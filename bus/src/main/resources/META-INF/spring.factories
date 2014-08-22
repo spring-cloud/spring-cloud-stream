@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.platform.cloudfoundry.broker.ServiceBrokerAutoConfiguration
+org.springframework.platform.bus.amqp.AmqpBusAutoConfiguration,\
+org.springframework.platform.bus.BusAutoConfiguration

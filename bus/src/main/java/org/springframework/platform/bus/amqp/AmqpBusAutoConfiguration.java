@@ -1,4 +1,4 @@
-package org.springframework.platform.bus;
+package org.springframework.platform.bus.amqp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,6 +6,7 @@ import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,7 @@ import org.springframework.integration.dsl.channel.MessageChannels;
 import org.springframework.integration.event.inbound.ApplicationEventListeningMessageProducer;
 import org.springframework.integration.event.outbound.ApplicationEventPublishingMessageHandler;
 import org.springframework.integration.handler.LoggingHandler;
+import org.springframework.platform.bus.event.RemoteApplicationEvent;
 import org.springframework.platform.config.client.RefreshEndpoint;
 import org.springframework.platform.context.restart.RestartEndpoint;
 
@@ -31,6 +33,7 @@ import org.springframework.platform.context.restart.RestartEndpoint;
  */
 @Configuration
 @ConditionalOnClass(AmqpTemplate.class)
+@ConditionalOnExpression()
 public class AmqpBusAutoConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(AmqpBusAutoConfiguration.class);
     public static final String X_SPRING_PLATFORM_ORIGIN = "X-Spring-Platform-Origin";
