@@ -17,6 +17,10 @@ public class AbstractBusEndpoint implements MvcEndpoint {
     @Autowired
     private BusEndpoint delegate;
 
+    protected String getAppName() {
+        return env.getProperty("spring.application.name");
+    }
+
     @Override
     public String getPath() {
         return "/" + this.delegate.getId();

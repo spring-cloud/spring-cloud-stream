@@ -16,8 +16,8 @@ public class RefreshBusEndpoint extends AbstractBusEndpoint {
     @RequestMapping(value = "refresh", method = RequestMethod.POST)
     @ResponseBody
     public void refresh(@RequestParam Map<String, String> params) {
-        context.publishEvent(new RefreshRemoteApplicationEvent(this, env.getProperty("spring.application.name")));
-        //return "remote refresh event sent to bus";
+        context.publishEvent(new RefreshRemoteApplicationEvent(this, getAppName()));
     }
+
 
 }
