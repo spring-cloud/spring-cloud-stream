@@ -73,14 +73,14 @@ public class AmqpBusAutoConfiguration {
     @Bean
     public IntegrationFlow platformBusOutboundFlow() {
         return IntegrationFlows.from(platformBusProducer())
-                .filter(acceptFromSelf())
+                .filter(outboundFilter())
                 .handle(Amqp.outboundAdapter(this.amqpTemplate).exchangeName(SPRING_PLATFORM_BUS))
                 .get();
     }
 
     //TODO: is there a way to move these filters to rabbit while not loosing the information once it is published to spring?
     @Bean
-    public GenericSelector acceptFromSelf() {
+    public GenericSelector outboundFilter() {
         return new GenericSelector<RemoteApplicationEvent>() {
             @Override
             public boolean accept(RemoteApplicationEvent source) {
@@ -90,7 +90,7 @@ public class AmqpBusAutoConfiguration {
     }
 
     @Bean
-    public GenericSelector inboutFilter() {
+    public GenericSelector inboundFilter() {
         return new GenericSelector<RemoteApplicationEvent>() {
             @Override
             public boolean accept(RemoteApplicationEvent event) {
@@ -117,7 +117,7 @@ public class AmqpBusAutoConfiguration {
     public IntegrationFlow platformBusInboundFlow(Environment env) {
         ApplicationEventPublishingMessageHandler messageHandler = new ApplicationEventPublishingMessageHandler();
         return IntegrationFlows.from(Amqp.inboundAdapter(connectionFactory, localPlatformBusQueue()))
-            .filter(inboutFilter())
+            .filter(inboundFilter())
             .handle(messageHandler)
             .get();
     }
