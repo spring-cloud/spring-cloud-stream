@@ -7,8 +7,6 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.context.embedded.EmbeddedServletContainerInitializedEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -25,18 +23,16 @@ import org.springframework.integration.event.inbound.ApplicationEventListeningMe
 import org.springframework.integration.event.outbound.ApplicationEventPublishingMessageHandler;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.platform.bus.event.RemoteApplicationEvent;
-import org.springframework.platform.config.client.RefreshEndpoint;
-import org.springframework.platform.context.restart.RestartEndpoint;
 
 /**
  * @author Spencer Gibb
  */
 @Configuration
 @ConditionalOnClass(AmqpTemplate.class)
-@ConditionalOnExpression()
+@ConditionalOnExpression("${bus.amqp.enabled:true}")
 public class AmqpBusAutoConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(AmqpBusAutoConfiguration.class);
-    public static final String X_SPRING_PLATFORM_ORIGIN = "X-Spring-Platform-Origin";
+    public static final String SPRING_PLATFORM_BUS = "spring.platform.bus";
 
     @Autowired
     private ConnectionFactory connectionFactory;
@@ -45,33 +41,16 @@ public class AmqpBusAutoConfiguration {
     private AmqpAdmin amqpAdmin;
 
     @Autowired
-    AmqpTemplate amqpTemplate;
+    private AmqpTemplate amqpTemplate;
 
     @Autowired
     private ConfigurableEnvironment env;
 
-    @Autowired(required = false)
-    private RefreshEndpoint refreshEndpoint;
-
-    @Autowired(required = false)
-    private RestartEndpoint restartEndpoint;
-    private int port;
-
     //TODO: how to fail gracefully if no rabbit?
-    @Bean
-    ApplicationListener<EmbeddedServletContainerInitializedEvent> servletInitListener() {
-        return new ApplicationListener<EmbeddedServletContainerInitializedEvent>() {
-            @Override
-            public void onApplicationEvent(EmbeddedServletContainerInitializedEvent event) {
-                port = event.getEmbeddedServletContainer().getPort();
-            }
-        };
-    }
-
     @Bean
     protected FanoutExchange platformBusExchange() {
         //TODO: change to TopicExchange?
-        FanoutExchange exchange = new FanoutExchange("spring.platform.bus");
+        FanoutExchange exchange = new FanoutExchange(SPRING_PLATFORM_BUS);
         amqpAdmin.declareExchange(exchange);
         return exchange;
     }
@@ -94,62 +73,51 @@ public class AmqpBusAutoConfiguration {
     @Bean
     public IntegrationFlow platformBusOutboundFlow() {
         return IntegrationFlows.from(platformBusProducer())
-                /*.enrichHeaders(new ComponentConfigurer<HeaderEnricherSpec>() {
-                    @Override
-                    public void configure(HeaderEnricherSpec headers) {
-                        headers.header(X_SPRING_PLATFORM_ORIGIN, env.getProperty("spring.application.name"));
-                    }
-                })*/
                 .filter(acceptFromSelf())
-                .handle(Amqp.outboundAdapter(this.amqpTemplate)
-                        //.mappedRequestHeaders(X_SPRING_PLATFORM_ORIGIN)
-                        .exchangeName("spring.platform.bus"))
+                .handle(Amqp.outboundAdapter(this.amqpTemplate).exchangeName(SPRING_PLATFORM_BUS))
                 .get();
     }
 
+    //TODO: is there a way to move these filters to rabbit while not loosing the information once it is published to spring?
     @Bean
     public GenericSelector acceptFromSelf() {
         return new GenericSelector<RemoteApplicationEvent>() {
             @Override
             public boolean accept(RemoteApplicationEvent source) {
-                return AmqpBusAutoConfiguration.this.isFromSelf(source);
+                return isFromSelf(source);
             }
         };
     }
 
     @Bean
-    public GenericSelector rejectMessagesFromSelf() {
-        /*return new GenericSelector<Message>() {
-            @Override
-            public boolean accept(Message source) {
-                String appName = env.getProperty("spring.application.name");
-                Object origin = source.getHeaders().get(X_SPRING_PLATFORM_ORIGIN);
-                // don't handle remote messages you sent!
-                return !origin.equals(appName);
-            }
-        };*/
+    public GenericSelector inboutFilter() {
         return new GenericSelector<RemoteApplicationEvent>() {
             @Override
-            public boolean accept(RemoteApplicationEvent source) {
-                return !AmqpBusAutoConfiguration.this.isFromSelf(source);
+            public boolean accept(RemoteApplicationEvent event) {
+                return !isFromSelf(event) && isForSelf(event);
             }
         };
     }
 
+    private boolean isForSelf(RemoteApplicationEvent event) {
+        return (event.getDestinationService() == null || event.getDestinationService().equals(getAppName()));
+    }
+
     private boolean isFromSelf(RemoteApplicationEvent event) {
         String originService = event.getOriginService();
-        String appName = env.getProperty("spring.application.name");
+        String appName = getAppName();
         return originService.equals(appName);
+    }
+
+    private String getAppName() {
+        return env.getProperty("spring.application.name");
     }
 
     @Bean
     public IntegrationFlow platformBusInboundFlow(Environment env) {
         ApplicationEventPublishingMessageHandler messageHandler = new ApplicationEventPublishingMessageHandler();
-        return IntegrationFlows.from(Amqp.inboundAdapter(connectionFactory, localPlatformBusQueue())
-                /*.mappedRequestHeaders(X_SPRING_PLATFORM_ORIGIN)*/)
-            //TODO: only accept messages to all services or the particular service? should that be at the amqp level?
-            .filter(rejectMessagesFromSelf())
-            //.channel(MessageChannels.direct().interceptor(new WireTap(wiretapChannel())))
+        return IntegrationFlows.from(Amqp.inboundAdapter(connectionFactory, localPlatformBusQueue()))
+            .filter(inboutFilter())
             .handle(messageHandler)
             .get();
     }
@@ -170,7 +138,6 @@ public class AmqpBusAutoConfiguration {
         LoggingHandler handler = new LoggingHandler("INFO");
         handler.setShouldLogFullMessage(true);
         return IntegrationFlows.from(wiretapChannel())
-                //.filter(rejectMessagesFromSelf())
                 .handle(handler)
                 .get();
     }

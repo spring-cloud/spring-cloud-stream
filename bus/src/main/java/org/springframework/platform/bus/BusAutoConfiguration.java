@@ -13,6 +13,7 @@ import org.springframework.platform.config.client.RefreshEndpoint;
  * @author Spencer Gibb
  */
 @Configuration
+@ConditionalOnExpression("${bus.enabled:true}")
 public class BusAutoConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(BusAutoConfiguration.class);
 
