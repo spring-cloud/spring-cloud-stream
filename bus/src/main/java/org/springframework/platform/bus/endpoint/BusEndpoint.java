@@ -1,4 +1,4 @@
-package org.springframework.platform.bus;
+package org.springframework.platform.bus.endpoint;
 
 import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
 import org.springframework.boot.context.properties.ConfigurationProperties;

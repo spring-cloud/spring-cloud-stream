@@ -1,8 +1,9 @@
-package org.springframework.platform.bus;
+package org.springframework.platform.bus.endpoint;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.Endpoint;
 import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
@@ -19,6 +20,10 @@ public class AbstractBusEndpoint implements MvcEndpoint {
 
     protected String getAppName() {
         return env.getProperty("spring.application.name");
+    }
+
+    protected void publish(ApplicationEvent event) {
+        context.publishEvent(event);
     }
 
     @Override
