@@ -100,7 +100,9 @@ public class AmqpBusAutoConfiguration {
     }
 
     private boolean isForSelf(RemoteApplicationEvent event) {
-        return (event.getDestinationService() == null || event.getDestinationService().equals(getAppName()));
+        return (event.getDestinationService() == null
+                  || event.getDestinationService().trim().isEmpty()
+                  || event.getDestinationService().equals(getAppName()));
     }
 
     private boolean isFromSelf(RemoteApplicationEvent event) {
