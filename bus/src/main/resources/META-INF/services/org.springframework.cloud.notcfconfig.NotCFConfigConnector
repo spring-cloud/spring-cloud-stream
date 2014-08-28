@@ -1,0 +1,5 @@
+org.springframework.cloud.localconfig.AmqpServiceInfoCreator
+org.springframework.cloud.localconfig.MongoServiceInfoCreator
+org.springframework.cloud.localconfig.MysqlServiceInfoCreator
+org.springframework.cloud.localconfig.PostgresqlServiceInfoCreator
+org.springframework.cloud.localconfig.RedisServiceInfoCreator
