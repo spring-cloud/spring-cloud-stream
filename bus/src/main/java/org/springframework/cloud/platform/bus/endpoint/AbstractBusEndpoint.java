@@ -1,4 +1,4 @@
-package org.springframework.platform.bus.endpoint;
+package org.springframework.cloud.bus.endpoint;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.Endpoint;

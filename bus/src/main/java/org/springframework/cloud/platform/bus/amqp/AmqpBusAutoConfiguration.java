@@ -1,4 +1,4 @@
-package org.springframework.platform.bus.amqp;
+package org.springframework.cloud.bus.amqp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ import org.springframework.integration.dsl.channel.MessageChannels;
 import org.springframework.integration.event.inbound.ApplicationEventListeningMessageProducer;
 import org.springframework.integration.event.outbound.ApplicationEventPublishingMessageHandler;
 import org.springframework.integration.handler.LoggingHandler;
-import org.springframework.platform.bus.event.RemoteApplicationEvent;
+import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 
 /**
  * @author Spencer Gibb

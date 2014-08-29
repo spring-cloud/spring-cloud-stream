@@ -1,4 +1,4 @@
-package org.springframework.platform.bus.event;
+package org.springframework.cloud.bus.event;
 
 import lombok.Data;
 import org.springframework.context.ApplicationEvent;

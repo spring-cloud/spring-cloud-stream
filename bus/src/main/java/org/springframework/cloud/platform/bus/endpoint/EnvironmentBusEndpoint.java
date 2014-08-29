@@ -1,6 +1,6 @@
-package org.springframework.platform.bus.endpoint;
+package org.springframework.cloud.bus.endpoint;
 
-import org.springframework.platform.bus.event.EnvironmentChangeRemoteApplicationEvent;
+import org.springframework.cloud.bus.event.EnvironmentChangeRemoteApplicationEvent;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;

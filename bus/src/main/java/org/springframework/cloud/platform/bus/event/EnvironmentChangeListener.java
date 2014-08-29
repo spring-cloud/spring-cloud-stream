@@ -1,10 +1,10 @@
-package org.springframework.platform.bus.event;
+package org.springframework.cloud.bus.event;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
-import org.springframework.platform.context.environment.EnvironmentManager;
+import org.springframework.cloud.context.environment.EnvironmentManager;
 
 import java.util.Map;
 
