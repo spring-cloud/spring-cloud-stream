@@ -1,15 +1,19 @@
 package org.springframework.cloud.bus.event;
 
-import lombok.Data;
-
 import java.util.Map;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author Spencer Gibb
  */
+@SuppressWarnings("serial")
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEvent {
-    private final Map<String, String> values;
+
+	private final Map<String, String> values;
 
     public EnvironmentChangeRemoteApplicationEvent(Object source, String originService,
                                                    String destinationService,
@@ -17,4 +21,5 @@ public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEv
         super(source, originService, destinationService);
         this.values = values;
     }
+
 }

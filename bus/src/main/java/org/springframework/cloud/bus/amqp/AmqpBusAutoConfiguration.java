@@ -1,12 +1,15 @@
 package org.springframework.cloud.bus.amqp;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -22,7 +25,6 @@ import org.springframework.integration.dsl.channel.MessageChannels;
 import org.springframework.integration.event.inbound.ApplicationEventListeningMessageProducer;
 import org.springframework.integration.event.outbound.ApplicationEventPublishingMessageHandler;
 import org.springframework.integration.handler.LoggingHandler;
-import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 
 /**
  * @author Spencer Gibb
@@ -31,7 +33,7 @@ import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 @ConditionalOnClass(AmqpTemplate.class)
 @ConditionalOnExpression("${bus.amqp.enabled:true}")
 public class AmqpBusAutoConfiguration {
-    private static final Logger logger = LoggerFactory.getLogger(AmqpBusAutoConfiguration.class);
+
     public static final String SPRING_PLATFORM_BUS = "spring.platform.bus";
 
     @Autowired
@@ -62,7 +64,8 @@ public class AmqpBusAutoConfiguration {
         return queue;
     }
 
-    @Bean
+    @SuppressWarnings("unchecked")
+	@Bean
     public ApplicationEventListeningMessageProducer platformBusProducer() {
         ApplicationEventListeningMessageProducer producer = new ApplicationEventListeningMessageProducer();
         producer.setEventTypes(RemoteApplicationEvent.class);
@@ -80,7 +83,7 @@ public class AmqpBusAutoConfiguration {
 
     //TODO: is there a way to move these filters to rabbit while not loosing the information once it is published to spring?
     @Bean
-    public GenericSelector outboundFilter() {
+    public GenericSelector<?> outboundFilter() {
         return new GenericSelector<RemoteApplicationEvent>() {
             @Override
             public boolean accept(RemoteApplicationEvent source) {
@@ -90,7 +93,7 @@ public class AmqpBusAutoConfiguration {
     }
 
     @Bean
-    public GenericSelector inboundFilter() {
+    public GenericSelector<?> inboundFilter() {
         return new GenericSelector<RemoteApplicationEvent>() {
             @Override
             public boolean accept(RemoteApplicationEvent event) {

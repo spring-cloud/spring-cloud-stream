@@ -18,6 +18,6 @@ public class BusEndpoint extends AbstractEndpoint<Collection<String>>/* implemen
 
     @Override
     public Collection<String> invoke() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 }

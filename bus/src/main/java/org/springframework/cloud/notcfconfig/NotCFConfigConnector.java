@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * @author Spencer Gibb
- * Let's spring boots current auto-configuration work, effectivly disabling spring cloud local
+ * Lets spring boot auto-configuration work, effectively disabling spring cloud local
  * TODO: workaround for not having to configure the local cloud connector
  */
 public class NotCFConfigConnector extends LocalConfigConnector {
