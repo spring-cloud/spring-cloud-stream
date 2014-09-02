@@ -30,6 +30,14 @@
 		</dependencies>
 	</dependencyManagement>
 
+    <repositories>
+        <repository>
+            <id>repo.spring.io</id>
+            <name>repo.spring.io-releases</name>
+            <url>http://repo.spring.io/libs-milestone-local</url>
+        </repository>
+    </repositories>
+
 	<dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
