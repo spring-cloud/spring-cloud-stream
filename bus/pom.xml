@@ -36,6 +36,14 @@
             <name>repo.spring.io-releases</name>
             <url>http://repo.spring.io/libs-milestone-local</url>
         </repository>
+        <repository>
+            <id>repo.spring.io-snapshots</id>
+            <name>repo.spring.io-snapshots</name>
+            <url>http://repo.spring.io/libs-snapshot-local</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
 	<dependencies>
