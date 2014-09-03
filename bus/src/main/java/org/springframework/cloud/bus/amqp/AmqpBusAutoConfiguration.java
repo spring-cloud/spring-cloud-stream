@@ -34,7 +34,7 @@ import org.springframework.integration.handler.LoggingHandler;
 @ConditionalOnExpression("${bus.amqp.enabled:true}")
 public class AmqpBusAutoConfiguration {
 
-    public static final String SPRING_PLATFORM_BUS = "spring.platform.bus";
+    public static final String SPRING_CLOUD_BUS = "spring.cloud.bus";
 
     @Autowired
     private ConnectionFactory connectionFactory;
@@ -50,23 +50,23 @@ public class AmqpBusAutoConfiguration {
 
     //TODO: how to fail gracefully if no rabbit?
     @Bean
-    protected FanoutExchange platformBusExchange() {
+    protected FanoutExchange cloudBusExchange() {
         //TODO: change to TopicExchange?
-        FanoutExchange exchange = new FanoutExchange(SPRING_PLATFORM_BUS);
+        FanoutExchange exchange = new FanoutExchange(SPRING_CLOUD_BUS);
         amqpAdmin.declareExchange(exchange);
         return exchange;
     }
 
     @Bean
-    protected Queue localPlatformBusQueue() {
+    protected Queue localCloudBusQueue() {
         Queue queue = amqpAdmin.declareQueue();
-        amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(platformBusExchange()));
+        amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(cloudBusExchange()));
         return queue;
     }
 
     @SuppressWarnings("unchecked")
 	@Bean
-    public ApplicationEventListeningMessageProducer platformBusProducer() {
+    public ApplicationEventListeningMessageProducer cloudBusProducer() {
         ApplicationEventListeningMessageProducer producer = new ApplicationEventListeningMessageProducer();
         producer.setEventTypes(RemoteApplicationEvent.class);
         producer.setOutputChannel(new DirectChannel());
@@ -74,10 +74,10 @@ public class AmqpBusAutoConfiguration {
     }
 
     @Bean
-    public IntegrationFlow platformBusOutboundFlow() {
-        return IntegrationFlows.from(platformBusProducer())
+    public IntegrationFlow cloudBusOutboundFlow() {
+        return IntegrationFlows.from(cloudBusProducer())
                 .filter(outboundFilter())
-                .handle(Amqp.outboundAdapter(this.amqpTemplate).exchangeName(SPRING_PLATFORM_BUS))
+                .handle(Amqp.outboundAdapter(this.amqpTemplate).exchangeName(SPRING_CLOUD_BUS))
                 .get();
     }
 
@@ -119,9 +119,9 @@ public class AmqpBusAutoConfiguration {
     }
 
     @Bean
-    public IntegrationFlow platformBusInboundFlow(Environment env) {
+    public IntegrationFlow cloudBusInboundFlow(Environment env) {
         ApplicationEventPublishingMessageHandler messageHandler = new ApplicationEventPublishingMessageHandler();
-        return IntegrationFlows.from(Amqp.inboundAdapter(connectionFactory, localPlatformBusQueue()))
+        return IntegrationFlows.from(Amqp.inboundAdapter(connectionFactory, localCloudBusQueue()))
             .filter(inboundFilter())
             .handle(messageHandler)
             .get();
@@ -133,7 +133,7 @@ public class AmqpBusAutoConfiguration {
     }
 
     @Bean
-    @GlobalChannelInterceptor(patterns = "platformBusInboundFlow*")
+    @GlobalChannelInterceptor(patterns = "cloudBusInboundFlow*")
     public WireTap wireTap() {
         return new WireTap(wiretapChannel());
     }
