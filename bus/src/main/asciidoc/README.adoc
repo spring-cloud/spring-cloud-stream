@@ -1,5 +1,4 @@
 = Spring Platform Bus
-:toc:
 
 include::intro.adoc[]
 
