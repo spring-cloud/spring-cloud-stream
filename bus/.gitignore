@@ -10,6 +10,7 @@
 build
 bin
 /target/
+_site/
 *.swp
 .idea
 *.iml
