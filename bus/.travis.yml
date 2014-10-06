@@ -1,0 +1,13 @@
+language: java
+before_install: git config user.name "$GIT_NAME" && git config user.email "$GIT_EMAIL"
+  && git config credential.helper "store --file=.git/credentials" && echo "https://$GH_TOKEN:@github.com"
+  > .git/credentials
+install: 
+  - mvn install -q -U -DskipTests=true -Dmaven.test.redirectTestOutputToFile=true
+  - ./src/main/asciidoc/ghpages.sh
+script: mvn --settings .settings.xml deploy -nsu -Dmaven.test.redirectTestOutputToFile=true
+env:
+  global:
+  - GIT_NAME="Dave Syer"
+  - GIT_EMAIL=dsyer@pivotal.io
+  - secure: WkOpm7S9tGG85vhmAej16RIJS1MxKKBsnwIa8/hDRONDba0iDBn4vmy8Nj/JuVAy3CVPd0UecQ8cJveqjnMK/3LSBH9G5B78cAfCkFfjPncMXfgn8f1l4uMOooIPYW/JNodSVwrTxPfGq+L8yYSLcIP1sqnvbz6IGw6Ni1p6wUQ=
