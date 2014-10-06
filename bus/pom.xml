@@ -12,9 +12,9 @@
 	<description>Spring Patform Bus</description>
 
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.1.5.RELEASE</version>
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-build</artifactId>
+		<version>1.0.0.BUILD-SNAPSHOT</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
@@ -29,22 +29,6 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-    <repositories>
-        <repository>
-            <id>repo.spring.io</id>
-            <name>repo.spring.io-releases</name>
-            <url>http://repo.spring.io/libs-milestone-local</url>
-        </repository>
-        <repository>
-            <id>repo.spring.io-snapshots</id>
-            <name>repo.spring.io-snapshots</name>
-            <url>http://repo.spring.io/libs-snapshot-local</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
 	<dependencies>
         <dependency>
@@ -104,70 +88,32 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.12.6</version>
+            <scope>provided</scope>
         </dependency>
 	</dependencies>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>1.7</java.version>
-	</properties>
-
-    <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <dependencies>
-              <dependency>
-                <groupId>org.jruby</groupId>
-                <artifactId>jruby-complete</artifactId>
-                <version>1.7.12</version>
-              </dependency>
-            </dependencies>
-            <executions>
-              <execution>
-                <id>readme</id>
-                <phase>process-resources</phase>
-				<goals>
-				  <goal>run</goal>
-				</goals>
-                <inherited>false</inherited>
-                <configuration>
-                  <tasks>
-                    <java classname="org.jruby.Main" failonerror="yes">
-                      <arg value="${basedir}/src/main/ruby/generate_readme.sh" />
-                      <arg value="-o" />
-                      <arg value="${basedir}/README.adoc" />
-                    </java>
-                  </tasks>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-		  <plugin>
-		    <groupId>org.asciidoctor</groupId>
-		    <artifactId>asciidoctor-maven-plugin</artifactId>
-		    <version>1.5.0</version>
-		    <executions>
-			  <execution>
-			    <id>generate-</id>
-			    <phase>process-resources</phase>
-			    <goals>
-				  <goal>process-asciidoc</goal>
-			    </goals>
-                <inherited>false</inherited>
-			    <configuration>
-				  <sourceDocumentName>${project.artifactId}.adoc</sourceDocumentName>
-                  <backend>html</backend>
-				  <doctype>article</doctype>
-				  <attributes>
-				    <docinfo>true</docinfo>
-				    <spring-cloud-version>${project.version}</spring-cloud-version>
-				  </attributes>
-			    </configuration>
-			  </execution>
-		    </executions>
-		  </plugin>
-        </plugins>
-	</build>
-
+    <profiles>
+		<profile>
+			<id>docs</id>
+            <build>
+               <plugins>
+		        <plugin>
+		          <groupId>org.asciidoctor</groupId>
+		          <artifactId>asciidoctor-maven-plugin</artifactId>
+                  <inherited>false</inherited>
+                </plugin>
+			    <plugin>
+				  <groupId>org.apache.maven.plugins</groupId>
+				  <artifactId>maven-antrun-plugin</artifactId>
+                  <inherited>false</inherited>
+                </plugin>
+ 				<plugin>
+				  <groupId>org.codehaus.mojo</groupId>
+				  <artifactId>build-helper-maven-plugin</artifactId>
+                  <inherited>false</inherited>
+                </plugin>
+              </plugins>
+            </build>
+		</profile>
+    </profiles>
 </project>
