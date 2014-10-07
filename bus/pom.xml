@@ -92,6 +92,13 @@
         </dependency>
 	</dependencies>
 
+	<scm>
+		<url>https://github.com/spring-cloud/spring-cloud-bus</url>
+		<connection>scm:git:git://github.com/spring-cloud/spring-cloud-bus.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/spring-cloud/spring-cloud-bus.git</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
+
     <profiles>
 		<profile>
 			<id>docs</id>
