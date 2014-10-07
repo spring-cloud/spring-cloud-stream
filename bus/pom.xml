@@ -46,7 +46,7 @@
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-java-dsl</artifactId>
-            <version>1.0.0.BUILD-SNAPSHOT</version>
+            <version>1.0.0.M3</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.integration</groupId>
@@ -66,7 +66,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-spring-service-connector</artifactId>
-            <version>1.1.0.BUILD-SNAPSHOT</version>
+            <version>1.1.0.RELEASE</version>
             <exclusions>
             	<exclusion>
             		<artifactId>log4j</artifactId>
@@ -77,12 +77,12 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-localconfig-connector</artifactId>
-            <version>1.1.0.BUILD-SNAPSHOT</version>
+            <version>1.1.0.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-cloudfoundry-connector</artifactId>
-            <version>1.1.0.BUILD-SNAPSHOT</version>
+            <version>1.1.0.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
