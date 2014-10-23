@@ -16,18 +16,6 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot</artifactId>
-                <version>1.1.5.RELEASE</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 	<dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
