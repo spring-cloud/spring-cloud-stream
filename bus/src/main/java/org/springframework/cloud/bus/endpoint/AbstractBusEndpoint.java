@@ -1,44 +1,48 @@
 package org.springframework.cloud.bus.endpoint;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.Endpoint;
 import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.context.ApplicationEventPublisher;
 
 /**
  * @author Spencer Gibb
  */
 public class AbstractBusEndpoint implements MvcEndpoint {
-    @Autowired
-    protected ConfigurableEnvironment env;
-    @Autowired
-    protected ConfigurableApplicationContext context;
-    @Autowired
-    private BusEndpoint delegate;
 
-    protected String getAppName() {
-        return env.getProperty("spring.application.name");
-    }
+	private ApplicationEventPublisher context;
 
-    protected void publish(ApplicationEvent event) {
-        context.publishEvent(event);
-    }
+	private BusEndpoint delegate;
 
-    @Override
-    public String getPath() {
-        return "/" + this.delegate.getId();
-    }
+	private String appId;
 
-    @Override
-    public boolean isSensitive() {
-        return this.delegate.isSensitive();
-    }
+	public AbstractBusEndpoint(ApplicationEventPublisher context, String appId, BusEndpoint busEndpoint) {
+		this.context = context;
+		this.appId = appId;
+		this.delegate = busEndpoint;
+	}
 
-    @Override
-    @SuppressWarnings("rawtypes")
-    public Class<? extends Endpoint> getEndpointType() {
-        return this.delegate.getClass();
-    }
+	protected String getInstanceId() {
+		return this.appId;
+	}
+
+	protected void publish(ApplicationEvent event) {
+		context.publishEvent(event);
+	}
+
+	@Override
+	public String getPath() {
+		return "/" + this.delegate.getId();
+	}
+
+	@Override
+	public boolean isSensitive() {
+		return this.delegate.isSensitive();
+	}
+
+	@Override
+	@SuppressWarnings("rawtypes")
+	public Class<? extends Endpoint> getEndpointType() {
+		return this.delegate.getClass();
+	}
 }
