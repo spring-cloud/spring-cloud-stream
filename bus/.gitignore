@@ -9,7 +9,7 @@
 .gradle
 build
 bin
-target
+target/
 _site/
 *.swp
 .idea

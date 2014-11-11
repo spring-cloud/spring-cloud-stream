@@ -1,6 +1,7 @@
 package org.springframework.cloud.bus.hystrix;
 
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -37,6 +38,12 @@ public class HystrixStreamAutoConfiguration {
         @Bean
         public DirectChannel hystrixStream() {
             return new DirectChannel();
+        }
+        
+        @Bean
+        public DirectExchange hystrixStreamExchange() {
+            DirectExchange exchange = new DirectExchange(Constants.HYSTRIX_STREAM_NAME);
+            return exchange;
         }
 
         @ConditionalOnExpression("${hystrix.stream.bus.enabled:true}")

@@ -1,4 +1,4 @@
-= Spring Platform Bus
+= Spring Cloud Bus
 :toc:
 
 include::intro.adoc[]
