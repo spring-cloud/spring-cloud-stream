@@ -1,13 +1,15 @@
 package org.springframework.cloud.bus.turbine;
 
-import com.netflix.turbine.aggregator.InstanceKey;
-import com.netflix.turbine.aggregator.StreamAggregator;
-import com.netflix.turbine.internal.JsonUtility;
+import static io.reactivex.netty.pipeline.PipelineConfigurators.sseServerConfigurator;
 import io.netty.buffer.ByteBuf;
 import io.reactivex.netty.RxNetty;
 import io.reactivex.netty.protocol.http.server.HttpServer;
 import io.reactivex.netty.protocol.text.sse.ServerSentEvent;
+
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -16,12 +18,13 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+
 import rx.Observable;
 import rx.subjects.PublishSubject;
 
-import java.util.Map;
-
-import static io.reactivex.netty.pipeline.PipelineConfigurators.*;
+import com.netflix.turbine.aggregator.InstanceKey;
+import com.netflix.turbine.aggregator.StreamAggregator;
+import com.netflix.turbine.internal.JsonUtility;
 
 /**
  * @author Spencer Gibb
@@ -53,7 +56,7 @@ public class StartBusTurbine implements SmartLifecycle {
 
         int port = new Integer(env.getProperty("server.port", "8989"));
         HttpServer<ByteBuf, ServerSentEvent> httpServer = RxNetty.createHttpServer(port, (request, response) -> {
-            StartBusTurbine.this.log.info("BusTurbine => SSE Request Received");
+            log.info("BusTurbine => SSE Request Received");
             response.getHeaders().setHeader("Content-Type", "text/event-stream");
             return publishedStreams
                     .doOnUnsubscribe(() -> log.info("BusTurbine => Unsubscribing RxNetty server connection"))

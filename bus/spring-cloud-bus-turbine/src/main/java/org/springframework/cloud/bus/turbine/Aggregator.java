@@ -1,11 +1,14 @@
 package org.springframework.cloud.bus.turbine;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.annotation.MessageEndpoint;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.util.StringUtils;
+
 import rx.subjects.PublishSubject;
 
 import java.io.IOException;
@@ -27,7 +30,8 @@ public class Aggregator {
     @ServiceActivator(inputChannel = "hystrixStreamAggregator")
     public void handle(String payload) {
         try {
-            Map<String, Object> map = objectMapper.readValue(payload, Map.class);
+            @SuppressWarnings("unchecked")
+			Map<String, Object> map = objectMapper.readValue(payload, Map.class);
             Map<String, Object> data = getPayloadData(map);
 
             log.debug("Received hystrix stream payload: {}", data);
@@ -38,7 +42,8 @@ public class Aggregator {
     }
 
     public static Map<String, Object> getPayloadData(Map<String, Object> jsonMap) {
-        Map<String, Object> origin = (Map<String, Object>) jsonMap.get("origin");
+        @SuppressWarnings("unchecked")
+		Map<String, Object> origin = (Map<String, Object>) jsonMap.get("origin");
 
         String instanceId = null;
         if (origin.containsKey("id")) {
@@ -51,7 +56,8 @@ public class Aggregator {
             //instanceId = origin.get("serviceId") + ":" + origin.get("ipAddress") + ":" + origin.get("port");
         }
 
-        Map<String, Object> data = (Map<String, Object>) jsonMap.get("data");
+        @SuppressWarnings("unchecked")
+		Map<String, Object> data = (Map<String, Object>) jsonMap.get("data");
 
         data.put("instanceId", instanceId);
         return data;
