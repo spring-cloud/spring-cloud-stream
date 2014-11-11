@@ -158,17 +158,17 @@ public class BusAutoConfiguration {
 
 	private boolean isFromSelf(RemoteApplicationEvent event) {
 		String originService = event.getOriginService();
-		String appName = getAppName();
-		return originService.equals(appName);
+		String serviceId = getServiceId();
+		return originService.equals(serviceId);
 	}
 
 	private boolean isForSelf(RemoteApplicationEvent event) {
 		return (event.getDestinationService() == null
 				|| event.getDestinationService().trim().isEmpty() || event
-				.getDestinationService().equals(getAppName()));
+				.getDestinationService().equals(getServiceId()));
 	}
 
-	private String getAppName() {
+	private String getServiceId() {
 		return context.getId();
 	}
 
