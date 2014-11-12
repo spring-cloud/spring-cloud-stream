@@ -1,4 +1,6 @@
 language: java
+jdk:
+  - oraclejdk8
 before_install:
   - git config user.name "$GIT_NAME"
   - git config user.email "$GIT_EMAIL"
