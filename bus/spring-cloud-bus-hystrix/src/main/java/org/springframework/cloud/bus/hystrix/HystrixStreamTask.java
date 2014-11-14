@@ -224,9 +224,6 @@ public class HystrixStreamTask {
         json.writeNumberField("port", localService.getPort());
         json.writeStringField("serviceId", localService.getServiceId());
         json.writeStringField("id", context.getId());
-        if (localService.getIpAddress() != null) {
-            json.writeStringField("ipAddress", localService.getIpAddress());
-        }
         json.writeEndObject();
     }
 }

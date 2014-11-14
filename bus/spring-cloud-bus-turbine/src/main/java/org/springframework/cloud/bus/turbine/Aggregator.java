@@ -53,7 +53,6 @@ public class Aggregator {
         if (!StringUtils.hasText(instanceId)) {
             //TODO: instanceid template
             instanceId = origin.get("serviceId")+":"+origin.get("host")+":"+origin.get("port");
-            //instanceId = origin.get("serviceId") + ":" + origin.get("ipAddress") + ":" + origin.get("port");
         }
 
         @SuppressWarnings("unchecked")
