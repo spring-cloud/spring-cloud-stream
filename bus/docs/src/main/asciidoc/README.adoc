@@ -9,3 +9,7 @@ include::quickstart.adoc[]
 == Building
 
 include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/src/main/asciidoc/building.adoc[]
+
+== Contributing
+
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/src/main/asciidoc/contributing.adoc[]
