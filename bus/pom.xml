@@ -28,6 +28,8 @@
         <spring-cloud.version>1.0.0.BUILD-SNAPSHOT</spring-cloud.version>
         <spring-integration.version>4.1.0.RELEASE</spring-integration.version>
         <spring-cloud-connector.version>1.1.0.RELEASE</spring-cloud-connector.version>
+        <turbine.version>2.0.0-DP.2</turbine.version>
+        <rxjava.version>[1.0,1.1)</rxjava.version>
     </properties>
 
     <dependencyManagement>
@@ -103,7 +105,7 @@
             <dependency>
                 <groupId>com.netflix.turbine</groupId>
                 <artifactId>turbine-core</artifactId>
-                <version>2.0.0-DP.1.1-SNAPSHOT</version>
+                <version>${turbine.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.netflix.rxjava</groupId>
@@ -118,7 +120,7 @@
             <dependency>
                 <groupId>io.reactivex</groupId>
                 <artifactId>rxjava</artifactId>
-                <version>1.0.0-rc.5</version>
+                <version>${rxjava.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
