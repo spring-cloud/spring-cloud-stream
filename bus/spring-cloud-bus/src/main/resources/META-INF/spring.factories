@@ -1,3 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.springframework.cloud.bus.amqp.AmqpBusAutoConfiguration,\
-org.springframework.cloud.bus.BusAutoConfiguration
+org.springframework.cloud.bus.BusAutoConfiguration,\
+org.springframework.cloud.bus.jackson.BusJacksonAutoConfiguration

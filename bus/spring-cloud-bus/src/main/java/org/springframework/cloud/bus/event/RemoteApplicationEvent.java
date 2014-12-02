@@ -1,5 +1,7 @@
 package org.springframework.cloud.bus.event;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,17 +13,27 @@ import org.springframework.context.ApplicationEvent;
 @SuppressWarnings("serial")
 @Data
 @EqualsAndHashCode(callSuper=false)
-public class RemoteApplicationEvent extends ApplicationEvent {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonIgnoreProperties("source")
+public abstract class RemoteApplicationEvent extends ApplicationEvent {
+    private static final Object TRANSIENT_SOURCE = new Object();
     private final String originService;
     private final String destinationService;
 
-    public RemoteApplicationEvent(Object source, String originService, String destinationService) {
+    protected RemoteApplicationEvent() {
+        //for serialization libs like jackson
+        super(TRANSIENT_SOURCE);
+        originService = null;
+        destinationService = null;
+    }
+
+    protected RemoteApplicationEvent(Object source, String originService, String destinationService) {
         super(source);
         this.originService = originService;
         this.destinationService = destinationService;
     }
 
-    public RemoteApplicationEvent(Object source, String originService) {
+    protected RemoteApplicationEvent(Object source, String originService) {
         this(source, originService, null);
     }
 }
