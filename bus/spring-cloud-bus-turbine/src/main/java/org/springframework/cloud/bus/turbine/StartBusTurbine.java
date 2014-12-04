@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-//import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +30,6 @@ import com.netflix.turbine.internal.JsonUtility;
  */
 @Configuration
 @EnableAutoConfiguration
-//@EnableEurekaClient
 @Slf4j
 public class StartBusTurbine implements SmartLifecycle {
 
