@@ -3,10 +3,11 @@ package org.springframework.cloud.bus.event;
 /**
  * @author Spencer Gibb
  */
-@SuppressWarnings("serial,unused")
+@SuppressWarnings("serial")
 public class RefreshRemoteApplicationEvent extends RemoteApplicationEvent {
 
-    private RefreshRemoteApplicationEvent(){
+    @SuppressWarnings("unused")
+	private RefreshRemoteApplicationEvent(){
         //for serializers
     }
 

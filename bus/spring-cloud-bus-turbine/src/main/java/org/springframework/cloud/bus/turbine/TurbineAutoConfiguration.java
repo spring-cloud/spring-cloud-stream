@@ -1,6 +1,13 @@
 package org.springframework.cloud.bus.turbine;
 
-import org.springframework.amqp.core.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -11,9 +18,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.amqp.Amqp;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author Spencer Gibb
@@ -29,24 +33,23 @@ public class TurbineAutoConfiguration {
         @Autowired
         private ConnectionFactory connectionFactory;
 
-        @Autowired
-        private AmqpAdmin amqpAdmin;
-
         //TODO: how to fail gracefully if no rabbit?
         @Bean
         public DirectExchange hystrixStreamExchange() {
             DirectExchange exchange = new DirectExchange(Constants.HYSTRIX_STREAM_NAME);
-            amqpAdmin.declareExchange(exchange);
             return exchange;
         }
+
+    	@Bean
+    	protected Binding localCloudBusQueueBinding() {
+    		return BindingBuilder.bind(hystrixStreamQueue()).to(hystrixStreamExchange()).with("");		
+    	}
 
         @Bean
         public Queue hystrixStreamQueue() {
             Map<String, Object> args = new HashMap<>();
             args.put("x-message-ttl", 60000); //TODO: configure TTL
             Queue queue = new Queue(Constants.HYSTRIX_STREAM_NAME, false, false, false, args);
-            amqpAdmin.declareQueue(queue);
-            amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(hystrixStreamExchange()).with(""));
             return queue;
         }
 

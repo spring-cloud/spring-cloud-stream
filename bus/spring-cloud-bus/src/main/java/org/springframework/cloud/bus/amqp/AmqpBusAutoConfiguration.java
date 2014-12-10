@@ -1,7 +1,8 @@
 package org.springframework.cloud.bus.amqp;
 
-import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.AnonymousQueue;
+import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
@@ -31,9 +32,6 @@ public class AmqpBusAutoConfiguration {
 	private ConnectionFactory connectionFactory;
 
 	@Autowired
-	private AmqpAdmin amqpAdmin;
-
-	@Autowired
 	private AmqpTemplate amqpTemplate;
 
 	// TODO: how to fail gracefully if no rabbit?
@@ -41,15 +39,17 @@ public class AmqpBusAutoConfiguration {
 	protected FanoutExchange cloudBusExchange() {
 		// TODO: change to TopicExchange?
 		FanoutExchange exchange = new FanoutExchange(SPRING_CLOUD_BUS);
-		amqpAdmin.declareExchange(exchange);
 		return exchange;
+	}
+	
+	@Bean
+	protected Binding localCloudBusQueueBinding() {
+		return BindingBuilder.bind(localCloudBusQueue()).to(cloudBusExchange());		
 	}
 
 	@Bean
 	protected Queue localCloudBusQueue() {
-		Queue queue = amqpAdmin.declareQueue();
-		amqpAdmin.declareBinding(BindingBuilder.bind(queue).to(cloudBusExchange()));
-		return queue;
+		return new AnonymousQueue();
 	}
 
 	@Bean
