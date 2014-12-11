@@ -1,7 +1,5 @@
 package org.springframework.cloud.bus.amqp;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
