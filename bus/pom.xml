@@ -51,21 +51,6 @@
 				<artifactId>spring-cloud-bus</artifactId>
 				<version>${project.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-bus-common</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-bus-hsytrix</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-bus-turbine</artifactId>
-				<version>${project.version}</version>
-			</dependency>
 		    <dependency>
 			  <groupId>org.springframework</groupId>
 			  <artifactId>spring-context</artifactId>
