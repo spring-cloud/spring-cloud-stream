@@ -17,10 +17,7 @@
     </parent>
 
     <modules>
-        <module>spring-cloud-bus-common</module>
         <module>spring-cloud-bus</module>
-        <module>spring-cloud-bus-hystrix</module>
-        <module>spring-cloud-bus-turbine</module>
         <module>docs</module>
     </modules>
 
