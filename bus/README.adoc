@@ -50,10 +50,10 @@ running locally (e.g. mongo or rabbit).  Ignore the git-related bits
 that you might find in "before_install" since they will be able git
 credentials and you already have those.
 
-If you need mongo, rabbit or redis, see the README in the [scripts
-demo repository](https://github.com/spring-cloud-samples/scripts) for
+If you need mongo, rabbit or redis, see the README in the https://github.com/spring-cloud-samples/scripts[scripts
+demo repository] for
 instructions. For example consider using the "fig.yml" with
-[Fig](http://www.fig.sh/) to run them in Docker containers.
+http://www.fig.sh/[Fig] to run them in Docker containers.
 
 === Documentation
 
@@ -130,5 +130,65 @@ following command:
 The generated eclipse projects can be imported by selecting `import existing projects`
 from the `file` menu.
 
+==== Adding Project Lombok Agent
+
+Spring Cloud uses [Project
+Lombok](http://projectlombok.org/features/index.html) to generate
+getters and setters etc. Compiling from the command line this
+shouldn't cause any problems, but in an IDE you need to add an agent
+to the JVM. Full instructions can be found in the Lombok website. The
+sign that you need to do this is a lot of compiler errors to do with
+missing methods and fields, e.g.
+
+[indent=0]
+----
+The method getInitialStatus() is undefined for the type EurekaInstanceConfigBean    EurekaDiscoveryClientConfiguration.java /spring-cloud-netflix-core/src/main/java/org/springframework/cloud/netflix/eureka   line 120    Java Problem
+The method getInitialStatus() is undefined for the type EurekaInstanceConfigBean    EurekaDiscoveryClientConfiguration.java /spring-cloud-netflix-core/src/main/java/org/springframework/cloud/netflix/eureka   line 121    Java Problem
+The method setNonSecurePort(int) is undefined for the type EurekaInstanceConfigBean EurekaDiscoveryClientConfiguration.java /spring-cloud-netflix-core/src/main/java/org/springframework/cloud/netflix/eureka   line 112    Java Problem
+The type EurekaInstanceConfigBean.IdentifyingDataCenterInfo must implement the inherited abstract method DataCenterInfo.getName()   EurekaInstanceConfigBean.java   /spring-cloud-netflix-core/src/main/java/org/springframework/cloud/netflix/eureka   line 131    Java Problem
+The method getId() is undefined for the type ProxyRouteLocator.ProxyRouteSpec   PreDecorationFilter.java    /spring-cloud-netflix-core/src/main/java/org/springframework/cloud/netflix/zuul/filters/pre line 60 Java Problem
+The method getLocation() is undefined for the type ProxyRouteLocator.ProxyRouteSpec PreDecorationFilter.java    /spring-cloud-netflix-core/src/main/java/org/springframework/cloud/netflix/zuul/filters/pre line 55 Java Problem
+----
+
 ==== Importing into other IDEs
 Maven is well supported by most Java IDEs. Refer to you vendor documentation.
+
+== Contributing
+
+Spring Cloud is released under the non-restrictive Apache 2.0 license. If you would like
+to contribute something, or simply want to hack on the code this document should help
+you get started.
+
+=== Sign the Contributor License Agreement
+Before we accept a non-trivial patch or pull request we will need you to sign the
+https://support.springsource.com/spring_committer_signup[contributor's agreement].
+Signing the contributor's agreement does not grant anyone commit rights to the main
+repository, but it does mean that we can accept your contributions, and you will get an
+author credit if we do.  Active contributors might be asked to join the core team, and
+given the ability to merge pull requests.
+
+=== Code Conventions and Housekeeping
+None of these is essential for a pull request, but they will all help.  They can also be
+added after the original pull request but before a merge.
+
+* Use the Spring Framework code format conventions. If you use Eclipse
+  you can import formatter settings using the
+  `eclipse-code-formatter.xml` file from the
+  https://github.com/spring-cloud/build/tree/master/eclipse-coding-conventions.xml[Spring
+  Cloud Build] project. If using IntelliJ, you can use the
+  http://plugins.jetbrains.com/plugin/6546[Eclipse Code Formatter
+  Plugin] to import the same file.
+* Make sure all new `.java` files to have a simple Javadoc class comment with at least an
+  `@author` tag identifying you, and preferably at least a paragraph on what the class is
+  for.
+* Add the ASF license header comment to all new `.java` files (copy from existing files
+  in the project)
+* Add yourself as an `@author` to the .java files that you modify substantially (more
+  than cosmetic changes).
+* Add some Javadocs and, if you change the namespace, some XSD doc elements.
+* A few unit tests would help a lot as well -- someone has to do it.
+* If no-one else is using your branch, please rebase it against the current master (or
+  other target branch in the main project).
+* When writing a commit message please follow http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html[these conventions],
+  if you are fixing an existing issue please add `Fixes gh-XXXX` at the end of the commit
+  message (where XXXX is the issue number).
