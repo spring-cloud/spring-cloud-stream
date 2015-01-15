@@ -3,7 +3,7 @@ package org.springframework.cloud.bus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.bus.endpoint.BusEndpoint;
 import org.springframework.cloud.bus.endpoint.EnvironmentBusEndpoint;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
@@ -35,7 +35,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Dave Syer
  */
 @Configuration
-@ConditionalOnExpression("${bus.enabled:true}")
+@ConditionalOnProperty(value = "bus.enabled", matchIfMissing = true)
 public class BusAutoConfiguration {
 
 	@Autowired
@@ -73,8 +73,8 @@ public class BusAutoConfiguration {
 		ApplicationEventListeningMessageProducer producer = cloudBusOutboundMessageProducer();
 		// Workaround for bug in IntegrationFlow (it won't register the listener)
 		context.addApplicationListener(producer);
-		return IntegrationFlows.from(producer)
-				.filter(outboundFilter()).channel(cloudBusOutboundChannel()).get();
+		return IntegrationFlows.from(producer).filter(outboundFilter())
+				.channel(cloudBusOutboundChannel()).get();
 	}
 
 	@Bean
@@ -126,13 +126,13 @@ public class BusAutoConfiguration {
 	@ConditionalOnBean(RefreshEndpoint.class)
 	protected static class BusRefreshConfiguration {
 		@Bean
-		@ConditionalOnExpression("${bus.refresh.enabled:true}")
+		@ConditionalOnProperty(value = "bus.refresh.enabled", matchIfMissing = true)
 		public RefreshListener refreshListener() {
 			return new RefreshListener();
 		}
 
 		@Bean
-		@ConditionalOnExpression("${endpoints.bus.refresh.enabled:true}")
+		@ConditionalOnProperty(value = "endpoints.bus.refresh.enabled", matchIfMissing = true)
 		public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context,
 				BusEndpoint busEndpoint) {
 			return new RefreshBusEndpoint(context, context.getId(), busEndpoint);
@@ -143,13 +143,13 @@ public class BusAutoConfiguration {
 	@ConditionalOnBean(EnvironmentManager.class)
 	protected static class BusEnvironmentConfiguration {
 		@Bean
-		@ConditionalOnExpression("${bus.env.enabled:true}")
+		@ConditionalOnProperty(value = "bus.env.enabled", matchIfMissing = true)
 		public EnvironmentChangeListener environmentChangeListener() {
 			return new EnvironmentChangeListener();
 		}
 
 		@Bean
-		@ConditionalOnExpression("${endpoints.bus.env.enabled:true}")
+		@ConditionalOnProperty(value = "endpoints.bus.env.enabled", matchIfMissing = true)
 		public EnvironmentBusEndpoint environmentBusEndpoint(ApplicationContext context,
 				BusEndpoint busEndpoint) {
 			return new EnvironmentBusEndpoint(context, context.getId(), busEndpoint);
