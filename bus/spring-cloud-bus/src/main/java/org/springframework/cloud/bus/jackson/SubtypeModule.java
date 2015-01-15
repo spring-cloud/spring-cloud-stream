@@ -7,15 +7,15 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
  */
 @SuppressWarnings("serial")
 public class SubtypeModule extends SimpleModule {
-    private Class<?>[] subtypes;
+	private Class<?>[] subtypes;
 
-    public SubtypeModule(Class<?>... subtypes) {
-        this.subtypes = subtypes;
-    }
+	public SubtypeModule(Class<?>... subtypes) {
+		this.subtypes = subtypes;
+	}
 
-    @Override
-    public void setupModule(SetupContext context) {
-        context.registerSubtypes(subtypes);
-        super.setupModule(context);
-    }
+	@Override
+	public void setupModule(SetupContext context) {
+		context.registerSubtypes(subtypes);
+		super.setupModule(context);
+	}
 }

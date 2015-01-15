@@ -33,9 +33,9 @@ public class BusAutoConfigurationTests {
 	public void inboundNotForSelf() {
 		context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
 		context.setId("foo");
-		context.getBean("cloudBusInboundChannel", MessageChannel.class)
-				.send(new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "bar",
-						"bar")));
+		context.getBean("cloudBusInboundChannel", MessageChannel.class).send(
+				new GenericMessage<>(
+						new RefreshRemoteApplicationEvent(this, "bar", "bar")));
 		assertNull(context.getBean(InboundMessageHandlerConfiguration.class).event);
 	}
 

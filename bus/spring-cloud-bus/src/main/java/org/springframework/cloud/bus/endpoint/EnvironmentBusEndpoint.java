@@ -14,17 +14,18 @@ import org.springframework.web.bind.annotation.ResponseBody;
  */
 public class EnvironmentBusEndpoint extends AbstractBusEndpoint {
 
-	public EnvironmentBusEndpoint(ApplicationEventPublisher context, String id, BusEndpoint delegate) {
+	public EnvironmentBusEndpoint(ApplicationEventPublisher context, String id,
+			BusEndpoint delegate) {
 		super(context, id, delegate);
 	}
 
-    @RequestMapping(value = "env", method = RequestMethod.POST)
-    @ResponseBody
-    //TODO: make this an abstract method in AbstractBusEndpoint?
-    public void env(@RequestParam Map<String, String> params,
-                        @RequestParam(value = "destination", required = false) String destination) {
-        publish(new EnvironmentChangeRemoteApplicationEvent(this, getInstanceId(), destination, params));
-    }
-
+	@RequestMapping(value = "env", method = RequestMethod.POST)
+	@ResponseBody
+	// TODO: make this an abstract method in AbstractBusEndpoint?
+	public void env(@RequestParam Map<String, String> params,
+			@RequestParam(value = "destination", required = false) String destination) {
+		publish(new EnvironmentChangeRemoteApplicationEvent(this, getInstanceId(),
+				destination, params));
+	}
 
 }

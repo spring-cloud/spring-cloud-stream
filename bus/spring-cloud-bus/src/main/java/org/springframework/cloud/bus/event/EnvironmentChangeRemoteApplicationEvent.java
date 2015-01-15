@@ -10,22 +10,21 @@ import lombok.EqualsAndHashCode;
  */
 @SuppressWarnings("serial")
 @Data
-@EqualsAndHashCode(callSuper=false)
+@EqualsAndHashCode(callSuper = false)
 public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEvent {
 
 	private final Map<String, String> values;
 
-    @SuppressWarnings("unused")
+	@SuppressWarnings("unused")
 	private EnvironmentChangeRemoteApplicationEvent() {
-        //for serializers
-        values = null;
-    }
+		// for serializers
+		values = null;
+	}
 
-    public EnvironmentChangeRemoteApplicationEvent(Object source, String originService,
-                                                   String destinationService,
-                                                   Map<String, String> values) {
-        super(source, originService, destinationService);
-        this.values = values;
-    }
+	public EnvironmentChangeRemoteApplicationEvent(Object source, String originService,
+			String destinationService, Map<String, String> values) {
+		super(source, originService, destinationService);
+		this.values = values;
+	}
 
 }

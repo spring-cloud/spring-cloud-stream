@@ -16,7 +16,8 @@ public class AbstractBusEndpoint implements MvcEndpoint {
 
 	private String appId;
 
-	public AbstractBusEndpoint(ApplicationEventPublisher context, String appId, BusEndpoint busEndpoint) {
+	public AbstractBusEndpoint(ApplicationEventPublisher context, String appId,
+			BusEndpoint busEndpoint) {
 		this.context = context;
 		this.appId = appId;
 		this.delegate = busEndpoint;
