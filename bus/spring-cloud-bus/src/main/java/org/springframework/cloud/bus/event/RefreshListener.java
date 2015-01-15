@@ -1,7 +1,6 @@
 package org.springframework.cloud.bus.event;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.apachecommons.CommonsLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.cloud.config.client.RefreshEndpoint;
@@ -11,15 +10,15 @@ import java.util.Arrays;
 /**
  * @author Spencer Gibb
  */
+@CommonsLog
 public class RefreshListener implements ApplicationListener<RefreshRemoteApplicationEvent> {
-    private static final Logger logger = LoggerFactory.getLogger(RefreshListener.class);
 
     @Autowired
-    RefreshEndpoint endpoint;
+    private RefreshEndpoint endpoint;
 
     @Override
     public void onApplicationEvent(RefreshRemoteApplicationEvent event) {
         String[] keys = endpoint.refresh();
-        logger.info("Received remote refresh request. Keys refreshed {}", Arrays.asList(keys));
+        log.info("Received remote refresh request. Keys refreshed " + Arrays.asList(keys));
     }
 }
