@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import lombok.extern.apachecommons.CommonsLog;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.config.client.RefreshEndpoint;
 import org.springframework.context.ApplicationListener;
 
@@ -14,9 +13,12 @@ import org.springframework.context.ApplicationListener;
 @CommonsLog
 public class RefreshListener implements
 		ApplicationListener<RefreshRemoteApplicationEvent> {
-
-	@Autowired
+	
 	private RefreshEndpoint endpoint;
+
+	public RefreshListener(RefreshEndpoint endpoint) {
+		this.endpoint = endpoint;
+	}
 
 	@Override
 	public void onApplicationEvent(RefreshRemoteApplicationEvent event) {
