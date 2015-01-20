@@ -18,7 +18,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.interceptor.WireTap;
 import org.springframework.integration.config.GlobalChannelInterceptor;
@@ -37,11 +36,8 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Dave Syer
  */
 @Configuration
-@ConditionalOnProperty(value = "bus.enabled", matchIfMissing = true)
+@ConditionalOnProperty(value = "spring.cloud.bus.enabled", matchIfMissing = true)
 public class BusAutoConfiguration {
-
-	@Autowired
-	private ConfigurableEnvironment environment;
 
 	@Autowired
 	private ConfigurableApplicationContext context;
@@ -134,13 +130,13 @@ public class BusAutoConfiguration {
 	protected static class BusRefreshConfiguration {
 
 		@Bean
-		@ConditionalOnProperty(value = "bus.refresh.enabled", matchIfMissing = true)
+		@ConditionalOnProperty(value = "spring.cloud.bus.refresh.enabled", matchIfMissing = true)
 		public RefreshListener refreshListener(RefreshEndpoint refreshEndpoint) {
 			return new RefreshListener(refreshEndpoint);
 		}
 
 		@Configuration
-		@ConditionalOnProperty(value = "endpoints.bus.refresh.enabled", matchIfMissing = true)
+		@ConditionalOnProperty(value = "endpoints.spring.cloud.bus.refresh.enabled", matchIfMissing = true)
 		protected static class BusRefreshEndpointConfiguration {
 			@Bean
 			public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context,
@@ -156,14 +152,14 @@ public class BusAutoConfiguration {
 	@ConditionalOnBean(EnvironmentManager.class)
 	protected static class BusEnvironmentConfiguration {
 		@Bean
-		@ConditionalOnProperty(value = "bus.env.enabled", matchIfMissing = true)
+		@ConditionalOnProperty(value = "spring.cloud.bus.env.enabled", matchIfMissing = true)
 		public EnvironmentChangeListener environmentChangeListener() {
 			return new EnvironmentChangeListener();
 		}
 
 		@Configuration
 		@ConditionalOnClass(Endpoint.class)
-		@ConditionalOnProperty(value = "endpoints.bus.env.enabled", matchIfMissing = true)
+		@ConditionalOnProperty(value = "endpoints.spring.cloud.bus.env.enabled", matchIfMissing = true)
 		protected static class EnvironmentBusEndpointConfiguration {
 			@Bean
 			public EnvironmentBusEndpoint environmentBusEndpoint(
