@@ -36,8 +36,10 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Dave Syer
  */
 @Configuration
-@ConditionalOnProperty(value = "spring.cloud.bus.enabled", matchIfMissing = true)
+@ConditionalOnBusEnabled
 public class BusAutoConfiguration {
+
+	public static final String SPRING_CLOUD_BUS_ENABLED = "spring.cloud.bus.enabled";
 
 	@Autowired
 	private ConfigurableApplicationContext context;
