@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import lombok.extern.apachecommons.CommonsLog;
 
-import org.springframework.cloud.config.client.RefreshEndpoint;
+import org.springframework.cloud.configure.client.RefreshEndpoint;
 import org.springframework.context.ApplicationListener;
 
 /**
