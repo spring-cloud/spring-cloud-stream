@@ -11,7 +11,7 @@ import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.EnvironmentChangeListener;
 import org.springframework.cloud.bus.event.RefreshListener;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
-import org.springframework.cloud.configure.client.RefreshEndpoint;
+import org.springframework.cloud.config.client.RefreshEndpoint;
 import org.springframework.cloud.context.environment.EnvironmentManager;
 import org.springframework.cloud.context.scope.refresh.RefreshScope;
 import org.springframework.context.ApplicationContext;
