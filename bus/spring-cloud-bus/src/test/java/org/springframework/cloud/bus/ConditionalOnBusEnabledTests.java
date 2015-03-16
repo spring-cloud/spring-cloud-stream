@@ -1,5 +1,8 @@
 package org.springframework.cloud.bus;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -8,10 +11,6 @@ import org.springframework.boot.test.EnvironmentTestUtils;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.cloud.bus.BusAutoConfiguration.SPRING_CLOUD_BUS_ENABLED;
 
 /**
  * @author Spencer Gibb
@@ -32,7 +31,7 @@ public class ConditionalOnBusEnabledTests {
 
 	@Test
 	public void busEnabledTrue() {
-		load(MyBusEnabledConfig.class, SPRING_CLOUD_BUS_ENABLED+":true");
+		load(MyBusEnabledConfig.class, ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED+":true");
 		assertTrue("missing bean from @ConditionalOnBusEnabled config",
 				this.context.containsBean("foo"));
 	}
@@ -46,7 +45,7 @@ public class ConditionalOnBusEnabledTests {
 
 	@Test
 	public void busDisabled() {
-		load(MyBusEnabledConfig.class, SPRING_CLOUD_BUS_ENABLED+":false");
+		load(MyBusEnabledConfig.class, ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED+":false");
 		assertFalse("bean exists from disabled @ConditionalOnBusEnabled config",
 				this.context.containsBean("foo"));
 	}
