@@ -16,6 +16,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -58,9 +59,10 @@ public class AmqpBusAutoConfiguration {
 	@Autowired(required = false)
 	private ConnectionFactory primaryConnectionFactory;
 
-	private RabbitTemplate amqpTemplate;
+	@Autowired
+	private ApplicationContext context;
 
-	private RabbitAdmin amqpAdmin;
+	private RabbitTemplate amqpTemplate;
 
 	@Autowired(required = false)
 	private ObjectMapper objectMapper;
@@ -71,11 +73,12 @@ public class AmqpBusAutoConfiguration {
 			Jackson2JsonMessageConverter converter = messageConverter();
 			amqpTemplate.setMessageConverter(converter);
 			this.amqpTemplate = amqpTemplate;
-			this.amqpAdmin = new RabbitAdmin(connectionFactory());
-			cloudBusExchange().setAdminsThatShouldDeclare(this.amqpAdmin);
-			localCloudBusQueueBinding().setAdminsThatShouldDeclare(this.amqpAdmin);
-			localCloudBusQueue().setAdminsThatShouldDeclare(this.amqpAdmin);
-			this.amqpAdmin.afterPropertiesSet();
+			RabbitAdmin amqpAdmin = new RabbitAdmin(connectionFactory());
+			cloudBusExchange().setAdminsThatShouldDeclare(amqpAdmin);
+			localCloudBusQueueBinding().setAdminsThatShouldDeclare(amqpAdmin);
+			localCloudBusQueue().setAdminsThatShouldDeclare(amqpAdmin);
+			amqpAdmin.setApplicationContext(context);
+			amqpAdmin.afterPropertiesSet();
 		}
 		return amqpTemplate;
 	}
