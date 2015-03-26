@@ -12,6 +12,10 @@ include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/maste
 
 include::quickstart.adoc[]
 
+== Addressing an Instance
+
+The HTTP endpoints accept a "destination" parameter, e.g. "/bus/refresh?destination=customers:9000", where the destination is an `ApplicationContext` ID. If the ID is owned by an instance on the Bus then it will process the message and all other instances will ignore it. Spring Boot sets the ID for you in the `ContextIdApplicationContextInitializer` to a combination of the `spring.application.name`, active profiles and `server.port` by default.
+
 == Customizing the AMQP ConnectionFactory
 
 If you are using AMQP there needs to be a `ConnectionFactory` (from
