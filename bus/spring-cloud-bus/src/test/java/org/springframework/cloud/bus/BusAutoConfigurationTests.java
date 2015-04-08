@@ -75,6 +75,36 @@ public class BusAutoConfigurationTests {
 		assertNull(context.getBean(OutboundMessageHandlerConfiguration.class).message);
 	}
 
+	@Test
+	public void inboundNotFromSelfPathPattern() {
+		context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
+		context.setId("bar:1000");
+		context.getBean("cloudBusInboundChannel", MessageChannel.class).send(
+				new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo",
+						"bar:*")));
+		assertNotNull(context.getBean(InboundMessageHandlerConfiguration.class).event);
+	}
+
+	@Test
+	public void inboundNotFromSelfDeepPathPattern() {
+		context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
+		context.setId("bar:test:1000");
+		context.getBean("cloudBusInboundChannel", MessageChannel.class).send(
+				new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo",
+						"bar:**")));
+		assertNotNull(context.getBean(InboundMessageHandlerConfiguration.class).event);
+	}
+
+	@Test
+	public void inboundNotFromSelfFlatPattern() {
+		context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
+		context.setId("bar");
+		context.getBean("cloudBusInboundChannel", MessageChannel.class).send(
+				new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo",
+						"bar*")));
+		assertNotNull(context.getBean(InboundMessageHandlerConfiguration.class).event);
+	}
+
 	@Configuration
 	@Import(BusAutoConfiguration.class)
 	@MessageEndpoint

@@ -30,6 +30,8 @@ import org.springframework.integration.event.outbound.ApplicationEventPublishing
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.util.PathMatcher;
 
 /**
  * @author Spencer Gibb
@@ -54,7 +56,7 @@ public class BusAutoConfiguration {
 		return new GenericSelector<RemoteApplicationEvent>() {
 			@Override
 			public boolean accept(RemoteApplicationEvent source) {
-				return isFromSelf(source);
+				return serviceMatcher().isFromSelf(source);
 			}
 		};
 	}
@@ -85,7 +87,7 @@ public class BusAutoConfiguration {
 		return new GenericSelector<RemoteApplicationEvent>() {
 			@Override
 			public boolean accept(RemoteApplicationEvent event) {
-				return !isFromSelf(event) && isForSelf(event);
+				return !serviceMatcher().isFromSelf(event) && serviceMatcher().isForSelf(event);
 			}
 		};
 	}
@@ -114,6 +116,16 @@ public class BusAutoConfiguration {
 		handler.setShouldLogFullMessage(true);
 		return IntegrationFlows.from(cloudBusWiretapChannel()).handle(handler).get();
 	}
+
+    @Bean
+    public PathMatcher busPathMatcher() {
+        return new AntPathMatcher(":");
+    }
+
+    @Bean
+    public ServiceMatcher serviceMatcher() {
+        return new ServiceMatcher();
+    }
 
 	@Configuration
 	@ConditionalOnClass(Endpoint.class)
@@ -169,20 +181,6 @@ public class BusAutoConfiguration {
 		}
 	}
 
-	private boolean isFromSelf(RemoteApplicationEvent event) {
-		String originService = event.getOriginService();
-		String serviceId = getServiceId();
-		return originService.equals(serviceId);
-	}
 
-	private boolean isForSelf(RemoteApplicationEvent event) {
-		return (event.getDestinationService() == null
-				|| event.getDestinationService().trim().isEmpty() || event
-				.getDestinationService().equals(getServiceId()));
-	}
-
-	private String getServiceId() {
-		return context.getId();
-	}
 
 }

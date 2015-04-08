@@ -16,6 +16,10 @@ include::quickstart.adoc[]
 
 The HTTP endpoints accept a "destination" parameter, e.g. "/bus/refresh?destination=customers:9000", where the destination is an `ApplicationContext` ID. If the ID is owned by an instance on the Bus then it will process the message and all other instances will ignore it. Spring Boot sets the ID for you in the `ContextIdApplicationContextInitializer` to a combination of the `spring.application.name`, active profiles and `server.port` by default.
 
+== Addressing all instances of a service
+
+The "destination" parameter is used in a Spring `PathMatcher` (with the path separator as a colon `:`) to determine if an instance will process the message.   Using the example from above, "/bus/refresh?destination=customers:**" will  target  all instances of the "customers" service regardless of the profiles and ports set as the `ApplicationContext` ID.
+
 == Customizing the AMQP ConnectionFactory
 
 If you are using AMQP there needs to be a `ConnectionFactory` (from
