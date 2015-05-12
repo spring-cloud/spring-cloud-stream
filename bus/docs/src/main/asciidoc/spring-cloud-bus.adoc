@@ -20,6 +20,10 @@ The HTTP endpoints accept a "destination" parameter, e.g. "/bus/refresh?destinat
 
 The "destination" parameter is used in a Spring `PathMatcher` (with the path separator as a colon `:`) to determine if an instance will process the message.   Using the example from above, "/bus/refresh?destination=customers:**" will  target  all instances of the "customers" service regardless of the profiles and ports set as the `ApplicationContext` ID.
 
+== Application Context ID must be unique
+
+The bus tries to eliminate processing an event twice, once from the original `ApplicationEvent` and once from the queue.  To do this, it checks the sending application context id againts the current application context id.  If multiple instances of a service have the same application context id, events will not be processed.  Running on a local machine, each service will be on a different port and that will be part of the application context id.  Cloud Foundry supplies an index to differentiate.  To ensure that the application context id is the unique, set `spring.application.index` to something unique for each instance of a service.  For example, in lattice, set `spring.application.index=${INSTANCE_INDEX}` in application.properties (or bootstrap.properties if using configserver).
+
 == Customizing the AMQP ConnectionFactory
 
 If you are using AMQP there needs to be a `ConnectionFactory` (from
