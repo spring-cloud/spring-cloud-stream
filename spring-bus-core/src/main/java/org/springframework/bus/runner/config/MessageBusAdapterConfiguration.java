@@ -15,12 +15,18 @@
  */
 package org.springframework.bus.runner.config;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
 
+import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
+import org.springframework.bus.runner.adapter.OutputChannelSpec;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -45,13 +51,98 @@ public class MessageBusAdapterConfiguration {
 	@Qualifier("input")
 	private MessageChannel input;
 
+	@Autowired
+	private MessageBusProperties module;
+
+	@Autowired
+	private ListableBeanFactory beanFactory;
+
 	@Bean
 	public MessageBusAdapter messageBusAdapter(MessageBusProperties module,
 			MessageBus messageBus) {
 		MessageBusAdapter adapter = new MessageBusAdapter(module, messageBus);
-		adapter.setOutputChannel(output);
-		adapter.setInputChannel(input);
+		adapter.setOutputChannels(getOutputChannels());
+		adapter.setInputChannels(getInputChannels());
 		return adapter;
+	}
+
+	private Map<String, OutputChannelSpec> getOutputChannels() {
+		Map<String, OutputChannelSpec> channels = new LinkedHashMap<String, OutputChannelSpec>();
+		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
+				MessageChannel.class);
+		for (String name : names) {
+			if (name.equals("output")) {
+				String channelName = module.getOutputChannelName();
+				channels.put(
+						channelName,
+						new OutputChannelSpec(channelName, beanFactory.getBean(name,
+								MessageChannel.class)));
+			}
+			else if (name.startsWith("output.")) {
+				String channelName = name.substring("output.".length());
+				if (channelName.contains(":")) {
+					String[] tokens = channelName.split(":", 2);
+					String type = tokens[0];
+					if ("queue".equals(type)) {
+						// omit the type for a queue
+						channelName = tokens[1] + "."
+								+ getPlainChannelName(module.getOutputChannelName());
+					}
+					else {
+						channelName = channelName + "."
+								+ getPlainChannelName(module.getOutputChannelName());
+					}
+				}
+				channels.put(
+						channelName,
+						new OutputChannelSpec(channelName, beanFactory.getBean(name,
+								MessageChannel.class)));
+			}
+		}
+		return channels;
+	}
+
+	private String getPlainChannelName(String name) {
+		if (name.contains(":")) {
+			name = name.substring(name.indexOf(":"));
+		}
+		return name;
+	}
+
+	private Map<String, InputChannelSpec> getInputChannels() {
+		Map<String, InputChannelSpec> channels = new LinkedHashMap<String, InputChannelSpec>();
+		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
+				MessageChannel.class);
+		for (String name : names) {
+			if (name.equals("input")) {
+				String channelName = module.getInputChannelName();
+				channels.put(
+						channelName,
+						new OutputChannelSpec(channelName, beanFactory.getBean(name,
+								MessageChannel.class)));
+			}
+			else if (name.startsWith("input.")) {
+				String channelName = name.substring("input.".length());
+				if (channelName.contains(":")) {
+					String[] tokens = channelName.split(":", 2);
+					String type = tokens[0];
+					if ("queue".equals(type)) {
+						// omit the type for a queue
+						channelName = tokens[1] + "."
+								+ getPlainChannelName(module.getInputChannelName());
+					}
+					else {
+						channelName = channelName + "."
+								+ getPlainChannelName(module.getInputChannelName());
+					}
+				}
+				channels.put(
+						channelName,
+						new OutputChannelSpec(channelName, beanFactory.getBean(name,
+								MessageChannel.class)));
+			}
+		}
+		return channels;
 	}
 
 	// Nested class to avoid instantiating all of the above early
