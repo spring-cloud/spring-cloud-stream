@@ -22,7 +22,6 @@ import java.util.Properties;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
@@ -42,14 +41,6 @@ import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPost
 @ImportResource("classpath*:/META-INF/spring-xd/bus/codec.xml")
 @EnableConfigurationProperties(MessageBusProperties.class)
 public class MessageBusAdapterConfiguration {
-
-	@Autowired(required = false)
-	@Qualifier("output")
-	private MessageChannel output;
-
-	@Autowired(required = false)
-	@Qualifier("input")
-	private MessageChannel input;
 
 	@Autowired
 	private MessageBusProperties module;
