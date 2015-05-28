@@ -1,0 +1,5 @@
+---
+spring:
+  bus:
+    group: testtock
+    name: ticker

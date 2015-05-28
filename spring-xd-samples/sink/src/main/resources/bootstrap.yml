@@ -1,0 +1,6 @@
+---
+spring:
+  bus:
+    group: testtock
+    name: logger
+    index: 1

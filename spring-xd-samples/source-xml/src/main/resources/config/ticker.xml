@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/integration"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<channel id="output"/>
+
+	<inbound-channel-adapter channel="output"
+			auto-startup="false"
+			expression="new java.text.SimpleDateFormat('${format}').format(new java.util.Date())">
+		<poller trigger="fixedDelayTrigger" />
+	</inbound-channel-adapter>
+
+	<beans:bean id="fixedDelayTrigger" class="org.springframework.scheduling.support.PeriodicTrigger">
+		<beans:constructor-arg value="${fixedDelay}" />
+		<beans:constructor-arg value="${timeUnit}" />
+		<beans:property name="initialDelay" value="${initialDelay} "/>
+	</beans:bean>
+
+</beans:beans>
