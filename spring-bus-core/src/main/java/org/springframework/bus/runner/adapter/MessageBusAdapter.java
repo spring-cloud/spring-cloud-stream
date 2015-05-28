@@ -58,8 +58,9 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 
 	private MessageBus messageBus;
 	private MessageBuilderFactory messageBuilderFactory = new DefaultMessageBuilderFactory();
-	private MessageChannel outputChannel;
-	private MessageChannel inputChannel;
+
+	private Map<String, OutputChannelSpec> outputChannels = new LinkedHashMap<String, OutputChannelSpec>();
+	private Map<String, InputChannelSpec> inputChannels = new LinkedHashMap<String, InputChannelSpec>();
 
 	private boolean running = false;
 
@@ -92,11 +93,25 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 	}
 
 	public void setOutputChannel(MessageChannel outputChannel) {
-		this.outputChannel = outputChannel;
+		if (outputChannel != null) {
+			String name = module.getOutputChannelName();
+			this.outputChannels.put(name, new OutputChannelSpec(name, outputChannel));
+		}
 	}
 
 	public void setInputChannel(MessageChannel inputChannel) {
-		this.inputChannel = inputChannel;
+		if (inputChannel != null) {
+			String name = module.getInputChannelName();
+			this.inputChannels.put(name, new InputChannelSpec(name, inputChannel));
+		}
+	}
+
+	public void setOutputChannels(Map<String, OutputChannelSpec> outputChannels) {
+		this.outputChannels = outputChannels;
+	}
+
+	public void setInputChannels(Map<String, InputChannelSpec> inputChannels) {
+		this.inputChannels = inputChannels;
 	}
 
 	@Override
@@ -137,13 +152,15 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 	}
 
 	protected final void unbindChannels() {
-		if (inputChannel != null) {
-			messageBus.unbindConsumers(module.getInputChannelName());
+		for (String name : inputChannels.keySet()) {
+			messageBus.unbindConsumers(name);
 		}
-		if (outputChannel != null) {
-			messageBus.unbindProducers(module.getOutputChannelName());
-			String tapChannelName = module.getTapChannelName();
-			messageBus.unbindProducers(tapChannelName);
+		for (String name : outputChannels.keySet()) {
+			messageBus.unbindProducers(name);
+			if (outputChannels.get(name).isTapped()) {
+				String tapChannelName = outputChannels.get(name).getTapChannelName();
+				messageBus.unbindProducers(tapChannelName);
+			}
 		}
 	}
 
@@ -152,22 +169,25 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 		if (trackHistory) {
 			// TODO: addHistoryTag();
 		}
-		if (outputChannel != null) {
-			bindMessageProducer(outputChannel, module.getOutputChannelName(),
-					module.getProducerProperties());
-			String tapChannelName = module.getTapChannelName();
-			// tappableChannels.put(tapChannelName, outputChannel);
-			// if (isTapActive(tapChannelName)) {
-			createAndBindTapChannel(tapChannelName, outputChannel);
-			// }
+		for (String name : outputChannels.keySet()) {
+			OutputChannelSpec spec = outputChannels.get(name);
+			MessageChannel outputChannel = spec.getMessageChannel();
+			bindMessageProducer(outputChannel, name, module.getProducerProperties());
+			if (spec.isTapped()) {
+				String tapChannelName = spec.getTapChannelName();
+				// tappableChannels.put(tapChannelName, outputChannel);
+				// if (isTapActive(tapChannelName)) {
+				createAndBindTapChannel(tapChannelName, outputChannel);
+				// }
+			}
 			if (trackHistory) {
 				track(outputChannel, historyProperties);
 			}
 		}
-		if (inputChannel != null) {
-			bindMessageConsumer(inputChannel, module.getInputChannelName(),
-					module.getConsumerProperties());
-			if (trackHistory && outputChannel==null) {
+		for (String name : inputChannels.keySet()) {
+			MessageChannel inputChannel = inputChannels.get(name).getMessageChannel();
+			bindMessageConsumer(inputChannel, name, module.getConsumerProperties());
+			if (trackHistory && outputChannels.size() != 1) {
 				track(inputChannel, historyProperties);
 			}
 		}

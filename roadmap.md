@@ -71,6 +71,8 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 - [ ] Support for multiple input and output channels
 
+- [ ] Partitioning
+
 - [ ] Support for pubsub as "primary" input/output (in addition to the existing queue semantics)
 
 - [ ] Support for more than one `MessageBus` (e.g. local and redis) in the same app
@@ -82,6 +84,8 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 - [ ] Re-use existing XD modules as libraries
 
 - [ ] Re-use existing XD analytics as libraries (possibly attempt merge with Spring Boot metrics)
+
+- [ ] Support Spring Batch jobs as modules
 
 ## Barriers to Progress
 
@@ -106,6 +110,8 @@ The best plan for making progress, where we keep in sight the goal of eventually
   - [x] A `ModuleDefinition` is only needed to initialize options for an XD module (so not really needed for the general case). We can split the module options initializer outr into a separate module that you only need if you know you want to test an XD module with its native options meatdata.
 
   - [ ] `XdHeaders` (e.g. for history)
+
+  - [ ] `BusUtils` (e.g. to construct external channel names)
 
 - [ ] There is a curator dependency in Spring XD that can't be shaken off.
 

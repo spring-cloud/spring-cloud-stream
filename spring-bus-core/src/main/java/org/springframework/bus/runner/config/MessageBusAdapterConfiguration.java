@@ -19,12 +19,10 @@ import java.util.Properties;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
@@ -35,7 +33,6 @@ import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPost
  *
  */
 @Configuration
-@Import(PropertyPlaceholderAutoConfiguration.class)
 @ImportResource("classpath*:/META-INF/spring-xd/bus/codec.xml")
 @EnableConfigurationProperties(MessageBusProperties.class)
 public class MessageBusAdapterConfiguration {
