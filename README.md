@@ -53,13 +53,13 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 There are several samples, all running on the redis transport (so you need redis running locally to test them):
 
-* `spring-xd-module-runner-sample-source` is a Java config version of the classic "timer" module from Spring XD. It has a "fixedDelay" option (in milliseconds) for the period between emitting messages.
+* `source` is a Java config version of the classic "timer" module from Spring XD. It has a "fixedDelay" option (in milliseconds) for the period between emitting messages.
 
-* `spring-xd-module-runner-sample-sink` is a Java config version of the classic "log" module from Spring XD. It has no options (but some could easily be added), and just logs incoming messages at INFO level.
+* `sink` is a Java config version of the classic "log" module from Spring XD. It has no options (but some could easily be added), and just logs incoming messages at INFO level.
 
-* `spring-xd-module-runner-sample-tap` is the same as the sink sample, except it is configured to tap the source sample output. When it is running it looks a lot like the sink, except that it only gets copies of the messages in the broker, and since it is a pub-sub subscriber, it only gets the messages sent since it started.
+* `tap` is the same as the sink sample, except it is configured to tap the source sample output. When it is running it looks a lot like the sink, except that it only gets copies of the messages in the broker, and since it is a pub-sub subscriber, it only gets the messages sent since it started.
 
-* `spring-xd-module-runner-sample-source-xml` is a copy of the classic "timer" module from Spring XD.
+* `source-xml` is a copy of the classic "timer" module from Spring XD.
 
 If you run the source and the sink and point them at the same redis instance (e.g. do nothing to get the one on localhost, or the one they are both bound to as a service on Cloud Foundry) then they will form a "stream" and start talking to each other. All the samples have friendly JMX and Actuator endpoints for inspecting what is going on in the system.
 
