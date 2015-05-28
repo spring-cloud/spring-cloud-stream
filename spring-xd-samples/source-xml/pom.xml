@@ -13,7 +13,7 @@
 
 	<parent>
 		<groupId>org.springframework.bus</groupId>
-		<artifactId>spring-bus-parent</artifactId>
+		<artifactId>spring-xd-samples</artifactId>
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 
