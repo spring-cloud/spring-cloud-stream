@@ -49,6 +49,10 @@ spring:
 
 To be deployable as an XD module in a "traditional" way you need `/config/*.properties` to point to any available Java config classes (via `base_packages` or `options_class`), or else you can put traditional XML configuration in `/config/*.xml`. You don't need those things to run as a consumer or producer to an existing XD system. There's an XML version of the same sample (a "timer" source).
 
+## Multiple Input or Output Channels
+
+A module can have multiple input or output channels. Instead of just one channel named "input" or "output" you can add multiple `MessageChannel` beans named `input.*` or `output.*` and the names are converted to external channel names on the bus. The external channel names are the "natural" channel name for the module (i.e. `<spring.bus.group>.<spring.bus.index>` or `spring.bus.[input|output]ChannelName` if supplied) plus the `MessageChannel` bean name, period separated. In addition, the bean name can be `input.[queue|topic|tap]:*` or `output.[queue|topic]:*` (i.e. with a channel type as a colon-separated prefix), and the semantics of the external bus channel changes accordingly (a tap is like a topic). For example, you can have two `MessageChannels` called "output" and "output.topic:foo" in a module deployed with "group=bar" and "index=2", and the result is 2 external channels called "bar.2" and "topic:foo.bar.2".
+
 ## XD Module Samples
 
 There are several samples, all running on the redis transport (so you need redis running locally to test them):

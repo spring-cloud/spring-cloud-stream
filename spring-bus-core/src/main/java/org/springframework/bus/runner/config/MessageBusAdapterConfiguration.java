@@ -118,7 +118,7 @@ public class MessageBusAdapterConfiguration {
 				String channelName = module.getInputChannelName();
 				channels.put(
 						channelName,
-						new OutputChannelSpec(channelName, beanFactory.getBean(name,
+						new InputChannelSpec(channelName, beanFactory.getBean(name,
 								MessageChannel.class)));
 			}
 			else if (name.startsWith("input.")) {
@@ -138,7 +138,7 @@ public class MessageBusAdapterConfiguration {
 				}
 				channels.put(
 						channelName,
-						new OutputChannelSpec(channelName, beanFactory.getBean(name,
+						new InputChannelSpec(channelName, beanFactory.getBean(name,
 								MessageChannel.class)));
 			}
 		}
