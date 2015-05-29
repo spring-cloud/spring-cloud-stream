@@ -57,7 +57,7 @@ public class MessageBusAdapterConfiguration {
 		return adapter;
 	}
 
-	private Map<String, OutputChannelSpec> getOutputChannels() {
+	protected Map<String, OutputChannelSpec> getOutputChannels() {
 		Map<String, OutputChannelSpec> channels = new LinkedHashMap<String, OutputChannelSpec>();
 		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
 				MessageChannel.class);
@@ -95,12 +95,12 @@ public class MessageBusAdapterConfiguration {
 
 	private String getPlainChannelName(String name) {
 		if (name.contains(":")) {
-			name = name.substring(name.indexOf(":"));
+			name = name.substring(name.indexOf(":")+1);
 		}
 		return name;
 	}
 
-	private Map<String, InputChannelSpec> getInputChannels() {
+	protected Map<String, InputChannelSpec> getInputChannels() {
 		Map<String, InputChannelSpec> channels = new LinkedHashMap<String, InputChannelSpec>();
 		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
 				MessageChannel.class);

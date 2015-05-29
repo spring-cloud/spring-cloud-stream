@@ -165,7 +165,7 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 	}
 
 	protected final void bindChannels() {
-		Map<String, Object> historyProperties = null;
+		Map<String, Object> historyProperties = new LinkedHashMap<String, Object>();
 		if (trackHistory) {
 			// TODO: addHistoryTag();
 		}
@@ -181,6 +181,7 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 				// }
 			}
 			if (trackHistory) {
+				historyProperties.put("outputChannel", name);
 				track(outputChannel, historyProperties);
 			}
 		}
@@ -188,6 +189,7 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 			MessageChannel inputChannel = inputChannels.get(name).getMessageChannel();
 			bindMessageConsumer(inputChannel, name, module.getConsumerProperties());
 			if (trackHistory && outputChannels.size() != 1) {
+				historyProperties.put("inputChannel", name);
 				track(inputChannel, historyProperties);
 			}
 		}
