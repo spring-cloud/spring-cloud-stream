@@ -30,7 +30,6 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.bus.runner.adapter.OutputChannelSpec;
 import org.springframework.bus.runner.config.MessageBusAdapterConfigurationTests.Empty;
-import org.springframework.bus.runner.config.MessageBusProperties.Tap;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;

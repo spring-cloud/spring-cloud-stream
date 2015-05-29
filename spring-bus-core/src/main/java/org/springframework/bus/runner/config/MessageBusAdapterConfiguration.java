@@ -16,16 +16,13 @@
 package org.springframework.bus.runner.config;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
@@ -63,17 +60,8 @@ public class MessageBusAdapterConfiguration {
 	}
 
 	@Bean
-	public AbstractEndpoint<?> messageBusEndpoint() {
-		return new AbstractEndpoint<Map<String, ?>>("messages") {
-			@Override
-			public Map<String, ?> invoke() {
-				LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
-				map.put("inputChannels", getInputChannels());
-				map.put("outputChannels", getOutputChannels());
-				map.put("module", module);
-				return map;
-			}
-		};
+	public ChannelsEndpoint channelsEndpoint(MessageBusAdapter adapter) {
+		return new ChannelsEndpoint(module, adapter);
 	}
 
 	protected Collection<OutputChannelSpec> getOutputChannels() {
@@ -110,7 +98,7 @@ public class MessageBusAdapterConfiguration {
 						.getTapChannelName(getPlainChannelName(channel.getName()))
 						: module.getTapChannelName();
 				channel.setTapChannelName(tapChannelName);
-				channel.setTapped(true); // TODO: determine when this is the case
+				channel.setTapped(false);
 				channels.add(channel);
 			}
 		}

@@ -116,6 +116,57 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 		this.inputChannels = new LinkedHashSet<InputChannelSpec>(inputChannels);
 	}
 
+	public Collection<OutputChannelSpec> getOutputChannels() {
+		return outputChannels;
+	}
+
+	public OutputChannelSpec getOutputChannel(String name) {
+		if (name==null) {
+			return null;
+		}
+		for (OutputChannelSpec spec : outputChannels) {
+			if (name.equals(spec.getName())) {
+				return spec;
+			}
+		}
+		return null;
+	}
+
+	public InputChannelSpec getInputChannel(String name) {
+		if (name==null) {
+			return null;
+		}
+		for (InputChannelSpec spec : inputChannels) {
+			if (name.equals(spec.getName())) {
+				return spec;
+			}
+		}
+		return null;
+	}
+
+	public Collection<InputChannelSpec> getInputChannels() {
+		return inputChannels;
+	}
+
+	public void tap(String outputChannel) {
+		OutputChannelSpec channel = getOutputChannel(outputChannel);
+		if (channel==null || channel.isTapped()) {
+			return;
+		}
+		createAndBindTapChannel(channel.getTapChannelName(), channel.getMessageChannel());
+		channel.setTapped(true);
+	}
+
+	public void untap(String outputChannel) {
+		OutputChannelSpec channel = getOutputChannel(outputChannel);
+		if (channel==null || !channel.isTapped()) {
+			return;
+		}
+		String tapChannelName = channel.getTapChannelName();
+		messageBus.unbindProducers(tapChannelName);
+		channel.setTapped(false);
+	}
+
 	@Override
 	@ManagedOperation
 	public void start() {
@@ -289,4 +340,5 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 					});
 		}
 	}
+
 }

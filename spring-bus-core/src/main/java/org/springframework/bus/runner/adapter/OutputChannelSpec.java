@@ -24,7 +24,7 @@ import org.springframework.messaging.MessageChannel;
  */
 public class OutputChannelSpec extends InputChannelSpec {
 
-	private boolean tapped;
+	private boolean tapped = false;
 	private String tapChannelName;
 
 	public OutputChannelSpec(String name, MessageChannel channel) {
