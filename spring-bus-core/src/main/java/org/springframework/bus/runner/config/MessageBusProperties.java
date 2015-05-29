@@ -22,11 +22,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.Assert;
 import org.springframework.xd.dirt.integration.bus.BusUtils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
  * @author Dave Syer
  *
  */
 @ConfigurationProperties("spring.bus")
+@JsonInclude(Include.NON_DEFAULT)
 public class MessageBusProperties {
 
 	private String name = "module";

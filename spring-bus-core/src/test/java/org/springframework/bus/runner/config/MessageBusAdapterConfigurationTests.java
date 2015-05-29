@@ -18,15 +18,19 @@ package org.springframework.bus.runner.config;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.bus.runner.adapter.OutputChannelSpec;
 import org.springframework.bus.runner.config.MessageBusAdapterConfigurationTests.Empty;
+import org.springframework.bus.runner.config.MessageBusProperties.Tap;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -57,65 +61,78 @@ public class MessageBusAdapterConfigurationTests {
 	@Test
 	public void oneOutput() throws Exception {
 		context.registerSingleton("output", new DirectChannel());
-		Map<String, OutputChannelSpec> channels = configuration.getOutputChannels();
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
 		assertEquals(1, channels.size());
-		assertTrue(channels.containsKey("group.0"));
+		assertEquals("group.0", channels.iterator().next().getName());
+		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test
 	public void twoOutputsWithTopic() throws Exception {
 		context.registerSingleton("output", new DirectChannel());
 		context.registerSingleton("output.topic:foo", new DirectChannel());
-		Map<String, OutputChannelSpec> channels = configuration.getOutputChannels();
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		List<String> names = getChannelNames(channels);
 		assertEquals(2, channels.size());
-		assertTrue(channels.containsKey("group.0"));
-		assertTrue(channels.containsKey("topic:foo.group.0"));
+		assertTrue(names.contains("group.0"));
+		assertTrue(names.contains("topic:foo.group.0"));
 	}
 
 	@Test
 	public void twoOutputsWithQueue() throws Exception {
 		context.registerSingleton("output", new DirectChannel());
 		context.registerSingleton("output.queue:foo", new DirectChannel());
-		Map<String, OutputChannelSpec> channels = configuration.getOutputChannels();
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		List<String> names = getChannelNames(channels);
 		assertEquals(2, channels.size());
-		assertTrue(channels.containsKey("group.0"));
-		assertTrue(channels.containsKey("foo.group.0"));
+		assertTrue(names.contains("group.0"));
+		assertTrue(names.contains("foo.group.0"));
+	}
+
+	private List<String> getChannelNames(Collection<? extends InputChannelSpec> channels) {
+		List<String> list = new ArrayList<String>();
+		for (InputChannelSpec spec : channels) {
+			list.add(spec.getName());
+		}
+		return list ;
 	}
 
 	@Test
 	public void overrideNaturalOutputChannelName() throws Exception {
 		module.setOutputChannelName("bar");
 		context.registerSingleton("output.queue:foo", new DirectChannel());
-		Map<String, OutputChannelSpec> channels = configuration.getOutputChannels();
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
 		assertEquals(1, channels.size());
-		assertTrue(channels.containsKey("foo.bar"));
+		assertEquals("foo.bar", channels.iterator().next().getName());
+		// TODO: fix this. What should it be?
+		// assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test
 	public void overrideNaturalOutputChannelNamedQueue() throws Exception {
 		module.setOutputChannelName("queue:bar");
 		context.registerSingleton("output.queue:foo", new DirectChannel());
-		Map<String, OutputChannelSpec> channels = configuration.getOutputChannels();
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
 		assertEquals(1, channels.size());
-		assertTrue("Wrong key: " + channels.keySet(), channels.containsKey("foo.bar"));
+		assertEquals("foo.bar", channels.iterator().next().getName());
 	}
 
 	@Test
 	public void overrideNaturalOutputChannelNamedQueueWithTopic() throws Exception {
 		module.setOutputChannelName("queue:bar");
 		context.registerSingleton("output.topic:foo", new DirectChannel());
-		Map<String, OutputChannelSpec> channels = configuration.getOutputChannels();
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
 		assertEquals(1, channels.size());
-		assertTrue("Wrong key: " + channels.keySet(), channels.containsKey("topic:foo.bar"));
+		assertEquals("topic:foo.bar", channels.iterator().next().getName());
 	}
 
 	@Test
 	public void overrideNaturalOutputChannelNamedTopic() throws Exception {
 		module.setOutputChannelName("topic:bar");
 		context.registerSingleton("output.queue:foo", new DirectChannel());
-		Map<String, OutputChannelSpec> channels = configuration.getOutputChannels();
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
 		assertEquals(1, channels.size());
-		assertTrue("Wrong key: " + channels.keySet(), channels.containsKey("foo.bar"));
+		assertEquals("foo.bar", channels.iterator().next().getName());
 	}
 
 	@Configuration

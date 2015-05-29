@@ -18,6 +18,8 @@ package org.springframework.bus.runner.adapter;
 
 import org.springframework.messaging.MessageChannel;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * @author Dave Syer
  *
@@ -36,6 +38,7 @@ public class InputChannelSpec {
 		return name;
 	}
 
+	@JsonIgnore
 	public MessageChannel getMessageChannel() {
 		return channel;
 	}

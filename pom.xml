@@ -46,6 +46,10 @@
 			<version>1.2.0.BUILD-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
+					<artifactId>jackson-core-asl</artifactId>
+					<groupId>org.codehaus.jackson</groupId>
+				</exclusion>
+				<exclusion>
 					<groupId>org.springframework.xd</groupId>
 					<artifactId>spring-xd-spark-streaming</artifactId>
 				</exclusion>
@@ -68,6 +72,10 @@
 				<exclusion>
 					<artifactId>zookeeper</artifactId>
 					<groupId>org.apache.zookeeper</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>spring-boot-starter-security</artifactId>
+					<groupId>org.springframework.boot</groupId>
 				</exclusion>
 				<exclusion>
 					<artifactId>spring-security-ldap</artifactId>

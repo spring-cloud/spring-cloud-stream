@@ -99,9 +99,9 @@ The best plan for making progress, where we keep in sight the goal of eventually
 
   - [x] There are no defaults for several properties in `xd.messagebus.*` so applications have to have a load of boilerplate configuration in `application.yml`. Fixed by adding `@PropertySources` to the default configuration.
 
-  - [ ] The XML is in `spring-xd-dirt` which we don't want to depend on. Maybe it should be in the messagebus implementation jars?
+  - [ ] The "codec.xml" is in `spring-xd-dirt` which we don't want to depend on. Maybe it should be in the messagebus SPI jar? Or we can make a copy and risk it changing in XD.
 
-  - [x] Do we need the analytics configuration? It should at least be optional. Answer "no".
+  - [x] Do we need the analytics configuration? It should at least be optional. Answer "no" (but support for analytics would be cool).
 
 - [ ] The `spring-xd-dirt` library contains some of the primitives we might need, especially when building the bridge to create XD modules as apps. It would be best if they could be extracted into another library.
 

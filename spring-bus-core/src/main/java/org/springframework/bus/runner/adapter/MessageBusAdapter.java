@@ -18,7 +18,9 @@ package org.springframework.bus.runner.adapter;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,8 +61,8 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 	private MessageBus messageBus;
 	private MessageBuilderFactory messageBuilderFactory = new DefaultMessageBuilderFactory();
 
-	private Map<String, OutputChannelSpec> outputChannels = new LinkedHashMap<String, OutputChannelSpec>();
-	private Map<String, InputChannelSpec> inputChannels = new LinkedHashMap<String, InputChannelSpec>();
+	private Collection<OutputChannelSpec> outputChannels = Collections.emptySet();
+	private Collection<InputChannelSpec> inputChannels = Collections.emptySet();
 
 	private boolean running = false;
 
@@ -95,23 +97,23 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 	public void setOutputChannel(MessageChannel outputChannel) {
 		if (outputChannel != null) {
 			String name = module.getOutputChannelName();
-			this.outputChannels.put(name, new OutputChannelSpec(name, outputChannel));
+			this.outputChannels.add(new OutputChannelSpec(name, outputChannel));
 		}
 	}
 
 	public void setInputChannel(MessageChannel inputChannel) {
 		if (inputChannel != null) {
 			String name = module.getInputChannelName();
-			this.inputChannels.put(name, new InputChannelSpec(name, inputChannel));
+			this.inputChannels.add(new InputChannelSpec(name, inputChannel));
 		}
 	}
 
-	public void setOutputChannels(Map<String, OutputChannelSpec> outputChannels) {
-		this.outputChannels = outputChannels;
+	public void setOutputChannels(Collection<OutputChannelSpec> outputChannels) {
+		this.outputChannels = new LinkedHashSet<OutputChannelSpec>(outputChannels);
 	}
 
-	public void setInputChannels(Map<String, InputChannelSpec> inputChannels) {
-		this.inputChannels = inputChannels;
+	public void setInputChannels(Collection<InputChannelSpec> inputChannels) {
+		this.inputChannels = new LinkedHashSet<InputChannelSpec>(inputChannels);
 	}
 
 	@Override
@@ -152,13 +154,13 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 	}
 
 	protected final void unbindChannels() {
-		for (String name : inputChannels.keySet()) {
-			messageBus.unbindConsumers(name);
+		for (InputChannelSpec spec : inputChannels) {
+			messageBus.unbindConsumers(spec.getName());
 		}
-		for (String name : outputChannels.keySet()) {
-			messageBus.unbindProducers(name);
-			if (outputChannels.get(name).isTapped()) {
-				String tapChannelName = outputChannels.get(name).getTapChannelName();
+		for (OutputChannelSpec spec : outputChannels) {
+			messageBus.unbindProducers(spec.getName());
+			if (spec.isTapped()) {
+				String tapChannelName = spec.getTapChannelName();
 				messageBus.unbindProducers(tapChannelName);
 			}
 		}
@@ -169,8 +171,8 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 		if (trackHistory) {
 			// TODO: addHistoryTag();
 		}
-		for (String name : outputChannels.keySet()) {
-			OutputChannelSpec spec = outputChannels.get(name);
+		for (OutputChannelSpec spec : outputChannels) {
+			String name = spec.getName();
 			MessageChannel outputChannel = spec.getMessageChannel();
 			bindMessageProducer(outputChannel, name, module.getProducerProperties());
 			if (spec.isTapped()) {
@@ -185,8 +187,9 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 				track(outputChannel, historyProperties);
 			}
 		}
-		for (String name : inputChannels.keySet()) {
-			MessageChannel inputChannel = inputChannels.get(name).getMessageChannel();
+		for (InputChannelSpec spec : inputChannels) {
+			String name = spec.getName();
+			MessageChannel inputChannel = spec.getMessageChannel();
 			bindMessageConsumer(inputChannel, name, module.getConsumerProperties());
 			if (trackHistory && outputChannels.size() != 1) {
 				historyProperties.put("inputChannel", name);
