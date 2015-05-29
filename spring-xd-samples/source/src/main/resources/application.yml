@@ -1,15 +1,1 @@
 fixedDelay: 5000
-
----
-xd:
-  messagebus:
-    redis:
-      headers:
-        # comma-delimited list of additional (string-valued) header names to transport
-      default:
-        # default bus properties, if not specified at the module level
-        backOffInitialInterval:    1000
-        backOffMaxInterval:        10000
-        backOffMultiplier:         2.0
-        concurrency:               1
-        maxAttempts:               3

@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.xd.dirt.integration.rabbit.RabbitMessageBus;
 
 /**
@@ -35,6 +36,7 @@ import org.springframework.xd.dirt.integration.rabbit.RabbitMessageBus;
 @ConditionalOnClass(RabbitMessageBus.class)
 @ImportResource({ "classpath*:/META-INF/spring-xd/bus/rabbit-bus.xml",
 		"classpath*:/META-INF/spring-xd/analytics/rabbit-analytics.xml" })
+@PropertySource("classpath:/META-INF/spring-bus/rabbit-bus.properties")
 public class RabbitServiceConfiguration {
 
 	@Configuration

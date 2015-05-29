@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.xd.dirt.integration.redis.RedisMessageBus;
 
@@ -35,6 +36,7 @@ import org.springframework.xd.dirt.integration.redis.RedisMessageBus;
 @ConditionalOnClass(RedisMessageBus.class)
 @ImportResource({ "classpath*:/META-INF/spring-xd/bus/redis-bus.xml",
 		"classpath*:/META-INF/spring-xd/analytics/redis-analytics.xml" })
+@PropertySource("classpath:/META-INF/spring-bus/redis-bus.properties")
 public class RedisServiceConfiguration {
 
 	@Configuration

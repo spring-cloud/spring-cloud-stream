@@ -97,7 +97,7 @@ The best plan for making progress, where we keep in sight the goal of eventually
 
 - [ ] We need the XML configuration from `/META-INF/spring-xd/bus/**` and `/META-INF/spring-xd/analytics` but
 
-  - [ ] There are no defaults for several properties in `xd.messagebus.*` so applications have to have a load of boilerplate configuration in `application.yml`
+  - [x] There are no defaults for several properties in `xd.messagebus.*` so applications have to have a load of boilerplate configuration in `application.yml`. Fixed by adding `@PropertySources` to the default configuration.
 
   - [ ] The XML is in `spring-xd-dirt` which we don't want to depend on. Maybe it should be in the messagebus implementation jars?
 
