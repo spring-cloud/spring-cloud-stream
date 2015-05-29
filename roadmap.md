@@ -69,11 +69,13 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 ## Backlog
 
-- [ ] Support for multiple input and output channels
+- [x] Support for multiple input and output channels
 
 - [ ] Partitioning
 
-- [ ] Support for pubsub as "primary" input/output (in addition to the existing queue semantics)
+- [x] Support for pubsub as "primary" input/output (in addition to the existing queue semantics)
+
+- [ ] Endpoint "/messages" for module configuration metadata ("/bus" is taken by Spring Cloud)
 
 - [ ] Support for more than one `MessageBus` (e.g. local and redis) in the same app
 

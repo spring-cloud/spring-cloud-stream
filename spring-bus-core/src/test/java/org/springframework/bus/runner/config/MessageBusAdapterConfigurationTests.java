@@ -105,7 +105,7 @@ public class MessageBusAdapterConfigurationTests {
 		assertEquals(1, channels.size());
 		assertEquals("foo.bar", channels.iterator().next().getName());
 		// TODO: fix this. What should it be?
-		// assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test
@@ -124,6 +124,7 @@ public class MessageBusAdapterConfigurationTests {
 		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("topic:foo.bar", channels.iterator().next().getName());
+		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test

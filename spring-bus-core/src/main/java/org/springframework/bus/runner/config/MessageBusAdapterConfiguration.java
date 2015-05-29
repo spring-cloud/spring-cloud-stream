@@ -34,6 +34,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.util.StringUtils;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPostProcessor;
 
@@ -100,13 +101,14 @@ public class MessageBusAdapterConfiguration {
 						prefix = channelName + ".";
 					}
 				}
-				channelName = prefix 
-						+ getPlainChannelName(module.getOutputChannelName());
+				channelName = prefix + getPlainChannelName(module.getOutputChannelName());
 				channel = new OutputChannelSpec(channelName, beanFactory.getBean(name,
 						MessageChannel.class));
 			}
 			if (channel != null) {
-				String tapChannelName = prefix + module.getTapChannelName();
+				String tapChannelName = StringUtils.hasText(prefix) ? module
+						.getTapChannelName(getPlainChannelName(channel.getName()))
+						: module.getTapChannelName();
 				channel.setTapChannelName(tapChannelName);
 				channel.setTapped(true); // TODO: determine when this is the case
 				channels.add(channel);

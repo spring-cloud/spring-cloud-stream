@@ -89,9 +89,13 @@ public class MessageBusProperties {
 	}
 
 	public String getTapChannelName() {
+		return getTapChannelName(group);
+	}
+
+	public String getTapChannelName(String prefix) {
 		Assert.isTrue(!type.equals("job"), "Job module type not supported.");
 		// for Stream return channel name with indexed elements
-		return String.format("%s.%s.%s", BusUtils.constructTapPrefix(group), name, index);
+		return String.format("%s.%s.%s", BusUtils.constructTapPrefix(prefix), name, index);
 	}
 
 	public void setOutputChannelName(String outputChannelName) {
