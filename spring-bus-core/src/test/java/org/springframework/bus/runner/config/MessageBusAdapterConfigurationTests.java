@@ -108,6 +108,22 @@ public class MessageBusAdapterConfigurationTests {
 	}
 
 	@Test
+	public void noQueueQualifier() throws Exception {
+		context.registerSingleton("output.foo", new DirectChannel());
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		assertEquals(1, channels.size());
+		assertEquals("foo.group.0", channels.iterator().next().getName());
+	}
+
+	@Test
+	public void underscoreSeparatorForChannelName() throws Exception {
+		context.registerSingleton("output_foo", new DirectChannel());
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		assertEquals(1, channels.size());
+		assertEquals("foo.group.0", channels.iterator().next().getName());
+	}
+
+	@Test
 	public void overrideNaturalOutputChannelNamedQueue() throws Exception {
 		module.setOutputChannelName("queue:bar");
 		context.registerSingleton("output.queue:foo", new DirectChannel());

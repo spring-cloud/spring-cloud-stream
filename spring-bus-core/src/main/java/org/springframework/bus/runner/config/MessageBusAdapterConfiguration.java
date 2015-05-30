@@ -31,7 +31,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.util.StringUtils;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPostProcessor;
 
@@ -69,32 +68,11 @@ public class MessageBusAdapterConfiguration {
 		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
 				MessageChannel.class);
 		for (String name : names) {
-			OutputChannelSpec channel = null;
-			String prefix = "";
-			if (name.equals("output")) {
-				String channelName = module.getOutputChannelName();
-				channel = new OutputChannelSpec(channelName, beanFactory.getBean(name,
-						MessageChannel.class));
-			}
-			else if (name.startsWith("output.")) {
-				String channelName = name.substring("output.".length());
-				if (channelName.contains(":")) {
-					String[] tokens = channelName.split(":", 2);
-					String type = tokens[0];
-					if ("queue".equals(type)) {
-						// omit the type for a queue
-						prefix = tokens[1] + ".";
-					}
-					else {
-						prefix = channelName + ".";
-					}
-				}
-				channelName = prefix + getPlainChannelName(module.getOutputChannelName());
-				channel = new OutputChannelSpec(channelName, beanFactory.getBean(name,
-						MessageChannel.class));
-			}
-			if (channel != null) {
-				String tapChannelName = StringUtils.hasText(prefix) ? module
+			String channelName = extractChannelName("output", name, module.getOutputChannelName());
+			if (channelName != null) {
+				OutputChannelSpec channel = new OutputChannelSpec(channelName,
+						beanFactory.getBean(name, MessageChannel.class));
+				String tapChannelName = !channelName.equals(module.getOutputChannelName()) ? module
 						.getTapChannelName(getPlainChannelName(channel.getName()))
 						: module.getTapChannelName();
 				channel.setTapChannelName(tapChannelName);
@@ -103,6 +81,32 @@ public class MessageBusAdapterConfiguration {
 			}
 		}
 		return channels;
+	}
+
+	private String extractChannelName(String start, String name, String externalChannelName) {
+		if (name.equals(start)) {
+			return externalChannelName;
+		}
+		else if (name.startsWith(start + ".") || name.startsWith(start + "_")) {
+			String prefix = "";
+			String channelName = name.substring(start.length() + 1);
+			if (channelName.contains(":")) {
+				String[] tokens = channelName.split(":", 2);
+				String type = tokens[0];
+				if ("queue".equals(type)) {
+					// omit the type for a queue
+					prefix = tokens[1] + ".";
+				}
+				else {
+					prefix = channelName + ".";
+				}
+			}
+			else {
+				prefix = channelName + ".";
+			}
+			return prefix + getPlainChannelName(externalChannelName);
+		}
+		return null;
 	}
 
 	private String getPlainChannelName(String name) {
@@ -117,26 +121,8 @@ public class MessageBusAdapterConfiguration {
 		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
 				MessageChannel.class);
 		for (String name : names) {
-			if (name.equals("input")) {
-				String channelName = module.getInputChannelName();
-				channels.add(new InputChannelSpec(channelName, beanFactory.getBean(name,
-						MessageChannel.class)));
-			}
-			else if (name.startsWith("input.")) {
-				String channelName = name.substring("input.".length());
-				if (channelName.contains(":")) {
-					String[] tokens = channelName.split(":", 2);
-					String type = tokens[0];
-					if ("queue".equals(type)) {
-						// omit the type for a queue
-						channelName = tokens[1] + "."
-								+ getPlainChannelName(module.getInputChannelName());
-					}
-					else {
-						channelName = channelName + "."
-								+ getPlainChannelName(module.getInputChannelName());
-					}
-				}
+			String channelName = extractChannelName("input", name, module.getInputChannelName());
+			if (channelName != null) {
 				channels.add(new InputChannelSpec(channelName, beanFactory.getBean(name,
 						MessageChannel.class)));
 			}
