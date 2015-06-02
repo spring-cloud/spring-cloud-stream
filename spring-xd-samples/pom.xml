@@ -21,4 +21,17 @@
 		<module>tap</module>
 		<module>source-xml</module>
 	</modules>
+	<build>
+      <pluginManagement>
+		<plugins>
+			<plugin>
+				<!--skip deploy (this is just a test module) -->
+				<artifactId>maven-deploy-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
+        </plugins>
+      </pluginManagement>
+    </build>
 </project>

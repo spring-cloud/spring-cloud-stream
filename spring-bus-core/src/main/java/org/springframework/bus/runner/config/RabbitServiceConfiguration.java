@@ -18,7 +18,8 @@ package org.springframework.bus.runner.config;
 
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.cloud.config.java.AbstractCloudConfig;
+import org.springframework.cloud.Cloud;
+import org.springframework.cloud.CloudFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -38,15 +39,16 @@ import org.springframework.xd.dirt.integration.rabbit.RabbitMessageBus;
 		"classpath*:/META-INF/spring-xd/analytics/rabbit-analytics.xml" })
 @PropertySource("classpath:/META-INF/spring-bus/rabbit-bus.properties")
 public class RabbitServiceConfiguration {
-
 	@Configuration
 	@Profile("cloud")
-	protected static class CloudConfig extends AbstractCloudConfig {
-
+	protected static class CloudConfig {
 		@Bean
-		ConnectionFactory rabbitConnectionFactory() {
-			return connectionFactory().rabbitConnectionFactory();
+		public Cloud cloud() {
+		  return new CloudFactory().getCloud();
+		}
+		@Bean
+		ConnectionFactory redisConnectionFactory(Cloud cloud) {
+			return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
 		}
 	}
-
 }

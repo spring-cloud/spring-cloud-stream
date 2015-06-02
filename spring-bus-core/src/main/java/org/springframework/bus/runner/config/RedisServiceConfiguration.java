@@ -17,7 +17,8 @@
 package org.springframework.bus.runner.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.cloud.config.java.AbstractCloudConfig;
+import org.springframework.cloud.Cloud;
+import org.springframework.cloud.CloudFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -41,11 +42,14 @@ public class RedisServiceConfiguration {
 
 	@Configuration
 	@Profile("cloud")
-	protected static class CloudConfig extends AbstractCloudConfig {
-
+	protected static class CloudConfig {
 		@Bean
-		RedisConnectionFactory redisConnectionFactory() {
-			return connectionFactory().redisConnectionFactory();
+		public Cloud cloud() {
+		  return new CloudFactory().getCloud();
+		}
+		@Bean
+		RedisConnectionFactory redisConnectionFactory(Cloud cloud) {
+			return cloud.getSingletonServiceConnector(RedisConnectionFactory.class, null);
 		}
 	}
 
