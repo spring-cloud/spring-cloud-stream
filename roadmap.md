@@ -73,6 +73,8 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 - [ ] Partitioning
 
+- [ ] Support for inputType and/or outputType properties
+
 - [x] Support for pubsub as "primary" input/output (in addition to the existing queue semantics)
 
 - [ ] Endpoint "/messages" for module configuration metadata ("/bus" is taken by Spring Cloud)
