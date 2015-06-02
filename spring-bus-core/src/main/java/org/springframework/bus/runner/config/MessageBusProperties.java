@@ -51,6 +51,8 @@ public class MessageBusProperties {
 	
 	private Tap tap;
 
+	private boolean autoStartup = true;
+
 	public String getName() {
 		return name;
 	}
@@ -130,6 +132,14 @@ public class MessageBusProperties {
 		this.producerProperties = producerProperties;
 	}
 	
+	public boolean isAutoStartup() {
+		return autoStartup;
+	}
+	
+	public void setAutoStartup(boolean autoStartup) {
+		this.autoStartup = autoStartup;
+	}
+
 	public Tap getTap() {
 		return tap;
 	}

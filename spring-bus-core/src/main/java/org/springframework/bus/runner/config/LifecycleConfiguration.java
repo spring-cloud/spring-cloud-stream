@@ -29,11 +29,14 @@ import org.springframework.context.annotation.Configuration;
 public class LifecycleConfiguration implements CommandLineRunner {
 
 	@Autowired
+	private MessageBusProperties module;
+
+	@Autowired
 	private MessageBusAdapter adapter;
 
 	@Override
 	public void run(String... args) throws Exception {
-		if (!adapter.isRunning()) {
+		if (!adapter.isRunning() && module.isAutoStartup()) {
 			adapter.start();
 		}
 	}

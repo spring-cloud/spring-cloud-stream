@@ -129,6 +129,11 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 				return spec;
 			}
 		}
+		for (OutputChannelSpec spec : outputChannels) {
+			if (name.equals(spec.getLocalName())) {
+				return spec;
+			}
+		}
 		return null;
 	}
 
@@ -138,6 +143,11 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 		}
 		for (InputChannelSpec spec : inputChannels) {
 			if (name.equals(spec.getName())) {
+				return spec;
+			}
+		}
+		for (InputChannelSpec spec : inputChannels) {
+			if (name.equals(spec.getLocalName())) {
 				return spec;
 			}
 		}

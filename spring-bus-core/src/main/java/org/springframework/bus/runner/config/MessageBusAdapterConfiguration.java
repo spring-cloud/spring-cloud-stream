@@ -34,6 +34,8 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPostProcessor;
 
+import reactor.util.StringUtils;
+
 /**
  * @author Dave Syer
  *
@@ -68,11 +70,12 @@ public class MessageBusAdapterConfiguration {
 		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
 				MessageChannel.class);
 		for (String name : names) {
-			String channelName = extractChannelName("output", name, module.getOutputChannelName());
+			String channelName = extractChannelName("output", name,
+					module.getOutputChannelName());
 			if (channelName != null) {
 				OutputChannelSpec channel = new OutputChannelSpec(channelName,
 						beanFactory.getBean(name, MessageChannel.class));
-				String tapChannelName = !channelName.equals(module.getOutputChannelName()) ? module
+				String tapChannelName = !isDefaultOuputChannel(channelName) ? module
 						.getTapChannelName(getPlainChannelName(channel.getName()))
 						: module.getTapChannelName();
 				channel.setTapChannelName(tapChannelName);
@@ -83,7 +86,16 @@ public class MessageBusAdapterConfiguration {
 		return channels;
 	}
 
-	private String extractChannelName(String start, String name, String externalChannelName) {
+	private boolean isDefaultOuputChannel(String channelName) {
+		if (channelName.contains(":")) {
+			String[] tokens = channelName.split(":", 2);
+			channelName = tokens[1];
+		}
+		return channelName.equals(module.getOutputChannelName());
+	}
+
+	private String extractChannelName(String start, String name,
+			String externalChannelName) {
 		if (name.equals(start)) {
 			return externalChannelName;
 		}
@@ -95,10 +107,12 @@ public class MessageBusAdapterConfiguration {
 				String type = tokens[0];
 				if ("queue".equals(type)) {
 					// omit the type for a queue
-					prefix = tokens[1] + ".";
+					if (StringUtils.hasText(tokens[1])) {
+						prefix = tokens[1] + ".";
+					}
 				}
 				else {
-					prefix = channelName + ".";
+					prefix = channelName + (channelName.endsWith(":") ? "" : ".");
 				}
 			}
 			else {
@@ -121,7 +135,8 @@ public class MessageBusAdapterConfiguration {
 		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
 				MessageChannel.class);
 		for (String name : names) {
-			String channelName = extractChannelName("input", name, module.getInputChannelName());
+			String channelName = extractChannelName("input", name,
+					module.getInputChannelName());
 			if (channelName != null) {
 				channels.add(new InputChannelSpec(channelName, beanFactory.getBean(name,
 						MessageChannel.class)));

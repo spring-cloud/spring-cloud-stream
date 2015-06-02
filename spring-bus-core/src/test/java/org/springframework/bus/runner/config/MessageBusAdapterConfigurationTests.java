@@ -67,6 +67,15 @@ public class MessageBusAdapterConfigurationTests {
 	}
 
 	@Test
+	public void oneOutputTopic() throws Exception {
+		context.registerSingleton("output.topic:", new DirectChannel());
+		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		assertEquals(1, channels.size());
+		assertEquals("topic:group.0", channels.iterator().next().getName());
+		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
+	}
+
+	@Test
 	public void twoOutputsWithTopic() throws Exception {
 		context.registerSingleton("output", new DirectChannel());
 		context.registerSingleton("output.topic:foo", new DirectChannel());
