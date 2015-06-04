@@ -15,11 +15,16 @@
  */
 package org.springframework.bus.runner.config;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +36,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.util.Assert;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPostProcessor;
 
@@ -149,11 +155,44 @@ public class MessageBusAdapterConfiguration {
 	@Configuration
 	protected static class MessageBusAwareRouterConfiguration {
 
+		@Autowired
+		private ListableBeanFactory beanFactory;
+
 		@Bean
-		public MessageBusAwareRouterBeanPostProcessor messageBusAwareRouterBeanPostProcessor(
-				MessageBus messageBus) {
-			return new MessageBusAwareRouterBeanPostProcessor(messageBus,
-					new Properties());
+		public MessageBusAwareRouterBeanPostProcessor messageBusAwareRouterBeanPostProcessor() {
+
+			return new MessageBusAwareRouterBeanPostProcessor(
+					createLazyProxy(beanFactory, MessageBus.class), new Properties());
+		}
+
+		private <T> T createLazyProxy(ListableBeanFactory beanFactory,  Class<T> type) {
+			ProxyFactory factory = new ProxyFactory();
+			LazyInitTargetSource source = new LazyInitTargetSource();
+			source.setTargetClass(type);
+			source.setTargetBeanName(getBeanNameFor(beanFactory, MessageBus.class));
+			source.setBeanFactory(beanFactory);
+			factory.setTargetSource(source);
+			factory.addAdvice(new PassthruAdvice());
+			factory.setInterfaces(new Class<?>[] { type });
+			@SuppressWarnings("unchecked")
+			T proxy = (T) factory.getProxy();
+			return proxy;
+		}
+
+		private String getBeanNameFor(ListableBeanFactory beanFactory, Class<?> type) {
+			String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory, type, false, false);
+			Assert.state(names.length==1, "No unique MessageBus (found " + names.length + ": "
+					+ Arrays.asList(names) + ")");
+			return names[0];
+		}
+
+		private class PassthruAdvice implements MethodInterceptor {
+
+			@Override
+			public Object invoke(MethodInvocation invocation) throws Throwable {
+				return invocation.proceed();
+			}
+
 		}
 
 	}

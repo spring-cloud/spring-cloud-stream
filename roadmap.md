@@ -77,7 +77,11 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 - [x] Support for pubsub as "primary" input/output (in addition to the existing queue semantics)
 
-- [ ] Endpoint "/messages" for module configuration metadata ("/bus" is taken by Spring Cloud)
+- [x] Endpoint "/channels" for module configuration metadata ("/bus" is taken by Spring Cloud)
+
+- [ ] Discover channel names through Spring Cloud service discovery (via "/channels" endpoint on remote components)
+
+- [ ] Optional validation of application as XD module
 
 - [ ] Support for more than one `MessageBus` (e.g. local and redis) in the same app
 
