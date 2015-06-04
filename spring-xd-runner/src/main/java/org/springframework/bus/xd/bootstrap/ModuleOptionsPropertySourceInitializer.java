@@ -78,7 +78,7 @@ public class ModuleOptionsPropertySourceInitializer implements
 
 	private ModuleDefinition getModuleDefinition() {
 		return ModuleDefinitions.simple(module.getName(),
-				ModuleType.valueOf(module.getType()), "classpath:");
+				ModuleType.valueOf(module.getType()), "file:.");
 	}
 
 	private void insert(ConfigurableEnvironment environment, MapPropertySource source) {
