@@ -71,7 +71,9 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 - [x] Support for multiple input and output channels
 
-- [ ] Partitioning
+- [X] Partitioning
+
+- [ ] Support channel-level partitioning properties, not just at bus-level
 
 - [ ] Support for inputType and/or outputType properties
 
