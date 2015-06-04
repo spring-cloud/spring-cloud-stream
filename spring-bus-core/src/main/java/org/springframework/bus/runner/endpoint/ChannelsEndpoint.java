@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.bus.runner.config;
+package org.springframework.bus.runner.endpoint;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
+import org.springframework.bus.runner.adapter.ChannelsMetadata;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
 import org.springframework.bus.runner.adapter.OutputChannelSpec;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,20 +32,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ChannelsEndpoint extends AbstractEndpoint<Map<String, ?>> {
-
-	private MessageBusProperties module;
+	
 	private MessageBusAdapter adapter;
 
-	public ChannelsEndpoint(MessageBusProperties module, MessageBusAdapter adapter) {
+	public ChannelsEndpoint(MessageBusAdapter adapter) {
 		super("channels");
-		this.module = module;
 		this.adapter = adapter;
 	}
 
 	@RequestMapping(value="/channels/taps")
 	public List<OutputChannelSpec> taps() {
 		List<OutputChannelSpec> list = new ArrayList<OutputChannelSpec>();
-		for (OutputChannelSpec spec : adapter.getOutputChannels()) {
+		for (OutputChannelSpec spec : adapter.getChannelsMetadata().getOutputChannels()) {
 			if (spec.isTapped()) {
 				list.add(spec);
 			}
@@ -67,9 +66,10 @@ public class ChannelsEndpoint extends AbstractEndpoint<Map<String, ?>> {
 	@Override
 	public Map<String, ?> invoke() {
 		LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
-		map.put("inputChannels", adapter.getInputChannels());
-		map.put("outputChannels", adapter.getOutputChannels());
-		map.put("module", module);
+		ChannelsMetadata channels = adapter.getChannelsMetadata();
+		map.put("inputChannels", channels.getInputChannels());
+		map.put("outputChannels", channels.getOutputChannels());
+		map.put("module", channels.getModule());
 		return map;
 	}
 

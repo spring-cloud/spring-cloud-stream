@@ -48,8 +48,10 @@ public class MessageBusProperties {
 	private Properties consumerProperties = new Properties();
 
 	private Properties producerProperties = new Properties();
-	
+
 	private Tap tap;
+
+	private Discovery discovery = new Discovery();
 
 	private boolean autoStartup = true;
 
@@ -79,10 +81,11 @@ public class MessageBusProperties {
 
 	public String getInputChannelName() {
 		if (isTap()) {
-			return String.format("%s.%s.%s", BusUtils.constructTapPrefix(tap.getGroup()), tap.getName(), tap.getIndex());
+			return String.format("%s.%s.%s", BusUtils.constructTapPrefix(tap.getGroup()),
+					tap.getName(), tap.getIndex());
 		}
 		return (inputChannelName != null) ? inputChannelName : BusUtils
-				.constructPipeName(group, index>0 ? index - 1 : index);
+				.constructPipeName(group, index > 0 ? index - 1 : index);
 	}
 
 	public String getOutputChannelName() {
@@ -97,7 +100,8 @@ public class MessageBusProperties {
 	public String getTapChannelName(String prefix) {
 		Assert.isTrue(!type.equals("job"), "Job module type not supported.");
 		// for Stream return channel name with indexed elements
-		return String.format("%s.%s.%s", BusUtils.constructTapPrefix(prefix), name, index);
+		return String
+				.format("%s.%s.%s", BusUtils.constructTapPrefix(prefix), name, index);
 	}
 
 	public void setOutputChannelName(String outputChannelName) {
@@ -131,11 +135,11 @@ public class MessageBusProperties {
 	public void setProducerProperties(Properties producerProperties) {
 		this.producerProperties = producerProperties;
 	}
-	
+
 	public boolean isAutoStartup() {
 		return autoStartup;
 	}
-	
+
 	public void setAutoStartup(boolean autoStartup) {
 		this.autoStartup = autoStartup;
 	}
@@ -147,19 +151,58 @@ public class MessageBusProperties {
 	public void setTap(Tap tap) {
 		this.tap = tap;
 	}
-	
+
 	private boolean isTap() {
-		if (tap!=null) {
-			Assert.state(tap.getName()!=null, "Tap name not provided");
-			Assert.state(!tap.getGroup().equals(group), "Tap group cannot be the same as module group");
+		if (tap != null) {
+			Assert.state(tap.getName() != null, "Tap name not provided");
+			Assert.state(!tap.getGroup().equals(group),
+					"Tap group cannot be the same as module group");
 		}
-		return tap!=null;
+		return tap != null;
+	}
+
+	public Discovery getDiscovery() {
+		return discovery;
+	}
+
+	public static class Discovery {
+
+		private boolean enabled = false;
+
+		private String inputServiceId;
+
+		private String outputServiceId;
+
+		public boolean isEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
+
+		public String getInputServiceId() {
+			return inputServiceId;
+		}
+
+		public void setInputServiceId(String inputServiceId) {
+			this.inputServiceId = inputServiceId;
+		}
+
+		public String getOutputServiceId() {
+			return outputServiceId;
+		}
+
+		public void setOutputServiceId(String outputServiceId) {
+			this.outputServiceId = outputServiceId;
+		}
+
 	}
 
 	public static class Tap {
 
 		private String group = "group";
-		
+
 		private String name;
 
 		public String getName() {

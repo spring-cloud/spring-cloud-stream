@@ -16,34 +16,13 @@
 
 package org.springframework.bus.runner.adapter;
 
-
 /**
  * @author Dave Syer
  *
  */
-public class OutputChannelSpec extends InputChannelSpec {
-
-	private boolean tapped = false;
-	private String tapChannelName;
-
-	public OutputChannelSpec(String localName) {
-		super(localName);
-	}
-
-	public boolean isTapped() {
-		return this.tapped;
-	}
-
-	public void setTapped(boolean tapped) {
-		this.tapped = tapped;
-	}
-
-	public void setTapChannelName(String tapChannelName) {
-		this.tapChannelName = tapChannelName;
-	}
-
-	public String getTapChannelName() {
-		return this.tapChannelName==null ? "" : this.tapChannelName;
-	}
+// TODO: Use DestinationResolver?
+public interface ChannelLocator {
+	
+	String locate(String name);
 
 }

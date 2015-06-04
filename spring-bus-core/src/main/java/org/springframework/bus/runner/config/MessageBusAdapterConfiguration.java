@@ -32,6 +32,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
 import org.springframework.bus.runner.adapter.OutputChannelSpec;
+import org.springframework.bus.runner.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -39,8 +40,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPostProcessor;
-
-import reactor.util.StringUtils;
 
 /**
  * @author Dave Syer
@@ -68,84 +67,28 @@ public class MessageBusAdapterConfiguration {
 
 	@Bean
 	public ChannelsEndpoint channelsEndpoint(MessageBusAdapter adapter) {
-		return new ChannelsEndpoint(module, adapter);
+		return new ChannelsEndpoint(adapter);
 	}
 
 	protected Collection<OutputChannelSpec> getOutputChannels() {
 		Set<OutputChannelSpec> channels = new LinkedHashSet<OutputChannelSpec>();
-		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
-				MessageChannel.class);
+		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
+				this.beanFactory, MessageChannel.class);
 		for (String name : names) {
-			String channelName = extractChannelName("output", name,
-					module.getOutputChannelName());
-			if (channelName != null) {
-				OutputChannelSpec channel = new OutputChannelSpec(channelName,
-						beanFactory.getBean(name, MessageChannel.class));
-				String tapChannelName = !isDefaultOuputChannel(channelName) ? module
-						.getTapChannelName(getPlainChannelName(channel.getName()))
-						: module.getTapChannelName();
-				channel.setTapChannelName(tapChannelName);
-				channel.setTapped(false);
-				channels.add(channel);
+			if (name.startsWith("output")) {
+				channels.add(new OutputChannelSpec(name));
 			}
 		}
 		return channels;
 	}
 
-	private boolean isDefaultOuputChannel(String channelName) {
-		if (channelName.contains(":")) {
-			String[] tokens = channelName.split(":", 2);
-			channelName = tokens[1];
-		}
-		return channelName.equals(module.getOutputChannelName());
-	}
-
-	private String extractChannelName(String start, String name,
-			String externalChannelName) {
-		if (name.equals(start)) {
-			return externalChannelName;
-		}
-		else if (name.startsWith(start + ".") || name.startsWith(start + "_")) {
-			String prefix = "";
-			String channelName = name.substring(start.length() + 1);
-			if (channelName.contains(":")) {
-				String[] tokens = channelName.split(":", 2);
-				String type = tokens[0];
-				if ("queue".equals(type)) {
-					// omit the type for a queue
-					if (StringUtils.hasText(tokens[1])) {
-						prefix = tokens[1] + ".";
-					}
-				}
-				else {
-					prefix = channelName + (channelName.endsWith(":") ? "" : ".");
-				}
-			}
-			else {
-				prefix = channelName + ".";
-			}
-			return prefix + getPlainChannelName(externalChannelName);
-		}
-		return null;
-	}
-
-	private String getPlainChannelName(String name) {
-		if (name.contains(":")) {
-			name = name.substring(name.indexOf(":") + 1);
-		}
-		return name;
-	}
-
 	protected Collection<InputChannelSpec> getInputChannels() {
 		Set<InputChannelSpec> channels = new LinkedHashSet<InputChannelSpec>();
-		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory,
-				MessageChannel.class);
+		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
+				this.beanFactory, MessageChannel.class);
 		for (String name : names) {
-			String channelName = extractChannelName("input", name,
-					module.getInputChannelName());
-			if (channelName != null) {
-				channels.add(new InputChannelSpec(channelName, beanFactory.getBean(name,
-						MessageChannel.class)));
+			if (name.startsWith("input")) {
+				channels.add(new InputChannelSpec(name));
 			}
 		}
 		return channels;
@@ -161,11 +104,11 @@ public class MessageBusAdapterConfiguration {
 		@Bean
 		public MessageBusAwareRouterBeanPostProcessor messageBusAwareRouterBeanPostProcessor() {
 
-			return new MessageBusAwareRouterBeanPostProcessor(
-					createLazyProxy(beanFactory, MessageBus.class), new Properties());
+			return new MessageBusAwareRouterBeanPostProcessor(createLazyProxy(
+					this.beanFactory, MessageBus.class), new Properties());
 		}
 
-		private <T> T createLazyProxy(ListableBeanFactory beanFactory,  Class<T> type) {
+		private <T> T createLazyProxy(ListableBeanFactory beanFactory, Class<T> type) {
 			ProxyFactory factory = new ProxyFactory();
 			LazyInitTargetSource source = new LazyInitTargetSource();
 			source.setTargetClass(type);
@@ -180,9 +123,10 @@ public class MessageBusAdapterConfiguration {
 		}
 
 		private String getBeanNameFor(ListableBeanFactory beanFactory, Class<?> type) {
-			String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(beanFactory, type, false, false);
-			Assert.state(names.length==1, "No unique MessageBus (found " + names.length + ": "
-					+ Arrays.asList(names) + ")");
+			String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
+					beanFactory, type, false, false);
+			Assert.state(names.length == 1, "No unique MessageBus (found " + names.length
+					+ ": " + Arrays.asList(names) + ")");
 			return names[0];
 		}
 

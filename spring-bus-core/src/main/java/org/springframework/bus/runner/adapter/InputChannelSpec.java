@@ -16,11 +16,6 @@
 
 package org.springframework.bus.runner.adapter;
 
-import org.springframework.integration.support.context.NamedComponent;
-import org.springframework.messaging.MessageChannel;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 /**
  * @author Dave Syer
  *
@@ -28,25 +23,22 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class InputChannelSpec {
 
 	private String name;
-	private MessageChannel channel;
+	private String localName;
 
-	public InputChannelSpec(String name, MessageChannel channel) {
-		this.name = name;
-		this.channel = channel;
+	public InputChannelSpec(String localName) {
+		this.localName = localName;
 	}
 
 	public String getName() {
-		return name;
+		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public String getLocalName() {
-		return (channel instanceof NamedComponent) ? ((NamedComponent) channel)
-				.getComponentName() : channel.toString();
-	}
-
-	@JsonIgnore
-	public MessageChannel getMessageChannel() {
-		return channel;
+		return this.localName;
 	}
 
 }

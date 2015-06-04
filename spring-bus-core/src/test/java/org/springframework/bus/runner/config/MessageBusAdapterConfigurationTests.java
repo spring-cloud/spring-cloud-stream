@@ -22,12 +22,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.bus.runner.adapter.InputChannelSpec;
+import org.springframework.bus.runner.adapter.MessageBusAdapter;
 import org.springframework.bus.runner.adapter.OutputChannelSpec;
 import org.springframework.bus.runner.config.MessageBusAdapterConfigurationTests.Empty;
 import org.springframework.context.annotation.Bean;
@@ -45,11 +47,14 @@ import org.springframework.xd.dirt.integration.bus.local.LocalMessageBus;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Empty.class)
-@DirtiesContext(classMode=ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 public class MessageBusAdapterConfigurationTests {
 
 	@Autowired
 	private DefaultListableBeanFactory context;
+
+	@Autowired
+	private MessageBusAdapter adapter;
 
 	@Autowired
 	private MessageBusAdapterConfiguration configuration;
@@ -57,40 +62,50 @@ public class MessageBusAdapterConfigurationTests {
 	@Autowired
 	private MessageBusProperties module;
 
+	@Before
+	public void init() {
+	}
+
 	@Test
 	public void oneOutput() throws Exception {
-		context.registerSingleton("output", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		this.context.registerSingleton("output", new DirectChannel());
+		refresh();
+		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("group.0", channels.iterator().next().getName());
-		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:stream:group.module.0", channels.iterator().next()
+				.getTapChannelName());
+	}
+
+	private void refresh() {
+		Collection<OutputChannelSpec> channels = this.configuration.getOutputChannels();
+		for (OutputChannelSpec channel : channels) {
+			channel.setTapped(true);
+		}
+		this.adapter.setOutputChannels(channels);
+		this.adapter.start();
 	}
 
 	@Test
 	public void oneOutputTopic() throws Exception {
-		context.registerSingleton("output.topic:", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		this.context.registerSingleton("output.topic:", new DirectChannel());
+		refresh();
+		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("topic:group.0", channels.iterator().next().getName());
-		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
-	}
-
-	@Test
-	public void twoOutputsWithTopic() throws Exception {
-		context.registerSingleton("output", new DirectChannel());
-		context.registerSingleton("output.topic:foo", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
-		List<String> names = getChannelNames(channels);
-		assertEquals(2, channels.size());
-		assertTrue(names.contains("group.0"));
-		assertTrue(names.contains("topic:foo.group.0"));
+		assertEquals("tap:stream:group.module.0", channels.iterator().next()
+				.getTapChannelName());
 	}
 
 	@Test
 	public void twoOutputsWithQueue() throws Exception {
-		context.registerSingleton("output", new DirectChannel());
-		context.registerSingleton("output.queue:foo", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		this.context.registerSingleton("output", new DirectChannel());
+		this.context.registerSingleton("output.queue:foo", new DirectChannel());
+		refresh();
+		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		List<String> names = getChannelNames(channels);
 		assertEquals(2, channels.size());
 		assertTrue(names.contains("group.0"));
@@ -102,62 +117,34 @@ public class MessageBusAdapterConfigurationTests {
 		for (InputChannelSpec spec : channels) {
 			list.add(spec.getName());
 		}
-		return list ;
+		return list;
 	}
 
 	@Test
 	public void overrideNaturalOutputChannelName() throws Exception {
-		module.setOutputChannelName("bar");
-		context.registerSingleton("output.queue:foo", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		this.module.setOutputChannelName("bar");
+		this.context.registerSingleton("output.queue:foo", new DirectChannel());
+		refresh();
+		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("foo.bar", channels.iterator().next().getName());
 		// TODO: fix this. What should it be?
-		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
-	}
-
-	@Test
-	public void noQueueQualifier() throws Exception {
-		context.registerSingleton("output.foo", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
-		assertEquals(1, channels.size());
-		assertEquals("foo.group.0", channels.iterator().next().getName());
-	}
-
-	@Test
-	public void underscoreSeparatorForChannelName() throws Exception {
-		context.registerSingleton("output_foo", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
-		assertEquals(1, channels.size());
-		assertEquals("foo.group.0", channels.iterator().next().getName());
-	}
-
-	@Test
-	public void overrideNaturalOutputChannelNamedQueue() throws Exception {
-		module.setOutputChannelName("queue:bar");
-		context.registerSingleton("output.queue:foo", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
-		assertEquals(1, channels.size());
-		assertEquals("foo.bar", channels.iterator().next().getName());
+		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next()
+				.getTapChannelName());
 	}
 
 	@Test
 	public void overrideNaturalOutputChannelNamedQueueWithTopic() throws Exception {
-		module.setOutputChannelName("queue:bar");
-		context.registerSingleton("output.topic:foo", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
+		this.module.setOutputChannelName("queue:bar");
+		this.context.registerSingleton("output.topic:foo", new DirectChannel());
+		refresh();
+		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("topic:foo.bar", channels.iterator().next().getName());
-		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
-	}
-
-	@Test
-	public void overrideNaturalOutputChannelNamedTopic() throws Exception {
-		module.setOutputChannelName("topic:bar");
-		context.registerSingleton("output.queue:foo", new DirectChannel());
-		Collection<OutputChannelSpec> channels = configuration.getOutputChannels();
-		assertEquals(1, channels.size());
-		assertEquals("foo.bar", channels.iterator().next().getName());
+		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next()
+				.getTapChannelName());
 	}
 
 	@Configuration
