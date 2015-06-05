@@ -26,6 +26,10 @@ public class OutputChannelSpec extends InputChannelSpec {
 	private boolean tapped = false;
 	private String tapChannelName;
 
+	protected OutputChannelSpec() {
+		this(null);
+	}
+
 	public OutputChannelSpec(String localName) {
 		super(localName);
 	}

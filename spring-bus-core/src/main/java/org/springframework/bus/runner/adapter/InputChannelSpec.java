@@ -25,6 +25,10 @@ public class InputChannelSpec {
 	private String name;
 	private String localName;
 
+	protected InputChannelSpec() {
+		this(null);
+	}
+
 	public InputChannelSpec(String localName) {
 		this.localName = localName;
 	}

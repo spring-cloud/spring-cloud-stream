@@ -29,8 +29,11 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.bus.runner.adapter.ChannelLocator;
+import org.springframework.bus.runner.adapter.InputChannel;
 import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
+import org.springframework.bus.runner.adapter.OutputChannel;
 import org.springframework.bus.runner.adapter.OutputChannelSpec;
 import org.springframework.bus.runner.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
@@ -56,12 +59,26 @@ public class MessageBusAdapterConfiguration {
 	@Autowired
 	private ListableBeanFactory beanFactory;
 
+	@Autowired(required=false)
+	@InputChannel
+	private ChannelLocator inputChannelLocator;
+
+	@Autowired(required=false)
+	@OutputChannel
+	private ChannelLocator outputChannelLocator;
+
 	@Bean
 	public MessageBusAdapter messageBusAdapter(MessageBusProperties module,
 			MessageBus messageBus) {
 		MessageBusAdapter adapter = new MessageBusAdapter(module, messageBus);
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
+		if (this.inputChannelLocator!=null) {
+			adapter.setInputChannelLocator(this.inputChannelLocator);
+		}
+		if (this.outputChannelLocator!=null) {
+			adapter.setOutputChannelLocator(this.outputChannelLocator);
+		}
 		return adapter;
 	}
 
