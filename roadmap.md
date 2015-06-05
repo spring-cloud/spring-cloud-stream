@@ -81,7 +81,9 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 - [x] Endpoint "/channels" for module configuration metadata ("/bus" is taken by Spring Cloud)
 
-- [ ] Discover channel names through Spring Cloud service discovery (via "/channels" endpoint on remote components)
+- [x] Discover channel names through Spring Cloud service discovery (via "/channels" endpoint on remote components)
+
+- [ ] Listen for changes in discovery catalog and potentially rebind channels
 
 - [ ] Optional validation of application as XD module
 
