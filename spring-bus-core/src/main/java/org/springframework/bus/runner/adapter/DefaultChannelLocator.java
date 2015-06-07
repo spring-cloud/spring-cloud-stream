@@ -17,8 +17,7 @@
 package org.springframework.bus.runner.adapter;
 
 import org.springframework.bus.runner.config.MessageBusProperties;
-
-import reactor.util.StringUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer

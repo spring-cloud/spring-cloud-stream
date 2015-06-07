@@ -26,6 +26,7 @@ import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.springframework.bus.runner.adapter.discovery.DiscoveryClientChannelLocator;
 import org.springframework.bus.runner.config.MessageBusProperties;
 import org.springframework.cloud.client.DefaultServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;

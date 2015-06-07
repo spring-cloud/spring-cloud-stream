@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.bus.runner.adapter;
+package org.springframework.bus.runner.adapter.discovery;
 
 import java.net.URI;
 import java.util.Collection;
@@ -24,6 +24,9 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.bus.runner.adapter.ChannelLocator;
+import org.springframework.bus.runner.adapter.ChannelsMetadata;
+import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.web.client.RestOperations;

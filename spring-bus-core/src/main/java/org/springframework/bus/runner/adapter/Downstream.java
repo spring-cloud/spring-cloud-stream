@@ -36,6 +36,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-public @interface OutputChannel {
+public @interface Downstream {
 
 }

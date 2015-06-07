@@ -189,6 +189,17 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 		channel.setTapped(false);
 	}
 
+	@ManagedOperation
+	public void rebind() {
+		boolean runnable = locateChannels();
+		if (runnable && !this.running) {
+			start();
+		}
+		if (!runnable && this.running) {
+			stop();
+		}
+	}
+
 	@Override
 	@ManagedOperation
 	public void start() {
@@ -196,13 +207,15 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 			// Start everything, but don't call ourselves
 			if (!this.active.get()) {
 				if (this.active.compareAndSet(false, true)) {
-					bindChannels();
-					this.applicationContext.start();
+					boolean ready = bindChannels();
+					if (ready) {
+						this.running = true;
+						this.applicationContext.start();
+					}
 					this.active.set(false);
 				}
 			}
 		}
-		this.running = true;
 	}
 
 	@Override
@@ -247,19 +260,16 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 		}
 	}
 
-	protected final void bindChannels() {
+	protected final boolean bindChannels() {
+		if (!locateChannels()) {
+			return false;
+		}
 		Map<String, Object> historyProperties = new LinkedHashMap<String, Object>();
 		if (this.trackHistory) {
 			// TODO: addHistoryTag();
 		}
 		for (OutputChannelSpec spec : this.outputChannels) {
-			String name = this.outputChannelLocator.locate(spec.getLocalName());
-			if (name == null) {
-				logger.info("No channel found for: " + spec.getLocalName());
-				continue;
-			}
-			spec.setName(name);
-			this.bindings.put(spec.getName(), name);
+			String name = spec.getName();
 			MessageChannel outputChannel = this.channelResolver.resolveDestination(spec
 					.getLocalName());
 			bindMessageProducer(outputChannel, name, this.module.getProducerProperties());
@@ -277,20 +287,40 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 			}
 		}
 		for (InputChannelSpec spec : this.inputChannels) {
-			String name = this.inputChannelLocator.locate(spec.getLocalName());
-			if (name == null) {
-				logger.info("No channel found for: " + spec.getLocalName());
-				continue;
-			}
-			spec.setName(name);
-			this.bindings.put(spec.getName(), name);
-			MessageChannel inputChannel = this.channelResolver.resolveDestination(spec.getLocalName());
+			String name = spec.getName();
+			MessageChannel inputChannel = this.channelResolver.resolveDestination(spec
+					.getLocalName());
 			bindMessageConsumer(inputChannel, name, this.module.getConsumerProperties());
 			if (this.trackHistory && this.outputChannels.size() != 1) {
 				historyProperties.put("inputChannel", name);
 				track(inputChannel, historyProperties);
 			}
 		}
+		return true;
+	}
+
+	private boolean locateChannels() {
+		logger.info("Locating channels");
+		boolean located = true;
+		for (OutputChannelSpec spec : this.outputChannels) {
+			String name = this.outputChannelLocator.locate(spec.getLocalName());
+			if (name == null) {
+				logger.info("No channel found for: " + spec.getLocalName());
+				located = false;
+			}
+			spec.setName(name);
+			this.bindings.put(spec.getName(), name);
+		}
+		for (InputChannelSpec spec : this.inputChannels) {
+			String name = this.inputChannelLocator.locate(spec.getLocalName());
+			if (name == null) {
+				logger.info("No channel found for: " + spec.getLocalName());
+				located = false;
+			}
+			spec.setName(name);
+			this.bindings.put(spec.getName(), name);
+		}
+		return located;
 	}
 
 	// TODO: move this to ChannelLocator?
