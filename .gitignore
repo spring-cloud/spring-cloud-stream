@@ -14,6 +14,8 @@ _site/
 .DS_Store
 *.sw*
 *.iml
+*.ipr
+*.iws
 .idea
 .factorypath
 spring-xd-samples/*/xd

@@ -48,7 +48,7 @@ import org.springframework.xd.module.options.ModuleOptionsMetadataResolver;
 
 /**
  * Initialize the application context with default values for the module options.
- * 
+ *
  * @author Dave Syer
  *
  */
@@ -60,7 +60,7 @@ public class ModuleOptionsPropertySourceInitializer implements
 
 	@Autowired
 	private MessageBusProperties module = new MessageBusProperties();
-	
+
 	@Autowired(required=false)
 	private EnvironmentAwareModuleOptionsMetadataResolver wrapper;
 
@@ -71,7 +71,9 @@ public class ModuleOptionsPropertySourceInitializer implements
 		ModuleOptionsMetadata resolved = resolver.resolve(getModuleDefinition());
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 		for (ModuleOption option : resolved) {
-			map.put(option.getName(), option.getDefaultValue());
+			if (option.getDefaultValue() != null) {
+				map.put(option.getName(), option.getDefaultValue());
+			}
 		}
 		insert(environment, new MapPropertySource("moduleDefaults", map));
 	}
@@ -105,7 +107,7 @@ public class ModuleOptionsPropertySourceInitializer implements
 	public DefaultModuleOptionsMetadataResolver defaultResolver() {
 		return new DefaultModuleOptionsMetadataResolver();
 	}
-	
+
 	@ConditionalOnExpression("'${xd.module.config.location:${xd.config.home:}}'!=''")
 	protected static class EnvironmentAwareModuleOptionsMetadataResolverConfiguration {
 		@Bean
