@@ -23,12 +23,11 @@ import org.springframework.bus.runner.config.MessageBusProperties;
 
 /**
  * @author Dave Syer
- *
  */
 public class ChannelsMetadata {
 
-	private Collection<OutputChannelSpec> outputChannels = Collections.emptySet();
-	private Collection<InputChannelSpec> inputChannels = Collections.emptySet();
+	private Collection<OutputChannelBinding> outputChannels = Collections.emptySet();
+	private Collection<InputChannelBinding> inputChannels = Collections.emptySet();
 	private MessageBusProperties module;
 
 	public MessageBusProperties getModule() {
@@ -39,19 +38,19 @@ public class ChannelsMetadata {
 		this.module = module;
 	}
 
-	public Collection<OutputChannelSpec> getOutputChannels() {
+	public Collection<OutputChannelBinding> getOutputChannels() {
 		return outputChannels;
 	}
 
-	public void setOutputChannels(Collection<OutputChannelSpec> outputChannels) {
+	public void setOutputChannels(Collection<OutputChannelBinding> outputChannels) {
 		this.outputChannels = outputChannels;
 	}
 
-	public Collection<InputChannelSpec> getInputChannels() {
+	public Collection<InputChannelBinding> getInputChannels() {
 		return inputChannels;
 	}
 
-	public void setInputChannels(Collection<InputChannelSpec> inputChannels) {
+	public void setInputChannels(Collection<InputChannelBinding> inputChannels) {
 		this.inputChannels = inputChannels;
 	}
 

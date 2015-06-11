@@ -34,7 +34,6 @@ import org.springframework.web.client.RestOperations;
 
 /**
  * @author Dave Syer
- *
  */
 public class DiscoveryClientChannelLocatorTests {
 
@@ -42,8 +41,7 @@ public class DiscoveryClientChannelLocatorTests {
 
 	private RestOperations restTemplate = Mockito.mock(RestOperations.class);
 
-	private DiscoveryClientChannelLocator locator = new DiscoveryClientChannelLocator(
-			this.client, "service");
+	private DiscoveryClientChannelLocator locator = new DiscoveryClientChannelLocator(this.client, "service");
 
 	private ChannelsMetadata metadata = new ChannelsMetadata();
 
@@ -51,28 +49,27 @@ public class DiscoveryClientChannelLocatorTests {
 	public void init() {
 		this.locator.setRestTemplate(this.restTemplate);
 		this.metadata.setModule(new MessageBusProperties());
-		this.metadata.setInputChannels(new HashSet<InputChannelSpec>());
-		this.metadata.setOutputChannels(new HashSet<OutputChannelSpec>());
+		this.metadata.setInputChannels(new HashSet<InputChannelBinding>());
+		this.metadata.setOutputChannels(new HashSet<OutputChannelBinding>());
 		Mockito.when(
 				this.restTemplate.getForObject(Mockito.any(URI.class), anyChannels()))
 				.thenReturn(this.metadata);
 		Mockito.when(this.client.getInstances(Mockito.anyString())).thenReturn(
-				Arrays.asList(new DefaultServiceInstance("service", "example.com", 888,
-						false)));
+				Arrays.asList(new DefaultServiceInstance("service", "example.com", 888, false)));
 	}
 
 	@Test
 	public void locateInputFromOutput() {
-		OutputChannelSpec output = new OutputChannelSpec("output");
-		output.setName("foo.0");
+		OutputChannelBinding output = new OutputChannelBinding("output");
+		output.setRemoteName("foo.0");
 		this.metadata.getOutputChannels().add(output);
 		assertEquals("foo.0", this.locator.locate("input"));
 	}
 
 	@Test
 	public void locateOutputFromInput() {
-		InputChannelSpec input = new InputChannelSpec("input");
-		input.setName("foo.0");
+		InputChannelBinding input = new InputChannelBinding("input");
+		input.setRemoteName("foo.0");
 		this.metadata.getInputChannels().add(input);
 		assertEquals("foo.0", this.locator.locate("output"));
 	}

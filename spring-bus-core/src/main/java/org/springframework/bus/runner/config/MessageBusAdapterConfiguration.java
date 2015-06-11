@@ -31,10 +31,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.bus.runner.adapter.ChannelLocator;
 import org.springframework.bus.runner.adapter.Upstream;
-import org.springframework.bus.runner.adapter.InputChannelSpec;
+import org.springframework.bus.runner.adapter.InputChannelBinding;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
 import org.springframework.bus.runner.adapter.Downstream;
-import org.springframework.bus.runner.adapter.OutputChannelSpec;
+import org.springframework.bus.runner.adapter.OutputChannelBinding;
 import org.springframework.bus.runner.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -87,25 +87,25 @@ public class MessageBusAdapterConfiguration {
 		return new ChannelsEndpoint(adapter);
 	}
 
-	protected Collection<OutputChannelSpec> getOutputChannels() {
-		Set<OutputChannelSpec> channels = new LinkedHashSet<OutputChannelSpec>();
+	protected Collection<OutputChannelBinding> getOutputChannels() {
+		Set<OutputChannelBinding> channels = new LinkedHashSet<OutputChannelBinding>();
 		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 				this.beanFactory, MessageChannel.class);
 		for (String name : names) {
 			if (name.startsWith("output")) {
-				channels.add(new OutputChannelSpec(name));
+				channels.add(new OutputChannelBinding(name));
 			}
 		}
 		return channels;
 	}
 
-	protected Collection<InputChannelSpec> getInputChannels() {
-		Set<InputChannelSpec> channels = new LinkedHashSet<InputChannelSpec>();
+	protected Collection<InputChannelBinding> getInputChannels() {
+		Set<InputChannelBinding> channels = new LinkedHashSet<InputChannelBinding>();
 		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 				this.beanFactory, MessageChannel.class);
 		for (String name : names) {
 			if (name.startsWith("input")) {
-				channels.add(new InputChannelSpec(name));
+				channels.add(new InputChannelBinding(name));
 			}
 		}
 		return channels;

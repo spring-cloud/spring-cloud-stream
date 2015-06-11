@@ -24,9 +24,9 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.bus.runner.adapter.ChannelBinding;
 import org.springframework.bus.runner.adapter.ChannelLocator;
 import org.springframework.bus.runner.adapter.ChannelsMetadata;
-import org.springframework.bus.runner.adapter.InputChannelSpec;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.web.client.RestOperations;
@@ -35,7 +35,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * @author Dave Syer
- *
  */
 public class DiscoveryClientChannelLocator implements ChannelLocator {
 
@@ -64,22 +63,21 @@ public class DiscoveryClientChannelLocator implements ChannelLocator {
 		}
 		URI uri = pickUrl(instances);
 		try {
-			ChannelsMetadata channels = this.restTemplate.getForObject(uri,
-					ChannelsMetadata.class);
-			Collection<? extends InputChannelSpec> specs = Collections.emptySet();
+			ChannelsMetadata channels = this.restTemplate.getForObject(uri, ChannelsMetadata.class);
+			Collection<? extends ChannelBinding> bindings = Collections.emptySet();
 			if (name.startsWith("input")) {
 				name = name.replace("input", "output");
-				specs = channels.getOutputChannels();
+				bindings = channels.getOutputChannels();
 			}
 			else if (name.startsWith("output")) {
 				name = name.replace("output", "input");
-				specs = channels.getInputChannels();
+				bindings = channels.getInputChannels();
 			}
-			for (InputChannelSpec spec : specs) {
-				if (name.equals(spec.getLocalName())) {
+			for (ChannelBinding binding : bindings) {
+				if (name.equals(binding.getLocalName())) {
 					this.logger.debug("Discovered channel for '" + this.serviceId + "' ("
-							+ name + "=" + spec.getName() + ")");
-					return spec.getName();
+							+ name + "=" + binding.getRemoteName() + ")");
+					return binding.getRemoteName();
 				}
 			}
 		}

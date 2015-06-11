@@ -21,7 +21,6 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
- *
  */
 public class DefaultChannelLocator implements ChannelLocator {
 
@@ -45,8 +44,7 @@ public class DefaultChannelLocator implements ChannelLocator {
 	}
 
 
-	private String extractChannelName(String start, String name,
-			String externalChannelName) {
+	private String extractChannelName(String start, String name, String externalChannelName) {
 		if (name.equals(start)) {
 			return externalChannelName;
 		}

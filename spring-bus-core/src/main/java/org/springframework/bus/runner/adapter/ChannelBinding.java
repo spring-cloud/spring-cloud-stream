@@ -17,32 +17,34 @@
 package org.springframework.bus.runner.adapter;
 
 /**
- * @author Dave Syer
+ * Represents a binding between a local and remote message channel.
  *
+ * @author Dave Syer
+ * @author Mark Fisher
  */
-public class InputChannelSpec {
+public abstract class ChannelBinding {
 
-	private String name;
 	private String localName;
+	private String remoteName;
 
-	protected InputChannelSpec() {
+	protected ChannelBinding() {
 		this(null);
 	}
 
-	public InputChannelSpec(String localName) {
+	protected ChannelBinding(String localName) {
 		this.localName = localName;
-	}
-
-	public String getName() {
-		return this.name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public String getLocalName() {
 		return this.localName;
+	}
+
+	public String getRemoteName() {
+		return this.remoteName;
+	}
+
+	public void setRemoteName(String name) {
+		this.remoteName = name;
 	}
 
 }

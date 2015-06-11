@@ -16,38 +16,17 @@
 
 package org.springframework.bus.runner.adapter;
 
-
 /**
  * @author Dave Syer
- *
  */
-public class OutputChannelSpec extends InputChannelSpec {
+public class InputChannelBinding extends ChannelBinding {
 
-	private boolean tapped = false;
-	private String tapChannelName;
-
-	protected OutputChannelSpec() {
-		this(null);
+	protected InputChannelBinding() {
+		super(null);
 	}
 
-	public OutputChannelSpec(String localName) {
+	public InputChannelBinding(String localName) {
 		super(localName);
-	}
-
-	public boolean isTapped() {
-		return this.tapped;
-	}
-
-	public void setTapped(boolean tapped) {
-		this.tapped = tapped;
-	}
-
-	public void setTapChannelName(String tapChannelName) {
-		this.tapChannelName = tapChannelName;
-	}
-
-	public String getTapChannelName() {
-		return this.tapChannelName==null ? "" : this.tapChannelName;
 	}
 
 }

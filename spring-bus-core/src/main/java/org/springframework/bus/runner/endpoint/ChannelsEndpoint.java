@@ -24,12 +24,15 @@ import java.util.Map;
 import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
 import org.springframework.bus.runner.adapter.ChannelsMetadata;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
-import org.springframework.bus.runner.adapter.OutputChannelSpec;
+import org.springframework.bus.runner.adapter.OutputChannelBinding;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * @author Dave Syer
+ */
 @RestController
 public class ChannelsEndpoint extends AbstractEndpoint<Map<String, ?>> {
 	
@@ -41,24 +44,24 @@ public class ChannelsEndpoint extends AbstractEndpoint<Map<String, ?>> {
 	}
 
 	@RequestMapping(value="/channels/taps")
-	public List<OutputChannelSpec> taps() {
-		List<OutputChannelSpec> list = new ArrayList<OutputChannelSpec>();
-		for (OutputChannelSpec spec : adapter.getChannelsMetadata().getOutputChannels()) {
-			if (spec.isTapped()) {
-				list.add(spec);
+	public List<OutputChannelBinding> taps() {
+		List<OutputChannelBinding> list = new ArrayList<OutputChannelBinding>();
+		for (OutputChannelBinding binding : adapter.getChannelsMetadata().getOutputChannels()) {
+			if (binding.isTapped()) {
+				list.add(binding);
 			}
 		}
 		return list ;
 	}
 
 	@RequestMapping(value="/channels/taps", method=RequestMethod.POST)
-	public OutputChannelSpec tap(@RequestParam String channel) {
+	public OutputChannelBinding tap(@RequestParam String channel) {
 		adapter.tap(channel);
 		return adapter.getOutputChannel(channel);
 	}
 
 	@RequestMapping(value="/channels/taps", method=RequestMethod.DELETE)
-	public OutputChannelSpec untap(@RequestParam String channel) {
+	public OutputChannelBinding untap(@RequestParam String channel) {
 		adapter.untap(channel);
 		return adapter.getOutputChannel(channel);
 	}

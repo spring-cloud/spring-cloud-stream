@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.bus.runner.config;
 
 import static org.junit.Assert.assertEquals;
@@ -28,9 +29,9 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.bus.runner.adapter.InputChannelSpec;
+import org.springframework.bus.runner.adapter.ChannelBinding;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
-import org.springframework.bus.runner.adapter.OutputChannelSpec;
+import org.springframework.bus.runner.adapter.OutputChannelBinding;
 import org.springframework.bus.runner.config.MessageBusAdapterConfigurationTests.Empty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,7 +44,6 @@ import org.springframework.xd.dirt.integration.bus.local.LocalMessageBus;
 
 /**
  * @author Dave Syer
- *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Empty.class)
@@ -70,17 +70,15 @@ public class MessageBusAdapterConfigurationTests {
 	public void oneOutput() throws Exception {
 		this.context.registerSingleton("output", new DirectChannel());
 		refresh();
-		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
-				.getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
-		assertEquals("group.0", channels.iterator().next().getName());
-		assertEquals("tap:stream:group.module.0", channels.iterator().next()
-				.getTapChannelName());
+		assertEquals("group.0", channels.iterator().next().getRemoteName());
+		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
 	}
 
 	private void refresh() {
-		Collection<OutputChannelSpec> channels = this.configuration.getOutputChannels();
-		for (OutputChannelSpec channel : channels) {
+		Collection<OutputChannelBinding> channels = this.configuration.getOutputChannels();
+		for (OutputChannelBinding channel : channels) {
 			channel.setTapped(true);
 		}
 		this.adapter.setOutputChannels(channels);
@@ -91,12 +89,10 @@ public class MessageBusAdapterConfigurationTests {
 	public void oneOutputTopic() throws Exception {
 		this.context.registerSingleton("output.topic:", new DirectChannel());
 		refresh();
-		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
-				.getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
-		assertEquals("topic:group.0", channels.iterator().next().getName());
-		assertEquals("tap:stream:group.module.0", channels.iterator().next()
-				.getTapChannelName());
+		assertEquals("topic:group.0", channels.iterator().next().getRemoteName());
+		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test
@@ -104,18 +100,17 @@ public class MessageBusAdapterConfigurationTests {
 		this.context.registerSingleton("output", new DirectChannel());
 		this.context.registerSingleton("output.queue:foo", new DirectChannel());
 		refresh();
-		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
-				.getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		List<String> names = getChannelNames(channels);
 		assertEquals(2, channels.size());
 		assertTrue(names.contains("group.0"));
 		assertTrue(names.contains("foo.group.0"));
 	}
 
-	private List<String> getChannelNames(Collection<? extends InputChannelSpec> channels) {
+	private List<String> getChannelNames(Collection<? extends ChannelBinding> channels) {
 		List<String> list = new ArrayList<String>();
-		for (InputChannelSpec spec : channels) {
-			list.add(spec.getName());
+		for (ChannelBinding binding : channels) {
+			list.add(binding.getRemoteName());
 		}
 		return list;
 	}
@@ -125,13 +120,11 @@ public class MessageBusAdapterConfigurationTests {
 		this.module.setOutputChannelName("bar");
 		this.context.registerSingleton("output.queue:foo", new DirectChannel());
 		refresh();
-		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
-				.getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
-		assertEquals("foo.bar", channels.iterator().next().getName());
+		assertEquals("foo.bar", channels.iterator().next().getRemoteName());
 		// TODO: fix this. What should it be?
-		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next()
-				.getTapChannelName());
+		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test
@@ -139,12 +132,10 @@ public class MessageBusAdapterConfigurationTests {
 		this.module.setOutputChannelName("queue:bar");
 		this.context.registerSingleton("output.topic:foo", new DirectChannel());
 		refresh();
-		Collection<OutputChannelSpec> channels = this.adapter.getChannelsMetadata()
-				.getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
-		assertEquals("topic:foo.bar", channels.iterator().next().getName());
-		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next()
-				.getTapChannelName());
+		assertEquals("topic:foo.bar", channels.iterator().next().getRemoteName());
+		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Configuration
