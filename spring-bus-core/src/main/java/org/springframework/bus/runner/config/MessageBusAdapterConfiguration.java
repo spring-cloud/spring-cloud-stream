@@ -30,10 +30,10 @@ import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.bus.runner.adapter.ChannelLocator;
-import org.springframework.bus.runner.adapter.Upstream;
+import org.springframework.bus.runner.adapter.Input;
 import org.springframework.bus.runner.adapter.InputChannelBinding;
 import org.springframework.bus.runner.adapter.MessageBusAdapter;
-import org.springframework.bus.runner.adapter.Downstream;
+import org.springframework.bus.runner.adapter.Output;
 import org.springframework.bus.runner.adapter.OutputChannelBinding;
 import org.springframework.bus.runner.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
@@ -60,11 +60,11 @@ public class MessageBusAdapterConfiguration {
 	private ListableBeanFactory beanFactory;
 
 	@Autowired(required=false)
-	@Upstream
+	@Input
 	private ChannelLocator inputChannelLocator;
 
 	@Autowired(required=false)
-	@Downstream
+	@Output
 	private ChannelLocator outputChannelLocator;
 
 	@Bean
