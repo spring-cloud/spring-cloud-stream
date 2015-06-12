@@ -31,7 +31,7 @@ public class ChannelsMetadata {
 	private MessageBusProperties module;
 
 	public MessageBusProperties getModule() {
-		return module;
+		return this.module;
 	}
 
 	public void setModule(MessageBusProperties module) {
@@ -39,7 +39,7 @@ public class ChannelsMetadata {
 	}
 
 	public Collection<OutputChannelBinding> getOutputChannels() {
-		return outputChannels;
+		return this.outputChannels;
 	}
 
 	public void setOutputChannels(Collection<OutputChannelBinding> outputChannels) {
@@ -47,7 +47,7 @@ public class ChannelsMetadata {
 	}
 
 	public Collection<InputChannelBinding> getInputChannels() {
-		return inputChannels;
+		return this.inputChannels;
 	}
 
 	public void setInputChannels(Collection<InputChannelBinding> inputChannels) {
