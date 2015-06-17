@@ -105,7 +105,9 @@ public class ModuleOptionsPropertySourceInitializer implements
 	@Bean
 	// TODO: allow override of this
 	public DefaultModuleOptionsMetadataResolver defaultResolver() {
-		return new DefaultModuleOptionsMetadataResolver();
+		DefaultModuleOptionsMetadataResolver defaultResolver = new DefaultModuleOptionsMetadataResolver();
+		defaultResolver.setShouldCreateModuleClassLoader(false);
+		return defaultResolver;
 	}
 
 	@ConditionalOnExpression("'${xd.module.config.location:${xd.config.home:}}'!=''")
