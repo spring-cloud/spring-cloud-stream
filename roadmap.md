@@ -85,6 +85,8 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 - [x] Listen for changes in discovery catalog and potentially rebind channels
 
+- [ ] `@BusClient` like `@FeignClient` where the remote service (and optionally channel) can be specified
+
 - [ ] Optional validation of application as XD module
 
 - [ ] Support for more than one `MessageBus` (e.g. local and redis) in the same app
