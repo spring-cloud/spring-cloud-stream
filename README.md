@@ -106,3 +106,24 @@ spring:
 ```
 
 The `spring.bus.tap` section tells the module runner which topic you want to subscribe to. It creates a new group (a tap can't be in the same group as the one it is tapping) and starts a new index count, in case anyone wants to listen downstream.
+
+## Build Spring Bus
+### Pre-requisites
+
+ * Required :
+    * Java 8
+    * Maven
+
+Currently the `receptor-client` dependency is not in a public Maven repo. To install it to your local Maven repo, execute the following commands:
+
+```
+git clone https://github.com/markfisher/receptor-client.git
+cd receptor-client
+./gradlew install
+```
+ 
+### Building the project
+
+```
+mvn clean install
+```
