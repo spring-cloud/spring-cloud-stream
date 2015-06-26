@@ -18,6 +18,7 @@
 
     <modules>
         <module>spring-cloud-bus</module>
+		<module>spring-cloud-starter-bus-amqp</module>
         <module>docs</module>
     </modules>
 
