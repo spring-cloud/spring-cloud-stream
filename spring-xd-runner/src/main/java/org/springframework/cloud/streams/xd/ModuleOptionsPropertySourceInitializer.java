@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.streams.xd;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,14 +62,15 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 	@Autowired
 	private ModuleProperties module = new ModuleProperties();
 
-	@Autowired(required=false)
+	@Autowired(required = false)
 	private EnvironmentAwareModuleOptionsMetadataResolver wrapper;
 
 	@Override
 	public void initialize(ConfigurableApplicationContext applicationContext) {
 		ConfigurableEnvironment environment = applicationContext.getEnvironment();
 		ModuleOptionsMetadataResolver resolver = moduleOptionsMetadataResolver(environment);
-		ModuleOptionsMetadata resolved = resolver.resolve(getModuleDefinition());
+		ModuleOptionsMetadata resolved = resolver
+				.resolve(getModuleDefinition(applicationContext));
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 		for (ModuleOption option : resolved) {
 			if (option.getDefaultValue() != null) {
@@ -77,16 +80,27 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 		insert(environment, new MapPropertySource("moduleDefaults", map));
 	}
 
-	private ModuleDefinition getModuleDefinition() {
+	private ModuleDefinition getModuleDefinition(
+			ConfigurableApplicationContext applicationContext) {
+		String location = "file:.";
+		ClassLoader classLoader = applicationContext.getClassLoader();
+		if (classLoader instanceof URLClassLoader) {
+			URL[] urls = ((URLClassLoader) classLoader).getURLs();
+			String firstUrl = urls[0].toString();
+			if (firstUrl.startsWith("jar:") && firstUrl.endsWith("!/")) {
+				location = firstUrl.substring(4, firstUrl.length() - 2);
+			}
+		}
 		return ModuleDefinitions.simple(this.module.getName(),
-				ModuleType.valueOf(this.module.getType()), "file:.");
+				ModuleType.valueOf(this.module.getType()), location);
 	}
 
 	private void insert(ConfigurableEnvironment environment, MapPropertySource source) {
 		environment.getPropertySources().addLast(source);
 	}
 
-	private ModuleOptionsMetadataResolver moduleOptionsMetadataResolver(Environment environment) {
+	private ModuleOptionsMetadataResolver moduleOptionsMetadataResolver(
+			Environment environment) {
 		List<ModuleOptionsMetadataResolver> delegates = new ArrayList<ModuleOptionsMetadataResolver>();
 		delegates.add(defaultResolver());
 		delegates.add(new ModuleTypeConversionPluginMetadataResolver());
@@ -94,7 +108,7 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 		DelegatingModuleOptionsMetadataResolver delegatingResolver = new DelegatingModuleOptionsMetadataResolver();
 		delegatingResolver.setDelegates(delegates);
 		ModuleOptionsMetadataResolver resolver = delegatingResolver;
-		if (this.wrapper!=null) {
+		if (this.wrapper != null) {
 			this.wrapper.setDelegate(delegatingResolver);
 			resolver = this.wrapper;
 		}
@@ -119,7 +133,7 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 
 	@Configuration
 	protected static class ModulePropertiesConfiguration {
-		@Bean(name="spring.cloud.channels.CONFIGURATION_PROPERTIES")
+		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
 		public ModuleProperties moduleProperties() {
 			return new ModuleProperties();
 		}
