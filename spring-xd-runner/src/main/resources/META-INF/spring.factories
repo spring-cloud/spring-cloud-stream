@@ -1,2 +1,2 @@
 org.springframework.cloud.bootstrap.BootstrapConfiguration:\
-org.springframework.bus.xd.bootstrap.ModuleOptionsPropertySourceInitializer
+org.springframework.cloud.streams.xd.ModuleOptionsPropertySourceInitializer
