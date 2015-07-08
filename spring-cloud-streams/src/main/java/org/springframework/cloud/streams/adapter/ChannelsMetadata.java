@@ -19,7 +19,7 @@ package org.springframework.cloud.streams.adapter;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.springframework.cloud.streams.config.MessageBusProperties;
+import org.springframework.cloud.streams.config.ChannelBindingProperties;
 
 /**
  * @author Dave Syer
@@ -28,13 +28,13 @@ public class ChannelsMetadata {
 
 	private Collection<OutputChannelBinding> outputChannels = Collections.emptySet();
 	private Collection<InputChannelBinding> inputChannels = Collections.emptySet();
-	private MessageBusProperties module;
+	private ChannelBindingProperties module;
 
-	public MessageBusProperties getModule() {
+	public ChannelBindingProperties getModule() {
 		return this.module;
 	}
 
-	public void setModule(MessageBusProperties module) {
+	public void setModule(ChannelBindingProperties module) {
 		this.module = module;
 	}
 

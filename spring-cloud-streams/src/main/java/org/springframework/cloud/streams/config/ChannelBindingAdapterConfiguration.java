@@ -28,11 +28,11 @@ import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.streams.adapter.ChannelLocator;
 import org.springframework.cloud.streams.adapter.Input;
 import org.springframework.cloud.streams.adapter.InputChannelBinding;
-import org.springframework.cloud.streams.adapter.MessageBusAdapter;
 import org.springframework.cloud.streams.adapter.Output;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
 import org.springframework.cloud.streams.endpoint.ChannelsEndpoint;
@@ -50,11 +50,10 @@ import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPost
  */
 @Configuration
 @ImportResource("classpath*:/META-INF/spring-xd/bus/codec.xml")
-@EnableConfigurationProperties(MessageBusProperties.class)
-public class MessageBusAdapterConfiguration {
+public class ChannelBindingAdapterConfiguration {
 
 	@Autowired
-	private MessageBusProperties module;
+	private ChannelBindingProperties module;
 
 	@Autowired
 	private ListableBeanFactory beanFactory;
@@ -67,10 +66,12 @@ public class MessageBusAdapterConfiguration {
 	@Output
 	private ChannelLocator outputChannelLocator;
 
+	@Autowired
+	private MessageBus messageBus;
+
 	@Bean
-	public MessageBusAdapter messageBusAdapter(MessageBusProperties module,
-			MessageBus messageBus) {
-		MessageBusAdapter adapter = new MessageBusAdapter(module, messageBus);
+	public ChannelBindingAdapter messageBusAdapter() {
+		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.messageBus);
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
 		if (this.inputChannelLocator!=null) {
@@ -83,8 +84,14 @@ public class MessageBusAdapterConfiguration {
 	}
 
 	@Bean
-	public ChannelsEndpoint channelsEndpoint(MessageBusAdapter adapter) {
+	public ChannelsEndpoint channelsEndpoint(ChannelBindingAdapter adapter) {
 		return new ChannelsEndpoint(adapter);
+	}
+
+	public void refresh() {
+		ChannelBindingAdapter adapter = messageBusAdapter();
+		adapter.setOutputChannels(getOutputChannels());
+		adapter.setInputChannels(getInputChannels());
 	}
 
 	protected Collection<OutputChannelBinding> getOutputChannels() {
@@ -158,4 +165,12 @@ public class MessageBusAdapterConfiguration {
 
 	}
 
+	@Configuration
+	@ConditionalOnMissingBean(ChannelBindingProperties.class)
+	protected static class ModulePropertiesConfiguration {
+		@Bean(name="spring.cloud.channels.CONFIGURATION_PROPERTIES")
+		public ChannelBindingProperties moduleProperties() {
+			return new ChannelBindingProperties();
+		}
+	}
 }

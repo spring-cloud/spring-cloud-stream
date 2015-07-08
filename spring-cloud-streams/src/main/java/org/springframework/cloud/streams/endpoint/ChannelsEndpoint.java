@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
 import org.springframework.cloud.streams.adapter.ChannelsMetadata;
-import org.springframework.cloud.streams.adapter.MessageBusAdapter;
+import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -36,9 +36,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ChannelsEndpoint extends AbstractEndpoint<Map<String, ?>> {
 	
-	private MessageBusAdapter adapter;
+	private ChannelBindingAdapter adapter;
 
-	public ChannelsEndpoint(MessageBusAdapter adapter) {
+	public ChannelsEndpoint(ChannelBindingAdapter adapter) {
 		super("channels");
 		this.adapter = adapter;
 	}

@@ -24,7 +24,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.streams.config.MessageBusProperties;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -53,13 +52,13 @@ import org.springframework.xd.module.options.ModuleOptionsMetadataResolver;
  *
  */
 @Configuration
-@EnableConfigurationProperties(MessageBusProperties.class)
+@EnableConfigurationProperties
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class ModuleOptionsPropertySourceInitializer implements
-		ApplicationContextInitializer<ConfigurableApplicationContext> {
+ApplicationContextInitializer<ConfigurableApplicationContext> {
 
 	@Autowired
-	private MessageBusProperties module = new MessageBusProperties();
+	private ModuleProperties module = new ModuleProperties();
 
 	@Autowired(required=false)
 	private EnvironmentAwareModuleOptionsMetadataResolver wrapper;
@@ -79,8 +78,8 @@ public class ModuleOptionsPropertySourceInitializer implements
 	}
 
 	private ModuleDefinition getModuleDefinition() {
-		return ModuleDefinitions.simple(module.getName(),
-				ModuleType.valueOf(module.getType()), "file:.");
+		return ModuleDefinitions.simple(this.module.getName(),
+				ModuleType.valueOf(this.module.getType()), "file:.");
 	}
 
 	private void insert(ConfigurableEnvironment environment, MapPropertySource source) {
@@ -95,9 +94,9 @@ public class ModuleOptionsPropertySourceInitializer implements
 		DelegatingModuleOptionsMetadataResolver delegatingResolver = new DelegatingModuleOptionsMetadataResolver();
 		delegatingResolver.setDelegates(delegates);
 		ModuleOptionsMetadataResolver resolver = delegatingResolver;
-		if (wrapper!=null) {
-			wrapper.setDelegate(delegatingResolver);
-			resolver = wrapper;
+		if (this.wrapper!=null) {
+			this.wrapper.setDelegate(delegatingResolver);
+			resolver = this.wrapper;
 		}
 		return resolver;
 	}
@@ -115,6 +114,14 @@ public class ModuleOptionsPropertySourceInitializer implements
 		@Bean
 		public EnvironmentAwareModuleOptionsMetadataResolver environmentAwareModuleOptionsMetadataResolver() {
 			return new EnvironmentAwareModuleOptionsMetadataResolver();
+		}
+	}
+
+	@Configuration
+	protected static class ModulePropertiesConfiguration {
+		@Bean(name="spring.cloud.channels.CONFIGURATION_PROPERTIES")
+		public ModuleProperties moduleProperties() {
+			return new ModuleProperties();
 		}
 	}
 

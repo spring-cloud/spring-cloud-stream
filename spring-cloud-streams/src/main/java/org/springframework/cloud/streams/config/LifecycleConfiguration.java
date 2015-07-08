@@ -18,7 +18,7 @@ package org.springframework.cloud.streams.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.cloud.streams.adapter.MessageBusAdapter;
+import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -29,10 +29,10 @@ import org.springframework.context.annotation.Configuration;
 public class LifecycleConfiguration implements CommandLineRunner {
 
 	@Autowired
-	private MessageBusProperties module;
+	private ChannelBindingProperties module;
 
 	@Autowired
-	private MessageBusAdapter adapter;
+	private ChannelBindingAdapter adapter;
 
 	@Override
 	public void run(String... args) throws Exception {

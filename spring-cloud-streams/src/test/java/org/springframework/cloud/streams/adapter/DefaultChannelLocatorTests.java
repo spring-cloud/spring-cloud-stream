@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 import org.springframework.cloud.streams.adapter.DefaultChannelLocator;
-import org.springframework.cloud.streams.config.MessageBusProperties;
+import org.springframework.cloud.streams.config.ChannelBindingProperties;
 
 /**
  * @author Dave Syer
@@ -27,7 +27,7 @@ import org.springframework.cloud.streams.config.MessageBusProperties;
  */
 public class DefaultChannelLocatorTests {
 
-	private MessageBusProperties module = new MessageBusProperties();
+	private ChannelBindingProperties module = new ChannelBindingProperties();
 
 	private DefaultChannelLocator locator = new DefaultChannelLocator(this.module);
 

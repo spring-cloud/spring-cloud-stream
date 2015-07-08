@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.cloud.streams.config.LifecycleConfiguration;
-import org.springframework.cloud.streams.config.MessageBusAdapterConfiguration;
+import org.springframework.cloud.streams.config.ChannelBindingAdapterConfiguration;
 import org.springframework.cloud.streams.config.RabbitServiceConfiguration;
 import org.springframework.cloud.streams.config.RedisServiceConfiguration;
 import org.springframework.context.annotation.Configuration;
@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Import;
 @Inherited
 @Configuration
 @Import({ RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
-		MessageBusAdapterConfiguration.class, LifecycleConfiguration.class })
+		ChannelBindingAdapterConfiguration.class, LifecycleConfiguration.class })
 public @interface EnableMessageBus {
 
 }

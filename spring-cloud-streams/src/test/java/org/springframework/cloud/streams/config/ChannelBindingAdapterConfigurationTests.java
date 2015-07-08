@@ -30,11 +30,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.streams.adapter.ChannelBinding;
-import org.springframework.cloud.streams.adapter.MessageBusAdapter;
+import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
-import org.springframework.cloud.streams.config.MessageBusAdapterConfiguration;
-import org.springframework.cloud.streams.config.MessageBusProperties;
-import org.springframework.cloud.streams.config.MessageBusAdapterConfigurationTests.Empty;
+import org.springframework.cloud.streams.config.ChannelBindingAdapterConfigurationTests.Empty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -50,19 +48,19 @@ import org.springframework.xd.dirt.integration.bus.local.LocalMessageBus;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Empty.class)
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-public class MessageBusAdapterConfigurationTests {
+public class ChannelBindingAdapterConfigurationTests {
 
 	@Autowired
 	private DefaultListableBeanFactory context;
 
 	@Autowired
-	private MessageBusAdapter adapter;
+	private ChannelBindingAdapter adapter;
 
 	@Autowired
-	private MessageBusAdapterConfiguration configuration;
+	private ChannelBindingAdapterConfiguration configuration;
 
 	@Autowired
-	private MessageBusProperties module;
+	private ChannelBindingProperties module;
 
 	@Before
 	public void init() {
@@ -75,7 +73,7 @@ public class MessageBusAdapterConfigurationTests {
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("group.0", channels.iterator().next().getRemoteName());
-		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:group.0", channels.iterator().next().getTapChannelName());
 	}
 
 	private void refresh() {
@@ -94,7 +92,7 @@ public class MessageBusAdapterConfigurationTests {
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("topic:group.0", channels.iterator().next().getRemoteName());
-		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:group.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test
@@ -126,7 +124,7 @@ public class MessageBusAdapterConfigurationTests {
 		assertEquals(1, channels.size());
 		assertEquals("foo.bar", channels.iterator().next().getRemoteName());
 		// TODO: fix this. What should it be?
-		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:foo.bar", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test
@@ -137,11 +135,11 @@ public class MessageBusAdapterConfigurationTests {
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("topic:foo.bar", channels.iterator().next().getRemoteName());
-		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:foo.bar", channels.iterator().next().getTapChannelName());
 	}
 
 	@Configuration
-	@Import(MessageBusAdapterConfiguration.class)
+	@Import(ChannelBindingAdapterConfiguration.class)
 	protected static class Empty {
 		@Bean
 		public LocalMessageBus messageBus() {

@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.streams.adapter;
 
-import org.springframework.cloud.streams.config.MessageBusProperties;
+import org.springframework.cloud.streams.config.ChannelBindingProperties;
 import org.springframework.util.StringUtils;
 
 /**
@@ -24,9 +24,9 @@ import org.springframework.util.StringUtils;
  */
 public class DefaultChannelLocator implements ChannelLocator {
 
-	private MessageBusProperties module;
+	private ChannelBindingProperties module;
 
-	public DefaultChannelLocator(MessageBusProperties module) {
+	public DefaultChannelLocator(ChannelBindingProperties module) {
 		this.module = module;
 	}
 
@@ -43,6 +43,19 @@ public class DefaultChannelLocator implements ChannelLocator {
 		return null;
 	}
 
+	@Override
+	public String tap(String name) {
+		return !isDefaultOuputChannel(name) ? this.module.getTapChannelName(getPlainChannelName(name))
+				: this.module.getTapChannelName();
+	}
+
+	private boolean isDefaultOuputChannel(String channelName) {
+		if (channelName.contains(":")) {
+			String[] tokens = channelName.split(":", 2);
+			channelName = tokens[1];
+		}
+		return channelName.equals(this.module.getOutputChannelName());
+	}
 
 	private String extractChannelName(String start, String name, String externalChannelName) {
 		if (name.equals(start)) {

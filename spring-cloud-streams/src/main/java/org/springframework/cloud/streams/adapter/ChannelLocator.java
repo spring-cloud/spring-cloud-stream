@@ -20,9 +20,10 @@ package org.springframework.cloud.streams.adapter;
  * @author Dave Syer
  *
  */
-// TODO: Use DestinationResolver?
 public interface ChannelLocator {
-	
+
 	String locate(String name);
+
+	String tap(String name);
 
 }

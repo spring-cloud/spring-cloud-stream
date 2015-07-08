@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.cloud.streams.config.MessageBusProperties;
+import org.springframework.cloud.streams.config.ChannelBindingProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -57,9 +57,9 @@ import org.springframework.xd.dirt.integration.bus.XdHeaders;
  * @author Dave Syer
  */
 @ManagedResource
-public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
+public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware {
 
-	private static Logger logger = LoggerFactory.getLogger(MessageBusAdapter.class);
+	private static Logger logger = LoggerFactory.getLogger(ChannelBindingAdapter.class);
 
 	private MessageBus messageBus;
 	private MessageBuilderFactory messageBuilderFactory = new DefaultMessageBuilderFactory();
@@ -73,7 +73,7 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 
 	private boolean trackHistory = false;
 
-	private MessageBusProperties module;
+	private ChannelBindingProperties module;
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -85,7 +85,7 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 
 	private Map<String, String> bindings = new HashMap<String, String>();
 
-	public MessageBusAdapter(MessageBusProperties module, MessageBus messageBus) {
+	public ChannelBindingAdapter(ChannelBindingProperties module, MessageBus messageBus) {
 		this.module = module;
 		this.messageBus = messageBus;
 		this.inputChannelLocator = new DefaultChannelLocator(module);
@@ -271,7 +271,7 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 			MessageChannel outputChannel = this.channelResolver.resolveDestination(binding.getLocalName());
 			bindMessageProducer(outputChannel, name, this.module.getProducerProperties());
 			if (binding.isTapped()) {
-				String tapChannelName = getTapChannelName(name);
+				String tapChannelName = this.outputChannelLocator.tap(name);
 				binding.setTapChannelName(tapChannelName);
 				// tappableChannels.put(tapChannelName, outputChannel);
 				// if (isTapActive(tapChannelName)) {
@@ -317,29 +317,6 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 			this.bindings.put(binding.getRemoteName(), name);
 		}
 		return located;
-	}
-
-	// TODO: move this to ChannelLocator?
-	private String getTapChannelName(String name) {
-		return !isDefaultOuputChannel(name) ? this.module.getTapChannelName(getPlainChannelName(name))
-				: this.module.getTapChannelName();
-	}
-
-	// TODO: move this to ChannelLocator?
-	private String getPlainChannelName(String name) {
-		if (name.contains(":")) {
-			name = name.substring(name.indexOf(":") + 1);
-		}
-		return name;
-	}
-
-	// TODO: move this to ChannelLocator?
-	private boolean isDefaultOuputChannel(String channelName) {
-		if (channelName.contains(":")) {
-			String[] tokens = channelName.split(":", 2);
-			channelName = tokens[1];
-		}
-		return channelName.equals(this.module.getOutputChannelName());
 	}
 
 	/*
@@ -422,7 +399,7 @@ public class MessageBusAdapter implements Lifecycle, ApplicationContextAware {
 					map.putAll(historyProps);
 					map.put("thread", Thread.currentThread().getName());
 					history.add(map);
-					Message<?> out = MessageBusAdapter.this.messageBuilderFactory.fromMessage(message)
+					Message<?> out = ChannelBindingAdapter.this.messageBuilderFactory.fromMessage(message)
 							.setHeader(XdHeaders.XD_HISTORY, history).build();
 					return out;
 				}
