@@ -35,7 +35,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
-import org.springframework.xd.dirt.plugins.job.JobPluginMetadataResolver;
 import org.springframework.xd.dirt.plugins.stream.ModuleTypeConversionPluginMetadataResolver;
 import org.springframework.xd.module.ModuleDefinition;
 import org.springframework.xd.module.ModuleDefinitions;
@@ -104,7 +103,6 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 		List<ModuleOptionsMetadataResolver> delegates = new ArrayList<ModuleOptionsMetadataResolver>();
 		delegates.add(defaultResolver());
 		delegates.add(new ModuleTypeConversionPluginMetadataResolver());
-		delegates.add(new JobPluginMetadataResolver());
 		DelegatingModuleOptionsMetadataResolver delegatingResolver = new DelegatingModuleOptionsMetadataResolver();
 		delegatingResolver.setDelegates(delegates);
 		ModuleOptionsMetadataResolver resolver = delegatingResolver;
