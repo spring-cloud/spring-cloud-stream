@@ -1,3 +1,0 @@
-# AutoConfiguration
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.cloud.streams.adapter.discovery.DiscoveryClientAutoConfiguration
