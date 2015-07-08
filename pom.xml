@@ -10,12 +10,13 @@
 		<name>Pivotal Software, Inc.</name>
 		<url>http://www.spring.io</url>
 	</organization>
-    <properties>
-      <java.version>1.7</java.version>
-      <spring-boot.version>1.3.0.BUILD-SNAPSHOT</spring-boot.version>
-      <spring-cloud.version>Brixton.BUILD-SNAPSHOT</spring-cloud.version>
-      <spring-xd.version>2.0.0.BUILD-SNAPSHOT</spring-xd.version>
-    </properties>
+	<properties>
+		<java.version>1.7</java.version>
+		<spring-boot.version>1.3.0.BUILD-SNAPSHOT</spring-boot.version>
+		<spring-cloud.version>Brixton.BUILD-SNAPSHOT</spring-cloud.version>
+		<spring-xd.version>2.0.0.BUILD-SNAPSHOT</spring-xd.version>
+		<spring-framework.version>4.2.0.RC2</spring-framework.version>
+	</properties>
 	<modules>
 		<module>spring-cloud-streams</module>
 		<module>spring-xd-runner</module>
@@ -47,75 +48,36 @@
 			  <artifactId>spring-xd-runner</artifactId>
 			  <version>1.0.0.BUILD-SNAPSHOT</version>
 		    </dependency>
-		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-dirt</artifactId>
-			<version>${spring-xd.version}</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>jackson-core-asl</artifactId>
-					<groupId>org.codehaus.jackson</groupId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.springframework.xd</groupId>
-					<artifactId>spring-xd-spark-streaming</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.springframework.xd</groupId>
-					<artifactId>spring-xd-hadoop</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.springframework.xd</groupId>
-					<artifactId>spring-xd-batch</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.springframework.xd</groupId>
-					<artifactId>spring-xd-ui</artifactId>
-				</exclusion>
-				<exclusion>
-					<artifactId>slf4j-log4j12</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>zookeeper</artifactId>
-					<groupId>org.apache.zookeeper</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>spring-boot-starter-security</artifactId>
-					<groupId>org.springframework.boot</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>spring-security-ldap</artifactId>
-					<groupId>org.springframework.security</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>spring-jdbc</artifactId>
-					<groupId>org.springframework</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>spring-batch-integration</artifactId>
-					<groupId>org.springframework.batch</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>spring-batch-admin-manager</artifactId>
-					<groupId>org.springframework.batch</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>spring-data-mongodb</artifactId>
-					<groupId>org.springframework.data</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-messagebus-redis</artifactId>
-			<version>${spring-xd.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-messagebus-rabbit</artifactId>
-			<version>${spring-xd.version}</version>
-		</dependency>
+			<dependency>
+				<groupId>org.springframework.xd</groupId>
+				<artifactId>spring-xd-codec</artifactId>
+				<version>${spring-xd.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.xd</groupId>
+				<artifactId>spring-xd-module</artifactId>
+				<version>${spring-xd.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.xd</groupId>
+				<artifactId>spring-xd-messagebus-local</artifactId>
+				<version>${spring-xd.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.xd</groupId>
+				<artifactId>spring-xd-messagebus-redis</artifactId>
+				<version>${spring-xd.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.xd</groupId>
+				<artifactId>spring-xd-messagebus-rabbit</artifactId>
+				<version>${spring-xd.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-messaging</artifactId>
+				<version>${spring-framework.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<build>
