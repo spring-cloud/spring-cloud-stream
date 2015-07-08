@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.springframework.bus</groupId>
-	<artifactId>spring-bus-parent</artifactId>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-streams-parent</artifactId>
 	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<url>http://projects.spring.io/spring-xd/</url>
@@ -12,12 +12,12 @@
 	</organization>
     <properties>
       <java.version>1.7</java.version>
-      <spring-boot.version>1.3.0.M1</spring-boot.version>
-      <spring-cloud.version>1.0.3.BUILD-SNAPSHOT</spring-cloud.version>
+      <spring-boot.version>1.3.0.BUILD-SNAPSHOT</spring-boot.version>
+      <spring-cloud.version>Brixton.BUILD-SNAPSHOT</spring-cloud.version>
       <spring-xd.version>2.0.0.BUILD-SNAPSHOT</spring-xd.version>
     </properties>
 	<modules>
-		<module>spring-bus-core</module>
+		<module>spring-cloud-streams</module>
 		<module>spring-xd-runner</module>
 		<module>spring-xd-samples</module>
 	</modules>
@@ -38,12 +38,12 @@
 				<scope>import</scope>
 			</dependency>
 		    <dependency>
-			  <groupId>org.springframework.bus</groupId>
-			  <artifactId>spring-bus-core</artifactId>
+			  <groupId>org.springframework.cloud</groupId>
+			  <artifactId>spring-cloud-streams</artifactId>
 			  <version>1.0.0.BUILD-SNAPSHOT</version>
 		    </dependency>
 		    <dependency>
-			  <groupId>org.springframework.bus</groupId>
+			  <groupId>org.springframework.cloud</groupId>
 			  <artifactId>spring-xd-runner</artifactId>
 			  <version>1.0.0.BUILD-SNAPSHOT</version>
 		    </dependency>

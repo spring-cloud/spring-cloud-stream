@@ -12,7 +12,7 @@
 	<description>Demo project for Spring XD module</description>
 
 	<parent>
-		<groupId>org.springframework.bus</groupId>
+		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-xd-samples</artifactId>
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
@@ -25,7 +25,7 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.springframework.bus</groupId>
+			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-xd-runner</artifactId>
 		</dependency>
 		<dependency>

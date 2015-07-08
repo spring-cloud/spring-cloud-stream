@@ -3,17 +3,17 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.springframework.bus</groupId>
-	<artifactId>spring-bus-core</artifactId>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-streams</artifactId>
 	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>spring-bus-runner</name>
-	<description>Demo project for Spring Integration as apps</description>
+	<name>spring-cloud-streams</name>
+	<description>Messaging Microservices with Spring Integration</description>
 
 	<parent>
-		<groupId>org.springframework.bus</groupId>
-		<artifactId>spring-bus-parent</artifactId>
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-streams-parent</artifactId>
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 
