@@ -8,7 +8,7 @@
 	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>spring-xd-module-runner</name>
+	<name>spring-xd-runner</name>
 	<description>Demo project for Spring XD Modules as apps</description>
 
 	<parent>
