@@ -5,6 +5,7 @@ asciidoctor.css
 .#*
 *#
 target/
+build/
 bin/
 _site/
 .classpath

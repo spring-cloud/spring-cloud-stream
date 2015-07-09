@@ -43,8 +43,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-codec</artifactId>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-streams-codec</artifactId>
 		</dependency>
 
 		<dependency>

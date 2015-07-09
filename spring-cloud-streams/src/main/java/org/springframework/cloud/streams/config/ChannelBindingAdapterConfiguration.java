@@ -15,14 +15,17 @@
  */
 package org.springframework.cloud.streams.config;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -35,21 +38,26 @@ import org.springframework.cloud.streams.adapter.Input;
 import org.springframework.cloud.streams.adapter.InputChannelBinding;
 import org.springframework.cloud.streams.adapter.Output;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
+import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
+import org.springframework.xd.dirt.integration.bus.serializer.kryo.FileKryoRegistrar;
+import org.springframework.xd.dirt.integration.bus.serializer.kryo.KryoRegistrar;
+import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 import org.springframework.cloud.streams.endpoint.ChannelsEndpoint;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportResource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPostProcessor;
 
+
 /**
  * @author Dave Syer
- *
+ * @author David Turanski
  */
 @Configuration
-@ImportResource("classpath*:/META-INF/spring-cloud-streams/codec.xml")
+
 public class ChannelBindingAdapterConfiguration {
 
 	@Autowired
@@ -58,11 +66,11 @@ public class ChannelBindingAdapterConfiguration {
 	@Autowired
 	private ListableBeanFactory beanFactory;
 
-	@Autowired(required=false)
+	@Autowired(required = false)
 	@Input
 	private ChannelLocator inputChannelLocator;
 
-	@Autowired(required=false)
+	@Autowired(required = false)
 	@Output
 	private ChannelLocator outputChannelLocator;
 
@@ -74,10 +82,10 @@ public class ChannelBindingAdapterConfiguration {
 		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.messageBus);
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
-		if (this.inputChannelLocator!=null) {
+		if (this.inputChannelLocator != null) {
 			adapter.setInputChannelLocator(this.inputChannelLocator);
 		}
-		if (this.outputChannelLocator!=null) {
+		if (this.outputChannelLocator != null) {
 			adapter.setOutputChannelLocator(this.outputChannelLocator);
 		}
 		return adapter;
@@ -140,7 +148,7 @@ public class ChannelBindingAdapterConfiguration {
 			source.setBeanFactory(beanFactory);
 			factory.setTargetSource(source);
 			factory.addAdvice(new PassthruAdvice());
-			factory.setInterfaces(new Class<?>[] { type });
+			factory.setInterfaces(new Class<?>[] {type});
 			@SuppressWarnings("unchecked")
 			T proxy = (T) factory.getProxy();
 			return proxy;
@@ -168,9 +176,29 @@ public class ChannelBindingAdapterConfiguration {
 	@Configuration
 	@ConditionalOnMissingBean(ChannelBindingProperties.class)
 	protected static class ModulePropertiesConfiguration {
-		@Bean(name="spring.cloud.channels.CONFIGURATION_PROPERTIES")
+		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
 		public ChannelBindingProperties moduleProperties() {
 			return new ChannelBindingProperties();
 		}
 	}
+
+
+	protected static class CodecConfiguration {
+		@Autowired
+		ApplicationContext applicationContext;
+
+		@Bean
+		@ConditionalOnMissingBean(name = "codec")
+		public MultiTypeCodec codec() {
+			Map<String, KryoRegistrar> kryoRegistrarMap = applicationContext.getBeansOfType(KryoRegistrar
+					.class);
+			return new PojoCodec(new ArrayList<>(kryoRegistrarMap.values()));
+		}
+
+		@Bean
+		public KryoRegistrar fileRegistrar() {
+			return new FileKryoRegistrar();
+		}
+	}
+
 }
