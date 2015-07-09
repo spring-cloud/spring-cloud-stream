@@ -20,3 +20,4 @@ _site/
 .idea
 .factorypath
 spring-xd-samples/*/xd
+dump.rdb

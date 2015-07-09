@@ -18,4 +18,3 @@ spring:
   cloud:
     channels:
       inputChannelName: xformed
-      

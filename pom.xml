@@ -31,6 +31,7 @@
 		<module>spring-cloud-streams-common</module>
 		<module>spring-xd-runner</module>
 		<module>spring-xd-samples</module>
+		<module>spring-cloud-streams-samples</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>
