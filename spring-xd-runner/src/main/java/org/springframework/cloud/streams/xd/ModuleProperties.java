@@ -66,12 +66,27 @@ public class ModuleProperties extends ChannelBindingProperties {
 	}
 
 	@Override
+	public String getOutputChannelName() {
+		String name = super.getOutputChannelName();
+		if (ChannelBindingProperties.DEFAULT_CHANNEL_NAME.equals(name)) {
+			return BusUtils.constructPipeName(this.group, this.index);
+		}
+		return name;
+	}
+
+	@Override
 	public String getInputChannelName() {
 		if (isTap()) {
-			return String.format("%s.%s.%s", BusUtils.constructTapPrefix(this.tap.getGroup()),
-					this.tap.getName(), this.tap.getIndex());
+			return String.format("%s.%s.%s",
+					BusUtils.constructTapPrefix(this.tap.getGroup()), this.tap.getName(),
+					this.tap.getIndex());
 		}
-		return super.getInputChannelName();
+		String name = super.getInputChannelName();
+		if (ChannelBindingProperties.DEFAULT_CHANNEL_NAME.equals(name)) {
+			return BusUtils.constructPipeName(this.group, this.index > 0 ? this.index - 1
+					: this.index);
+		}
+		return name;
 	}
 
 	@Override
@@ -81,10 +96,10 @@ public class ModuleProperties extends ChannelBindingProperties {
 
 	@Override
 	public String getTapChannelName(String prefix) {
-		Assert.isTrue(!this.type .equals("job"), "Job module type not supported.");
+		Assert.isTrue(!this.type.equals("job"), "Job module type not supported.");
 		// for Stream return channel name with indexed elements
-		return String
-				.format("%s.%s.%s", BusUtils.constructTapPrefix(prefix), this.name, this.index);
+		return String.format("%s.%s.%s", BusUtils.constructTapPrefix(prefix), this.name,
+				this.index);
 	}
 
 	public Tap getTap() {

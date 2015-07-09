@@ -31,9 +31,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonInclude(Include.NON_DEFAULT)
 public class ChannelBindingProperties {
 
-	private String outputChannelName = "group.0";
+	public static final String DEFAULT_CHANNEL_NAME = "group.0";
 
-	private String inputChannelName = "group.0";
+	private String outputChannelName = DEFAULT_CHANNEL_NAME;
+
+	private String inputChannelName = DEFAULT_CHANNEL_NAME;
 
 	private Properties consumerProperties = new Properties();
 

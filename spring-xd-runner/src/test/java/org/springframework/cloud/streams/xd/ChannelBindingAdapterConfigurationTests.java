@@ -31,9 +31,9 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.streams.adapter.ChannelBinding;
 import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
+import org.springframework.cloud.streams.adapter.InputChannelBinding;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
 import org.springframework.cloud.streams.config.ChannelBindingAdapterConfiguration;
-import org.springframework.cloud.streams.config.ChannelBindingProperties;
 import org.springframework.cloud.streams.xd.ChannelBindingAdapterConfigurationTests.Empty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -62,7 +62,7 @@ public class ChannelBindingAdapterConfigurationTests {
 	private ChannelBindingAdapterConfiguration configuration;
 
 	@Autowired
-	private ChannelBindingProperties module;
+	private ModuleProperties module;
 
 	@Before
 	public void init() {
@@ -72,15 +72,28 @@ public class ChannelBindingAdapterConfigurationTests {
 	public void oneOutput() throws Exception {
 		this.context.registerSingleton("output", new DirectChannel());
 		refresh();
-		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("group.0", channels.iterator().next().getRemoteName());
-		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:stream:group.module.0", channels.iterator().next()
+				.getTapChannelName());
+	}
+
+	@Test
+	public void oneInput() throws Exception {
+		this.context.registerSingleton("input", new DirectChannel());
+		refresh();
+		Collection<InputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getInputChannels();
+		assertEquals(1, channels.size());
+		assertEquals("group.0", channels.iterator().next().getRemoteName());
 	}
 
 	private void refresh() {
 		this.configuration.refresh();
-		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		for (OutputChannelBinding channel : channels) {
 			channel.setTapped(true);
 		}
@@ -92,10 +105,49 @@ public class ChannelBindingAdapterConfigurationTests {
 	public void oneOutputTopic() throws Exception {
 		this.context.registerSingleton("output.topic:", new DirectChannel());
 		refresh();
-		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("topic:group.0", channels.iterator().next().getRemoteName());
-		assertEquals("tap:stream:group.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:stream:group.module.0", channels.iterator().next()
+				.getTapChannelName());
+	}
+
+	@Test
+	public void oneOutputOverrideName() throws Exception {
+		this.module.setGroup("mine");
+		this.module.setName("foo");
+		this.module.setIndex(2);
+		this.context.registerSingleton("output.topic:", new DirectChannel());
+		refresh();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
+		assertEquals(1, channels.size());
+		assertEquals("topic:mine.2", channels.iterator().next().getRemoteName());
+		assertEquals("tap:stream:mine.foo.2", channels.iterator().next()
+				.getTapChannelName());
+	}
+
+	@Test
+	public void oneInputTopic() throws Exception {
+		this.context.registerSingleton("input.topic:", new DirectChannel());
+		refresh();
+		Collection<InputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getInputChannels();
+		assertEquals(1, channels.size());
+		assertEquals("topic:group.0", channels.iterator().next().getRemoteName());
+	}
+
+	@Test
+	public void oneInputOverrideName() throws Exception {
+		this.module.setGroup("mine");
+		this.module.setIndex(2);
+		this.context.registerSingleton("input", new DirectChannel());
+		refresh();
+		Collection<InputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getInputChannels();
+		assertEquals(1, channels.size());
+		assertEquals("mine.1", channels.iterator().next().getRemoteName());
 	}
 
 	@Test
@@ -103,7 +155,8 @@ public class ChannelBindingAdapterConfigurationTests {
 		this.context.registerSingleton("output", new DirectChannel());
 		this.context.registerSingleton("output.queue:foo", new DirectChannel());
 		refresh();
-		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		List<String> names = getChannelNames(channels);
 		assertEquals(2, channels.size());
 		assertTrue(names.contains("group.0"));
@@ -123,11 +176,13 @@ public class ChannelBindingAdapterConfigurationTests {
 		this.module.setOutputChannelName("bar");
 		this.context.registerSingleton("output.queue:foo", new DirectChannel());
 		refresh();
-		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("foo.bar", channels.iterator().next().getRemoteName());
 		// TODO: fix this. What should it be?
-		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next()
+				.getTapChannelName());
 	}
 
 	@Test
@@ -135,10 +190,12 @@ public class ChannelBindingAdapterConfigurationTests {
 		this.module.setOutputChannelName("queue:bar");
 		this.context.registerSingleton("output.topic:foo", new DirectChannel());
 		refresh();
-		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
+		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata()
+				.getOutputChannels();
 		assertEquals(1, channels.size());
 		assertEquals("topic:foo.bar", channels.iterator().next().getRemoteName());
-		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next().getTapChannelName());
+		assertEquals("tap:stream:foo.bar.module.0", channels.iterator().next()
+				.getTapChannelName());
 	}
 
 	@Configuration

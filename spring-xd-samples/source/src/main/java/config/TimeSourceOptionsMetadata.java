@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.xd.dirt.modules.metadata;
+package config;
 
 import org.springframework.xd.module.options.mixins.MaxMessagesDefaultOneMixin;
 import org.springframework.xd.module.options.mixins.PeriodicTriggerMixin;
