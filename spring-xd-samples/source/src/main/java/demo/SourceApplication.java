@@ -2,13 +2,13 @@ package demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.streams.EnableChannelBinding;
+import org.springframework.cloud.streams.annotation.EnableModule;
 import org.springframework.context.annotation.ComponentScan;
 
 import config.ModuleDefinition;
 
 @SpringBootApplication
-@EnableChannelBinding
+@EnableModule
 @ComponentScan(basePackageClasses=ModuleDefinition.class)
 public class SourceApplication {
 

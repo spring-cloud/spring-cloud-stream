@@ -18,11 +18,10 @@ package transform;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.streams.EnableChannelBinding;
+import org.springframework.cloud.streams.annotation.EnableModule;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.annotation.MessageEndpoint;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
@@ -32,9 +31,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Dave Syer
  *
  */
-@Configuration
-@EnableChannelBinding
-@MessageEndpoint
+@EnableModule
 @ConfigurationProperties("module.logging")
 public class LoggingTransformer {
 

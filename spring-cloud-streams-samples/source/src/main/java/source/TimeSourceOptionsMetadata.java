@@ -19,9 +19,6 @@ package source;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
-import org.springframework.xd.module.options.mixins.MaxMessagesDefaultOneMixin;
-import org.springframework.xd.module.options.mixins.PeriodicTriggerMixin;
-import org.springframework.xd.module.options.spi.Mixin;
 import org.springframework.xd.module.options.validation.DateFormat;
 
 /**
@@ -30,7 +27,6 @@ import org.springframework.xd.module.options.validation.DateFormat;
  * @author Eric Bottard
  * @author Gary Russell
  */
-@Mixin({ PeriodicTriggerMixin.class, MaxMessagesDefaultOneMixin.class })
 public class TimeSourceOptionsMetadata {
 
 	/**

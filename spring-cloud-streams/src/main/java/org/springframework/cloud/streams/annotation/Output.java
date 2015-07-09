@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.streams.adapter;
+package org.springframework.cloud.streams.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,19 +23,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Qualifier annotation for a bean relating input channels.
+ * Indicates that an output channel will be created and injected by the framework.
  *
  * @author Dave Syer
+ * @author Marius Bogoevici
  */
-@Qualifier
-@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE,
-	ElementType.ANNOTATION_TYPE })
+
+@Target({ ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-public @interface Input {
+public @interface Output {
 
 }

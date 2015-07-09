@@ -53,8 +53,11 @@ import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.XdHeaders;
 
 /**
+ * Binds input/output channels to the bus.
+ *
  * @author Mark Fisher
  * @author Dave Syer
+ * @author Marius Bogoevici
  */
 @ManagedResource
 public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware {
@@ -77,9 +80,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 
 	private ConfigurableApplicationContext applicationContext;
 
-	private ChannelLocator inputChannelLocator;
-
-	private ChannelLocator outputChannelLocator;
+	private ChannelLocator channelLocator;
 
 	private DestinationResolver<MessageChannel> channelResolver;
 
@@ -88,16 +89,11 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 	public ChannelBindingAdapter(ChannelBindingProperties module, MessageBus messageBus) {
 		this.module = module;
 		this.messageBus = messageBus;
-		this.inputChannelLocator = new DefaultChannelLocator(module);
-		this.outputChannelLocator = new DefaultChannelLocator(module);
+		this.channelLocator = new DefaultChannelLocator(module);
 	}
 
-	public void setInputChannelLocator(ChannelLocator channelLocator) {
-		this.inputChannelLocator = channelLocator;
-	}
-
-	public void setOutputChannelLocator(ChannelLocator channelLocator) {
-		this.outputChannelLocator = channelLocator;
+	public void setChannelLocator(ChannelLocator channelLocator) {
+		this.channelLocator = channelLocator;
 	}
 
 	@Override
@@ -271,7 +267,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 			MessageChannel outputChannel = this.channelResolver.resolveDestination(binding.getLocalName());
 			bindMessageProducer(outputChannel, name, this.module.getProducerProperties());
 			if (binding.isTapped()) {
-				String tapChannelName = this.outputChannelLocator.tap(name);
+				String tapChannelName = this.channelLocator.tap(name);
 				binding.setTapChannelName(tapChannelName);
 				// tappableChannels.put(tapChannelName, outputChannel);
 				// if (isTapActive(tapChannelName)) {
@@ -299,7 +295,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 		logger.info("Locating channels");
 		boolean located = true;
 		for (OutputChannelBinding binding : this.outputChannels) {
-			String name = this.outputChannelLocator.locate(binding.getLocalName());
+			String name = this.channelLocator.locate(binding.getLocalName());
 			if (name == null) {
 				logger.info("No channel found for: " + binding.getLocalName());
 				located = false;
@@ -308,7 +304,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 			this.bindings.put(binding.getRemoteName(), name);
 		}
 		for (InputChannelBinding binding : this.inputChannels) {
-			String name = this.inputChannelLocator.locate(binding.getLocalName());
+			String name = this.channelLocator.locate(binding.getLocalName());
 			if (name == null) {
 				logger.info("No channel found for: " + binding.getLocalName());
 				located = false;

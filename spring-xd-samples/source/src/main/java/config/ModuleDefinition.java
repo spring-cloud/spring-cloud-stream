@@ -20,6 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.streams.annotation.EnableModule;
+import org.springframework.cloud.streams.annotation.Output;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.InboundChannelAdapter;
@@ -31,21 +33,20 @@ import org.springframework.messaging.support.GenericMessage;
 
 /**
  * @author Dave Syer
- *
+ * @author Marius Bogoevici
  */
-@Configuration
+@EnableModule
 public class ModuleDefinition {
 
 	@Value("${format}")
 	private String format;
 
-	@Bean
-	public MessageChannel output() {
-		return new DirectChannel();
-	}
+	@Output
+	public MessageChannel output;
 
 	@Bean
-	@InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+	@InboundChannelAdapter(value = "output", autoStartup = "false",
+			poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
 	public MessageSource<String> timerMessageSource() {
 		return () -> new GenericMessage<>(new SimpleDateFormat(format).format(new Date()));
 	}

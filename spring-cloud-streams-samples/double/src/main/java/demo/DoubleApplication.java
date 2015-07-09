@@ -2,7 +2,6 @@ package demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.streams.EnableChannelBinding;
 import org.springframework.cloud.streams.aggregate.AggregateBuilder;
 import org.springframework.cloud.streams.aggregate.AggregateConfigurer;
 
@@ -10,7 +9,6 @@ import config.SinkModuleDefinition;
 import config.SourceModuleDefinition;
 
 @SpringBootApplication
-@EnableChannelBinding
 public class DoubleApplication implements AggregateConfigurer {
 
 	@Override
