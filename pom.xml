@@ -21,11 +21,14 @@
 		<java.version>1.7</java.version>
 		<spring-boot.version>1.3.0.BUILD-SNAPSHOT</spring-boot.version>
 		<spring-cloud.version>Brixton.BUILD-SNAPSHOT</spring-cloud.version>
-		<spring-xd.version>2.0.0.BUILD-SNAPSHOT</spring-xd.version>
+		<spring-xd.version>1.2.1.BUILD-SNAPSHOT</spring-xd.version>
 		<spring-framework.version>4.2.0.RC2</spring-framework.version>
+		<spring-integration.version>4.2.0.M2</spring-integration.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-streams</module>
+		<module>spring-cloud-streams-codec</module>
+		<module>spring-cloud-streams-common</module>
 		<module>spring-xd-runner</module>
 		<module>spring-xd-samples</module>
 	</modules>
@@ -48,17 +51,22 @@
 		    <dependency>
 			  <groupId>org.springframework.cloud</groupId>
 			  <artifactId>spring-cloud-streams</artifactId>
-			  <version>1.0.0.BUILD-SNAPSHOT</version>
+			  <version>${project.version}</version>
 		    </dependency>
 		    <dependency>
 			  <groupId>org.springframework.cloud</groupId>
 			  <artifactId>spring-xd-runner</artifactId>
-			  <version>1.0.0.BUILD-SNAPSHOT</version>
+			  <version>${project.version}</version>
 		    </dependency>
 			<dependency>
-				<groupId>org.springframework.xd</groupId>
-				<artifactId>spring-xd-codec</artifactId>
-				<version>${spring-xd.version}</version>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-streams-codec</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-streams-common</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.xd</groupId>
@@ -84,6 +92,11 @@
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-messaging</artifactId>
 				<version>${spring-framework.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.integration</groupId>
+				<artifactId>spring-integration-core</artifactId>
+				<version>${spring-integration.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

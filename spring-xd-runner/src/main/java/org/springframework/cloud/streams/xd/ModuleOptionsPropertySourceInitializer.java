@@ -117,7 +117,6 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 	// TODO: allow override of this
 	public DefaultModuleOptionsMetadataResolver defaultResolver() {
 		DefaultModuleOptionsMetadataResolver defaultResolver = new DefaultModuleOptionsMetadataResolver();
-		defaultResolver.setShouldCreateModuleClassLoader(false);
 		return defaultResolver;
 	}
 
