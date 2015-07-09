@@ -1,12 +1,12 @@
-# Spring Integration: Messaging as a Microservice
+# Spring Cloud Streams: Messaging as a Microservice
 
-This is an experimental project allowing a user to develop and run messaging microservices using Spring Integration and run them locally or in the cloud, or even on Spring XD. It also allows a user to develop and run an XD module locally. Just create `MessageChannels` "input" and/or "output" and add `@EnableMessageBus` and run your app as a Spring Boot app (single application context).  You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. The sample uses Redis.
+This project allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. It also allows a user to develop and run an XD module locally. Just create `MessageChannels` "input" and/or "output" and add `@EnableChannelBinding` and run your app as a Spring Boot app (single application context).  You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. The sample uses Redis.
 
 Here's a sample source module (output channel only):
 
 ```
 @SpringBootApplication
-@EnableMessageBus
+@EnableChannelBinding
 @ComponentScan(basePackageClasses=ModuleDefinition.class)
 public class ModuleApplication {
 
@@ -36,22 +36,21 @@ public class ModuleDefinition {
 }
 ```
 
-The `bootstrap.yml` has the module group (a.k.a. stream name in XD), name and index, e.g.
+The `application.yml` has the mapping from channel names to external broker handles (queues, topics, routing keys, etc. depending on the broker), e.g.
 
 ```
 ---
 spring:
-  bus:
-    group: testtock
-    name: ${spring.application.name:ticker}
-    index: 0 # source
+  cloud:
+    channels:
+      outputChannelName: ${spring.application.name:ticker}
 ```
 
-To be deployable as an XD module in a "traditional" way you need `/config/*.properties` to point to any available Java config classes (via `base_packages` or `options_class`), or else you can put traditional XML configuration in `/config/*.xml`. You don't need those things to run as a consumer or producer to an existing XD system. There's an XML version of the same sample (a "timer" source).
+To be deployable as an XD module in a "traditional" way you need `/config/*.properties` to point to any available Java config classes (via `base_packages` or `options_class`), or else you can put traditional XML configuration in `/config/*.xml`. You don't need those things to run as a consumer or producer to an existing XD system, but you do need to replace the `outputChannelName` with `group`, `module` and `index` (the index is a sequential counter that XD uses to label the modules in a stream from left to right). There's an XML version of the same sample (a "timer" source).
 
 ## Multiple Input or Output Channels
 
-A module can have multiple input or output channels. Instead of just one channel named "input" or "output" you can add multiple `MessageChannel` beans named `input.*` or `output.*` and the names are converted to external channel names on the bus. The external channel names are the "natural" channel name for the module (i.e. `<spring.bus.group>.<spring.bus.index>` or `spring.bus.[input|output]ChannelName` if supplied) plus the `MessageChannel` bean name, period separated. In addition, the bean name can be `input.[queue|topic|tap]:*` or `output.[queue|topic]:*` (i.e. with a channel type as a colon-separated prefix), and the semantics of the external bus channel changes accordingly (a tap is like a topic). For example, you can have two `MessageChannels` called "output" and "output.topic:foo" in a module deployed with "group=bar" and "index=2", and the result is 2 external channels called "bar.2" and "topic:foo.bar.2".
+A module can have multiple input or output channels. Instead of just one channel named "input" or "output" you can add multiple `MessageChannel` beans named `input.*` or `output.*` and the names are converted to external channel names on the broker. The external channel names are the `spring.cloud.streams.[input|output]ChannelName` plus the `MessageChannel` bean name, period separated. In addition, the bean name can be `input.[queue|topic|tap]:*` or `output.[queue|topic]:*` (i.e. with a channel type as a colon-separated prefix), and the semantics of the external bus channel changes accordingly (a tap is like a topic). For example, you can have two `MessageChannels` called "output" and "output.topic:foo" in a module with `outputChannelName=bar`, and the result is 2 external channels called "bar" and "topic:foo.bar".
 
 ## XD Module Samples
 
@@ -85,29 +84,34 @@ You can run in standalone mode from your IDE for testing. To run in production y
 
 ## Making Standalone Modules Talk to Each Other
 
-The "group" and "index" are used to create physical endpoints in the external broker (e.g. `queue.<group>.<index>` in Redis), so a source (output only) has `index=0` (the default) and downstream modules have the same group but incremented index, with a sink module (input only) having the highest index. To listen to the output from an existing app, just use the same "group" name and an index 1 larger than the app before it in the chain. The index can be anything, as long as successive modules have consecutive values. 
+The `[input,output]ChannelName` are used to create physical endpoints in the external broker (e.g. `queue.<channelName>` in Redis).
 
-> Note: since the same naming conventions are used in XD, you can spy on or send messages to an existing XD stream by copying the stream name (to `spring.bus.group`) and knowing the index of the XD module you want to interact with.
+For an XD module the channel names are `<group>.<index>` and a source (output only) has `index=0` (the default) and downstream modules have the same group but incremented index, with a sink module (input only) having the highest index. To listen to the output from a running XD module, just use the same "group" name and an index 1 larger than the app before it in the chain.
+
+> Note: since the same naming conventions are used in XD, you can steal messages from or send messages to an existing XD stream by copying the stream name (to `spring.cloud.streams.group`) and knowing the index of the XD module you want to interact with.
 
 ## Taps
 
-All output channels are also tapped by default so you can also attach a module to a pub-sub endpoint and listen to the tap if you know the module metadata (e.g. `topic.tap:stream:<name>.<group>.<index>` in Redis). To tap an existing output channel you just need to know its group, name and index, e.g.
+All output channels can be also tapped so you can also attach a module to a pub-sub endpoint and listen to the tap if you know the module metadata. To tap an existing vanilla module you need to know its `outputChannelName` and the tap name is then `tap:<outputChannelName>`, so you can listen to it on an input channel named `input.topic.tap:<outputChannelName>`. The tap is only active if you explicitly ask for it: you can do that by POSTing to the HTTP endpoint `/taps/<channelName>` (where the channel name can be the internal or external name, e.g. "output" or the external name mapped to the output channel).
+
+To tap an existing output channel in an XD module you just need to know its group, name and index, e.g.
 
 ```
 spring:
-  bus:
-    group: tocktap
-    name: logger
-    index: 0
-    tap:
-      group: testtock
-      name: ticker
+  cloud:
+    channels:
+      group: tocktap
+      name: logger
       index: 0
+      tap:
+        group: testtock
+        name: ticker
+        index: 0
 ```
 
-The `spring.bus.tap` section tells the module runner which topic you want to subscribe to. It creates a new group (a tap can't be in the same group as the one it is tapping) and starts a new index count, in case anyone wants to listen downstream.
+The `spring.cloud.channels.tap` section tells the module runner which topic you want to subscribe to. It creates a new group (a tap can't be in the same group as the one it is tapping) and starts a new index count, in case anyone wants to listen downstream.
 
-## Build Spring Bus
+## Build Spring Cloud Streams
 ### Pre-requisites
 
  * Required :

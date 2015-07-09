@@ -6,18 +6,18 @@ This project was originally motivated by the goal of allowing a developer to bui
 
 ## Basic Programming Model
 
-Just create `MessageChannels` "input" and/or "output" and add `@EnableMessageBus` and run your app as a Spring Boot app (single application context). You need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. The sample uses Redis.
+Just create `MessageChannels` "input" and/or "output" and add `@EnableChannelBinding` and run your app as a Spring Boot app (single application context). You need to connect to the physical broker, which is automatic if the relevant implementation is available on the classpath. The sample uses Redis.
 
 Here's a sample source module (output channel only):
 
 ```
 @SpringBootApplication
-@EnableMessageBus
+@EnableChannelBinding
 @ComponentScan(basePackageClasses=ModuleDefinition.class)
-public class MessageBusApplication {
+public class MessagingApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(MessageBusApplication.class, args);
+    SpringApplication.run(MessagingApplication.class, args);
   }
 
 }
@@ -42,15 +42,14 @@ public class ModuleDefinition {
 }
 ```
 
-The `bootstrap.yml` has the module group (a.k.a. stream name), name and index, e.g.
+The `application.yml` has the external channel names, e.g.
 
 ```
 ---
 spring:
-  bus:
-    group: testtock
-    name: ${spring.application.name:ticker}
-    index: 0 # source
+  cloud:
+    channels:
+      outputChannelName: ${spring.application.name:ticker}
 ```
 
 ## Richer Input and Output
@@ -79,11 +78,7 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 - [x] Support for pubsub as "primary" input/output (in addition to the existing queue semantics)
 
-- [x] Endpoint "/channels" for module configuration metadata ("/bus" is taken by Spring Cloud)
-
-- [x] Discover channel names through Spring Cloud service discovery (via "/channels" endpoint on remote components)
-
-- [x] Listen for changes in discovery catalog and potentially rebind channels
+- [x] Endpoint "/channels" for module configuration metadata
 
 - [ ] `@BusClient` like `@FeignClient` where the remote service (and optionally channel) can be specified
 
@@ -93,7 +88,9 @@ To be deployable as an XD module in a "traditional" way you need `/config/*.prop
 
 - [ ] Correlation and message tracing
 
-- [ ] Extract `spring-xd-dirt` dependencies into a separate module
+- [x] Extract `spring-xd-dirt` dependencies into a separate module
+
+  - [ ] Remove xd package names
 
 - [ ] Re-use existing XD modules as libraries
 
@@ -109,17 +106,17 @@ The best plan for making progress, where we keep in sight the goal of eventually
 
 - [ ] Ditto configuration properties in `xd.*` should be moved to `spring.bus.*` (or something).
 
-- [ ] We need the XML configuration from `/META-INF/spring-xd/bus/**` and `/META-INF/spring-xd/analytics` but
+- [x] We need the XML configuration from `/META-INF/spring-xd/bus/**` and `/META-INF/spring-xd/analytics` but
 
   - [x] There are no defaults for several properties in `xd.messagebus.*` so applications have to have a load of boilerplate configuration in `application.yml`. Fixed by adding `@PropertySources` to the default configuration.
 
-  - [ ] The "codec.xml" is in `spring-xd-dirt` which we don't want to depend on. Maybe it should be in the messagebus SPI jar? Or we can make a copy and risk it changing in XD.
+  - [x] The "codec.xml" is in `spring-xd-dirt` which we don't want to depend on. Maybe it should be in the messagebus SPI jar? Or we can make a copy and risk it changing in XD.
 
   - [x] Do we need the analytics configuration? It should at least be optional. Answer "no" (but support for analytics would be cool).
 
-- [ ] The `spring-xd-dirt` library contains some of the primitives we might need, especially when building the bridge to create XD modules as apps. It would be best if they could be extracted into another library.
+- [x] The `spring-xd-dirt` library contains some of the primitives we might need, especially when building the bridge to create XD modules as apps. It would be best if they could be extracted into another library.
 
-  - [ ] `MessageBusAwareChannelResolver` and `MessageBusAwareRouterBeanPostProcessor` should be pulled out of dirt (and dirt should ultimately depend on this project).
+  - [x] `MessageBusAwareChannelResolver` and `MessageBusAwareRouterBeanPostProcessor` should be pulled out of dirt (and dirt should ultimately depend on this project).
 
   - [x] A `ModuleDefinition` is only needed to initialize options for an XD module (so not really needed for the general case). We can split the module options initializer out into a separate module that you only need if you know you want to test an XD module with its native options metadata.
 
@@ -127,7 +124,7 @@ The best plan for making progress, where we keep in sight the goal of eventually
 
   - [ ] `BusUtils` (e.g. to construct external channel names)
 
-- [ ] There is a curator dependency in Spring XD that can't be shaken off.
+- [x] There is a curator dependency in Spring XD that can't be shaken off.
 
 - [ ] Spring XD plugins provide a rich set of lifecycle hooks, but those would not all be needed and are an awkward mismatch with a "pure-play" Spring Boot approach, where the application is either running or not.
 
