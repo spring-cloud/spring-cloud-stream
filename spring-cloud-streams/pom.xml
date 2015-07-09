@@ -56,8 +56,6 @@
 			<groupId>org.springframework.xd</groupId>
 			<artifactId>spring-xd-messagebus-local</artifactId>
 		</dependency>
-		
-		
 
 		<dependency>
 			<groupId>org.springframework.xd</groupId>
@@ -79,6 +77,14 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-config-client</artifactId>
 		</dependency>
 	</dependencies>
 
