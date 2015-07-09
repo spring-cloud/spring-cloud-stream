@@ -172,6 +172,7 @@ public class ChannelBindingAdapterConfiguration {
 	}
 
 	@Configuration
+	//TODO: make sure to set the SearchStrategy to CURRENT once the module options initializer code is removed.
 	@ConditionalOnMissingBean(value=ChannelBindingProperties.class)
 	protected static class ModulePropertiesConfiguration {
 		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
