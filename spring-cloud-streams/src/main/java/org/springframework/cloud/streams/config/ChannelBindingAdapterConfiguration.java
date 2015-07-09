@@ -32,17 +32,12 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.streams.adapter.ChannelLocator;
 import org.springframework.cloud.streams.adapter.Input;
 import org.springframework.cloud.streams.adapter.InputChannelBinding;
 import org.springframework.cloud.streams.adapter.Output;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.FileKryoRegistrar;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.KryoRegistrar;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 import org.springframework.cloud.streams.endpoint.ChannelsEndpoint;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -51,6 +46,10 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPostProcessor;
+import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
+import org.springframework.xd.dirt.integration.bus.serializer.kryo.FileKryoRegistrar;
+import org.springframework.xd.dirt.integration.bus.serializer.kryo.KryoRegistrar;
+import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 
 
 /**
@@ -173,7 +172,8 @@ public class ChannelBindingAdapterConfiguration {
 	}
 
 	@Configuration
-	@ConditionalOnMissingBean(value=ChannelBindingProperties.class, search=SearchStrategy.CURRENT)
+	//TODO: make sure to set the SearchStrategy to CURRENT once the module options initializer code is removed.
+	@ConditionalOnMissingBean(value=ChannelBindingProperties.class)
 	protected static class ModulePropertiesConfiguration {
 		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
 		public ChannelBindingProperties moduleProperties() {
