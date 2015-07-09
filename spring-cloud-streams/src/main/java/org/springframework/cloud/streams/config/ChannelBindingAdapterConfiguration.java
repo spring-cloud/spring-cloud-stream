@@ -55,6 +55,7 @@ import org.springframework.xd.dirt.integration.bus.serializer.kryo.KryoRegistrar
 import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 
 
+
 /**
  * @author Dave Syer
  * @author David Turanski
@@ -171,15 +172,22 @@ public class ChannelBindingAdapterConfiguration {
 
 	}
 
-	@Configuration
+	@ConditionalOnMissingBean(ChannelBindingProperties.class)
+	protected static class ModulePropertiesConfiguration {
+		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
+		public ChannelBindingProperties moduleProperties() {
+			return new ChannelBindingProperties();
+		}
+	}
+
 	protected static class CodecConfiguration {
 		@Autowired
 		ApplicationContext applicationContext;
 
 		@Bean
 		@ConditionalOnMissingBean(name = "codec")
-		public MultiTypeCodec<?> codec() {
-			Map<String, KryoRegistrar> kryoRegistrarMap = this.applicationContext.getBeansOfType(KryoRegistrar
+		public MultiTypeCodec codec() {
+			Map<String, KryoRegistrar> kryoRegistrarMap = applicationContext.getBeansOfType(KryoRegistrar
 					.class);
 			return new PojoCodec(new ArrayList<>(kryoRegistrarMap.values()));
 		}
@@ -189,5 +197,4 @@ public class ChannelBindingAdapterConfiguration {
 			return new FileKryoRegistrar();
 		}
 	}
-
 }
