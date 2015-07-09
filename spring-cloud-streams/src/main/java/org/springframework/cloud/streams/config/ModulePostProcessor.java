@@ -47,7 +47,7 @@ public class ModulePostProcessor implements BeanDefinitionRegistryPostProcessor,
 	}
 
 	@Override
-	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+	public void postProcessBeanDefinitionRegistry(final BeanDefinitionRegistry registry) throws BeansException {
 		String[] beanDefinitionNames = registry.getBeanDefinitionNames();
 		for (String beanDefinitionName : beanDefinitionNames) {
 			BeanDefinition beanDefinition = registry.getBeanDefinition(beanDefinitionName);
@@ -77,7 +77,7 @@ public class ModulePostProcessor implements BeanDefinitionRegistryPostProcessor,
 	}
 
 	@Override
-	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+	public Object postProcessBeforeInitialization(final Object bean, String beanName) throws BeansException {
 		if (AnnotationUtils.findAnnotation(bean.getClass(), EnableModule.class) != null) {
 			ReflectionUtils.doWithFields(bean.getClass(), new ReflectionUtils.FieldCallback() {
 				@Override

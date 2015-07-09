@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+	<bean id="zookeeperConnect" class="org.springframework.integration.kafka.support.ZookeeperConnect">
+		<property name="zkConnect" value="${xd.messagebus.kafka.zkAddress}"/>
+	</bean>
+
+
+	<bean id="messageBus" class="org.springframework.xd.dirt.integration.kafka.KafkaMessageBus">
+		<constructor-arg ref="zookeeperConnect"/>
+		<constructor-arg value="${xd.messagebus.kafka.brokers}"/>
+		<constructor-arg value="${xd.messagebus.kafka.zkAddress}"/>
+		<constructor-arg ref="codec"/>
+		<constructor-arg value="#{new String[0]}"/>
+
+		<property name="mode" value="${xd.messagebus.kafka.mode}"/>
+
+		<!-- Producer properties -->
+		<property name="defaultBatchSize" value="${xd.messagebus.kafka.default.batchSize}"/>
+		<property name="defaultBatchTimeout" value="${xd.messagebus.kafka.default.batchTimeout}"/>
+		<property name="defaultRequiredAcks" value="${xd.messagebus.kafka.default.requiredAcks}"/>
+
+		<property name="defaultReplicationFactor" value="${xd.messagebus.kafka.default.replicationFactor}"/>
+		<property name="defaultConcurrency" value="${xd.messagebus.kafka.default.concurrency}"/>
+		<property name="defaultCompressionCodec" value="${xd.messagebus.kafka.default.compressionCodec}"/>
+		<!-- ConsumerProperties -->
+		<property name="defaultAutoCommitEnabled" value="${xd.messagebus.kafka.default.autoCommitEnabled}"/>
+		<property name="defaultFetchSize" value="${xd.messagebus.kafka.default.fetchSize}"/>
+		<property name="defaultMinPartitionCount" value="${xd.messagebus.kafka.default.minPartitionCount}"/>
+		<property name="defaultQueueSize" value="${xd.messagebus.kafka.default.queueSize}"/>
+		<!-- Offset Manager Properties-->
+		<property name="offsetStoreTopic" value="${xd.messagebus.kafka.offsetStoreTopic}"/>
+		<property name="offsetStoreSegmentSize" value="${xd.messagebus.kafka.offsetStoreSegmentSize}"/>
+		<property name="offsetStoreRetentionTime" value="${xd.messagebus.kafka.offsetStoreRetentionTime}"/>
+		<property name="offsetStoreRequiredAcks" value="${xd.messagebus.kafka.offsetStoreRequiredAcks}"/>
+		<property name="offsetStoreMaxFetchSize" value="${xd.messagebus.kafka.offsetStoreMaxFetchSize}"/>
+		<property name="offsetStoreBatchBytes" value="${xd.messagebus.kafka.offsetStoreBatchBytes}"/>
+		<property name="offsetStoreBatchTime" value="${xd.messagebus.kafka.offsetStoreBatchTime}"/>
+		<property name="offsetUpdateTimeWindow" value="${xd.messagebus.kafka.offsetUpdateTimeWindow}"/>
+		<property name="offsetUpdateCount" value="${xd.messagebus.kafka.offsetUpdateCount}"/>
+		<property name="offsetUpdateShutdownTimeout" value="${xd.messagebus.kafka.offsetUpdateShutdownTimeout}"/>
+	</bean>
+
+</beans>
