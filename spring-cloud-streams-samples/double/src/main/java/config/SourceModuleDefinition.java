@@ -20,31 +20,27 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.streams.EnableChannelBinding;
+import org.springframework.cloud.streams.annotation.EnableModule;
+import org.springframework.cloud.streams.annotation.Output;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
-import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
  * @author Dave Syer
- *
+ * @author Marius Bogoevici
  */
-@Configuration
-@EnableChannelBinding
+@EnableModule
 public class SourceModuleDefinition {
 
 	@Value("${format:YYYY/MM/dd hh:mm:ss}")
 	private String format;
 
-	@Bean
-	public MessageChannel output() {
-		return new DirectChannel();
-	}
+	@Output
+	public MessageChannel output;
 
 	@Bean
 	@InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))

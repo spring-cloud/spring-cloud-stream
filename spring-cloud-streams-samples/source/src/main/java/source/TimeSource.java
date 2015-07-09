@@ -21,7 +21,8 @@ import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.streams.EnableChannelBinding;
+import org.springframework.cloud.streams.annotation.EnableModule;
+import org.springframework.cloud.streams.annotation.Output;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.InboundChannelAdapter;
@@ -35,18 +36,15 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Dave Syer
  *
  */
-@Configuration
-@EnableChannelBinding
+@EnableModule
 @EnableConfigurationProperties(TimeSourceOptionsMetadata.class)
 public class TimeSource {
 
 	@Autowired
 	private TimeSourceOptionsMetadata options;
 
-	@Bean
-	public MessageChannel output() {
-		return new DirectChannel();
-	}
+	@Output
+	public MessageChannel output;
 
 	@Bean
 	@InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))

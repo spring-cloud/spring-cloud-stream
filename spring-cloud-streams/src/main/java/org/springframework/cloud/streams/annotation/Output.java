@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.streams;
+package org.springframework.cloud.streams.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,26 +23,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.cloud.streams.config.AggregateBuilderConfiguration;
-import org.springframework.cloud.streams.config.ChannelBindingAdapterConfiguration;
-import org.springframework.cloud.streams.config.LifecycleConfiguration;
-import org.springframework.cloud.streams.config.RabbitServiceConfiguration;
-import org.springframework.cloud.streams.config.RedisServiceConfiguration;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * @author Dave Syer
+ * Indicates that an output channel will be created and injected by the framework
  *
+ * @author Dave Syer
+ * @author Marius Bogoevici
  */
-@Target(ElementType.TYPE)
+
+@Target({ ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@Documented
 @Inherited
-@Configuration
-@Import({ RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
-	ChannelBindingAdapterConfiguration.class, LifecycleConfiguration.class,
-	AggregateBuilderConfiguration.class })
-public @interface EnableChannelBinding {
+@Documented
+public @interface Output {
 
 }

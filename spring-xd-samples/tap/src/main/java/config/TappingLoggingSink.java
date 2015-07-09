@@ -18,27 +18,23 @@ package config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.annotation.MessageEndpoint;
+
+import org.springframework.cloud.streams.annotation.EnableModule;
+import org.springframework.cloud.streams.annotation.Input;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 
 /**
  * @author Dave Syer
- *
+ * @author Marius Bogoevici
  */
-@Configuration
-@MessageEndpoint
-public class ModuleDefinition {
+@EnableModule
+public class TappingLoggingSink {
 	
-	private static Logger logger = LoggerFactory.getLogger(ModuleDefinition.class);
+	private static Logger logger = LoggerFactory.getLogger(TappingLoggingSink.class);
 
-	@Bean
-	public MessageChannel input() {
-		return new DirectChannel();
-	}
+	@Input
+	public MessageChannel input;
 
 	@ServiceActivator(inputChannel="input")
 	public void loggerSink(Object payload) {

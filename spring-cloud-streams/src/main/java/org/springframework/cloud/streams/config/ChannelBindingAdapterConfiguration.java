@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -33,9 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.streams.adapter.ChannelLocator;
-import org.springframework.cloud.streams.adapter.Input;
 import org.springframework.cloud.streams.adapter.InputChannelBinding;
-import org.springframework.cloud.streams.adapter.Output;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
 import org.springframework.cloud.streams.endpoint.ChannelsEndpoint;
 import org.springframework.context.ApplicationContext;
@@ -54,6 +53,7 @@ import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 /**
  * @author Dave Syer
  * @author David Turanski
+ * @author Marius Bogoevici
  */
 @Configuration
 public class ChannelBindingAdapterConfiguration {
@@ -64,13 +64,7 @@ public class ChannelBindingAdapterConfiguration {
 	@Autowired
 	private ListableBeanFactory beanFactory;
 
-	@Autowired(required = false)
-	@Input
-	private ChannelLocator inputChannelLocator;
-
-	@Autowired(required = false)
-	@Output
-	private ChannelLocator outputChannelLocator;
+	private ChannelLocator channelLocator;
 
 	@Autowired
 	private MessageBus messageBus;
@@ -80,11 +74,8 @@ public class ChannelBindingAdapterConfiguration {
 		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.messageBus);
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
-		if (this.inputChannelLocator != null) {
-			adapter.setInputChannelLocator(this.inputChannelLocator);
-		}
-		if (this.outputChannelLocator != null) {
-			adapter.setOutputChannelLocator(this.outputChannelLocator);
+		if (this.channelLocator!=null) {
+			adapter.setChannelLocator(this.channelLocator);
 		}
 		return adapter;
 	}

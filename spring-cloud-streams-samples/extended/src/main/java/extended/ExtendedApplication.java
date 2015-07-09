@@ -2,7 +2,6 @@ package extended;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.streams.EnableChannelBinding;
 import org.springframework.cloud.streams.aggregate.AggregateBuilder;
 import org.springframework.cloud.streams.aggregate.AggregateConfigurer;
 
@@ -11,7 +10,6 @@ import source.TimeSource;
 import transform.LoggingTransformer;
 
 @SpringBootApplication
-@EnableChannelBinding
 public class ExtendedApplication implements AggregateConfigurer {
 
 	@Override
