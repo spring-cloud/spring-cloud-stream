@@ -1,5 +1,6 @@
 server:
   port: 8081
+fixedDelay: 5000
 spring:
   cloud:
     channels:
@@ -14,7 +15,6 @@ spring:
 ---
 spring:
   profiles: extended
-spring:
   cloud:
     channels:
       inputChannelName: xformed
