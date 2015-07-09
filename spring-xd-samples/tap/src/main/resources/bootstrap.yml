@@ -1,11 +1,12 @@
 ---
 spring:
-  bus:
-    group: tocktap
-    name: logger
-    index: 0
-    tap:
-      group: testtock
-      name: ticker
+  cloud:
+    channels:
+      group: tocktap
+      name: logger
       index: 0
+      tap:
+        group: testtock
+        name: ticker
+        index: 0
     

@@ -1,5 +1,6 @@
 ---
 spring:
-  bus:
-    group: testtock
-    name: ticker
+  cloud:
+    channels:
+      group: testtock
+      name: ticker

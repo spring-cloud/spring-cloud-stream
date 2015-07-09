@@ -1,11 +1,11 @@
----
+server:
+  port: 8081
 spring:
   cloud:
     channels:
-      group: testtock
-      name: logger
-      index: 1
+      outputChannelName: testtock
       # uncomment below to have this module consume from a specific partition
       # in the range of 0 to N-1, where N is the upstream module's partitionCount
       #consumerProperties:
       #  partitionIndex: 1
+  
