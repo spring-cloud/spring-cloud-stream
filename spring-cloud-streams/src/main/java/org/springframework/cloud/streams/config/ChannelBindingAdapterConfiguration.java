@@ -49,7 +49,7 @@ import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPost
  *
  */
 @Configuration
-@ImportResource("classpath*:/META-INF/spring-bus/codec.xml")
+@ImportResource("classpath*:/META-INF/spring-cloud-streams/codec.xml")
 public class ChannelBindingAdapterConfiguration {
 
 	@Autowired

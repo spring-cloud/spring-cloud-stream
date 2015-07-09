@@ -36,8 +36,8 @@ import org.springframework.xd.dirt.integration.redis.RedisMessageBus;
 @Configuration
 @ConditionalOnClass(RedisMessageBus.class)
 @ImportResource({ "classpath*:/META-INF/spring-xd/bus/redis-bus.xml",
-		"classpath*:/META-INF/spring-xd/analytics/redis-analytics.xml" })
-@PropertySource("classpath:/META-INF/spring-bus/redis-bus.properties")
+"classpath*:/META-INF/spring-xd/analytics/redis-analytics.xml" })
+@PropertySource("classpath:/META-INF/spring-cloud-streams/redis-bus.properties")
 public class RedisServiceConfiguration {
 
 	@Configuration
@@ -45,7 +45,7 @@ public class RedisServiceConfiguration {
 	protected static class CloudConfig {
 		@Bean
 		public Cloud cloud() {
-		  return new CloudFactory().getCloud();
+			return new CloudFactory().getCloud();
 		}
 		@Bean
 		RedisConnectionFactory redisConnectionFactory(Cloud cloud) {

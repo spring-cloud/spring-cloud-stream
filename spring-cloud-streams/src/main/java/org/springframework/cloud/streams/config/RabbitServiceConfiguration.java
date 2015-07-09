@@ -36,15 +36,15 @@ import org.springframework.xd.dirt.integration.rabbit.RabbitMessageBus;
 @Configuration
 @ConditionalOnClass(RabbitMessageBus.class)
 @ImportResource({ "classpath*:/META-INF/spring-xd/bus/rabbit-bus.xml",
-		"classpath*:/META-INF/spring-xd/analytics/rabbit-analytics.xml" })
-@PropertySource("classpath:/META-INF/spring-bus/rabbit-bus.properties")
+"classpath*:/META-INF/spring-xd/analytics/rabbit-analytics.xml" })
+@PropertySource("classpath:/META-INF/spring-cloud-streams/rabbit-bus.properties")
 public class RabbitServiceConfiguration {
 	@Configuration
 	@Profile("cloud")
 	protected static class CloudConfig {
 		@Bean
 		public Cloud cloud() {
-		  return new CloudFactory().getCloud();
+			return new CloudFactory().getCloud();
 		}
 		@Bean
 		ConnectionFactory redisConnectionFactory(Cloud cloud) {

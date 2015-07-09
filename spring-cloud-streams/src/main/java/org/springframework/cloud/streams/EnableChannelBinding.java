@@ -41,6 +41,6 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import({ RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
 		ChannelBindingAdapterConfiguration.class, LifecycleConfiguration.class })
-public @interface EnableMessageBus {
+public @interface EnableChannelBinding {
 
 }
