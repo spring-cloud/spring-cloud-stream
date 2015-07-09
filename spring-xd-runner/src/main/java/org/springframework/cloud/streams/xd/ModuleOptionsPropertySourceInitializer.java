@@ -25,6 +25,8 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -129,6 +131,7 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 	}
 
 	@Configuration
+	@ConditionalOnMissingBean(value=ModuleProperties.class, search=SearchStrategy.CURRENT)
 	protected static class ModulePropertiesConfiguration {
 		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
 		public ModuleProperties moduleProperties() {

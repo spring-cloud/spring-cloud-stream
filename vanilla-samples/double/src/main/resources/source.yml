@@ -1,0 +1,6 @@
+fixedDelay: 5000
+spring:
+  cloud:
+    channels:
+      outputChannelName: testtock
+  

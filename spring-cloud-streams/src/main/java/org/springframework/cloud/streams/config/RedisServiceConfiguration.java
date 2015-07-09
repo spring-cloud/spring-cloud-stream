@@ -17,6 +17,7 @@
 package org.springframework.cloud.streams.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.context.annotation.Bean;
@@ -35,6 +36,7 @@ import org.springframework.xd.dirt.integration.redis.RedisMessageBus;
  */
 @Configuration
 @ConditionalOnClass(RedisMessageBus.class)
+@ConditionalOnMissingBean(RedisMessageBus.class)
 @ImportResource({ "classpath*:/META-INF/spring-xd/bus/redis-bus.xml",
 "classpath*:/META-INF/spring-xd/analytics/redis-analytics.xml" })
 @PropertySource("classpath:/META-INF/spring-cloud-streams/redis-bus.properties")

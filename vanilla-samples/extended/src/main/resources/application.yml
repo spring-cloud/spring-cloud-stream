@@ -1,0 +1,6 @@
+---
+spring:
+  profiles: other
+module:
+  logging:
+    name: other 

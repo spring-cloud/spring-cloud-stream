@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package config;
+package source;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;

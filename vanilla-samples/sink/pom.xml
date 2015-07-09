@@ -13,7 +13,7 @@
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-xd-samples</artifactId>
+		<artifactId>spring-cloud-streams-samples</artifactId>
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 

@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package config;
+package transform;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.streams.EnableChannelBinding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.annotation.InboundChannelAdapter;
-import org.springframework.integration.annotation.Poller;
+import org.springframework.integration.annotation.MessageEndpoint;
+import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.support.GenericMessage;
+import org.springframework.messaging.SubscribableChannel;
 
 /**
  * @author Dave Syer
@@ -37,21 +34,39 @@ import org.springframework.messaging.support.GenericMessage;
  */
 @Configuration
 @EnableChannelBinding
-@EnableConfigurationProperties(TimeSourceOptionsMetadata.class)
-public class ModuleDefinition {
+@MessageEndpoint
+@ConfigurationProperties("module.logging")
+public class LoggingTransformer {
 
-	@Autowired
-	private TimeSourceOptionsMetadata options;
+	private static Logger logger = LoggerFactory.getLogger(LoggingTransformer.class);
+
+	/**
+	 * The name to include in the log message
+	 */
+	private String name = "logging";
+
+	public String getName() {
+		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
 
 	@Bean
-	public MessageChannel output() {
+	public MessageChannel input() {
 		return new DirectChannel();
 	}
 
 	@Bean
-	@InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
-	public MessageSource<String> timerMessageSource() {
-		return () -> new GenericMessage<>(new SimpleDateFormat(this.options.getFormat()).format(new Date()));
+	public SubscribableChannel output() {
+		return new DirectChannel();
+	}
+
+	@ServiceActivator(inputChannel = "input", outputChannel = "output")
+	public Object transform(Object payload) {
+		logger.info("Transformed by " + this.name + ": " + payload);
+		return payload;
 	}
 
 }

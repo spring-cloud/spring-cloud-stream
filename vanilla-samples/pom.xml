@@ -18,7 +18,29 @@
 	<modules>
 		<module>source</module>
 		<module>sink</module>
+		<module>transform</module>
+		<module>double</module>
+		<module>extended</module>
 	</modules>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-streams-sample-source</artifactId>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-streams-sample-sink</artifactId>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-streams-sample-transform</artifactId>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<build>
       <pluginManagement>
 		<plugins>

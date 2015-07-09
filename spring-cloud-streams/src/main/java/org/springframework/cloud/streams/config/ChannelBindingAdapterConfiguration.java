@@ -32,6 +32,7 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.streams.adapter.ChannelLocator;
 import org.springframework.cloud.streams.adapter.Input;
@@ -104,8 +105,7 @@ public class ChannelBindingAdapterConfiguration {
 
 	protected Collection<OutputChannelBinding> getOutputChannels() {
 		Set<OutputChannelBinding> channels = new LinkedHashSet<OutputChannelBinding>();
-		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
-				this.beanFactory, MessageChannel.class);
+		String[] names = this.beanFactory.getBeanNamesForType(MessageChannel.class);
 		for (String name : names) {
 			if (name.startsWith("output")) {
 				channels.add(new OutputChannelBinding(name));
@@ -116,8 +116,7 @@ public class ChannelBindingAdapterConfiguration {
 
 	protected Collection<InputChannelBinding> getInputChannels() {
 		Set<InputChannelBinding> channels = new LinkedHashSet<InputChannelBinding>();
-		String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
-				this.beanFactory, MessageChannel.class);
+		String[] names = this.beanFactory.getBeanNamesForType(MessageChannel.class);
 		for (String name : names) {
 			if (name.startsWith("input")) {
 				channels.add(new InputChannelBinding(name));
@@ -174,7 +173,7 @@ public class ChannelBindingAdapterConfiguration {
 	}
 
 	@Configuration
-	@ConditionalOnMissingBean(ChannelBindingProperties.class)
+	@ConditionalOnMissingBean(value=ChannelBindingProperties.class, search=SearchStrategy.CURRENT)
 	protected static class ModulePropertiesConfiguration {
 		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
 		public ChannelBindingProperties moduleProperties() {

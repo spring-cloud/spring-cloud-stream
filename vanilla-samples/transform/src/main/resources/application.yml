@@ -1,0 +1,8 @@
+server:
+  port: 8082
+spring:
+  cloud:
+    channels:
+      outputChannelName: xformed
+      inputChannelName: testtock
+  

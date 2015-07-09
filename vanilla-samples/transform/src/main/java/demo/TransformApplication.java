@@ -4,14 +4,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
-import source.TimeSource;
+import transform.LoggingTransformer;
 
 @SpringBootApplication
-@ComponentScan(basePackageClasses=TimeSource.class)
-public class SourceApplication {
+@ComponentScan(basePackageClasses=LoggingTransformer.class)
+public class TransformApplication {
 
 	public static void main(String[] args) throws InterruptedException {
-		SpringApplication.run(SourceApplication.class, args);
+		SpringApplication.run(TransformApplication.class, args);
 	}
 
 }

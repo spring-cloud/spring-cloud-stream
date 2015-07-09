@@ -33,9 +33,9 @@ import org.springframework.messaging.MessageChannel;
 @Configuration
 @EnableChannelBinding
 @MessageEndpoint
-public class ModuleDefinition {
+public class SinkModuleDefinition {
 
-	private static Logger logger = LoggerFactory.getLogger(ModuleDefinition.class);
+	private static Logger logger = LoggerFactory.getLogger(SinkModuleDefinition.class);
 
 	@Bean
 	public MessageChannel input() {
