@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -57,7 +56,6 @@ import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
  * @author David Turanski
  */
 @Configuration
-
 public class ChannelBindingAdapterConfiguration {
 
 	@Autowired
@@ -172,24 +170,14 @@ public class ChannelBindingAdapterConfiguration {
 	}
 
 	@Configuration
-	//TODO: make sure to set the SearchStrategy to CURRENT once the module options initializer code is removed.
-	@ConditionalOnMissingBean(value=ChannelBindingProperties.class)
-	protected static class ModulePropertiesConfiguration {
-		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
-		public ChannelBindingProperties moduleProperties() {
-			return new ChannelBindingProperties();
-		}
-	}
-
-
 	protected static class CodecConfiguration {
 		@Autowired
 		ApplicationContext applicationContext;
 
 		@Bean
 		@ConditionalOnMissingBean(name = "codec")
-		public MultiTypeCodec codec() {
-			Map<String, KryoRegistrar> kryoRegistrarMap = applicationContext.getBeansOfType(KryoRegistrar
+		public MultiTypeCodec<?> codec() {
+			Map<String, KryoRegistrar> kryoRegistrarMap = this.applicationContext.getBeansOfType(KryoRegistrar
 					.class);
 			return new PojoCodec(new ArrayList<>(kryoRegistrarMap.values()));
 		}

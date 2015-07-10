@@ -139,7 +139,7 @@ public class ChannelBindingAdapterConfigurationTests {
 	}
 
 	@Configuration
-	@Import(ChannelBindingAdapterConfiguration.class)
+	@Import({ChannelBindingAdapterConfiguration.class, ChannelBindingPropertiesAutoConfiguration.class})
 	protected static class Empty {
 		@Bean
 		public LocalMessageBus messageBus() {

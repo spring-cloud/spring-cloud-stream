@@ -79,6 +79,8 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 			}
 		}
 		insert(environment, new MapPropertySource("moduleDefaults", map));
+		applicationContext.getBeanFactory().registerSingleton(
+				"spring.cloud.channels.CONFIGURATION_PROPERTIES", this.module);
 	}
 
 	private ModuleDefinition getModuleDefinition(
@@ -131,7 +133,7 @@ ApplicationContextInitializer<ConfigurableApplicationContext> {
 	}
 
 	@Configuration
-	@ConditionalOnMissingBean(value=ModuleProperties.class, search=SearchStrategy.CURRENT)
+	@ConditionalOnMissingBean(value = ModuleProperties.class, search = SearchStrategy.CURRENT)
 	protected static class ModulePropertiesConfiguration {
 		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
 		public ModuleProperties moduleProperties() {
