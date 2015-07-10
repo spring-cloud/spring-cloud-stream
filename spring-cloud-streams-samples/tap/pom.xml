@@ -4,22 +4,22 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.springframework.cloud</groupId>
-	<artifactId>spring-xd-module-runner-sample-source</artifactId>
+	<artifactId>spring-cloud-streams-sample-tap</artifactId>
 	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>spring-xd-module-runner-sample-source</name>
+	<name>spring-cloud-streams-sample-tap</name>
 	<description>Demo project for Spring XD module</description>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-xd-samples</artifactId>
+		<artifactId>spring-cloud-streams-samples</artifactId>
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<start-class>demo.SourceApplication</start-class>
+		<start-class>demo.TapApplication</start-class>
 		<java.version>1.8</java.version>
 	</properties>
 
