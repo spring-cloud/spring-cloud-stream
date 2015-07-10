@@ -31,11 +31,16 @@ import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.streams.adapter.ChannelLocator;
 import org.springframework.cloud.streams.adapter.InputChannelBinding;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
+import org.springframework.cloud.streams.annotation.Input;
+import org.springframework.cloud.streams.annotation.Output;
 import org.springframework.cloud.streams.endpoint.ChannelsEndpoint;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -62,7 +67,7 @@ public class ChannelBindingAdapterConfiguration {
 	private ChannelBindingProperties module;
 
 	@Autowired
-	private ListableBeanFactory beanFactory;
+	private ConfigurableListableBeanFactory beanFactory;
 
 	private ChannelLocator channelLocator;
 
@@ -92,10 +97,13 @@ public class ChannelBindingAdapterConfiguration {
 	}
 
 	protected Collection<OutputChannelBinding> getOutputChannels() {
-		Set<OutputChannelBinding> channels = new LinkedHashSet<OutputChannelBinding>();
+		Set<OutputChannelBinding> channels = new LinkedHashSet<>();
 		String[] names = this.beanFactory.getBeanNamesForType(MessageChannel.class);
 		for (String name : names) {
-			if (name.startsWith("output")) {
+			BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(name);
+			// for now, just assume that the beans are at least AbstractBeanDefinition
+			if (beanDefinition instanceof AbstractBeanDefinition
+					&& ((AbstractBeanDefinition)beanDefinition).getQualifier(Output.class.getName()) != null) {
 				channels.add(new OutputChannelBinding(name));
 			}
 		}
@@ -103,10 +111,13 @@ public class ChannelBindingAdapterConfiguration {
 	}
 
 	protected Collection<InputChannelBinding> getInputChannels() {
-		Set<InputChannelBinding> channels = new LinkedHashSet<InputChannelBinding>();
+		Set<InputChannelBinding> channels = new LinkedHashSet<>();
 		String[] names = this.beanFactory.getBeanNamesForType(MessageChannel.class);
 		for (String name : names) {
-			if (name.startsWith("input")) {
+			BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(name);
+			// for now, just assume that the beans are at least AbstractBeanDefinition
+			if (beanDefinition instanceof AbstractBeanDefinition
+					&& ((AbstractBeanDefinition)beanDefinition).getQualifier(Input.class.getName()) != null) {
 				channels.add(new InputChannelBinding(name));
 			}
 		}
