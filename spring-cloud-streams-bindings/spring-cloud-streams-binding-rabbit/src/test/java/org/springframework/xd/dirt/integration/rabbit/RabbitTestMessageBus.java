@@ -22,12 +22,11 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.xd.dirt.integration.bus.AbstractTestMessageBus;
-import org.springframework.xd.dirt.integration.bus.rabbit.RabbitMessageBus;
 import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 
 /**
- * Test support class for {@link org.springframework.xd.dirt.integration.bus.rabbit.RabbitMessageBus}.
+ * Test support class for {@link org.springframework.xd.dirt.integration.rabbit.RabbitMessageBus}.
  *
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell

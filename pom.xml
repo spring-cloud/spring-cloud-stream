@@ -76,19 +76,19 @@
 				<version>${spring-xd.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.xd</groupId>
-				<artifactId>spring-xd-messagebus-local</artifactId>
-				<version>${spring-xd.version}</version>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-streams-binding-local</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.xd</groupId>
-				<artifactId>spring-xd-messagebus-redis</artifactId>
-				<version>${spring-xd.version}</version>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-streams-binding-redis</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.xd</groupId>
-				<artifactId>spring-xd-messagebus-rabbit</artifactId>
-				<version>${spring-xd.version}</version>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-streams-binding-rabbit</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>

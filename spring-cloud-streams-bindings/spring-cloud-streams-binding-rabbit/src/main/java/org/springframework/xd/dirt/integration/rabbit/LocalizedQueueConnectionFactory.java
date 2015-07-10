@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.xd.dirt.integration.bus.rabbit;
+package org.springframework.xd.dirt.integration.rabbit;
 
 import java.net.URI;
 import java.util.Arrays;

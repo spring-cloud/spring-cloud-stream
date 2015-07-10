@@ -53,7 +53,6 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.xd.dirt.integration.bus.rabbit.LocalizedQueueConnectionFactory;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Consumer;

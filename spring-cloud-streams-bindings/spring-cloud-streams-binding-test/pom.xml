@@ -101,6 +101,12 @@
 			<groupId>org.springframework.xd</groupId>
 			<artifactId>spring-xd-tuple</artifactId>
 			<version>${spring-xd.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.xd</groupId>
+					<artifactId>spring-xd-codec</artifactId>
+				</exclusion>
+			</exclusions>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

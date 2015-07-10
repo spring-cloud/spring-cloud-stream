@@ -53,20 +53,17 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-messagebus-local</artifactId>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-streams-binding-local</artifactId>
 		</dependency>
-		
-		
 
 		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-messagebus-redis</artifactId>
-			<optional>true</optional>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-streams-binding-redis</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-messagebus-rabbit</artifactId>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-streams-binding-rabbit</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>

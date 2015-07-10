@@ -71,7 +71,6 @@ import org.springframework.xd.dirt.integration.bus.BusProperties;
 import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.PartitionCapableBusTests;
 import org.springframework.xd.dirt.integration.bus.Spy;
-import org.springframework.xd.dirt.integration.bus.rabbit.RabbitTestMessageBus;
 import org.springframework.xd.test.rabbit.RabbitTestSupport;
 
 /**

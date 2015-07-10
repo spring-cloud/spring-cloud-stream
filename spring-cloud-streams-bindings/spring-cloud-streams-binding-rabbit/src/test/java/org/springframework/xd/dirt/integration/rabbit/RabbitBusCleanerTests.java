@@ -41,7 +41,6 @@ import org.springframework.xd.dirt.integration.bus.BusUtils;
 import org.springframework.xd.dirt.integration.bus.MessageBusSupport;
 import org.springframework.xd.dirt.integration.bus.RabbitAdminException;
 import org.springframework.xd.dirt.integration.bus.RabbitManagementUtils;
-import org.springframework.xd.dirt.integration.bus.rabbit.RabbitBusCleaner;
 import org.springframework.xd.test.rabbit.RabbitAdminTestSupport;
 import org.springframework.xd.test.rabbit.RabbitTestSupport;
 

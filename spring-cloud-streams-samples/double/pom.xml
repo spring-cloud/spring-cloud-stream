@@ -29,8 +29,8 @@
 			<artifactId>spring-cloud-streams</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-messagebus-redis</artifactId>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-streams-binding-redis</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

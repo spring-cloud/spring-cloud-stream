@@ -29,7 +29,6 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.xd.dirt.integration.bus.rabbit.LocalizedQueueConnectionFactory;
 import org.springframework.xd.test.rabbit.RabbitTestSupport;
 
 

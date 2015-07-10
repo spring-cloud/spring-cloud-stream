@@ -16,7 +16,7 @@
  *
  */
 
-package org.springframework.xd.dirt.integration.bus.rabbit;
+package org.springframework.xd.dirt.integration.rabbit;
 
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
