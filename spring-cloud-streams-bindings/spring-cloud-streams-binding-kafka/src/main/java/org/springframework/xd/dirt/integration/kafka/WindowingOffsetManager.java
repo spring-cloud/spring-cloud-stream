@@ -51,6 +51,7 @@ import org.springframework.util.Assert;
  *
  * @author Marius Bogoevici
  */
+//TODO: Move this class to spring-integration-kafka
 public class WindowingOffsetManager implements OffsetManager, InitializingBean, DisposableBean {
 
 	private final CreatePartitionAndOffsetFunction createPartitionAndOffsetFunction = new CreatePartitionAndOffsetFunction();
