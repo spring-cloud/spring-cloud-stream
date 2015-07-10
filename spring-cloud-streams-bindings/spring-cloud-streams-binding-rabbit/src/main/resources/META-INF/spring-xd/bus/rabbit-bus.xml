@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<bean class="org.springframework.xd.dirt.integration.bus.rabbit.ConnectionFactorySettings" />
+
+	<bean id="messageBus" class="org.springframework.xd.dirt.integration.bus.rabbit.RabbitMessageBus">
+		<constructor-arg ref="rabbitConnectionFactory" />
+		<constructor-arg ref="codec"/>
+		<property name="defaultAcknowledgeMode" value="#{T(org.springframework.amqp.core.AcknowledgeMode).${xd.messagebus.rabbit.default.ackMode}}" />
+		<property name="defaultBackOffInitialInterval" value="${xd.messagebus.rabbit.default.backOffInitialInterval}" />
+		<property name="defaultBackOffMaxInterval" value="${xd.messagebus.rabbit.default.backOffMaxInterval}" />
+		<property name="defaultBackOffMultiplier" value="${xd.messagebus.rabbit.default.backOffMultiplier}" />
+		<property name="defaultChannelTransacted" value="${xd.messagebus.rabbit.default.transacted}" />
+		<property name="defaultConcurrency" value="${xd.messagebus.rabbit.default.concurrency}" />
+		<property name="defaultDefaultDeliveryMode" value="#{T(org.springframework.amqp.core.MessageDeliveryMode).${xd.messagebus.rabbit.default.deliveryMode}}" />
+		<property name="defaultDefaultRequeueRejected" value="${xd.messagebus.rabbit.default.requeue}" />
+		<property name="defaultMaxAttempts" value="${xd.messagebus.rabbit.default.maxAttempts}" />
+		<property name="defaultMaxConcurrency" value="${xd.messagebus.rabbit.default.maxConcurrency}" />
+		<property name="defaultPrefetchCount" value="${xd.messagebus.rabbit.default.prefetch}" />
+		<property name="defaultPrefix" value="${xd.messagebus.rabbit.default.prefix}" />
+		<property name="defaultReplyHeaderPatterns" value="${xd.messagebus.rabbit.default.replyHeaderPatterns}" />
+		<property name="defaultRequestHeaderPatterns" value="${xd.messagebus.rabbit.default.requestHeaderPatterns}" />
+		<property name="defaultTxSize" value="${xd.messagebus.rabbit.default.txSize}" />
+		<property name="defaultAutoBindDLQ" value="${xd.messagebus.rabbit.default.autoBindDLQ}" />
+		<property name="defaultRepublishToDLQ" value="${xd.messagebus.rabbit.default.republishToDLQ}" />
+		<property name="defaultBatchingEnabled" value="${xd.messagebus.rabbit.default.batchingEnabled}" />
+		<property name="defaultBatchSize" value="${xd.messagebus.rabbit.default.batchSize}" />
+		<property name="defaultBatchBufferLimit" value="${xd.messagebus.rabbit.default.batchBufferLimit}" />
+		<property name="defaultBatchTimeout" value="${xd.messagebus.rabbit.default.batchTimeout}" />
+		<property name="defaultCompress" value="${xd.messagebus.rabbit.default.compress}" />
+		<property name="compressingPostProcessor">
+			<bean class="org.springframework.amqp.support.postprocessor.GZipPostProcessor">
+				<property name="level" value="${xd.messagebus.rabbit.compressionLevel:#{T(java.util.zip.Deflater).BEST_SPEED}}" />
+			</bean>
+		</property>
+		<property name="decompressingPostProcessor">
+			<bean class="org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor">
+				<!-- set a map of decompressors here if using other than the default -->
+			</bean>
+		</property>
+		<property name="defaultDurableSubscription" value="${xd.messagebus.rabbit.default.durableSubscription}" />
+		<property name="addresses" value="${spring.rabbitmq.addresses:}" />
+		<property name="adminAddresses" value="${spring.rabbitmq.adminAddresses:}" />
+		<property name="nodes" value="${spring.rabbitmq.nodes:}" />
+		<property name="username" value="${spring.rabbitmq.username:}" />
+		<property name="password" value="${spring.rabbitmq.password:}" />
+		<property name="vhost" value="${spring.rabbitmq.virtual_host:}" />
+		<property name="useSSL" value="${spring.rabbitmq.useSSL:false}" />
+		<property name="sslPropertiesLocation" value="${spring.rabbitmq.sslProperties:}" />
+	</bean>
+
+</beans>

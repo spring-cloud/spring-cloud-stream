@@ -27,6 +27,7 @@
 	</properties>
 	<modules>
 		<module>spring-cloud-streams</module>
+		<module>spring-cloud-streams-bindings</module>
 		<module>spring-cloud-streams-codec</module>
 		<module>spring-cloud-streams-common</module>
 		<module>spring-xd-runner</module>
@@ -114,6 +115,14 @@
 			<id>spring-milestones</id>
 			<name>Spring Milestones</name>
 			<url>http://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>jcenter</id>
+			<name>JCenter Bintray</name>
+			<url>http://jcenter.bintray.com</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
