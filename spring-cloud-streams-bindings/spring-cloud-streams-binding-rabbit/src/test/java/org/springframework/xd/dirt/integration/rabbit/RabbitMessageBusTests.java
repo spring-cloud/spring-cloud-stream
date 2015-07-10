@@ -691,7 +691,7 @@ public class RabbitMessageBusTests extends PartitionCapableBusTests {
 	@Override
 	public Spy spyOn(final String queue) {
 		final RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
-		template.setAfterReceivePostProcessor(new DelegatingDecompressingPostProcessor());
+		template.setAfterReceivePostProcessors(new DelegatingDecompressingPostProcessor());
 		return new Spy() {
 
 			@Override

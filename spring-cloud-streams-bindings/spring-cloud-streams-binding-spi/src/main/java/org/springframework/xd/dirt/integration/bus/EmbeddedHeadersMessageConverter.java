@@ -24,11 +24,8 @@ import java.util.Map;
 import javax.xml.bind.DatatypeConverter;
 
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
-import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.support.json.Jackson2JsonObjectMapper;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageHeaderAccessor;
 
 /**
  * Encodes requested headers into payload with format

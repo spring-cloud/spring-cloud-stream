@@ -16,13 +16,10 @@
 
 package org.springframework.xd.dirt.integration.bus.kafka;
 
-import java.util.Collections;
-
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.xd.dirt.integration.bus.AbstractTestMessageBus;
 import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.AbstractKryoRegistrar;
 import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 import org.springframework.xd.dirt.integration.kafka.KafkaMessageBus;
 import org.springframework.xd.dirt.integration.kafka.TestKafkaCluster;
@@ -44,7 +41,7 @@ public class KafkaTestMessageBus extends AbstractTestMessageBus<KafkaMessageBus>
 	}
 
 
-	public KafkaTestMessageBus(KafkaTestSupport kafkaTestSupport, MultiTypeCodec<Object> codec, 
+	public KafkaTestMessageBus(KafkaTestSupport kafkaTestSupport, MultiTypeCodec<Object> codec,
 			KafkaMessageBus.Mode mode) {
 
 		try {

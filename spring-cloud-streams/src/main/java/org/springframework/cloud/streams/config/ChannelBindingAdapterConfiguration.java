@@ -54,8 +54,6 @@ import org.springframework.xd.dirt.integration.bus.serializer.kryo.FileKryoRegis
 import org.springframework.xd.dirt.integration.bus.serializer.kryo.KryoRegistrar;
 import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 
-
-
 /**
  * @author Dave Syer
  * @author David Turanski
@@ -186,7 +184,7 @@ public class ChannelBindingAdapterConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean(name = "codec")
-		public MultiTypeCodec codec() {
+		public MultiTypeCodec<?> codec() {
 			Map<String, KryoRegistrar> kryoRegistrarMap = applicationContext.getBeansOfType(KryoRegistrar
 					.class);
 			return new PojoCodec(new ArrayList<>(kryoRegistrarMap.values()));

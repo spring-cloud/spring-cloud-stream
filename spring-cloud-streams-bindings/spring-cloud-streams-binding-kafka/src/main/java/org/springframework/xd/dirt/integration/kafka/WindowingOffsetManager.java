@@ -19,11 +19,15 @@ package org.springframework.xd.dirt.integration.kafka;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.integration.kafka.core.Partition;
+import org.springframework.integration.kafka.listener.OffsetManager;
+import org.springframework.util.Assert;
+
 import rx.Observable;
-import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -31,16 +35,9 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.observables.GroupedObservable;
 import rx.observables.MathObservable;
-import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 import rx.subjects.SerializedSubject;
 import rx.subjects.Subject;
-
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.integration.kafka.core.Partition;
-import org.springframework.integration.kafka.listener.OffsetManager;
-import org.springframework.util.Assert;
 
 /**
  * An {@link OffsetManager} that aggregates writes over a time or count window, using an underlying delegate to
@@ -68,7 +65,7 @@ public class WindowingOffsetManager implements OffsetManager, InitializingBean, 
 
 	private final NotifyObservableClosedAction notifyObservableClosed = new NotifyObservableClosedAction();
 
-	private OffsetManager delegate;
+	private final OffsetManager delegate;
 
 	private long timespan = 10 * 1000;
 
@@ -193,9 +190,9 @@ public class WindowingOffsetManager implements OffsetManager, InitializingBean, 
 
 	class PartitionAndOffset {
 
-		private Partition partition;
+		private final Partition partition;
 
-		private Long offset;
+		private final Long offset;
 
 		public PartitionAndOffset(Partition partition, Long offset) {
 			this.partition = partition;

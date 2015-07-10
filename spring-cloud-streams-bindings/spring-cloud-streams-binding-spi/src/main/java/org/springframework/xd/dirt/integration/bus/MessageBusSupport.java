@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -50,8 +51,8 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
-import org.springframework.integration.expression.IntegrationEvaluationContextAware;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -76,7 +77,7 @@ import org.springframework.xd.dirt.integration.bus.serializer.SerializationExcep
  * @author Ilayaperumal Gopinathan
  */
 public abstract class MessageBusSupport
-		implements MessageBus, ApplicationContextAware, InitializingBean, IntegrationEvaluationContextAware {
+		implements MessageBus, ApplicationContextAware, InitializingBean {
 
 	protected static final String P2P_NAMED_CHANNEL_TYPE_PREFIX = "queue:";
 
@@ -263,7 +264,6 @@ public abstract class MessageBusSupport
 		return idGenerator;
 	}
 
-	@Override
 	public void setIntegrationEvaluationContext(EvaluationContext evaluationContext) {
 		this.evaluationContext = evaluationContext;
 	}
@@ -375,6 +375,9 @@ public abstract class MessageBusSupport
 	public void afterPropertiesSet() throws Exception {
 		Assert.notNull(applicationContext, "The 'applicationContext' property cannot be null");
 		onInit();
+		if (this.evaluationContext == null) {
+			this.evaluationContext = IntegrationContextUtils.getEvaluationContext(getBeanFactory());
+		}
 	}
 
 	protected void onInit() {
