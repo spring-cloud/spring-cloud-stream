@@ -19,7 +19,6 @@
 		<module>source</module>
 		<module>sink</module>
 		<module>tap</module>
-		<module>source-xml</module>
 	</modules>
 	<build>
       <pluginManagement>
