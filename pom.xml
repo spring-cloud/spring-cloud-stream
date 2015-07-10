@@ -30,7 +30,6 @@
 		<module>spring-cloud-streams-codec</module>
 		<module>spring-cloud-streams-common</module>
 		<module>spring-xd-runner</module>
-		<module>spring-xd-samples</module>
 		<module>spring-cloud-streams-samples</module>
 		<module>docs</module>
 	</modules>
