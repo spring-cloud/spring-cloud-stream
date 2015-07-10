@@ -5,7 +5,10 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<channel id="output"/>
+
+	<beans:bean id="output" class="org.springframework.integration.channel.DirectChannel">
+		<beans:qualifier type="org.springframework.cloud.streams.annotation.Output"/>
+	</beans:bean>
 
 	<inbound-channel-adapter channel="output"
 			auto-startup="false"
