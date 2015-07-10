@@ -38,7 +38,7 @@ import org.springframework.util.ReflectionUtils;
 /**
  * @author Marius Bogoevici
  */
-public class ModuleBeanPostProcessor implements BeanDefinitionRegistryPostProcessor,BeanPostProcessor, ApplicationContextAware {
+public class ModulePostProcessor implements BeanDefinitionRegistryPostProcessor,BeanPostProcessor, ApplicationContextAware {
 
 	private ApplicationContext applicationContext;
 
@@ -71,7 +71,7 @@ public class ModuleBeanPostProcessor implements BeanDefinitionRegistryPostProces
 						}
 					});
 				}
-			} catch (Exception e) {
+			} catch (ClassNotFoundException e) {
 				throw new IllegalStateException(e);
 			}
 		}

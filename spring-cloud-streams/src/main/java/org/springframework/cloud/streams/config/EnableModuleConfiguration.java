@@ -26,8 +26,8 @@ import org.springframework.context.annotation.Configuration;
 public class EnableModuleConfiguration {
 
 	@Bean
-	public ModuleBeanPostProcessor moduleBeanFactoryPostProcessor() {
-		return new ModuleBeanPostProcessor();
+	public ModulePostProcessor modulePostProcessor() {
+		return new ModulePostProcessor();
 	}
 
 }
