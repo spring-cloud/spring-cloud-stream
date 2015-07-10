@@ -10,7 +10,6 @@
 	<artifactId>spring-cloud-streams-docs</artifactId>
 	<packaging>pom</packaging>
 	<name>Spring Cloud Streams Docs</name>
-	<version>1.1.0.BUILD-SNAPSHOT</version>
 	<description>Spring Cloud Docs</description>
 	<properties>
 		<docs.main>spring-cloud-streams</docs.main>
