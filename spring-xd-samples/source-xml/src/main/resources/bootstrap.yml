@@ -1,6 +1,0 @@
----
-spring:
-  cloud:
-    channels:
-      group: testtock
-      name: ticker

@@ -22,13 +22,12 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.streams.annotation.EnableModule;
 import org.springframework.cloud.streams.annotation.Input;
 import org.springframework.cloud.streams.annotation.Output;
+import org.springframework.cloud.streams.utils.BeanDefinitionRegistryUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -59,14 +58,10 @@ public class ModulePostProcessor implements BeanDefinitionRegistryPostProcessor,
 						@Override
 						public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
 							if (field.isAnnotationPresent(Input.class)) {
-								RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(DirectChannelFactoryBean.class);
-								rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(Input.class));
-								registry.registerBeanDefinition(field.getName(), rootBeanDefinition);
+								BeanDefinitionRegistryUtils.registerInputChannelBeanDefinition(field.getName(), registry);
 							}
 							if (field.isAnnotationPresent(Output.class)) {
-								RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(DirectChannelFactoryBean.class);
-								rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(Output.class));
-								registry.registerBeanDefinition(field.getName(), rootBeanDefinition);
+								BeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition(field.getName(), registry);
 							}
 						}
 					});

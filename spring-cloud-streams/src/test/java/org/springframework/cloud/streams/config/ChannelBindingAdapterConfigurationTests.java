@@ -33,6 +33,7 @@ import org.springframework.cloud.streams.adapter.ChannelBinding;
 import org.springframework.cloud.streams.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.streams.adapter.OutputChannelBinding;
 import org.springframework.cloud.streams.config.ChannelBindingAdapterConfigurationTests.Empty;
+import org.springframework.cloud.streams.utils.BeanDefinitionRegistryUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -68,7 +69,7 @@ public class ChannelBindingAdapterConfigurationTests {
 
 	@Test
 	public void oneOutput() throws Exception {
-		this.context.registerSingleton("output", new DirectChannel());
+		BeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output", context);
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
@@ -87,7 +88,7 @@ public class ChannelBindingAdapterConfigurationTests {
 
 	@Test
 	public void oneOutputTopic() throws Exception {
-		this.context.registerSingleton("output.topic:", new DirectChannel());
+		BeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output.topic:", context);
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
@@ -97,8 +98,8 @@ public class ChannelBindingAdapterConfigurationTests {
 
 	@Test
 	public void twoOutputsWithQueue() throws Exception {
-		this.context.registerSingleton("output", new DirectChannel());
-		this.context.registerSingleton("output.queue:foo", new DirectChannel());
+		BeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output", context);
+		BeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output.queue:foo", context);
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		List<String> names = getChannelNames(channels);
@@ -118,7 +119,7 @@ public class ChannelBindingAdapterConfigurationTests {
 	@Test
 	public void overrideNaturalOutputChannelName() throws Exception {
 		this.module.setOutputChannelName("bar");
-		this.context.registerSingleton("output.queue:foo", new DirectChannel());
+		BeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output.queue:foo", context);
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
@@ -130,7 +131,7 @@ public class ChannelBindingAdapterConfigurationTests {
 	@Test
 	public void overrideNaturalOutputChannelNamedQueueWithTopic() throws Exception {
 		this.module.setOutputChannelName("queue:bar");
-		this.context.registerSingleton("output.topic:foo", new DirectChannel());
+		BeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output.topic:foo", context);
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
