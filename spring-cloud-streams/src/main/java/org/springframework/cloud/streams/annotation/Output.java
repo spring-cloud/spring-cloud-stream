@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Indicates that an output channel will be created and injected by the framework
+ * Indicates that an output channel will be created and injected by the framework.
  *
  * @author Dave Syer
  * @author Marius Bogoevici

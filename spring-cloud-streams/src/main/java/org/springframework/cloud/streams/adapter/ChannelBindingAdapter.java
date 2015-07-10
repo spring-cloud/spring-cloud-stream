@@ -53,7 +53,7 @@ import org.springframework.xd.dirt.integration.bus.MessageBus;
 import org.springframework.xd.dirt.integration.bus.XdHeaders;
 
 /**
- * Binds input/output channels to the bus
+ * Binds input/output channels to the bus.
  *
  * @author Mark Fisher
  * @author Dave Syer

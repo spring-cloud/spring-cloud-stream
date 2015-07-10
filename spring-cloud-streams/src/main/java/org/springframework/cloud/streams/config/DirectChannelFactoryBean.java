@@ -23,15 +23,20 @@ import org.springframework.messaging.MessageChannel;
 /**
  * {@link FactoryBean} for creating channels for fields annotated with
  * {@link org.springframework.cloud.streams.annotation.Input} and
- * {@link org.springframework.cloud.streams.annotation.Output}
+ * {@link org.springframework.cloud.streams.annotation.Output}.
  *
  * @author Marius Bogoevici
  */
 public class DirectChannelFactoryBean implements FactoryBean<MessageChannel> {
 
+	private DirectChannel directChannel;
+
 	@Override
-	public MessageChannel getObject() throws Exception {
-		return new DirectChannel();
+	public synchronized MessageChannel getObject() throws Exception {
+		if (directChannel == null) {
+			directChannel = new DirectChannel();
+		}
+		return directChannel;
 	}
 
 	@Override

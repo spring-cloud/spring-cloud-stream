@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.MessageEndpoint;
 
 /**
- * Annotation that identifies a class as a module
+ * Annotation that identifies a class as a module.
  *
  * @author Dave Syer
  * @author Marius Bogoevici
@@ -47,8 +47,7 @@ import org.springframework.integration.annotation.MessageEndpoint;
 @MessageEndpoint
 @Import({ RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
 	ChannelBindingAdapterConfiguration.class, LifecycleConfiguration.class,
-	AggregateBuilderConfiguration.class, ChannelBindingAdapterConfiguration.class,
-		EnableModuleConfiguration.class})
+	AggregateBuilderConfiguration.class, EnableModuleConfiguration.class})
 public @interface EnableModule {
 
 }

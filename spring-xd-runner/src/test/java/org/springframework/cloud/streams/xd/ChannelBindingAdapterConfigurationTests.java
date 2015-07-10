@@ -51,7 +51,6 @@ import org.springframework.xd.dirt.integration.bus.local.LocalMessageBus;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Empty.class)
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-@Ignore
 public class ChannelBindingAdapterConfigurationTests {
 
 	@Autowired
