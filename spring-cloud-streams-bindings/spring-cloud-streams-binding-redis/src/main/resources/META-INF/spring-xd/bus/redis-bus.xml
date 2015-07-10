@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<bean id="messageBus" class="org.springframework.xd.dirt.integration.redis.RedisMessageBus">
+		<constructor-arg ref="redisConnectionFactory" />
+		<constructor-arg ref="codec"/>
+		<constructor-arg value="${xd.messagebus.redis.headers:}" />
+		<property name="defaultBackOffInitialInterval" value="${xd.messagebus.redis.default.backOffInitialInterval}" />
+		<property name="defaultBackOffMaxInterval" value="${xd.messagebus.redis.default.backOffMaxInterval}" />
+		<property name="defaultBackOffMultiplier" value="${xd.messagebus.redis.default.backOffMultiplier}" />
+		<property name="defaultConcurrency" value="${xd.messagebus.redis.default.concurrency}" />
+		<property name="defaultMaxAttempts" value="${xd.messagebus.redis.default.maxAttempts}" />
+	</bean>
+
+</beans>

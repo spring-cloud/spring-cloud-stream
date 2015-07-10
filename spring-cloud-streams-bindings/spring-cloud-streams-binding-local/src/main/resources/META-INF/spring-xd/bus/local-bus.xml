@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:int="http://www.springframework.org/schema/integration"
+	xsi:schemaLocation="http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+		<bean id="messageBus" class="org.springframework.xd.dirt.integration.bus.local.LocalMessageBus">
+			<property name="queueSize"
+					  value="${xd.messagebus.local.queueSize: #{T(Integer).MAX_VALUE}}" />
+			<property name="poller">
+				<int:poller fixed-rate="${xd.messagebus.local.polling}" />
+			</property>
+			<property name="executorCorePoolSize" value="${xd.messagebus.local.executor.corePoolSize}" />
+			<property name="executorMaxPoolSize" value="${xd.messagebus.local.executor.maxPoolSize}" />
+			<property name="executorQueueSize" value="${xd.messagebus.local.executor.queueSize: #{T(Integer).MAX_VALUE}}" />
+			<property name="executorKeepAliveSeconds" value="${xd.messagebus.local.executor.keepAliveSeconds}" />
+		</bean>
+</beans>
