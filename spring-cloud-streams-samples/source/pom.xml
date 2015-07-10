@@ -33,11 +33,6 @@
 			<artifactId>spring-xd-messagebus-redis</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-lattice-connector</artifactId>
-			<version>1.0.2.BUILD-SNAPSHOT</version>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>

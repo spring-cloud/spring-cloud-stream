@@ -34,4 +34,16 @@
         </plugins>
       </pluginManagement>
     </build>
+	<profiles>
+		<profile>
+			<id>lattice</id>
+            <dependencies>
+		      <dependency>
+			    <groupId>org.springframework.cloud</groupId>
+			    <artifactId>spring-cloud-lattice-connector</artifactId>
+			    <version>1.0.2.BUILD-SNAPSHOT</version>
+		      </dependency>
+            </dependencies>
+		</profile>
+	</profiles>
 </project>
