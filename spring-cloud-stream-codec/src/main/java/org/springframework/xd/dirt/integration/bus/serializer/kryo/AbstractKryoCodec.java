@@ -75,9 +75,7 @@ public abstract class AbstractKryoCodec implements MultiTypeCodec<Object> {
 
 	protected abstract Object doDeserialize(Kryo kryo, Input input, Class<?> type);
 
-	protected void configureKryoInstance(Kryo kryo) {
-		kryo.setReferences(false);
-	}
+	protected abstract void configureKryoInstance(Kryo kryo);
 
 	/**
 	 * Deserialize an object of a given type given a byte array

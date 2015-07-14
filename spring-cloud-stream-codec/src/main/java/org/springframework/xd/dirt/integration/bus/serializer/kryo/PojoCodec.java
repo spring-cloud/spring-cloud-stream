@@ -96,7 +96,6 @@ public class PojoCodec extends AbstractKryoCodec {
 
 	@Override
 	protected void configureKryoInstance(Kryo kryo) {
-		super.configureKryoInstance(kryo);
 		if (kryoRegistrar != null) {
 			kryoRegistrar.registerTypes(kryo);
 		}
