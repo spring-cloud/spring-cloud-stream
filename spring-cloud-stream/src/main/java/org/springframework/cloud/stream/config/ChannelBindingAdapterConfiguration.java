@@ -78,7 +78,7 @@ public class ChannelBindingAdapterConfiguration {
 		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.messageBus);
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
-		if (this.channelLocator!=null) {
+		if (this.channelLocator != null) {
 			adapter.setChannelLocator(this.channelLocator);
 		}
 		return adapter;
@@ -102,7 +102,7 @@ public class ChannelBindingAdapterConfiguration {
 			BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(name);
 			// for now, just assume that the beans are at least AbstractBeanDefinition
 			if (beanDefinition instanceof AbstractBeanDefinition
-					&& ((AbstractBeanDefinition)beanDefinition).getQualifier(Output.class.getName()) != null) {
+					&& ((AbstractBeanDefinition) beanDefinition).getQualifier(Output.class.getName()) != null) {
 				channels.add(new OutputChannelBinding(name));
 			}
 		}
@@ -116,7 +116,7 @@ public class ChannelBindingAdapterConfiguration {
 			BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(name);
 			// for now, just assume that the beans are at least AbstractBeanDefinition
 			if (beanDefinition instanceof AbstractBeanDefinition
-					&& ((AbstractBeanDefinition)beanDefinition).getQualifier(Input.class.getName()) != null) {
+					&& ((AbstractBeanDefinition) beanDefinition).getQualifier(Input.class.getName()) != null) {
 				channels.add(new InputChannelBinding(name));
 			}
 		}
@@ -166,33 +166,6 @@ public class ChannelBindingAdapterConfiguration {
 				return invocation.proceed();
 			}
 
-		}
-
-	}
-
-	@ConditionalOnMissingBean(ChannelBindingProperties.class)
-	protected static class ModulePropertiesConfiguration {
-		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
-		public ChannelBindingProperties moduleProperties() {
-			return new ChannelBindingProperties();
-		}
-	}
-
-	protected static class CodecConfiguration {
-		@Autowired
-		ApplicationContext applicationContext;
-
-		@Bean
-		@ConditionalOnMissingBean(name = "codec")
-		public MultiTypeCodec<?> codec() {
-			Map<String, KryoRegistrar> kryoRegistrarMap = applicationContext.getBeansOfType(KryoRegistrar
-					.class);
-			return new PojoCodec(new ArrayList<>(kryoRegistrarMap.values()));
-		}
-
-		@Bean
-		public KryoRegistrar fileRegistrar() {
-			return new FileKryoRegistrar();
 		}
 	}
 }
