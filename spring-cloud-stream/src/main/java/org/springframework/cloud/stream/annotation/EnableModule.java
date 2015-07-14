@@ -23,21 +23,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
-import org.springframework.cloud.stream.config.EnableModuleConfiguration;
-import org.springframework.cloud.stream.config.LifecycleConfiguration;
-import org.springframework.cloud.stream.config.ChannelBindingAdapterConfiguration;
-import org.springframework.cloud.stream.config.RabbitServiceConfiguration;
-import org.springframework.cloud.stream.config.RedisServiceConfiguration;
+import org.springframework.cloud.streams.config.AggregateBuilderConfiguration;
+import org.springframework.cloud.streams.config.ChannelBindingAdapterConfiguration;
+import org.springframework.cloud.streams.config.CodecConfiguration;
+import org.springframework.cloud.streams.config.EnableModuleConfiguration;
+import org.springframework.cloud.streams.config.LifecycleConfiguration;
+import org.springframework.cloud.streams.config.RabbitServiceConfiguration;
+import org.springframework.cloud.streams.config.RedisServiceConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.MessageEndpoint;
 
 /**
  * Annotation that identifies a class as a module.
- *
  * @author Dave Syer
  * @author Marius Bogoevici
+ * @author David Turanski
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -45,9 +46,9 @@ import org.springframework.integration.annotation.MessageEndpoint;
 @Inherited
 @Configuration
 @MessageEndpoint
-@Import({ RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
-	ChannelBindingAdapterConfiguration.class, LifecycleConfiguration.class,
-	AggregateBuilderConfiguration.class, EnableModuleConfiguration.class})
+@Import({RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
+		ChannelBindingAdapterConfiguration.class, CodecConfiguration.class, LifecycleConfiguration.class,
+		AggregateBuilderConfiguration.class, EnableModuleConfiguration.class})
 public @interface EnableModule {
 
 }

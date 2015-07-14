@@ -167,41 +167,5 @@ public class ChannelBindingAdapterConfiguration {
 			}
 
 		}
-
-	}
-
-	@ConditionalOnMissingBean(ChannelBindingProperties.class)
-	protected static class ModulePropertiesConfiguration {
-		@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
-		public ChannelBindingProperties moduleProperties() {
-			return new ChannelBindingProperties();
-		}
-	}
-
-	@ConditionalOnMissingBean(KryoCodecProperties.class)
-
-	
-
-	protected static class CodecConfiguration {
-		@Autowired
-		ApplicationContext applicationContext;
-
-		@Bean(name = "spring.cloud.streams.codec.kryo.CONFIGURATION_PROPERTIES")
-		public KryoCodecProperties kryoCodecProperties() {
-			return new KryoCodecProperties();
-		}
-
-		@Bean
-		@ConditionalOnMissingBean(name = "codec")
-		public MultiTypeCodec<?> codec() {
-			Map<String, KryoRegistrar> kryoRegistrarMap = applicationContext.getBeansOfType(KryoRegistrar
-					.class);
-			return new PojoCodec(new ArrayList<>(kryoRegistrarMap.values()), kryoCodecProperties().isReferences());
-		}
-
-		@Bean
-		public KryoRegistrar fileRegistrar() {
-			return new FileKryoRegistrar();
-		}
 	}
 }
