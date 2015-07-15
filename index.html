@@ -1,13 +1,13 @@
 ---
 # The name of your project
-title: Spring Cloud Streams
+title: Spring Cloud Stream
 
 badges:
 
   # Customize your project's badges. Delete any entries that do not apply.
   custom:
     - name: Source (GitHub)
-      url:  https://github.com/spring-cloud/spring-cloud-streams
+      url:  https://github.com/spring-cloud/spring-cloud-stream
       icon: github
 
     - name: StackOverflow
@@ -26,7 +26,7 @@ badges:
 
 {% capture billboard_description %}
 
-Spring Cloud Streams allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just create `MessageChannels` "input" and/or "output" and add `@EnableChannelBinding` and run your app as a Spring Boot app (single application context).  You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. 
+Spring Cloud Stream allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just create `MessageChannels` "input" and/or "output" and add `@EnableChannelBinding` and run your app as a Spring Boot app (single application context).  You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. 
 
 {% endcapture %}
 
@@ -38,7 +38,7 @@ Spring Cloud Streams allows a user to develop and run messaging microservices us
 <script type="text/javascript">{% include custom.js %}</script>
 {% include download_widget.md %}
 
-As long as Spring Cloud Streams and a Spring XD Message Bus is on the
+As long as Spring Cloud Stream and a Spring XD Message Bus is on the
 classpath any Spring Boot application with `@EnableChannelBinding` will bind to an external broker provided by the bus (e.g. redis, rabbit, kafka, depending on the implementation you choose). Sample application:
 
 ```java
@@ -79,10 +79,10 @@ public class ModuleDefinition {
 
 ### Sample Projects
 
-* [Source](https://github.com/spring-cloud/spring-cloud-streams/tree/master/spring-cloud-streams-samples/source)
-* [Sink](https://github.com/spring-cloud/spring-cloud-streams/tree/master/spring-cloud-streams-samples/sink)
-* [Transformer](https://github.com/spring-cloud/spring-cloud-streams/tree/master/spring-cloud-streams-samples/transformer)
-* [Mashup](https://github.com/spring-cloud/spring-cloud-streams/tree/master/spring-cloud-streams-samples/extended)
+* [Source](https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-samples/source)
+* [Sink](https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-samples/sink)
+* [Transformer](https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-samples/transformer)
+* [Mashup](https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-samples/extended)
 
 {% endcapture %}
 
