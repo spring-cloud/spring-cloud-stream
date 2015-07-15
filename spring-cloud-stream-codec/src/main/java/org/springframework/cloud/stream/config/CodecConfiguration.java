@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.streams.config;
+package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
 import java.util.Map;
