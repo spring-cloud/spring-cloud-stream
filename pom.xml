@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.springframework.cloud</groupId>
-	<artifactId>spring-cloud-streams-parent</artifactId>
+	<artifactId>spring-cloud-stream-parent</artifactId>
 	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<parent>
@@ -12,9 +12,9 @@
 		<relativePath />
 	</parent>
 	<scm>
-		<url>https://github.com/spring-cloud/spring-cloud-streams</url>
-		<connection>scm:git:git://github.com/spring-cloud/spring-cloud-streams.git</connection>
-		<developerConnection>scm:git:ssh://git@github.com/spring-cloud/spring-cloud-streams.git</developerConnection>
+		<url>https://github.com/spring-cloud/spring-cloud-stream</url>
+		<connection>scm:git:git://github.com/spring-cloud/spring-cloud-stream.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/spring-cloud/spring-cloud-stream.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 	<properties>
@@ -26,11 +26,11 @@
 		<spring-integration.version>4.2.0.M2</spring-integration.version>
 	</properties>
 	<modules>
-		<module>spring-cloud-streams</module>
-		<module>spring-cloud-streams-bindings</module>
-		<module>spring-cloud-streams-codec</module>
-		<module>spring-cloud-streams-common</module>
-		<module>spring-cloud-streams-samples</module>
+		<module>spring-cloud-stream</module>
+		<module>spring-cloud-stream-bindings</module>
+		<module>spring-cloud-stream-codec</module>
+		<module>spring-cloud-stream-common</module>
+		<module>spring-cloud-stream-samples</module>
 		<module>docs</module>
 	</modules>
 	<dependencyManagement>
@@ -51,7 +51,7 @@
 			</dependency>
 		    <dependency>
 			  <groupId>org.springframework.cloud</groupId>
-			  <artifactId>spring-cloud-streams</artifactId>
+			  <artifactId>spring-cloud-stream</artifactId>
 			  <version>${project.version}</version>
 		    </dependency>
 		    <dependency>
@@ -61,12 +61,12 @@
 		    </dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-streams-codec</artifactId>
+				<artifactId>spring-cloud-stream-codec</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-streams-common</artifactId>
+				<artifactId>spring-cloud-stream-common</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -76,17 +76,17 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-streams-binding-local</artifactId>
+				<artifactId>spring-cloud-stream-binding-local</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-streams-binding-redis</artifactId>
+				<artifactId>spring-cloud-stream-binding-redis</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-streams-binding-rabbit</artifactId>
+				<artifactId>spring-cloud-stream-binding-rabbit</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

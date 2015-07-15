@@ -4,15 +4,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-streams-parent</artifactId>
+		<artifactId>spring-cloud-stream-parent</artifactId>
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
-	<artifactId>spring-cloud-streams-docs</artifactId>
+	<artifactId>spring-cloud-stream-docs</artifactId>
 	<packaging>pom</packaging>
 	<name>Spring Cloud Streams Docs</name>
 	<description>Spring Cloud Docs</description>
 	<properties>
-		<docs.main>spring-cloud-streams</docs.main>
+		<docs.main>spring-cloud-stream</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
 	</properties>
  	<build>
