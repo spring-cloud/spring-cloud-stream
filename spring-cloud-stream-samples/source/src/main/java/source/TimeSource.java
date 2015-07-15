@@ -31,6 +31,8 @@ import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.scheduling.Trigger;
+import org.springframework.scheduling.support.PeriodicTrigger;
 
 /**
  * @author Dave Syer
@@ -47,7 +49,14 @@ public class TimeSource {
 	public MessageChannel output;
 
 	@Bean
-	@InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+	public Trigger trigger() {
+		PeriodicTrigger periodicTrigger = new PeriodicTrigger(options.getFixedDelay(), options.getTimeUnit());
+		periodicTrigger.setInitialDelay(options.getInitialDelay());
+		return periodicTrigger;
+	}
+
+	@Bean
+	@InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(trigger = "trigger", maxMessagesPerPoll = "${module.maxMessages}"))
 	public MessageSource<String> timerMessageSource() {
 		return () -> new GenericMessage<>(new SimpleDateFormat(this.options.getFormat()).format(new Date()));
 	}

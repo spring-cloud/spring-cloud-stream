@@ -1,6 +1,11 @@
 server:
   port: 8081
-fixedDelay: 5000
+module:
+  # module options that are not read from @ConfigurationProperties classes
+  # such as the ones below (used in SI annotation attributes) have to have
+  # their default set here (in addition to the class, which is only to
+  # generate correct json metadata)
+  maxMessages: 1
 spring:
   cloud:
     channels:

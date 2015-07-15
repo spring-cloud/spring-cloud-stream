@@ -16,9 +16,12 @@
 
 package source;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.xd.module.options.validation.DateFormat;
 
 /**
@@ -27,6 +30,7 @@ import org.springframework.xd.module.options.validation.DateFormat;
  * @author Eric Bottard
  * @author Gary Russell
  */
+@ConfigurationProperties(prefix = "module.")
 public class TimeSourceOptionsMetadata {
 
 	/**
@@ -47,7 +51,7 @@ public class TimeSourceOptionsMetadata {
 	/**
 	 * the time unit for the fixed and initial delays
 	 */
-	private String timeUnit = "SECONDS";
+	private TimeUnit timeUnit = TimeUnit.SECONDS;
 
 	/**
 	 * the maximum messages per poll; -1 for unlimited
@@ -71,14 +75,12 @@ public class TimeSourceOptionsMetadata {
 		this.initialDelay = initialDelay;
 	}
 
-	@Pattern(regexp = "(?i)(NANOSECONDS|MICROSECONDS|MILLISECONDS|SECONDS|MINUTES|HOURS|DAYS)",
-			message = "timeUnit must be one of NANOSECONDS, MICROSECONDS, MILLISECONDS, SECONDS, MINUTES, HOURS, DAYS (case-insensitive)")
-	public String getTimeUnit() {
+	public TimeUnit getTimeUnit() {
 		return this.timeUnit;
 	}
 
-	public void setTimeUnit(String timeUnit) {
-		this.timeUnit = timeUnit.toUpperCase();
+	public void setTimeUnit(TimeUnit timeUnit) {
+		this.timeUnit = timeUnit;
 	}
 
 	@DateFormat
