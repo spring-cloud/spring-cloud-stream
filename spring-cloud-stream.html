@@ -417,7 +417,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This project allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just create <code>MessageChannels</code> "input" and/or "output" and add <code>@EnableChannelBinding</code> and run your app as a Spring Boot app (single application context).  You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. The sample uses Redis.</p>
+<p>This project allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just create <code>MessageChannels</code> "input" and/or "output" and add <code>@EnableModule</code> and run your app as a Spring Boot app (single application context). You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. The sample uses Redis.</p>
 </div>
 <div class="paragraph">
 <p>Here&#8217;s a sample source module (output channel only):</p>
@@ -425,7 +425,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="listingblock">
 <div class="content">
 <pre class="highlight"><code class="language-java" data-lang="java">@SpringBootApplication
-@EnableChannelBinding
+@EnableModule
 @ComponentScan(basePackageClasses=ModuleDefinition.class)
 public class ModuleApplication {
 
@@ -468,9 +468,6 @@ spring:
       outputChannelName: ${spring.application.name:ticker}</pre>
 </div>
 </div>
-<div class="paragraph">
-<p>To be deployable as an XD module in a "traditional" way you need <code>/config/<strong>.properties</code> to point to any available Java config classes (via <code>base_packages</code> or <code>options_class</code>), or else you can put traditional XML configuration in <code>/config/</strong>.xml</code>. You don&#8217;t need those things to run as a consumer or producer to an existing XD system, but you do need to replace the <code>outputChannelName</code> with <code>group</code>, <code>module</code> and <code>index</code> (the index is a sequential counter that XD uses to label the modules in a stream from left to right). There&#8217;s an XML version of the same sample (a "timer" source).</p>
-</div>
 </div>
 </div>
 <div class="sect1">
@@ -487,8 +484,6 @@ spring:
 <div class="paragraph">
 <p>There are several samples, all running on the redis transport (so you need redis running locally to test them).</p>
 </div>
-<div class="sect2">
-<h3 id="_vanilla_module_samples">Vanilla Module Samples</h3>
 <div class="admonitionblock note">
 <table>
 <tr>
@@ -520,31 +515,8 @@ The main set of samples are "vanilla" in the sense that they are not deployable 
 </li>
 </ul>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_xd_module_samples">XD Module Samples</h3>
-<div class="paragraph">
-<p>There are several samples, all running on the redis transport (so you need redis running locally to test them):</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>source</code> is a Java config version of the classic "timer" module from Spring XD. It has a "fixedDelay" option (in milliseconds) for the period between emitting messages.</p>
-</li>
-<li>
-<p><code>sink</code> is a Java config version of the classic "log" module from Spring XD. It has no options (but some could easily be added), and just logs incoming messages at INFO level.</p>
-</li>
-<li>
-<p><code>tap</code> is the same as the sink sample, except it is configured to tap the source sample output. When it is running it looks a lot like the sink, except that it only gets copies of the messages in the broker, and since it is a pub-sub subscriber, it only gets the messages sent since it started.</p>
-</li>
-<li>
-<p><code>source-xml</code> is a copy of the classic "timer" module from Spring XD.</p>
-</li>
-</ul>
-</div>
 <div class="paragraph">
 <p>If you run the source and the sink and point them at the same redis instance (e.g. do nothing to get the one on localhost, or the one they are both bound to as a service on Cloud Foundry) then they will form a "stream" and start talking to each other. All the samples have friendly JMX and Actuator endpoints for inspecting what is going on in the system.</p>
-</div>
 </div>
 </div>
 </div>
@@ -555,21 +527,9 @@ The main set of samples are "vanilla" in the sense that they are not deployable 
 <p>Code using this library can be deployed as a standalone app or as an XD module. In standalone mode you app will run happily as a service or in any PaaS (Cloud Foundry, Lattice, Heroku, Azure, etc.). Depending on whether your main aim is to develop an XD module and you just want to test it locally using the standalone mode, or if the ultimate goal is a standalone app, there are some things that you might do differently.</p>
 </div>
 <div class="sect2">
-<h3 id="_module_options">Module Options</h3>
-<div class="paragraph">
-<p>Module option (placeholders) default values can be set in <code>/config/<strong>.properties</code> as per a normal XD module, and they can be overridden at runtime in standalone mode using standard Spring Boot configuration (e.g. <code>application.yml</code>). Because of the way XD likes to organize options, the default values can also be set as <code>option.</strong></code> in <code>bootstrap.yml</code> (in standalone mode) or as System properties (generally).</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_local_configuration">Local Configuration</h3>
-<div class="paragraph">
-<p>The <code>application.yml</code> and <code>bootstrap.yml</code> files are ignored by XD when deploying the module natively, so you can put whatever you like in there to control the app in standlone mode.</p>
-</div>
-</div>
-<div class="sect2">
 <h3 id="_fat_jar">Fat JAR</h3>
 <div class="paragraph">
-<p>You can run in standalone mode from your IDE for testing. To run in production you can create an executable (or "fat") JAR using the standard Spring Boot tooling, but the executable JAR has a load of stuff in it that isn&#8217;t needed if it&#8217;s going to be deployed as an XD module. In that case you are better off with the normal JAR packaging provided by Maven or Gradle.</p>
+<p>You can run in standalone mode from your IDE for testing. To run in production you can create an executable (or "fat") JAR using the standard Spring Boot tooling.</p>
 </div>
 </div>
 </div>
@@ -623,7 +583,7 @@ The main set of samples are "vanilla" in the sense that they are not deployable 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-07-15 15:45:09 UTC
+Last updated 2015-07-15 15:50:56 UTC
 </div>
 </div>
 </body>
