@@ -33,6 +33,7 @@ import org.springframework.xd.dirt.integration.rabbit.RabbitMessageBus;
  *
  * @author Mark Fisher
  * @author Dave Syer
+ * @author Glenn Renfro
  */
 @Configuration
 @ConditionalOnClass(RabbitMessageBus.class)
@@ -49,7 +50,7 @@ public class RabbitServiceConfiguration {
 			return new CloudFactory().getCloud();
 		}
 		@Bean
-		ConnectionFactory redisConnectionFactory(Cloud cloud) {
+		ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
 			return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
 		}
 	}
