@@ -18,25 +18,20 @@ package sink;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.cloud.stream.annotation.Sink;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.messaging.MessageChannel;
 
 /**
  * @author Dave Syer
  *
  */
-@EnableModule
+@EnableModule(Sink.class)
 public class LogSink {
 
 	private static Logger logger = LoggerFactory.getLogger(LogSink.class);
 
-	@Input
-	public MessageChannel input;
-
-	@ServiceActivator(inputChannel="input")
+	@ServiceActivator(inputChannel=Sink.INPUT)
 	public void loggerSink(Object payload) {
 		logger.info("Received: " + payload);
 	}

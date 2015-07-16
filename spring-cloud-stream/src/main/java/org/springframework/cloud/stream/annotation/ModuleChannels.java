@@ -26,19 +26,19 @@ import java.lang.annotation.Target;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Indicates that an output channel will be created by the framework.
+ * Indicates an instance of a channels interface containing methods returning named
+ * message channels.
  *
  * @author Dave Syer
- * @author Marius Bogoevici
  */
 
 @Qualifier
-@Target({ ElementType.FIELD, ElementType.METHOD})
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-public @interface Output {
+public @interface ModuleChannels {
 
-	String value() default "";
+	Class<?> value();
 
 }

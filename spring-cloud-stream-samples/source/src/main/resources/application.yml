@@ -1,5 +1,3 @@
-server:
-  port: 8081
 fixedDelay: 5000
 spring:
   cloud:
