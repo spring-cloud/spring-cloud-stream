@@ -23,21 +23,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Indicates that an input channel will be created and injected by the framework.
+ * Indicates that an input channel will be created by the framework.
  *
  * @author Dave Syer
  * @author Marius Bogoevici
  */
 
+@Qualifier
 @Target({ ElementType.FIELD, ElementType.METHOD,
 	ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
 public @interface Input {
+
+	String value() default "";
 
 }

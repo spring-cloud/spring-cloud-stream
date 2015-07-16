@@ -19,12 +19,11 @@ package source;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.annotation.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
 import org.springframework.integration.core.MessageSource;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.text.SimpleDateFormat;
@@ -35,18 +34,15 @@ import java.util.Date;
  * @author Glenn Renfro
  *
  */
-@EnableModule
+@EnableModule(Source.class)
 @EnableConfigurationProperties(TimeSourceOptionsMetadata.class)
 public class TimeSource {
 
 	@Autowired
 	private TimeSourceOptionsMetadata options;
 
-	@Output
-	public MessageChannel output;
-
 	@Bean
-	@InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+	@InboundChannelAdapter(value = Source.OUTPUT, autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
 	public MessageSource<String> timerMessageSource() {
 		return () -> new GenericMessage<>(new SimpleDateFormat(this.options.getFormat()).format(new Date()));
 	}
