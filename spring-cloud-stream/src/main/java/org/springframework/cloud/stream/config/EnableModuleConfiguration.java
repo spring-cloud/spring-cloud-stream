@@ -16,18 +16,48 @@
 
 package org.springframework.cloud.stream.config;
 
-import org.springframework.context.annotation.Bean;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.cloud.stream.annotation.EnableModule;
+import org.springframework.cloud.stream.utils.MessageChannelBeanDefinitionRegistryUtils;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.MultiValueMap;
 
 /**
  * @author Marius Bogoevici
+ * @author Dave Syer
  */
 @Configuration
-public class EnableModuleConfiguration {
+public class EnableModuleConfiguration implements ImportBeanDefinitionRegistrar {
 
-	@Bean
-	public ModulePostProcessor modulePostProcessor() {
-		return new ModulePostProcessor();
+	@Override
+	public void registerBeanDefinitions(AnnotationMetadata metadata,
+			BeanDefinitionRegistry registry) {
+		MultiValueMap<String, Object> attributes = metadata.getAllAnnotationAttributes(
+				EnableModule.class.getName(), false);
+		for (Class<?> type : collectClasses(attributes.get("value"))) {
+			MessageChannelBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type, registry);
+			MessageChannelBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
+					ClassUtils.resolveClassName(metadata.getClassName(), null), type,
+					registry);
+		}
+	}
+
+	private List<Class<?>> collectClasses(List<Object> list) {
+		ArrayList<Class<?>> result = new ArrayList<Class<?>>();
+		for (Object object : list) {
+			for (Object value : (Object[]) object) {
+				if (value instanceof Class && void.class != value) {
+					result.add((Class<?>) value);
+				}
+			}
+		}
+		return result;
 	}
 
 }

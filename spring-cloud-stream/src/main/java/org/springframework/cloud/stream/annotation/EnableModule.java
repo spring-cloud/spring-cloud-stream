@@ -47,8 +47,10 @@ import org.springframework.integration.annotation.MessageEndpoint;
 @Configuration
 @MessageEndpoint
 @Import({RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
-		ChannelBindingAdapterConfiguration.class, CodecConfiguration.class, LifecycleConfiguration.class,
-		AggregateBuilderConfiguration.class, EnableModuleConfiguration.class})
+	ChannelBindingAdapterConfiguration.class, CodecConfiguration.class, LifecycleConfiguration.class,
+	AggregateBuilderConfiguration.class, EnableModuleConfiguration.class})
 public @interface EnableModule {
+
+	Class<?>[] value() default {};
 
 }

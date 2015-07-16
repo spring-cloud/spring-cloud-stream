@@ -21,29 +21,25 @@ import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.annotation.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
 import org.springframework.integration.core.MessageSource;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
  * @author Dave Syer
  * @author Marius Bogoevici
  */
-@EnableModule
+@EnableModule(Source.class)
 public class SourceModuleDefinition {
 
 	@Value("${format:YYYY/MM/dd hh:mm:ss}")
 	private String format;
 
-	@Output
-	public MessageChannel output;
-
 	@Bean
-	@InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+	@InboundChannelAdapter(value = Source.OUTPUT, autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
 	public MessageSource<String> timerMessageSource() {
 		return () -> new GenericMessage<>(new SimpleDateFormat(this.format).format(new Date()));
 	}

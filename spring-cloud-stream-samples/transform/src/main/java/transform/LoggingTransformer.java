@@ -18,20 +18,16 @@ package transform;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.context.annotation.Bean;
+import org.springframework.cloud.stream.annotation.Processor;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.SubscribableChannel;
 
 /**
  * @author Dave Syer
  *
  */
-@EnableModule
+@EnableModule(Processor.class)
 @ConfigurationProperties("module.logging")
 public class LoggingTransformer {
 
@@ -50,17 +46,7 @@ public class LoggingTransformer {
 		this.name = name;
 	}
 
-	@Bean
-	public MessageChannel input() {
-		return new DirectChannel();
-	}
-
-	@Bean
-	public SubscribableChannel output() {
-		return new DirectChannel();
-	}
-
-	@ServiceActivator(inputChannel = "input", outputChannel = "output")
+	@ServiceActivator(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
 	public Object transform(Object payload) {
 		logger.info("Transformed by " + this.name + ": " + payload);
 		return payload;
