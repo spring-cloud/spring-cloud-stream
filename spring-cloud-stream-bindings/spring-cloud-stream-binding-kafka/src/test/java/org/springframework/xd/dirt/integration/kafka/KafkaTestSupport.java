@@ -27,11 +27,12 @@ import kafka.utils.TestZKUtils;
 import kafka.utils.Utils;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
+
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
+import org.junit.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.junit.Rule;
 
 import org.springframework.xd.test.AbstractExternalResourceTestSupport;
 
@@ -61,6 +62,9 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	private KafkaServer kafkaServer;
 
 	private Properties brokerConfig = TestUtils.createBrokerConfig(0, TestUtils.choosePort(), false);
+
+	// caches previous failures to reach the external server - preventing repeated retries
+	private static boolean hasFailedAlready = false;
 
 	static {
 		embedded = "true".equals(System.getProperty(XD_KAFKA_TEST_EMBEDDED));
@@ -95,36 +99,46 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 
 	@Override
 	protected void obtainResource() throws Exception {
-		if (embedded) {
-			log.debug("Starting Zookeeper");
-			zookeeper = new EmbeddedZookeeper(TestZKUtils.zookeeperConnect());
-			log.debug("Started Zookeeper at " + zookeeper.getConnectString());
-			try {
-				int zkConnectionTimeout = 6000;
-				int zkSessionTimeout = 6000;
-				zkClient = new ZkClient(getZkConnectString(), zkSessionTimeout, zkConnectionTimeout, ZKStringSerializer$.MODULE$);
+		if (!hasFailedAlready) {
+			if (embedded) {
+				try {
+					log.debug("Starting Zookeeper");
+					zookeeper = new EmbeddedZookeeper(TestZKUtils.zookeeperConnect());
+					log.debug("Started Zookeeper at " + zookeeper.getConnectString());
+					try {
+						int zkConnectionTimeout = 6000;
+						int zkSessionTimeout = 6000;
+						zkClient = new ZkClient(getZkConnectString(), zkSessionTimeout, zkConnectionTimeout, ZKStringSerializer$.MODULE$);
+					}
+					catch (Exception e) {
+						zookeeper.shutdown();
+						throw e;
+					}
+					try {
+						log.debug("Creating Kafka server");
+						Properties brokerConfigProperties = brokerConfig;
+						kafkaServer = TestUtils.createServer(new KafkaConfig(brokerConfigProperties), SystemTime$.MODULE$);
+						log.debug("Created Kafka server at " + kafkaServer.config().hostName() + ":" + kafkaServer.config().port());
+					}
+					catch (Exception e) {
+						zookeeper.shutdown();
+						zkClient.close();
+						throw e;
+					}
+				} catch (Exception e) {
+					hasFailedAlready = true;
+					throw e;
+				}
 			}
-			catch (Exception e) {
-				zookeeper.shutdown();
-				throw e;
+			else {
+				this.zkClient = new ZkClient(DEFAULT_ZOOKEEPER_CONNECT, 2000, 2000, ZKStringSerializer$.MODULE$);
+				if (ZkUtils.getAllBrokersInCluster(zkClient).size() == 0) {
+					hasFailedAlready = true;
+					throw new RuntimeException("Kafka server not available");
+				}
 			}
-			try {
-				log.debug("Creating Kafka server");
-				Properties brokerConfigProperties = brokerConfig;
-				kafkaServer = TestUtils.createServer(new KafkaConfig(brokerConfigProperties), SystemTime$.MODULE$);
-				log.debug("Created Kafka server at " + kafkaServer.config().hostName() + ":" + kafkaServer.config().port());
-			}
-			catch (Exception e) {
-				zookeeper.shutdown();
-				zkClient.close();
-				throw e;
-			}
-		}
-		else {
-			this.zkClient = new ZkClient(DEFAULT_ZOOKEEPER_CONNECT, 5000, 5000, ZKStringSerializer$.MODULE$);
-			if (ZkUtils.getAllBrokersInCluster(zkClient).size() == 0) {
-				throw new RuntimeException("Kafka server not available");
-			}
+		} else {
+			throw new RuntimeException("Kafka server not available");
 		}
 	}
 

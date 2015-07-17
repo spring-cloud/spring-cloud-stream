@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 
 import kafka.api.OffsetRequest;
 
+import org.junit.ClassRule;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.integration.channel.DirectChannel;
@@ -56,11 +56,10 @@ import org.springframework.xd.dirt.integration.kafka.KafkaTestSupport;
  * @author Eric Bottard
  * @author Marius Bogoevici
  */
-@Ignore //TODO: Fix this test
 public class KafkaMessageBusTests extends PartitionCapableBusTests {
 
-	@Rule
-	public KafkaTestSupport kafkaTestSupport = new KafkaTestSupport();
+	@ClassRule
+	public static KafkaTestSupport kafkaTestSupport = new KafkaTestSupport();
 
 	private KafkaTestMessageBus messageBus;
 
