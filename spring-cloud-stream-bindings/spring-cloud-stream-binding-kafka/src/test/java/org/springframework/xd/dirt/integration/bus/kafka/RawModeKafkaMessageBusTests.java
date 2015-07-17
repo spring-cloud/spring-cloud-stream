@@ -51,7 +51,7 @@ import org.springframework.xd.test.TestUtils;
 /**
  * @author Marius Bogoevici
  */
-@Ignore //TODO: Fix this test
+
 public class RawModeKafkaMessageBusTests extends KafkaMessageBusTests {
 
 	@Override
