@@ -47,7 +47,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 
 	private static final Logger log = LoggerFactory.getLogger(KafkaTestSupport.class);
 
-	private static final String XD_KAFKA_TEST_EMBEDDED = "XD_KAFKA_TEST_EMBEDDED";
+	private static final String SCS_KAFKA_TEST_EMBEDDED = "SCS_KAFKA_TEST_EMBEDDED";
 
 	public static final boolean embedded;
 
@@ -67,7 +67,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	private static boolean hasFailedAlready = false;
 
 	static {
-		embedded = "true".equals(System.getProperty(XD_KAFKA_TEST_EMBEDDED));
+		// check if either the environment or Java property is set to use embedded tests
+		embedded = "true".equals(System.getenv(SCS_KAFKA_TEST_EMBEDDED)) || "true".equals(System.getProperty(SCS_KAFKA_TEST_EMBEDDED));
 		log.info(String.format("Testing with %s Kafka broker", embedded ? "embedded" : "external"));
 	}
 
