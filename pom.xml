@@ -54,11 +54,6 @@
 			  <artifactId>spring-cloud-stream</artifactId>
 			  <version>${project.version}</version>
 		    </dependency>
-		    <dependency>
-			  <groupId>org.springframework.cloud</groupId>
-			  <artifactId>spring-xd-runner</artifactId>
-			  <version>${project.version}</version>
-		    </dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-codec</artifactId>
@@ -68,11 +63,6 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-common</artifactId>
 				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.xd</groupId>
-				<artifactId>spring-xd-module</artifactId>
-				<version>${spring-xd.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
