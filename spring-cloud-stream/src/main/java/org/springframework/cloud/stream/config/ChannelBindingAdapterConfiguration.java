@@ -37,13 +37,13 @@ import org.springframework.cloud.stream.adapter.InputChannelBinding;
 import org.springframework.cloud.stream.adapter.OutputChannelBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.binder.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
-import org.springframework.xd.dirt.integration.bus.MessageBus;
-import org.springframework.xd.dirt.integration.bus.MessageBusAwareRouterBeanPostProcessor;
+import org.springframework.cloud.stream.binder.Binder;
 
 /**
  * @author Dave Syer
@@ -62,11 +62,11 @@ public class ChannelBindingAdapterConfiguration {
 	private ChannelLocator channelLocator;
 
 	@Autowired
-	private MessageBus messageBus;
+	private Binder<MessageChannel> binder;
 
 	@Bean
-	public ChannelBindingAdapter messageBusAdapter() {
-		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.messageBus);
+	public ChannelBindingAdapter binderAdapter() {
+		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.binder);
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
 		if (this.channelLocator != null) {
@@ -81,7 +81,7 @@ public class ChannelBindingAdapterConfiguration {
 	}
 
 	public void refresh() {
-		ChannelBindingAdapter adapter = messageBusAdapter();
+		ChannelBindingAdapter adapter = binderAdapter();
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
 	}
@@ -116,23 +116,23 @@ public class ChannelBindingAdapterConfiguration {
 
 	// Nested class to avoid instantiating all of the above early
 	@Configuration
-	protected static class MessageBusAwareRouterConfiguration {
+	protected static class BinderAwareRouterConfiguration {
 
 		@Autowired
 		private ListableBeanFactory beanFactory;
 
 		@Bean
-		public MessageBusAwareRouterBeanPostProcessor messageBusAwareRouterBeanPostProcessor() {
+		public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor() {
 
-			return new MessageBusAwareRouterBeanPostProcessor(createLazyProxy(
-					this.beanFactory, MessageBus.class), new Properties());
+			return new BinderAwareRouterBeanPostProcessor(createLazyProxy(
+					this.beanFactory, Binder.class), new Properties());
 		}
 
 		private <T> T createLazyProxy(ListableBeanFactory beanFactory, Class<T> type) {
 			ProxyFactory factory = new ProxyFactory();
 			LazyInitTargetSource source = new LazyInitTargetSource();
 			source.setTargetClass(type);
-			source.setTargetBeanName(getBeanNameFor(beanFactory, MessageBus.class));
+			source.setTargetBeanName(getBeanNameFor(beanFactory, Binder.class));
 			source.setBeanFactory(beanFactory);
 			factory.setTargetSource(source);
 			factory.addAdvice(new PassthruAdvice());
@@ -145,7 +145,7 @@ public class ChannelBindingAdapterConfiguration {
 		private String getBeanNameFor(ListableBeanFactory beanFactory, Class<?> type) {
 			String[] names = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
 					beanFactory, type, false, false);
-			Assert.state(names.length == 1, "No unique MessageBus (found " + names.length
+			Assert.state(names.length == 1, "No unique Binder (found " + names.length
 					+ ": " + Arrays.asList(names) + ")");
 			return names[0];
 		}

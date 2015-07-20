@@ -27,9 +27,8 @@
 	</properties>
 	<modules>
 		<module>spring-cloud-stream</module>
-		<module>spring-cloud-stream-bindings</module>
+		<module>spring-cloud-stream-binders</module>
 		<module>spring-cloud-stream-codec</module>
-		<module>spring-cloud-stream-common</module>
 		<module>spring-cloud-stream-samples</module>
 		<module>docs</module>
 	</modules>
@@ -76,17 +75,17 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binding-local</artifactId>
+				<artifactId>spring-cloud-stream-binder-local</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binding-redis</artifactId>
+				<artifactId>spring-cloud-stream-binder-redis</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binding-rabbit</artifactId>
+				<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.config.ChannelBindingProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -49,11 +50,10 @@ import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import org.springframework.xd.dirt.integration.bus.MessageBus;
-import org.springframework.xd.dirt.integration.bus.XdHeaders;
+import org.springframework.cloud.stream.binder.Binder;
 
 /**
- * Binds input/output channels to the bus.
+ * Binds input/output channels to the binder.
  *
  * @author Mark Fisher
  * @author Dave Syer
@@ -64,7 +64,8 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 
 	private static Logger logger = LoggerFactory.getLogger(ChannelBindingAdapter.class);
 
-	private MessageBus messageBus;
+	private Binder<MessageChannel> binder;
+
 	private MessageBuilderFactory messageBuilderFactory = new DefaultMessageBuilderFactory();
 
 	private Collection<OutputChannelBinding> outputChannels = Collections.emptySet();
@@ -86,9 +87,9 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 
 	private Map<String, String> bindings = new HashMap<String, String>();
 
-	public ChannelBindingAdapter(ChannelBindingProperties module, MessageBus messageBus) {
+	public ChannelBindingAdapter(ChannelBindingProperties module, Binder<MessageChannel> binder) {
 		this.module = module;
-		this.messageBus = messageBus;
+		this.binder = binder;
 		this.channelLocator = new DefaultChannelLocator(module);
 	}
 
@@ -179,7 +180,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 			return;
 		}
 		String tapChannelName = channel.getTapChannelName();
-		this.messageBus.unbindProducers(tapChannelName);
+		this.binder.unbindProducers(tapChannelName);
 		channel.setTapped(false);
 	}
 
@@ -239,17 +240,17 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 			if (name == null) {
 				continue;
 			}
-			this.messageBus.unbindConsumers(name);
+			this.binder.unbindConsumers(name);
 		}
 		for (OutputChannelBinding binding : this.outputChannels) {
 			String name = this.bindings.get(binding.getRemoteName());
 			if (name == null) {
 				continue;
 			}
-			this.messageBus.unbindProducers(name);
+			this.binder.unbindProducers(name);
 			if (binding.isTapped()) {
 				String tapChannelName = binding.getTapChannelName();
-				this.messageBus.unbindProducers(tapChannelName);
+				this.binder.unbindProducers(tapChannelName);
 			}
 		}
 	}
@@ -322,20 +323,20 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 	private void bindMessageConsumer(MessageChannel inputChannel,
 			String inputChannelName, Properties consumerProperties) {
 		if (isChannelPubSub(inputChannelName)) {
-			this.messageBus.bindPubSubConsumer(inputChannelName, inputChannel, consumerProperties);
+			this.binder.bindPubSubConsumer(inputChannelName, inputChannel, consumerProperties);
 		}
 		else {
-			this.messageBus.bindConsumer(inputChannelName, inputChannel, consumerProperties);
+			this.binder.bindConsumer(inputChannelName, inputChannel, consumerProperties);
 		}
 	}
 
 	private void bindMessageProducer(MessageChannel outputChannel,
 			String outputChannelName, Properties producerProperties) {
 		if (isChannelPubSub(outputChannelName)) {
-			this.messageBus.bindPubSubProducer(outputChannelName, outputChannel, producerProperties);
+			this.binder.bindPubSubProducer(outputChannelName, outputChannel, producerProperties);
 		}
 		else {
-			this.messageBus.bindProducer(outputChannelName, outputChannel, producerProperties);
+			this.binder.bindProducer(outputChannelName, outputChannel, producerProperties);
 		}
 	}
 
@@ -346,7 +347,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 
 	/**
 	 * Creates a wiretap on the output channel and binds the tap channel to
-	 * {@link MessageBus}'s message target.
+	 * {@link org.springframework.cloud.stream.binder.Binder}'s message target.
 	 *
 	 * @param tapChannelName the name of the tap channel
 	 * @param localName the channel to tap
@@ -357,7 +358,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 		if (channel instanceof ChannelInterceptorAware) {
 			DirectChannel tapChannel = new DirectChannel();
 			tapChannel.setBeanName(tapChannelName + ".tap.bridge");
-			this.messageBus.bindPubSubProducer(tapChannelName, tapChannel, null); // TODO
+			this.binder.bindPubSubProducer(tapChannelName, tapChannel, null); // TODO
 			// tap
 			// producer
 			// props
@@ -384,7 +385,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 				public Message<?> preSend(Message<?> message, MessageChannel channel) {
 					@SuppressWarnings("unchecked")
 					Collection<Map<String, Object>> history = (Collection<Map<String, Object>>) message
-					.getHeaders().get(XdHeaders.XD_HISTORY);
+					.getHeaders().get(BinderHeaders.BINDER_HISTORY);
 					if (history == null) {
 						history = new ArrayList<Map<String, Object>>(1);
 					}
@@ -396,7 +397,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 					map.put("thread", Thread.currentThread().getName());
 					history.add(map);
 					Message<?> out = ChannelBindingAdapter.this.messageBuilderFactory.fromMessage(message)
-							.setHeader(XdHeaders.XD_HISTORY, history).build();
+							.setHeader(BinderHeaders.BINDER_HISTORY, history).build();
 					return out;
 				}
 			});

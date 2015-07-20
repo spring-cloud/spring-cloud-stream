@@ -32,6 +32,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.adapter.ChannelBinding;
 import org.springframework.cloud.stream.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.stream.adapter.OutputChannelBinding;
+import org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterConfigurationTests.Empty;
 import org.springframework.cloud.stream.utils.MessageChannelBeanDefinitionRegistryUtils;
 import org.springframework.context.annotation.Bean;
@@ -40,7 +41,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.xd.dirt.integration.bus.local.LocalMessageBus;
 
 /**
  * @author Dave Syer
@@ -142,8 +142,8 @@ public class ChannelBindingAdapterConfigurationTests {
 	@Import({ChannelBindingAdapterConfiguration.class, ChannelBindingPropertiesAutoConfiguration.class})
 	protected static class Empty {
 		@Bean
-		public LocalMessageBus messageBus() {
-			return new LocalMessageBus();
+		public LocalMessageChannelBinder binder() {
+			return new LocalMessageChannelBinder();
 		}
 	}
 
