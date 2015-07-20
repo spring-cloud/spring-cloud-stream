@@ -30,7 +30,7 @@ import javax.validation.ConstraintValidatorContext;
 import javax.validation.Payload;
 
 /**
- * The annotated must be a valid {@link java.text.SimpleDateFormat} pattern.
+ * The annotated String must be a valid {@link java.text.SimpleDateFormat} pattern.
  *
  * @author Eric Bottard
  */
