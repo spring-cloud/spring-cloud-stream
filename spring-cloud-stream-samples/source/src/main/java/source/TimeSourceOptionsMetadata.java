@@ -19,8 +19,6 @@ package source;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
-import org.springframework.xd.module.options.validation.DateFormat;
-
 /**
  * Describes options to the {@code time} source module.
  *
