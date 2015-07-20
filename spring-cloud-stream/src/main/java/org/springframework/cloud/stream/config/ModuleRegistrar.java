@@ -22,7 +22,6 @@ import java.util.List;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.EnableModule;
 import org.springframework.cloud.stream.utils.MessageChannelBeanDefinitionRegistryUtils;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
@@ -32,8 +31,7 @@ import org.springframework.util.MultiValueMap;
  * @author Marius Bogoevici
  * @author Dave Syer
  */
-@Configuration
-public class EnableModuleConfiguration implements ImportBeanDefinitionRegistrar {
+public class ModuleRegistrar implements ImportBeanDefinitionRegistrar {
 
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata,

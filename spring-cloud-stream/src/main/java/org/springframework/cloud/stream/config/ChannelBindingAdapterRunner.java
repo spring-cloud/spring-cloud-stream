@@ -19,14 +19,12 @@ package org.springframework.cloud.stream.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.cloud.stream.adapter.ChannelBindingAdapter;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Dave Syer
  *
  */
-@Configuration
-public class LifecycleConfiguration implements CommandLineRunner {
+public class ChannelBindingAdapterRunner implements CommandLineRunner {
 
 	@Autowired
 	private ChannelBindingProperties module;
@@ -40,5 +38,4 @@ public class LifecycleConfiguration implements CommandLineRunner {
 			adapter.start();
 		}
 	}
-
 }

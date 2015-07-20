@@ -46,5 +46,4 @@ public class AggregateBuilderConfiguration implements CommandLineRunner {
 		}
 		aggregateBuilder().build();
 	}
-
 }
