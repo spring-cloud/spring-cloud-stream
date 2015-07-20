@@ -22,7 +22,7 @@ import com.esotericsoftware.kryo.Registration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.xd.dirt.integration.bus.serializer.SerializationException;
+import org.springframework.core.serializer.support.SerializationFailedException;
 
 /**
  * @author David Turanski
@@ -38,7 +38,7 @@ public abstract class AbstractKryoRegistrar implements KryoRegistrar {
 			register(kryo, registration);
 		}
 	}
-	
+
 	public abstract List<Registration> getRegistrations();
 
 	protected void register(Kryo kryo, Registration registration) {
@@ -47,11 +47,11 @@ public abstract class AbstractKryoRegistrar implements KryoRegistrar {
 		Registration existing = kryo.getRegistration(id);
 
 		if (existing != null) {
-			throw new SerializationException(String.format("registration already exists %s", existing));
+			throw new SerializationFailedException(String.format("registration already exists %s", existing));
 		}
 
 		log.info("registering {} with serializer {}", registration, registration.getSerializer().getClass()
-					.getName());
+				.getName());
 
 		kryo.register(registration);
 	}

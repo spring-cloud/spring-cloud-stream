@@ -20,9 +20,9 @@ import java.util.List;
 
 import com.esotericsoftware.kryo.Registration;
 
+import org.springframework.core.serializer.support.SerializationFailedException;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import org.springframework.xd.dirt.integration.bus.serializer.SerializationException;
 
 /**
  * A {@link KryoRegistrar} that delegates and validates
@@ -37,7 +37,7 @@ public class CompositeKryoRegistrar extends AbstractKryoRegistrar {
 	public CompositeKryoRegistrar(List<KryoRegistrar> delegates) {
 		super();
 		this.delegates = delegates;
-		
+
 		if (!CollectionUtils.isEmpty(this.delegates)) {
 			validateRegistrations();
 		}
@@ -60,18 +60,18 @@ public class CompositeKryoRegistrar extends AbstractKryoRegistrar {
 			Assert.isTrue(registration.getId() >= MIN_REGISTRATION_VALUE, "registration ID must be >= " +
 					MIN_REGISTRATION_VALUE);
 			if (ids.contains(registration.getId())) {
-				throw new SerializationException(String.format("Duplicate registration ID found: %d",
+				throw new SerializationFailedException(String.format("Duplicate registration ID found: %d",
 						registration.getId()));
 			}
 			ids.add(registration.getId());
 
 			if (types.contains(registration.getType())) {
-				throw new SerializationException(String.format("Duplicate registration found for type: %s",
+				throw new SerializationFailedException(String.format("Duplicate registration found for type: %s",
 						registration.getType()));
 			}
 			types.add(registration.getType());
 
-			log.info("configured Kryo registration {} with serializer {}", registration, 
+			log.info("configured Kryo registration {} with serializer {}", registration,
 					registration.getSerializer().getClass().getName());
 
 		}

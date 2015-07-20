@@ -26,7 +26,7 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.xd.dirt.integration.redis.RedisMessageBus;
+import org.springframework.cloud.stream.binder.redis.RedisBinder;
 
 /**
  * Bind to services, either locally or in a Lattice environment.
@@ -35,11 +35,11 @@ import org.springframework.xd.dirt.integration.redis.RedisMessageBus;
  * @author Dave Syer
  */
 @Configuration
-@ConditionalOnClass(RedisMessageBus.class)
-@ConditionalOnMissingBean(RedisMessageBus.class)
-@ImportResource({ "classpath*:/META-INF/spring-xd/bus/redis-bus.xml",
+@ConditionalOnClass(RedisBinder.class)
+@ConditionalOnMissingBean(RedisBinder.class)
+@ImportResource({ "classpath*:/META-INF/spring-cloud-stream/binder/redis-binder.xml",
 "classpath*:/META-INF/spring-xd/analytics/redis-analytics.xml" })
-@PropertySource("classpath:/META-INF/spring-cloud-streams/redis-bus.properties")
+@PropertySource("classpath:/META-INF/spring-cloud-stream/redis-binder.properties")
 public class RedisServiceConfiguration {
 
 	@Configuration

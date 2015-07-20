@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.xd.dirt.integration.bus.local.LocalMessageBus;
+import org.springframework.cloud.stream.binder.local.LocalBinder;
 
 /**
  * @author Dave Syer
@@ -142,8 +142,8 @@ public class ChannelBindingAdapterConfigurationTests {
 	@Import({ChannelBindingAdapterConfiguration.class, ChannelBindingPropertiesAutoConfiguration.class})
 	protected static class Empty {
 		@Bean
-		public LocalMessageBus messageBus() {
-			return new LocalMessageBus();
+		public LocalBinder binder() {
+			return new LocalBinder();
 		}
 	}
 
