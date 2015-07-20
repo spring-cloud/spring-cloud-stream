@@ -35,6 +35,7 @@ import org.junit.Test;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -48,7 +49,6 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.PeriodicTrigger;
-import org.springframework.cloud.stream.binder.local.LocalBinder;
 
 /**
  * @author Mark Fisher
@@ -60,11 +60,11 @@ public class BinderAwareChannelResolverTests {
 
 	private volatile BinderAwareChannelResolver resolver;
 
-	private volatile LocalBinder binder;
+	private volatile LocalMessageChannelBinder binder;
 
 	@Before
 	public void setupContext() throws Exception {
-		this.binder = new LocalBinder();
+		this.binder = new LocalMessageChannelBinder();
 		this.binder.setApplicationContext(context);
 		this.binder.afterPropertiesSet();
 		this.resolver = new BinderAwareChannelResolver(this.binder, null);

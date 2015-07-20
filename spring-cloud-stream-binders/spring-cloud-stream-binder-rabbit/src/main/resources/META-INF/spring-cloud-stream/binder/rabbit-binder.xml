@@ -7,7 +7,7 @@
 
 	<bean class="org.springframework.cloud.stream.binder.rabbit.ConnectionFactorySettings" />
 
-	<bean id="messageBus" class="org.springframework.cloud.stream.binder.rabbit.RabbitBinder">
+	<bean id="messageBus" class="org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder">
 		<constructor-arg ref="rabbitConnectionFactory" />
 		<constructor-arg ref="codec"/>
 		<property name="defaultAcknowledgeMode" value="#{T(org.springframework.amqp.core.AcknowledgeMode).${xd.messagebus.rabbit.default.ackMode}}" />

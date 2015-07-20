@@ -21,31 +21,31 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
-import org.springframework.xd.dirt.integration.kafka.KafkaBinder;
+import org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder;
 import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
 
 
 /**
- * Test support class for {@link org.springframework.xd.dirt.integration.kafka.KafkaBinder}.
+ * Test support class for {@link org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder}.
  * Creates a binder that uses a test {@link TestKafkaCluster kafka cluster}.
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author David Turanski
  */
-public class KafkaTestBinder extends AbstractTestBinder<KafkaBinder> {
+public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder> {
 
 	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport) {
-		this(kafkaTestSupport, getCodec(), KafkaBinder.Mode.embeddedHeaders);
+		this(kafkaTestSupport, getCodec(), KafkaMessageChannelBinder.Mode.embeddedHeaders);
 	}
 
 
 	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport, MultiTypeCodec<Object> codec,
-			KafkaBinder.Mode mode) {
+			KafkaMessageChannelBinder.Mode mode) {
 
 		try {
 			ZookeeperConnect zookeeperConnect = new ZookeeperConnect();
 			zookeeperConnect.setZkConnect(kafkaTestSupport.getZkConnectString());
-			KafkaBinder binder = new KafkaBinder(zookeeperConnect,
+			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(zookeeperConnect,
 					kafkaTestSupport.getBrokerAddress(),
 					kafkaTestSupport.getZkConnectString(), codec);
 			binder.setDefaultBatchingEnabled(false);

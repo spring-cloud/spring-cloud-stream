@@ -78,6 +78,8 @@ import static org.mockito.Mockito.when;
  */
 public class RabbitBinderTests extends PartitionCapableBinderTests {
 
+	private final String CLASS_UNDER_TEST_NAME = RabbitMessageChannelBinder.class.getSimpleName();
+
 	public static final String BINDER_PREFIX = "binder.rabbit.";
 
 	public static final String TEST_PREFIX = "bindertest.";
@@ -180,7 +182,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RabbitBinder does not support consumer properties: "),
+					containsString(getClassUnderTestName() + " does not support consumer properties: "),
 					containsString("partitionIndex"),
 					containsString("concurrency"),
 					containsString(" for dummy.")));
@@ -190,7 +192,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 			fail("Expected exception");
 		}
 		catch (IllegalArgumentException e) {
-			assertEquals("RabbitBinder does not support consumer property: partitionIndex for queue:dummy.",
+			assertEquals(getClassUnderTestName() + " does not support consumer property: partitionIndex for queue:dummy.",
 					e.getMessage());
 		}
 
@@ -244,7 +246,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RabbitBinder does not support producer properties: "),
+					containsString(getClassUnderTestName() + " does not support producer properties: "),
 					containsString("partitionSelectorExpression"),
 					containsString("partitionKeyExtractorClass"),
 					containsString("partitionKeyExpression"),
@@ -257,7 +259,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RabbitBinder does not support producer properties: "),
+					containsString(getClassUnderTestName() + " does not support producer properties: "),
 					containsString("partitionSelectorExpression"),
 					containsString("partitionKeyExtractorClass"),
 					containsString("partitionKeyExpression"),
@@ -322,7 +324,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RabbitBinder does not support producer properties: "),
+					containsString(getClassUnderTestName() + " does not support producer properties: "),
 					containsString("partitionSelectorExpression"),
 					containsString("partitionKeyExtractorClass"),
 					containsString("partitionKeyExpression"),
@@ -391,7 +393,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RabbitBinder does not support consumer properties: "),
+					containsString(getClassUnderTestName() + " does not support consumer properties: "),
 					containsString("partitionSelectorExpression"),
 					containsString("partitionKeyExtractorClass"),
 					containsString("partitionKeyExpression"),
@@ -695,6 +697,11 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 	protected String getPubSubEndpointRouting(AbstractEndpoint endpoint) {
 		return TestUtils.getPropertyValue(endpoint, "handler.delegate.exchangeNameExpression", 
 				SpelExpression.class).getExpressionString();
+	}
+
+	@Override
+	protected String getClassUnderTestName() {
+		return CLASS_UNDER_TEST_NAME;
 	}
 
 	@Override

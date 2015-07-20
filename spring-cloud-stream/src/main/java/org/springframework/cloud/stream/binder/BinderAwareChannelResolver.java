@@ -31,7 +31,7 @@ import org.springframework.messaging.core.DestinationResolutionException;
  */
 public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
 
-	private final Binder binder;
+	private final Binder<MessageChannel> binder;
 
 	private final Properties producerProperties;
 

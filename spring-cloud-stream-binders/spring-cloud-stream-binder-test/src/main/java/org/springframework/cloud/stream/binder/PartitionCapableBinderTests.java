@@ -62,7 +62,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 			binder.bindProducer("badprops.0", output, properties);
 		}
 		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), allOf(Matchers.containsString(binder.getClass().getSimpleName().replace("Test", "")
+			assertThat(e.getMessage(), allOf(Matchers.containsString(getClassUnderTestName()
 							+ " does not support producer "),
 					containsString("foo"),
 					containsString("baz"),
@@ -74,7 +74,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 			binder.bindConsumer("badprops.0", output, properties);
 		}
 		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), equalTo(binder.getClass().getSimpleName().replace("Test", "")
+			assertThat(e.getMessage(), equalTo(getClassUnderTestName()
 					+ " does not support consumer property: foo for badprops.0."));
 		}
 	}
@@ -266,5 +266,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 	protected String getPubSubEndpointRouting(AbstractEndpoint endpoint) {
 		throw new UnsupportedOperationException();
 	}
+	
+	protected abstract String getClassUnderTestName();
 
 }

@@ -51,7 +51,7 @@ import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
-import org.springframework.cloud.stream.binder.BinderSupport;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
@@ -62,7 +62,7 @@ import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
  * @author David Turanski
  * @author Jennifer Hickey
  */
-public class RedisBinder extends BinderSupport implements DisposableBean {
+public class RedisMessageChannelBinder extends MessageChannelBinderSupport implements DisposableBean {
 
 	private static final String ERROR_HEADER = "errorKey";
 
@@ -140,11 +140,11 @@ public class RedisBinder extends BinderSupport implements DisposableBean {
 
 	private final RedisQueueOutboundChannelAdapter errorAdapter;
 
-	public RedisBinder(RedisConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
+	public RedisMessageChannelBinder(RedisConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
 		this(connectionFactory, codec, new String[0]);
 	}
 
-	public RedisBinder(RedisConnectionFactory connectionFactory, MultiTypeCodec<Object> codec,
+	public RedisMessageChannelBinder(RedisConnectionFactory connectionFactory, MultiTypeCodec<Object> codec,
 			String... headersToMap) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		Assert.notNull(codec, "codec must not be null");
@@ -387,7 +387,7 @@ public class RedisBinder extends BinderSupport implements DisposableBean {
 		this.doRegisterConsumer(name, name, requests, adapter, accessor);
 
 		RedisQueueOutboundChannelAdapter replyQueue = new RedisQueueOutboundChannelAdapter(
-				RedisBinder.parser.parseExpression("headers['" + BinderHeaders.REPLY_TO + "']"),
+				RedisMessageChannelBinder.parser.parseExpression("headers['" + BinderHeaders.REPLY_TO + "']"),
 				this.connectionFactory);
 		replyQueue.setBeanFactory(this.getBeanFactory());
 		replyQueue.setIntegrationEvaluationContext(this.evaluationContext);
@@ -413,7 +413,7 @@ public class RedisBinder extends BinderSupport implements DisposableBean {
 			this.delegate = delegate;
 			this.replyTo = replyTo;
 			this.partitioningMetadata = new PartitioningMetadata(properties, properties.getNextModuleCount());
-			this.setBeanFactory(RedisBinder.this.getBeanFactory());
+			this.setBeanFactory(RedisMessageChannelBinder.this.getBeanFactory());
 		}
 
 		@Override
@@ -429,7 +429,7 @@ public class RedisBinder extends BinderSupport implements DisposableBean {
 			}
 			
 			byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
-					RedisBinder.this.headersToMap);
+					RedisMessageChannelBinder.this.headersToMap);
 			delegate.handleMessage(MessageBuilder.withPayload(messageToSend).copyHeaders(transformed).build());
 		}
 
@@ -439,7 +439,7 @@ public class RedisBinder extends BinderSupport implements DisposableBean {
 
 		public ReceivingHandler() {
 			super();
-			this.setBeanFactory(RedisBinder.this.getBeanFactory());
+			this.setBeanFactory(RedisMessageChannelBinder.this.getBeanFactory());
 		}
 
 		@SuppressWarnings("unchecked")
@@ -483,12 +483,12 @@ public class RedisBinder extends BinderSupport implements DisposableBean {
 			for (int i = 0; i < concurrency; i++) {
 				RedisQueueMessageDrivenEndpoint adapter = new RedisQueueMessageDrivenEndpoint(queueName,
 						connectionFactory);
-				adapter.setBeanFactory(RedisBinder.this.getBeanFactory());
+				adapter.setBeanFactory(RedisMessageChannelBinder.this.getBeanFactory());
 				adapter.setSerializer(null);
 				adapter.setBeanName("inbound." + queueName + "." + i);
 				this.consumers.add(adapter);
 			}
-			this.setBeanFactory(RedisBinder.this.getBeanFactory());
+			this.setBeanFactory(RedisMessageChannelBinder.this.getBeanFactory());
 		}
 
 		@Override

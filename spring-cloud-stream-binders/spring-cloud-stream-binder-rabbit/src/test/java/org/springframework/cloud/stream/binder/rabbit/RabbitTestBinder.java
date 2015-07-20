@@ -26,12 +26,12 @@ import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 
 /**
- * Test support class for {@link org.springframework.cloud.stream.binder.rabbit.RabbitBinder}.
+ * Test support class for {@link RabbitMessageChannelBinder}.
  *
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  */
-public class RabbitTestBinder extends AbstractTestBinder<RabbitBinder> {
+public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBinder> {
 
 	public static final String BINDER_PREFIX = "binder.rabbit.";
 
@@ -42,7 +42,7 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitBinder> {
 	}
 
 	public RabbitTestBinder(ConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
-		RabbitBinder binder = new RabbitBinder(connectionFactory, codec);
+		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(connectionFactory, codec);
 		GenericApplicationContext context = new GenericApplicationContext();
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.setPoolSize(1);

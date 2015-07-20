@@ -5,7 +5,7 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<bean id="messageBus" class="org.springframework.cloud.stream.binder.redis.RedisBinder">
+	<bean id="messageBus" class="org.springframework.cloud.stream.binder.redis.RedisMessageChannelBinder">
 		<constructor-arg ref="redisConnectionFactory" />
 		<constructor-arg ref="codec"/>
 		<constructor-arg value="${xd.messagebus.redis.headers:}" />

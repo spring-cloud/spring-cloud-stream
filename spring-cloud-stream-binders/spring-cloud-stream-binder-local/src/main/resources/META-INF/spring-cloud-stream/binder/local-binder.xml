@@ -4,7 +4,7 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-		<bean id="messageBus" class="org.springframework.cloud.stream.binder.local.LocalBinder">
+		<bean id="messageBus" class="org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder">
 			<property name="queueSize"
 					  value="${xd.messagebus.local.queueSize: #{T(Integer).MAX_VALUE}}" />
 			<property name="poller">

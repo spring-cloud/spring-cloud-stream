@@ -35,7 +35,7 @@ import org.apache.curator.test.TestingServer;
 
 import org.springframework.util.Assert;
 import org.springframework.util.SocketUtils;
-import org.springframework.xd.dirt.integration.kafka.KafkaBinder;
+import org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -91,7 +91,7 @@ public class TestKafkaCluster {
 	 */
 	public static void main(String[] args) throws Exception {
 		TestKafkaCluster cluster = new TestKafkaCluster();
-		ZkClient client = new ZkClient(cluster.getZkConnectString(), 10000, 10000, KafkaBinder.utf8Serializer);
+		ZkClient client = new ZkClient(cluster.getZkConnectString(), 10000, 10000, KafkaMessageChannelBinder.utf8Serializer);
 		int partitions = 5;
 		int replication = 1;
 		AdminUtils.createTopic(client, "mytopic", partitions, replication, new Properties());

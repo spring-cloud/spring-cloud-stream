@@ -46,16 +46,18 @@ import org.springframework.messaging.Message;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Spy;
-import org.springframework.xd.dirt.integration.kafka.KafkaBinder;
+import org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder;
 
 
 /**
- * Integration tests for the {@link org.springframework.xd.dirt.integration.kafka.KafkaBinder}.
+ * Integration tests for the {@link org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder}.
  *
  * @author Eric Bottard
  * @author Marius Bogoevici
  */
 public class KafkaBinderTests extends PartitionCapableBinderTests {
+
+	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
 	@ClassRule
 	public static KafkaTestSupport kafkaTestSupport = new KafkaTestSupport();
@@ -76,7 +78,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 	}
 
 	protected KafkaTestBinder createKafkaTestBinder() {
-		return new KafkaTestBinder(kafkaTestSupport, getCodec(), KafkaBinder.Mode.embeddedHeaders);
+		return new KafkaTestBinder(kafkaTestSupport, getCodec(), KafkaMessageChannelBinder.Mode.embeddedHeaders);
 	}
 
 	@Override
@@ -85,8 +87,13 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 	}
 
 	@Override
+	protected String getClassUnderTestName() {
+		return CLASS_UNDER_TEST_NAME;
+	}
+
+	@Override
 	public Spy spyOn(final String name) {
-		String topic = KafkaBinder.escapeTopicName(name);
+		String topic = KafkaMessageChannelBinder.escapeTopicName(name);
 
 		KafkaTestBinder binderWrapper = (KafkaTestBinder) getBinder();
 		// Rewind offset, as tests will have typically already sent the messages we're trying to consume
@@ -128,7 +135,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 			QueueChannel moduleInputChannel = new QueueChannel();
 			Properties props = new Properties();
 			if (codec != null) {
-				props.put(KafkaBinder.COMPRESSION_CODEC, codec);
+				props.put(KafkaMessageChannelBinder.COMPRESSION_CODEC, codec);
 			}
 			binder.bindProducer("foo.0", moduleOutputChannel, props);
 			binder.bindConsumer("foo.0", moduleInputChannel, null);

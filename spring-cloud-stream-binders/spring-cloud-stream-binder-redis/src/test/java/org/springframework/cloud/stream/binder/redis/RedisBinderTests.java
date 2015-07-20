@@ -58,6 +58,8 @@ import org.springframework.cloud.stream.binder.Spy;
  * @author Gary Russell
  */
 public class RedisBinderTests extends PartitionCapableBinderTests {
+	
+	private final String CLASS_UNDER_TEST_NAME = RedisMessageChannelBinder.class.getSimpleName();
 
 	@Rule
 	public RedisTestSupport redisAvailableRule = new RedisTestSupport();
@@ -126,7 +128,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RedisBinder does not support consumer properties: "),
+					containsString(getClassUnderTestName() + " does not support consumer properties: "),
 					containsString("partitionIndex"),
 					containsString("concurrency"),
 					containsString(" for dummy.")));
@@ -136,7 +138,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 			fail("Expected exception");
 		}
 		catch (IllegalArgumentException e) {
-			assertEquals("RedisBinder does not support consumer property: partitionIndex for queue:dummy.",
+			assertEquals(getClassUnderTestName() +  " does not support consumer property: partitionIndex for queue:dummy.",
 					e.getMessage());
 		}
 
@@ -178,7 +180,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RedisBinder does not support producer properties: "),
+					containsString(getClassUnderTestName() + " does not support producer properties: "),
 					containsString("partitionSelectorExpression"),
 					containsString("partitionKeyExtractorClass"),
 					containsString("partitionKeyExpression"),
@@ -191,7 +193,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RedisBinder does not support producer properties: "),
+					containsString(getClassUnderTestName() + " does not support producer properties: "),
 					containsString("partitionSelectorExpression"),
 					containsString("partitionKeyExtractorClass"),
 					containsString("partitionKeyExpression"),
@@ -238,7 +240,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RedisBinder does not support producer properties: "),
+					containsString(getClassUnderTestName() + " does not support producer properties: "),
 					containsString("partitionSelectorExpression"),
 					containsString("partitionKeyExtractorClass"),
 					containsString("partitionKeyExpression"),
@@ -287,7 +289,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), allOf(
-					containsString("RedisBinder does not support consumer properties: "),
+					containsString(getClassUnderTestName()  + " does not support consumer properties: "),
 					containsString("partitionSelectorExpression"),
 					containsString("partitionKeyExtractorClass"),
 					containsString("partitionKeyExpression"),
@@ -307,10 +309,10 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 				TestUtils.getPropertyValue(endpoint, "consumers", List.class).get(0),
 				"outputChannel", DirectChannel.class);
 		assertThat(
-				channel.getClass().getName(), containsString("RedisBinder$")); // retry wrapper
+				channel.getClass().getName(), containsString(getClassUnderTestName() + "$")); // retry wrapper
 		assertThat(
 				TestUtils.getPropertyValue(TestUtils.getPropertyValue(endpoint, "consumers", List.class).get(1),
-						"outputChannel").getClass().getName(), containsString("RedisBinder$")); // retry wrapper
+						"outputChannel").getClass().getName(), containsString(getClassUnderTestName() + "$")); // retry wrapper
 		RetryTemplate retry = TestUtils.getPropertyValue(channel, "val$retryTemplate", RetryTemplate.class);
 		assertEquals(23, TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts"));
 		assertEquals(2000L, TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval"));
@@ -337,7 +339,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testMoreHeaders() {
-		RedisBinder binder = new RedisBinder(mock(RedisConnectionFactory.class), getCodec(), "foo", "bar");
+		RedisMessageChannelBinder binder = new RedisMessageChannelBinder(mock(RedisConnectionFactory.class), getCodec(), "foo", "bar");
 		Collection<String> headers = Arrays.asList(TestUtils.getPropertyValue(binder, "headersToMap", String[].class));
 		assertEquals(10, headers.size());
 		assertTrue(headers.contains("foo"));
@@ -365,6 +367,11 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 	@Override
 	protected String getPubSubEndpointRouting(AbstractEndpoint endpoint) {
 		return TestUtils.getPropertyValue(endpoint, "handler.delegate.topicExpression", Expression.class).getExpressionString();
+	}
+
+	@Override
+	protected String getClassUnderTestName() {
+		return CLASS_UNDER_TEST_NAME;
 	}
 
 	@Override

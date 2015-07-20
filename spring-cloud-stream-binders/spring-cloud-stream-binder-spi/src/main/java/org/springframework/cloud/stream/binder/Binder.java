@@ -18,7 +18,7 @@ import java.util.Properties;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * A strategy interface used to bind a {@link MessageChannel} to a logical name. The name is intended to identify a
+ * A strategy interface used to bind a module interface to a logical name. The name is intended to identify a
  * logical consumer or producer of messages. This may be a queue, a channel adapter, another message channel, a Spring
  * bean, etc.
  *
@@ -29,55 +29,55 @@ import org.springframework.messaging.MessageChannel;
  * @author Ilayaperumal Gopinathan
  * @since 1.0
  */
-public interface Binder {
+public interface Binder<T> {
 
 	/**
 	 * Bind a message consumer on a p2p channel
 	 *
 	 * @param name the logical identity of the message source
-	 * @param moduleInputChannel the channel bound as a consumer
+	 * @param inboundBindTarget the module interface to be bound as a point to point consumer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
 	 */
-	void bindConsumer(String name, MessageChannel moduleInputChannel, Properties properties);
+	void bindConsumer(String name, T inboundBindTarget, Properties properties);
 
 
 	/**
 	 * Bind a message consumer on a pub/sub channel
 	 *
 	 * @param name the logical identity of the message source
-	 * @param inputChannel the channel bound as a pub/sub consumer
+	 * @param inboundBindTarget the module interface to be bound as a pub/sub consumer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
 	 */
-	void bindPubSubConsumer(final String name, MessageChannel inputChannel, Properties properties);
+	void bindPubSubConsumer(final String name, T inboundBindTarget, Properties properties);
 
 	/**
 	 * Bind a message producer on a p2p channel.
 	 *
 	 * @param name the logical identity of the message target
-	 * @param moduleOutputChannel the channel bound as a producer
+	 * @param outboundBindTarget the module interface bound as a producer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
 	 */
-	void bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties);
+	void bindProducer(String name, T outboundBindTarget, Properties properties);
 
 
 	/**
 	 * Bind a message producer on a pub/sub channel.
 	 *
 	 * @param name the logical identity of the message target
-	 * @param outputChannel the channel bound as a producer
+	 * @param outboundBindTarget the module interface bound as a producer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
 	 */
-	void bindPubSubProducer(final String name, MessageChannel outputChannel, Properties properties);
+	void bindPubSubProducer(final String name, T outboundBindTarget, Properties properties);
 
 	/**
-	 * Unbind an inbound inter-module channel and stop any active components that use the channel.
+	 * Unbind inbound module components and stop any active components that use the channel.
 	 *
 	 * @param name the channel name
 	 */
 	void unbindConsumers(String name);
 
 	/**
-	 * Unbind an outbound inter-module channel and stop any active components that use the channel.
+	 * Unbind an outbound module components and stop any active components that use the channel.
 	 *
 	 * @param name the channel name
 	 */
@@ -87,56 +87,56 @@ public interface Binder {
 	 * Unbind a specific p2p or pub/sub message consumer
 	 *
 	 * @param name The logical identify of a message source
-	 * @param channel The channel bound as a consumer
+	 * @param inboundBindTarget The module interface bound as a consumer
 	 */
-	void unbindConsumer(String name, MessageChannel channel);
+	void unbindConsumer(String name, T inboundBindTarget);
 
 	/**
 	 * Unbind a specific p2p or pub/sub message producer
 	 *
 	 * @param name the logical identity of the message target
-	 * @param channel the channel bound as a producer
+	 * @param outboundBindTarget the channel bound as a producer
 	 */
-	void unbindProducer(String name, MessageChannel channel);
+	void unbindProducer(String name, T outboundBindTarget);
 
 	/**
 	 * Bind a producer that expects async replies. To unbind, invoke unbindProducer() and unbindConsumer().
 	 *
 	 * @param name The name of the requestor.
-	 * @param requests The request channel - sends requests.
-	 * @param replies The reply channel - receives replies.
+	 * @param requests The interface used to send requests.
+	 * @param replies The interface used to receive replies.
 	 * @param properties arbitrary String key/value pairs that will be used in the binding.
 	 */
-	void bindRequestor(String name, MessageChannel requests, MessageChannel replies, Properties properties);
+	void bindRequestor(String name, T requests, T replies, Properties properties);
 
 	/**
 	 * Bind a consumer that handles requests from a requestor and asynchronously sends replies. To unbind, invoke
 	 * unbindProducer() and unbindConsumer().
 	 *
 	 * @param name The name of the requestor for which this replier will handle requests.
-	 * @param requests The request channel - receives requests.
-	 * @param replies The reply channel - sends replies.
+	 * @param requests The interface used to send requests.
+	 * @param replies The interface used to receive replies.
 	 * @param properties arbitrary String key/value pairs that will be used in the binding.
 	 */
-	void bindReplier(String name, MessageChannel requests, MessageChannel replies, Properties properties);
+	void bindReplier(String name, T requests, T replies, Properties properties);
 
 	/**
-	 * Create a channel and bind a producer dynamically, creating the infrastructure
+	 * Create a object and bind a producer dynamically, creating the infrastructure
 	 * required by the binder technology.
 	 * @param name The name of the "queue:" channel.
 	 * @param properties arbitrary String key/value pairs that will be used in the binding.
-	 * @return The channel.
+	 * @return The bound object.
 	 */
-	MessageChannel bindDynamicProducer(String name, Properties properties);
+	T bindDynamicProducer(String name, Properties properties);
 
 	/**
-	 * Create a channel and bind a producer dynamically, creating the infrastructure
+	 * Create an object and bind a producer dynamically, creating the infrastructure
 	 * required by the binder technology to broadcast messages to consumers.
 	 * @param name The name of the "topic:" channel.
 	 * @param properties arbitrary String key/value pairs that will be used in the binding.
-	 * @return The channel.
+	 * @return The bound Object.
 	 */
-	MessageChannel bindDynamicPubSubProducer(String name, Properties properties);
+	T bindDynamicPubSubProducer(String name, Properties properties);
 
 	/**
 	 * Return true if the binder supports the capability.

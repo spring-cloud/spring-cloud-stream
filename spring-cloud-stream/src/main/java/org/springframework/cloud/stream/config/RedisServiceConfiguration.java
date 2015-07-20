@@ -20,13 +20,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
+import org.springframework.cloud.stream.binder.redis.RedisMessageChannelBinder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.cloud.stream.binder.redis.RedisBinder;
 
 /**
  * Bind to services, either locally or in a Lattice environment.
@@ -35,8 +35,8 @@ import org.springframework.cloud.stream.binder.redis.RedisBinder;
  * @author Dave Syer
  */
 @Configuration
-@ConditionalOnClass(RedisBinder.class)
-@ConditionalOnMissingBean(RedisBinder.class)
+@ConditionalOnClass(RedisMessageChannelBinder.class)
+@ConditionalOnMissingBean(RedisMessageChannelBinder.class)
 @ImportResource({ "classpath*:/META-INF/spring-cloud-stream/binder/redis-binder.xml",
 "classpath*:/META-INF/spring-xd/analytics/redis-analytics.xml" })
 @PropertySource("classpath:/META-INF/spring-cloud-stream/redis-binder.properties")

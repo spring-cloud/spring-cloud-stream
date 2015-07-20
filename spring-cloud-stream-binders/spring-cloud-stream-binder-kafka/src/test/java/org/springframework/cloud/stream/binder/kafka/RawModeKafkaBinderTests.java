@@ -45,7 +45,7 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.xd.dirt.integration.kafka.KafkaBinder;
+import org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.binder.TestUtils;
 
 /**
@@ -56,7 +56,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Override
 	protected KafkaTestBinder createKafkaTestBinder() {
-		return new KafkaTestBinder(kafkaTestSupport, getCodec(), KafkaBinder.Mode.raw);
+		return new KafkaTestBinder(kafkaTestSupport, getCodec(), KafkaMessageChannelBinder.Mode.raw);
 	}
 
 	@Test

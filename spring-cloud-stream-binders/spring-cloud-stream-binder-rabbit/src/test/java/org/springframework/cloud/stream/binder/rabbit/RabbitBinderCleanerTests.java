@@ -38,7 +38,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.cloud.stream.binder.BinderUtils;
-import org.springframework.cloud.stream.binder.BinderSupport;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.RabbitAdminException;
 import org.springframework.cloud.stream.binder.RabbitManagementUtils;
 
@@ -71,9 +71,9 @@ public class RabbitBinderCleanerTests {
 		String stream2 = stream1 + "-1";
 		String firstQueue = null;
 		for (int i = 0; i < 5; i++) {
-			String queue1Name = BinderSupport.applyPrefix(BINDER_PREFIX,
+			String queue1Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX,
 					BinderUtils.constructPipeName(stream1, i));
-			String queue2Name = BinderSupport.applyPrefix(BINDER_PREFIX,
+			String queue2Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX,
 					BinderUtils.constructPipeName(stream2, i));
 			if (firstQueue == null) {
 				firstQueue = queue1Name;
@@ -90,18 +90,18 @@ public class RabbitBinderCleanerTests {
 			template.put(uri, new AmqpQueue(false, true));
 			uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues")
 					.pathSegment("{vhost}", "{queue}")
-					.buildAndExpand("/", BinderSupport.constructDLQName(queue1Name)).encode().toUri();
+					.buildAndExpand("/", MessageChannelBinderSupport.constructDLQName(queue1Name)).encode().toUri();
 			template.put(uri, new AmqpQueue(false, true));
 		}
 		CachingConnectionFactory connectionFactory = test.getResource();
 		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
 		final FanoutExchange fanout1 = new FanoutExchange(
-				BinderSupport.applyPrefix(BINDER_PREFIX, BinderSupport.applyPubSub(
+				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, MessageChannelBinderSupport.applyPubSub(
 						BinderUtils.constructTapPrefix(stream1) + ".foo.bar")));
 		rabbitAdmin.declareExchange(fanout1);
 		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(fanout1));
 		final FanoutExchange fanout2 = new FanoutExchange(
-				BinderSupport.applyPrefix(BINDER_PREFIX, BinderSupport.applyPubSub(
+				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, MessageChannelBinderSupport.applyPubSub(
 						BinderUtils.constructTapPrefix(stream2) + ".foo.bar")));
 		rabbitAdmin.declareExchange(fanout2);
 		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(fanout2));
@@ -109,7 +109,7 @@ public class RabbitBinderCleanerTests {
 
 			@Override
 			public Void doInRabbit(Channel channel) throws Exception {
-				String queueName = BinderSupport.applyPrefix(BINDER_PREFIX,
+				String queueName = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX,
 						BinderUtils.constructPipeName(stream1, 4));
 				String consumerTag = channel.basicConsume(queueName, new DefaultConsumer(channel));
 				try {

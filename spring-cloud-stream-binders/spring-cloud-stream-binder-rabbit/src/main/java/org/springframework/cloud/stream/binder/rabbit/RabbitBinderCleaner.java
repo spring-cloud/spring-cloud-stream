@@ -28,7 +28,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.cloud.stream.binder.BinderCleaner;
 import org.springframework.cloud.stream.binder.BinderUtils;
-import org.springframework.cloud.stream.binder.BinderSupport;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.RabbitAdminException;
 import org.springframework.cloud.stream.binder.RabbitManagementUtils;
 
@@ -72,8 +72,8 @@ public class RabbitBinderCleaner implements BinderCleaner {
 		if (isJob) {
 		}
 		else {
-			final String tapPrefix = adjustPrefix(BinderSupport.applyPrefix(binderPrefix,
-					BinderSupport.applyPubSub(BinderUtils.constructTapPrefix(entity))));
+			final String tapPrefix = adjustPrefix(MessageChannelBinderSupport.applyPrefix(binderPrefix,
+					MessageChannelBinderSupport.applyPubSub(BinderUtils.constructTapPrefix(entity))));
 			callback = new ExchangeCandidateCallback() {
 
 				@Override
@@ -117,7 +117,7 @@ public class RabbitBinderCleaner implements BinderCleaner {
 
 	private List<String> findStreamQueues(String adminUri, String vhost, String binderPrefix, String stream,
 			RestTemplate restTemplate) {
-		String queueNamePrefix = adjustPrefix(BinderSupport.applyPrefix(binderPrefix, stream));
+		String queueNamePrefix = adjustPrefix(MessageChannelBinderSupport.applyPrefix(binderPrefix, stream));
 		List<Map<String, Object>> queues = listAllQueues(adminUri, vhost, restTemplate);
 		List<String> removedQueues = new ArrayList<>();
 		for (Map<String, Object> queue : queues) {

@@ -31,7 +31,7 @@ import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.cloud.stream.binder.BinderSupport.JavaClassMimeTypeConversion;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport.JavaClassMimeTypeConversion;
 import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 import org.springframework.xd.tuple.DefaultTuple;
 import org.springframework.xd.tuple.Tuple;
@@ -46,11 +46,11 @@ import static org.junit.Assert.assertSame;
  * @author Gary Russell
  * @author David Turanski
  */
-public class BinderSupportTests {
+public class MessageChannelBinderSupportTests {
 
 	private ContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
-	private final TestBinder binder = new TestBinder();
+	private final TestMessageChannelBinder binder = new TestMessageChannelBinder();
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Before
@@ -268,7 +268,7 @@ public class BinderSupportTests {
 
 	}
 
-	public class TestBinder extends BinderSupport {
+	public class TestMessageChannelBinder extends MessageChannelBinderSupport {
 
 		@Override
 		public void bindConsumer(String name, MessageChannel channel, Properties properties) {

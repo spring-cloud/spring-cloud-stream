@@ -29,12 +29,12 @@ import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 
 /**
- * Test support class for {@link org.springframework.cloud.stream.binder.redis.RedisBinder}.
+ * Test support class for {@link RedisMessageChannelBinder}.
  *
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  */
-public class RedisTestBinder extends AbstractTestBinder<RedisBinder> {
+public class RedisTestBinder extends AbstractTestBinder<RedisMessageChannelBinder> {
 
 	private StringRedisTemplate template;
 
@@ -43,7 +43,7 @@ public class RedisTestBinder extends AbstractTestBinder<RedisBinder> {
 	}
 
 	public RedisTestBinder(RedisConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
-		RedisBinder binder = new RedisBinder(connectionFactory, codec);
+		RedisMessageChannelBinder binder = new RedisMessageChannelBinder(connectionFactory, codec);
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.getBeanFactory().registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				new DefaultMessageBuilderFactory());

@@ -88,7 +88,7 @@ import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.BinderProperties;
-import org.springframework.cloud.stream.binder.BinderSupport;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
@@ -105,7 +105,7 @@ import com.rabbitmq.client.Envelope;
  * @author Ilayaperumal Gopinathan
  * @author David Turanski
  */
-public class RabbitBinder extends BinderSupport implements DisposableBean {
+public class RabbitMessageChannelBinder extends MessageChannelBinderSupport implements DisposableBean {
 
 	private static final AcknowledgeMode DEFAULT_ACKNOWLEDGE_MODE = AcknowledgeMode.AUTO;
 
@@ -302,7 +302,7 @@ public class RabbitBinder extends BinderSupport implements DisposableBean {
 
 	private volatile boolean clustered;
 
-	public RabbitBinder(ConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
+	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		Assert.notNull(codec, "codec must not be null");
 		this.connectionFactory = connectionFactory;
@@ -549,7 +549,7 @@ public class RabbitBinder extends BinderSupport implements DisposableBean {
 				listenerContainer.setAdviceChain(new Advice[] { retryInterceptor });
 			}
 			listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
-			listenerContainer.setMessagePropertiesConverter(RabbitBinder.inboundMessagePropertiesConverter);
+			listenerContainer.setMessagePropertiesConverter(RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
 			listenerContainer.afterPropertiesSet();
 			AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);
 			adapter.setBeanFactory(this.getBeanFactory());
@@ -767,7 +767,7 @@ public class RabbitBinder extends BinderSupport implements DisposableBean {
 					channel.exchangeDeclarePassive(exchange.getName());
 				}
 				catch (IOException e) {
-					RabbitBinder.this.rabbitAdmin.declareExchange(exchange);
+					RabbitMessageChannelBinder.this.rabbitAdmin.declareExchange(exchange);
 				}
 				return null;
 			}
@@ -873,7 +873,7 @@ public class RabbitBinder extends BinderSupport implements DisposableBean {
 			this.delegate = delegate;
 			this.replyTo = replyTo;
 			this.partitioningMetadata = new PartitioningMetadata(properties, properties.getNextModuleCount());
-			this.setBeanFactory(RabbitBinder.this.getBeanFactory());
+			this.setBeanFactory(RabbitMessageChannelBinder.this.getBeanFactory());
 		}
 
 		@Override
@@ -920,7 +920,7 @@ public class RabbitBinder extends BinderSupport implements DisposableBean {
 
 		public ReceivingHandler() {
 			super();
-			this.setBeanFactory(RabbitBinder.this.getBeanFactory());
+			this.setBeanFactory(RabbitMessageChannelBinder.this.getBeanFactory());
 		}
 
 		@Override

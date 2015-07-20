@@ -30,7 +30,7 @@ import org.springframework.messaging.MessageChannel;
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  */
-public abstract class AbstractTestBinder<C extends BinderSupport> implements Binder {
+public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> implements Binder<MessageChannel> {
 
 	protected Set<String> queues = new HashSet<String>();
 

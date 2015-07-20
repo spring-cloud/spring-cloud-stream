@@ -57,7 +57,7 @@ public class LocalBinderTests extends AbstractBinderTests {
 
 	@Override
 	protected Binder getBinder() throws Exception {
-		LocalBinder binder = new LocalBinder();
+		LocalMessageChannelBinder binder = new LocalMessageChannelBinder();
 		GenericApplicationContext applicationContext = new GenericApplicationContext();
 		applicationContext.getBeanFactory().registerSingleton(
 				IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
@@ -78,7 +78,7 @@ public class LocalBinderTests extends AbstractBinderTests {
 
 	@Test
 	public void testProps() throws Exception {
-		LocalBinder binder = (LocalBinder) getBinder();
+		LocalMessageChannelBinder binder = (LocalMessageChannelBinder) getBinder();
 		ThreadPoolTaskExecutor exec = TestUtils.getPropertyValue(binder, "executor", ThreadPoolTaskExecutor.class);
 		assertEquals(2, exec.getCorePoolSize());
 		assertEquals(10, exec.getMaxPoolSize());
@@ -88,19 +88,19 @@ public class LocalBinderTests extends AbstractBinderTests {
 
 	@Test
 	public void testPayloadConversionNotNeededExplicitType() throws Exception {
-		LocalBinder binder = (LocalBinder) getBinder();
+		LocalMessageChannelBinder binder = (LocalMessageChannelBinder) getBinder();
 		verifyPayloadConversion(new TestPayload(), binder);
 	}
 
 	@Test
 	public void testNoPayloadConversionByDefault() throws Exception {
-		LocalBinder binder = (LocalBinder) getBinder();
+		LocalMessageChannelBinder binder = (LocalMessageChannelBinder) getBinder();
 		verifyPayloadConversion(new TestPayload(), binder);
 	}
 
 	@Test
 	public void testTapDoesntHurtStream() throws Exception {
-		LocalBinder binder = (LocalBinder) getBinder();
+		LocalMessageChannelBinder binder = (LocalMessageChannelBinder) getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		moduleOutputChannel.setBeanName("bangOut");
 		DirectChannel tapChannel = new DirectChannel();
@@ -139,7 +139,7 @@ public class LocalBinderTests extends AbstractBinderTests {
 		assertNotSame(Thread.currentThread(), tapThread.get());
 	}
 
-	private void verifyPayloadConversion(final Object expectedValue, final LocalBinder binder) {
+	private void verifyPayloadConversion(final Object expectedValue, final LocalMessageChannelBinder binder) {
 		DirectChannel myChannel = new DirectChannel();
 		binder.bindConsumer("in", myChannel, null);
 		DirectChannel input = binder.getBean("in", DirectChannel.class);

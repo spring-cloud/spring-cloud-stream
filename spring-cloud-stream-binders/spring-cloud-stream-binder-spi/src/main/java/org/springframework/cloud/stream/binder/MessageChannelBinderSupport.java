@@ -76,8 +76,8 @@ import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  */
-public abstract class BinderSupport
-		implements Binder, ApplicationContextAware, InitializingBean {
+public abstract class MessageChannelBinderSupport
+		implements Binder<MessageChannel>, ApplicationContextAware, InitializingBean {
 
 	protected static final String P2P_NAMED_CHANNEL_TYPE_PREFIX = "queue:";
 

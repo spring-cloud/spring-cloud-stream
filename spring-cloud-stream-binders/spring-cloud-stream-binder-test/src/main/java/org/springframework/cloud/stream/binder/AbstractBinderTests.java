@@ -271,7 +271,7 @@ public abstract class AbstractBinderTests {
 			if (binder instanceof AbstractTestBinder) {
 				binder = ((AbstractTestBinder) binder).getCoreBinder();
 			}
-			assertFalse(((BinderSupport) binder).getApplicationContext().containsBean("queue:foo"));
+			assertFalse(((MessageChannelBinderSupport) binder).getApplicationContext().containsBean("queue:foo"));
 		}
 	}
 

@@ -83,7 +83,7 @@ import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
-import org.springframework.cloud.stream.binder.BinderSupport;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
@@ -125,7 +125,7 @@ import scala.collection.Seq;
  * @author David Turanski
  * @author Gary Russell
  */
-public class KafkaBinder extends BinderSupport {
+public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	public static final ByteArraySerializer BYTE_ARRAY_SERIALIZER = new ByteArraySerializer();
 
@@ -183,7 +183,7 @@ public class KafkaBinder extends BinderSupport {
 
 	protected static final Set<Object> PRODUCER_COMPRESSION_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
-				KafkaBinder.COMPRESSION_CODEC,
+				KafkaMessageChannelBinder.COMPRESSION_CODEC,
 			}));
 
 	/**
@@ -292,7 +292,7 @@ public class KafkaBinder extends BinderSupport {
 
 	private Mode mode = Mode.embeddedHeaders;
 
-	public KafkaBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
+	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
 			MultiTypeCodec<Object> codec, String... headersToMap) {
 		this.zookeeperConnect = zookeeperConnect;
 		this.brokers = brokers;
@@ -834,7 +834,7 @@ public class KafkaBinder extends BinderSupport {
 	private class ReceivingHandler extends AbstractReplyProducingMessageHandler {
 
 		public ReceivingHandler() {
-			this.setBeanFactory(KafkaBinder.this.getBeanFactory());
+			this.setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
 		}
 
 		@Override
@@ -893,7 +893,7 @@ public class KafkaBinder extends BinderSupport {
 			this.topicName = topicName;
 			this.numberOfKafkaPartitions = numberOfPartitions;
 			this.partitioningMetadata = new PartitioningMetadata(properties, numberOfPartitions);
-			this.setBeanFactory(KafkaBinder.this.getBeanFactory());
+			this.setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
 			this.producerConfiguration = producerConfiguration;
 		}
 
@@ -910,7 +910,7 @@ public class KafkaBinder extends BinderSupport {
 			if (Mode.embeddedHeaders.equals(mode)) {
 				MessageValues transformed = serializePayloadIfNecessary(message);
 				byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
-						KafkaBinder.this.headersToMap);
+						KafkaMessageChannelBinder.this.headersToMap);
 				producerConfiguration.send(topicName, targetPartition, null, messageToSend);
 			}
 			else if (Mode.raw.equals(mode)) {

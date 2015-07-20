@@ -40,7 +40,7 @@ import org.springframework.util.MimeType;
 import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.BinderProperties;
-import org.springframework.cloud.stream.binder.BinderSupport;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 
 /**
  * A simple implementation of {@link org.springframework.cloud.stream.binder.Binder} for in-process use. For inbound and outbound, creates a
@@ -55,7 +55,7 @@ import org.springframework.cloud.stream.binder.BinderSupport;
  * @author Ilayaperumal Gopinathan
  * @since 1.0
  */
-public class LocalBinder extends BinderSupport {
+public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private static final int DEFAULT_EXECUTOR_CORE_POOL_SIZE = 0;
 
