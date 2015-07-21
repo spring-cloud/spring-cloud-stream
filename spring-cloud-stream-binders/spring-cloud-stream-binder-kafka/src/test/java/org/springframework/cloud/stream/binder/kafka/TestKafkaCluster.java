@@ -35,7 +35,6 @@ import org.apache.curator.test.TestingServer;
 
 import org.springframework.util.Assert;
 import org.springframework.util.SocketUtils;
-import org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder;
 
 import java.io.IOException;
 import java.util.Collections;

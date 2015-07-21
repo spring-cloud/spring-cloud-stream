@@ -11,7 +11,7 @@
 	</bean>
 
 
-	<bean id="messageBus" class="org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder">
+	<bean id="messageBus" class="org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder">
 		<constructor-arg ref="zookeeperConnect"/>
 		<constructor-arg value="${xd.messagebus.kafka.brokers}"/>
 		<constructor-arg value="${xd.messagebus.kafka.zkAddress}"/>

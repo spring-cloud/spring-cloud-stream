@@ -15,13 +15,10 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.Properties;
 
-import org.springframework.messaging.MessageChannel;
-
 /**
  * A strategy interface used to bind a module interface to a logical name. The name is intended to identify a
  * logical consumer or producer of messages. This may be a queue, a channel adapter, another message channel, a Spring
  * bean, etc.
- *
  * @author Mark Fisher
  * @author David Turanski
  * @author Gary Russell
@@ -33,7 +30,6 @@ public interface Binder<T> {
 
 	/**
 	 * Bind a message consumer on a p2p channel
-	 *
 	 * @param name the logical identity of the message source
 	 * @param inboundBindTarget the module interface to be bound as a point to point consumer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
@@ -43,7 +39,6 @@ public interface Binder<T> {
 
 	/**
 	 * Bind a message consumer on a pub/sub channel
-	 *
 	 * @param name the logical identity of the message source
 	 * @param inboundBindTarget the module interface to be bound as a pub/sub consumer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
@@ -52,7 +47,6 @@ public interface Binder<T> {
 
 	/**
 	 * Bind a message producer on a p2p channel.
-	 *
 	 * @param name the logical identity of the message target
 	 * @param outboundBindTarget the module interface bound as a producer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
@@ -62,7 +56,6 @@ public interface Binder<T> {
 
 	/**
 	 * Bind a message producer on a pub/sub channel.
-	 *
 	 * @param name the logical identity of the message target
 	 * @param outboundBindTarget the module interface bound as a producer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
@@ -71,21 +64,18 @@ public interface Binder<T> {
 
 	/**
 	 * Unbind inbound module components and stop any active components that use the channel.
-	 *
 	 * @param name the channel name
 	 */
 	void unbindConsumers(String name);
 
 	/**
-	 * Unbind an outbound module components and stop any active components that use the channel.
-	 *
+	 * Unbind outbound module components and stop any active components that use the channel.
 	 * @param name the channel name
 	 */
 	void unbindProducers(String name);
 
 	/**
 	 * Unbind a specific p2p or pub/sub message consumer
-	 *
 	 * @param name The logical identify of a message source
 	 * @param inboundBindTarget The module interface bound as a consumer
 	 */
@@ -93,7 +83,6 @@ public interface Binder<T> {
 
 	/**
 	 * Unbind a specific p2p or pub/sub message producer
-	 *
 	 * @param name the logical identity of the message target
 	 * @param outboundBindTarget the channel bound as a producer
 	 */
@@ -101,7 +90,6 @@ public interface Binder<T> {
 
 	/**
 	 * Bind a producer that expects async replies. To unbind, invoke unbindProducer() and unbindConsumer().
-	 *
 	 * @param name The name of the requestor.
 	 * @param requests The interface used to send requests.
 	 * @param replies The interface used to receive replies.
@@ -112,7 +100,6 @@ public interface Binder<T> {
 	/**
 	 * Bind a consumer that handles requests from a requestor and asynchronously sends replies. To unbind, invoke
 	 * unbindProducer() and unbindConsumer().
-	 *
 	 * @param name The name of the requestor for which this replier will handle requests.
 	 * @param requests The interface used to send requests.
 	 * @param replies The interface used to receive replies.
@@ -121,7 +108,7 @@ public interface Binder<T> {
 	void bindReplier(String name, T requests, T replies, Properties properties);
 
 	/**
-	 * Create a object and bind a producer dynamically, creating the infrastructure
+	 * Create an object and bind a producer dynamically, creating the infrastructure
 	 * required by the binder technology.
 	 * @param name The name of the "queue:" channel.
 	 * @param properties arbitrary String key/value pairs that will be used in the binding.

@@ -23,6 +23,7 @@ import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport.JavaClassMimeTypeConversion;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -31,7 +32,6 @@ import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport.JavaClassMimeTypeConversion;
 import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 import org.springframework.xd.tuple.DefaultTuple;
 import org.springframework.xd.tuple.Tuple;
@@ -62,8 +62,7 @@ public class MessageChannelBinderSupportTests {
 	public void testBytesPassThru() {
 		byte[] payload = "foo".getBytes();
 		Message<byte[]> message = MessageBuilder.withPayload(payload).build();
-		MessageValues converted = binder.serializePayloadIfNecessary(message
-		);
+		MessageValues converted = binder.serializePayloadIfNecessary(message);
 		assertSame(payload, converted.getPayload());
 		Message<?> convertedMessage = converted.toMessage();
 		assertSame(payload, convertedMessage.getPayload());

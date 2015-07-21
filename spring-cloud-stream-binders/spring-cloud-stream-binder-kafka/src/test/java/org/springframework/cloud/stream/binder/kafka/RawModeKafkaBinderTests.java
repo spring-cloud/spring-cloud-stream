@@ -45,7 +45,6 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.binder.TestUtils;
 
 /**

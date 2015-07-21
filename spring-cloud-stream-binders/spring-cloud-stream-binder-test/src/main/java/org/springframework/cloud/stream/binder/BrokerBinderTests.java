@@ -74,7 +74,7 @@ public abstract class BrokerBinderTests extends
 		assertEquals(2, count.get());
 		assertNull(spyOn("direct.0").receive(true));
 
-		// Remove direct binding and bind producer to the binder
+		// Remove direct binding and bind the producer
 		binder.unbindConsumers("direct.0");
 		binderBindUnbindLatency();
 

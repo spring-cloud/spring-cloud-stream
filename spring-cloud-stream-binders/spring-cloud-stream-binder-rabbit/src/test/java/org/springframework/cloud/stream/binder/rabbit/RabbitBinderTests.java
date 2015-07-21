@@ -80,8 +80,6 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 	private final String CLASS_UNDER_TEST_NAME = RabbitMessageChannelBinder.class.getSimpleName();
 
-	public static final String BINDER_PREFIX = "binder.rabbit.";
-
 	public static final String TEST_PREFIX = "bindertest.";
 
 	@Rule
@@ -137,7 +135,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertEquals(AcknowledgeMode.AUTO, container.getAcknowledgeMode());
-		assertEquals(BINDER_PREFIX + "props.0", container.getQueueNames()[0]);
+		assertEquals(RabbitMessageChannelBinder.DEFAULT_RABBIT_PREFIX + "props.0", container.getQueueNames()[0]);
 		assertTrue(TestUtils.getPropertyValue(container, "transactional", Boolean.class));
 		assertEquals(1, TestUtils.getPropertyValue(container, "concurrentConsumers"));
 		assertNull(TestUtils.getPropertyValue(container, "maxConcurrentConsumers"));
@@ -208,7 +206,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
 		AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
-		assertEquals(BINDER_PREFIX + "props.0", TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKey"));
+		assertEquals(RabbitMessageChannelBinder.DEFAULT_RABBIT_PREFIX + "props.0", TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKey"));
 		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
 				MessageDeliveryMode.class);
 		assertEquals(MessageDeliveryMode.PERSISTENT, mode);
@@ -589,7 +587,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		output.setBeanName("batchingProducer");
 		binder.bindProducer("batching.0", output, properties);
 
-		while (template.receive(BINDER_PREFIX + "batching.0") != null) {
+		while (template.receive(RabbitMessageChannelBinder.DEFAULT_RABBIT_PREFIX + "batching.0") != null) {
 		}
 
 		Log logger = spy(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor.logger", Log.class));
@@ -714,12 +712,12 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 			public Object receive(boolean expectNull) throws Exception {
 				if (expectNull) {
 					Thread.sleep(50);
-					return template.receiveAndConvert(BINDER_PREFIX + queue);
+					return template.receiveAndConvert(RabbitMessageChannelBinder.DEFAULT_RABBIT_PREFIX + queue);
 				}
 				Object bar = null;
 				int n = 0;
 				while (n++ < 100 && bar == null) {
-					bar = template.receiveAndConvert(BINDER_PREFIX + queue);
+					bar = template.receiveAndConvert(RabbitMessageChannelBinder.DEFAULT_RABBIT_PREFIX + queue);
 					Thread.sleep(100);
 				}
 				assertTrue("Message did not arrive in RabbitMQ", n < 100);

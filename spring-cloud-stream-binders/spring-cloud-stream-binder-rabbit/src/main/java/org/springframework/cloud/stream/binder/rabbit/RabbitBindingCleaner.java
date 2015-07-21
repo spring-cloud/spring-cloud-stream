@@ -24,9 +24,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.cloud.stream.binder.BindingCleaner;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.cloud.stream.binder.BinderCleaner;
 import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.RabbitAdminException;
@@ -34,14 +34,14 @@ import org.springframework.cloud.stream.binder.RabbitManagementUtils;
 
 
 /**
- * Implementation of {@link org.springframework.cloud.stream.binder.BinderCleaner} for the {@code RabbitBinder}.
+ * Implementation of {@link org.springframework.cloud.stream.binder.BindingCleaner} for the {@code RabbitBinder}.
  * @author Gary Russell
  * @author David Turanski
  * @since 1.2
  */
-public class RabbitBinderCleaner implements BinderCleaner {
+public class RabbitBindingCleaner implements BindingCleaner {
 
-	private final static Logger logger = LoggerFactory.getLogger(RabbitBinderCleaner.class);
+	private final static Logger logger = LoggerFactory.getLogger(RabbitBindingCleaner.class);
 
 	public static final String BINDER_PREFIX = "binder.rabbit.";
 
