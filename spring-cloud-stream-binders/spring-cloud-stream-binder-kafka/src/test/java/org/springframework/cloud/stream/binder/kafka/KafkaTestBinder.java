@@ -21,12 +21,11 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
-import org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder;
 import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
 
 
 /**
- * Test support class for {@link org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder}.
+ * Test support class for {@link KafkaMessageChannelBinder}.
  * Creates a binder that uses a test {@link TestKafkaCluster kafka cluster}.
  * @author Eric Bottard
  * @author Marius Bogoevici

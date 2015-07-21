@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.xd.dirt.integration.kafka;
+package org.springframework.cloud.stream.binder.kafka;
 
 import java.io.IOException;
 import java.util.Collection;

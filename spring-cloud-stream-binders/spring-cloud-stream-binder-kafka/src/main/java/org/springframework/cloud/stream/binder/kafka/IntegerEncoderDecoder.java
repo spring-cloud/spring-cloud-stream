@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.xd.dirt.integration.kafka;
+package org.springframework.cloud.stream.binder.kafka;
 
 import kafka.serializer.Decoder;
 import kafka.serializer.Encoder;

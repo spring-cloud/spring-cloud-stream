@@ -46,11 +46,10 @@ import org.springframework.messaging.Message;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Spy;
-import org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder;
 
 
 /**
- * Integration tests for the {@link org.springframework.xd.dirt.integration.kafka.KafkaMessageChannelBinder}.
+ * Integration tests for the {@link KafkaMessageChannelBinder}.
  *
  * @author Eric Bottard
  * @author Marius Bogoevici
