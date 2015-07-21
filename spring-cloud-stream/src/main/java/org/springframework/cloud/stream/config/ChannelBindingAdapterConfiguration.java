@@ -65,7 +65,7 @@ public class ChannelBindingAdapterConfiguration {
 	private Binder binder;
 
 	@Bean
-	public ChannelBindingAdapter binderAdapter() {
+	public ChannelBindingAdapter bindingAdapter() {
 		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.binder);
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
@@ -81,7 +81,7 @@ public class ChannelBindingAdapterConfiguration {
 	}
 
 	public void refresh() {
-		ChannelBindingAdapter adapter = binderAdapter();
+		ChannelBindingAdapter adapter = bindingAdapter();
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
 	}
