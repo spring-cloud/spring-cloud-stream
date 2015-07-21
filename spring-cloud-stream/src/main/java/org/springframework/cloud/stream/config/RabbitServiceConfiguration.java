@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.xd.dirt.integration.rabbit.RabbitMessageBus;
+import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 
 /**
  * Bind to services, either locally or in a Lattice environment.
@@ -36,11 +36,11 @@ import org.springframework.xd.dirt.integration.rabbit.RabbitMessageBus;
  * @author Glenn Renfro
  */
 @Configuration
-@ConditionalOnClass(RabbitMessageBus.class)
-@ConditionalOnMissingBean(RabbitMessageBus.class)
-@ImportResource({ "classpath*:/META-INF/spring-xd/bus/rabbit-bus.xml",
+@ConditionalOnClass(RabbitMessageChannelBinder.class)
+@ConditionalOnMissingBean(RabbitMessageChannelBinder.class)
+@ImportResource({ "classpath*:/META-INF/spring-cloud-stream/binder/rabbit-binder.xml",
 "classpath*:/META-INF/spring-xd/analytics/rabbit-analytics.xml" })
-@PropertySource("classpath:/META-INF/spring-cloud-streams/rabbit-bus.properties")
+@PropertySource("classpath:/META-INF/spring-cloud-stream/rabbit-binder.properties")
 public class RabbitServiceConfiguration {
 	@Configuration
 	@Profile("cloud")
