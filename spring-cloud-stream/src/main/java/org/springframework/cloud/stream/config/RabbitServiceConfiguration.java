@@ -38,8 +38,7 @@ import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder
 @Configuration
 @ConditionalOnClass(RabbitMessageChannelBinder.class)
 @ConditionalOnMissingBean(RabbitMessageChannelBinder.class)
-@ImportResource({ "classpath*:/META-INF/spring-cloud-stream/binder/rabbit-binder.xml",
-"classpath*:/META-INF/spring-xd/analytics/rabbit-analytics.xml" })
+@ImportResource("classpath*:/META-INF/spring-cloud-stream/binder/rabbit-binder.xml")
 @PropertySource("classpath:/META-INF/spring-cloud-stream/rabbit-binder.properties")
 public class RabbitServiceConfiguration {
 	@Configuration
