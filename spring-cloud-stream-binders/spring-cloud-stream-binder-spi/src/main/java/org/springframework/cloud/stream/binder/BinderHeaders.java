@@ -22,7 +22,6 @@ import org.springframework.messaging.MessageHeaders;
 
 /**
  * Spring Integration message headers for XD.
- *
  * @author Gary Russell
  * @author David Turanski
  */
@@ -47,13 +46,13 @@ public final class BinderHeaders {
 	 * that have no inherent header support (by embedding the headers in the payload).
 	 */
 	public static final String[] STANDARD_HEADERS = new String[] {
-		IntegrationMessageHeaderAccessor.CORRELATION_ID,
-		IntegrationMessageHeaderAccessor.SEQUENCE_SIZE,
-		IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER,
+			IntegrationMessageHeaderAccessor.CORRELATION_ID,
+			IntegrationMessageHeaderAccessor.SEQUENCE_SIZE,
+			IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER,
 			BINDER_REPLY_CHANNEL,
-		MessageHeaders.CONTENT_TYPE,
+			MessageHeaders.CONTENT_TYPE,
 			BINDER_ORIGINAL_CONTENT_TYPE,
-		REPLY_TO,
+			REPLY_TO,
 			BINDER_HISTORY
 	};
 

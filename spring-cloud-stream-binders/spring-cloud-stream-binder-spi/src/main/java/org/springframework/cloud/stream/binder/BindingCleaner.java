@@ -25,7 +25,7 @@ import java.util.Map;
  * @author Gary Russell
  * @since 1.2
  */
-public interface BinderCleaner {
+public interface BindingCleaner {
 
 	/**
 	 * Clean up all resources for the supplied stream/job.

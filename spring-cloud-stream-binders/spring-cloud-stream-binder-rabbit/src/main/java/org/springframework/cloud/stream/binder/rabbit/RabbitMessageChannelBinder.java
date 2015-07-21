@@ -117,7 +117,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 
 	private static final int DEFAULT_PREFETCH_COUNT = 1;
 
-	private static final String DEFAULT_RABBIT_PREFIX = "binder.rabbit.";
+	static final String DEFAULT_RABBIT_PREFIX = "binder.";
 
 	private static final int DEFAULT_TX_SIZE = 1;
 

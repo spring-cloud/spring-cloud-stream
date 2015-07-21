@@ -64,7 +64,7 @@ public class RabbitBinderCleanerTests {
 
 	@Test
 	public void testCleanStream() {
-		final RabbitBinderCleaner cleaner = new RabbitBinderCleaner();
+		final RabbitBindingCleaner cleaner = new RabbitBindingCleaner();
 		final RestTemplate template = RabbitManagementUtils.buildRestTemplate("http://localhost:15672", "guest", 
 				"guest");
 		final String stream1 = UUID.randomUUID().toString();

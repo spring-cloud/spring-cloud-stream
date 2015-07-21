@@ -828,7 +828,7 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	/**
-	 * Attempt to create a direct binding (avoiding the binder) if the consumer is local. Named channel producers are not
+	 * Attempt to create a direct binding (avoiding the broker) if the consumer is local. Named channel producers are not
 	 * bound directly.
 	 * @param name The name.
 	 * @param moduleOutputChannel The channel to bind.
@@ -884,8 +884,8 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	/**
-	 * Attempt to bind a producer directly (avoiding the binder) if there is already a local producer. PubSub producers
-	 * cannot be bound directly. Create the direct binding, then unbind the existing binder producer.
+	 * Attempt to bind a producer directly (avoiding the broker) if there is already a local producer. PubSub producers
+	 * cannot be bound directly. Create the direct binding, then unbind the existing producer.
 	 * @param name The name.
 	 * @param consumerChannel The channel to bind the producer to.
 	 */
