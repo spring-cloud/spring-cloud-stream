@@ -53,7 +53,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.cloud.stream.binder.Binder;
 
 /**
- * Binds input/output channels to the binder.
+ * Binds input/output channels.
  *
  * @author Mark Fisher
  * @author Dave Syer
