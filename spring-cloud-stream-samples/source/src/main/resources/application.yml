@@ -3,7 +3,7 @@ server:
 fixedDelay: 5000
 spring:
   cloud:
-    channels:
+    stream:
       outputChannelName: testtock
       # uncomment below to use the last digit of the seconds as a partition key
       # hashcode(key) % N is then applied with N being the partitionCount value
@@ -16,5 +16,5 @@ spring:
 spring:
   profiles: extended
   cloud:
-    channels:
+    stream:
       outputChannelName: xformed

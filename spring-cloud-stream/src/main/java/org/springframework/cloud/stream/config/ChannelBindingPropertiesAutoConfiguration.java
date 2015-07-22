@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnMissingBean(value = ChannelBindingProperties.class, search = SearchStrategy.CURRENT)
 public class ChannelBindingPropertiesAutoConfiguration {
 
-	@Bean(name = "spring.cloud.channels.CONFIGURATION_PROPERTIES")
+	@Bean(name = "spring.cloud.stream.CONFIGURATION_PROPERTIES")
 	public ChannelBindingProperties moduleProperties() {
 		return new ChannelBindingProperties();
 	}
