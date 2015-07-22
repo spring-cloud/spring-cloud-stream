@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Dave Syer
  *
  */
-@ConfigurationProperties("spring.cloud.channels")
+@ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
 public class ChannelBindingProperties {
 

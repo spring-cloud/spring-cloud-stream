@@ -1,5 +1,5 @@
 spring:
   cloud:
-    channels:
+    stream:
       inputChannelName: testtock
   

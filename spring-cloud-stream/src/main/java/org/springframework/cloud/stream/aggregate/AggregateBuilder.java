@@ -230,10 +230,10 @@ public class AggregateBuilder implements ApplicationContextAware {
 				args.add("--spring.config.name=" + this.configName);
 			}
 			if (this.input != null) {
-				args.add("--spring.cloud.channels.inputChannelName=" + this.input);
+				args.add("--spring.cloud.stream.inputChannelName=" + this.input);
 			}
 			if (this.output != null) {
-				args.add("--spring.cloud.channels.outputChannelName=" + this.output);
+				args.add("--spring.cloud.stream.outputChannelName=" + this.output);
 			}
 			this.builder.run(args.toArray(new String[0]));
 		}

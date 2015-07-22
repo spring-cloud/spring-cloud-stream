@@ -48,7 +48,7 @@ The `application.yml` has the external channel names, e.g.
 ---
 spring:
   cloud:
-    channels:
+    stream:
       outputChannelName: ${spring.application.name:ticker}
 ```
 

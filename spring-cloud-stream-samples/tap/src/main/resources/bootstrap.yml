@@ -1,7 +1,7 @@
 ---
 spring:
   cloud:
-    channels:
+    stream:
       group: tocktap
       name: logger
       index: 0
