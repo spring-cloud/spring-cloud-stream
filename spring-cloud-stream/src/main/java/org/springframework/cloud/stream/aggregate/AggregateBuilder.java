@@ -233,7 +233,7 @@ public class AggregateBuilder implements ApplicationContextAware {
 				args.add("--spring.cloud.stream.bindings.input=" + this.input);
 			}
 			if (this.output != null) {
-				args.add("--spring.cloud.stream.binding.output=" + this.output);
+				args.add("--spring.cloud.stream.bindings.output=" + this.output);
 			}
 			this.builder.run(args.toArray(new String[0]));
 		}
