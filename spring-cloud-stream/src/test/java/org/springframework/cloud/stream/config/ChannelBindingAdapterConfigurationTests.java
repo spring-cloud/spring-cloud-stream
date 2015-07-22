@@ -72,8 +72,8 @@ public class ChannelBindingAdapterConfigurationTests {
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
-		assertEquals("group.0", channels.iterator().next().getRemoteName());
-		assertEquals("tap:group.0", channels.iterator().next().getTapChannelName());
+		assertEquals("output", channels.iterator().next().getRemoteName());
+		assertEquals("tap:output", channels.iterator().next().getTapChannelName());
 	}
 
 	private void refresh() {
@@ -86,28 +86,20 @@ public class ChannelBindingAdapterConfigurationTests {
 	}
 
 	@Test
-	public void oneOutputTopic() throws Exception {
-		MessageChannelBeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output.topic:", context);
-		refresh();
-		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
-		assertEquals(1, channels.size());
-		assertEquals("topic:group.0", channels.iterator().next().getRemoteName());
-		assertEquals("tap:group.0", channels.iterator().next().getTapChannelName());
-	}
-
-	@Test
-	public void twoOutputsWithQueue() throws Exception {
+	public void twoOutputs() throws Exception {
 		MessageChannelBeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output", context);
-		MessageChannelBeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output.queue:foo", context);
+		MessageChannelBeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("foo", context);
+		module.getBindings().put("output", "group.0");
+		module.getBindings().put("foo", "topic:group.0");
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
-		List<String> names = getChannelNames(channels);
+		List<String> remoteBindingNames = getRemoteBindingNames(channels);
 		assertEquals(2, channels.size());
-		assertTrue(names.contains("group.0"));
-		assertTrue(names.contains("foo.group.0"));
+		assertTrue(remoteBindingNames.contains("group.0"));
+		assertTrue(remoteBindingNames.contains("topic:group.0"));
 	}
 
-	private List<String> getChannelNames(Collection<? extends ChannelBinding> channels) {
+	private List<String> getRemoteBindingNames(Collection<? extends ChannelBinding> channels) {
 		List<String> list = new ArrayList<String>();
 		for (ChannelBinding binding : channels) {
 			list.add(binding.getRemoteName());
@@ -117,25 +109,25 @@ public class ChannelBindingAdapterConfigurationTests {
 
 	@Test
 	public void overrideNaturalOutputChannelName() throws Exception {
-		this.module.setOutputChannelName("bar");
-		MessageChannelBeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output.queue:foo", context);
+		MessageChannelBeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output", context);
+		module.getBindings().put("output", "group.0");
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
-		assertEquals("foo.bar", channels.iterator().next().getRemoteName());
-		// TODO: fix this. What should it be?
-		assertEquals("tap:foo.bar", channels.iterator().next().getTapChannelName());
+		assertEquals("group.0", channels.iterator().next().getRemoteName());
+		assertEquals("tap:group.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Test
 	public void overrideNaturalOutputChannelNamedQueueWithTopic() throws Exception {
-		this.module.setOutputChannelName("queue:bar");
-		MessageChannelBeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output.topic:foo", context);
+		MessageChannelBeanDefinitionRegistryUtils.registerOutputChannelBeanDefinition("output", context);
+		module.getBindings().put("output", "topic:group.0");
 		refresh();
 		Collection<OutputChannelBinding> channels = this.adapter.getChannelsMetadata().getOutputChannels();
 		assertEquals(1, channels.size());
-		assertEquals("topic:foo.bar", channels.iterator().next().getRemoteName());
-		assertEquals("tap:foo.bar", channels.iterator().next().getTapChannelName());
+		assertEquals("topic:group.0", channels.iterator().next().getRemoteName());
+		// is this correct?
+		assertEquals("tap:group.0", channels.iterator().next().getTapChannelName());
 	}
 
 	@Configuration

@@ -2,5 +2,6 @@ fixedDelay: 5000
 spring:
   cloud:
     stream:
-      outputChannelName: testtock
+      bindings:
+        output: testtock
   

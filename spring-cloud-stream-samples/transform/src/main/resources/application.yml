@@ -3,6 +3,7 @@ server:
 spring:
   cloud:
     stream:
-      outputChannelName: xformed
-      inputChannelName: testtock
+      bindings:
+        output: xformed
+        input: testtock
   

@@ -17,6 +17,8 @@ package org.springframework.cloud.stream.adapter;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Collections;
+
 import org.junit.Test;
 import org.springframework.cloud.stream.adapter.DefaultChannelLocator;
 import org.springframework.cloud.stream.config.ChannelBindingProperties;
@@ -33,56 +35,26 @@ public class DefaultChannelLocatorTests {
 
 	@Test
 	public void oneOutput() throws Exception {
-		assertEquals("group.0", this.locator.locate("output"));
+		assertEquals("output", this.locator.locate("output"));
 	}
+
+	@Test
+	public void oneOutputWithShortcutPath() throws Exception {
+		module.getBindings().put("outputWithShortcutPath","group.0.shortcut");
+		assertEquals("group.0.shortcut", this.locator.locate("outputWithShortcutPath"));
+	}
+
+	@Test
+	public void oneOutputWithFullPath() throws Exception {
+		module.getBindings().put("outputWithFullPath", Collections.singletonMap(ChannelBindingProperties.PATH,"group.0.full"));
+		assertEquals("group.0.full", this.locator.locate("outputWithFullPath"));
+	}
+
 
 	@Test
 	public void oneOutputTopic() throws Exception {
-		assertEquals("topic:group.0", this.locator.locate("output.topic:"));
-	}
-
-	@Test
-	public void outputWithNamedTopic() throws Exception {
-		assertEquals("topic:foo.group.0", this.locator.locate("output.topic:foo"));
-	}
-
-	@Test
-	public void outputWithNamedQueue() throws Exception {
-		assertEquals("foo.group.0", this.locator.locate("output.queue:foo"));
-	}
-
-	@Test
-	public void overrideNaturalOutputChannelName() throws Exception {
-		this.module.setOutputChannelName("bar");
-		assertEquals("foo.bar", this.locator.locate("output.queue:foo"));
-	}
-
-	@Test
-	public void noQueueQualifier() throws Exception {
-		assertEquals("foo.group.0", this.locator.locate("output.foo"));
-	}
-
-	@Test
-	public void underscoreSeparatorForChannelName() throws Exception {
-		assertEquals("foo.group.0", this.locator.locate("output_foo"));
-	}
-
-	@Test
-	public void overrideNaturalOutputChannelNamedQueue() throws Exception {
-		this.module.setOutputChannelName("queue:bar");
-		assertEquals("foo.bar", this.locator.locate("output.foo"));
-	}
-
-	@Test
-	public void overrideNaturalOutputChannelNamedQueueWithTopic() throws Exception {
-		this.module.setOutputChannelName("queue:bar");
-		assertEquals("topic:foo.bar", this.locator.locate("output.topic:foo"));
-	}
-
-	@Test
-	public void overrideNaturalOutputChannelNamedTopic() throws Exception {
-		this.module.setOutputChannelName("topic:bar");
-		assertEquals("foo.bar", this.locator.locate("output.queue:foo"));
+		module.getBindings().put("outputWithTopic", Collections.singletonMap(ChannelBindingProperties.PATH,"topic:group.0"));
+		assertEquals("topic:group.0", this.locator.locate("outputWithTopic"));
 	}
 
 }

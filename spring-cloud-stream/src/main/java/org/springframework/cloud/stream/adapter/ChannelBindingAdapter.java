@@ -69,6 +69,7 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 	private MessageBuilderFactory messageBuilderFactory = new DefaultMessageBuilderFactory();
 
 	private Collection<OutputChannelBinding> outputChannels = Collections.emptySet();
+
 	private Collection<InputChannelBinding> inputChannels = Collections.emptySet();
 
 	private boolean running = false;
