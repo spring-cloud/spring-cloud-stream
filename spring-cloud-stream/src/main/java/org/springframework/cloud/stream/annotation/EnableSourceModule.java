@@ -16,13 +16,21 @@
 
 package org.springframework.cloud.stream.annotation;
 
-import org.springframework.messaging.MessageChannel;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface Source {
-	
-	public static final String OUTPUT = "output";
-	
-	@Output(Source.OUTPUT)
-	MessageChannel output();
+/**
+ * Annotation that identifies a class as a source module.
+ *
+ * @author Ilayaperumal Gopinathan
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@EnableModule(Source.class)
+public @interface EnableSourceModule {
 
 }

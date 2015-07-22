@@ -20,7 +20,7 @@ import org.springframework.messaging.SubscribableChannel;
 
 public interface Sink {
 
-	public static String INPUT = "input";
+	public static final String INPUT = "input";
 
 	@Input(Sink.INPUT)
 	SubscribableChannel input();
