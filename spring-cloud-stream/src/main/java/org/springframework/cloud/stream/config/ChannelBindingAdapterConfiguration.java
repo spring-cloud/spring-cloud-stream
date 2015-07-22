@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -32,18 +33,17 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.cloud.stream.adapter.ChannelBindingAdapter;
-import org.springframework.cloud.stream.adapter.ChannelLocator;
 import org.springframework.cloud.stream.adapter.InputChannelBinding;
 import org.springframework.cloud.stream.adapter.OutputChannelBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
-import org.springframework.cloud.stream.binder.Binder;
 
 /**
  * @author Dave Syer
@@ -59,8 +59,6 @@ public class ChannelBindingAdapterConfiguration {
 	@Autowired
 	private ConfigurableListableBeanFactory beanFactory;
 
-	private ChannelLocator channelLocator;
-
 	@Autowired
 	private Binder<MessageChannel> binder;
 
@@ -69,9 +67,6 @@ public class ChannelBindingAdapterConfiguration {
 		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.binder);
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
-		if (this.channelLocator != null) {
-			adapter.setChannelLocator(this.channelLocator);
-		}
 		return adapter;
 	}
 
