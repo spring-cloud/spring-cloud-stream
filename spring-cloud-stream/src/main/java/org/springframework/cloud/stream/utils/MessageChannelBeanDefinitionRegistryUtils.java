@@ -48,22 +48,40 @@ import org.springframework.util.StringUtils;
  */
 public abstract class MessageChannelBeanDefinitionRegistryUtils {
 
+	public static final String DEFAULT_INPUT_QUALIFIER_VALUE;
+
+	public static final String DEFAULT_OUTPUT_QUALIFIER_VALUE;
+
+	static {
+		DEFAULT_INPUT_QUALIFIER_VALUE = (String) ReflectionUtils.findMethod(Input.class, "value").getDefaultValue();
+		DEFAULT_OUTPUT_QUALIFIER_VALUE = (String) ReflectionUtils.findMethod(Output.class, "value").getDefaultValue();
+	}
+
 	public static void registerInputChannelBeanDefinition(String name,
 			BeanDefinitionRegistry registry) {
-		registerChannelBeanDefinition(Input.class, name, registry);
+		registerInputChannelBeanDefinition(DEFAULT_INPUT_QUALIFIER_VALUE, name, registry);
+	}
+
+	public static void registerInputChannelBeanDefinition(String qualifierValue, String name,
+			BeanDefinitionRegistry registry) {
+		registerChannelBeanDefinition(Input.class, qualifierValue, name, registry);
 	}
 
 	public static void registerOutputChannelBeanDefinition(String name,
 			BeanDefinitionRegistry registry) {
-		registerChannelBeanDefinition(Output.class, name, registry);
+		registerOutputChannelBeanDefinition(DEFAULT_OUTPUT_QUALIFIER_VALUE, name, registry);
+	}
+	public static void registerOutputChannelBeanDefinition(String qualifierValue, String name,BeanDefinitionRegistry registry) {
+		registerChannelBeanDefinition(Output.class, qualifierValue, name, registry);
 	}
 
 	private static void registerChannelBeanDefinition(
-			Class<? extends Annotation> qualifier, String name,
+			Class<? extends Annotation> qualifier, String qualifierValue, String name,
 			BeanDefinitionRegistry registry) {
+
 		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
 				DirectChannelFactoryBean.class);
-		rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(qualifier));
+		rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(qualifier, qualifierValue));
 		registry.registerBeanDefinition(name, rootBeanDefinition);
 	}
 
@@ -76,12 +94,12 @@ public abstract class MessageChannelBeanDefinitionRegistryUtils {
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
 					String name = getName(input, method);
-					registerInputChannelBeanDefinition(name, registry);
+					registerInputChannelBeanDefinition(name, input.value(), registry);
 				}
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
 					String name = getName(output, method);
-					registerOutputChannelBeanDefinition(name, registry);
+					registerOutputChannelBeanDefinition(name, output.value(), registry);
 				}
 			}
 
