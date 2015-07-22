@@ -17,4 +17,5 @@ spring:
   profiles: extended
   cloud:
     stream:
-      outputChannelName: xformed
+      bindings:
+        output: xformed
