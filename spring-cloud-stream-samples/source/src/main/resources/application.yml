@@ -4,17 +4,19 @@ fixedDelay: 5000
 spring:
   cloud:
     stream:
-      outputChannelName: testtock
-      # uncomment below to use the last digit of the seconds as a partition key
-      # hashcode(key) % N is then applied with N being the partitionCount value
-      # thus, even seconds should go to the 0 queue, odd seconds to the 1 queue
-      #producerProperties:
-      #  partitionKeyExpression: payload.charAt(payload.length()-1)
-      #  partitionCount: 2
+      bindings:
+        output: testtock
+        # uncomment below to use the last digit of the seconds as a partition key
+        # hashcode(key) % N is then applied with N being the partitionCount value
+        # thus, even seconds should go to the 0 queue, odd seconds to the 1 queue
+        #producerProperties:
+        #  partitionKeyExpression: payload.charAt(payload.length()-1)
+        #  partitionCount: 2
 
 ---
 spring:
   profiles: extended
   cloud:
     stream:
-      outputChannelName: xformed
+      bindings:
+        output: xformed

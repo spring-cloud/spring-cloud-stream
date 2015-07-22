@@ -32,60 +32,16 @@ public class DefaultChannelLocator implements ChannelLocator {
 
 	@Override
 	public String locate(String name) {
-		String channelName = extractChannelName("input", name, this.module.getInputChannelName());
-		if (channelName!=null) {
-			return channelName;
-		}
-		channelName = extractChannelName("output", name, this.module.getOutputChannelName());
-		if (channelName!=null) {
-			return channelName;
-		}
-		return null;
+		return module.getBindingPath(name);
 	}
 
 	@Override
 	public String tap(String name) {
-		return !isDefaultOuputChannel(name) ? this.module.getTapChannelName(getPlainChannelName(name))
-				: this.module.getTapChannelName();
+		return this.module.getTapChannelName(getPlainBinding(name));
 	}
 
-	private boolean isDefaultOuputChannel(String channelName) {
-		if (channelName.contains(":")) {
-			String[] tokens = channelName.split(":", 2);
-			channelName = tokens[1];
-		}
-		return channelName.equals(this.module.getOutputChannelName());
-	}
-
-	private String extractChannelName(String start, String name, String externalChannelName) {
-		if (name.equals(start)) {
-			return externalChannelName;
-		}
-		else if (name.startsWith(start + ".") || name.startsWith(start + "_")) {
-			String prefix = "";
-			String channelName = name.substring(start.length() + 1);
-			if (channelName.contains(":")) {
-				String[] tokens = channelName.split(":", 2);
-				String type = tokens[0];
-				if ("queue".equals(type)) {
-					// omit the type for a queue
-					if (StringUtils.hasText(tokens[1])) {
-						prefix = tokens[1] + ".";
-					}
-				}
-				else {
-					prefix = channelName + (channelName.endsWith(":") ? "" : ".");
-				}
-			}
-			else {
-				prefix = channelName + ".";
-			}
-			return prefix + getPlainChannelName(externalChannelName);
-		}
-		return null;
-	}
-
-	private String getPlainChannelName(String name) {
+	private String getPlainBinding(String name) {
+		// remove prefixes such as 'tap:','topic:','queue:'
 		if (name.contains(":")) {
 			name = name.substring(name.indexOf(":") + 1);
 		}

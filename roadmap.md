@@ -49,7 +49,8 @@ The `application.yml` has the external channel names, e.g.
 spring:
   cloud:
     stream:
-      outputChannelName: ${spring.application.name:ticker}
+      bindings:
+      output: ${spring.application.name:ticker}
 ```
 
 ## Richer Input and Output

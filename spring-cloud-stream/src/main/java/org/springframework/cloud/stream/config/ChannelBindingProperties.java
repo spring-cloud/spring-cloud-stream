@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -31,11 +33,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonInclude(Include.NON_DEFAULT)
 public class ChannelBindingProperties {
 
-	public static final String DEFAULT_CHANNEL_NAME = "group.0";
-
-	private String outputChannelName = DEFAULT_CHANNEL_NAME;
-
-	private String inputChannelName = DEFAULT_CHANNEL_NAME;
+	public static final String PATH = "path";
 
 	private Properties consumerProperties = new Properties();
 
@@ -43,21 +41,7 @@ public class ChannelBindingProperties {
 
 	private boolean autoStartup = true;
 
-	public String getOutputChannelName() {
-		return this.outputChannelName;
-	}
-
-	public String getInputChannelName() {
-		return this.inputChannelName;
-	}
-
-	public void setOutputChannelName(String outputChannelName) {
-		this.outputChannelName = outputChannelName;
-	}
-
-	public void setInputChannelName(String inputChannelName) {
-		this.inputChannelName = inputChannelName;
-	}
+	private Map<String,Object> bindings = new HashMap<>();
 
 	public Properties getConsumerProperties() {
 		return this.consumerProperties;
@@ -83,12 +67,35 @@ public class ChannelBindingProperties {
 		this.autoStartup = autoStartup;
 	}
 
-	public String getTapChannelName() {
-		return getTapChannelName(getOutputChannelName());
+	public Map<String, Object> getBindings() {
+		return bindings;
 	}
 
-	public String getTapChannelName(String prefix) {
-		return "tap:" + prefix;
+	public void setBindings(Map<String, Object> bindings) {
+		this.bindings = bindings;
+	}
+
+	public String getBindingPath(String channelName) {
+		Object binding = bindings.get(channelName);
+		// we may shortcut directly to the path
+		if (binding != null) {
+			if (binding instanceof String) {
+				return (String) binding;
+			}
+			else if (binding instanceof Map) {
+				Map<?, ?> bindingProperties = (Map<?, ?>) binding;
+				Object bindingPath = bindingProperties.get(PATH);
+				if (bindingPath != null) {
+					return bindingPath.toString();
+				}
+			}
+		}
+		// the default path of the binding is the channel name itself
+		return channelName;
+	}
+
+	public String getTapChannelName(String channelName) {
+		return "tap:" + getBindingPath(channelName);
 	}
 
 }
