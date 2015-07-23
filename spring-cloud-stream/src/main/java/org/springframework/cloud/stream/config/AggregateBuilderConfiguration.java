@@ -18,8 +18,7 @@ package org.springframework.cloud.stream.config;
 
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.cloud.stream.aggregate.AggregateBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateConfigurer;
 import org.springframework.context.annotation.Bean;
@@ -30,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
  *
  */
 @Configuration
-public class AggregateBuilderConfiguration implements ApplicationRunner {
+public class AggregateBuilderConfiguration implements CommandLineRunner {
 
 	@Autowired
 	private ListableBeanFactory beanFactory;
@@ -41,7 +40,7 @@ public class AggregateBuilderConfiguration implements ApplicationRunner {
 	}
 
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void run(String... args) throws Exception {
 		for (AggregateConfigurer configurer : this.beanFactory.getBeansOfType(AggregateConfigurer.class).values()) {
 			configurer.configure(aggregateBuilder());
 		}

@@ -17,15 +17,14 @@
 package org.springframework.cloud.stream.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.cloud.stream.adapter.ChannelBindingAdapter;
 
 /**
  * @author Dave Syer
  *
  */
-public class ChannelBindingAdapterRunner implements ApplicationRunner {
+public class ChannelBindingAdapterRunner implements CommandLineRunner {
 
 	@Autowired
 	private ChannelBindingProperties module;
@@ -34,7 +33,7 @@ public class ChannelBindingAdapterRunner implements ApplicationRunner {
 	private ChannelBindingAdapter adapter;
 
 	@Override
-	public void run(ApplicationArguments args) throws Exception {
+	public void run(String... args) throws Exception {
 		if (!adapter.isRunning() && module.isAutoStartup()) {
 			adapter.start();
 		}
