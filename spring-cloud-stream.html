@@ -460,7 +460,8 @@ public class TimerSource {
 spring:
   cloud:
     stream:
-      outputChannelName: ${spring.application.name:ticker}</pre>
+      bindings:
+        output: ${spring.application.name:ticker}</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -514,7 +515,7 @@ In this case there is only one <code>Source</code> in the application context so
 <h2 id="_multiple_input_or_output_channels">Multiple Input or Output Channels</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A module can have multiple input or output channels all defined either as <code>@Input</code> and <code>@Output</code> methods in an interface (preferrable) or as bean definitions. Instead of just one channel named "input" or "output" you can add multiple <code>MessageChannel</code> methods annotated <code>input.<strong></code> or <code>output.</strong></code> and the names are converted to external channel names on the broker. The external channel names are the <code>spring.cloud.stream.[input|output]ChannelName</code> plus the <code>MessageChannel</code> bean name, period separated. In addition, the bean name can be <code>input.[queue|topic|tap]:*</code> or <code>output.[queue|topic]:*</code> (i.e. with a channel type as a colon-separated prefix), and the semantics of the external bus channel changes accordingly (a tap is like a topic). For example, you can have two <code>MessageChannels</code> called "output" and "output.topic:foo" in a module with <code>outputChannelName=bar</code>, and the result is 2 external channels called "bar" and "topic:foo.bar".</p>
+<p>A module can have multiple input or output channels all defined either as <code>@Input</code> and <code>@Output</code> methods in an interface (preferrable) or as bean definitions. Instead of just one channel named "input" or "output" you can add multiple <code>MessageChannel</code> methods annotated <code>@Input</code> or <code>@Output</code> and the names are converted to external channel names on the broker. The external channel names can be specified as properties that consist of the channel names prefixed with <code>spring.cloud.stream.bindings</code> (e.g. <code>spring.cloud.stream.bindings.input</code> or <code>spring.cloud.stream.bindings.output</code>). External channel names can have a channel type as a colon-separated prefix, and the semantics of the external bus channel changes accordingly (a tap is like a topic). For example, you can have two <code>MessageChannels</code> called "output" and "foo" in a module with <code>spring.cloud.stream.bindings.output=bar</code> and <code>spring.cloud.stream.bindings.foo=topic:foo</code>, and the result is 2 external channels called "bar" and "topic:foo".</p>
 </div>
 </div>
 </div>
@@ -596,7 +597,7 @@ The main set of samples are "vanilla" in the sense that they are not deployable 
 <h2 id="_taps">Taps</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>All output channels can be also tapped so you can also attach a module to a pub-sub endpoint and listen to the tap if you know the module metadata. To tap an existing vanilla module you need to know its <code>outputChannelName</code> and the tap name is then <code>tap:&lt;outputChannelName&gt;</code>, so you can listen to it on an input channel named <code>input.topic.tap:&lt;outputChannelName&gt;</code>. The tap is only active if you explicitly ask for it: you can do that by POSTing to the HTTP endpoint <code>/taps/&lt;channelName&gt;</code> (where the channel name can be the internal or external name, e.g. "output" or the external name mapped to the output channel).</p>
+<p>All output channels can be also tapped so you can also attach a module to a pub-sub endpoint and listen to the tap if you know the module metadata. To tap an existing vanilla module you need to know its <code>outputChannelName</code> and the tap name is then <code>tap:&lt;outputChannelName&gt;</code>, so you can listen to it on an input channel named <code>topic.tap:&lt;outputChannelName&gt;</code>. The tap is only active if you explicitly ask for it: you can do that by POSTing to the HTTP endpoint <code>/taps/&lt;channelName&gt;</code> (where the channel name can be the internal or external name, e.g. "output" or the external name mapped to the output channel).</p>
 </div>
 <div class="paragraph">
 <p>To tap an existing output channel in an XD module you just need to know its group, name and index, e.g.</p>
@@ -623,7 +624,7 @@ The main set of samples are "vanilla" in the sense that they are not deployable 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-07-23 14:29:14 UTC
+Last updated 2015-07-23 15:26:05 UTC
 </div>
 </div>
 </body>
