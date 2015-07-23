@@ -21,6 +21,12 @@ import java.util.List;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.util.AsciiBytes;
 
+/**
+ * A (possibly temporary) alternative to {@link JarLauncher} that provides a
+ * public {@link #launch(String[])} method.
+ *
+ * @author Mark Fisher
+ */
 public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 
 	private static final AsciiBytes LIB = new AsciiBytes("lib/");

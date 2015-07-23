@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.module.launcher;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -103,7 +104,7 @@ public class ModuleLauncher {
 				ModuleJarLauncher jarLauncher = new ModuleJarLauncher(jarFileArchive);
 				jarLauncher.launch(args);
 			}
-			catch (Exception e) {
+			catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
