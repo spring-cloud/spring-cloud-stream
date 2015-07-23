@@ -1,4 +1,4 @@
-package org.springframework.cloud.stream.module.registry;/*
+/*
  * Copyright 2011-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,7 @@ package org.springframework.cloud.stream.module.registry;/*
  * limitations under the License.
  */
 
+package org.springframework.cloud.stream.module.registry;
 
 import java.util.List;
 
