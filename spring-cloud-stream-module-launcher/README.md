@@ -23,6 +23,8 @@ cp spring-cloud-stream/spring-cloud-stream-samples/sink/target/spring-cloud-stre
 
 3: start redis locally via `redis-server` (optionally start `redis-cli` and use the `MONITOR` command to watch activity)
 
+*NOTE:* redis.conf (on OSX it is found here: /usr/local/etc/redis.conf) may need to be updated to set the binding to an address other than 127.0.0.1 else the docker instances will fail to connect. For example: bind 0.0.0.0
+
 ## Running Standalone
 
 From the `spring-cloud-stream/spring-cloud-stream-module-launcher` directory:
