@@ -28,7 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.BeansException;
+import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.config.ChannelBindingProperties;
 import org.springframework.context.ApplicationContext;
@@ -40,7 +42,6 @@ import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.interceptor.WireTap;
 import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.integration.support.MessageBuilderFactory;
-import org.springframework.integration.support.channel.BeanFactoryChannelResolver;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -50,7 +51,6 @@ import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import org.springframework.cloud.stream.binder.Binder;
 
 /**
  * Binds input/output channels.
@@ -91,7 +91,6 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 	public ChannelBindingAdapter(ChannelBindingProperties module, Binder<MessageChannel> binder) {
 		this.module = module;
 		this.binder = binder;
-		this.channelLocator = new DefaultChannelLocator(module);
 	}
 
 	public void setChannelLocator(ChannelLocator channelLocator) {
@@ -101,7 +100,6 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-		this.channelResolver = new BeanFactoryChannelResolver(applicationContext);
 	}
 
 	public void setChannelResolver(DestinationResolver<MessageChannel> channelResolver) {

@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.util.Properties;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -35,8 +33,8 @@ public class BinderAwareRouterBeanPostProcessor implements BeanPostProcessor, Be
 
 	private final BinderAwareChannelResolver channelResolver;
 
-	public BinderAwareRouterBeanPostProcessor(Binder binder, Properties producerProperties) {
-		this.channelResolver = new BinderAwareChannelResolver(binder, producerProperties);
+	public BinderAwareRouterBeanPostProcessor(BinderAwareChannelResolver channelResolver) {
+		this.channelResolver = channelResolver;
 	}
 
 	@Override
