@@ -18,36 +18,42 @@ package org.springframework.cloud.stream.module.registry;
 
 
 /**
- * Thrown when trying to create a new module with the given name and type, but one already exists.
+ * Thrown when trying to create a new module with the given artifactId and groupId, but one already exists.
  * @author Eric Bottard
  */
 @SuppressWarnings("serial")
 public class ModuleAlreadyExistsException extends RuntimeException {
 
-	private final String name;
+	private final String artifactId;
 
-	private final String type;
+	private final String groupId;
+
+	private final String version;
 
 	/**
 	 * Construct a new exception with the given parameters. The message template will be interpolated using
-	 * {@link String#format(String, Object...)} with the module name and type being the first and second replacements.
+	 * {@link String#format(String, Object...)} with the module artifactId and groupId being the first and second
+	 * replacements.
 	 */
-	public ModuleAlreadyExistsException(String messageTemplate, String name, String type) {
-		super(String.format(messageTemplate, name, type));
-		this.name = name;
-		this.type = type;
+	public ModuleAlreadyExistsException(String messageTemplate, String groupId, String artifactId, String version) {
+		super(String.format(messageTemplate, groupId, artifactId, version));
+		this.groupId = groupId;
+		this.artifactId = artifactId;
+		this.version = version;
 	}
 
-	public ModuleAlreadyExistsException(String name, String type) {
-		this("There is already a module named '%s' with type '%s'", name, type);
+	public ModuleAlreadyExistsException(String artifactId, String groupId, String version) {
+		this("There is already a module '%s:%s:%s'", artifactId, groupId, version);
 	}
 
-	public String getName() {
-		return name;
+	public String getArtifactId() {
+		return artifactId;
 	}
 
-	public String getType() {
-		return type;
+	public String getGroupId() {
+		return groupId;
 	}
+
+	public String getVersion() { return version;  }
 
 }

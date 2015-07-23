@@ -22,20 +22,25 @@ import java.util.Set;
 /**
  * Thrown when performing an action cannot be carried over because some dependency would be broken.
  * @author Eric Bottard
+ * @author David Turanski
  */
 @SuppressWarnings("serial")
 public class /* Module? */DependencyException extends RuntimeException {
 
 	private final Set<String> dependents;
 
-	private final String name;
+	private final String groupId;
 
-	private final String type;
+	private final String artifactId;
 
-	public DependencyException(String message, String name, String type, Set<String> dependents) {
-		super(String.format(message, name, type, dependents));
-		this.name = name;
-		this.type = type;
+	private final String version;
+
+	public DependencyException(String message, String groupId, String artifactId, String version, 
+			Set<String> dependents) {
+		super(String.format(message, groupId, artifactId, version, dependents));
+		this.groupId = groupId;
+		this.artifactId = artifactId;
+		this.version = version;
 		this.dependents = dependents;
 	}
 
@@ -43,12 +48,16 @@ public class /* Module? */DependencyException extends RuntimeException {
 		return dependents;
 	}
 
-	public String getName() {
-		return name;
+	public String getArtifactId() {
+		return this.artifactId;
 	}
 
-	public String getType() {
-		return type;
+	public String getGroupId() {
+		return this.groupId;
+	}
+
+	public String getVersion() {
+		return this.version;
 	}
 
 }

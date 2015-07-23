@@ -16,52 +16,43 @@
 
 package org.springframework.cloud.stream.module.registry;
 
-import java.util.Arrays;
-
 import org.springframework.util.Assert;
 
 /**
  * Thrown when attempting to refer to a module that does not exist.
  * @author Eric Bottard
+ * @author David Turanski
  */
 @SuppressWarnings("serial")
 public class NoSuchModuleException extends ResourceDefinitionException {
 
-	private final String name;
+	private final String artifactId;
 
-	private final String[] candidateTypes;
+	private final String groupId;
+
+	private final String version;
+
 
 	/**
 	 * Create a new exception.
-	 * @param name the module name that was referenced, but could not be found
-	 * @param candidateTypes the type(s) of the module that was expected but could not be found
+	 * @param groupId the module groupId that was referenced, but could not be found
+	 * @param artifactId the module artifactId that was referenced, but could not be found
+	 * @param version the version
 	 */
-	public NoSuchModuleException(String name, String... candidateTypes) {
+	public NoSuchModuleException(String groupId, String artifactId, String version) {
 		super(""); // will be overriden by getMessage()
-		Assert.hasText(name);
-		Assert.notEmpty(candidateTypes);
-		this.name = name;
-		this.candidateTypes = candidateTypes;
+		Assert.hasText(groupId);
+		Assert.hasText(artifactId);
+
+		this.artifactId = artifactId;
+		this.groupId = groupId;
+		this.version = version;
 	}
 
 	@Override
 	public String getMessage() {
-		if (candidateTypes.length == 1) {
-			return String.format("Could not find module with name '%s' and type '%s'", name,
-					candidateTypes[0]);
-		}
-		else {
-			return String.format("Could not find module with name '%s' and type among %s", name,
-					Arrays.asList(candidateTypes));
-		}
+		return String.format("Could not find module '%s:%s:%s'", groupId
+				, artifactId, version);
 	}
 
-	public String getName() {
-		return name;
-	}
-
-
-	public String[] getCandidateTypes() {
-		return candidateTypes;
-	}
 }

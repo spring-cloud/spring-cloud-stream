@@ -60,8 +60,8 @@ public class SynchronizingModuleRegistry implements WritableModuleRegistry {
 
 
 	@Override
-	public ModuleDefinition findDefinition(String name, String moduleType) {
-		ModuleDefinition remoteDefinition = remoteRegistry.findDefinition(name, moduleType);
+	public ModuleDefinition findModuleDefinition(String groupId, String artifactId, String version) {
+		ModuleDefinition remoteDefinition = remoteRegistry.findModuleDefinition(groupId, artifactId, version);
 		if (remoteDefinition == null || remoteDefinition.isComposed()) {
 			return remoteDefinition;
 		}
@@ -71,20 +71,14 @@ public class SynchronizingModuleRegistry implements WritableModuleRegistry {
 	}
 
 	@Override
-	public List<ModuleDefinition> findDefinitionsByName(String name) {
-		List<ModuleDefinition> remoteDefinitions = remoteRegistry.findDefinitionsByName(name);
+	public List<ModuleDefinition> findVersionsForModuleDefinition(String groupId, String artifactId) {
+		List<ModuleDefinition> remoteDefinitions = remoteRegistry.findVersionsForModuleDefinition(groupId, artifactId);
 		return refresh(remoteDefinitions);
 	}
 
 	@Override
-	public List<ModuleDefinition> findDefinitionsByType(String type) {
-		List<ModuleDefinition> remoteDefinitions = remoteRegistry.findDefinitionsByType(type);
-		return refresh(remoteDefinitions);
-	}
-
-	@Override
-	public List<ModuleDefinition> findDefinitions() {
-		List<ModuleDefinition> remoteDefinitions = remoteRegistry.findDefinitions();
+	public List<ModuleDefinition> findModuleDefinitionsByGroupId(String groupId) {
+		List<ModuleDefinition> remoteDefinitions = remoteRegistry.findModuleDefinitionsByGroupId(groupId);
 		return refresh(remoteDefinitions);
 	}
 
@@ -124,8 +118,9 @@ public class SynchronizingModuleRegistry implements WritableModuleRegistry {
 				throw new RuntimeException("Error while copying module", e);
 			}
 			localRegistry.delete(remoteDefinition);
-			UploadedModuleDefinition definitionToInstall = new UploadedModuleDefinition(remoteDefinition.getName(),
-					remoteDefinition.getType(), is);
+			UploadedModuleDefinition definitionToInstall = new UploadedModuleDefinition(remoteDefinition
+					.getArtifactId(),
+					remoteDefinition.getGroupId(), remoteDefinition.getVersion(), is);
 			localRegistry.registerNew(definitionToInstall);
 		}
 	}
@@ -134,7 +129,8 @@ public class SynchronizingModuleRegistry implements WritableModuleRegistry {
 	 * Returns the current version corresponding to a given module definition, as seen by the local registry.
 	 */
 	private ModuleDefinition currentLocalDefinition(ModuleDefinition remoteDefinition) {
-		return localRegistry.findDefinition(remoteDefinition.getName(), remoteDefinition.getType());
+		return localRegistry.findModuleDefinition(remoteDefinition.getArtifactId(), remoteDefinition.getGroupId(),
+				remoteDefinition.getVersion());
 	}
 
 

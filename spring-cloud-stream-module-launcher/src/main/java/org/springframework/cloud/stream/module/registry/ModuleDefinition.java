@@ -22,29 +22,33 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.util.Assert;
 
 /**
- * An instance of ModuleDefinition reflects the fact that a given module (identified by its type and name) is
+ * An instance of ModuleDefinition reflects the fact that a given module (identified by its groupId and artifactId) is
  * 'available', <i>i.e.</i> that it can be used in a job or stream definition.
  * @author Gary Russell
  * @author Eric Bottard
  * @author Mark Pollack
  * @author Ilayaperumal Gopinathan
+ * @author David Turanski
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY)
 public abstract class ModuleDefinition implements Comparable<ModuleDefinition> {
 
-	private String name;
+	private String artifactId;
 
-	private String type;
+	private String groupId;
+
+	private String version;
 
 	protected ModuleDefinition() {
 		// For (subclass) JSON deserialization only
 	}
 
-	protected ModuleDefinition(String name, String type) {
-		Assert.hasLength(name, "name cannot be blank");
-		Assert.hasLength(type, "type cannot be blank");
-		this.name = name;
-		this.type = type;
+	protected ModuleDefinition(String artifactId, String groupId, String version) {
+		Assert.hasLength(artifactId, "artifactId cannot be blank");
+		Assert.hasLength(groupId, "groupId cannot be blank");
+		this.artifactId = artifactId;
+		this.groupId = groupId;
+		this.version = version;
 	}
 
 	/**
@@ -54,20 +58,23 @@ public abstract class ModuleDefinition implements Comparable<ModuleDefinition> {
 	@JsonIgnore
 	public abstract boolean isComposed();
 
-	public String getName() {
-		return name;
+	public String getArtifactId() {
+		return artifactId;
 	}
 
-	public String getType() {
-		return type;
+	public String getGroupId() {
+		return groupId;
 	}
+
+	public String getVersion() { return version; }
 
 	/**
-	 * Compares the module definitions using the name of the {@link ModuleDefinition}
+	 * Compares the module definitions using the artifactId of the {@link ModuleDefinition}
 	 */
 	@Override
+	//TODO: may need some work
 	public int compareTo(ModuleDefinition other) {
-		return this.getName().compareTo(other.getName());
+		return this.getArtifactId().compareTo(other.getArtifactId());
 	}
 
 	@Override
@@ -82,10 +89,14 @@ public abstract class ModuleDefinition implements Comparable<ModuleDefinition> {
 
 		ModuleDefinition that = (ModuleDefinition) o;
 
-		if (!name.equals(that.name)) {
+		if (!artifactId.equals(that.artifactId)) {
 			return false;
 		}
-		if (type != that.type) {
+		if (groupId != that.groupId) {
+			return false;
+		}
+
+		if (version != that.version) {
 			return false;
 		}
 
@@ -94,8 +105,8 @@ public abstract class ModuleDefinition implements Comparable<ModuleDefinition> {
 
 	@Override
 	public final int hashCode() {
-		int result = name.hashCode();
-		result = 31 * result + type.hashCode();
+		int result = artifactId.hashCode();
+		result = 31 * result + groupId.hashCode();
 		return result;
 	}
 }

@@ -30,34 +30,28 @@ import java.util.List;
 public interface ModuleRegistry {
 
 	/**
-	 * Lookup a module of the given type with the given name.
-	 * @return {@code null} if this registry does not have such a module
+	 * Look up a module definition
+	 * @param groupId the grouo Id
+	 * @param artifactId the artifact Id
+	 * @param version the version
+	 * @return the {@link ModuleDefinition}
 	 */
-	ModuleDefinition findDefinition(String name, String moduleType);
+	ModuleDefinition findModuleDefinition(String groupId, String artifactId, String version);
 
 	/**
-	 * Searches the registry for the name specified and returns all module definitions that match the name regardless
-	 * of
-	 * module type.
-	 * @param name The module definition name to be searched.
-	 * @return A list of the module definitions that have the name specified by the input parameter. If no module
-	 * definition is found with the name an empty list will be returned.
+	 * Searches the registry for the artifactId specified and returns all versions of module definitions that match.
+	 * @param groupId the groupId of the artifact to be searched
+	 * @param artifactId The artifactId of module artifact to be searched
+	 * @return A list of the module definitions . If no module is found, an empty list will be returned.
 	 */
-	List<ModuleDefinition> findDefinitionsByName(String name);
+	List<ModuleDefinition> findVersionsForModuleDefinition(String groupId, String artifactId);
 
 	/**
-	 * Searches the registry for the type specified and returns all module definitions that match the type.
-	 * @param type The module type name to be searched.
-	 * @return A list of the module definitions that have the type specified by the input parameter. If no module
-	 * definition is found with the type an empty list will be returned.
+	 * Searches the registry for the groupId specified and returns all module definitions that match.
+	 * @param groupId The module groupId to be searched.
+	 * @return A list of the module definitions that contain the group. If no modules are 
+	 * found, an empty list will be returned.
 	 */
-	List<ModuleDefinition> findDefinitionsByType(String type);
-
-	/**
-	 * Returns all module definitions.
-	 * @return A list of the module definitions. If no module definition is found with the type an empty list will be
-	 * returned.
-	 */
-	List<ModuleDefinition> findDefinitions();
+	List<ModuleDefinition> findModuleDefinitionsByGroupId(String groupId);
 
 }

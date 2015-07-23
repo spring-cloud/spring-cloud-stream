@@ -38,9 +38,9 @@ public class CompositeModuleDefinition extends ModuleDefinition {
 		// For json de-serialization
 	}
 
-	/*package*/ CompositeModuleDefinition(String name, String type,
+	/*package*/ CompositeModuleDefinition( String groupId, String artifactId, String version,
 			String dslDefinition, List<ModuleDefinition> children) {
-		super(name, type);
+		super(groupId, artifactId, version);
 		Assert.hasText(dslDefinition, "The dsl definition for a composed module must not be blank");
 		Assert.notEmpty(children, "The sub-module definitions for a composed module must have at least one element");
 		this.dslDefinition = dslDefinition;
@@ -54,7 +54,7 @@ public class CompositeModuleDefinition extends ModuleDefinition {
 
 	@Override
 	public String toString() {
-		return String.format("%s (%s:%s) [%s]", getClass().getSimpleName(), getType(), getName(), dslDefinition);
+		return String.format("%s (%s:%s) [%s]", getClass().getSimpleName(), getGroupId(), getArtifactId(), dslDefinition);
 	}
 
 	/**

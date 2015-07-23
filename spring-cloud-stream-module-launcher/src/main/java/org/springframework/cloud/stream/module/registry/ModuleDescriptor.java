@@ -32,7 +32,9 @@ import org.springframework.util.Assert;
  * @author Luke Taylor
  * @author Ilayaperumal Gopinathan
  * @author Patrick Peralta
+ * @author David Turanski 
  */
+//TODO: Needs work. Does it belong in XD?
 public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 
 	/**
@@ -122,8 +124,8 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 	 * {@code $XD_HOME/modules/[module type]}.
 	 * @return module name
 	 */
-	public String getModuleName() {
-		return moduleDefinition.getName();
+	public String getArtifactId() {
+		return moduleDefinition.getArtifactId();
 	}
 
 	/**
@@ -158,8 +160,8 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 	 * Return the module type.
 	 * @return module type
 	 */
-	public String getType() {
-		return moduleDefinition.getType();
+	public String getGroupId() {
+		return moduleDefinition.getGroupId();
 	}
 
 	/**
@@ -222,7 +224,7 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 	 * @return new {@code Key}
 	 */
 	public Key createKey() {
-		return new Key(getGroup(), getType(), getModuleLabel());
+		return new Key(getGroup(), getGroupId(), getModuleLabel());
 	}
 
 	/**
@@ -231,13 +233,13 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 	@Override
 	public String toString() {
 		return new ToStringCreator(this)
-				.append("moduleName", moduleDefinition != null ? moduleDefinition.getName() : null)
+				.append("moduleName", moduleDefinition != null ? moduleDefinition.getArtifactId() : null)
 				.append("moduleLabel", moduleLabel)
 				.append("group", group)
 				.append("sourceChannelName", sourceChannelName)
 				.append("sinkChannelName", sinkChannelName)
 				.append("index", index)
-				.append("type", moduleDefinition != null ? moduleDefinition.getType() : null)
+				.append("type", moduleDefinition != null ? moduleDefinition.getGroupId() : null)
 				.append("parameters", parameters)
 				.append("children", children).toString();
 	}
@@ -258,8 +260,6 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 	 * type/fields/parameters during parsing.
 	 */
 	public static class Builder {
-
-		private String moduleName;
 
 		/**
 		 * @see ModuleDescriptor#moduleLabel
@@ -287,7 +287,12 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		private int index;
 
 
-		private String type;
+		private String groupId;
+
+		private String artifactId;
+
+
+		private String version;
 
 		/**
 		 * @see ModuleDescriptor#parameters
@@ -301,14 +306,15 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 
 		private ModuleDefinition moduleDefinition;
 
+
 		/**
 		 * Set the module name.
-		 * @param moduleName name of module
+		 * @param artifactId name of module
 		 * @return this builder object
-		 * @see ModuleDescriptor#getModuleName
+		 * @see ModuleDescriptor#getArtifactId
 		 */
-		public Builder setModuleName(String moduleName) {
-			this.moduleName = moduleName;
+		public Builder setArtifactId(String artifactId) {
+			this.artifactId = artifactId;
 			return this;
 		}
 
@@ -331,6 +337,11 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		 */
 		public Builder setGroup(String group) {
 			this.group = group;
+			return this;
+		}
+
+		public Builder setVersion(String version) {
+			this.version = version;
 			return this;
 		}
 
@@ -369,12 +380,12 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 
 		/**
 		 * Set the module type.
-		 * @param type module type
+		 * @param groupId module groupId
 		 * @return this builder object
-		 * @see ModuleDescriptor#getType()
+		 * @see ModuleDescriptor#getGroupId() ()
 		 */
-		public Builder setType(String type) {
-			this.type = type;
+		public Builder setGroupId(String groupId) {
+			this.groupId = groupId;
 			return this;
 		}
 
@@ -413,14 +424,6 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 			return this;
 		}
 
-		/**
-		 * Return name of module. Typically this module is present under
-		 * {@code $XD_HOME/modules/[module type]}.
-		 * @return module name
-		 */
-		public String getModuleName() {
-			return moduleName;
-		}
 
 		/**
 		 * Return symbolic name of a module. This may be explicitly specified in
@@ -468,13 +471,6 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 			return index;
 		}
 
-		/**
-		 * Return the module type.
-		 * @return module type
-		 */
-		public String getType() {
-			return type;
-		}
 
 		/**
 		 * Return parameters for module. This is specific to the type of module -
@@ -495,13 +491,13 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		 */
 		public static Builder fromModuleDescriptor(ModuleDescriptor descriptor) {
 			Builder builder = new Builder();
-			builder.setModuleName(descriptor.getModuleName());
+			builder.setArtifactId(descriptor.getArtifactId());
 			builder.setModuleLabel(descriptor.getModuleLabel());
 			builder.setGroup(descriptor.getGroup());
 			builder.setSourceChannelName(descriptor.getSourceChannelName());
 			builder.setSinkChannelName(descriptor.getSinkChannelName());
 			builder.setIndex(descriptor.getIndex());
-			builder.setType(descriptor.getType());
+			builder.setGroupId(descriptor.getGroupId());
 			builder.setModuleDefinition(descriptor.getModuleDefinition());
 			builder.addParameters(descriptor.getParameters());
 			builder.addChildren(descriptor.getChildren());
@@ -514,7 +510,7 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		 * @return new instance of {@code ModuleDescriptor}
 		 */
 		public ModuleDescriptor build() {
-			String label = moduleLabel != null ? moduleLabel : getModuleDefinition().getName();
+			String label = moduleLabel != null ? moduleLabel : getModuleDefinition().getArtifactId();
 			return new ModuleDescriptor(label, group,
 					sourceChannelName, sinkChannelName,
 					index, getModuleDefinition(),
@@ -528,7 +524,7 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 
 		public ModuleDefinition getModuleDefinition() {
 			if (moduleDefinition == null) {
-				moduleDefinition = new ModuleDefinition(moduleName, type) {
+				moduleDefinition = new ModuleDefinition(artifactId, groupId, version) {
 					@Override
 					public boolean isComposed() {
 						return false;
@@ -550,9 +546,9 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		private final String group;
 
 		/**
-		 * Module type.
+		 * Module groupId.
 		 */
-		private final String type;
+		private final String groupId;
 
 		/**
 		 * Module label.
@@ -562,15 +558,15 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		/**
 		 * Construct a key.
 		 * @param group group name
-		 * @param type module type
+		 * @param groupId module type
 		 * @param label module label
 		 */
-		public Key(String group, String type, String label) {
+		public Key(String group, String groupId, String label) {
 			Assert.notNull(group, "Group is required");
-			Assert.notNull(type, "Type is required");
+			Assert.notNull(groupId, "GroupId is required");
 			Assert.hasText(label, "Label is required");
 			this.group = group;
-			this.type = type;
+			this.groupId = groupId;
 			this.label = label;
 		}
 
@@ -586,8 +582,8 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		 * Return the module type.
 		 * @return module type
 		 */
-		public String getType() {
-			return type;
+		public String getGroupId() {
+			return groupId;
 		}
 
 		/**
@@ -603,7 +599,7 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		 */
 		@Override
 		public int compareTo(Key other) {
-			int c = type.compareTo(other.getType());
+			int c = groupId.compareTo(other.getGroupId());
 			if (c == 0) {
 				c = label.compareTo(other.getLabel());
 			}
@@ -625,7 +621,7 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 			if (o instanceof Key) {
 				Key other = (Key) o;
 				return group.equals(other.getGroup())
-						&& type.equals(other.getType()) && label.equals(other.getLabel());
+						&& groupId.equals(other.getGroupId()) && label.equals(other.getLabel());
 			}
 
 			return false;
@@ -637,7 +633,7 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		@Override
 		public int hashCode() {
 			int result = group.hashCode();
-			result = 31 * result + type.hashCode();
+			result = 31 * result + groupId.hashCode();
 			result = 31 * result + label.hashCode();
 			return result;
 		}
@@ -649,7 +645,7 @@ public class ModuleDescriptor implements Comparable<ModuleDescriptor> {
 		public String toString() {
 			return "ModuleDeploymentKey{" +
 					"stream='" + group + '\'' +
-					", type=" + type +
+					", type=" + groupId +
 					", label='" + label + '\'' +
 					'}';
 		}

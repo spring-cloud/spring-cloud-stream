@@ -46,9 +46,9 @@ public class DelegatingModuleRegistry implements WritableModuleRegistry {
 	}
 
 	@Override
-	public ModuleDefinition findDefinition(String name, String moduleType) {
+	public ModuleDefinition findModuleDefinition(String groupId, String artifactId, String version) {
 		for (ModuleRegistry delegate : delegates) {
-			ModuleDefinition result = delegate.findDefinition(name, moduleType);
+			ModuleDefinition result = delegate.findModuleDefinition(groupId, artifactId, version);
 			if (result != null) {
 				return result;
 			}
@@ -57,11 +57,11 @@ public class DelegatingModuleRegistry implements WritableModuleRegistry {
 	}
 
 	@Override
-	public List<ModuleDefinition> findDefinitionsByName(String name) {
+	public List<ModuleDefinition> findVersionsForModuleDefinition(String groupId, String artifactId) {
 		Set<String> alreadySeen = new HashSet<String>();
 		List<ModuleDefinition> result = new ArrayList<ModuleDefinition>();
 		for (ModuleRegistry delegate : delegates) {
-			List<ModuleDefinition> sub = delegate.findDefinitionsByName(name);
+			List<ModuleDefinition> sub = delegate.findVersionsForModuleDefinition(groupId, artifactId);
 			for (ModuleDefinition definition : sub) {
 				// First registry's module shadows subsequent
 				if (alreadySeen.add(makeKeyFor(definition))) {
@@ -77,29 +77,15 @@ public class DelegatingModuleRegistry implements WritableModuleRegistry {
 	}
 
 	private String makeKeyFor(ModuleDefinition definition) {
-		return definition.getType() + "|" + definition.getName();
+		return definition.getGroupId() + "|" + definition.getArtifactId();
 	}
 
 	@Override
-	public List<ModuleDefinition> findDefinitionsByType(String type) {
+	public List<ModuleDefinition> findModuleDefinitionsByGroupId(String groupId) {
 		ArrayList<ModuleDefinition> definitions = new ArrayList<ModuleDefinition>();
 		Set<String> alreadySeen = new HashSet<String>();
 		for (ModuleRegistry delegate : delegates) {
-			for (ModuleDefinition def : delegate.findDefinitionsByType(type)) {
-				if (alreadySeen.add(makeKeyFor(def))) {
-					definitions.add(def);
-				}
-			}
-		}
-		return definitions;
-	}
-
-	@Override
-	public List<ModuleDefinition> findDefinitions() {
-		ArrayList<ModuleDefinition> definitions = new ArrayList<ModuleDefinition>();
-		Set<String> alreadySeen = new HashSet<String>();
-		for (ModuleRegistry delegate : delegates) {
-			for (ModuleDefinition def : delegate.findDefinitions()) {
+			for (ModuleDefinition def : delegate.findModuleDefinitionsByGroupId(groupId)) {
 				if (alreadySeen.add(makeKeyFor(def))) {
 					definitions.add(def);
 				}

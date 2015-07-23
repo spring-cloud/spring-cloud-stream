@@ -31,8 +31,8 @@ public class SimpleModuleDefinition extends ModuleDefinition {
 		// For json de-serialization
 	}
 
-	/*package*/ SimpleModuleDefinition(String name, String moduleType, String location) {
-		super(name, moduleType);
+	/*package*/ SimpleModuleDefinition(String groupId, String artifactId, String version, String location) {
+		super(groupId, artifactId, version);
 		this.location = location;
 	}
 
@@ -50,6 +50,6 @@ public class SimpleModuleDefinition extends ModuleDefinition {
 
 	@Override
 	public String toString() {
-		return String.format("%s (%s:%s) @ %s", getClass().getSimpleName(), getType(), getName(), location);
+		return String.format("%s (%s:%s:%s) @ %s", getClass().getSimpleName(), getGroupId(), getArtifactId(), getVersion(), location);
 	}
 }

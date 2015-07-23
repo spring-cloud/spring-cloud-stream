@@ -39,6 +39,7 @@ import org.springframework.util.StringUtils;
  * Writable extension of {@link ResourceModuleRegistry}.
  * <p>Will generate MD5 hash files for written modules.</p>
  * @author Eric Bottard
+ * @author David Turanski
  */
 public class WritableResourceModuleRegistry extends ResourceModuleRegistry implements WritableModuleRegistry,
 		InitializingBean {
@@ -63,7 +64,8 @@ public class WritableResourceModuleRegistry extends ResourceModuleRegistry imple
 	@Override
 	public boolean delete(ModuleDefinition definition) {
 		try {
-			Resource archive = getResources(definition.getType(), definition.getName(),
+			Resource archive = getResources(definition.getGroupId(), definition.getArtifactId(), 
+					definition.getVersion(),
 					ARCHIVE_AS_FILE_EXTENSION).iterator().next();
 			if (archive instanceof WritableResource) {
 				WritableResource writableResource = (WritableResource) archive;
@@ -89,7 +91,8 @@ public class WritableResourceModuleRegistry extends ResourceModuleRegistry imple
 		}
 		UploadedModuleDefinition uploadedModuleDefinition = (UploadedModuleDefinition) definition;
 		try {
-			Resource archive = getResources(definition.getType(), definition.getName(),
+			Resource archive = getResources(definition.getGroupId(), definition.getArtifactId(), 
+					definition.getVersion(),
 					ARCHIVE_AS_FILE_EXTENSION).iterator().next();
 			if (archive instanceof WritableResource) {
 				WritableResource writableResource = (WritableResource) archive;

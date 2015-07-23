@@ -68,31 +68,13 @@ public class ResourceModuleRegistry implements ModuleRegistry {
 		return sanitize(resolver.getResources(location)).iterator().next();
 	}
 
+
 	@Override
-	public ModuleDefinition findDefinition(String name, String moduleType) {
+	public List<ModuleDefinition> findVersionsForModuleDefinition(String groupId, String artifactId) {
 		List<ModuleDefinition> result = new ArrayList<ModuleDefinition>();
 		try {
 			for (String suffix : SUFFIXES) {
-				for (Resource resource : getResources(moduleType, name, suffix)) {
-					collect(resource, result);
-				}
-			}
-		}
-		catch (IOException e) {
-			throw new RuntimeException(String.format("An error occurred trying to locate module '%s:%s'",
-					moduleType, name), e);
-		}
-
-		return result.size() == 1 ? result.iterator().next() : null;
-
-	}
-
-	@Override
-	public List<ModuleDefinition> findDefinitionsByName(String name) {
-		List<ModuleDefinition> result = new ArrayList<ModuleDefinition>();
-		try {
-			for (String suffix : SUFFIXES) {
-				for (Resource resource : getResources("*", name, suffix)) {
+				for (Resource resource : getResources(groupId, artifactId, "*", suffix)) {
 					collect(resource, result);
 				}
 			}
@@ -104,10 +86,10 @@ public class ResourceModuleRegistry implements ModuleRegistry {
 	}
 
 	@Override
-	public List<ModuleDefinition> findDefinitionsByType(String type) {
+	public List<ModuleDefinition> findModuleDefinitionsByGroupId(String groupId) {
 		List<ModuleDefinition> result = new ArrayList<>();
 		try {
-			for (Resource resource : getResources(type, "*", "")) {
+			for (Resource resource : getResources(groupId, "*", "*", "")) {
 				collect(resource, result);
 			}
 		}
@@ -117,23 +99,10 @@ public class ResourceModuleRegistry implements ModuleRegistry {
 		return result;
 	}
 
-	@Override
-	public List<ModuleDefinition> findDefinitions() {
-		List<ModuleDefinition> result = new ArrayList<>();
-		try {
-			for (Resource resource : getResources("*", "*", "")) {
-				collect(resource, result);
-			}
-		}
-		catch (IOException e) {
-			return Collections.emptyList();
-		}
-		return result;
-	}
-
-	protected Iterable<Resource> getResources(String moduleType,
-			String moduleName, String suffix) throws IOException {
-		String path = String.format("%s/%s/%s%s", this.root, moduleType, moduleName, suffix);
+	protected Iterable<Resource> getResources(String groupId,
+			String artifactId, String version, String suffix) throws IOException {
+		//TODO: this need to be fixed
+		String path = String.format("%s/%s/%s%s", this.root, groupId, artifactId, version, suffix);
 		Resource[] resources = this.resolver.getResources(path);
 		List<Resource> filtered = sanitize(resources);
 
@@ -179,29 +148,34 @@ public class ResourceModuleRegistry implements ModuleRegistry {
 			path = path.substring(0, path.length() - 1);
 		}
 
+		//TODO: Parsing needs work here
 		int lastSlash = path.lastIndexOf('/');
 		int nextToLastSlash = path.lastIndexOf('/', lastSlash - 1);
 
-		String name = path.substring(lastSlash + 1);
-		if (name.endsWith(ARCHIVE_AS_FILE_EXTENSION)) {
-			name = name.substring(0, name.length() - ARCHIVE_AS_FILE_EXTENSION.length());
+		String groupId = path.substring(lastSlash + 1);
+		if (groupId.endsWith(ARCHIVE_AS_FILE_EXTENSION)) {
+			groupId = groupId.substring(0, groupId.length() - ARCHIVE_AS_FILE_EXTENSION.length());
 		}
-		String type = path.substring(nextToLastSlash + 1, lastSlash);
+		String artifactId = path.substring(nextToLastSlash + 1, lastSlash);
 
 		String locationToUse = resource.getURL().toString();
 		if (!locationToUse.endsWith(ARCHIVE_AS_FILE_EXTENSION) && !locationToUse.endsWith("/")) {
 			locationToUse += "/";
 		}
 
-		SimpleModuleDefinition found = ModuleDefinitions.simple(name, type, locationToUse);
+		String version = null;
+
+		SimpleModuleDefinition found = ModuleDefinitions.simple(groupId, artifactId, version, locationToUse);
 
 		if (holder.contains(found)) {
 			SimpleModuleDefinition other = (SimpleModuleDefinition) holder.get(holder.indexOf(found));
-			throw new IllegalStateException(String.format("Duplicate module definitions for '%s:%s' found at '%s' " +
+			throw new IllegalStateException(String.format("Duplicate module definitions for '%s:%s:%s' found at '%s'" +
+							" " +
 							"and" +
 							" " +
 							"'%s'",
-					found.getType(), found.getName(), found.getLocation(), other.getLocation()));
+					found.getGroupId(), found.getArtifactId(), found.getVersion(), found.getLocation(), 
+					other.getLocation()));
 		}
 		else {
 			holder.add(found);
@@ -211,6 +185,25 @@ public class ResourceModuleRegistry implements ModuleRegistry {
 
 	public void setRequireHashFiles(boolean requireHashFiles) {
 		this.requireHashFiles = requireHashFiles;
+	}
+
+	@Override
+	public ModuleDefinition findModuleDefinition(String groupId, String artifactId, String version) {
+		List<ModuleDefinition> result = new ArrayList<ModuleDefinition>();
+		try {
+			for (String suffix : SUFFIXES) {
+				for (Resource resource : getResources(groupId, artifactId, version, suffix)) {
+					collect(resource, result);
+				}
+			}
+		}
+		catch (IOException e) {
+			throw new RuntimeException(String.format("An error occurred trying to locate module '%s:%s:%s'",
+					groupId, artifactId, version), e);
+		}
+
+		return result.size() == 1 ? result.iterator().next() : null;
+
 	}
 
 }

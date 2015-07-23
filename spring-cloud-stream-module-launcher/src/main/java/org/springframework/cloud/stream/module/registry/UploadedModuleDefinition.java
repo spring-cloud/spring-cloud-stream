@@ -24,17 +24,18 @@ import java.io.InputStream;
 /**
  * A module definition that serves as a temporary vehicle for the payload of an uploaded module.
  * @author Eric Bottard
+ * @author David Turanski
  */
 public class UploadedModuleDefinition extends ModuleDefinition {
 
 	private final InputStream inputStream;
 
-	public UploadedModuleDefinition(String name, String type, byte[] bytes) {
-		this(name, type, new ByteArrayInputStream(bytes));
+	public UploadedModuleDefinition(String groupId, String artifactId, String version, byte[] bytes) {
+		this(groupId, artifactId, version, new ByteArrayInputStream(bytes));
 	}
 
-	public UploadedModuleDefinition(String name, String moduleType, InputStream is) {
-		super(name, moduleType);
+	public UploadedModuleDefinition(String groupId, String artifactId, String version, InputStream is) {
+		super(groupId, artifactId, version);
 		this.inputStream = is;
 	}
 
@@ -49,6 +50,6 @@ public class UploadedModuleDefinition extends ModuleDefinition {
 
 	@Override
 	public String toString() {
-		return String.format("Uploaded module '%s:%s'", getType(), getName());
+		return String.format("Uploaded module '%s:%s:%s'", getGroupId(), getArtifactId(), getVersion());
 	}
 }

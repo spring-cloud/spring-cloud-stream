@@ -37,25 +37,27 @@ public class ModuleDefinitions {
 	/**
 	 * Create a new definition for a simple module (one where its implementation code can be located). Interpretation
 	 * of the location of that code is left other class(es).
-	 * @param name the name of the module
-	 * @param type the type of the module
+	 * @param groupId the groupId of the module
+	 * @param artifactId the artifactId of the module
+	 * @param version the version of the module
 	 * @param location where the 'code' for the module can be found
 	 */
-	public static SimpleModuleDefinition simple(String name, String type, String location) {
-		return new SimpleModuleDefinition(name, type, location);
+	public static SimpleModuleDefinition simple(String groupId, String artifactId, String version,  String location) {
+		return new SimpleModuleDefinition(groupId, artifactId, version, location);
 	}
 
 	/**
 	 * Create a new definition for a composed module (one where its behavior comes not from its own 'code', but from
 	 * composing pre-existing modules).
-	 * @param name the name of the module
-	 * @param type the type of the module
+	 * @param groupId the name of the module
+	 * @param artifactId the type of the module
+	 * @param version the version of the module
 	 * @param dslDefinition the definition that was used to create the module, in Spring XD DSL
 	 * @param children information about the child modules that make up the composed module
 	 */
-	public static CompositeModuleDefinition composed(String name, String type, String dslDefinition,
+	public static CompositeModuleDefinition composed(String groupId, String artifactId, String version,  String dslDefinition,
 			List<ModuleDefinition> children) {
-		return new CompositeModuleDefinition(name, type, dslDefinition, children);
+		return new CompositeModuleDefinition(groupId, artifactId, version, dslDefinition, children);
 	}
 
 }
