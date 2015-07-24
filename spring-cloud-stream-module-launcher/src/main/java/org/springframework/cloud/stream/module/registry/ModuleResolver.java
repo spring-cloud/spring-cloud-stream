@@ -1,6 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
- *
+ * Copyright 2014 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,19 +15,19 @@
 
 package org.springframework.cloud.stream.module.registry;
 
+import org.springframework.core.io.Resource;
+
 /**
- * Thrown when a problem is detected with the (DSL) definition of an XD resource.
- * @author Eric Bottard
+ * Retrieve
+ * @author David Turanski
  */
-@SuppressWarnings("serial")
-public class ResourceDefinitionException extends RuntimeException {
-
-	public ResourceDefinitionException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	public ResourceDefinitionException(String message) {
-		super(message);
-	}
-
+public interface  ModuleResolver {
+	/**
+	 * Retrieve a resource given it's coordinates.
+	 * @param groupId the groupId
+	 * @param artifactId the artifactId
+	 * @param version the version
+	 * @return the resource
+	 */
+	public Resource locateResource(String groupId, String artifactId, String version);
 }
