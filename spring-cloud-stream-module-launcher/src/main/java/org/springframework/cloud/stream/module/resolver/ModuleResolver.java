@@ -18,16 +18,21 @@ package org.springframework.cloud.stream.module.resolver;
 import org.springframework.core.io.Resource;
 
 /**
- * Interface used to retrieve a Module uber-jar from a remote or local repository.
+ * Interface used to return a {@link Resource} that provides access to a module
+ * uber-jar based on its Maven coordinates.
+ *
  * @author David Turanski
  */
 public interface ModuleResolver {
+
 	/**
 	 * Retrieve a resource given its coordinates.
+	 *
 	 * @param groupId the groupId
 	 * @param artifactId the artifactId
 	 * @param version the version
 	 * @return the resource
 	 */
 	public Resource resolve(String groupId, String artifactId, String version);
+
 }
