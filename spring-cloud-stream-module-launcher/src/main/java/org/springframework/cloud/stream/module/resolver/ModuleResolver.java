@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,21 +13,21 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.module.registry;
+package org.springframework.cloud.stream.module.resolver;
 
 import org.springframework.core.io.Resource;
 
 /**
- * Retrieve
+ * Interface used to retrieve a Module uber-jar from a remote or local repository.
  * @author David Turanski
  */
-public interface  ModuleResolver {
+public interface ModuleResolver {
 	/**
-	 * Retrieve a resource given it's coordinates.
+	 * Retrieve a resource given its coordinates.
 	 * @param groupId the groupId
 	 * @param artifactId the artifactId
 	 * @param version the version
 	 * @return the resource
 	 */
-	public Resource locateResource(String groupId, String artifactId, String version);
+	public Resource resolve(String groupId, String artifactId, String version);
 }
