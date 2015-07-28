@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author David Turanski
  */
-public class DefaultModuleResolverTests {
+public class AetherModuleResolverTests {
 	private int port = SocketUtils.findAvailableTcpPort();
 
 	@Rule
@@ -49,7 +49,7 @@ public class DefaultModuleResolverTests {
 	public void testResolveLocal() throws IOException {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
-		DefaultModuleResolver defaultModuleResolver = new DefaultModuleResolver(localRepository, null);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
 		Resource resource = defaultModuleResolver.resolve("foo.bar", "foo-bar", "1.0.0");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-bar-1.0.0.jar");
@@ -59,7 +59,7 @@ public class DefaultModuleResolverTests {
 	public void testResolveDoesNotExist() throws IOException {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
-		DefaultModuleResolver defaultModuleResolver = new DefaultModuleResolver(localRepository, null);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
 		defaultModuleResolver.resolve("niente", "nada", "zilch");
 	}
 
@@ -75,7 +75,7 @@ public class DefaultModuleResolverTests {
 		remoteRepos.put("spring-snap", "http://repo.spring.io/snapshot");
 		remoteRepos.put("spring-ms", "http://repo.spring.io/milestone");
 
-		DefaultModuleResolver defaultModuleResolver = new DefaultModuleResolver(localRepository, remoteRepos);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
 		Resource resource = defaultModuleResolver.resolve("org.springframework", "spring-core", "4.1.6.RELEASE");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "spring-core-4.1.6.RELEASE.jar");
@@ -100,7 +100,7 @@ public class DefaultModuleResolverTests {
 						.withStatus(200)
 						.withBodyFile(stubFileName)));
 
-		DefaultModuleResolver defaultModuleResolver = new DefaultModuleResolver(localRepository, remoteRepos);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
 		Resource resource = defaultModuleResolver.resolve("org.bar", "foo", "1.0.0");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-1.0.0.jar");

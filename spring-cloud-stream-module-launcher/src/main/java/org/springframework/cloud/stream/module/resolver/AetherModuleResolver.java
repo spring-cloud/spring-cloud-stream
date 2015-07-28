@@ -49,7 +49,7 @@ import org.springframework.util.CollectionUtils;
  * necessary.
  * @author David Turanski
  */
-public class DefaultModuleResolver implements ModuleResolver {
+public class AetherModuleResolver implements ModuleResolver {
 	private static final String DEFAULT_CONTENT_TYPE = "default";
 
 	private static final String DEFAULT_CLASSIFIER = "";
@@ -62,6 +62,35 @@ public class DefaultModuleResolver implements ModuleResolver {
 
 	private final RepositorySystem repositorySystem;
 
+	/**
+	 * Create an instance specifying the locations of the local and remote repositories.
+	 *
+	 * @param localRepository the root path of the local maven repository
+	 * @param remoteRepositories a Map containing pairs of (repository ID,repository URL). This
+	 * may be null or empty if the local repository is off line.
+	 */
+	public AetherModuleResolver(File localRepository, Map<String, String> remoteRepositories) {
+		Assert.isTrue(localRepository.exists(), "File " + localRepository + " does not exist.");
+		this.localRepository = localRepository;
+		this.remoteRepositories = new LinkedList<>();
+		if (!CollectionUtils.isEmpty(remoteRepositories)) {
+			for (Map.Entry<String, String> remoteRepo : remoteRepositories.entrySet()) {
+				RemoteRepository remoteRepository = new RemoteRepository.Builder(remoteRepo.getKey(),
+						DEFAULT_CONTENT_TYPE, remoteRepo.getValue()).build();
+				this.remoteRepositories.add(remoteRepository);
+			}
+		}
+		repositorySystem = newRepositorySystem();
+	}
+
+	/**
+	 * Resolve the an artifact and return its location in the local repository. Aether performs the normal
+	 * Maven resolution process ensuring that the latest update is cached to the local repository.
+	 * @param groupId the groupId
+	 * @param artifactId the artifactId
+	 * @param version the version
+	 * @return a {@ link FileSystemResource} representing the resolved artifact in the local repository.
+	 */
 	@Override
 	public Resource resolve(String groupId, String artifactId, String version) {
 		Artifact artifact = new DefaultArtifact(groupId, artifactId, DEFAULT_CLASSIFIER, DEFAULT_EXTENSION, version);
@@ -80,35 +109,24 @@ public class DefaultModuleResolver implements ModuleResolver {
 		return new FileSystemResource(result.getArtifact().getFile());
 	}
 
-	public DefaultModuleResolver(File localRepo, Map<String, String> remoteRepos) {
-		Assert.isTrue(localRepo.exists(), "File " + localRepo + " does not exist.");
-		this.localRepository = localRepo;
-		this.remoteRepositories = new LinkedList<>();
-		if (!CollectionUtils.isEmpty(remoteRepos)) {
-			for (Map.Entry<String, String> remoteRepo : remoteRepos.entrySet()) {
-				RemoteRepository remoteRepository = new RemoteRepository.Builder(remoteRepo.getKey(),
-						DEFAULT_CONTENT_TYPE, remoteRepo.getValue()).build();
-				this.remoteRepositories.add(remoteRepository);
-			}
-		}
-		repositorySystem = newRepositorySystem();
-	}
-
+	/*
+	 * Create a session to manage remote and local synchronization.
+	 */
 	private DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,
 			String localRepoPath) {
 		DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
 		LocalRepository localRepo = new LocalRepository(localRepoPath);
 		session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 		return session;
 	}
 
+	/*
+	 * Aether's components implement {@link org.eclipse.aether.spi.locator.Service} to ease manual wiring.
+	 * Using the prepopulated {@link DefaultServiceLocator}, we need to register the repository connector 
+	 * and transporter factories
+	 */
 	private RepositorySystem newRepositorySystem() {
-               /*
-	        * Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
-    	        * prepopulated DefaultServiceLocator, we only need to register the repository connector and transporter
-    	        * factories.
-		*/
+
 		DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
 		locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
 		locator.addService(TransporterFactory.class, FileTransporterFactory.class);
