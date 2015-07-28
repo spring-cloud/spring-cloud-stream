@@ -90,6 +90,7 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * @param artifactId the artifactId
 	 * @param version the version
 	 * @return a {@ link FileSystemResource} representing the resolved artifact in the local repository.
+	 * @throws a RuntimeException if the artifact does not exist or the resolution fails.
 	 */
 	@Override
 	public Resource resolve(String groupId, String artifactId, String version) {
