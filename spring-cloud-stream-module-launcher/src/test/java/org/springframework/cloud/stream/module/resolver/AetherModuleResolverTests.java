@@ -71,14 +71,11 @@ public class AetherModuleResolverTests {
 
 		Map<String, String> remoteRepos = new HashMap<>();
 
-		remoteRepos.put("spring", "http://repo.spring.io/release");
-		remoteRepos.put("spring-snap", "http://repo.spring.io/snapshot");
-		remoteRepos.put("spring-ms", "http://repo.spring.io/milestone");
-
+		remoteRepos.put("modules", "http://repo.spring.io/spring-cloud-stream-modules");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
-		Resource resource = defaultModuleResolver.resolve("org.springframework", "spring-core", "4.1.6.RELEASE");
+		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source", "1.0.0.BUILD-SNAPSHOT","exec", "jar");
 		assertTrue(resource.exists());
-		assertEquals(resource.getFile().getName(), "spring-core-4.1.6.RELEASE.jar");
+		assertEquals(resource.getFile().getName(), "time-source-1.0.0.BUILD-SNAPSHOT-exec.jar");
 	}
 
 	@Test

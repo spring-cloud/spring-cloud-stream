@@ -64,7 +64,6 @@ public class AetherModuleResolver implements ModuleResolver {
 
 	/**
 	 * Create an instance specifying the locations of the local and remote repositories.
-	 *
 	 * @param localRepository the root path of the local maven repository
 	 * @param remoteRepositories a Map containing pairs of (repository ID,repository URL). This
 	 * may be null or empty if the local repository is off line.
@@ -90,11 +89,36 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * @param artifactId the artifactId
 	 * @param version the version
 	 * @return a {@ link FileSystemResource} representing the resolved artifact in the local repository.
-	 * @throws a RuntimeException if the artifact does not exist or the resolution fails.
+     * @throws a RuntimeException if the artifact does not exist or the resolution fails.
 	 */
 	@Override
 	public Resource resolve(String groupId, String artifactId, String version) {
-		Artifact artifact = new DefaultArtifact(groupId, artifactId, DEFAULT_CLASSIFIER, DEFAULT_EXTENSION, version);
+		return resolve(groupId, artifactId, version, DEFAULT_CLASSIFIER, DEFAULT_EXTENSION);
+	}
+
+	/**
+	 * Resolve an artifact and return its location in the local repository. Aether performs the normal
+	 * Maven resolution process ensuring that the latest update is cached to the local repository.
+	 * @param groupId the groupId
+	 * @param artifactId the artifactId
+	 * @param version the version
+	 * @param classifer classifier can be null if none
+	 * @param extension the file extension
+	 * @return a {@ link FileSystemResource} representing the resolved artifact in the local repository.
+     * @throws a RuntimeException if the artifact does not exist or the resolution fails.
+	 */
+	@Override
+	public Resource resolve(String groupId, String artifactId, String version, String classifer, String extension) {
+		Assert.hasText(groupId, "'groupId' cannot be blank.");
+		Assert.hasText(artifactId, "'artifactId' cannot be blank.");
+		Assert.hasText(version, "'version' cannot be blank.");
+		if (classifer == null) {
+			classifer = "";
+		}
+
+		Assert.hasText(extension, "'extension' cannot be blank.");
+
+		Artifact artifact = new DefaultArtifact(groupId, artifactId, classifer, extension, version);
 		RepositorySystemSession session = newRepositorySystemSession(repositorySystem,
 				localRepository.getAbsolutePath());
 		ArtifactResult result;

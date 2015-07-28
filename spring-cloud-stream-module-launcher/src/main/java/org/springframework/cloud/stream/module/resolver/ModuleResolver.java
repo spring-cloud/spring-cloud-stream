@@ -35,4 +35,16 @@ public interface ModuleResolver {
 	 */
 	public Resource resolve(String groupId, String artifactId, String version);
 
+	/**
+	 * Retrieve a resource given its coordinates.
+	 *
+	 * @param groupId the groupId
+	 * @param artifactId the artifactId
+	 * @param version the version
+	 * @param classifer classifier
+	 * @param extension the file extension
+	 * @return the resource
+	 */
+	public Resource resolve(String groupId, String artifactId, String version, String classifer, String extension);
+
 }
