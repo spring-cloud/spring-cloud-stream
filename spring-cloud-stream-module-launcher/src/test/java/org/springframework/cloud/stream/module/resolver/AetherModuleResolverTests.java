@@ -40,6 +40,7 @@ import static org.junit.Assert.assertTrue;
  * @author David Turanski
  */
 public class AetherModuleResolverTests {
+
 	private int port = SocketUtils.findAvailableTcpPort();
 
 	@Rule
@@ -68,12 +69,10 @@ public class AetherModuleResolverTests {
 	public void testResolveRemote() throws IOException {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
-
 		Map<String, String> remoteRepos = new HashMap<>();
-
 		remoteRepos.put("modules", "http://repo.spring.io/spring-cloud-stream-modules");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
-		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source", "1.0.0.BUILD-SNAPSHOT","exec", "jar");
+		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source", "1.0.0.BUILD-SNAPSHOT", "exec", "jar");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "time-source-1.0.0.BUILD-SNAPSHOT-exec.jar");
 	}
@@ -82,21 +81,15 @@ public class AetherModuleResolverTests {
 	public void testResolveMockRemote() throws IOException {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
-
 		ClassPathResource stubJarResource = new ClassPathResource("__files/foo.jar");
-
 		String stubFileName = stubJarResource.getFile().getName();
-
 		Map<String, String> remoteRepos = new HashMap<>();
-
 		remoteRepos.put("repo0", "http://localhost:" + port + "/repo0");
 		remoteRepos.put("repo1", "http://localhost:" + port + "/repo1");
-
 		stubFor(get(urlEqualTo("/repo1/org/bar/foo/1.0.0/foo-1.0.0.jar"))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withBodyFile(stubFileName)));
-
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
 		Resource resource = defaultModuleResolver.resolve("org.bar", "foo", "1.0.0");
 		assertTrue(resource.exists());

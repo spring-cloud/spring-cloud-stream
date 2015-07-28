@@ -44,12 +44,14 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 /**
- * An implementation of ModuleResolver using <a href="http://www.eclipse.org/aether/>aether</a> resolve the module
+ * An implementation of ModuleResolver using <a href="http://www.eclipse.org/aether/>aether</a> to resolve the module
  * artifact (uber jar) in a local Maven repository, downloading the latest update from a remote repository if
  * necessary.
+ *
  * @author David Turanski
  */
 public class AetherModuleResolver implements ModuleResolver {
+
 	private static final String DEFAULT_CONTENT_TYPE = "default";
 
 	private static final String DEFAULT_CLASSIFIER = "";
@@ -89,7 +91,7 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * @param artifactId the artifactId
 	 * @param version the version
 	 * @return a {@ link FileSystemResource} representing the resolved artifact in the local repository.
-     * @throws a RuntimeException if the artifact does not exist or the resolution fails.
+	 * @throws a RuntimeException if the artifact does not exist or the resolution fails.
 	 */
 	@Override
 	public Resource resolve(String groupId, String artifactId, String version) {
@@ -105,7 +107,7 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * @param classifer classifier can be null if none
 	 * @param extension the file extension
 	 * @return a {@ link FileSystemResource} representing the resolved artifact in the local repository.
-     * @throws a RuntimeException if the artifact does not exist or the resolution fails.
+	 * @throws a RuntimeException if the artifact does not exist or the resolution fails.
 	 */
 	@Override
 	public Resource resolve(String groupId, String artifactId, String version, String classifer, String extension) {
@@ -115,30 +117,25 @@ public class AetherModuleResolver implements ModuleResolver {
 		if (classifer == null) {
 			classifer = "";
 		}
-
 		Assert.hasText(extension, "'extension' cannot be blank.");
-
 		Artifact artifact = new DefaultArtifact(groupId, artifactId, classifer, extension, version);
 		RepositorySystemSession session = newRepositorySystemSession(repositorySystem,
 				localRepository.getAbsolutePath());
 		ArtifactResult result;
-
 		try {
-			result = repositorySystem.resolveArtifact(session, new ArtifactRequest(artifact, remoteRepositories,
-					"runtime"));
+			result = repositorySystem.resolveArtifact(session,
+					new ArtifactRequest(artifact, remoteRepositories, "runtime"));
 		}
 		catch (ArtifactResolutionException e) {
 			throw new RuntimeException(e);
 		}
-
 		return new FileSystemResource(result.getArtifact().getFile());
 	}
 
 	/*
 	 * Create a session to manage remote and local synchronization.
 	 */
-	private DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system,
-			String localRepoPath) {
+	private DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system, String localRepoPath) {
 		DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 		LocalRepository localRepo = new LocalRepository(localRepoPath);
 		session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
@@ -151,20 +148,16 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * and transporter factories
 	 */
 	private RepositorySystem newRepositorySystem() {
-
 		DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
 		locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
 		locator.addService(TransporterFactory.class, FileTransporterFactory.class);
 		locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-
-
 		locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
 			@Override
 			public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
 				throw new RuntimeException(exception);
 			}
 		});
-
 		return locator.getService(RepositorySystem.class);
 	}
 }
