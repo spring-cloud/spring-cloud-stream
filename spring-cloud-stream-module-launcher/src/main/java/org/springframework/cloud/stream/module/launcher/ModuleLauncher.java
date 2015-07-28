@@ -19,18 +19,22 @@ package org.springframework.cloud.stream.module.launcher;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import org.springframework.boot.loader.ModuleJarLauncher;
 import org.springframework.boot.loader.archive.JarFileArchive;
+import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
+import org.springframework.cloud.stream.module.resolver.ModuleResolver;
+import org.springframework.core.io.Resource;
+import org.springframework.util.Assert;
 
 /**
- * Bootstrap for launching one or more modules. The module path(s), relative to the module home, must be provided via
- * the "modules" system property or "MODULES" environment variable as a comma-delimited list. The module home directory
- * itself may be provided via the "module.home" system property or "MODULE_HOME" environment variable. The default
- * module home directory is: /opt/spring/modules
+ * Bootstrap for launching one or more modules. The module coordinates (as 'groupId:artifactId:version') must be
+ * provided via the "modules" system property or "MODULES" environment variable as a comma-delimited list.
  * <p>
  * To pass args to a module, prefix with the module name and a dot. The arg name will be de-qualified and passed along.
  * For example: <code>--foo.bar=123</code> becomes <code>--bar=123</code> and is only passed to the 'foo' module.
@@ -40,12 +44,16 @@ import org.springframework.boot.loader.archive.JarFileArchive;
  */
 public class ModuleLauncher {
 
-	private static final String DEFAULT_MODULE_HOME = "/opt/spring/modules";
+	private static final String LOCAL_REPO = "/opt/spring/modules";
 
-	private final File moduleHome;
+	private final ModuleResolver moduleResolver;
 
-	public ModuleLauncher(File moduleHome) {
-		this.moduleHome = moduleHome;
+	public ModuleLauncher() {
+		this(Collections.singletonMap("spring-cloud-stream-modules", "http://repo.spring.io/spring-cloud-stream-modules"));
+	}
+
+	public ModuleLauncher(Map<String, String> remoteRepositories) {
+		this.moduleResolver = new AetherModuleResolver(new File(LOCAL_REPO), remoteRepositories);
 	}
 
 	public void launch(String[] modules, String[] args) {
@@ -57,8 +65,8 @@ public class ModuleLauncher {
 					moduleArgs.add("--" + arg.substring(module.length() + 3));
 				}
 			}
-			moduleArgs.add("--spring.jmx.default-domain=" + module.replace("/", "."));
-			executor.execute(new ModuleLaunchTask(moduleHome, module + ".jar", moduleArgs.toArray(new String[moduleArgs.size()])));
+			moduleArgs.add("--spring.jmx.default-domain=" + module.replace("/", ".").replace(":", "."));
+			executor.execute(new ModuleLaunchTask(moduleResolver, module, moduleArgs.toArray(new String[moduleArgs.size()])));
 		}
 	}
 
@@ -71,36 +79,38 @@ public class ModuleLauncher {
 			System.err.println("Either the 'modules' system property or 'MODULES' environment variable is required.");
 			System.exit(1);
 		}
-		String moduleHome = System.getProperty("module.home");
-		if (moduleHome == null) {
-			moduleHome = System.getenv("MODULE_HOME");
-		}
-		if (moduleHome == null) {
-			moduleHome = DEFAULT_MODULE_HOME;
-		}
-		ModuleLauncher launcher = new ModuleLauncher(new File(moduleHome));
+		ModuleLauncher launcher = new ModuleLauncher();
 		launcher.launch(modules.split(","), args);
 	}
 
 
 	private static class ModuleLaunchTask implements Runnable {
 
-		private final File directory;
+		private final ModuleResolver moduleResolver;
 
-		private final String module;
+		private final String groupId;
+
+		private final String artifactId;
+
+		private final String version;
 
 		private final String[] args;
 
-		ModuleLaunchTask(File directory, String module, String[] args) {
-			this.directory = directory;
-			this.module = module;
+		ModuleLaunchTask(ModuleResolver moduleResolver, String module, String[] args) {
+			this.moduleResolver = moduleResolver;
+			String[] tokens = module.split(":");
+			Assert.isTrue(tokens.length == 3, "required module format is: 'groupId:artifactId:version'");
+			this.groupId = tokens[0];
+			this.artifactId = tokens[1];
+			this.version = tokens[2];
 			this.args = args;
 		}
 
 		@Override
 		public void run() {
 			try {
-				JarFileArchive jarFileArchive = new JarFileArchive(new File(directory, module));
+				Resource resource = moduleResolver.resolve(groupId, artifactId, version, "exec", "jar");
+				JarFileArchive jarFileArchive = new JarFileArchive(resource.getFile());
 				ModuleJarLauncher jarLauncher = new ModuleJarLauncher(jarFileArchive);
 				jarLauncher.launch(args);
 			}
