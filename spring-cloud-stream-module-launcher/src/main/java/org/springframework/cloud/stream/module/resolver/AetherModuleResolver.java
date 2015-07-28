@@ -84,7 +84,7 @@ public class AetherModuleResolver implements ModuleResolver {
 	}
 
 	/**
-	 * Resolve the an artifact and return its location in the local repository. Aether performs the normal
+	 * Resolve an artifact and return its location in the local repository. Aether performs the normal
 	 * Maven resolution process ensuring that the latest update is cached to the local repository.
 	 * @param groupId the groupId
 	 * @param artifactId the artifactId
