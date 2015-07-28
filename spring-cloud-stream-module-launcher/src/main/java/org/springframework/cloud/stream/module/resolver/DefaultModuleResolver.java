@@ -104,11 +104,11 @@ public class DefaultModuleResolver implements ModuleResolver {
 	}
 
 	private RepositorySystem newRepositorySystem() {
-		/*
-		 * Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
-    	 * prepopulated DefaultServiceLocator, we only need to register the repository connector and transporter
-    	 * factories.
-		 */
+	   /*
+		* Aether's components implement org.eclipse.aether.spi.locator.Service to ease manual wiring and using the
+    	* prepopulated DefaultServiceLocator, we only need to register the repository connector and transporter
+    	* factories.
+		*/
 		DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
 		locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
 		locator.addService(TransporterFactory.class, FileTransporterFactory.class);
