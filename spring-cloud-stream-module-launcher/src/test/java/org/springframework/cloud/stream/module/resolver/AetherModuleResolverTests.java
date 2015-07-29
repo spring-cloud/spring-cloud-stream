@@ -51,7 +51,7 @@ public class AetherModuleResolverTests {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
-		Resource resource = defaultModuleResolver.resolve("foo.bar", "foo-bar", "1.0.0");
+		Resource resource = defaultModuleResolver.resolve("foo.bar", "foo-bar", "jar","","1.0.0");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-bar-1.0.0.jar");
 	}
@@ -61,7 +61,7 @@ public class AetherModuleResolverTests {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
-		defaultModuleResolver.resolve("niente", "nada", "zilch");
+		defaultModuleResolver.resolve("niente", "nada", "jar","", "zilch");
 	}
 
 	@Test
@@ -72,7 +72,8 @@ public class AetherModuleResolverTests {
 		Map<String, String> remoteRepos = new HashMap<>();
 		remoteRepos.put("modules", "http://repo.spring.io/spring-cloud-stream-modules");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
-		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source", "1.0.0.BUILD-SNAPSHOT", "exec", "jar");
+		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source", 
+				"1.0.0.BUILD-SNAPSHOT", "exec", "jar");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "time-source-1.0.0.BUILD-SNAPSHOT-exec.jar");
 	}
@@ -91,7 +92,7 @@ public class AetherModuleResolverTests {
 						.withStatus(200)
 						.withBodyFile(stubFileName)));
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
-		Resource resource = defaultModuleResolver.resolve("org.bar", "foo", "1.0.0");
+		Resource resource = defaultModuleResolver.resolve("org.bar", "foo","jar", "", "1.0.0");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-1.0.0.jar");
 	}
