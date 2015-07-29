@@ -31,10 +31,10 @@ public interface ModuleResolver {
 	 * @param groupId the groupId
 	 * @param artifactId the artifactId
 	 * @param extension the file extension
-	 * @param classifer classifier
+	 * @param classifier classifier
 	 * @param version the version
 	 * @return the resource
 	 */
-	public Resource resolve(String groupId, String artifactId, String extension, String classifer, String version);
+	public Resource resolve(String groupId, String artifactId, String extension, String classifier, String version);
 
 }

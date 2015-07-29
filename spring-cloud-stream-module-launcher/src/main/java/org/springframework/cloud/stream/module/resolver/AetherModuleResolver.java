@@ -86,25 +86,22 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * @param groupId the groupId
 	 * @param artifactId the artifactId
 	 * @param extension the file extension
-	 * @param classifer classifier can be null if none
+	 * @param classifier classifier can be null if none
 	 * @param version the version
 	 * @return a {@ link FileSystemResource} representing the resolved artifact in the local repository
 	 * @throws a RuntimeException if the artifact does not exist or the resolution fails
 	 */
 	@Override
-	public Resource resolve(String groupId, String artifactId, String extension, String classifer, String version) {
+	public Resource resolve(String groupId, String artifactId, String extension, String classifier, String version) {
 		Assert.hasText(groupId, "'groupId' cannot be blank.");
 		Assert.hasText(artifactId, "'artifactId' cannot be blank.");
-
 		Assert.hasText(extension, "'extension' cannot be blank.");
-
-		if (classifer == null) {
-			classifer = "";
+		if (classifier == null) {
+			classifier = "";
 		}
-
 		Assert.hasText(version, "'version' cannot be blank.");
 	
-		Artifact artifact = new DefaultArtifact(groupId, artifactId, classifer, extension, version);
+		Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, version);
 		RepositorySystemSession session = newRepositorySystemSession(repositorySystem,
 				localRepository.getAbsolutePath());
 		ArtifactResult result;
