@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.boot.loader.ModuleJarLauncher;
 import org.springframework.boot.loader.archive.JarFileArchive;
@@ -31,6 +33,7 @@ import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * Bootstrap for launching one or more modules. The module coordinates (as 'groupId:artifactId:version') must be
@@ -86,30 +89,27 @@ public class ModuleLauncher {
 
 	private static class ModuleLaunchTask implements Runnable {
 
+		private static final String DEFAULT_EXTENSION = "jar";
+
+		private static final String DEFAULT_CLASSIFIER = "exec";
+
 		private final ModuleResolver moduleResolver;
 
-		private final String groupId;
-
-		private final String artifactId;
-
-		private final String version;
+		private final Coordinates coordinates;
 
 		private final String[] args;
 
 		ModuleLaunchTask(ModuleResolver moduleResolver, String module, String[] args) {
 			this.moduleResolver = moduleResolver;
-			String[] tokens = module.split(":");
-			Assert.isTrue(tokens.length == 3, "required module format is: 'groupId:artifactId:version'");
-			this.groupId = tokens[0];
-			this.artifactId = tokens[1];
-			this.version = tokens[2];
+			this.coordinates = parse(module);
 			this.args = args;
 		}
 
 		@Override
 		public void run() {
 			try {
-				Resource resource = moduleResolver.resolve(groupId, artifactId, version, "exec", "jar");
+				Resource resource = moduleResolver.resolve(coordinates.groupId, coordinates.artifactId,
+						coordinates.extension, coordinates.classifier, coordinates.version);
 				JarFileArchive jarFileArchive = new JarFileArchive(resource.getFile());
 				ModuleJarLauncher jarLauncher = new ModuleJarLauncher(jarFileArchive);
 				jarLauncher.launch(args);
@@ -117,6 +117,40 @@ public class ModuleLauncher {
 			catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+
+		private static Coordinates parse(String coordinates) {
+			Pattern p = Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
+			Matcher m = p.matcher(coordinates);
+			Assert.isTrue(m.matches(), "Bad artifact coordinates " + coordinates
+					+ ", expected format is <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>");
+			String groupId = m.group(1);
+			String artifactId = m.group(2);
+			String extension = StringUtils.hasLength(m.group(4)) ? m.group(4) : DEFAULT_EXTENSION;
+			String classifier = StringUtils.hasLength(m.group(6)) ? m.group(6) : DEFAULT_CLASSIFIER;
+			String version = m.group(7);
+			return new Coordinates(groupId, artifactId, extension, classifier, version);
+		}
+	}
+
+	private static class Coordinates {
+
+		private final String groupId;
+
+		private final String artifactId;
+
+		private final String extension;
+
+		private final String classifier;
+
+		private final String version;
+
+		private Coordinates(String groupId, String artifactId, String extension, String classifier, String version) {
+			this.groupId = groupId;
+			this.artifactId = artifactId;
+			this.extension = extension;
+			this.classifier = classifier;
+			this.version = version;
 		}
 	}
 }
