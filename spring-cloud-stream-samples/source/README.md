@@ -7,7 +7,7 @@ In this *Spring Cloud Stream* sample, a timestamp is published on an interval de
 
 To run this sample, you will need to have installed:
 
-* Java 7 or Above
+* Java 8 or Above
 
 This example requires Redis to be running on localhost.
 
@@ -34,5 +34,5 @@ Build the sample by executing:
 
 To start the source module execute the following:
 
-	source>$ java -jar target/spring-cloud-streams-sample-source-1.0.0.BUILD-SNAPSHOT-exec.jar
+	source>$ java -jar target/spring-cloud-stream-sample-source-1.0.0.BUILD-SNAPSHOT-exec.jar
 
