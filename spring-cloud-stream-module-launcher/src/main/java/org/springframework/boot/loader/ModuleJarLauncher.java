@@ -36,12 +36,8 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 
 	private static final AsciiBytes LIB = new AsciiBytes("lib/");
 
-	private final InputArgumentsJavaAgentDetector javaAgentDetector;
-
-
 	public ModuleJarLauncher(Archive archive) {
 		super(archive);
-		this.javaAgentDetector = new InputArgumentsJavaAgentDetector();
 	}
 
 	@Override
@@ -54,7 +50,6 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 		archives.add(0, getArchive());
 	}
 
-
 	@Override
 	public void launch(String[] args) {
 		super.launch(args);
@@ -62,43 +57,7 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 
 	@Override
 	protected ClassLoader createClassLoader(URL[] urls) throws Exception {
-		Set<URL> copy = new LinkedHashSet<URL>(urls.length);
-		ClassLoader loader = getDefaultClassLoader();
-		if (loader instanceof URLClassLoader) {
-			for (URL url : ((URLClassLoader) loader).getURLs()) {
-				if (addDefaultClassloaderUrl(urls, url)) {
-					copy.add(url);
-				}
-			}
-		}
-		Collections.addAll(copy, urls);
-		return new LaunchedURLClassLoader(copy.toArray(new URL[copy.size()]), null);
+		return new LaunchedURLClassLoader(urls, null);
 	}
 
-
-	private boolean addDefaultClassloaderUrl(URL[] urls, URL url) {
-		String jarUrl = "jar:" + url + "!/";
-		for (URL nestedUrl : urls) {
-			if (nestedUrl.equals(url) || nestedUrl.toString().equals(jarUrl)) {
-				return false;
-			}
-		}
-		return !this.javaAgentDetector.isJavaAgentJar(url);
-	}
-
-	private static ClassLoader getDefaultClassLoader() {
-		ClassLoader classloader = null;
-		try {
-			classloader = Thread.currentThread().getContextClassLoader();
-		}
-		catch (Throwable ex) {
-			// Cannot access thread context ClassLoader - falling back to system class
-			// loader...
-		}
-		if (classloader == null) {
-			// No thread context class loader -> use class loader of this class.
-			classloader = ExecutableArchiveLauncher.class.getClassLoader();
-		}
-		return classloader;
-	}
 }
