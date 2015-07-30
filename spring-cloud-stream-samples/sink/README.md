@@ -7,7 +7,7 @@ In this *Spring Cloud Stream* sample, messages are received from a stream and th
 
 To run this sample, you will need to have installed:
 
-* Java 7 or Above
+* Java 8 or Above
 
 This example requires Redis to be running on localhost.
 
@@ -28,5 +28,5 @@ Build the sample by executing:
 
 To start the sink module execute the following:
 
-	sink>$ java -jar target/spring-cloud-streams-sample-sink-1.0.0.BUILD-SNAPSHOT-exec.jar
+	sink>$ java -jar target/spring-cloud-stream-sample-sink-1.0.0.BUILD-SNAPSHOT-exec.jar
 
