@@ -16,6 +16,7 @@
 
 package org.springframework.boot.loader;
 
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
@@ -25,6 +26,8 @@ import java.util.Set;
 
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.util.AsciiBytes;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * A (possibly temporary) alternative to {@link JarLauncher} that provides a
@@ -36,12 +39,8 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 
 	private static final AsciiBytes LIB = new AsciiBytes("lib/");
 
-	private final InputArgumentsJavaAgentDetector javaAgentDetector;
-
-
 	public ModuleJarLauncher(Archive archive) {
 		super(archive);
-		this.javaAgentDetector = new InputArgumentsJavaAgentDetector();
 	}
 
 	@Override
@@ -54,51 +53,27 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 		archives.add(0, getArchive());
 	}
 
-
 	@Override
 	public void launch(String[] args) {
 		super.launch(args);
 	}
 
 	@Override
-	protected ClassLoader createClassLoader(URL[] urls) throws Exception {
-		Set<URL> copy = new LinkedHashSet<URL>(urls.length);
-		ClassLoader loader = getDefaultClassLoader();
-		if (loader instanceof URLClassLoader) {
-			for (URL url : ((URLClassLoader) loader).getURLs()) {
-				if (addDefaultClassloaderUrl(urls, url)) {
-					copy.add(url);
-				}
-			}
-		}
-		Collections.addAll(copy, urls);
-		return new LaunchedURLClassLoader(copy.toArray(new URL[copy.size()]), null);
-	}
-
-
-	private boolean addDefaultClassloaderUrl(URL[] urls, URL url) {
-		String jarUrl = "jar:" + url + "!/";
-		for (URL nestedUrl : urls) {
-			if (nestedUrl.equals(url) || nestedUrl.toString().equals(jarUrl)) {
-				return false;
-			}
-		}
-		return !this.javaAgentDetector.isJavaAgentJar(url);
-	}
-
-	private static ClassLoader getDefaultClassLoader() {
-		ClassLoader classloader = null;
+	protected void launch(String[] args, String mainClass, ClassLoader classLoader) throws Exception {
 		try {
-			classloader = Thread.currentThread().getContextClassLoader();
+			// disable JVM-wide registration of TomcatURLStreamHandlerFactory
+			Class<?> streamHandlerFactoryClass = ClassUtils.forName("org.apache.catalina.webresources.TomcatURLStreamHandlerFactory", classLoader);
+			Method disable = ReflectionUtils.findMethod(streamHandlerFactoryClass, "disable");
+			ReflectionUtils.invokeMethod(disable, null);
+		} catch (ClassNotFoundException e) {
+			// ignore
 		}
-		catch (Throwable ex) {
-			// Cannot access thread context ClassLoader - falling back to system class
-			// loader...
-		}
-		if (classloader == null) {
-			// No thread context class loader -> use class loader of this class.
-			classloader = ExecutableArchiveLauncher.class.getClassLoader();
-		}
-		return classloader;
+		super.launch(args, mainClass, classLoader);
 	}
+
+	@Override
+	protected ClassLoader createClassLoader(URL[] urls) throws Exception {
+		return new LaunchedURLClassLoader(urls, null);
+	}
+
 }
