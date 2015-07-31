@@ -31,7 +31,6 @@ import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
-import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StringUtils;
 
 /**
