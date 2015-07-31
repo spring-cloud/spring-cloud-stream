@@ -24,6 +24,8 @@
 		<spring-xd.version>1.2.1.BUILD-SNAPSHOT</spring-xd.version>
 		<spring-framework.version>4.2.0.RC2</spring-framework.version>
 		<spring-integration.version>4.2.0.M2</spring-integration.version>
+		<spring-cloud-spring-service-connector.version>1.2.0.BUILD-SNAPSHOT</spring-cloud-spring-service-connector.version>
+		<spring-cloud-lattice.version>1.0.2.BUILD-SNAPSHOT</spring-cloud-lattice.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream</module>
@@ -48,6 +50,16 @@
 				<version>${spring-cloud.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-spring-service-connector</artifactId>
+				<version>${spring-cloud-spring-service-connector.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-lattice-connector</artifactId>
+				<version>${spring-cloud-lattice.version}</version>
 			</dependency>
 		    <dependency>
 			  <groupId>org.springframework.cloud</groupId>
