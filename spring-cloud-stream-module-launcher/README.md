@@ -41,8 +41,8 @@ The time messages will be emitted every 5 seconds. The console for the log modul
 1: run each module as a docker process by passing environment variables for the module name as well as the host machine's IP address for the redis connection to be established within the container:
 
 ````
-docker run -p 8080:8080 -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
-docker run -p 8081:8081 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
+docker run -p 8080:8080 -e LOCAL_REPOSITORY=/opt/spring/modules -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
+docker run -p 8081:8081 -e LOCAL_REPOSITORY=/opt/spring/modules -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
 ````
 
 ## Running on Lattice
@@ -58,6 +58,6 @@ $ ltc create redis redis -r
 3: Run the modules as long-running processes (LRPs) on Lattice:
 
 ````
-$ ltc create time springcloud/stream-module-launcher -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
-$ ltc create log springcloud/stream-module-launcher -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
+$ ltc create time springcloud/stream-module-launcher -e LOCAL_REPOSITORY=/opt/spring/modules -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
+$ ltc create log springcloud/stream-module-launcher -e LOCAL_REPOSITORY=/opt/spring/modules -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
 ````
