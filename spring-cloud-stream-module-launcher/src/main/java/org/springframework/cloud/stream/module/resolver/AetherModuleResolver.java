@@ -49,6 +49,7 @@ import org.springframework.util.CollectionUtils;
  * necessary.
  *
  * @author David Turanski
+ * @author Mark Fisher
  */
 public class AetherModuleResolver implements ModuleResolver {
 
@@ -67,7 +68,10 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * may be null or empty if the local repository is off line.
 	 */
 	public AetherModuleResolver(File localRepository, Map<String, String> remoteRepositories) {
-		Assert.isTrue(localRepository.exists(), "File " + localRepository + " does not exist.");
+		if (!localRepository.exists()) {
+			Assert.isTrue(localRepository.mkdirs(),
+					"Unable to create directory for local repository: " + localRepository);
+		}
 		this.localRepository = localRepository;
 		this.remoteRepositories = new LinkedList<>();
 		if (!CollectionUtils.isEmpty(remoteRepositories)) {
