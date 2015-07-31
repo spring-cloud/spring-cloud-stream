@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,8 +34,10 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Bootstrap for launching one or more modules. The module coordinates (as 'groupId:artifactId:version') must be
- * provided via the "modules" system property or "MODULES" environment variable as a comma-delimited list.
+ * Bootstrap for launching one or more modules. The module coordinates must be provided via the "modules" system
+ * property or "MODULES" environment variable as a comma-delimited list. The format of each module must conform to the
+ * <a href="http://www.eclipse.org/aether">Aether</a> convention:
+ * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code> 
  * <p>
  * To pass args to a module, prefix with the module name and a dot. The arg name will be de-qualified and passed along.
  * For example: <code>--foo.bar=123</code> becomes <code>--bar=123</code> and is only passed to the 'foo' module.
@@ -48,6 +48,12 @@ import org.springframework.util.StringUtils;
 public class ModuleLauncher {
 
 	private static final String LOCAL_REPO = "/opt/spring/modules";
+
+	private static final String DEFAULT_EXTENSION = "jar";
+
+	private static final String DEFAULT_CLASSIFIER = "exec";
+
+	private static final Pattern COORDINATES_PATTERN = Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
 
 	private final ModuleResolver moduleResolver;
 
@@ -60,7 +66,6 @@ public class ModuleLauncher {
 	}
 
 	public void launch(String[] modules, String[] args) {
-		Executor executor = Executors.newFixedThreadPool(modules.length);
 		for (String module : modules) {
 			List<String> moduleArgs = new ArrayList<>(); 
 			for (String arg : args) {
@@ -69,8 +74,32 @@ public class ModuleLauncher {
 				}
 			}
 			moduleArgs.add("--spring.jmx.default-domain=" + module.replace("/", ".").replace(":", "."));
-			executor.execute(new ModuleLaunchTask(moduleResolver, module, moduleArgs.toArray(new String[moduleArgs.size()])));
+			launchModule(module, moduleArgs.toArray(new String[moduleArgs.size()]));
 		}
+	}
+
+	private void launchModule(String module, String[] args) {
+		try {
+			Resource resource = resolveModule(module);
+			JarFileArchive jarFileArchive = new JarFileArchive(resource.getFile());
+			ModuleJarLauncher jarLauncher = new ModuleJarLauncher(jarFileArchive);
+			jarLauncher.launch(args);
+		}
+		catch (IOException e) {
+			throw new RuntimeException("failed to launch module: " + module, e);
+		}
+	}
+
+	private Resource resolveModule(String coordinates) {
+		Matcher matcher = COORDINATES_PATTERN.matcher(coordinates);
+		Assert.isTrue(matcher.matches(), "Bad artifact coordinates " + coordinates
+				+ ", expected format is <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>");
+		String groupId = matcher.group(1);
+		String artifactId = matcher.group(2);
+		String extension = StringUtils.hasLength(matcher.group(4)) ? matcher.group(4) : DEFAULT_EXTENSION;
+		String classifier = StringUtils.hasLength(matcher.group(6)) ? matcher.group(6) : DEFAULT_CLASSIFIER;
+		String version = matcher.group(7);
+		return moduleResolver.resolve(groupId, artifactId, extension, classifier, version);
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -84,73 +113,5 @@ public class ModuleLauncher {
 		}
 		ModuleLauncher launcher = new ModuleLauncher();
 		launcher.launch(modules.split(","), args);
-	}
-
-
-	private static class ModuleLaunchTask implements Runnable {
-
-		private static final String DEFAULT_EXTENSION = "jar";
-
-		private static final String DEFAULT_CLASSIFIER = "exec";
-
-		private final ModuleResolver moduleResolver;
-
-		private final Coordinates coordinates;
-
-		private final String[] args;
-
-		ModuleLaunchTask(ModuleResolver moduleResolver, String module, String[] args) {
-			this.moduleResolver = moduleResolver;
-			this.coordinates = parse(module);
-			this.args = args;
-		}
-
-		@Override
-		public void run() {
-			try {
-				Resource resource = moduleResolver.resolve(coordinates.groupId, coordinates.artifactId,
-						coordinates.extension, coordinates.classifier, coordinates.version);
-				JarFileArchive jarFileArchive = new JarFileArchive(resource.getFile());
-				ModuleJarLauncher jarLauncher = new ModuleJarLauncher(jarFileArchive);
-				jarLauncher.launch(args);
-			}
-			catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-		private static Coordinates parse(String coordinates) {
-			Pattern p = Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
-			Matcher m = p.matcher(coordinates);
-			Assert.isTrue(m.matches(), "Bad artifact coordinates " + coordinates
-					+ ", expected format is <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>");
-			String groupId = m.group(1);
-			String artifactId = m.group(2);
-			String extension = StringUtils.hasLength(m.group(4)) ? m.group(4) : DEFAULT_EXTENSION;
-			String classifier = StringUtils.hasLength(m.group(6)) ? m.group(6) : DEFAULT_CLASSIFIER;
-			String version = m.group(7);
-			return new Coordinates(groupId, artifactId, extension, classifier, version);
-		}
-	}
-
-	private static class Coordinates {
-
-		private final String groupId;
-
-		private final String artifactId;
-
-		private final String extension;
-
-		private final String classifier;
-
-		private final String version;
-
-		private Coordinates(String groupId, String artifactId, String extension, String classifier, String version) {
-			this.groupId = groupId;
-			this.artifactId = artifactId;
-			this.extension = extension;
-			this.classifier = classifier;
-			this.version = version;
-		}
 	}
 }
