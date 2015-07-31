@@ -13,15 +13,7 @@ mvn -s .settings.xml package
 cd ..
 ````
 
-2: copy the spring-cloud-stream source and sink sample JARs to `/opt/spring/modules`:
-
-````
-mkdir -p /opt/spring/modules/org/springframework/cloud/stream/module
-cp spring-cloud-stream/spring-cloud-stream-samples/source/target/spring-cloud-stream-sample-source-1.0.0.BUILD-SNAPSHOT-exec.jar /opt/spring/modules/org/springframework/cloud/stream/module
-cp spring-cloud-stream/spring-cloud-stream-samples/sink/target/spring-cloud-stream-sample-sink-1.0.0.BUILD-SNAPSHOT-exec.jar /opt/spring/modules/org/springframework/cloud/stream/module
-````
-
-3: start redis locally via `redis-server` (optionally start `redis-cli` and use the `MONITOR` command to watch activity)
+2: start redis locally via `redis-server` (optionally start `redis-cli` and use the `MONITOR` command to watch activity)
 
 *NOTE:* redis.conf (on OSX it is found here: /usr/local/etc/redis.conf) may need to be updated to set the binding to an address other than 127.0.0.1 else the docker instances will fail to connect. For example: bind 0.0.0.0
 
@@ -46,21 +38,11 @@ The time messages will be emitted every 5 seconds. The console for the log modul
 
 ## Running with Docker
 
-1: build the module-launcher Docker image, including a copy of the module directory:
-
-From the `spring-cloud-stream/spring-cloud-stream-module-launcher` directory:
+1: run each module as a docker process by passing environment variables for the module name as well as the host machine's IP address for the redis connection to be established within the container:
 
 ````
-mkdir artifacts
-cp -r /opt/spring/modules artifacts/
-./dockerize.sh
-````
-
-2: run each module as a docker process by passing environment variables for the module name as well as the host machine's IP address for the redis connection to be established within the container:
-
-````
-docker run -p 8080:8080 -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> 192.168.59.103:5000/module-launcher
-docker run -p 8081:8081 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> 192.168.59.103:5000/module-launcher
+docker run -p 8080:8080 -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
+docker run -p 8081:8081 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
 ````
 
 ## Running on Lattice
@@ -88,6 +70,6 @@ $ ltc create redis redis -r
 3: Run the modules as long-running processes (LRPs) on Lattice:
 
 ````
-$ ltc create time 192.168.59.103:5000/module-launcher -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
-$ ltc create log 192.168.59.103:5000/module-launcher -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
+$ ltc create time springcloud/stream-module-launcher -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
+$ ltc create log springcloud/stream-module-launcher -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
 ````
