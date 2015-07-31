@@ -44,25 +44,30 @@ import org.springframework.util.StringUtils;
  *
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
  */
 public class ModuleLauncher {
 
-	private static final String LOCAL_REPO = "/opt/spring/modules";
+	// TODO ensure that this properly supports Windows too
+	private static final String DEFAULT_LOCAL_REPO =
+			System.getProperty("user.home") + "/.m2/repository";
 
 	private static final String DEFAULT_EXTENSION = "jar";
 
 	private static final String DEFAULT_CLASSIFIER = "exec";
 
-	private static final Pattern COORDINATES_PATTERN = Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
+	private static final Pattern COORDINATES_PATTERN =
+			Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
 
 	private final ModuleResolver moduleResolver;
 
-	public ModuleLauncher() {
-		this(Collections.singletonMap("spring-cloud-stream-modules", "http://repo.spring.io/spring-cloud-stream-modules"));
+	public ModuleLauncher(String localRepository) {
+		this(localRepository,
+				Collections.singletonMap("spring-cloud-stream-modules", "http://repo.spring.io/spring-cloud-stream-modules"));
 	}
 
-	public ModuleLauncher(Map<String, String> remoteRepositories) {
-		this.moduleResolver = new AetherModuleResolver(new File(LOCAL_REPO), remoteRepositories);
+	public ModuleLauncher(String localRepository, Map<String, String> remoteRepositories) {
+		this.moduleResolver = new AetherModuleResolver(new File(localRepository), remoteRepositories);
 	}
 
 	public void launch(String[] modules, String[] args) {
@@ -111,7 +116,15 @@ public class ModuleLauncher {
 			System.err.println("Either the 'modules' system property or 'MODULES' environment variable is required.");
 			System.exit(1);
 		}
-		ModuleLauncher launcher = new ModuleLauncher();
+
+		String localRepository = System.getProperty("localRepository");
+		if (localRepository == null) {
+			localRepository = System.getenv("LOCAL_REPOSITORY");
+		}
+		if (localRepository == null) {
+			localRepository = DEFAULT_LOCAL_REPO;
+		}
+		ModuleLauncher launcher = new ModuleLauncher(localRepository);
 		launcher.launch(modules.split(","), args);
 	}
 }
