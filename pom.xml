@@ -25,7 +25,7 @@
 		<spring-framework.version>4.2.0.RC2</spring-framework.version>
 		<spring-integration.version>4.2.0.M2</spring-integration.version>
 		<spring-cloud-spring-service-connector.version>1.2.0.BUILD-SNAPSHOT</spring-cloud-spring-service-connector.version>
-		<spring-cloud-lattice.version>1.0.2.BUILD-SNAPSHOT</spring-cloud-lattice.version>
+		<spring-cloud-lattice.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-lattice.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream</module>
