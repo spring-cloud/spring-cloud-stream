@@ -61,6 +61,10 @@ public class ModuleLauncher {
 
 	private final ModuleResolver moduleResolver;
 
+	public ModuleLauncher() {
+		this(DEFAULT_LOCAL_REPO);
+	}
+
 	public ModuleLauncher(String localRepository) {
 		this(localRepository,
 				Collections.singletonMap("spring-cloud-stream-modules", "http://repo.spring.io/spring-cloud-stream-modules"));
