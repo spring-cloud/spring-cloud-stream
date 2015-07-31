@@ -62,11 +62,7 @@ public class ModuleLauncher {
 	private final ModuleResolver moduleResolver;
 
 	public ModuleLauncher() {
-		this(DEFAULT_LOCAL_REPO);
-	}
-
-	public ModuleLauncher(String localRepository) {
-		this(localRepository,
+		this(determineLocalRepositoryLocation(),
 				Collections.singletonMap("spring-cloud-stream-modules", "http://repo.spring.io/spring-cloud-stream-modules"));
 	}
 
@@ -111,6 +107,17 @@ public class ModuleLauncher {
 		return moduleResolver.resolve(groupId, artifactId, extension, classifier, version);
 	}
 
+	private static String determineLocalRepositoryLocation() {
+		String localRepository = System.getProperty("local.repository");
+		if (localRepository == null) {
+			localRepository = System.getenv("LOCAL_REPOSITORY");
+		}
+		if (localRepository == null) {
+			localRepository = DEFAULT_LOCAL_REPO;
+		}
+		return localRepository;
+	}
+
 	public static void main(String[] args) throws Exception {
 		String modules = System.getProperty("modules");
 		if (modules == null) {
@@ -120,15 +127,7 @@ public class ModuleLauncher {
 			System.err.println("Either the 'modules' system property or 'MODULES' environment variable is required.");
 			System.exit(1);
 		}
-
-		String localRepository = System.getProperty("local.repository");
-		if (localRepository == null) {
-			localRepository = System.getenv("LOCAL_REPOSITORY");
-		}
-		if (localRepository == null) {
-			localRepository = DEFAULT_LOCAL_REPO;
-		}
-		ModuleLauncher launcher = new ModuleLauncher(localRepository);
+		ModuleLauncher launcher = new ModuleLauncher();
 		launcher.launch(modules.split(","), args);
 	}
 }
