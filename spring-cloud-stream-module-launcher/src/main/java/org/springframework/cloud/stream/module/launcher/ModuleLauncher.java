@@ -31,6 +31,7 @@ import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -50,7 +51,7 @@ public class ModuleLauncher {
 
 	// TODO ensure that this properly supports Windows too
 	private static final String DEFAULT_LOCAL_REPO =
-			System.getProperty("user.home") + "/.m2/repository";
+			System.getProperty("user.home") + File.separator  + ".m2" + File.separator +  "repository";
 
 	private static final String DEFAULT_EXTENSION = "jar";
 
@@ -117,7 +118,7 @@ public class ModuleLauncher {
 			System.exit(1);
 		}
 
-		String localRepository = System.getProperty("localRepository");
+		String localRepository = System.getProperty("local.repository");
 		if (localRepository == null) {
 			localRepository = System.getenv("LOCAL_REPOSITORY");
 		}
