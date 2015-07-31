@@ -47,7 +47,7 @@ import org.springframework.util.StringUtils;
  */
 public class ModuleLauncher {
 
-	private static final String LOCAL_REPO = "/opt/spring/modules";
+	private static final File LOCAL_REPO = new File(System.getProperty("user.home"), ".m2/repository");
 
 	private static final String DEFAULT_EXTENSION = "jar";
 
@@ -62,7 +62,7 @@ public class ModuleLauncher {
 	}
 
 	public ModuleLauncher(Map<String, String> remoteRepositories) {
-		this.moduleResolver = new AetherModuleResolver(new File(LOCAL_REPO), remoteRepositories);
+		this.moduleResolver = new AetherModuleResolver(LOCAL_REPO, remoteRepositories);
 	}
 
 	public void launch(String[] modules, String[] args) {
