@@ -34,6 +34,7 @@ import org.springframework.util.ReflectionUtils;
  * public {@link #launch(String[])} method.
  *
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
 public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 
