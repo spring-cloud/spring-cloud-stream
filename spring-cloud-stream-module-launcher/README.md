@@ -59,5 +59,5 @@ $ ltc create redis redis -r
 
 ````
 $ ltc create time springcloud/stream-module-launcher -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
-$ ltc create log springcloud/stream-module-launcher -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
+$ ltc create log springcloud/stream-module-launcher -p 8081 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
 ````
