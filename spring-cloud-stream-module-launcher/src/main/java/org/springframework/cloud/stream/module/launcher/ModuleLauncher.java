@@ -52,6 +52,8 @@ public class ModuleLauncher {
 	private static final String DEFAULT_LOCAL_REPO =
 			System.getProperty("user.home") + File.separator  + ".m2" + File.separator +  "repository";
 
+	private static final String DEFAULT_REMOTE_REPO = "http://repo.spring.io/spring-cloud-stream-modules";
+
 	private static final String DEFAULT_EXTENSION = "jar";
 
 	private static final String DEFAULT_CLASSIFIER = "exec";
@@ -63,7 +65,7 @@ public class ModuleLauncher {
 
 	public ModuleLauncher() {
 		this(determineLocalRepositoryLocation(),
-				Collections.singletonMap("spring-cloud-stream-modules", "http://repo.spring.io/spring-cloud-stream-modules"));
+				Collections.singletonMap("spring-cloud-stream-modules", determineRemoteRepositoryLocation()));
 	}
 
 	public ModuleLauncher(String localRepository, Map<String, String> remoteRepositories) {
@@ -116,6 +118,17 @@ public class ModuleLauncher {
 			localRepository = DEFAULT_LOCAL_REPO;
 		}
 		return localRepository;
+	}
+
+	private static String determineRemoteRepositoryLocation() {
+		String remoteRepository = System.getProperty("remote.repository");
+		if (remoteRepository == null) {
+			remoteRepository = System.getenv("REMOTE_REPOSITORY");
+		}
+		if (remoteRepository == null) {
+			remoteRepository = DEFAULT_REMOTE_REPO;
+		}
+		return remoteRepository;
 	}
 
 	public static void main(String[] args) throws Exception {
