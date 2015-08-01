@@ -38,7 +38,7 @@ The time messages will be emitted every 5 seconds. The console for the log modul
 
 ## Running with Docker
 
-1: run each module as a docker process by passing environment variables for the module name as well as the host machine's IP address for the redis connection to be established within the container:
+Run each module as a Docker process by passing environment variables for the module name as well as the host machine's IP address for the redis connection to be established within the container:
 
 ````
 docker run -p 8080:8080 -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
