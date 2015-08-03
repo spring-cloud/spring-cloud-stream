@@ -20,6 +20,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -53,6 +55,8 @@ import org.springframework.util.CollectionUtils;
  */
 public class AetherModuleResolver implements ModuleResolver {
 
+	private static final Log log = LogFactory.getLog(AetherModuleResolver.class);
+
 	private static final String DEFAULT_CONTENT_TYPE = "default";
 
 	private final File localRepository;
@@ -68,6 +72,10 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * may be null or empty if the local repository is off line.
 	 */
 	public AetherModuleResolver(File localRepository, Map<String, String> remoteRepositories) {
+		if (log.isDebugEnabled()) {
+			log.debug("Local repository: " + localRepository);
+			log.debug("Remote repository: " + remoteRepositories);
+		}
 		if (!localRepository.exists()) {
 			Assert.isTrue(localRepository.mkdirs(),
 					"Unable to create directory for local repository: " + localRepository);

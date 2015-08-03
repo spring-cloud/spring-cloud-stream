@@ -19,7 +19,12 @@ package org.springframework.cloud.stream.module.launcher;
 import java.io.File;
 import java.util.Collections;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
@@ -50,7 +55,11 @@ public class ModuleLauncherConfiguration {
 		this.remoteRepository = remoteRepository;
 	}
 
+	/**
+	 * Sets up the default Aether-based module resolver, unless overridden
+	 */
 	@Bean
+	@ConditionalOnMissingBean(ModuleResolver.class)
 	public ModuleResolver moduleResolver() {
 		return new AetherModuleResolver(localRepository, Collections.singletonMap("remoteRepository", remoteRepository));
 	}
