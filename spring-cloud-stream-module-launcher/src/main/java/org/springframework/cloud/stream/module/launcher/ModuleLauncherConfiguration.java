@@ -38,10 +38,10 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties
 public class ModuleLauncherConfiguration {
 
-	private static final String DEFAULT_LOCAL_REPO =
+	public static final String DEFAULT_LOCAL_REPO =
 			System.getProperty("user.home") + File.separator  + ".m2" + File.separator +  "repository";
 
-	private static final String DEFAULT_REMOTE_REPO = "http://repo.spring.io/spring-cloud-stream-modules";
+	public static final String DEFAULT_REMOTE_REPO = "https://repo.spring.io/libs-snapshot";
 
 	private File localRepository = new File(DEFAULT_LOCAL_REPO);
 
