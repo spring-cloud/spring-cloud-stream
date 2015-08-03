@@ -16,21 +16,17 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.loader.ModuleJarLauncher;
 import org.springframework.boot.loader.archive.JarFileArchive;
-import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -60,11 +56,6 @@ public class ModuleLauncher {
 			Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
 
 	private final ModuleResolver moduleResolver;
-
-	public ModuleLauncher() {
-		this(new AetherModuleResolver(new File(determineLocalRepositoryLocation(),
-				Collections.singletonMap("spring-cloud-stream-modules", determineRemoteRepositoryLocation()))));
-	}
 
 	public ModuleLauncher(ModuleResolver moduleResolver) {
 		this.moduleResolver = moduleResolver;

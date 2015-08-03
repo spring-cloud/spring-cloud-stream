@@ -30,6 +30,6 @@ import org.springframework.context.annotation.ComponentScan;
 public class ModuleLauncherApplication {
 
 	public static void main(String[] args) throws Exception {
-		SpringApplication.run(ModuleLauncherConfiguration.class, args);
+		SpringApplication.run(ModuleLauncherApplication.class, args);
 	}
 }

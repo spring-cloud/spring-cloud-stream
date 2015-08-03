@@ -16,30 +16,40 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Marius Bogoevici
  */
 @Component
-public class ModuleLauncherRunner implements ApplicationRunner {
+@ConfigurationProperties
+public class ModuleLauncherRunner implements ApplicationRunner,InitializingBean {
 
 	@Autowired
 	private ModuleLauncher moduleLauncher;
 
+	private String modules;
+
+	public void setModules(String modules) {
+		this.modules = modules;
+	}
+
 	@Override
-	public void run(ApplicationArguments applicationArguments) throws Exception {
-		String modules = System.getProperty("modules");
-		if (modules == null) {
-			modules = System.getenv("MODULES");
-		}
-		if (modules == null) {
+	public void afterPropertiesSet() throws Exception {
+		if (!StringUtils.hasText(modules)) {
 			System.err.println("Either the 'modules' system property or 'MODULES' environment variable is required.");
 			System.exit(1);
 		}
+	}
+
+	@Override
+	public void run(ApplicationArguments applicationArguments) throws Exception {
 		moduleLauncher.launch(modules.split(","), applicationArguments.getSourceArgs());
 	}
 }
