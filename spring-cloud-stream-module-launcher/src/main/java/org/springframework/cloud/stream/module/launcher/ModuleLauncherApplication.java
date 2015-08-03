@@ -24,7 +24,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
- * Spring Boot launcher application
+ * Bootstrap for launching one or more modules, provided via the "modules" system property or "MODULES" environment variable as a comma-delimited list, with the arguments provided at
+ * launch.
+ *
+ * @see ModuleLauncher#launch(String[], String[]) for module and argument structure and format
  *
  * @author Marius Bogoevici
  */

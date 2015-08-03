@@ -29,27 +29,18 @@ import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Bootstrap for launching one or more modules. The module coordinates must be provided via the "modules" system
- * property or "MODULES" environment variable as a comma-delimited list. The format of each module must conform to the
- * <a href="http://www.eclipse.org/aether">Aether</a> convention:
- * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code> 
- * <p>
- * To pass args to a module, prefix with the module name and a dot. The arg name will be de-qualified and passed along.
- * For example: <code>--foo.bar=123</code> becomes <code>--bar=123</code> and is only passed to the 'foo' module.
+ * A component that launches one or more modules, delegating their resolution to an
+ * underlying {@link ModuleResolver}.
  *
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
 public class ModuleLauncher {
-
-	// TODO ensure that this properly supports Windows too
-
 
 	private static final String DEFAULT_EXTENSION = "jar";
 
@@ -63,13 +54,29 @@ public class ModuleLauncher {
 	@Deprecated
 	public ModuleLauncher() {
 		this(new AetherModuleResolver(new File(ModuleLauncherConfiguration.DEFAULT_LOCAL_REPO),
-				Collections.singletonMap("spring-cloud-stream-modules",ModuleLauncherConfiguration.DEFAULT_REMOTE_REPO)));
+				Collections.singletonMap("spring-cloud-stream-modules", ModuleLauncherConfiguration.DEFAULT_REMOTE_REPO)));
 	}
 
+	/**
+	 * Creates a module launcher using the provided module resolver
+	 * @param moduleResolver the module resolver instance to use
+	 */
 	public ModuleLauncher(ModuleResolver moduleResolver) {
 		this.moduleResolver = moduleResolver;
 	}
 
+	/**
+	 * Launches one or more modules, with the corresponding arguments, if any.
+	 *
+	 * The format of each module must conform to the <a href="http://www.eclipse.org/aether">Aether</a> convention:
+	 * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code>
+	 *
+	 * To pass arguments to a module, prefix with the module name and a dot. The arg name will be de-qualified and passed along.
+	 * For example: <code>---Dorg.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT.bar=123</code> becomes <code>--bar=123</code> and is only passed to the 'org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT' module.
+	 *
+	 * @param modules a list of modules
+	 * @param args a list of arguments, prefixed with the module name
+	 */
 	public void launch(String[] modules, String[] args) {
 		for (String module : modules) {
 			List<String> moduleArgs = new ArrayList<>(); 
