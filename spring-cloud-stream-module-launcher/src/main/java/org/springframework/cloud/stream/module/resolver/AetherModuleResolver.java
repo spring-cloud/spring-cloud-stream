@@ -20,6 +20,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -42,6 +44,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * An implementation of ModuleResolver using <a href="http://www.eclipse.org/aether/>aether</a> to resolve the module
@@ -50,8 +53,11 @@ import org.springframework.util.CollectionUtils;
  *
  * @author David Turanski
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
 public class AetherModuleResolver implements ModuleResolver {
+
+	private static final Log log = LogFactory.getLog(AetherModuleResolver.class);
 
 	private static final String DEFAULT_CONTENT_TYPE = "default";
 
@@ -68,6 +74,14 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * may be null or empty if the local repository is off line.
 	 */
 	public AetherModuleResolver(File localRepository, Map<String, String> remoteRepositories) {
+		Assert.notNull(localRepository, "Local repository path cannot be null");
+		if (log.isDebugEnabled()) {
+			log.debug("Local repository: " + localRepository);
+			if (!CollectionUtils.isEmpty(remoteRepositories)) {
+				// just listing the values, ids are simply informative
+				log.debug("Remote repositories: " + StringUtils.collectionToCommaDelimitedString(remoteRepositories.values()));
+			}
+		}
 		if (!localRepository.exists()) {
 			Assert.isTrue(localRepository.mkdirs(),
 					"Unable to create directory for local repository: " + localRepository);

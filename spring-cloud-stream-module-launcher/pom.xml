@@ -16,7 +16,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<start-class>org.springframework.cloud.stream.module.launcher.ModuleLauncher</start-class>
+		<start-class>org.springframework.cloud.stream.module.launcher.ModuleLauncherApplication</start-class>
 		<aether.version>1.0.2.v20150114</aether.version>
 		<maven.version>3.1.0</maven.version>
 		<wiremock.version>1.57</wiremock.version>
@@ -26,6 +26,10 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
