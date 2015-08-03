@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.loader.ModuleJarLauncher;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
@@ -49,10 +50,7 @@ import org.springframework.util.StringUtils;
 public class ModuleLauncher {
 
 	// TODO ensure that this properly supports Windows too
-	private static final String DEFAULT_LOCAL_REPO =
-			System.getProperty("user.home") + File.separator  + ".m2" + File.separator +  "repository";
 
-	private static final String DEFAULT_REMOTE_REPO = "http://repo.spring.io/spring-cloud-stream-modules";
 
 	private static final String DEFAULT_EXTENSION = "jar";
 
@@ -64,12 +62,12 @@ public class ModuleLauncher {
 	private final ModuleResolver moduleResolver;
 
 	public ModuleLauncher() {
-		this(determineLocalRepositoryLocation(),
-				Collections.singletonMap("spring-cloud-stream-modules", determineRemoteRepositoryLocation()));
+		this(new AetherModuleResolver(new File(determineLocalRepositoryLocation(),
+				Collections.singletonMap("spring-cloud-stream-modules", determineRemoteRepositoryLocation()))));
 	}
 
-	public ModuleLauncher(String localRepository, Map<String, String> remoteRepositories) {
-		this.moduleResolver = new AetherModuleResolver(new File(localRepository), remoteRepositories);
+	public ModuleLauncher(ModuleResolver moduleResolver) {
+		this.moduleResolver = moduleResolver;
 	}
 
 	public void launch(String[] modules, String[] args) {
@@ -109,38 +107,4 @@ public class ModuleLauncher {
 		return moduleResolver.resolve(groupId, artifactId, extension, classifier, version);
 	}
 
-	private static String determineLocalRepositoryLocation() {
-		String localRepository = System.getProperty("local.repository");
-		if (localRepository == null) {
-			localRepository = System.getenv("LOCAL_REPOSITORY");
-		}
-		if (localRepository == null) {
-			localRepository = DEFAULT_LOCAL_REPO;
-		}
-		return localRepository;
-	}
-
-	private static String determineRemoteRepositoryLocation() {
-		String remoteRepository = System.getProperty("remote.repository");
-		if (remoteRepository == null) {
-			remoteRepository = System.getenv("REMOTE_REPOSITORY");
-		}
-		if (remoteRepository == null) {
-			remoteRepository = DEFAULT_REMOTE_REPO;
-		}
-		return remoteRepository;
-	}
-
-	public static void main(String[] args) throws Exception {
-		String modules = System.getProperty("modules");
-		if (modules == null) {
-			modules = System.getenv("MODULES");
-		}
-		if (modules == null) {
-			System.err.println("Either the 'modules' system property or 'MODULES' environment variable is required.");
-			System.exit(1);
-		}
-		ModuleLauncher launcher = new ModuleLauncher();
-		launcher.launch(modules.split(","), args);
-	}
 }
