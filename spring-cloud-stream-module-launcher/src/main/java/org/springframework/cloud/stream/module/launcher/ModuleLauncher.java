@@ -59,7 +59,7 @@ public class ModuleLauncher {
 			Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
 
 	private final ModuleResolver moduleResolver;
-	
+
 	@Deprecated
 	public ModuleLauncher() {
 		this(new AetherModuleResolver(new File(ModuleLauncherConfiguration.DEFAULT_LOCAL_REPO),

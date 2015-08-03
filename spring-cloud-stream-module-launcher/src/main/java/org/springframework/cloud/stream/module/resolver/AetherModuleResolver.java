@@ -44,6 +44,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * An implementation of ModuleResolver using <a href="http://www.eclipse.org/aether/>aether</a> to resolve the module
@@ -52,6 +53,7 @@ import org.springframework.util.CollectionUtils;
  *
  * @author David Turanski
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
 public class AetherModuleResolver implements ModuleResolver {
 
@@ -72,9 +74,13 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * may be null or empty if the local repository is off line.
 	 */
 	public AetherModuleResolver(File localRepository, Map<String, String> remoteRepositories) {
+		Assert.notNull(localRepository, "Local repository path cannot be null");
 		if (log.isDebugEnabled()) {
 			log.debug("Local repository: " + localRepository);
-			log.debug("Remote repository: " + remoteRepositories);
+			if (!CollectionUtils.isEmpty(remoteRepositories)) {
+				// just listing the values, ids are simply informative
+				log.debug("Remote repositories: " + StringUtils.collectionToCommaDelimitedString(remoteRepositories.values()));
+			}
 		}
 		if (!localRepository.exists()) {
 			Assert.isTrue(localRepository.mkdirs(),

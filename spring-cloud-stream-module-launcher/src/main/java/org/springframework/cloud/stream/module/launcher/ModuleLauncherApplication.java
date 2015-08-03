@@ -37,8 +37,9 @@ public class ModuleLauncherApplication {
 	public static void main(String[] args) throws Exception {
 		try {
 			SpringApplication.run(ModuleLauncherApplication.class, args);
-		} catch (Exception e) {
-			log.error("Couldn't launch module: ", e);
+		}
+		catch (Exception e) {
+			log.error("Failed to launch module ", e);
 		}
 	}
 }
