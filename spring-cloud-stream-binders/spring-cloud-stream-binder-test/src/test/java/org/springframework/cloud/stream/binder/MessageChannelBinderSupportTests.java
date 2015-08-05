@@ -18,12 +18,17 @@ package org.springframework.cloud.stream.binder;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport.JavaClassMimeTypeConversion;
+import org.springframework.integration.codec.kryo.KryoRegistrar;
+import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -32,7 +37,6 @@ import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 import org.springframework.xd.tuple.DefaultTuple;
 import org.springframework.xd.tuple.Tuple;
 import org.springframework.xd.tuple.TupleBuilder;
@@ -52,10 +56,9 @@ public class MessageChannelBinderSupportTests {
 
 	private final TestMessageChannelBinder binder = new TestMessageChannelBinder();
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Before
 	public void setUp() {
-		binder.setCodec(new PojoCodec(new TupleKryoRegistrar()));
+		binder.setCodec(new PojoCodec(new TupleRegistrar()));
 	}
 
 	@Test
@@ -290,6 +293,21 @@ public class MessageChannelBinderSupportTests {
 		@Override
 		public void bindReplier(String name, MessageChannel requests, MessageChannel replies,
 				Properties properties) {
+		}
+	}
+
+	//TODO: temporary wrapper for compatibility with SI Codec types
+	private static class TupleRegistrar implements KryoRegistrar {
+		private TupleKryoRegistrar delegate = new TupleKryoRegistrar();
+
+		@Override
+		public void registerTypes(Kryo kryo) {
+			delegate.registerTypes(kryo);
+		}
+
+		@Override
+		public List<Registration> getRegistrations() {
+			return delegate.getRegistrations();
 		}
 	}
 

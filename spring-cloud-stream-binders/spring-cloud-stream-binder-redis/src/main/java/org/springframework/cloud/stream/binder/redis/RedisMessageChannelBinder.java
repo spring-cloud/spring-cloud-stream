@@ -53,7 +53,6 @@ import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by Redis.
@@ -140,16 +139,14 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	private final RedisQueueOutboundChannelAdapter errorAdapter;
 
-	public RedisMessageChannelBinder(RedisConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
-		this(connectionFactory, codec, new String[0]);
+	public RedisMessageChannelBinder(RedisConnectionFactory connectionFactory) {
+		this(connectionFactory, new String[0]);
 	}
 
-	public RedisMessageChannelBinder(RedisConnectionFactory connectionFactory, MultiTypeCodec<Object> codec,
+	public RedisMessageChannelBinder(RedisConnectionFactory connectionFactory,
 			String... headersToMap) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
-		Assert.notNull(codec, "codec must not be null");
 		this.connectionFactory = connectionFactory;
-		setCodec(codec);
 		this.errorAdapter = new RedisQueueOutboundChannelAdapter(
 				parser.parseExpression("headers['" + ERROR_HEADER + "']"), connectionFactory);
 		if (headersToMap != null && headersToMap.length > 0) {

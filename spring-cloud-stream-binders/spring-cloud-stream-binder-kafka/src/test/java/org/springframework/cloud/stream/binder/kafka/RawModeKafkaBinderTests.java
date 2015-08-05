@@ -49,13 +49,14 @@ import org.springframework.cloud.stream.binder.TestUtils;
 
 /**
  * @author Marius Bogoevici
+ * @author David Turanski
  */
 
 public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Override
 	protected KafkaTestBinder createKafkaTestBinder() {
-		return new KafkaTestBinder(kafkaTestSupport, getCodec(), KafkaMessageChannelBinder.Mode.raw);
+		return new KafkaTestBinder(kafkaTestSupport, KafkaMessageChannelBinder.Mode.raw);
 	}
 
 	@Test

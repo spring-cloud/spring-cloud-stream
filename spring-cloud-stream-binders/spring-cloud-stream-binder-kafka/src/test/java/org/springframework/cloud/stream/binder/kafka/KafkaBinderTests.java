@@ -77,7 +77,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 	}
 
 	protected KafkaTestBinder createKafkaTestBinder() {
-		return new KafkaTestBinder(kafkaTestSupport, getCodec(), KafkaMessageChannelBinder.Mode.embeddedHeaders);
+		return new KafkaTestBinder(kafkaTestSupport, KafkaMessageChannelBinder.Mode.embeddedHeaders);
 	}
 
 	@Override

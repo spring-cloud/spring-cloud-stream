@@ -20,12 +20,13 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.integration.channel.DefaultHeaderChannelRegistry;
+import org.springframework.integration.codec.Codec;
+import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 
 /**
@@ -33,17 +34,14 @@ import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
  *
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author David Turanski
  */
 public class RedisTestBinder extends AbstractTestBinder<RedisMessageChannelBinder> {
 
 	private StringRedisTemplate template;
 
 	public RedisTestBinder(RedisConnectionFactory connectionFactory) {
-		template = new StringRedisTemplate(connectionFactory);
-	}
-
-	public RedisTestBinder(RedisConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
-		RedisMessageChannelBinder binder = new RedisMessageChannelBinder(connectionFactory, codec);
+		RedisMessageChannelBinder binder = new RedisMessageChannelBinder(connectionFactory);
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.getBeanFactory().registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				new DefaultMessageBuilderFactory());
@@ -57,6 +55,7 @@ public class RedisTestBinder extends AbstractTestBinder<RedisMessageChannelBinde
 				channelRegistry);
 		context.refresh();
 		binder.setApplicationContext(context);
+		binder.setCodec(new PojoCodec());
 		setBinder(binder);
 		template = new StringRedisTemplate(connectionFactory);
 	}

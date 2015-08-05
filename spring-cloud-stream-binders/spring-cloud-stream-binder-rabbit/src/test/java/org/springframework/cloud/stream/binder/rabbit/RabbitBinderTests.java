@@ -75,6 +75,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author Mark Fisher
  * @author Gary Russell
+ * @author David Turanski
  */
 public class RabbitBinderTests extends PartitionCapableBinderTests {
 
@@ -88,7 +89,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 	@Override
 	protected Binder getBinder() {
 		if (testBinder == null) {
-			testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource(), getCodec());
+			testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource());
 		}
 		return testBinder;
 	}

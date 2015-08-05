@@ -19,10 +19,11 @@ package org.springframework.cloud.stream.binder.rabbit;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.codec.Codec;
+import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 
 /**
@@ -30,6 +31,7 @@ import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
  *
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author David Turanski
  */
 public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBinder> {
 
@@ -38,11 +40,7 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 	private final RabbitAdmin rabbitAdmin;
 
 	public RabbitTestBinder(ConnectionFactory connectionFactory) {
-		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
-	}
-
-	public RabbitTestBinder(ConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
-		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(connectionFactory, codec);
+		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(connectionFactory);
 		GenericApplicationContext context = new GenericApplicationContext();
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.setPoolSize(1);
@@ -50,6 +48,7 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 		context.getBeanFactory().registerSingleton(IntegrationContextUtils.TASK_SCHEDULER_BEAN_NAME, scheduler);
 		context.refresh();
 		binder.setApplicationContext(context);
+		binder.setCodec(new PojoCodec());
 		this.setBinder(binder);
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 	}

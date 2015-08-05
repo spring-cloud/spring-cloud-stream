@@ -85,7 +85,6 @@ import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 import scala.collection.Seq;
 
@@ -293,11 +292,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private Mode mode = Mode.embeddedHeaders;
 
 	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
-			MultiTypeCodec<Object> codec, String... headersToMap) {
+			 String... headersToMap) {
 		this.zookeeperConnect = zookeeperConnect;
 		this.brokers = brokers;
 		this.zkAddress = zkAddress;
-		setCodec(codec);
 		if (headersToMap.length > 0) {
 			String[] combinedHeadersToMap =
 					Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0, BinderHeaders.STANDARD_HEADERS.length + headersToMap
