@@ -13,43 +13,46 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.config.codec.kryo;
 
 import java.util.ArrayList;
 import java.util.Map;
 
+import com.esotericsoftware.kryo.Kryo;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.FileKryoRegistrar;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.KryoRegistrar;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
+import org.springframework.integration.codec.Codec;
+import org.springframework.integration.codec.kryo.FileKryoRegistrar;
+import org.springframework.integration.codec.kryo.KryoRegistrar;
+import org.springframework.integration.codec.kryo.PojoCodec;
+
 
 /**
+ * Auto configures {@link PojoCodec} if Kryo is on the class path.
  * @author David Turanski
  */
 @Configuration
-public class CodecConfiguration {
-
+@ConditionalOnClass(Kryo.class)
+@EnableConfigurationProperties(KryoCodecProperties.class)
+@ConditionalOnMissingBean(Codec.class)
+public class KryoCodecAutoConfiguration {
 
 	@Autowired
 	ApplicationContext applicationContext;
 
-	@ConditionalOnMissingBean(KryoCodecProperties.class)
-	@Bean(name = "spring.cloud.streams.codec.kryo.CONFIGURATION_PROPERTIES")
-	public KryoCodecProperties kryoCodecProperties() {
-		return new KryoCodecProperties();
-	}
+	@Autowired KryoCodecProperties kryoCodecProperties;
 
 	@Bean
-	@ConditionalOnMissingBean(name = "codec")
-	public MultiTypeCodec<?> codec() {
+	public PojoCodec codec() {
 		Map<String, KryoRegistrar> kryoRegistrarMap = applicationContext.getBeansOfType(KryoRegistrar
 				.class);
-		return new PojoCodec(new ArrayList<>(kryoRegistrarMap.values()), kryoCodecProperties().isReferences());
+		return new PojoCodec(new ArrayList<>(kryoRegistrarMap.values()), kryoCodecProperties.isReferences());
 	}
 
 	@Bean

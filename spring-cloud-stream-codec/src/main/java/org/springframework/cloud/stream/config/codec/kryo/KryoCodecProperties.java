@@ -13,26 +13,26 @@
  * limitations under the License.
  */
 
-package org.springframework.xd.dirt.integration.bus.serializer.kryo;
+package org.springframework.cloud.stream.config.codec.kryo;
 
-import java.util.Collections;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-import com.esotericsoftware.kryo.Registration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * A {@link KryoRegistrar} used to register a File serializer.
  * @author David Turanski
- * @since 1.2
  */
-public class FileKryoRegistrar extends AbstractKryoRegistrar {
-
-	private final static int FILE_REGISTRATION_ID = 40;
-
-	private final FileSerializer fileSerializer = new FileSerializer();
-
-	@Override
-	public List<Registration> getRegistrations() {
-		return Collections.singletonList(new Registration(java.io.File.class, fileSerializer, FILE_REGISTRATION_ID));
+@ConfigurationProperties("spring.cloud.codec.kryo")
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+public class KryoCodecProperties {
+	private boolean references = true;
+	
+	public boolean isReferences() {
+		return references;
 	}
+
+	public void setReferences(boolean references) {
+		this.references = references;
+	}
+	
 }

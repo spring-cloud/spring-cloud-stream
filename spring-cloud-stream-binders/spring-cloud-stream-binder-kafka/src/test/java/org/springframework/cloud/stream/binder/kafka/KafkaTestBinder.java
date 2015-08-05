@@ -16,11 +16,17 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.util.List;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
+
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.codec.Codec;
+import org.springframework.integration.codec.kryo.KryoRegistrar;
+import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
 
 
@@ -34,11 +40,11 @@ import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
 public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder> {
 
 	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport) {
-		this(kafkaTestSupport, getCodec(), KafkaMessageChannelBinder.Mode.embeddedHeaders);
+		this(kafkaTestSupport, KafkaMessageChannelBinder.Mode.embeddedHeaders);
 	}
 
 
-	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport, MultiTypeCodec<Object> codec,
+	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport,
 			KafkaMessageChannelBinder.Mode mode) {
 
 		try {
@@ -46,7 +52,8 @@ public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinde
 			zookeeperConnect.setZkConnect(kafkaTestSupport.getZkConnectString());
 			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(zookeeperConnect,
 					kafkaTestSupport.getBrokerAddress(),
-					kafkaTestSupport.getZkConnectString(), codec);
+					kafkaTestSupport.getZkConnectString());
+			binder.setCodec(getCodec());
 			binder.setDefaultBatchingEnabled(false);
 			binder.setMode(mode);
 			binder.afterPropertiesSet();
@@ -65,9 +72,23 @@ public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinde
 		// do nothing - the rule will take care of that
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	private static MultiTypeCodec<Object> getCodec() {
-		return new PojoCodec(new TupleKryoRegistrar());
+	private static Codec getCodec() {
+		return new PojoCodec(new TupleRegistrar());
+	}
+	
+	//TODO: temporary wrapper for compatibility with SI Codec types
+	private static class TupleRegistrar implements KryoRegistrar {
+		private TupleKryoRegistrar delegate = new TupleKryoRegistrar();
+
+		@Override
+		public void registerTypes(Kryo kryo) {
+			delegate.registerTypes(kryo);
+		}
+
+		@Override
+		public List<Registration> getRegistrations() {
+			return delegate.getRegistrations();
+		}
 	}
 
 }

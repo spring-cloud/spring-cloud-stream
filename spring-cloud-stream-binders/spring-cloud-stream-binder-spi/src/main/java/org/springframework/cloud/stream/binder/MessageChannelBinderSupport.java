@@ -46,6 +46,7 @@ import org.springframework.core.serializer.support.SerializationFailedException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.codec.Codec;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.messaging.Message;
@@ -63,7 +64,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.IdGenerator;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 import static org.springframework.util.MimeTypeUtils.ALL;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
@@ -91,7 +91,7 @@ public abstract class MessageChannelBinderSupport
 
 	private volatile AbstractApplicationContext applicationContext;
 
-	private volatile MultiTypeCodec<Object> codec;
+	private volatile Codec codec;
 
 	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
@@ -256,7 +256,7 @@ public abstract class MessageChannelBinderSupport
 		return this.applicationContext.getBeanFactory();
 	}
 
-	public void setCodec(MultiTypeCodec<Object> codec) {
+	public void setCodec(Codec codec) {
 		this.codec = codec;
 	}
 
@@ -584,7 +584,7 @@ public abstract class MessageChannelBinderSupport
 				if (originalPayload instanceof String) {
 					return ((String) originalPayload).getBytes("UTF-8");
 				}
-				this.codec.serialize(originalPayload, bos);
+				this.codec.encode(originalPayload, bos);
 				return bos.toByteArray();
 			}
 			catch (IOException e) {
@@ -644,7 +644,7 @@ public abstract class MessageChannelBinderSupport
 					targetType = ClassUtils.forName(className, null);
 					payloadTypeCache.put(className, targetType);
 				}
-				return codec.deserialize(bytes, targetType);
+				return codec.decode(bytes, targetType);
 			}
 			catch (ClassNotFoundException e) {
 				throw new SerializationFailedException("unable to deserialize [" + className + "]. Class not found.",

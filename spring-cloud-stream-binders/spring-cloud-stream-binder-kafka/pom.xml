@@ -28,6 +28,15 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-codec</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-autoconfigure</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-test</artifactId>
 		</dependency>
 		<dependency>
@@ -63,12 +72,6 @@
 			<groupId>org.springframework.xd</groupId>
 			<artifactId>spring-xd-tuple</artifactId>
 			<version>${spring-xd.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.xd</groupId>
-					<artifactId>spring-xd-codec</artifactId>
-				</exclusion>
-			</exclusions>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
