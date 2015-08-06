@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Properties;
 
-import org.apache.catalina.core.ApplicationContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -43,12 +42,14 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringApplicationConfiguration(ProcessorBindingTestsWithDefaults.TestProcessor.class)
 public class ProcessorBindingTestsWithDefaults {
 
+	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
 	@Autowired @ModuleChannels(TestProcessor.class)
 	private Processor processor;
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
 		Mockito.verify(binder).bindConsumer(eq("input"), eq(processor.input()), Mockito.<Properties>any());

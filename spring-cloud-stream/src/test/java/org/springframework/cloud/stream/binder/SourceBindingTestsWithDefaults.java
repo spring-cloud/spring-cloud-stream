@@ -43,12 +43,14 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringApplicationConfiguration(SourceBindingTestsWithDefaults.TestSource.class)
 public class SourceBindingTestsWithDefaults {
 
+	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
 	@Autowired @ModuleChannels(TestSource.class)
 	private Source testSource;
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
 		verify(binder).bindProducer(eq("output"), eq(testSource.output()), Mockito.<Properties>any());

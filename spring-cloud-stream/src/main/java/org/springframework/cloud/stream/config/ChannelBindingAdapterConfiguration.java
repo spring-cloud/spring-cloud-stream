@@ -16,27 +16,19 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Properties;
-import java.util.Set;
 
 import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.adapter.ChannelBindingAdapter;
-import org.springframework.cloud.stream.adapter.DefaultChannelLocator;
-import org.springframework.cloud.stream.adapter.InputChannelBinding;
-import org.springframework.cloud.stream.adapter.OutputChannelBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.binding.ChannelBindingAdapter;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderAwareChannelResolver;
-import org.springframework.cloud.stream.binder.BinderAwareRouterBeanPostProcessor;
-import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
@@ -55,64 +47,15 @@ import org.springframework.messaging.core.DestinationResolver;
 @EnableConfigurationProperties(ChannelBindingProperties.class)
 public class ChannelBindingAdapterConfiguration {
 
-	@Autowired
-	private ChannelBindingProperties module;
-
-	@Autowired
-	private ConfigurableListableBeanFactory beanFactory;
-
-	@Autowired
-	private Binder<MessageChannel> binder;
-
 	@Bean
-	public ChannelBindingAdapter bindingAdapter() {
-		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module,
-				this.binder);
-		adapter.setChannelLocator(new DefaultChannelLocator(this.module));
-		adapter.setOutputChannels(getOutputChannels());
-		adapter.setInputChannels(getInputChannels());
-		adapter.setChannelResolver(binderAwareChannelResolver());
-		return adapter;
+	@ConditionalOnMissingBean(ChannelBindingAdapter.class)
+	public ChannelBindingAdapter bindingAdapter(ChannelBindingProperties module, Binder<MessageChannel> binder,ConfigurableListableBeanFactory beanFactory) {
+		return new ChannelBindingAdapter(module, binder);
 	}
 
 	@Bean
-	public ChannelsEndpoint channelsEndpoint(ChannelBindingAdapter adapter) {
-		return new ChannelsEndpoint(adapter);
-	}
-
-	Collection<OutputChannelBinding> getOutputChannels() {
-		Set<OutputChannelBinding> channels = new LinkedHashSet<>();
-		String[] names = this.beanFactory.getBeanNamesForType(MessageChannel.class);
-		for (String name : names) {
-			BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(name);
-			// for now, just assume that the beans are at least AbstractBeanDefinition
-			if (beanDefinition instanceof AbstractBeanDefinition
-					&& ((AbstractBeanDefinition) beanDefinition)
-					.getQualifier(Output.class.getName()) != null) {
-				channels.add(new OutputChannelBinding(name));
-			}
-		}
-		return channels;
-	}
-
-	Collection<InputChannelBinding> getInputChannels() {
-		Set<InputChannelBinding> channels = new LinkedHashSet<>();
-		String[] names = this.beanFactory.getBeanNamesForType(MessageChannel.class);
-		for (String name : names) {
-			BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(name);
-			// for now, just assume that the beans are at least AbstractBeanDefinition
-			if (beanDefinition instanceof AbstractBeanDefinition
-					&& ((AbstractBeanDefinition) beanDefinition).getQualifier(Input.class
-							.getName()) != null) {
-				channels.add(new InputChannelBinding(name));
-			}
-		}
-		return channels;
-	}
-
-	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver() {
-		return new BinderAwareChannelResolver(this.binder, new Properties());
+	public BinderAwareChannelResolver binderAwareChannelResolver(Binder<MessageChannel> binder) {
+		return new BinderAwareChannelResolver(binder, new Properties());
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
@@ -132,8 +75,7 @@ public class ChannelBindingAdapterConfiguration {
 						public MessageChannel resolveDestination(String name)
 								throws DestinationResolutionException {
 							if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
-								PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils.beanOfType(
-										beanFactory, BinderAwareChannelResolver.class);
+								PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils.beanOfType(beanFactory, BinderAwareChannelResolver.class);
 							}
 							return PostProcessorConfiguration.this.binderAwareChannelResolver.resolveDestination(name);
 						}

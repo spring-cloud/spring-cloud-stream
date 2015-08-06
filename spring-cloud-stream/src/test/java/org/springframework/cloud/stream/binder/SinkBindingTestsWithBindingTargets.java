@@ -44,12 +44,14 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringApplicationConfiguration(SinkBindingTestsWithBindingTargets.TestSink.class)
 public class SinkBindingTestsWithBindingTargets {
 
+	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
 	@Autowired @ModuleChannels(TestSink.class)
 	private Sink testSink;
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
 		verify(binder).bindConsumer(eq("testtock"), eq(testSink.input()), Mockito.<Properties>any());

@@ -58,7 +58,8 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 			}
 			log.info(sb.toString());
 		}
-		this.moduleLauncher.launch(launchRequests);
+		this.moduleLauncher.launch(launchRequests, moduleLauncherProperties.isAggregateOnLaunch(),
+				getBindableProperties(args));
 	}
 
 	private List<ModuleLaunchRequest> generateModuleLaunchRequests() {
@@ -70,5 +71,15 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 			requests.add(moduleLaunchRequest);
 		}
 		return requests;
+	}
+
+	private String[] getBindableProperties(String[] args) {
+		List<String> bindableProperties = new ArrayList<>();
+		for (String arg : args) {
+			if (arg.startsWith("--")) {
+				bindableProperties.add(arg.substring(2));
+			}
+		}
+		return bindableProperties.toArray(new String[bindableProperties.size()]);
 	}
 }

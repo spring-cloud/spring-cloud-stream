@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,26 +14,42 @@
  * limitations under the License.
  */
 
-package config;
+package org.springframework.cloud.stream.binding;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.Sink;
-import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.context.SmartLifecycle;
 
 /**
- * @author Dave Syer
  * @author Marius Bogoevici
  */
-@EnableModule(Sink.class)
-public class SinkModuleDefinition {
+public class ChannelBindingLifecycle implements SmartLifecycle {
 
-	private static Logger logger = LoggerFactory.getLogger(SinkModuleDefinition.class);
-
-	@ServiceActivator(inputChannel=Sink.INPUT)
-	public void loggerSink(Object payload) {
-		logger.info("Received: " + payload);
+	@Override
+	public boolean isAutoStartup() {
+		return false;
 	}
 
+	@Override
+	public void stop(Runnable callback) {
+
+	}
+
+	@Override
+	public void start() {
+
+	}
+
+	@Override
+	public void stop() {
+
+	}
+
+	@Override
+	public boolean isRunning() {
+		return false;
+	}
+
+	@Override
+	public int getPhase() {
+		return 0;
+	}
 }

@@ -25,9 +25,11 @@ import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterConfiguration;
-import org.springframework.cloud.stream.config.ModuleRegistrar;
+import org.springframework.cloud.stream.config.BindingBeansRegistrar;
+import org.springframework.cloud.stream.config.SharedChannelsConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.integration.config.EnableIntegration;
 
 /**
  * Annotation that identifies a class as a module.
@@ -41,7 +43,8 @@ import org.springframework.context.annotation.Import;
 @Documented
 @Inherited
 @Configuration
-@Import({ChannelBindingAdapterConfiguration.class, AggregateBuilderConfiguration.class, ModuleRegistrar.class})
+@Import({ChannelBindingAdapterConfiguration.class, AggregateBuilderConfiguration.class, BindingBeansRegistrar.class, SharedChannelsConfiguration.class})
+@EnableIntegration
 public @interface EnableModule {
 
 	Class<?>[] value() default {};

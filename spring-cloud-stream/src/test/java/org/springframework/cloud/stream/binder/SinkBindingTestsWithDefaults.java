@@ -31,7 +31,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.EnableModule;
 import org.springframework.cloud.stream.annotation.ModuleChannels;
-import org.springframework.cloud.stream.annotation.Processor;
 import org.springframework.cloud.stream.annotation.Sink;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.context.annotation.Import;
@@ -44,12 +43,14 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringApplicationConfiguration(SinkBindingTestsWithDefaults.TestSink.class)
 public class SinkBindingTestsWithDefaults {
 
+	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
 	@Autowired @ModuleChannels(TestSink.class)
 	private Sink testSink;
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
 		verify(binder).bindConsumer(eq("input"), eq(testSink.input()), Mockito.<Properties>any());

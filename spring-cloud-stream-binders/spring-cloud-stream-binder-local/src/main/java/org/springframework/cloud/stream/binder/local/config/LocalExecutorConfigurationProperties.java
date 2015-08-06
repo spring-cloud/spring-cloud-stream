@@ -24,43 +24,43 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.local.executor")
 class LocalExecutorConfigurationProperties {
 	
-	private int executorCorePoolSize;
+	private int corePoolSize;
 	
-	private int executorMaxPoolSize;
+	private int maxPoolSize;
 	
-	private int executorQueueSize = Integer.MAX_VALUE;
+	private int queueSize = Integer.MAX_VALUE;
 	
-	private int executorKeepAliveSeconds;
+	private int keepAliveSeconds;
 
-	public int getExecutorCorePoolSize() {
-		return executorCorePoolSize;
+	public int getCorePoolSize() {
+		return corePoolSize;
 	}
 
-	public void setExecutorCorePoolSize(int executorCorePoolSize) {
-		this.executorCorePoolSize = executorCorePoolSize;
+	public void setCorePoolSize(int corePoolSize) {
+		this.corePoolSize = corePoolSize;
 	}
 
-	public int getExecutorMaxPoolSize() {
-		return executorMaxPoolSize;
+	public int getMaxPoolSize() {
+		return maxPoolSize;
 	}
 
-	public void setExecutorMaxPoolSize(int executorMaxPoolSize) {
-		this.executorMaxPoolSize = executorMaxPoolSize;
+	public void setMaxPoolSize(int maxPoolSize) {
+		this.maxPoolSize = maxPoolSize;
 	}
 
-	public int getExecutorQueueSize() {
-		return executorQueueSize;
+	public int getQueueSize() {
+		return queueSize;
 	}
 
-	public void setExecutorQueueSize(int executorQueueSize) {
-		this.executorQueueSize = executorQueueSize;
+	public void setQueueSize(int queueSize) {
+		this.queueSize = queueSize;
 	}
 
-	public int getExecutorKeepAliveSeconds() {
-		return executorKeepAliveSeconds;
+	public int getKeepAliveSeconds() {
+		return keepAliveSeconds;
 	}
 
-	public void setExecutorKeepAliveSeconds(int executorKeepAliveSeconds) {
-		this.executorKeepAliveSeconds = executorKeepAliveSeconds;
+	public void setKeepAliveSeconds(int keepAliveSeconds) {
+		this.keepAliveSeconds = keepAliveSeconds;
 	}
 }

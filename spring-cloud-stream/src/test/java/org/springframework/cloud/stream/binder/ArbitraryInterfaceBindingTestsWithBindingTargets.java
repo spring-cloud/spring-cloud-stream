@@ -47,9 +47,11 @@ public class ArbitraryInterfaceBindingTestsWithBindingTargets {
 	@ModuleChannels(ArbitraryInterfaceBindingTestsWithBindingTargets.TestFooChannels.class)
 	public FooChannels fooChannels;
 
+	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
 		verify(binder).bindConsumer(eq("someQueue.0"), eq(fooChannels.foo()), Mockito.<Properties>any());

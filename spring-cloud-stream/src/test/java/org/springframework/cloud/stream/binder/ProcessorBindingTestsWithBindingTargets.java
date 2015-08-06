@@ -43,12 +43,14 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @SpringApplicationConfiguration(ProcessorBindingTestsWithBindingTargets.TestProcessor.class)
 public class ProcessorBindingTestsWithBindingTargets {
 
+	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
 	@Autowired @ModuleChannels(TestProcessor.class)
 	private Processor testProcessor;
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
 		verify(binder).bindConsumer(eq("testtock.0"), eq(testProcessor.input()), Mockito.<Properties>any());

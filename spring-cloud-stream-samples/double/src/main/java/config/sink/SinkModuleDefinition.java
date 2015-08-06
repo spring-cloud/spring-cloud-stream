@@ -14,37 +14,26 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.adapter;
+package config.sink;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cloud.stream.annotation.EnableModule;
+import org.springframework.cloud.stream.annotation.Sink;
+import org.springframework.integration.annotation.ServiceActivator;
 
 /**
- * Represents a binding between a local and remote message channel.
- *
  * @author Dave Syer
- * @author Mark Fisher
+ * @author Marius Bogoevici
  */
-public abstract class ChannelBinding {
+@EnableModule(Sink.class)
+public class SinkModuleDefinition {
 
-	private String localName;
-	private String remoteName;
+	private static Logger logger = LoggerFactory.getLogger(SinkModuleDefinition.class);
 
-	protected ChannelBinding() {
-		this(null);
-	}
-
-	protected ChannelBinding(String localName) {
-		this.localName = localName;
-	}
-
-	public String getLocalName() {
-		return this.localName;
-	}
-
-	public String getRemoteName() {
-		return this.remoteName;
-	}
-
-	public void setRemoteName(String name) {
-		this.remoteName = name;
+	@ServiceActivator(inputChannel=Sink.INPUT)
+	public void loggerSink(Object payload) {
+		logger.info("Received: " + payload);
 	}
 
 }

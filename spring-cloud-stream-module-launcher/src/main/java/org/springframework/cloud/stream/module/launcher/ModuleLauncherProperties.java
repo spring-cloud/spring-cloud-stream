@@ -49,7 +49,12 @@ import org.springframework.core.env.Environment;
 public class ModuleLauncherProperties {
 
 	/**
-	 * Array of coordinates for modules that need to be launched.
+	 * True if aggregating multiple modules when launched together
+	 */
+	private boolean aggregateOnLaunch;
+
+	/**
+	 * File path to a locally available maven repository, where modules will be downloaded.
 	 */
 	private String[] modules;
 
@@ -60,6 +65,14 @@ public class ModuleLauncherProperties {
 
 	public void setModules(String[] modules) {
 		this.modules = modules;
+	}
+
+	public boolean isAggregateOnLaunch() {
+		return aggregateOnLaunch;
+	}
+
+	public void setAggregateOnLaunch(boolean aggregateOnLaunch) {
+		this.aggregateOnLaunch = aggregateOnLaunch;
 	}
 
 	@NotEmpty(message = "A list of modules must be specified.")
