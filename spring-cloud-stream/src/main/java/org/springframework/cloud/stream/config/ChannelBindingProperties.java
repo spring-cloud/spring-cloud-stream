@@ -87,5 +87,5 @@ public class ChannelBindingProperties {
 	public String getTapChannelName(String channelName) {
 		return "tap:" + getBindingPath(channelName);
 	}
-
+	
 }

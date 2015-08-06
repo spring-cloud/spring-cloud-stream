@@ -36,6 +36,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -155,9 +156,11 @@ public class BinderAwareChannelResolverTests {
 	@Test
 	public void propertyPassthrough() {
 		Properties properties = new Properties();
+		@SuppressWarnings("rawtypes")
 		Binder binder = mock(Binder.class);
 		doReturn(new DirectChannel()).when(binder).bindDynamicProducer("queue:foo", properties);
 		doReturn(new DirectChannel()).when(binder).bindDynamicPubSubProducer("topic:bar", properties);
+		@SuppressWarnings("unchecked")
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binder, properties);
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);

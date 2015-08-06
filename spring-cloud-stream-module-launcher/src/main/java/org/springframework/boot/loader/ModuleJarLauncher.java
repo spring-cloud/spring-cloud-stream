@@ -84,6 +84,7 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 		if (systemClassLoader instanceof URLClassLoader) {
 			// add the URLs of the application classloader to the created classloader
 			// to compensate for LaunchedURLClassLoader not delegating to parent to retrieve resources
+			@SuppressWarnings("resource")
 			URLClassLoader systemUrlClassLoader = (URLClassLoader) systemClassLoader;
 			URL[] mergedUrls = new URL[urls.length + systemUrlClassLoader.getURLs().length];
 			System.arraycopy(urls, 0, mergedUrls, 0, urls.length);
@@ -91,9 +92,8 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 					systemUrlClassLoader.getURLs().length);
 			// add the extension classloader as parent to the created context, if accessible
 			return new LaunchedURLClassLoader(mergedUrls, systemUrlClassLoader.getParent());
-		} else {
-			return new LaunchedURLClassLoader(urls, systemClassLoader);
 		}
+		return new LaunchedURLClassLoader(urls, systemClassLoader);
 	}
 
 }

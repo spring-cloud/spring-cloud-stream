@@ -38,8 +38,6 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties("spring.cloud.streams")
 public class AggregateBuilder implements ApplicationContextAware {
 
-	public static final String DEFAULT_NAME = "application";
-
 	private ConfigurableApplicationContext parent;
 
 	private int index = 0;

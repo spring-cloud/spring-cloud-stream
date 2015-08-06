@@ -44,10 +44,10 @@ public class LocalMessageChannelBinderConfiguration {
 	public LocalMessageChannelBinder localMessageChannelBinder() {
 		LocalMessageChannelBinder localMessageChannelBinder = new LocalMessageChannelBinder();
 		
-		localMessageChannelBinder.setExecutorCorePoolSize(localExecutorConfigurationProperties.getExecutorCorePoolSize());
-		localMessageChannelBinder.setExecutorKeepAliveSeconds(localExecutorConfigurationProperties.getExecutorKeepAliveSeconds());
-		localMessageChannelBinder.setExecutorMaxPoolSize(localExecutorConfigurationProperties.getExecutorMaxPoolSize());
-		localMessageChannelBinder.setExecutorQueueSize(localExecutorConfigurationProperties.getExecutorQueueSize());
+		localMessageChannelBinder.setExecutorCorePoolSize(localExecutorConfigurationProperties.getCorePoolSize());
+		localMessageChannelBinder.setExecutorKeepAliveSeconds(localExecutorConfigurationProperties.getKeepAliveSeconds());
+		localMessageChannelBinder.setExecutorMaxPoolSize(localExecutorConfigurationProperties.getMaxPoolSize());
+		localMessageChannelBinder.setExecutorQueueSize(localExecutorConfigurationProperties.getQueueSize());
 
 		if (polling > 0) {
 			PollerMetadata pollerMetadata = new PollerMetadata();

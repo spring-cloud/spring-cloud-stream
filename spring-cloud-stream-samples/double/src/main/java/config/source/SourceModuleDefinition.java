@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package config;
+package config.source;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -35,11 +35,10 @@ import org.springframework.messaging.support.GenericMessage;
 @EnableModule(Source.class)
 public class SourceModuleDefinition {
 
-	@Value("${format:YYYY/MM/dd hh:mm:ss}")
-	private String format;
+	private String format = "yyyy-MM-dd HH:mm:ss";
 
 	@Bean
-	@InboundChannelAdapter(value = Source.OUTPUT, autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+	@InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
 	public MessageSource<String> timerMessageSource() {
 		return () -> new GenericMessage<>(new SimpleDateFormat(this.format).format(new Date()));
 	}
