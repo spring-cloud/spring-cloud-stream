@@ -273,7 +273,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 							public Boolean recover(RetryContext context) throws Exception {
 								logger.error(
 										"Failed to deliver message; retries exhausted; message sent to queue 'ERRORS:"
-												+ name + "' " + context.getLastThrowable());
+												+ name + "' ", context.getLastThrowable());
 								errorAdapter.handleMessage(getMessageBuilderFactory().fromMessage(message)
 										.setHeader(ERROR_HEADER, "ERRORS:" + name)
 										.build());
