@@ -90,7 +90,6 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -302,9 +301,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 
 	private volatile boolean clustered;
 
-	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory, MultiTypeCodec<Object> codec) {
+	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
-		Assert.notNull(codec, "codec must not be null");
 		this.connectionFactory = connectionFactory;
 		this.rabbitTemplate.setConnectionFactory(connectionFactory);
 		this.rabbitTemplate.afterPropertiesSet();
@@ -312,7 +310,6 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		this.autoDeclareContext.refresh();
 		this.rabbitAdmin.setApplicationContext(this.autoDeclareContext);
 		this.rabbitAdmin.afterPropertiesSet();
-		this.setCodec(codec);
 	}
 
 	/**

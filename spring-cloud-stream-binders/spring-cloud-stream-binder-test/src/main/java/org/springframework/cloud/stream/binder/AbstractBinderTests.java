@@ -30,12 +30,12 @@ import org.springframework.http.MediaType;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.channel.interceptor.WireTap;
+import org.springframework.integration.codec.Codec;
+import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.cloud.stream.binder.Binder.Capability;
-import org.springframework.xd.dirt.integration.bus.serializer.MultiTypeCodec;
-import org.springframework.xd.dirt.integration.bus.serializer.kryo.PojoCodec;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -285,11 +285,6 @@ public abstract class AbstractBinderTests {
 	protected Collection<?> getBindingsFromBinder(Binder binder) {
 		DirectFieldAccessor accessor = new DirectFieldAccessor(binder);
 		return (List<?>) accessor.getPropertyValue("bindings");
-	}
-
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	protected MultiTypeCodec<Object> getCodec() {
-		return new PojoCodec();
 	}
 
 	protected abstract Binder getBinder() throws Exception;

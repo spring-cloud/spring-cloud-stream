@@ -21,12 +21,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
+import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
+import org.springframework.cloud.stream.binder.rabbit.config.RabbitMessageChannelBinderConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportResource;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 
 /**
  * Bind to services, either locally or in a Lattice environment.
@@ -34,11 +35,12 @@ import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder
  * @author Mark Fisher
  * @author Dave Syer
  * @author Glenn Renfro
+ * @author David Turanski
  */
 @Configuration
 @ConditionalOnClass(RabbitMessageChannelBinder.class)
 @ConditionalOnMissingBean(RabbitMessageChannelBinder.class)
-@ImportResource("classpath*:/META-INF/spring-cloud-stream/binder/rabbit-binder.xml")
+@Import(RabbitMessageChannelBinderConfiguration.class)
 @PropertySource("classpath:/META-INF/spring-cloud-stream/rabbit-binder.properties")
 public class RabbitServiceConfiguration {
 	@Configuration
@@ -48,6 +50,7 @@ public class RabbitServiceConfiguration {
 		public Cloud cloud() {
 			return new CloudFactory().getCloud();
 		}
+
 		@Bean
 		ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
 			return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);

@@ -25,7 +25,6 @@ import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterConfiguration;
-import org.springframework.cloud.stream.config.CodecConfiguration;
 import org.springframework.cloud.stream.config.ModuleRegistrar;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterRunner;
 import org.springframework.cloud.stream.config.RabbitServiceConfiguration;
@@ -47,7 +46,7 @@ import org.springframework.integration.annotation.MessageEndpoint;
 @Configuration
 @MessageEndpoint
 @Import({RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
-	ChannelBindingAdapterConfiguration.class, CodecConfiguration.class, ChannelBindingAdapterRunner.class,
+	ChannelBindingAdapterConfiguration.class, ChannelBindingAdapterRunner.class,
 	AggregateBuilderConfiguration.class, ModuleRegistrar.class})
 public @interface EnableModule {
 
