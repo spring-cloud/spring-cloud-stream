@@ -14,35 +14,34 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.binder.redis.config;
 
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
-import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
-import org.springframework.cloud.stream.binder.rabbit.config.RabbitMessageChannelBinderConfiguration;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.redis.RedisMessageChannelBinder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 /**
  * Bind to services, either locally or in a Lattice environment.
  *
  * @author Mark Fisher
  * @author Dave Syer
- * @author Glenn Renfro
  * @author David Turanski
+ * @author Eric Bottard
  */
 @Configuration
-@ConditionalOnClass(RabbitMessageChannelBinder.class)
-@ConditionalOnMissingBean(RabbitMessageChannelBinder.class)
-@Import(RabbitMessageChannelBinderConfiguration.class)
-@PropertySource("classpath:/META-INF/spring-cloud-stream/rabbit-binder.properties")
-public class RabbitServiceConfiguration {
+@ConditionalOnMissingBean(Binder.class)
+@Import(RedisMessageChannelBinderConfiguration.class)
+@PropertySource("classpath:/META-INF/spring-cloud-stream/redis-binder.properties")
+public class RedisServiceAutoConfiguration {
+
 	@Configuration
 	@Profile("cloud")
 	protected static class CloudConfig {
@@ -50,10 +49,10 @@ public class RabbitServiceConfiguration {
 		public Cloud cloud() {
 			return new CloudFactory().getCloud();
 		}
-
 		@Bean
-		ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
-			return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
+		RedisConnectionFactory redisConnectionFactory(Cloud cloud) {
+			return cloud.getSingletonServiceConnector(RedisConnectionFactory.class, null);
 		}
 	}
+
 }

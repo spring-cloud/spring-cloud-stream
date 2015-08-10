@@ -35,7 +35,7 @@ import org.springframework.integration.codec.Codec;
 
 @Configuration
 @Import(CodecConfiguration.class)
-@EnableConfigurationProperties({RabbitBinderConfigurationProperties.class, SpringRabbitMQProperties.class})
+@EnableConfigurationProperties({RabbitBinderConfigurationProperties.class})
 public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
@@ -95,5 +95,10 @@ public class RabbitMessageChannelBinderConfiguration {
 	@Bean
 	ConnectionFactorySettings rabbitConnectionFactorySettings() {
 		return new ConnectionFactorySettings();
+	}
+
+	@Bean
+	SpringRabbitMQProperties springRabbitMQProperties() {
+		return new SpringRabbitMQProperties();
 	}
 }
