@@ -39,6 +39,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
 @Import(RedisMessageChannelBinderConfiguration.class)
+@PropertySource("classpath:/META-INF/spring-cloud-stream/redis-binder.properties")
 public class RedisServiceAutoConfiguration {
 
 	@Configuration

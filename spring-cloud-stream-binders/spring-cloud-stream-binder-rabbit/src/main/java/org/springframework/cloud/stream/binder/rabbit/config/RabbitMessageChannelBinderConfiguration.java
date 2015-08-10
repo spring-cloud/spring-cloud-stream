@@ -35,7 +35,7 @@ import org.springframework.integration.codec.Codec;
 
 @Configuration
 @Import(CodecConfiguration.class)
-@EnableConfigurationProperties({RabbitBinderConfigurationProperties.class, SpringRabbitMQProperties.class})
+@EnableConfigurationProperties({RabbitBinderConfigurationProperties.class})
 public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
@@ -61,8 +61,8 @@ public class RabbitMessageChannelBinderConfiguration {
 		binder.setDefaultAcknowledgeMode(rabbitBinderConfigurationProperties.getAcknowledgeMode());
 		binder.setDefaultAutoBindDLQ(rabbitBinderConfigurationProperties.isAutoBindDLQ());
 		binder.setDefaultChannelTransacted(rabbitBinderConfigurationProperties.isTransacted());
-		binder.setDefaultDefaultDeliveryMode(rabbitBinderConfigurationProperties.getDefaultDeliveryMode());
-		binder.setDefaultDefaultRequeueRejected(rabbitBinderConfigurationProperties.isDefaultRequeueRejected());
+		binder.setDefaultDefaultDeliveryMode(rabbitBinderConfigurationProperties.getDeliveryMode());
+		binder.setDefaultDefaultRequeueRejected(rabbitBinderConfigurationProperties.isRequeueRejected());
 		binder.setDefaultMaxConcurrency(rabbitBinderConfigurationProperties.getMaxConcurrency());
 		binder.setDefaultPrefetchCount(rabbitBinderConfigurationProperties.getPrefetchCount());
 		binder.setDefaultPrefix(rabbitBinderConfigurationProperties.getPrefix());
@@ -95,5 +95,10 @@ public class RabbitMessageChannelBinderConfiguration {
 	@Bean
 	ConnectionFactorySettings rabbitConnectionFactorySettings() {
 		return new ConnectionFactorySettings();
+	}
+
+	@Bean
+	SpringRabbitMQProperties springRabbitMQProperties() {
+		return new SpringRabbitMQProperties();
 	}
 }

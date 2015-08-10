@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.binder.rabbit.config;
 
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
+import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 import org.springframework.cloud.stream.binder.rabbit.config.RabbitMessageChannelBinderConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -36,13 +37,13 @@ import org.springframework.context.annotation.PropertySource;
  * @author Dave Syer
  * @author Glenn Renfro
  * @author David Turanski
+ * @author Eric Bottard
  */
 @Configuration
-@ConditionalOnClass(RabbitMessageChannelBinder.class)
-@ConditionalOnMissingBean(RabbitMessageChannelBinder.class)
+@ConditionalOnMissingBean(Binder.class)
 @Import(RabbitMessageChannelBinderConfiguration.class)
 @PropertySource("classpath:/META-INF/spring-cloud-stream/rabbit-binder.properties")
-public class RabbitServiceConfiguration {
+public class RabbitServiceAutoConfiguration {
 	@Configuration
 	@Profile("cloud")
 	protected static class CloudConfig {

@@ -31,15 +31,15 @@ class RabbitBinderConfigurationProperties {
 
 	private int backOffMaxInterval;
 
-	private int backOffMultiplier;
+	private double backOffMultiplier;
 
 	private boolean transacted;
 
 	private boolean concurrency;
 
-	private MessageDeliveryMode defaultDeliveryMode;
+	private MessageDeliveryMode deliveryMode;
 
-	private boolean defaultRequeueRejected;
+	private boolean requeueRejected;
 
 	private int maxAttempts;
 
@@ -97,11 +97,11 @@ class RabbitBinderConfigurationProperties {
 		this.backOffMaxInterval = backOffMaxInterval;
 	}
 
-	public int getBackOffMultiplier() {
+	public double getBackOffMultiplier() {
 		return backOffMultiplier;
 	}
 
-	public void setBackOffMultiplier(int backOffMultiplier) {
+	public void setBackOffMultiplier(double backOffMultiplier) {
 		this.backOffMultiplier = backOffMultiplier;
 	}
 
@@ -121,20 +121,20 @@ class RabbitBinderConfigurationProperties {
 		this.concurrency = concurrency;
 	}
 
-	public MessageDeliveryMode getDefaultDeliveryMode() {
-		return defaultDeliveryMode;
+	public MessageDeliveryMode getDeliveryMode() {
+		return deliveryMode;
 	}
 
-	public void setDefaultDeliveryMode(MessageDeliveryMode defaultDeliveryMode) {
-		this.defaultDeliveryMode = defaultDeliveryMode;
+	public void setDeliveryMode(MessageDeliveryMode deliveryMode) {
+		this.deliveryMode = deliveryMode;
 	}
 
-	public boolean isDefaultRequeueRejected() {
-		return defaultRequeueRejected;
+	public boolean isRequeueRejected() {
+		return requeueRejected;
 	}
 
-	public void setDefaultRequeueRejected(boolean defaultRequeueRejected) {
-		this.defaultRequeueRejected = defaultRequeueRejected;
+	public void setRequeueRejected(boolean requeueRejected) {
+		this.requeueRejected = requeueRejected;
 	}
 
 	public int getMaxAttempts() {
