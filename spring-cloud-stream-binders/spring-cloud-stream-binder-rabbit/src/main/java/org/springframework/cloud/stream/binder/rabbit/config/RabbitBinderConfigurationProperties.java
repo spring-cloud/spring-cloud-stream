@@ -37,9 +37,9 @@ class RabbitBinderConfigurationProperties {
 
 	private boolean concurrency;
 
-	private MessageDeliveryMode deliveryMode;
+	private MessageDeliveryMode defaultDeliveryMode;
 
-	private boolean requeueRejected;
+	private boolean defaultRequeueRejected;
 
 	private int maxAttempts;
 
@@ -121,20 +121,20 @@ class RabbitBinderConfigurationProperties {
 		this.concurrency = concurrency;
 	}
 
-	public MessageDeliveryMode getDeliveryMode() {
-		return deliveryMode;
+	public MessageDeliveryMode getDefaultDeliveryMode() {
+		return defaultDeliveryMode;
 	}
 
-	public void setDeliveryMode(MessageDeliveryMode deliveryMode) {
-		this.deliveryMode = deliveryMode;
+	public void setDefaultDeliveryMode(MessageDeliveryMode defaultDeliveryMode) {
+		this.defaultDeliveryMode = defaultDeliveryMode;
 	}
 
-	public boolean isRequeueRejected() {
-		return requeueRejected;
+	public boolean isDefaultRequeueRejected() {
+		return defaultRequeueRejected;
 	}
 
-	public void setRequeueRejected(boolean requeueRejected) {
-		this.requeueRejected = requeueRejected;
+	public void setDefaultRequeueRejected(boolean defaultRequeueRejected) {
+		this.defaultRequeueRejected = defaultRequeueRejected;
 	}
 
 	public int getMaxAttempts() {

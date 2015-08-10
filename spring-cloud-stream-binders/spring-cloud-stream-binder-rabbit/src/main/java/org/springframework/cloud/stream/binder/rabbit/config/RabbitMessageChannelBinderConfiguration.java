@@ -61,8 +61,8 @@ public class RabbitMessageChannelBinderConfiguration {
 		binder.setDefaultAcknowledgeMode(rabbitBinderConfigurationProperties.getAcknowledgeMode());
 		binder.setDefaultAutoBindDLQ(rabbitBinderConfigurationProperties.isAutoBindDLQ());
 		binder.setDefaultChannelTransacted(rabbitBinderConfigurationProperties.isTransacted());
-		binder.setDefaultDefaultDeliveryMode(rabbitBinderConfigurationProperties.getDeliveryMode());
-		binder.setDefaultDefaultRequeueRejected(rabbitBinderConfigurationProperties.isRequeueRejected());
+		binder.setDefaultDefaultDeliveryMode(rabbitBinderConfigurationProperties.getDefaultDeliveryMode());
+		binder.setDefaultDefaultRequeueRejected(rabbitBinderConfigurationProperties.isDefaultRequeueRejected());
 		binder.setDefaultMaxConcurrency(rabbitBinderConfigurationProperties.getMaxConcurrency());
 		binder.setDefaultPrefetchCount(rabbitBinderConfigurationProperties.getPrefetchCount());
 		binder.setDefaultPrefix(rabbitBinderConfigurationProperties.getPrefix());
