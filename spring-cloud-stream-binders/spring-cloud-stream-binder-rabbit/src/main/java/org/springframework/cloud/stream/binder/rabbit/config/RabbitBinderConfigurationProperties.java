@@ -31,7 +31,7 @@ class RabbitBinderConfigurationProperties {
 
 	private int backOffMaxInterval;
 
-	private int backOffMultiplier;
+	private double backOffMultiplier;
 
 	private boolean transacted;
 
@@ -97,11 +97,11 @@ class RabbitBinderConfigurationProperties {
 		this.backOffMaxInterval = backOffMaxInterval;
 	}
 
-	public int getBackOffMultiplier() {
+	public double getBackOffMultiplier() {
 		return backOffMultiplier;
 	}
 
-	public void setBackOffMultiplier(int backOffMultiplier) {
+	public void setBackOffMultiplier(double backOffMultiplier) {
 		this.backOffMultiplier = backOffMultiplier;
 	}
 

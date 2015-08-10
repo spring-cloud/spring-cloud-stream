@@ -24,11 +24,11 @@ import org.springframework.core.io.Resource;
 @ConfigurationProperties(prefix = "spring.rabbitmq")
 class SpringRabbitMQProperties {
 
-	private String[] addresses;
+	private String[] addresses = new String[0];
 
-	private String[] adminAdresses;
+	private String[] adminAdresses = new String[0];
 
-	private String[] nodes;
+	private String[] nodes = new String[0];
 
 	private String username;
 

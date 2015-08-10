@@ -27,14 +27,14 @@ import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterConfiguration;
 import org.springframework.cloud.stream.config.ModuleRegistrar;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterRunner;
-import org.springframework.cloud.stream.config.RabbitServiceConfiguration;
-import org.springframework.cloud.stream.config.RedisServiceConfiguration;
+import org.springframework.cloud.stream.binder.rabbit.config.RabbitServiceAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.MessageEndpoint;
 
 /**
  * Annotation that identifies a class as a module.
+ *
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author David Turanski
@@ -45,7 +45,7 @@ import org.springframework.integration.annotation.MessageEndpoint;
 @Inherited
 @Configuration
 @MessageEndpoint
-@Import({RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
+@Import({
 	ChannelBindingAdapterConfiguration.class, ChannelBindingAdapterRunner.class,
 	AggregateBuilderConfiguration.class, ModuleRegistrar.class})
 public @interface EnableModule {
