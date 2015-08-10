@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.binder.redis.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
+import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.redis.RedisMessageChannelBinder;
-import org.springframework.cloud.stream.binder.redis.config.RedisMessageChannelBinderConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -36,14 +34,12 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
  * @author Mark Fisher
  * @author Dave Syer
  * @author David Turanski
+ * @author Eric Bottard
  */
 @Configuration
-@ConditionalOnClass(RedisMessageChannelBinder.class)
-@ConditionalOnMissingBean(RedisMessageChannelBinder.class)
+@ConditionalOnMissingBean(Binder.class)
 @Import(RedisMessageChannelBinderConfiguration.class)
-@ImportResource("classpath*:/META-INF/spring-xd/analytics/redis-analytics.xml")
-@PropertySource("classpath:/META-INF/spring-cloud-stream/redis-binder.properties")
-public class RedisServiceConfiguration {
+public class RedisServiceAutoConfiguration {
 
 	@Configuration
 	@Profile("cloud")

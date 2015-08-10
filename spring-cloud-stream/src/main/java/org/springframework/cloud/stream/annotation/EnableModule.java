@@ -28,7 +28,7 @@ import org.springframework.cloud.stream.config.ChannelBindingAdapterConfiguratio
 import org.springframework.cloud.stream.config.ModuleRegistrar;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterRunner;
 import org.springframework.cloud.stream.config.RabbitServiceConfiguration;
-import org.springframework.cloud.stream.config.RedisServiceConfiguration;
+import org.springframework.cloud.stream.binder.redis.config.RedisServiceAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.MessageEndpoint;
@@ -45,7 +45,7 @@ import org.springframework.integration.annotation.MessageEndpoint;
 @Inherited
 @Configuration
 @MessageEndpoint
-@Import({RedisServiceConfiguration.class, RabbitServiceConfiguration.class,
+@Import({RabbitServiceConfiguration.class,
 	ChannelBindingAdapterConfiguration.class, ChannelBindingAdapterRunner.class,
 	AggregateBuilderConfiguration.class, ModuleRegistrar.class})
 public @interface EnableModule {
