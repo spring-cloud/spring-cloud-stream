@@ -18,11 +18,7 @@ package org.springframework.boot.loader;
 
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.util.AsciiBytes;
@@ -30,8 +26,8 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * A (possibly temporary) alternative to {@link JarLauncher} that provides a
- * public {@link #launch(String[])} method.
+ * A (possibly temporary) alternative to {@link JarLauncher} that provides a public
+ * {@link #launch(String[])} method.
  *
  * @author Mark Fisher
  * @author Marius Bogoevici
@@ -60,14 +56,19 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 	}
 
 	@Override
-	protected void launch(String[] args, String mainClass, ClassLoader classLoader) throws Exception {
-		try {
-			// disable JVM-wide registration of TomcatURLStreamHandlerFactory
-			Class<?> streamHandlerFactoryClass = ClassUtils.forName("org.apache.catalina.webresources.TomcatURLStreamHandlerFactory", classLoader);
-			Method disable = ReflectionUtils.findMethod(streamHandlerFactoryClass, "disable");
-			ReflectionUtils.invokeMethod(disable, null);
-		} catch (ClassNotFoundException e) {
-			// ignore
+	protected void launch(String[] args, String mainClass, ClassLoader classLoader)
+			throws Exception {
+		if (ClassUtils.isPresent(
+				"org.apache.catalina.webresources.TomcatURLStreamHandlerFactory",
+				classLoader)) {
+			// Ensure the method is invoked on a class that is loaded by the provided
+			// class loader (not the current context class loader):
+			Method method = ReflectionUtils
+					.findMethod(
+							classLoader
+							.loadClass("org.apache.catalina.webresources.TomcatURLStreamHandlerFactory"),
+							"disable");
+			ReflectionUtils.invokeMethod(method, null);
 		}
 		super.launch(args, mainClass, classLoader);
 	}

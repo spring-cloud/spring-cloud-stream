@@ -18,8 +18,6 @@ package org.springframework.cloud.stream.module.launcher;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -34,6 +32,7 @@ import org.springframework.util.StringUtils;
  */
 @Component
 @ConfigurationProperties
+// TODO: use a prefix
 public class ModuleLauncherRunner implements ApplicationRunner, InitializingBean {
 
 	private final static Log log = LogFactory.getLog(ModuleLauncherRunner.class);
@@ -41,24 +40,27 @@ public class ModuleLauncherRunner implements ApplicationRunner, InitializingBean
 	@Autowired
 	private ModuleLauncher moduleLauncher;
 
-	private String modules;
+	private String[] modules;
 
-	public void setModules(String modules) {
+	public void setModules(String[] modules) {
 		this.modules = modules;
 	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Assert.hasText(modules, "A list of modules must be specified");
+		Assert.notEmpty(this.modules, "A list of modules must be specified");
 	}
 
 	@Override
 	public void run(ApplicationArguments applicationArguments) throws Exception {
-		String[] launchedModules = modules.split(",");
+		String[] launchedModules = this.modules;
 		if (log.isInfoEnabled()) {
-			log.info("Launching: " + modules + " with arguments: "
-					+ StringUtils.arrayToCommaDelimitedString(applicationArguments.getSourceArgs()));
+			log.info("Launching: "
+					+ StringUtils.arrayToCommaDelimitedString(this.modules)
+					+ " with arguments: "
+					+ StringUtils.arrayToCommaDelimitedString(applicationArguments
+							.getSourceArgs()));
 		}
-		moduleLauncher.launch(launchedModules, applicationArguments.getSourceArgs());
+		this.moduleLauncher.launch(launchedModules, applicationArguments.getSourceArgs());
 	}
 }

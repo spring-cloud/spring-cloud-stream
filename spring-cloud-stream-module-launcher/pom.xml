@@ -20,16 +20,19 @@
 		<aether.version>1.0.2.v20150114</aether.version>
 		<maven.version>3.1.0</maven.version>
 		<wiremock.version>1.57</wiremock.version>
+		<docker.image.prefix>springcloud</docker.image.prefix>
+		<docker.image.name>stream-module-launcher</docker.image.name>
 	</properties>
 
 	<dependencies>
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-core</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -68,12 +71,6 @@
 		<dependency>
 			<groupId>org.springframework.integration</groupId>
 			<artifactId>spring-integration-test</artifactId>
-			<version>${spring-integration.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -135,6 +132,22 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<classifier>exec</classifier>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.spotify</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>0.2.3</version>
+				<configuration>
+					<imageName>${docker.image.prefix}/${docker.image.name}</imageName>
+					<dockerDirectory>src/main/docker</dockerDirectory>
+					<resources>
+						<resource>
+							<targetPath>/</targetPath>
+							<directory>${project.build.directory}</directory>
+							<include>${project.build.finalName}-exec.jar</include>
+						</resource>
+					</resources>
 				</configuration>
 			</plugin>
 		</plugins>

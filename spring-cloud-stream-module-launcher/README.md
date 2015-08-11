@@ -13,7 +13,7 @@ mvn -s .settings.xml package
 cd ..
 ````
 
-2: start redis locally via `redis-server` (optionally start `redis-cli` and use the `MONITOR` command to watch activity)
+2: start redis locally via `redis-server` or `docker-compose` (there's a `docker-compose.yml` in `spring-cloud-stream-samples`). Optionally start `redis-cli` and use the `MONITOR` command to watch activity.
 
 *NOTE:* redis.conf (on OSX it is found here: /usr/local/etc/redis.conf) may need to be updated to set the binding to an address other than 127.0.0.1 else the docker instances will fail to connect. For example: bind 0.0.0.0
 
@@ -38,7 +38,18 @@ The time messages will be emitted every 5 seconds. The console for the log modul
 
 ## Running with Docker
 
-Run each module as a Docker process by passing environment variables for the module name as well as the host machine's IP address for the redis connection to be established within the container:
+The easiest way to get a demo working is to use `docker-compose` (from this directory):
+
+```
+$ mvn package docker:build
+$ docker-compose up
+...
+logsink_1    | 2015-08-11 08:25:49.909  INFO 1 --- [hannel-adapter1] o.s.cloud.stream.module.log.LogSink      : Received: 2015-08-11 08:25:49
+logsink_1    | 2015-08-11 08:25:54.909  INFO 1 --- [hannel-adapter1] o.s.cloud.stream.module.log.Log
+...
+```
+
+You can also run each module individually as a Docker process by passing environment variables for the module name as well as the host machine's IP address for the redis connection to be established within the container:
 
 ````
 docker run -p 8080:8080 -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher

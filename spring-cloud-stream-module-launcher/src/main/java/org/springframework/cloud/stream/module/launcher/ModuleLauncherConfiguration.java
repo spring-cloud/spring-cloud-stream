@@ -19,11 +19,6 @@ package org.springframework.cloud.stream.module.launcher;
 import java.io.File;
 import java.util.Collections;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
@@ -36,10 +31,11 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConfigurationProperties
+// TODO: use a prefix
 public class ModuleLauncherConfiguration {
 
-	public static final String DEFAULT_LOCAL_REPO =
-			System.getProperty("user.home") + File.separator  + ".m2" + File.separator +  "repository";
+	public static final String DEFAULT_LOCAL_REPO = System.getProperty("user.home")
+			+ File.separator + ".m2" + File.separator + "repository";
 
 	public static final String DEFAULT_REMOTE_REPO = "https://repo.spring.io/libs-snapshot";
 
@@ -61,7 +57,8 @@ public class ModuleLauncherConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(ModuleResolver.class)
 	public ModuleResolver moduleResolver() {
-		return new AetherModuleResolver(localRepository, Collections.singletonMap("remoteRepository", remoteRepository));
+		return new AetherModuleResolver(this.localRepository, Collections.singletonMap(
+				"remoteRepository", this.remoteRepository));
 	}
 
 	@Bean

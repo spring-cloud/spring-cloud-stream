@@ -1,0 +1,19 @@
+redis:
+  image: redis
+
+timesource:
+  image: springcloud/stream-module-launcher
+  links:
+    - redis
+  environment:
+    SPRING_REDIS_HOST: redis
+    MODULES: org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT
+
+logsink:
+  image: springcloud/stream-module-launcher
+  links:
+    - redis
+  environment:
+    SPRING_REDIS_HOST: redis
+    MODULES: org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT
+    

@@ -16,33 +16,23 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
 
 /**
- * Bootstrap for launching one or more modules, provided via the "modules" system property or "MODULES" environment variable as a comma-delimited list, with the arguments provided at
- * launch.
+ * Bootstrap for launching one or more modules, provided via the "modules" system property
+ * or "MODULES" environment variable as a comma-delimited list, with the arguments
+ * provided at launch.
  *
- * @see ModuleLauncher#launch(String[], String[]) for module and argument structure and format
+ * @see ModuleLauncher#launch(String[], String[]) for module and argument structure and
+ * format
  *
  * @author Marius Bogoevici
  */
 @SpringBootApplication
-@ComponentScan(basePackageClasses = ModuleLauncherApplication.class)
 public class ModuleLauncherApplication {
 
-	private static final Log log = LogFactory.getLog(ModuleLauncherApplication.class);
-
 	public static void main(String[] args) throws Exception {
-		try {
-			SpringApplication.run(ModuleLauncherApplication.class, args);
-		}
-		catch (Exception e) {
-			log.error("Failed to launch module ", e);
-		}
+		SpringApplication.run(ModuleLauncherApplication.class, args);
 	}
 }
