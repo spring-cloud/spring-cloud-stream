@@ -16,6 +16,7 @@
 package org.springframework.cloud.stream.binder.redis.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.redis.RedisMessageChannelBinder;
@@ -44,6 +45,7 @@ public class RedisMessageChannelBinderConfiguration {
 	private RedisBinderConfigurationProperties redisBinderConfigurationProperties;
 	
 	@Autowired
+	@Qualifier("binder")
 	private RedisConnectionFactory redisConnectionFactory;
 
 	@Bean
