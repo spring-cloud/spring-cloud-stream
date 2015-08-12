@@ -14,49 +14,35 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.loader;
+package org.springframework.cloud.stream.module.launcher;
+
 
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.List;
 
+import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.archive.Archive;
-import org.springframework.boot.loader.util.AsciiBytes;
 import org.springframework.cloud.stream.module.utils.ClassloaderUtils;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * A (possibly temporary) alternative to {@link JarLauncher} that provides a public
- * {@link #launch(String[])} method.
+ * A {@link JarLauncher} that supports launching module archive.
  *
  * Also, it restricts the classloader of the launched application to the contents of the uber-jar and the
  * extension classloader of the JVM.
  *
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
-public class ModuleJarLauncher extends ExecutableArchiveLauncher {
-
-	private static final AsciiBytes LIB = new AsciiBytes("lib/");
+public class ModuleJarLauncher extends JarLauncher {
 
 	public ModuleJarLauncher(Archive archive) {
 		super(archive);
 	}
 
 	@Override
-	protected boolean isNestedArchive(Archive.Entry entry) {
-		return !entry.isDirectory() && entry.getName().startsWith(LIB);
-	}
-
-	@Override
-	protected void postProcessClassPathArchives(List<Archive> archives) throws Exception {
-		archives.add(0, getArchive());
-	}
-
-	@Override
-	// TODO: this method is protected in Spring Boot but we need it to be public here
 	public void launch(String[] args) {
 		super.launch(args);
 	}
@@ -70,9 +56,7 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 			// Ensure the method is invoked on a class that is loaded by the provided
 			// class loader (not the current context class loader):
 			Method method = ReflectionUtils
-					.findMethod(
-							classLoader
-							.loadClass("org.apache.catalina.webresources.TomcatURLStreamHandlerFactory"),
+					.findMethod(classLoader.loadClass("org.apache.catalina.webresources.TomcatURLStreamHandlerFactory"),
 							"disable");
 			ReflectionUtils.invokeMethod(method, null);
 		}

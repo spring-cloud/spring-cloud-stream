@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.boot.loader.ModuleJarLauncher;
+
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
