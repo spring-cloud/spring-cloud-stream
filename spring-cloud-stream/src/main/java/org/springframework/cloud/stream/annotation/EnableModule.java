@@ -25,9 +25,8 @@ import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterConfiguration;
-import org.springframework.cloud.stream.config.ModuleRegistrar;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterRunner;
-import org.springframework.cloud.stream.binder.rabbit.config.RabbitServiceAutoConfiguration;
+import org.springframework.cloud.stream.config.ModuleRegistrar;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.MessageEndpoint;
