@@ -9,7 +9,7 @@
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
 		<version>1.1.0.BUILD-SNAPSHOT</version>
-		<relativePath />
+		<relativePath/>
 	</parent>
 	<scm>
 		<url>https://github.com/spring-cloud/spring-cloud-stream</url>
@@ -30,7 +30,8 @@
 		<module>spring-cloud-stream-module-launcher</module>
 		<module>spring-cloud-stream-samples</module>
 		<module>docs</module>
-	</modules>
+    <module>spring-cloud-stream-test-support</module>
+  </modules>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
