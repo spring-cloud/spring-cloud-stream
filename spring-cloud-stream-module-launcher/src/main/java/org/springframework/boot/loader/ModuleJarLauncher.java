@@ -18,11 +18,7 @@ package org.springframework.boot.loader;
 
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.util.AsciiBytes;
@@ -37,8 +33,6 @@ import org.springframework.util.ReflectionUtils;
  * @author Marius Bogoevici
  */
 public class ModuleJarLauncher extends ExecutableArchiveLauncher {
-
-	private final JavaAgentDetector javaAgentDetector =  new InputArgumentsJavaAgentDetector();
 
 	private static final AsciiBytes LIB = new AsciiBytes("lib/");
 
