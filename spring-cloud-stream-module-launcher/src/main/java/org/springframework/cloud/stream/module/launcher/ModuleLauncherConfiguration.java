@@ -56,7 +56,7 @@ public class ModuleLauncherConfiguration {
 		return new ModuleLauncher(moduleResolver);
 	}
 
-	@ConfigurationProperties(prefix = "spring.cloud.stream.module.launcher")
+	@ConfigurationProperties
 	protected static class ModuleLauncherProperties {
 
 		private File localRepository;

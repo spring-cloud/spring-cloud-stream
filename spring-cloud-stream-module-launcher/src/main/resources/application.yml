@@ -1,7 +1,2 @@
-spring:
-  cloud:
-    stream:
-      module:
-        launcher:
-          localRepository: ${user.home}${file.separator}.m2${file.separator}repository
-          remoteRepository: https://repo.spring.io/libs-snapshot
+localRepository: ${user.home}${file.separator}.m2${file.separator}repository
+remoteRepository: https://repo.spring.io/libs-snapshot
