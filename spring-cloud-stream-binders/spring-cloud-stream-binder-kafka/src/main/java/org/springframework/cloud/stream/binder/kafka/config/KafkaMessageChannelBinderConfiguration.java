@@ -19,10 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
-import org.springframework.cloud.stream.config.codec.CodecConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 
@@ -30,50 +28,49 @@ import org.springframework.integration.kafka.support.ZookeeperConnect;
  * @author David Turanski
  */
 @Configuration
-@Import(CodecConfiguration.class)
 @EnableConfigurationProperties(KafkaBinderConfigurationProperties.class)
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka")
 public class KafkaMessageChannelBinderConfiguration {
-	
+
 	private String zkAddress;
-	
-	private String brokers; 
-	
+
+	private String brokers;
+
 	private KafkaMessageChannelBinder.Mode mode;
-	
+
 	private String offsetStoreTopic;
-	
+
 	private int offsetStoreSegmentSize;
-	
+
 	private int offsetStoreRetentionTime;
-	
+
 	private int offsetStoreRequiredAcks;
-	
+
 	private int offsetStoreMaxFetchSize;
-	
+
 	private int offsetStoreBatchBytes;
-	
+
 	private int offsetStoreBatchTime;
-	
+
 	private int offsetUpdateTimeWindow;
-	
+
 	private int offsetUpdateCount;
-	
+
 	private int offsetUpdateShutdownTimeout;
-	
+
 	@Autowired
 	private Codec codec;
-	
+
 	@Autowired
 	private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
-	
+
 	@Bean
 	ZookeeperConnect zookeeperConnect() {
 		ZookeeperConnect zookeeperConnect = new ZookeeperConnect();
 		zookeeperConnect.setZkConnect(zkAddress);
-		return zookeeperConnect;	
+		return zookeeperConnect;
 	}
-	
+
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder() {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(zookeeperConnect(),
@@ -90,8 +87,9 @@ public class KafkaMessageChannelBinderConfiguration {
 		kafkaMessageChannelBinder.setOffsetUpdateTimeWindow(offsetUpdateTimeWindow);
 		kafkaMessageChannelBinder.setOffsetUpdateCount(offsetUpdateCount);
 		kafkaMessageChannelBinder.setOffsetUpdateShutdownTimeout(offsetUpdateShutdownTimeout);
-	
-		kafkaMessageChannelBinder.setDefaultAutoCommitEnabled(kafkaBinderConfigurationProperties.isAutoCommitEnabled());
+
+		kafkaMessageChannelBinder.setDefaultAutoCommitEnabled(kafkaBinderConfigurationProperties.isAutoCommitEnabled
+				());
 		kafkaMessageChannelBinder.setDefaultBatchSize(kafkaBinderConfigurationProperties.getBatchSize());
 		kafkaMessageChannelBinder.setDefaultBatchTimeout(kafkaBinderConfigurationProperties.getBatchTimeout());
 		kafkaMessageChannelBinder.setDefaultCompressionCodec(kafkaBinderConfigurationProperties
@@ -101,9 +99,10 @@ public class KafkaMessageChannelBinderConfiguration {
 		kafkaMessageChannelBinder.setDefaultMinPartitionCount(kafkaBinderConfigurationProperties
 				.getMinPartitionCount());
 		kafkaMessageChannelBinder.setDefaultQueueSize(kafkaBinderConfigurationProperties.getQueueSize());
-		kafkaMessageChannelBinder.setDefaultReplicationFactor(kafkaBinderConfigurationProperties.getReplicationFactor());
+		kafkaMessageChannelBinder.setDefaultReplicationFactor(kafkaBinderConfigurationProperties.getReplicationFactor
+				());
 		kafkaMessageChannelBinder.setDefaultRequiredAcks(kafkaBinderConfigurationProperties.getRequiredAcks());
-		
+
 		return kafkaMessageChannelBinder;
 	}
 

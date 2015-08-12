@@ -27,14 +27,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.rabbit.ConnectionFactorySettings;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
-import org.springframework.cloud.stream.config.codec.CodecConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.integration.codec.Codec;
 
 @Configuration
-@Import(CodecConfiguration.class)
 @EnableConfigurationProperties({RabbitBinderConfigurationProperties.class})
 public class RabbitMessageChannelBinderConfiguration {
 
