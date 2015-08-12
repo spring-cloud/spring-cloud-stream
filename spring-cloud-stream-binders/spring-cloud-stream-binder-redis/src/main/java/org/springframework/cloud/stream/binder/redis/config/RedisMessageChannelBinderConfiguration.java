@@ -19,10 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.redis.RedisMessageChannelBinder;
-import org.springframework.cloud.stream.config.codec.CodecConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.integration.codec.Codec;
 
@@ -30,7 +28,6 @@ import org.springframework.integration.codec.Codec;
  * @author David Turanski
  */
 @Configuration
-@Import(CodecConfiguration.class)
 @EnableConfigurationProperties(RedisBinderConfigurationProperties.class)
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.redis")
 public class RedisMessageChannelBinderConfiguration {
