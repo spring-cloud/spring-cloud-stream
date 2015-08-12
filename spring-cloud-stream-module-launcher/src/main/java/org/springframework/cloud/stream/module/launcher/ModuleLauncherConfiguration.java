@@ -19,37 +19,27 @@ package org.springframework.cloud.stream.module.launcher;
 import java.io.File;
 import java.util.Collections;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * Configuration class that has the beans required for module launcher.
+ *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @Configuration
-@ConfigurationProperties
-// TODO: use a prefix
+@EnableConfigurationProperties(ModuleLauncherConfiguration.ModuleLauncherProperties.class)
 public class ModuleLauncherConfiguration {
 
-	public static final String DEFAULT_LOCAL_REPO = System.getProperty("user.home")
-			+ File.separator + ".m2" + File.separator + "repository";
-
-	public static final String DEFAULT_REMOTE_REPO = "https://repo.spring.io/libs-snapshot";
-
-	private File localRepository = new File(DEFAULT_LOCAL_REPO);
-
-	private String remoteRepository = DEFAULT_REMOTE_REPO;
-
-	public void setLocalRepository(File localRepository) {
-		this.localRepository = localRepository;
-	}
-
-	public void setRemoteRepository(String remoteRepository) {
-		this.remoteRepository = remoteRepository;
-	}
+	@Autowired
+	private ModuleLauncherProperties properties;
 
 	/**
 	 * Sets up the default Aether-based module resolver, unless overridden
@@ -57,13 +47,37 @@ public class ModuleLauncherConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(ModuleResolver.class)
 	public ModuleResolver moduleResolver() {
-		return new AetherModuleResolver(this.localRepository, Collections.singletonMap(
-				"remoteRepository", this.remoteRepository));
+		return new AetherModuleResolver(properties.getLocalRepository(), Collections.singletonMap(
+				"remoteRepository", properties.getRemoteRepository()));
 	}
 
 	@Bean
 	public ModuleLauncher moduleLauncher(ModuleResolver moduleResolver) {
 		return new ModuleLauncher(moduleResolver);
+	}
+
+	@ConfigurationProperties
+	protected static class ModuleLauncherProperties {
+
+		private File localRepository;
+
+		private String remoteRepository;
+
+		public void setRemoteRepository(String remoteRepository) {
+			this.remoteRepository = remoteRepository;
+		}
+
+		public void setLocalRepository(File localRepository) {
+			this.localRepository = localRepository;
+		}
+
+		protected File getLocalRepository() {
+			return localRepository;
+		}
+
+		protected String getRemoteRepository() {
+			return remoteRepository;
+		}
 	}
 
 }
