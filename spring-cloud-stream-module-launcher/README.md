@@ -22,8 +22,8 @@ cd ..
 From the `spring-cloud-stream/spring-cloud-stream-module-launcher` directory:
 
 ````
-java -Dmodules=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT-exec.jar
-java -Dmodules=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT-exec.jar
+java -Dmodules=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
+java -Dmodules=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
 ````
 
 The time messages will be emitted every 5 seconds. The console for the log module will display each:
