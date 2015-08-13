@@ -29,6 +29,9 @@ import org.springframework.util.ReflectionUtils;
  * A (possibly temporary) alternative to {@link JarLauncher} that provides a public
  * {@link #launch(String[])} method.
  *
+ * Also, it restricts the classloader of the launched application to the contents of the uber-jar and the
+ * extension classloader of the JVM.
+ *
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
@@ -76,7 +79,13 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 
 	@Override
 	protected ClassLoader createClassLoader(URL[] urls) throws Exception {
-		return new LaunchedURLClassLoader(urls, ClassLoader.getSystemClassLoader());
+		ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+		// try to retrieve the extension classloader
+		ClassLoader extensionClassLoader = systemClassLoader != null ? systemClassLoader.getParent() : null;
+		// set the classloader for the module as the extension classloader if available
+		// fall back to the system classloader (which can also be null) if not available
+		ClassLoader classLoaderForModule = extensionClassLoader != null ? extensionClassLoader : systemClassLoader;
+		return new LaunchedURLClassLoader(urls, classLoaderForModule);
 	}
 
 }
