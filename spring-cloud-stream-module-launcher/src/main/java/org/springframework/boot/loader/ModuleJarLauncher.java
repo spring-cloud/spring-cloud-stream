@@ -76,7 +76,13 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 
 	@Override
 	protected ClassLoader createClassLoader(URL[] urls) throws Exception {
-		return new LaunchedURLClassLoader(urls, ClassLoader.getSystemClassLoader());
+		// System classloader is the -cp/-jar argument to java
+		// Includes extra stuff that we may not want our modules to see
+		ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+		// We want only the JRE classes as the parent
+		// (the module uber-jar already contains everything it needs to run)
+		ClassLoader parentToUse = systemClassLoader != null ? systemClassLoader.getParent() : null;
+		return new LaunchedURLClassLoader(urls, parentToUse);
 	}
 
 }
