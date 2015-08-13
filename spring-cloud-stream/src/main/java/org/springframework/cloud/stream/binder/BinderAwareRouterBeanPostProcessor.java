@@ -17,29 +17,24 @@
 package org.springframework.cloud.stream.binder;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.core.DestinationResolver;
 
 /**
  * A {@link BeanPostProcessor} that sets a {@link BinderAwareChannelResolver} on any bean of type
  * {@link AbstractMappingMessageRouter} within the context.
- * 
+ *
  * @author Mark Fisher
  * @author Gary Russell
  */
-public class BinderAwareRouterBeanPostProcessor implements BeanPostProcessor, BeanFactoryAware {
+public class BinderAwareRouterBeanPostProcessor implements BeanPostProcessor {
 
-	private final BinderAwareChannelResolver channelResolver;
+	private final DestinationResolver<MessageChannel> channelResolver;
 
-	public BinderAwareRouterBeanPostProcessor(BinderAwareChannelResolver channelResolver) {
+	public BinderAwareRouterBeanPostProcessor(DestinationResolver<MessageChannel> channelResolver) {
 		this.channelResolver = channelResolver;
-	}
-
-	@Override
-	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-		channelResolver.setBeanFactory(beanFactory);
 	}
 
 	@Override
@@ -50,7 +45,7 @@ public class BinderAwareRouterBeanPostProcessor implements BeanPostProcessor, Be
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		if (bean instanceof AbstractMappingMessageRouter) {
-			((AbstractMappingMessageRouter) bean).setChannelResolver(channelResolver);
+			((AbstractMappingMessageRouter) bean).setChannelResolver(this.channelResolver);
 		}
 		return bean;
 	}

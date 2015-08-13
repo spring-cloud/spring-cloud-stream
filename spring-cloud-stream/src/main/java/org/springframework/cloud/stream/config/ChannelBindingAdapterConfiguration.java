@@ -38,6 +38,8 @@ import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.core.DestinationResolutionException;
+import org.springframework.messaging.core.DestinationResolver;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
@@ -61,8 +63,9 @@ public class ChannelBindingAdapterConfiguration {
 
 	@Bean
 	public ChannelBindingAdapter bindingAdapter() {
-		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module, this.binder);
-		adapter.setChannelLocator(new DefaultChannelLocator(module));
+		ChannelBindingAdapter adapter = new ChannelBindingAdapter(this.module,
+				this.binder);
+		adapter.setChannelLocator(new DefaultChannelLocator(this.module));
 		adapter.setOutputChannels(getOutputChannels());
 		adapter.setInputChannels(getInputChannels());
 		adapter.setChannelResolver(binderAwareChannelResolver());
@@ -81,7 +84,8 @@ public class ChannelBindingAdapterConfiguration {
 			BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(name);
 			// for now, just assume that the beans are at least AbstractBeanDefinition
 			if (beanDefinition instanceof AbstractBeanDefinition
-					&& ((AbstractBeanDefinition) beanDefinition).getQualifier(Output.class.getName()) != null) {
+					&& ((AbstractBeanDefinition) beanDefinition)
+					.getQualifier(Output.class.getName()) != null) {
 				channels.add(new OutputChannelBinding(name));
 			}
 		}
@@ -95,7 +99,8 @@ public class ChannelBindingAdapterConfiguration {
 			BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(name);
 			// for now, just assume that the beans are at least AbstractBeanDefinition
 			if (beanDefinition instanceof AbstractBeanDefinition
-					&& ((AbstractBeanDefinition) beanDefinition).getQualifier(Input.class.getName()) != null) {
+					&& ((AbstractBeanDefinition) beanDefinition).getQualifier(Input.class
+							.getName()) != null) {
 				channels.add(new InputChannelBinding(name));
 			}
 		}
@@ -104,11 +109,35 @@ public class ChannelBindingAdapterConfiguration {
 
 	@Bean
 	public BinderAwareChannelResolver binderAwareChannelResolver() {
-		return new BinderAwareChannelResolver(BeanFactoryUtils.beanOfType(beanFactory, Binder.class), new Properties());
+		return new BinderAwareChannelResolver(this.binder, new Properties());
 	}
 
-	@Bean
-	public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(BinderAwareChannelResolver resolver) {
-		return new BinderAwareRouterBeanPostProcessor(resolver);
+	// IMPORTANT: Nested class to avoid instantiating all of the above early
+	@Configuration
+	protected static class PostProcessorConfiguration {
+
+		private BinderAwareChannelResolver binderAwareChannelResolver;
+
+		@Bean
+		public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
+				final ConfigurableListableBeanFactory beanFactory) {
+			// IMPORTANT: Lazy delegate to avoid instantiating all of the above early
+			return new BinderAwareRouterBeanPostProcessor(
+					new DestinationResolver<MessageChannel>() {
+
+						@Override
+						public MessageChannel resolveDestination(String name)
+								throws DestinationResolutionException {
+							if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
+								PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils.beanOfType(
+										beanFactory, BinderAwareChannelResolver.class);
+							}
+							return PostProcessorConfiguration.this.binderAwareChannelResolver.resolveDestination(name);
+						}
+
+					});
+		}
+
 	}
+
 }
