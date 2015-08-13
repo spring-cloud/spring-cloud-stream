@@ -19,16 +19,19 @@ package org.springframework.cloud.stream.module.launcher;
 import java.io.File;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.PropertySource;
 
 /**
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
  */
 @ConfigurationProperties
 public class ModuleLauncherProperties {
 
-	private File localRepository;
+	private File localRepository = new File(System.getProperty("user.home")
+			+ File.separator + ".m2" + File.separator + "repository");
 
-	private String remoteRepository;
+	private String remoteRepository = "https://repo.spring.io/libs-snapshot";
 
 	public void setRemoteRepository(String remoteRepository) {
 		this.remoteRepository = remoteRepository;
