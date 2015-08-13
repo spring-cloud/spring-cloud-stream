@@ -38,13 +38,13 @@ public class ModuleLauncherProperties {
 	/**
 	 * Location of comma separated remote maven repositories from which modules will be downloaded, if not available locally.
 	 */
-	private String remoteRepositories = "https://repo.spring.io/libs-snapshot";
+	private String[] remoteRepositories = new String[] {"https://repo.spring.io/libs-snapshot"};
 
-	public void setRemoteRepositories(String remoteRepositories) {
+	public void setRemoteRepositories(String[] remoteRepositories) {
 		this.remoteRepositories = remoteRepositories;
 	}
 
-	protected String getRemoteRepositories() {
+	protected String[] getRemoteRepositories() {
 		return remoteRepositories;
 	}
 

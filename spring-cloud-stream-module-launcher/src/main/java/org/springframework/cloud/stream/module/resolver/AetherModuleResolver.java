@@ -18,7 +18,7 @@ package org.springframework.cloud.stream.module.resolver;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -54,7 +54,6 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Mark Fisher
  * @author Marius Bogoevici
- * @author Ilayaperumal Gopinathan
  */
 public class AetherModuleResolver implements ModuleResolver {
 
@@ -71,16 +70,16 @@ public class AetherModuleResolver implements ModuleResolver {
 	/**
 	 * Create an instance specifying the locations of the local and remote repositories.
 	 * @param localRepository the root path of the local maven repository
-	 * @param remoteRepositoriesSet a set of remote repositories. This
+	 * @param remoteRepositories a Map containing pairs of (repository ID,repository URL). This
 	 * may be null or empty if the local repository is off line.
 	 */
-	public AetherModuleResolver(File localRepository, Set<String> remoteRepositoriesSet) {
+	public AetherModuleResolver(File localRepository, Map<String, String> remoteRepositories) {
 		Assert.notNull(localRepository, "Local repository path cannot be null");
 		if (log.isDebugEnabled()) {
 			log.debug("Local repository: " + localRepository);
-			if (!CollectionUtils.isEmpty(remoteRepositoriesSet)) {
+			if (!CollectionUtils.isEmpty(remoteRepositories)) {
 				// just listing the values, ids are simply informative
-				log.debug("Remote repositories: " + StringUtils.collectionToCommaDelimitedString(remoteRepositoriesSet));
+				log.debug("Remote repositories: " + StringUtils.collectionToCommaDelimitedString(remoteRepositories.values()));
 			}
 		}
 		if (!localRepository.exists()) {
@@ -89,10 +88,10 @@ public class AetherModuleResolver implements ModuleResolver {
 		}
 		this.localRepository = localRepository;
 		this.remoteRepositories = new LinkedList<>();
-		if (!CollectionUtils.isEmpty(remoteRepositoriesSet)) {
-			for (String remoteRepo : remoteRepositoriesSet) {
-				RemoteRepository remoteRepository = new RemoteRepository.Builder("",
-						DEFAULT_CONTENT_TYPE, remoteRepo).build();
+		if (!CollectionUtils.isEmpty(remoteRepositories)) {
+			for (Map.Entry<String, String> remoteRepo : remoteRepositories.entrySet()) {
+				RemoteRepository remoteRepository = new RemoteRepository.Builder(remoteRepo.getKey(),
+						DEFAULT_CONTENT_TYPE, remoteRepo.getValue()).build();
 				this.remoteRepositories.add(remoteRepository);
 			}
 		}
@@ -119,7 +118,7 @@ public class AetherModuleResolver implements ModuleResolver {
 			classifier = "";
 		}
 		Assert.hasText(version, "'version' cannot be blank.");
-	
+
 		Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, version);
 		RepositorySystemSession session = newRepositorySystemSession(repositorySystem,
 				localRepository.getAbsolutePath());
