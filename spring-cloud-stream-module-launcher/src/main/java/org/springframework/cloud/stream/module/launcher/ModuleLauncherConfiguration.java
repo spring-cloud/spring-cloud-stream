@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
+import org.springframework.cloud.stream.module.resolver.ModuleResolverProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,11 +35,11 @@ import org.springframework.context.annotation.Configuration;
  * @author Ilayaperumal Gopinathan
  */
 @Configuration
-@EnableConfigurationProperties(ModuleLauncherProperties.class)
+@EnableConfigurationProperties(ModuleResolverProperties.class)
 public class ModuleLauncherConfiguration {
 
 	@Autowired
-	private ModuleLauncherProperties properties;
+	private ModuleResolverProperties properties;
 
 	/**
 	 * Sets up the default Aether-based module resolver, unless overridden.

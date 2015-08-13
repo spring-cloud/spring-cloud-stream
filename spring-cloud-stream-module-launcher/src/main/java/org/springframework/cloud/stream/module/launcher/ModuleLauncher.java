@@ -63,7 +63,7 @@ public class ModuleLauncher {
 	 * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code>
 	 *
 	 * To pass arguments to a module, prefix with the module name and a dot. The arg name will be de-qualified and passed along.
-	 * For example: <code>---Dorg.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT.bar=123</code> becomes <code>--bar=123</code> and is only passed to the 'org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT' module.
+	 * For example: <code>--org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT.bar=123</code> becomes <code>--bar=123</code> and is only passed to the 'org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT' module.
 	 *
 	 * @param modules a list of modules
 	 * @param args a list of arguments, prefixed with the module name
