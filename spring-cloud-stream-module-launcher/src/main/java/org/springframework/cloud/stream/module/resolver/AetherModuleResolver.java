@@ -118,7 +118,7 @@ public class AetherModuleResolver implements ModuleResolver {
 			classifier = "";
 		}
 		Assert.hasText(version, "'version' cannot be blank.");
-	
+
 		Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, version);
 		RepositorySystemSession session = newRepositorySystemSession(repositorySystem,
 				localRepository.getAbsolutePath());

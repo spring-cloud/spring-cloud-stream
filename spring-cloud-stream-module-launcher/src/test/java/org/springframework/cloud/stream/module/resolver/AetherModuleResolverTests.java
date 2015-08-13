@@ -15,12 +15,18 @@
 
 package org.springframework.cloud.stream.module.resolver;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,12 +35,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.SocketUtils;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 /**
  * @author David Turanski
@@ -72,7 +73,7 @@ public class AetherModuleResolverTests {
 		Map<String, String> remoteRepos = new HashMap<>();
 		remoteRepos.put("modules", "http://repo.spring.io/spring-cloud-stream-modules");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
-		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source", 
+		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source",
 				"1.0.0.BUILD-SNAPSHOT", "exec", "jar");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "time-source-1.0.0.BUILD-SNAPSHOT-exec.jar");

@@ -16,7 +16,8 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -25,6 +26,8 @@ import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.AlternativeJdkIdGenerator;
+import org.springframework.util.IdGenerator;
 
 /**
  * Configuration class that has the beans required for module launcher.
@@ -36,6 +39,8 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(ModuleLauncherProperties.class)
 public class ModuleLauncherConfiguration {
 
+	private final IdGenerator idGenerator = new AlternativeJdkIdGenerator();
+
 	@Autowired
 	private ModuleLauncherProperties properties;
 
@@ -45,8 +50,11 @@ public class ModuleLauncherConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(ModuleResolver.class)
 	public ModuleResolver moduleResolver() {
-		return new AetherModuleResolver(properties.getLocalRepository(), Collections.singletonMap(
-				"remoteRepository", properties.getRemoteRepository()));
+		Map<String, String> repositoriesMap = new HashMap<>();
+		for (String repository: properties.getRemoteRepositories()) {
+			repositoriesMap.put(idGenerator.generateId().toString(), repository);
+		}
+		return new AetherModuleResolver(properties.getLocalRepository(), repositoriesMap);
 	}
 
 	@Bean
