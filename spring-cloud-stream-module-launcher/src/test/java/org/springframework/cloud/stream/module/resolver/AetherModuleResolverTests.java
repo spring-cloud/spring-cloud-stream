@@ -15,12 +15,18 @@
 
 package org.springframework.cloud.stream.module.resolver;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,12 +35,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.SocketUtils;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 /**
  * @author David Turanski
@@ -69,8 +70,8 @@ public class AetherModuleResolverTests {
 	public void testResolveRemote() throws IOException {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
-		Map<String, String> remoteRepos = new HashMap<>();
-		remoteRepos.put("modules", "http://repo.spring.io/spring-cloud-stream-modules");
+		Set<String> remoteRepos = new HashSet<>();
+		remoteRepos.add("http://repo.spring.io/spring-cloud-stream-modules");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
 		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source", 
 				"1.0.0.BUILD-SNAPSHOT", "exec", "jar");
@@ -84,9 +85,9 @@ public class AetherModuleResolverTests {
 		File localRepository = cpr.getFile();
 		ClassPathResource stubJarResource = new ClassPathResource("__files/foo.jar");
 		String stubFileName = stubJarResource.getFile().getName();
-		Map<String, String> remoteRepos = new HashMap<>();
-		remoteRepos.put("repo0", "http://localhost:" + port + "/repo0");
-		remoteRepos.put("repo1", "http://localhost:" + port + "/repo1");
+		Set<String> remoteRepos = new HashSet<>();
+		remoteRepos.add("http://localhost:" + port + "/repo0");
+		remoteRepos.add("http://localhost:" + port + "/repo1");
 		stubFor(get(urlEqualTo("/repo1/org/bar/foo/1.0.0/foo-1.0.0.jar"))
 				.willReturn(aResponse()
 						.withStatus(200)

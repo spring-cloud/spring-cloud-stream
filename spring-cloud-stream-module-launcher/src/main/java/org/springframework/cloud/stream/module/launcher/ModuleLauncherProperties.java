@@ -36,16 +36,16 @@ public class ModuleLauncherProperties {
 			+ File.separator + ".m2" + File.separator + "repository");
 
 	/**
-	 * Location of a remote maven repository from which modules will be downloaded, if not available locally.
+	 * Location of comma separated remote maven repositories from which modules will be downloaded, if not available locally.
 	 */
-	private String remoteRepository = "https://repo.spring.io/libs-snapshot";
+	private String remoteRepositories = "https://repo.spring.io/libs-snapshot";
 
-	public void setRemoteRepository(String remoteRepository) {
-		this.remoteRepository = remoteRepository;
+	public void setRemoteRepositories(String remoteRepositories) {
+		this.remoteRepositories = remoteRepositories;
 	}
 
-	protected String getRemoteRepository() {
-		return remoteRepository;
+	protected String getRemoteRepositories() {
+		return remoteRepositories;
 	}
 
 	public void setLocalRepository(File localRepository) {

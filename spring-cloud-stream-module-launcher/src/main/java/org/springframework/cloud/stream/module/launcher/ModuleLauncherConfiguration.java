@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
-import java.util.Collections;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,6 +23,7 @@ import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 /**
  * Configuration class that has the beans required for module launcher.
@@ -45,8 +44,8 @@ public class ModuleLauncherConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(ModuleResolver.class)
 	public ModuleResolver moduleResolver() {
-		return new AetherModuleResolver(properties.getLocalRepository(), Collections.singletonMap(
-				"remoteRepository", properties.getRemoteRepository()));
+		return new AetherModuleResolver(properties.getLocalRepository(),
+				StringUtils.commaDelimitedListToSet(properties.getRemoteRepositories()));
 	}
 
 	@Bean
