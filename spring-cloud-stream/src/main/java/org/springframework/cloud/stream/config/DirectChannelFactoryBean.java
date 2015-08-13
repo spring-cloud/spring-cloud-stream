@@ -41,7 +41,7 @@ public class DirectChannelFactoryBean implements FactoryBean<MessageChannel> {
 
 	@Override
 	public Class<?> getObjectType() {
-		return MessageChannel.class;
+		return DirectChannel.class;
 	}
 
 	@Override
