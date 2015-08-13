@@ -18,6 +18,7 @@
 	<properties>
 		<kafka.version>0.8.2.1</kafka.version>
 		<curator.version>2.6.0</curator.version>
+		<spring-xd.version>1.2.1.BUILD-SNAPSHOT</spring-xd.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream-binder-spi</module>
@@ -31,15 +32,9 @@
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-spi</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-test</artifactId>
-				<version>${project.version}</version>
-				<scope>test</scope>
+				<groupId>org.springframework.xd</groupId>
+				<artifactId>spring-xd-tuple</artifactId>
+				<version>${spring-xd.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.kafka</groupId>
