@@ -18,15 +18,15 @@ package org.springframework.cloud.stream.test.binder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
 
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
-import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.test.matcher.MessageQueueMatcher;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.integration.endpoint.AbstractEndpoint;
-import org.springframework.integration.endpoint.EventDrivenConsumer;
-import org.springframework.integration.handler.BridgeHandler;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
@@ -36,17 +36,23 @@ import org.springframework.messaging.SubscribableChannel;
  * </ul>
  *
  * @author Eric Bottard
- * @see org.springframework.cloud.stream.test.matcher.MessageChannelMatcher
+ * @see MessageQueueMatcher
  */
-public class TestSupportBinder extends MessageChannelBinderSupport {
+public class TestSupportBinder implements Binder<MessageChannel> {
 
 	public static Map<MessageChannel, QueueChannel> channelToBindings =
 			new HashMap<>();
 
+	private final MessageCollector messageCollector;
+
+	public TestSupportBinder(MessageCollector messageCollector) {
+		this.messageCollector = messageCollector;
+	}
+
 
 	@Override
 	public void bindConsumer(String name, MessageChannel inboundBindTarget, Properties properties) {
-		// Do nothing. A module author can grab hold of the input channel
+		// Do nothing. A module author can grab hold forChannel the input channel
 		// and interact with it directly
 	}
 
@@ -57,29 +63,42 @@ public class TestSupportBinder extends MessageChannelBinderSupport {
 
 	/**
 	 * Bridges a QueueChannel to the module output channel, so that it can
-	 * be easily queried by {@link org.springframework.cloud.stream.test.matcher.MessageChannelMatcher}.
+	 * be easily queried by {@link MessageQueueMatcher}.
 	 */
 	@Override
 	public void bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
-		BridgeHandler bridge = new BridgeHandler();
-		QueueChannel queue = new QueueChannel();
-		bridge.setOutputChannel(queue);
-		AbstractEndpoint ae = new EventDrivenConsumer((SubscribableChannel) outboundBindTarget, bridge);
-		ae.setBeanName("outbound." + name);
-		Binding binding = Binding.forConsumer(name, ae, outboundBindTarget, new NullPropertiesAccessor(properties));
-		addBinding(binding);
-		channelToBindings.put(outboundBindTarget, queue);
-		binding.start();
+		final BlockingQueue queue = messageCollector.register(outboundBindTarget);
+		((SubscribableChannel)outboundBindTarget).subscribe(new MessageHandler() {
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				queue.add(message);
+			}
+		});
+
 	}
 
 	@Override
 	public void unbindProducer(String name, MessageChannel channel) {
-		super.unbindProducer(name, channel);
-		channelToBindings.remove(channel);
+		messageCollector.unregister(channel);
 	}
 
 	@Override
 	public void bindPubSubProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
+
+	}
+
+	@Override
+	public void unbindConsumers(String name) {
+
+	}
+
+	@Override
+	public void unbindProducers(String name) {
+
+	}
+
+	@Override
+	public void unbindConsumer(String name, MessageChannel inboundBindTarget) {
 
 	}
 
@@ -93,11 +112,18 @@ public class TestSupportBinder extends MessageChannelBinderSupport {
 
 	}
 
+	@Override
+	public MessageChannel bindDynamicProducer(String name, Properties properties) {
+		return null;
+	}
 
-	private static class NullPropertiesAccessor extends AbstractBinderPropertiesAccessor {
+	@Override
+	public MessageChannel bindDynamicPubSubProducer(String name, Properties properties) {
+		return null;
+	}
 
-		public NullPropertiesAccessor(Properties properties) {
-			super(properties);
-		}
+	@Override
+	public boolean isCapable(Capability capability) {
+		return false;
 	}
 }

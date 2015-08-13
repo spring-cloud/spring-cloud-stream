@@ -23,20 +23,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
 /**
- * Installs the {@link TestSupportBinder}.
+ * Installs the {@link TestSupportBinder} and exposes {@link MessageCollector} to be injected in tests.
+ *
  * Note that this auto-configuration has higher priority than regular binders, so adding
  * this on the classpath in test scope is sufficient to have support kick in.
  *
  * @author Eric Bottard
  */
 @Configuration
-@ConditionalOnMissingBean(Binder.class)
-@AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE - 10)
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 public class TestSupportBinderAutoConfiguration {
 
 	@Bean
+	public MessageCollector messageCollector() {
+		return new MessageCollector();
+	}
+
+	@Bean
 	public Binder testSupportBinder() {
-		return new TestSupportBinder();
+		return new TestSupportBinder(messageCollector());
 	}
 
 }

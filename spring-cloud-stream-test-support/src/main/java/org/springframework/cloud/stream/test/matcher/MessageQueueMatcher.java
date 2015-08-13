@@ -17,6 +17,8 @@ package org.springframework.cloud.stream.test.matcher;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -26,12 +28,11 @@ import org.hamcrest.SelfDescribing;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
 import org.springframework.integration.util.Function;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
 
 /**
  * A Hamcrest Matcher meant to be used in conjunction with {@link TestSupportBinder}.
  *
- * <p>Expected usage is of the form (with appropriate static imports):
+ * <p>Expected usage is forChannel the form (with appropriate static imports):
  * <pre>
  * public class TransformProcessorApplicationTests {
  *
@@ -39,10 +40,14 @@ import org.springframework.messaging.MessageChannel;
  *    {@literal @}ModuleChannels(TransformProcessor.class)
  *    private Processor processor;
  *
+ *    {@literal @}Autowired
+ *    private MessageCollector messageCollector;
+ *
+ *
  *    {@literal @}Test
  *    public void testUsingExpression() {
- *    processor.input().send(new GenericMessage{@literal <}Object>("hello"));
- *    assertThat(processor.output(), receivesPayloadThat(equalTo("hellofoo")).within(10));
+ *        processor.input().send(new GenericMessage{@literal <}Object>("hello"));
+ *        assertThat(messageCollector.forChannel(processor.output()), receivesPayloadThat(is("hellofoo")).within(10));
  *    }
  *
  * }</pre>
@@ -50,7 +55,7 @@ import org.springframework.messaging.MessageChannel;
  *
  * @author Eric Bottard
  */
-public class MessageChannelMatcher<T> extends BaseMatcher<MessageChannel> {
+public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>>> {
 
 	private final Matcher<T> delegate;
 
@@ -58,39 +63,54 @@ public class MessageChannelMatcher<T> extends BaseMatcher<MessageChannel> {
 
 	private Extractor<Message<?>, T> extractor;
 
-	private Map<MessageChannel, T> actuallyReceived = new HashMap<>();
+	private Map<BlockingQueue<Message<?>>, T> actuallyReceived = new HashMap<>();
 
-	public MessageChannelMatcher(Matcher<T> delegate, long timeout, Extractor<Message<?>, T> extractor) {
+	private final TimeUnit unit;
+
+	public MessageQueueMatcher(Matcher<T> delegate, long timeout, TimeUnit unit, Extractor<Message<?>, T> extractor) {
 		this.delegate = delegate;
 		this.timeout = timeout;
+		this.unit = unit;
 		this.extractor = extractor;
 	}
 
 
 	@Override
 	public boolean matches(Object item) {
-		MessageChannel channel = (MessageChannel) item;
-		Message<?> received = TestSupportBinder.channelToBindings.get(channel).receive(timeout);
-		if (received == null) { // timeout
+		@SuppressWarnings("unchecked")
+		BlockingQueue<Message<?>> queue = (BlockingQueue<Message<?>>) item;
+		Message<?> received = null;
+		try {
+			if (timeout > 0) {
+				received = queue.poll(timeout, unit);
+			} else if (timeout == 0) {
+				received = queue.poll();
+			} else {
+				received = queue.take();
+			}
+		}
+		catch (InterruptedException e) {
 			return false;
 		}
 		T unwrapped = extractor.apply(received);
-		actuallyReceived.put(channel, unwrapped);
+		actuallyReceived.put(queue, unwrapped);
 		return delegate.matches(unwrapped);
 	}
 
 	@Override
 	public void describeMismatch(Object item, Description description) {
-		T value = actuallyReceived.get(item);
+		@SuppressWarnings("unchecked")
+		BlockingQueue<Message<?>> queue = (BlockingQueue<Message<?>>) item;
+		T value = actuallyReceived.get(queue);
 		if (value != null) {
 			description.appendText("received: ").appendValue(value);
 		} else {
-			description.appendText("timed out after " + timeout + "ms.");
+			description.appendText("timed out after " + timeout + " " + unit.name().toLowerCase());
 		}
 	}
 
-	public MessageChannelMatcher within(long timeout) {
-		return new MessageChannelMatcher(this.delegate, timeout, extractor);
+	public MessageQueueMatcher within(long timeout, TimeUnit unit) {
+		return new MessageQueueMatcher<>(this.delegate, timeout, unit, this.extractor);
 	}
 
 	@Override
@@ -98,8 +118,9 @@ public class MessageChannelMatcher<T> extends BaseMatcher<MessageChannel> {
 		description.appendText("Channel to receive ").appendDescriptionOf(extractor).appendDescriptionOf(delegate);
 	}
 
-	public static <P> MessageChannelMatcher receivesMessageThat(Matcher<Message<P>> messageMatcher) {
-		return new MessageChannelMatcher(messageMatcher, -1, new Extractor<Message<P>, Message<P>>("a message that ") {
+	@SuppressWarnings("unchecked")
+	public static <P> MessageQueueMatcher receivesMessageThat(Matcher<Message<P>> messageMatcher) {
+		return new MessageQueueMatcher(messageMatcher, -1, null, new Extractor<Message<P>, Message<P>>("a message that ") {
 			@Override
 			public Message<P> apply(Message<P> m) {
 				return m;
@@ -107,8 +128,9 @@ public class MessageChannelMatcher<T> extends BaseMatcher<MessageChannel> {
 		});
 	}
 
-	public static <P> MessageChannelMatcher receivesPayloadThat(Matcher<P> payloadMatcher) {
-		return new MessageChannelMatcher(payloadMatcher, -1, new Extractor<Message<P>, P>("a message whose payload ") {
+	@SuppressWarnings("unchecked")
+	public static <P> MessageQueueMatcher receivesPayloadThat(Matcher<P> payloadMatcher) {
+		return new MessageQueueMatcher(payloadMatcher, -1, null, new Extractor<Message<P>, P>("a message whose payload ") {
 			@Override
 			public P apply(Message<P> m) {
 				return m.getPayload();
@@ -116,7 +138,10 @@ public class MessageChannelMatcher<T> extends BaseMatcher<MessageChannel> {
 		});
 	}
 
-	private static abstract class Extractor<R, T> implements Function<R, T>, SelfDescribing {
+	/**
+	 * A transformation to be applied to a received message before asserting, <i>e.g.</i> to only inspect the payload.
+	 */
+	public static abstract class Extractor<R, T> implements Function<R, T>, SelfDescribing {
 
 		private final String behaviorDescription;
 
