@@ -18,44 +18,38 @@ package org.springframework.cloud.stream.module.launcher;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.InitializingBean;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
+ * Spring boot {@link ApplicationRunner} that triggers {@link ModuleLauncher} to launch the modules.
+ *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @Component
-@ConfigurationProperties
-public class ModuleLauncherRunner implements ApplicationRunner, InitializingBean {
+@EnableConfigurationProperties(ModuleLauncherProperties.class)
+public class ModuleLauncherRunner implements ApplicationRunner {
 
 	private final static Log log = LogFactory.getLog(ModuleLauncherRunner.class);
 
 	@Autowired
+	private ModuleLauncherProperties moduleLauncherProperties;
+
+	@Autowired
 	private ModuleLauncher moduleLauncher;
-
-	private String[] modules;
-
-	public void setModules(String[] modules) {
-		this.modules = modules;
-	}
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		Assert.notEmpty(this.modules, "A list of modules must be specified");
-	}
 
 	@Override
 	public void run(ApplicationArguments applicationArguments) throws Exception {
-		String[] launchedModules = this.modules;
+		String[] launchedModules = moduleLauncherProperties.getModules();
 		if (log.isInfoEnabled()) {
 			log.info("Launching: "
-					+ StringUtils.arrayToCommaDelimitedString(this.modules)
+					+ StringUtils.arrayToCommaDelimitedString(launchedModules)
 					+ " with arguments: "
 					+ StringUtils.arrayToCommaDelimitedString(applicationArguments
 							.getSourceArgs()));

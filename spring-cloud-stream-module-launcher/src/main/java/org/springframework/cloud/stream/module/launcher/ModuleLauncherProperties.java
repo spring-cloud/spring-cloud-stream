@@ -16,12 +16,12 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
-import java.io.File;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Contains configuration properties for the module launcher.
+ * Configuration properties for {@link ModuleLauncher}.
  *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -30,30 +30,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ModuleLauncherProperties {
 
 	/**
-	 * File path to a locally available maven repository, where modules will be downloaded.
+	 * Array of modules that need to be launched.
 	 */
-	private File localRepository = new File(System.getProperty("user.home")
-			+ File.separator + ".m2" + File.separator + "repository");
+	private String[] modules;
 
-	/**
-	 * Location of comma separated remote maven repositories from which modules will be downloaded, if not available locally.
-	 */
-	private String[] remoteRepositories = new String[] {"https://repo.spring.io/libs-snapshot"};
-
-	public void setRemoteRepositories(String[] remoteRepositories) {
-		this.remoteRepositories = remoteRepositories;
+	public void setModules(String[] modules) {
+		this.modules = modules;
 	}
 
-	protected String[] getRemoteRepositories() {
-		return remoteRepositories;
-	}
-
-	public void setLocalRepository(File localRepository) {
-		this.localRepository = localRepository;
-	}
-
-	protected File getLocalRepository() {
-		return localRepository;
+	@NotEmpty(message = "A list of modules must be specified.")
+	public String[] getModules() {
+		return modules;
 	}
 
 }
