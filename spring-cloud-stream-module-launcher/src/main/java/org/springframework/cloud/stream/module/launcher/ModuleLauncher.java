@@ -70,7 +70,7 @@ public class ModuleLauncher {
 	 */
 	public void launch(String[] modules, String[] args) {
 		for (String module : modules) {
-			List<String> moduleArgs = new ArrayList<>(); 
+			List<String> moduleArgs = new ArrayList<>();
 			for (String arg : args) {
 				if (arg.startsWith("--" + module + ".")) {
 					moduleArgs.add("--" + arg.substring(module.length() + 3));
@@ -102,7 +102,7 @@ public class ModuleLauncher {
 		String extension = StringUtils.hasLength(matcher.group(4)) ? matcher.group(4) : DEFAULT_EXTENSION;
 		String classifier = StringUtils.hasLength(matcher.group(6)) ? matcher.group(6) : DEFAULT_CLASSIFIER;
 		String version = matcher.group(7);
-		return moduleResolver.resolve(groupId, artifactId, extension, classifier, version);
+		return this.moduleResolver.resolve(groupId, artifactId, extension, classifier, version);
 	}
 
 }

@@ -51,6 +51,7 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 	}
 
 	@Override
+	// TODO: this method is protected in Spring Boot but we need it to be public here
 	public void launch(String[] args) {
 		super.launch(args);
 	}
