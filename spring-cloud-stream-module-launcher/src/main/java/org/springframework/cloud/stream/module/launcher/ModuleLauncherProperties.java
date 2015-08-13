@@ -21,14 +21,24 @@ import java.io.File;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
+ * Contains configuration properties for the module launcher.
+ *
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
  */
 @ConfigurationProperties
 public class ModuleLauncherProperties {
 
-	private File localRepository;
+	/**
+	 * File path to a locally available maven repository, where modules will be downloaded.
+	 */
+	private File localRepository = new File(System.getProperty("user.home")
+			+ File.separator + ".m2" + File.separator + "repository");
 
-	private String remoteRepository;
+	/**
+	 * Location of a remote maven repository from which modules will be downloaded, if not available locally.
+	 */
+	private String remoteRepository = "https://repo.spring.io/libs-snapshot";
 
 	public void setRemoteRepository(String remoteRepository) {
 		this.remoteRepository = remoteRepository;

@@ -40,7 +40,7 @@ public class ModuleLauncherConfiguration {
 	private ModuleLauncherProperties properties;
 
 	/**
-	 * Sets up the default Aether-based module resolver, unless overridden
+	 * Sets up the default Aether-based module resolver, unless overridden.
 	 */
 	@Bean
 	@ConditionalOnMissingBean(ModuleResolver.class)

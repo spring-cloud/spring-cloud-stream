@@ -32,7 +32,6 @@ import org.springframework.util.StringUtils;
  */
 @Component
 @ConfigurationProperties
-// TODO: use a prefix
 public class ModuleLauncherRunner implements ApplicationRunner, InitializingBean {
 
 	private final static Log log = LogFactory.getLog(ModuleLauncherRunner.class);
