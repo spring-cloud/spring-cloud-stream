@@ -16,7 +16,8 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -45,8 +46,12 @@ public class ModuleLauncherConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(ModuleResolver.class)
 	public ModuleResolver moduleResolver() {
-		return new AetherModuleResolver(properties.getLocalRepository(), Collections.singletonMap(
-				"remoteRepository", properties.getRemoteRepository()));
+		int i = 1;
+		Map<String, String> repositoriesMap = new HashMap<>();
+		for (String repository: properties.getRemoteRepositories()) {
+			repositoriesMap.put("repository " + i++, repository);
+		}
+		return new AetherModuleResolver(properties.getLocalRepository(), repositoriesMap);
 	}
 
 	@Bean
