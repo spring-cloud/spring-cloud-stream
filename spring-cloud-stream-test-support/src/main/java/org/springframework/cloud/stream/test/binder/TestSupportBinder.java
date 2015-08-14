@@ -52,8 +52,6 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 	@Override
 	public void bindConsumer(String name, MessageChannel inboundBindTarget, Properties properties) {
-		// Do nothing. A module author can grab hold forChannel the input channel
-		// and interact with it directly
 	}
 
 	@Override
@@ -62,8 +60,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	}
 
 	/**
-	 * Bridges a QueueChannel to the module output channel, so that it can
-	 * be easily queried by {@link MessageQueueMatcher}.
+	 * Registers a single subscriber to the channel, that enqueues messages for later retrieval and assertion in tests.
 	 */
 	@Override
 	public void bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {

@@ -36,15 +36,18 @@ public class MessageCollector {
 
 	/*package*/ BlockingQueue register(MessageChannel channel) {
 		LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
-		Assert.isNull(results.put(channel, result));
+		Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
+		results.put(channel, result);
 		return result;
 	}
 
 	/*package*/ void unregister(MessageChannel channel) {
-		Assert.notNull(results.remove(channel));
+		Assert.notNull(results.remove(channel), "Trying to unregister a mapping for an unknown channel [" + channel + "]");
 	}
 
 	public BlockingQueue<Message<?>> forChannel(MessageChannel channel) {
-		return results.get(channel);
+		BlockingQueue<Message<?>> queue = results.get(channel);
+		Assert.notNull(queue, "Channel [" + channel + "] was not bound by " + TestSupportBinder.class);
+		return queue;
 	}
 }

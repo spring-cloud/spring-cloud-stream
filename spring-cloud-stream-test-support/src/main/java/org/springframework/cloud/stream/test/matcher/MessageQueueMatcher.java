@@ -32,7 +32,7 @@ import org.springframework.messaging.Message;
 /**
  * A Hamcrest Matcher meant to be used in conjunction with {@link TestSupportBinder}.
  *
- * <p>Expected usage is forChannel the form (with appropriate static imports):
+ * <p>Expected usage is of the form (with appropriate static imports):
  * <pre>
  * public class TransformProcessorApplicationTests {
  *
