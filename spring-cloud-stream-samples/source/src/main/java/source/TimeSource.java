@@ -42,7 +42,7 @@ public class TimeSource {
 	private TimeSourceOptionsMetadata options;
 
 	@Bean
-	@InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+	@InboundChannelAdapter(value = Source.OUTPUT, autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
 	public MessageSource<String> timerMessageSource() {
 		return () -> new GenericMessage<>(new SimpleDateFormat(this.options.getFormat()).format(new Date()));
 	}
