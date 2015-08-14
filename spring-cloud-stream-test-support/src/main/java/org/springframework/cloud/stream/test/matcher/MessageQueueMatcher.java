@@ -109,7 +109,7 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		}
 	}
 
-	public MessageQueueMatcher within(long timeout, TimeUnit unit) {
+	public MessageQueueMatcher<T> within(long timeout, TimeUnit unit) {
 		return new MessageQueueMatcher<>(this.delegate, timeout, unit, this.extractor);
 	}
 
@@ -119,7 +119,7 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <P> MessageQueueMatcher receivesMessageThat(Matcher<Message<P>> messageMatcher) {
+	public static <P> MessageQueueMatcher<P> receivesMessageThat(Matcher<Message<P>> messageMatcher) {
 		return new MessageQueueMatcher(messageMatcher, -1, null, new Extractor<Message<P>, Message<P>>("a message that ") {
 			@Override
 			public Message<P> apply(Message<P> m) {
@@ -129,7 +129,7 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <P> MessageQueueMatcher receivesPayloadThat(Matcher<P> payloadMatcher) {
+	public static <P> MessageQueueMatcher<P> receivesPayloadThat(Matcher<P> payloadMatcher) {
 		return new MessageQueueMatcher(payloadMatcher, -1, null, new Extractor<Message<P>, P>("a message whose payload ") {
 			@Override
 			public P apply(Message<P> m) {
