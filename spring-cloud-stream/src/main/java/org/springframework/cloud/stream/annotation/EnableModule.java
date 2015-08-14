@@ -29,7 +29,6 @@ import org.springframework.cloud.stream.config.ChannelBindingAdapterRunner;
 import org.springframework.cloud.stream.config.ModuleRegistrar;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.integration.annotation.MessageEndpoint;
 
 /**
  * Annotation that identifies a class as a module.
@@ -43,7 +42,6 @@ import org.springframework.integration.annotation.MessageEndpoint;
 @Documented
 @Inherited
 @Configuration
-@MessageEndpoint
 @Import({
 	ChannelBindingAdapterConfiguration.class, ChannelBindingAdapterRunner.class,
 	AggregateBuilderConfiguration.class, ModuleRegistrar.class})
