@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.test.matcher.MessageQueueMatcher;
@@ -28,6 +29,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.util.Assert;
 
 /**
  * A minimal binder that<ul>
@@ -40,14 +42,7 @@ import org.springframework.messaging.SubscribableChannel;
  */
 public class TestSupportBinder implements Binder<MessageChannel> {
 
-	public static Map<MessageChannel, QueueChannel> channelToBindings =
-			new HashMap<>();
-
-	private final MessageCollector messageCollector;
-
-	public TestSupportBinder(MessageCollector messageCollector) {
-		this.messageCollector = messageCollector;
-	}
+	private final MessageCollectorImpl messageCollector = new MessageCollectorImpl();
 
 
 	@Override
@@ -122,5 +117,36 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	@Override
 	public boolean isCapable(Capability capability) {
 		return false;
+	}
+
+	public MessageCollector messageCollector() {
+		return messageCollector;
+	}
+
+	/**
+	 * Maintains mappings between channels and queues.
+	 *
+	 * @author Eric Bottard
+	 */
+	private static class MessageCollectorImpl implements MessageCollector{
+
+		private Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
+
+		private BlockingQueue register(MessageChannel channel) {
+			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
+			Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
+			results.put(channel, result);
+			return result;
+		}
+
+		private void unregister(MessageChannel channel) {
+			Assert.notNull(results.remove(channel), "Trying to unregister a mapping for an unknown channel [" + channel + "]");
+		}
+
+		public BlockingQueue<Message<?>> forChannel(MessageChannel channel) {
+			BlockingQueue<Message<?>> queue = results.get(channel);
+			Assert.notNull(queue, "Channel [" + channel + "] was not bound by " + TestSupportBinder.class);
+			return queue;
+		}
 	}
 }

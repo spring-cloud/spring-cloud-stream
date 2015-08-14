@@ -16,14 +16,13 @@
 package org.springframework.cloud.stream.test.binder;
 
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
 /**
- * Installs the {@link TestSupportBinder} and exposes {@link MessageCollector} to be injected in tests.
+ * Installs the {@link TestSupportBinder} and exposes {@link TestSupportBinder.MessageCollectorImpl} to be injected in tests.
  *
  * Note that this auto-configuration has higher priority than regular binders, so adding
  * this on the classpath in test scope is sufficient to have support kick in.
@@ -36,12 +35,12 @@ public class TestSupportBinderAutoConfiguration {
 
 	@Bean
 	public MessageCollector messageCollector() {
-		return new MessageCollector();
+		return testSupportBinder().messageCollector();
 	}
 
 	@Bean
-	public Binder testSupportBinder() {
-		return new TestSupportBinder(messageCollector());
+	public TestSupportBinder testSupportBinder() {
+		return new TestSupportBinder();
 	}
 
 }

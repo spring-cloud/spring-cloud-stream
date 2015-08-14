@@ -41,7 +41,7 @@ import org.springframework.messaging.Message;
  *    private Processor processor;
  *
  *    {@literal @}Autowired
- *    private MessageCollector messageCollector;
+ *    private MessageCollectorImpl messageCollector;
  *
  *
  *    {@literal @}Test

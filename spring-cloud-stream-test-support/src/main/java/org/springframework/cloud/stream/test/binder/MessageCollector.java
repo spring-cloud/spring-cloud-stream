@@ -15,14 +15,10 @@
 
 package org.springframework.cloud.stream.test.binder;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.util.Assert;
 
 /**
  * Maintains a map between (output) channels and messages received (in FIFO order). To be injected in tests that
@@ -30,24 +26,10 @@ import org.springframework.util.Assert;
  *
  * @author Eric Bottard
  */
-public class MessageCollector {
+public interface MessageCollector {
 
-	private Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
-
-	/*package*/ BlockingQueue register(MessageChannel channel) {
-		LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
-		Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
-		results.put(channel, result);
-		return result;
-	}
-
-	/*package*/ void unregister(MessageChannel channel) {
-		Assert.notNull(results.remove(channel), "Trying to unregister a mapping for an unknown channel [" + channel + "]");
-	}
-
-	public BlockingQueue<Message<?>> forChannel(MessageChannel channel) {
-		BlockingQueue<Message<?>> queue = results.get(channel);
-		Assert.notNull(queue, "Channel [" + channel + "] was not bound by " + TestSupportBinder.class);
-		return queue;
-	}
+	/**
+	 * Obtain a queue that will receive messages sent to the given channel.
+	 */
+	public BlockingQueue<Message<?>> forChannel(MessageChannel channel);
 }
