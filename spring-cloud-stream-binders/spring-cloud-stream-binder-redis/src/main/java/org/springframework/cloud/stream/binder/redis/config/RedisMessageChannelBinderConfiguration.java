@@ -31,30 +31,34 @@ import org.springframework.integration.codec.Codec;
 @EnableConfigurationProperties(RedisBinderConfigurationProperties.class)
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.redis")
 public class RedisMessageChannelBinderConfiguration {
-	
+
 	private String[] headers;
 
-	@Autowired 
+	@Autowired
 	private Codec codec;
 
 	@Autowired
 	private RedisBinderConfigurationProperties redisBinderConfigurationProperties;
-	
+
 	@Autowired
 	private RedisConnectionFactory redisConnectionFactory;
 
 	@Bean
 	public RedisMessageChannelBinder redisMessageChannelBinder() {
 
-		RedisMessageChannelBinder redisMessageChannelBinder = new RedisMessageChannelBinder(redisConnectionFactory, 
-				headers);
-		redisMessageChannelBinder.setCodec(codec);
-		redisMessageChannelBinder.setDefaultBackOffInitialInterval(redisBinderConfigurationProperties.getBackOffInitialInterval());
-		redisMessageChannelBinder.setDefaultBackOffMaxInterval(redisBinderConfigurationProperties.getBackOffMaxInterval());
-		redisMessageChannelBinder.setDefaultBackOffMultiplier(redisBinderConfigurationProperties.getBackOffMultiplier());
-		redisMessageChannelBinder.setDefaultConcurrency(redisBinderConfigurationProperties.getConcurrency());
-		redisMessageChannelBinder.setDefaultMaxAttempts(redisBinderConfigurationProperties.getMaxAttempts());
+		RedisMessageChannelBinder redisMessageChannelBinder = new RedisMessageChannelBinder(this.redisConnectionFactory,
+				this.headers);
+		redisMessageChannelBinder.setCodec(this.codec);
+		redisMessageChannelBinder.setDefaultBackOffInitialInterval(this.redisBinderConfigurationProperties.getBackOffInitialInterval());
+		redisMessageChannelBinder.setDefaultBackOffMaxInterval(this.redisBinderConfigurationProperties.getBackOffMaxInterval());
+		redisMessageChannelBinder.setDefaultBackOffMultiplier(this.redisBinderConfigurationProperties.getBackOffMultiplier());
+		redisMessageChannelBinder.setDefaultConcurrency(this.redisBinderConfigurationProperties.getConcurrency());
+		redisMessageChannelBinder.setDefaultMaxAttempts(this.redisBinderConfigurationProperties.getMaxAttempts());
 		return redisMessageChannelBinder;
+	}
+
+	public String[] getHeaders() {
+		return this.headers;
 	}
 
 	public void setHeaders(String[] headers) {
