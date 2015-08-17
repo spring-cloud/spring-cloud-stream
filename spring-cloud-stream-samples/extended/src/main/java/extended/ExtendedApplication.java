@@ -23,7 +23,7 @@ public class ExtendedApplication implements AggregateConfigurer {
 		// @formatter:on
 	}
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		SpringApplication.run(ExtendedApplication.class, args);
 	}
 

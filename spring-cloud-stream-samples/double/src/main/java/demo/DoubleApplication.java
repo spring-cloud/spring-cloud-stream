@@ -14,10 +14,10 @@ public class DoubleApplication implements AggregateConfigurer {
 	@Override
 	public void configure(AggregateBuilder builder) {
 		builder.from(SourceModuleDefinition.class).as("source")
-		.to(SinkModuleDefinition.class).as("sink");
+				.to(SinkModuleDefinition.class).as("sink");
 	}
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		SpringApplication.run(DoubleApplication.class, args);
 	}
 

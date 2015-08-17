@@ -10,7 +10,7 @@ import config.TappingLoggingSink;
 @ComponentScan(basePackageClasses= TappingLoggingSink.class)
 public class TapApplication {
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		SpringApplication.run(TapApplication.class, args);
 	}
 

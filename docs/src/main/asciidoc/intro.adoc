@@ -8,7 +8,7 @@ Here's a sample source module (output channel only):
 @ComponentScan(basePackageClasses=TimerSource.class)
 public class ModuleApplication {
 
-  public static void main(String[] args) throws InterruptedException {
+  public static void main(String[] args) {
     SpringApplication.run(ModuleApplication.class, args);
   }
 

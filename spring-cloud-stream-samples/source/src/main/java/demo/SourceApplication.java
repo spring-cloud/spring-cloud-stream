@@ -10,7 +10,7 @@ import source.TimeSource;
 @ComponentScan(basePackageClasses=TimeSource.class)
 public class SourceApplication {
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		SpringApplication.run(SourceApplication.class, args);
 	}
 

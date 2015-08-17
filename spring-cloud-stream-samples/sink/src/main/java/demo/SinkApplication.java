@@ -10,7 +10,7 @@ import sink.LogSink;
 @ComponentScan(basePackageClasses=LogSink.class)
 public class SinkApplication {
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		SpringApplication.run(SinkApplication.class, args);
 	}
 

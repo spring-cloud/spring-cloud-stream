@@ -10,7 +10,7 @@ import transform.LoggingTransformer;
 @ComponentScan(basePackageClasses=LoggingTransformer.class)
 public class TransformApplication {
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		SpringApplication.run(TransformApplication.class, args);
 	}
 
