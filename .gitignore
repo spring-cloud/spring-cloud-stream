@@ -18,7 +18,6 @@ _site/
 *.ipr
 *.iws
 .idea/*
-!.idea/copyright/
 .factorypath
 spring-xd-samples/*/xd
 dump.rdb
