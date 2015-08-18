@@ -113,6 +113,14 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		return new MessageQueueMatcher<>(this.delegate, timeout, unit, this.extractor);
 	}
 
+	public MessageQueueMatcher<T> immediately() {
+		return new MessageQueueMatcher<>(this.delegate, 0, null, this.extractor);
+	}
+
+	public MessageQueueMatcher<T> indefinitely() {
+		return new MessageQueueMatcher<>(this.delegate, -1, null, this.extractor);
+	}
+
 	@Override
 	public void describeTo(Description description) {
 		description.appendText("Channel to receive ").appendDescriptionOf(extractor).appendDescriptionOf(delegate);
@@ -120,7 +128,7 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 
 	@SuppressWarnings("unchecked")
 	public static <P> MessageQueueMatcher<P> receivesMessageThat(Matcher<Message<P>> messageMatcher) {
-		return new MessageQueueMatcher(messageMatcher, -1, null, new Extractor<Message<P>, Message<P>>("a message that ") {
+		return new MessageQueueMatcher(messageMatcher, 0, null, new Extractor<Message<P>, Message<P>>("a message that ") {
 			@Override
 			public Message<P> apply(Message<P> m) {
 				return m;
@@ -130,7 +138,7 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 
 	@SuppressWarnings("unchecked")
 	public static <P> MessageQueueMatcher<P> receivesPayloadThat(Matcher<P> payloadMatcher) {
-		return new MessageQueueMatcher(payloadMatcher, -1, null, new Extractor<Message<P>, P>("a message whose payload ") {
+		return new MessageQueueMatcher(payloadMatcher, 0, null, new Extractor<Message<P>, P>("a message whose payload ") {
 			@Override
 			public P apply(Message<P> m) {
 				return m.getPayload();
