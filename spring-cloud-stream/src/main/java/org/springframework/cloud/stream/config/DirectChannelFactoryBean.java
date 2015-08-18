@@ -21,7 +21,10 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.util.Assert;
 
 /**
  * {@link FactoryBean} for creating channels for fields annotated with
@@ -30,12 +33,15 @@ import org.springframework.integration.channel.DirectChannel;
  *
  * @author Marius Bogoevici
  */
-public class DirectChannelFactoryBean implements FactoryBean<DirectChannel>, BeanNameAware, BeanFactoryAware {
+public class DirectChannelFactoryBean implements FactoryBean<DirectChannel>, BeanNameAware, BeanFactoryAware, ApplicationContextAware {
 
 	private DirectChannel directChannel;
 
 	private String beanName;
+
 	private BeanFactory beanFactory;
+
+	private ApplicationContext applicationContext;
 
 	@Override
 	public void setBeanName(String beanName) {
@@ -44,7 +50,14 @@ public class DirectChannelFactoryBean implements FactoryBean<DirectChannel>, Bea
 
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		Assert.notNull(beanFactory, "'beanFactory' must not be null");
 		this.beanFactory = beanFactory;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) {
+		Assert.notNull(beanFactory, "'applicationContext' must not be null");
+		this.applicationContext = applicationContext;
 	}
 
 	@Override
@@ -54,6 +67,7 @@ public class DirectChannelFactoryBean implements FactoryBean<DirectChannel>, Bea
 		}
 		directChannel.setBeanName(beanName);
 		directChannel.setBeanFactory(beanFactory);
+		directChannel.setApplicationContext(applicationContext);
 		return directChannel;
 	}
 
