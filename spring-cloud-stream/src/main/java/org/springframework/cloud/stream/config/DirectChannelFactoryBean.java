@@ -16,9 +16,12 @@
 
 package org.springframework.cloud.stream.config;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.messaging.MessageChannel;
 
 /**
  * {@link FactoryBean} for creating channels for fields annotated with
@@ -27,15 +30,30 @@ import org.springframework.messaging.MessageChannel;
  *
  * @author Marius Bogoevici
  */
-public class DirectChannelFactoryBean implements FactoryBean<MessageChannel> {
+public class DirectChannelFactoryBean implements FactoryBean<DirectChannel>, BeanNameAware, BeanFactoryAware {
 
 	private DirectChannel directChannel;
 
+	private String beanName;
+	private BeanFactory beanFactory;
+
 	@Override
-	public synchronized MessageChannel getObject() throws Exception {
+	public void setBeanName(String beanName) {
+		this.beanName = beanName;
+	}
+
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = beanFactory;
+	}
+
+	@Override
+	public synchronized DirectChannel getObject() throws Exception {
 		if (directChannel == null) {
 			directChannel = new DirectChannel();
 		}
+		directChannel.setBeanName(beanName);
+		directChannel.setBeanFactory(beanFactory);
 		return directChannel;
 	}
 
