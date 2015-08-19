@@ -1,5 +1,6 @@
 /*
  * Copyright 2015 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -70,10 +71,9 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 	public MessageQueueMatcher(Matcher<T> delegate, long timeout, TimeUnit unit, Extractor<Message<?>, T> extractor) {
 		this.delegate = delegate;
 		this.timeout = timeout;
-		this.unit = unit;
+		this.unit = (unit != null ? unit : TimeUnit.SECONDS);
 		this.extractor = extractor;
 	}
-
 
 	@Override
 	public boolean matches(Object item) {
@@ -83,9 +83,11 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		try {
 			if (timeout > 0) {
 				received = queue.poll(timeout, unit);
-			} else if (timeout == 0) {
+			}
+			else if (timeout == 0) {
 				received = queue.poll();
-			} else {
+			}
+			else {
 				received = queue.take();
 			}
 		}
@@ -104,7 +106,8 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		T value = actuallyReceived.get(queue);
 		if (value != null) {
 			description.appendText("received: ").appendValue(value);
-		} else {
+		}
+		else {
 			description.appendText("timed out after " + timeout + " " + unit.name().toLowerCase());
 		}
 	}
@@ -126,9 +129,9 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		description.appendText("Channel to receive ").appendDescriptionOf(extractor).appendDescriptionOf(delegate);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static <P> MessageQueueMatcher<P> receivesMessageThat(Matcher<Message<P>> messageMatcher) {
-		return new MessageQueueMatcher(messageMatcher, 0, null, new Extractor<Message<P>, Message<P>>("a message that ") {
+		return new MessageQueueMatcher(messageMatcher, 5, TimeUnit.SECONDS, new Extractor<Message<P>, Message<P>>("a message that ") {
 			@Override
 			public Message<P> apply(Message<P> m) {
 				return m;
@@ -136,9 +139,9 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		});
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static <P> MessageQueueMatcher<P> receivesPayloadThat(Matcher<P> payloadMatcher) {
-		return new MessageQueueMatcher(payloadMatcher, 0, null, new Extractor<Message<P>, P>("a message whose payload ") {
+		return new MessageQueueMatcher(payloadMatcher, 5, TimeUnit.SECONDS, new Extractor<Message<P>, P>("a message whose payload ") {
 			@Override
 			public P apply(Message<P> m) {
 				return m.getPayload();
