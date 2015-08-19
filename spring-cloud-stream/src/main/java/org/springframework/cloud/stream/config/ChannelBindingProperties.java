@@ -39,8 +39,6 @@ public class ChannelBindingProperties {
 
 	private Properties producerProperties = new Properties();
 
-	private boolean autoStartup = true;
-
 	private Map<String,Object> bindings = new HashMap<>();
 
 	public Properties getConsumerProperties() {
@@ -57,14 +55,6 @@ public class ChannelBindingProperties {
 
 	public void setProducerProperties(Properties producerProperties) {
 		this.producerProperties = producerProperties;
-	}
-
-	public boolean isAutoStartup() {
-		return this.autoStartup;
-	}
-
-	public void setAutoStartup(boolean autoStartup) {
-		this.autoStartup = autoStartup;
 	}
 
 	public Map<String, Object> getBindings() {
