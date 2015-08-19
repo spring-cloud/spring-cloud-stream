@@ -36,7 +36,7 @@ import org.springframework.cloud.stream.config.ChannelBindingProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.Lifecycle;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.integration.channel.ChannelInterceptorAware;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.interceptor.WireTap;
@@ -58,9 +58,10 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Dave Syer
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @ManagedResource
-public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware {
+public class ChannelBindingAdapter implements SmartLifecycle, ApplicationContextAware {
 
 	private static Logger logger = LoggerFactory.getLogger(ChannelBindingAdapter.class);
 
@@ -403,4 +404,22 @@ public class ChannelBindingAdapter implements Lifecycle, ApplicationContextAware
 		}
 	}
 
+	@Override
+	public boolean isAutoStartup() {
+		return true;
+	}
+
+	@Override
+	public void stop(Runnable callback) {
+		stop();
+		callback.run();
+	}
+
+	/**
+	 * Return the lowest value to start this bean before any message producing lifecycle beans.
+	 */
+	@Override
+	public int getPhase() {
+		return Integer.MIN_VALUE;
+	}
 }

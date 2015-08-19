@@ -82,6 +82,7 @@ public class ChannelBindingAdapterConfigurationTests {
 			channel.setTapped(true);
 		}
 		this.adapter.setOutputChannels(channels);
+		this.adapter.stop();
 		this.adapter.start();
 	}
 
