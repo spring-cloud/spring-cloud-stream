@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.support;
+package org.springframework.cloud.stream.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
