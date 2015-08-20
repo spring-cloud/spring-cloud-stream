@@ -94,12 +94,12 @@ public abstract class MessageChannelBeanDefinitionRegistryUtils {
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
 					String name = getName(input, method);
-					registerInputChannelBeanDefinition(name, input.value(), registry);
+					registerInputChannelBeanDefinition(input.value(), name, registry);
 				}
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
 					String name = getName(output, method);
-					registerOutputChannelBeanDefinition(name, output.value(), registry);
+					registerOutputChannelBeanDefinition(output.value(), name, registry);
 				}
 			}
 
