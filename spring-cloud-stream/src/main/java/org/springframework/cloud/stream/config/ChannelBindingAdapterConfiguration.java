@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.adapter.ChannelBindingAdapter;
 import org.springframework.cloud.stream.adapter.DefaultChannelLocator;
 import org.springframework.cloud.stream.adapter.InputChannelBinding;
@@ -50,6 +51,7 @@ import org.springframework.messaging.core.DestinationResolver;
  * @author Ilayaperumal Gopinathan
  */
 @Configuration
+@EnableConfigurationProperties(ChannelBindingProperties.class)
 public class ChannelBindingAdapterConfiguration {
 
 	@Autowired
