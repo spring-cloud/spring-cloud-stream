@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.interceptor;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,8 +61,8 @@ public class BoundChannelsInterceptedTest {
 	@Test
 	public void testBoundChannelsIntercepted() {
 		fooSink.input().send(TEST_MESSAGE);
-		Mockito.verify(channelInterceptor).preSend(TEST_MESSAGE, fooSink.input());
-		Mockito.verifyNoMoreInteractions(channelInterceptor);
+		verify(channelInterceptor).preSend(TEST_MESSAGE, fooSink.input());
+		verifyNoMoreInteractions(channelInterceptor);
 	}
 
 
