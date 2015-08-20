@@ -26,27 +26,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.ModuleChannels;
 import org.springframework.cloud.stream.annotation.Sink;
-import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.config.GlobalChannelInterceptor;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
+ * Verifies that interceptors used by modules are applied correctly to generated channels.
+ *
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(ChannelsInterceptedTests.Foo.class)
-public class ChannelsInterceptedTests {
+@SpringApplicationConfiguration(BoundChannelsInterceptedTest.Foo.class)
+public class BoundChannelsInterceptedTest {
 
 	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").build();
 
@@ -54,11 +53,11 @@ public class ChannelsInterceptedTests {
 	ChannelInterceptor channelInterceptor;
 
 	@Autowired
-	@ModuleChannels(ChannelsInterceptedTests.Foo.class)
+	@ModuleChannels(BoundChannelsInterceptedTest.Foo.class)
 	public Sink fooSink;
 
 	@Test
-	public void testChannelsIntercepted() {
+	public void testBoundChannelsIntercepted() {
 		fooSink.input().send(TEST_MESSAGE);
 		Mockito.verify(channelInterceptor).preSend(TEST_MESSAGE, fooSink.input());
 		Mockito.verifyNoMoreInteractions(channelInterceptor);
