@@ -28,12 +28,12 @@ public interface FooChannels {
 	@Input
 	MessageChannel foo();
 
-	@Input//(value = "bar")
+	@Input
 	MessageChannel bar();
 
 	@Output
 	MessageChannel baz();
 
-	@Output//(value = "qux")
+	@Output
 	MessageChannel qux();
 }
