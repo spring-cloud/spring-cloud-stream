@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * @author Dave Syer
- *
+ * @author Marius Bogoevici
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
@@ -38,7 +38,7 @@ public class ChannelBindingProperties {
 	public static final String PATH = "path";
 
 	@Value("${spring.application.name:}")
-	private String springApplicationName;
+	private String applicationName;
 
 	private Properties consumerProperties = new Properties();
 
@@ -86,8 +86,7 @@ public class ChannelBindingProperties {
 			}
 		}
 		// the default path of the binding is the channel name itself
-		return (StringUtils.hasText(springApplicationName)? springApplicationName + "." : "")
-				+  channelName;
+		return (StringUtils.hasText(applicationName) ? applicationName + "." : "") + channelName;
 	}
 
 	public String getTapChannelName(String channelName) {

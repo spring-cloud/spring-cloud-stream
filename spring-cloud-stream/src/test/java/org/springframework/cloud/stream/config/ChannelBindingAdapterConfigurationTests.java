@@ -36,7 +36,6 @@ import org.springframework.cloud.stream.adapter.OutputChannelBinding;
 import org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder;
 import org.springframework.cloud.stream.config.ChannelBindingAdapterConfigurationTests.Empty;
 import org.springframework.cloud.stream.utils.MessageChannelBeanDefinitionRegistryUtils;
-import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
