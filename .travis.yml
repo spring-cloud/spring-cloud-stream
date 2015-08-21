@@ -17,7 +17,7 @@ install:
 - ./mvnw install -P docs -q -U -DskipTests=true -Dmaven.test.redirectTestOutputToFile=true
 - ./docs/src/main/asciidoc/ghpages.sh
 script:
-- ./mvnw package -nsu -Dmaven.test.redirectTestOutputToFile=true'
+- ./mvnw package -nsu -Dmaven.test.redirectTestOutputToFile=true
 env:
   global:
   - GIT_NAME="Dave Syer"
