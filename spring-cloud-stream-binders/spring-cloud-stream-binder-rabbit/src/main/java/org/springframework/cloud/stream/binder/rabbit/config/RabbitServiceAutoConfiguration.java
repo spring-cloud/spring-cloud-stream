@@ -17,13 +17,12 @@
 package org.springframework.cloud.stream.binder.rabbit.config;
 
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
-import org.springframework.cloud.stream.binder.rabbit.config.RabbitMessageChannelBinderConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -45,6 +44,7 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource("classpath:/META-INF/spring-cloud-stream/rabbit-binder.properties")
 public class RabbitServiceAutoConfiguration {
 	@Configuration
+	@AutoConfigureBefore(RabbitAutoConfiguration.class)
 	@Profile("cloud")
 	protected static class CloudConfig {
 		@Bean
