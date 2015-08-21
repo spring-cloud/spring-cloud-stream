@@ -41,8 +41,7 @@ import org.springframework.context.annotation.Import;
 @Documented
 @Inherited
 @Configuration
-@Import({
-	ChannelBindingAdapterConfiguration.class, AggregateBuilderConfiguration.class, ModuleRegistrar.class})
+@Import({ChannelBindingAdapterConfiguration.class, AggregateBuilderConfiguration.class, ModuleRegistrar.class})
 public @interface EnableModule {
 
 	Class<?>[] value() default {};

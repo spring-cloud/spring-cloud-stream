@@ -26,9 +26,10 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.adapter.ChannelBinding;
 import org.springframework.cloud.stream.adapter.ChannelBindingAdapter;
@@ -133,8 +134,7 @@ public class ChannelBindingAdapterConfigurationTests {
 	}
 
 	@Configuration
-	@Import({ChannelBindingAdapterConfiguration.class})
-	@EnableAutoConfiguration
+	@Import({ChannelBindingAdapterConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
 	protected static class Empty {
 		@Bean
 		public LocalMessageChannelBinder binder() {
