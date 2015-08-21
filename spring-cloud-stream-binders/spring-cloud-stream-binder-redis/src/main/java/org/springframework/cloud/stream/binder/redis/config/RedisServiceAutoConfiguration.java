@@ -16,11 +16,12 @@
 
 package org.springframework.cloud.stream.binder.redis.config;
 
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.redis.RedisAutoConfiguration;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.redis.RedisMessageChannelBinder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -43,6 +44,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 public class RedisServiceAutoConfiguration {
 
 	@Configuration
+	@AutoConfigureBefore(RedisAutoConfiguration.class)
 	@Profile("cloud")
 	protected static class CloudConfig {
 		@Bean
@@ -50,6 +52,7 @@ public class RedisServiceAutoConfiguration {
 			return new CloudFactory().getCloud();
 		}
 		@Bean
+		@ConditionalOnMissingBean(RedisConnectionFactory.class)
 		RedisConnectionFactory redisConnectionFactory(Cloud cloud) {
 			return cloud.getSingletonServiceConnector(RedisConnectionFactory.class, null);
 		}
