@@ -52,7 +52,6 @@ public class RedisServiceAutoConfiguration {
 			return new CloudFactory().getCloud();
 		}
 		@Bean
-		@ConditionalOnMissingBean(RedisConnectionFactory.class)
 		RedisConnectionFactory redisConnectionFactory(Cloud cloud) {
 			return cloud.getSingletonServiceConnector(RedisConnectionFactory.class, null);
 		}
