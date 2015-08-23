@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binder.local.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
