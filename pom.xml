@@ -30,9 +30,10 @@
 		<module>spring-cloud-stream-rxjava</module>
 		<module>spring-cloud-stream-samples</module>
 		<module>spring-cloud-stream-module-launcher</module>
-		<module>docs</module>
 		<module>spring-cloud-stream-test-support</module>
+		<module>spring-cloud-stream-test-support-internal</module>
 		<module>spring-cloud-stream-configuration-metadata</module>
+		<module>docs</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>
@@ -117,6 +118,16 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support</artifactId>
 				<version>1.0.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-test-support-internal</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-module-test-support</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.integration</groupId>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka;
+package org.springframework.cloud.stream.test.junit.kafka;
 
 import java.io.File;
 import java.net.InetSocketAddress;

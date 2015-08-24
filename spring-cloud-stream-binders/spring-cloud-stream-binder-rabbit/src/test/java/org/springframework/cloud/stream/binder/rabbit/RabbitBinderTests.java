@@ -46,6 +46,7 @@ import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
+import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;

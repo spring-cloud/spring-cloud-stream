@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka;
+package org.springframework.cloud.stream.test.junit.kafka;
 
 import kafka.admin.AdminUtils;
 import kafka.consumer.Consumer;
@@ -85,87 +85,9 @@ public class TestKafkaCluster {
 	}
 
 
-	/**
-	 * See XD-2293. This is used to reproduce Kafka rebalance issues.
-	 */
-	public static void main(String[] args) throws Exception {
-		TestKafkaCluster cluster = new TestKafkaCluster();
-		ZkClient client = new ZkClient(cluster.getZkConnectString(), 10000, 10000, KafkaMessageChannelBinder.utf8Serializer);
-		int partitions = 5;
-		int replication = 1;
-		AdminUtils.createTopic(client, "mytopic", partitions, replication, new Properties());
-
-		Properties props = new Properties();
-		props.put("zookeeper.connect", cluster.getZkConnectString());
-		props.put("group.id", "foo");
-		props.put("rebalance.backoff.ms", "2000");
-		props.put("rebalance.max.retries", "2000");
-		ConsumerConfig config = new ConsumerConfig(props);
-
-
-		CuratorFramework curator = CuratorFrameworkFactory.newClient(cluster.getZkConnectString(), new RetryUntilElapsed(1000, 100));
-		curator.start();
-
-		RebalanceListener listener = null;
-		for (int i = 0; i < 5; i++) {
-			System.out.format("%nCreating consumer #%d%n", i + 1);
-			ConsumerConnector connector = Consumer.createJavaConsumerConnector(config);
-			connector.createMessageStreams(Collections.singletonMap("mytopic", 1));
-			if (i == 0) {
-				PathChildrenCache cache = new PathChildrenCache(curator, "/consumers/foo/owners/mytopic", true);
-				listener = new RebalanceListener(5);
-				cache.getListenable().addListener(listener);
-				cache.start(PathChildrenCache.StartMode.POST_INITIALIZED_EVENT);
-			}
-
-			synchronized (listener) {
-				System.out.println("******** Waiting for rebalance...");
-				listener.wait();
-			}
-
-		}
-
-		System.out.println();
-
-	}
 
 	public String getZkConnectString() {
 		return zkServer.getConnectString();
 	}
 
-	private static class RebalanceListener implements PathChildrenCacheListener {
-
-		private int expected;
-
-		private int actual;
-
-		private boolean ready;
-
-		public RebalanceListener(int expected) {
-			this.expected = expected;
-		}
-
-		@Override
-		public synchronized void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-			System.out.println(event);
-			System.out.println(event.getData() != null ? new String(event.getData().getData()) : "no data");
-			switch (event.getType()) {
-				case CHILD_ADDED:
-					actual++;
-					if (ready && actual == expected) {
-						System.out.println("*** Moving on... ");
-						this.notify();
-					}
-					break;
-				case CHILD_REMOVED:
-					actual--;
-					break;
-				case INITIALIZED:
-					Assert.isTrue(actual == expected);
-					ready = true;
-					this.notify();
-					break;
-			}
-		}
-	}
 }

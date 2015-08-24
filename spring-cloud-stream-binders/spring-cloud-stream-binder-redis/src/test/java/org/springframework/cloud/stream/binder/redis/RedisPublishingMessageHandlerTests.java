@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.BinderTestUtils;
+import org.springframework.cloud.stream.test.junit.redis.RedisTestSupport;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
