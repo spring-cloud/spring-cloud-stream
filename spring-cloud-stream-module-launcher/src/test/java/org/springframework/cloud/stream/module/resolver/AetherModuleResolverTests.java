@@ -16,18 +16,12 @@
 
 package org.springframework.cloud.stream.module.resolver;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,7 +30,12 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.SocketUtils;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author David Turanski
@@ -72,10 +71,10 @@ public class AetherModuleResolverTests {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
 		Map<String, String> remoteRepos = new HashMap<>();
-		remoteRepos.put("modules", "http://repo.spring.io/spring-cloud-stream-modules");
+		remoteRepos.put("modules", "http://repo.spring.io/libs-snapshot");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
 		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source",
-				"1.0.0.BUILD-SNAPSHOT", "exec", "jar");
+				"jar", "exec", "1.0.0.BUILD-SNAPSHOT");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "time-source-1.0.0.BUILD-SNAPSHOT-exec.jar");
 	}
