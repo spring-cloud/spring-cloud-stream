@@ -9,11 +9,9 @@
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 	<groupId>org.springframework.cloud</groupId>
-	<artifactId>spring-cloud-stream-test-support</artifactId>
-	<name>Spring Cloud Stream Test Support</name>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
+	<artifactId>spring-cloud-stream-module-test-support</artifactId>
+	<name>Spring Cloud Stream Module Test Support</name>
+	<description>A set of classes to ease testing of Spring Cloud Stream modules.</description>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
