@@ -31,7 +31,8 @@
 		<module>spring-cloud-stream-samples</module>
 		<module>docs</module>
 		<module>spring-cloud-stream-module-test-support</module>
-	</modules>
+    <module>spring-cloud-stream-test-support</module>
+  </modules>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>

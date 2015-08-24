@@ -8,31 +8,35 @@
 		<artifactId>spring-cloud-stream-parent</artifactId>
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
-	<artifactId>spring-cloud-stream-module-test-support</artifactId>
-	<name>Spring Cloud Stream Module Test Support</name>
-	<description>A set of classes to ease testing of Spring Cloud Stream modules.</description>
+	<artifactId>spring-cloud-stream-test-support</artifactId>
+	<name>Spring Cloud Stream Test Support</name>
+	<description>Set of classes and utility code that may assist in testing both
+	spring-cloud-stream itself, and also modules.</description>
 	<dependencies>
 		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-configuration-processor</artifactId>
+			<artifactId>spring-boot-starter-logging</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+		</dependency>
+
+		<!-- External systems supported -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-redis</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-spi</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-autoconfigure</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream</artifactId>
-			<scope>test</scope>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+			<optional>true</optional>
 		</dependency>
 	</dependencies>
 </project>
