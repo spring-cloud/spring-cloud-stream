@@ -72,10 +72,10 @@ public class AetherModuleResolverTests {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
 		Map<String, String> remoteRepos = new HashMap<>();
-		remoteRepos.put("modules", "http://repo.spring.io/spring-cloud-stream-modules");
+		remoteRepos.put("modules", "http://repo.spring.io/libs-snapshot");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
 		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source",
-				"1.0.0.BUILD-SNAPSHOT", "exec", "jar");
+				"jar", "exec", "1.0.0.BUILD-SNAPSHOT");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "time-source-1.0.0.BUILD-SNAPSHOT-exec.jar");
 	}
