@@ -9,7 +9,6 @@
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 	<artifactId>spring-cloud-stream-module-test-support</artifactId>
-	<name>Spring Cloud Stream Module Test Support</name>
 	<description>A set of classes to ease testing of Spring Cloud Stream modules.</description>
 	<dependencies>
 		<dependency>

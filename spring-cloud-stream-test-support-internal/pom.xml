@@ -8,8 +8,7 @@
 		<artifactId>spring-cloud-stream-parent</artifactId>
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
-	<artifactId>spring-cloud-stream-test-support</artifactId>
-	<name>Spring Cloud Stream Test Support</name>
+	<artifactId>spring-cloud-stream-test-support-internal</artifactId>
 	<description>Set of classes and utility code that may assist in testing both
 	spring-cloud-stream itself, and also modules.</description>
 	<properties>
