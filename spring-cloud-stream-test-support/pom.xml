@@ -12,6 +12,10 @@
 	<name>Spring Cloud Stream Test Support</name>
 	<description>Set of classes and utility code that may assist in testing both
 	spring-cloud-stream itself, and also modules.</description>
+	<properties>
+		<kafka.version>0.8.2.1</kafka.version>
+		<curator.version>2.6.0</curator.version>
+	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -27,16 +31,45 @@
 			<artifactId>spring-core</artifactId>
 		</dependency>
 
-		<!-- External systems supported -->
+		<!-- External systems supported, each should be marked optional -->
+		<!-- redis -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-redis</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<!-- kafka -->
+		<dependency>
+			<groupId>org.apache.curator</groupId>
+			<artifactId>curator-recipes</artifactId>
+			<version>${curator.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.10</artifactId>
+			<version>${kafka.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.10</artifactId>
+			<classifier>test</classifier>
+			<version>${kafka.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.curator</groupId>
+			<artifactId>curator-test</artifactId>
+			<version>${curator.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<!-- rabbit -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-amqp</artifactId>
 			<optional>true</optional>
 		</dependency>
+
 	</dependencies>
 </project>

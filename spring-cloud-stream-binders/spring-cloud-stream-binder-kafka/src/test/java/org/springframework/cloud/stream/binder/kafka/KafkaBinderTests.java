@@ -36,6 +36,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
+import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.kafka.core.KafkaMessage;

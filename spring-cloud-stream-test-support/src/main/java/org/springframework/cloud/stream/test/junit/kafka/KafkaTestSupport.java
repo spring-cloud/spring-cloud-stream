@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka;
+package org.springframework.cloud.stream.test.junit.kafka;
 
 
 import java.util.Properties;
@@ -34,7 +34,8 @@ import org.junit.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.cloud.stream.binder.AbstractExternalResourceTestSupport;
+import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
+
 
 /**
  * JUnit {@link Rule} that starts an embedded Kafka server (with an associated Zookeeper)
