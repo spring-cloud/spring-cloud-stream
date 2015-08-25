@@ -31,14 +31,14 @@ import org.springframework.util.Assert;
 /**
  * Abstract base class for JUnit {@link Rule}s that detect the presence of some external resource. If the resource is
  * indeed present, it will be available during the test lifecycle through {@link #getResource()}. If it is not, tests
- * will either fail or be skipped, depending on the value of system property {@value #XD_EXTERNAL_SERVERS_REQUIRED}.
+ * will either fail or be skipped, depending on the value of system property {@value #SCS_EXTERNAL_SERVERS_REQUIRED}.
  *
  * @author Eric Bottard
  * @author Gary Russell
  */
 public abstract class AbstractExternalResourceTestSupport<R> implements TestRule {
 
-    public static final String XD_EXTERNAL_SERVERS_REQUIRED = "XD_EXTERNAL_SERVERS_REQUIRED";
+    public static final String SCS_EXTERNAL_SERVERS_REQUIRED = "SCS_EXTERNAL_SERVERS_REQUIRED";
 
     protected R resource;
 
@@ -83,7 +83,7 @@ public abstract class AbstractExternalResourceTestSupport<R> implements TestRule
     }
 
     private Statement failOrSkip(final Exception e) {
-        String serversRequired = System.getenv(XD_EXTERNAL_SERVERS_REQUIRED);
+        String serversRequired = System.getenv(SCS_EXTERNAL_SERVERS_REQUIRED);
         if ("true".equalsIgnoreCase(serversRequired)) {
             logger.error(resourceDescription + " IS REQUIRED BUT NOT AVAILABLE", e);
             fail(resourceDescription + " IS NOT AVAILABLE");
