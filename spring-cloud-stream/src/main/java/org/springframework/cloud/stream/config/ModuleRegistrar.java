@@ -18,11 +18,17 @@ package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.EnableModule;
 import org.springframework.cloud.stream.utils.MessageChannelBeanDefinitionRegistryUtils;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MultiValueMap;
@@ -31,18 +37,40 @@ import org.springframework.util.MultiValueMap;
  * @author Marius Bogoevici
  * @author Dave Syer
  */
-public class ModuleRegistrar implements ImportBeanDefinitionRegistrar {
+@Configuration
+public class ModuleRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
+
+	public static final String SPRING_CLOUD_STREAM_BINDINGS_PREFIX = "spring.cloud.stream.bindings";
+
+	private ConfigurableEnvironment environment;
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		if (environment instanceof ConfigurableEnvironment) {
+			this.environment = (ConfigurableEnvironment) environment;
+		}
+	}
 
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata,
 			BeanDefinitionRegistry registry) {
 		MultiValueMap<String, Object> attributes = metadata.getAllAnnotationAttributes(
 				EnableModule.class.getName(), false);
+		List<String> registeredChannelNames = new ArrayList<>();
 		for (Class<?> type : collectClasses(attributes.get("value"))) {
-			MessageChannelBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type, registry);
+			registeredChannelNames.addAll(MessageChannelBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type, registry));
 			MessageChannelBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
 					ClassUtils.resolveClassName(metadata.getClassName(), null), type,
 					registry);
+		}
+		Properties defaultChannelNameProperties = new Properties();
+		for (String registeredChannelName : registeredChannelNames) {
+			defaultChannelNameProperties.put(SPRING_CLOUD_STREAM_BINDINGS_PREFIX + "." + registeredChannelName,
+					"${spring.application.name:spring.cloud.stream}" + "." + registeredChannelName);
+		}
+		if (environment != null) {
+			environment.getPropertySources().addLast(
+					new PropertiesPropertySource("default-spring-cloud-stream-channel-bindings", defaultChannelNameProperties));
 		}
 	}
 

@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.aopalliance.intercept.MethodInterceptor;
@@ -85,8 +87,9 @@ public abstract class MessageChannelBeanDefinitionRegistryUtils {
 		registry.registerBeanDefinition(name, rootBeanDefinition);
 	}
 
-	public static void registerChannelBeanDefinitions(Class<?> type,
+	public static List<String> registerChannelBeanDefinitions(Class<?> type,
 			final BeanDefinitionRegistry registry) {
+		final List<String> channelNames = new ArrayList<>();
 		ReflectionUtils.doWithMethods(type, new MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException,
@@ -95,15 +98,18 @@ public abstract class MessageChannelBeanDefinitionRegistryUtils {
 				if (input != null) {
 					String name = getName(input, method);
 					registerInputChannelBeanDefinition(input.value(), name, registry);
+					channelNames.add(name);
 				}
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
 					String name = getName(output, method);
 					registerOutputChannelBeanDefinition(output.value(), name, registry);
+					channelNames.add(name);
 				}
 			}
 
 		});
+		return channelNames;
 	}
 
 	public static void registerChannelsQualifiedBeanDefinitions(Class<?> parent, Class<?> type,
