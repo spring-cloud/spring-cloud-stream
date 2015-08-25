@@ -119,12 +119,12 @@ public interface BinderProperties {
 	/**
 	 * For all non-terminal modules, the number of modules coming after this one, irrespective of partitioning.
 	 */
-	public static final String NEXT_MODULE_COUNT = "next.module.count";
+	public static final String NEXT_MODULE_COUNT = "nextModuleCount";
 
 	/**
 	 * For all non-terminal modules, the concurrency for module coming after this one.
 	 */
-	public static final String NEXT_MODULE_CONCURRENCY = "next.module.concurrency";
+	public static final String NEXT_MODULE_CONCURRENCY = "nextModuleConcurrency";
 
 	/**
 	 * Compression enabled.
