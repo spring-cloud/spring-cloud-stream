@@ -46,9 +46,7 @@ public class ModuleRegistrar implements ImportBeanDefinitionRegistrar, Environme
 
 	@Override
 	public void setEnvironment(Environment environment) {
-		if (environment instanceof ConfigurableEnvironment) {
-			this.environment = (ConfigurableEnvironment) environment;
-		}
+		this.environment = (ConfigurableEnvironment) environment;
 	}
 
 	@Override
@@ -68,10 +66,8 @@ public class ModuleRegistrar implements ImportBeanDefinitionRegistrar, Environme
 			defaultChannelNameProperties.put(SPRING_CLOUD_STREAM_BINDINGS_PREFIX + "." + registeredChannelName,
 					"${spring.application.name:spring.cloud.stream}" + "." + registeredChannelName);
 		}
-		if (environment != null) {
-			environment.getPropertySources().addLast(
-					new PropertiesPropertySource("default-spring-cloud-stream-channel-bindings", defaultChannelNameProperties));
-		}
+		environment.getPropertySources().addLast(
+				new PropertiesPropertySource("default-spring-cloud-stream-channel-bindings", defaultChannelNameProperties));
 	}
 
 	private List<Class<?>> collectClasses(List<Object> list) {
