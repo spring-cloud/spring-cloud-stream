@@ -61,9 +61,4 @@ public class ModuleLauncherConfiguration {
 		return new ModuleLauncher(moduleResolver);
 	}
 
-	@Bean
-	public ArgumentsNamespacingStrategy argumentsNamespacingStrategy() {
-		return new DefaultArgumentsNamespacingStrategy();
-	}
-
 }

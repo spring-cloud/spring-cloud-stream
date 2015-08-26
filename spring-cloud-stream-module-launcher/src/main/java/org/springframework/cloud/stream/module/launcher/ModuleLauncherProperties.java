@@ -17,7 +17,10 @@
 package org.springframework.cloud.stream.module.launcher;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
 
@@ -39,24 +42,14 @@ import org.springframework.core.env.PropertySources;
 public class ModuleLauncherProperties {
 
 	/**
-	 * Array of modules that need to be launched.
+	 * Array of coordinates for modules that need to be launched.
 	 */
 	private String[] modules;
 
-	private List<ModuleLaunchRequest> modulesWithArguments = new ArrayList<>();
-
-	private PropertySources propertySources;
-
-	@Autowired
-	private ArgumentsNamespacingStrategy argumentsNamespacingStrategy;
-
-	@Autowired
-	public void setEnvironment(Environment environment) {
-		if (environment instanceof ConfigurableEnvironment) {
-			ConfigurableEnvironment configurableEnvironment = (ConfigurableEnvironment) environment;
-			propertySources = configurableEnvironment.getPropertySources();
-		}
-	}
+	/**
+	 * Map of arguments, keyed by the 0-based index in the {@kink #modules array}.
+	 */
+	private Map<Integer, Map<String, String>> arguments = new HashMap<>();
 
 	public void setModules(String[] modules) {
 		this.modules = modules;
@@ -67,16 +60,21 @@ public class ModuleLauncherProperties {
 		return modules;
 	}
 
-	@PostConstruct
-	public void deduceModuleArguments() throws Exception {
-		for (String module : modules) {
-			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(module);
-			moduleLaunchRequest.setArguments(argumentsNamespacingStrategy.unqualify(module, this.propertySources));
-			modulesWithArguments.add(moduleLaunchRequest);
-		}
+	public void setArguments(Map<Integer, Map<String, String>> arguments) {
+		this.arguments = arguments;
 	}
 
-	public List<ModuleLaunchRequest> modulesWithArguments() {
-		return modulesWithArguments;
+	public Map<Integer, Map<String, String>> getArguments() {
+		return arguments;
+	}
+
+	public List<ModuleLaunchRequest> asModuleLaunchRequests() {
+		List<ModuleLaunchRequest> requests = new ArrayList<>();
+		for (int i = 0; i < modules.length; i++) {
+			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i]);
+			moduleLaunchRequest.setArguments(arguments.get(i));
+			requests.add(moduleLaunchRequest);
+		}
+		return requests;
 	}
 }

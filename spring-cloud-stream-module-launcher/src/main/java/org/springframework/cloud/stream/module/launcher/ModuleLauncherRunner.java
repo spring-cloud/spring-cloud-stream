@@ -47,7 +47,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		List<ModuleLaunchRequest> modulesToRun = moduleLauncherProperties.modulesWithArguments();
+		List<ModuleLaunchRequest> modulesToRun = moduleLauncherProperties.asModuleLaunchRequests();
 		if (log.isInfoEnabled()) {
 			StringBuilder sb = new StringBuilder("Launching\n");
 			for (ModuleLaunchRequest moduleLaunchRequest : modulesToRun) {
