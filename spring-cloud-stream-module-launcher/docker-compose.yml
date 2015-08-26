@@ -17,5 +17,4 @@ logsink:
   environment:
     SPRING_REDIS_HOST: redis
     MODULES: org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT
-    SERVER_PORT: 8081
     SPRING_CLOUD_STREAM_BINDINGS_INPUT: ticktock
