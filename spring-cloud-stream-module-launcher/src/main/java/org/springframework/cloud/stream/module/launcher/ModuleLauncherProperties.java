@@ -35,8 +35,23 @@ import org.springframework.core.env.PropertySources;
 /**
  * Configuration properties for {@link ModuleLauncher}.
  *
+ * <p>Expects the following keys (resolved from the {@link Environment}, so this could take many forms _ System
+ * properties, environment variables, program arguments, <i>etc.</i> _):<ul>
+ *     <li>{@literal modules = <list>}: an ordered list of maven coordinates of modules to launch</li>
+ *     <li>{@literal arguments[<index>][<key>] = <value>}: key/value pairs that will become module arguments,
+ *     where {@literal <index>} is the 0-based index of the module in the list above</li>
+ * </ul>
+ *
+ * As an example, this is how one would launch {@literal time --fixedDelay=4 | log} canonical example:
+ * <pre>
+ *     modules = org.springframework.cloud.modules:time-source:1.0.0-SNAPSHOT,org.springframework.cloud.modules:log-sink:1.0.0-SNAPSHOT
+ *     arguments.0.fixedDelay=4
+ * </pre>
+ * </p>
+ *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Eric Bottard
  */
 @ConfigurationProperties
 public class ModuleLauncherProperties {
