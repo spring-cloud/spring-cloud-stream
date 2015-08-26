@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -47,7 +48,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		List<ModuleLaunchRequest> modulesToRun = moduleLauncherProperties.asModuleLaunchRequests();
+		List<ModuleLaunchRequest> modulesToRun = toModuleLaunchRequests(moduleLauncherProperties);
 		if (log.isInfoEnabled()) {
 			StringBuilder sb = new StringBuilder("Launching\n");
 			for (ModuleLaunchRequest moduleLaunchRequest : modulesToRun) {
@@ -56,5 +57,16 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 			log.info(sb.toString());
 		}
 		this.moduleLauncher.launch(modulesToRun);
+	}
+
+	private List<ModuleLaunchRequest> toModuleLaunchRequests(ModuleLauncherProperties moduleLauncherProperties) {
+		List<ModuleLaunchRequest> requests = new ArrayList<>();
+		for (int i = 0; i < moduleLauncherProperties.getModules().length; i++) {
+			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(moduleLauncherProperties.getModules()[i]);
+			moduleLaunchRequest.setArguments(moduleLauncherProperties.getArguments().get(i));
+			requests.add(moduleLaunchRequest);
+		}
+		return requests;
+
 	}
 }

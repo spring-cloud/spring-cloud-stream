@@ -16,21 +16,13 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-
-import javax.annotation.PostConstruct;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
-import org.springframework.core.env.PropertySources;
 
 /**
  * Configuration properties for {@link ModuleLauncher}.
@@ -83,13 +75,4 @@ public class ModuleLauncherProperties {
 		return arguments;
 	}
 
-	public List<ModuleLaunchRequest> asModuleLaunchRequests() {
-		List<ModuleLaunchRequest> requests = new ArrayList<>();
-		for (int i = 0; i < modules.length; i++) {
-			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i]);
-			moduleLaunchRequest.setArguments(arguments.get(i));
-			requests.add(moduleLaunchRequest);
-		}
-		return requests;
-	}
 }
