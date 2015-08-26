@@ -23,10 +23,11 @@ From the `spring-cloud-stream/spring-cloud-stream-module-launcher` directory:
 
 ````
 java -Dmodules=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -Dspring.cloud.stream.bindings.output=ticktock -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
-java -Dmodules=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -Dserver.port=8081 -Dspring.cloud.stream.bindings.input=ticktock -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
+java -Dmodules=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -Dargs.0.server.port=8081 -Dspring.cloud.stream.bindings.input=ticktock -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
 ````
 
 Note that `server.port` needs to be specified explicitly for the log sink module as the time source module already uses the default port `8080`.
+The module launcher is able to launch several modules, hence the `args.0.` prefix.
 The binding property is set to use the same name `ticktock` for both the output/input bindings of source/sink modules so that the log sink receives messages from the time source.
 
 The time messages will be emitted every second. The console for the log module will display each:
