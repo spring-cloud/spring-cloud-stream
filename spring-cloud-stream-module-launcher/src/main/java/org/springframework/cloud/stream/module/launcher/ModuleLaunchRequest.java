@@ -27,13 +27,13 @@ import org.springframework.util.Assert;
  *
  * @author Eric Bottard
  */
-public class ModuleWithArguments {
+public class ModuleLaunchRequest {
 
 	private final String module;
 
 	private Map<String, String> arguments = new HashMap<>();
 
-	public ModuleWithArguments(String module) {
+	public ModuleLaunchRequest(String module) {
 		this.module = module;
 	}
 

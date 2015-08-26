@@ -17,8 +17,6 @@
 package org.springframework.cloud.stream.module.launcher;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -64,13 +62,13 @@ public class ModuleLauncher {
 	 * The format of each module must conform to the <a href="http://www.eclipse.org/aether">Aether</a> convention:
 	 * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code>
 	 *
-	 * @param modulesWithArguments a list of modules with their (unqualified) arguments
+	 * @param moduleLaunchRequests a list of modules with their (unqualified) arguments
 	 */
-	public void launch(Iterable<ModuleWithArguments> modulesWithArguments) {
-		for (ModuleWithArguments moduleWithArguments : modulesWithArguments) {
-			String module = moduleWithArguments.getModule();
-			moduleWithArguments.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
-			launchModule(module, toProgramArguments(moduleWithArguments.getArguments()));
+	public void launch(Iterable<ModuleLaunchRequest> moduleLaunchRequests) {
+		for (ModuleLaunchRequest moduleLaunchRequest : moduleLaunchRequests) {
+			String module = moduleLaunchRequest.getModule();
+			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
+			launchModule(module, toProgramArguments(moduleLaunchRequest.getArguments()));
 		}
 	}
 

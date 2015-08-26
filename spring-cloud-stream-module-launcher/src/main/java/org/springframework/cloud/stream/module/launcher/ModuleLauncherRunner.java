@@ -22,12 +22,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 /**
  * Spring boot {@link ApplicationRunner} that triggers {@link ModuleLauncher} to launch the modules.
@@ -49,12 +47,12 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... unused) throws Exception {
-		List<ModuleWithArguments> modulesToRun = moduleLauncherProperties.modulesWithArguments();
+		List<ModuleLaunchRequest> modulesToRun = moduleLauncherProperties.modulesWithArguments();
 		if (log.isInfoEnabled()) {
 			StringBuilder sb = new StringBuilder(modulesToRun.size() * 100);
 			sb.append("Launching\n");
-			for (ModuleWithArguments moduleWithArguments : modulesToRun) {
-				sb.append('\t').append(moduleWithArguments).append('\n');
+			for (ModuleLaunchRequest moduleLaunchRequest : modulesToRun) {
+				sb.append('\t').append(moduleLaunchRequest).append('\n');
 			}
 			log.info(sb.toString());
 		}
