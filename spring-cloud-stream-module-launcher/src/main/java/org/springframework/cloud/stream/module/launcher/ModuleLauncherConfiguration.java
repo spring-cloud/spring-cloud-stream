@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Eric Bottard
  */
 @Configuration
 @EnableConfigurationProperties(ModuleResolverProperties.class)
@@ -58,6 +59,11 @@ public class ModuleLauncherConfiguration {
 	@Bean
 	public ModuleLauncher moduleLauncher(ModuleResolver moduleResolver) {
 		return new ModuleLauncher(moduleResolver);
+	}
+
+	@Bean
+	public ArgumentsNamespacingStrategy argumentsNamespacingStrategy() {
+		return new DefaultArgumentsNamespacingStrategy();
 	}
 
 }

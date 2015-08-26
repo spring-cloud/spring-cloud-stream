@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.module.launcher;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +37,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Eric Bottard
  */
 public class ModuleLauncher {
 
@@ -62,23 +64,27 @@ public class ModuleLauncher {
 	 * The format of each module must conform to the <a href="http://www.eclipse.org/aether">Aether</a> convention:
 	 * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code>
 	 *
-	 * To pass arguments to a module, prefix with the module name and a dot. The arg name will be de-qualified and passed along.
-	 * For example: <code>--org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT.bar=123</code> becomes <code>--bar=123</code> and is only passed to the 'org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT' module.
-	 *
-	 * @param modules a list of modules
-	 * @param args a list of arguments, prefixed with the module name
+	 * @param modulesWithArguments a list of modules with their (unqualified) arguments
 	 */
-	public void launch(String[] modules, String[] args) {
-		for (String module : modules) {
-			List<String> moduleArgs = new ArrayList<>();
-			for (String arg : args) {
-				if (arg.startsWith("--" + module + ".")) {
-					moduleArgs.add("--" + arg.substring(module.length() + 3));
-				}
-			}
-			moduleArgs.add("--spring.jmx.default-domain=" + module.replace("/", ".").replace(":", "."));
-			launchModule(module, moduleArgs.toArray(new String[moduleArgs.size()]));
+	public void launch(Iterable<ModuleWithArguments> modulesWithArguments) {
+		for (ModuleWithArguments moduleWithArguments : modulesWithArguments) {
+			String module = moduleWithArguments.getModule();
+			moduleWithArguments.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
+			launchModule(module, toProgramArguments(moduleWithArguments.getArguments()));
 		}
+	}
+
+	/**
+	 * Converts a set of semantic program arguments to "command line program arguments" that is, to the
+	 * {@literal --foo=bar} form.
+	 */
+	private String[] toProgramArguments(Map<String, String> args) {
+		String[] result = new String[args.size()];
+		int i = 0;
+		for (Map.Entry<String, String> kv : args.entrySet()) {
+			result[i++] = String.format("--%s=%s", kv.getKey(), kv.getValue());
+		}
+		return result;
 	}
 
 	private void launchModule(String module, String[] args) {

@@ -16,12 +16,15 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -34,7 +37,7 @@ import org.springframework.util.StringUtils;
  */
 @Component
 @EnableConfigurationProperties(ModuleLauncherProperties.class)
-public class ModuleLauncherRunner implements ApplicationRunner {
+public class ModuleLauncherRunner implements CommandLineRunner {
 
 	private final static Log log = LogFactory.getLog(ModuleLauncherRunner.class);
 
@@ -45,15 +48,16 @@ public class ModuleLauncherRunner implements ApplicationRunner {
 	private ModuleLauncher moduleLauncher;
 
 	@Override
-	public void run(ApplicationArguments applicationArguments) throws Exception {
-		String[] launchedModules = moduleLauncherProperties.getModules();
+	public void run(String... unused) throws Exception {
+		List<ModuleWithArguments> modulesToRun = moduleLauncherProperties.modulesWithArguments();
 		if (log.isInfoEnabled()) {
-			log.info("Launching: "
-					+ StringUtils.arrayToCommaDelimitedString(launchedModules)
-					+ " with arguments: "
-					+ StringUtils.arrayToCommaDelimitedString(applicationArguments
-							.getSourceArgs()));
+			StringBuilder sb = new StringBuilder(modulesToRun.size() * 100);
+			sb.append("Launching\n");
+			for (ModuleWithArguments moduleWithArguments : modulesToRun) {
+				sb.append('\t').append(moduleWithArguments).append('\n');
+			}
+			log.info(sb.toString());
 		}
-		this.moduleLauncher.launch(launchedModules, applicationArguments.getSourceArgs());
+		this.moduleLauncher.launch(modulesToRun);
 	}
 }
