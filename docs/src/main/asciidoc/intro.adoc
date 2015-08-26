@@ -22,24 +22,12 @@ public class TimerSource {
   private String format;
 
   @Bean
-  @InboundChannelAdapter(value = Source.OUTPUT, autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+  @InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
   public MessageSource<String> timerMessageSource() {
     return () -> new GenericMessage<>(new SimpleDateFormat(format).format(new Date()));
   }
 
 }
-----
-
-The `application.yml` has the mapping from channel names to external broker handles (queues, topics, routing keys, etc. depending on the broker), e.g.
-
-.application.yml
-----
----
-spring:
-  cloud:
-    stream:
-      bindings:
-        output: ${spring.application.name:ticker}
 ----
 
 `@EnableModule` is parameterized by an interface (in this case `Source`) which declares input and output channels. `Source`, `Sink` and `Processor` are provided off the shelf, but you can define others. Here's the definition of `Source`
