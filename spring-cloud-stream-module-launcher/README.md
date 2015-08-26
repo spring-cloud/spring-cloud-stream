@@ -98,8 +98,8 @@ $ ltc create redis redis -r
 3: Run the modules as long-running processes (LRPs) on Lattice:
 
 ````
-$ ltc create time springcloud/stream-module-launcher -e SPRING_PROFILES_ACTIVE=cloud -m 1024 \
+$ ltc create time springcloud/stream-module-launcher -m 512 \
  -e SPRING_CLOUD_STREAM_BINDINGS_OUTPUT=ticktock -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT
-$ ltc create log springcloud/stream-module-launcher -e SPRING_PROFILES_ACTIVE=cloud -m 1024 \
+$ ltc create log springcloud/stream-module-launcher -m 512 \
  -e SPRING_CLOUD_STREAM_BINDINGS_INPUT=ticktock -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT
 ````
