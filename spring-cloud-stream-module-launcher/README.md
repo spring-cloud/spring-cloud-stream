@@ -9,7 +9,7 @@ The Module Launcher provides a single entry point that bootstraps module JARs lo
 ````
 git clone https://github.com/spring-cloud/spring-cloud-stream.git
 cd spring-cloud-stream
-mvn -s .settings.xml package
+mvn package
 cd ..
 ````
 
@@ -22,39 +22,69 @@ cd ..
 From the `spring-cloud-stream/spring-cloud-stream-module-launcher` directory:
 
 ````
-java -Dmodules=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
-java -Dmodules=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
+java -Dmodules=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -Dspring.cloud.stream.bindings.output=ticktock -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
+java -Dmodules=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -Dserver.port=8081 -Dspring.cloud.stream.bindings.input=ticktock -jar target/spring-cloud-stream-module-launcher-1.0.0.BUILD-SNAPSHOT.jar
 ````
 
-The time messages will be emitted every 5 seconds. The console for the log module will display each:
+Note that `server.port` needs to be specified explicitly for the log sink module as the time source module already uses the default port `8080`.
+The binding property is set to use the same name `ticktock` for both the output/input bindings of source/sink modules so that the log sink receives messages from the time source.
+
+The time messages will be emitted every second. The console for the log module will display each:
 
 ````
-2015-07-31 11:51:42.133  INFO 3388 --- [hannel-adapter1] sink.LogSink         : Received: 2015-07-31 11:51:36
-2015-07-31 11:51:42.135  INFO 3388 --- [hannel-adapter1] sink.LogSink         : Received: 2015-07-31 11:51:41
-2015-07-31 11:51:46.569  INFO 3388 --- [hannel-adapter1] sink.LogSink         : Received: 2015-07-31 11:51:46
+2015-08-26 14:21:44.546  INFO 35725 --- [hannel-adapter1] o.s.cloud.stream.module.log.LogSink      : Received: 2015-08-26 14:21:44
+2015-08-26 14:21:45.548  INFO 35725 --- [hannel-adapter1] o.s.cloud.stream.module.log.LogSink      : Received: 2015-08-26 14:21:45
+2015-08-26 14:21:46.550  INFO 35725 --- [hannel-adapter1] o.s.cloud.stream.module.log.LogSink      : Received: 2015-08-26 14:21:46
 ````
 
 *NOTE:* the two modules will be launched within a single process if both are provided (comma-delimited) via `-Dmodules`
 
 ## Running with Docker
 
-The easiest way to get a demo working is to use `docker-compose` (from this directory):
+The easiest way to get a demo working is to use `docker-compose` (From the `spring-cloud-stream/spring-cloud-stream-module-launcher` directory):
+
+Make sure to set `DOCKER_HOST`. If you are running a `boot2docker` VM, $(boot2docker shellinit) would set that up.
 
 ```
 $ mvn package docker:build
 $ docker-compose up
 ...
 logsink_1    | 2015-08-11 08:25:49.909  INFO 1 --- [hannel-adapter1] o.s.cloud.stream.module.log.LogSink      : Received: 2015-08-11 08:25:49
-logsink_1    | 2015-08-11 08:25:54.909  INFO 1 --- [hannel-adapter1] o.s.cloud.stream.module.log.Log
+logsink_1    | 2015-08-11 08:25:50.909  INFO 1 --- [hannel-adapter1] o.s.cloud.stream.module.log.LogSink      : Received: 2015-08-11 08:25:50
 ...
 ```
 
 You can also run each module individually as a Docker process by passing environment variables for the module name as well as the host machine's IP address for the redis connection to be established within the container:
+To find out redis host IP:
+```
+Get the container ID of redis: `docker ps`
+Get the IP address by inspecting the container: `docker inspect <containerID>`
+
+```
+To run the modules individually on docker:
+````
+docker run -p 8080:8080 -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT \
+ -e spring.cloud.stream.bindings.output=ticktock -e SPRING_REDIS_HOST=<Redis-Host-IP> springcloud/stream-module-launcher
+
+docker run -p 8081:8080 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT \
+  -e spring.cloud.stream.bindings.input=ticktock -e SPRING_REDIS_HOST=<Redis-Host-IP> springcloud/stream-module-launcher
+````
+Note the binding name `ticktock` is specified for the source's output and sink's input.
+The port mapping is done so that individual modules' http endpoints can be accessed via the docker VM port.
+
+To run pub/sub modules individually on docker, the binding name has to start with `topic:`.
 
 ````
-docker run -p 8080:8080 -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
-docker run -p 8081:8081 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_REDIS_HOST=<host.ip> springcloud/stream-module-launcher
+docker run -p 8080:8080 -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT \
+ -e spring.cloud.stream.bindings.output=topic:foo -e SPRING_REDIS_HOST=<Redis-Host-IP> springcloud/stream-module-launcher
+
+docker run -p 8081:8080 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT \
+ -e spring.cloud.stream.bindings.input=topic:foo -e SPRING_REDIS_HOST=<Redis-Host-IP> springcloud/stream-module-launcher
+
+docker run -p 8082:8080 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT \
+ -e spring.cloud.stream.bindings.input=topic:foo -e SPRING_REDIS_HOST=<Redis-Host-IP> springcloud/stream-module-launcher
 ````
+In the above scenario, both the sink modules receive the same messages from the time source.
 
 ## Running on Lattice
 
@@ -69,6 +99,8 @@ $ ltc create redis redis -r
 3: Run the modules as long-running processes (LRPs) on Lattice:
 
 ````
-$ ltc create time springcloud/stream-module-launcher -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
-$ ltc create log springcloud/stream-module-launcher -p 8081 -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT -e SPRING_PROFILES_ACTIVE=cloud
+$ ltc create time springcloud/stream-module-launcher -m 512 \
+ -e SPRING_CLOUD_STREAM_BINDINGS_OUTPUT=ticktock -e MODULES=org.springframework.cloud.stream.module:time-source:1.0.0.BUILD-SNAPSHOT
+$ ltc create log springcloud/stream-module-launcher -m 512 \
+ -e SPRING_CLOUD_STREAM_BINDINGS_INPUT=ticktock -e MODULES=org.springframework.cloud.stream.module:log-sink:1.0.0.BUILD-SNAPSHOT
 ````
