@@ -48,22 +48,22 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		List<ModuleLaunchRequest> modulesToRun = toModuleLaunchRequests(moduleLauncherProperties);
+		List<ModuleLaunchRequest> launchRequests = toModuleLaunchRequests(moduleLauncherProperties);
 		if (log.isInfoEnabled()) {
 			StringBuilder sb = new StringBuilder("Launching\n");
-			for (ModuleLaunchRequest moduleLaunchRequest : modulesToRun) {
+			for (ModuleLaunchRequest moduleLaunchRequest : launchRequests) {
 				sb.append('\t').append(moduleLaunchRequest).append('\n');
 			}
 			log.info(sb.toString());
 		}
-		this.moduleLauncher.launch(modulesToRun);
+		this.moduleLauncher.launch(launchRequests);
 	}
 
 	private List<ModuleLaunchRequest> toModuleLaunchRequests(ModuleLauncherProperties moduleLauncherProperties) {
 		List<ModuleLaunchRequest> requests = new ArrayList<>();
 		for (int i = 0; i < moduleLauncherProperties.getModules().length; i++) {
 			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(moduleLauncherProperties.getModules()[i]);
-			moduleLaunchRequest.setArguments(moduleLauncherProperties.getArguments().get(i));
+			moduleLaunchRequest.setArguments(moduleLauncherProperties.getArgs().get(i));
 			requests.add(moduleLaunchRequest);
 		}
 		return requests;

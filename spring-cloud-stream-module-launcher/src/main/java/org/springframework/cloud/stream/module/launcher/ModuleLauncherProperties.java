@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.module.launcher;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.validation.constraints.AssertFalse;
+
 import org.hibernate.validator.constraints.NotEmpty;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -30,14 +32,14 @@ import org.springframework.core.env.Environment;
  * <p>Expects the following keys (resolved from the {@link Environment}, so this could take many forms _ System
  * properties, environment variables, program arguments, <i>etc.</i> _):<ul>
  *     <li>{@literal modules = <list>}: an ordered list of maven coordinates of modules to launch</li>
- *     <li>{@literal arguments[<index>][<key>] = <value>}: key/value pairs that will become module arguments,
+ *     <li>{@literal args[<index>][<key>] = <value>}: key/value pairs that will become module arguments,
  *     where {@literal <index>} is the 0-based index of the module in the list above</li>
  * </ul>
  *
  * As an example, this is how one would launch {@literal time --fixedDelay=4 | log} canonical example:
  * <pre>
  *     modules = org.springframework.cloud.modules:time-source:1.0.0-SNAPSHOT,org.springframework.cloud.modules:log-sink:1.0.0-SNAPSHOT
- *     arguments.0.fixedDelay=4
+ *     args.0.fixedDelay=4
  * </pre>
  * </p>
  *
@@ -56,7 +58,7 @@ public class ModuleLauncherProperties {
 	/**
 	 * Map of arguments, keyed by the 0-based index in the {@kink #modules array}.
 	 */
-	private Map<Integer, Map<String, String>> arguments = new HashMap<>();
+	private Map<Integer, Map<String, String>> args = new HashMap<>();
 
 	public void setModules(String[] modules) {
 		this.modules = modules;
@@ -67,12 +69,12 @@ public class ModuleLauncherProperties {
 		return modules;
 	}
 
-	public void setArguments(Map<Integer, Map<String, String>> arguments) {
-		this.arguments = arguments;
+	public void setArgs(Map<Integer, Map<String, String>> args) {
+		this.args = args;
 	}
 
-	public Map<Integer, Map<String, String>> getArguments() {
-		return arguments;
+	public Map<Integer, Map<String, String>> getArgs() {
+		return args;
 	}
 
 }

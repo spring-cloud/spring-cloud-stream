@@ -68,7 +68,7 @@ public class ModuleLauncher {
 		for (ModuleLaunchRequest moduleLaunchRequest : moduleLaunchRequests) {
 			String module = moduleLaunchRequest.getModule();
 			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
-			launchModule(module, toProgramArguments(moduleLaunchRequest.getArguments()));
+			launchModule(module, toArgArray(moduleLaunchRequest.getArguments()));
 		}
 	}
 
@@ -76,7 +76,7 @@ public class ModuleLauncher {
 	 * Converts a set of semantic program arguments to "command line program arguments" that is, to the
 	 * {@literal --foo=bar} form.
 	 */
-	private String[] toProgramArguments(Map<String, String> args) {
+	private String[] toArgArray(Map<String, String> args) {
 		String[] result = new String[args.size()];
 		int i = 0;
 		for (Map.Entry<String, String> kv : args.entrySet()) {
