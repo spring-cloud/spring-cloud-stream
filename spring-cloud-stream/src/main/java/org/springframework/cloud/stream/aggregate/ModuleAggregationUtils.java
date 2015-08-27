@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableModule;
 import org.springframework.cloud.stream.annotation.Processor;
@@ -33,6 +34,7 @@ import org.springframework.cloud.stream.binding.BindableContextWrapper;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BindingUtils;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.DirectChannel;
 
 /**
@@ -132,6 +134,11 @@ public class ModuleAggregationUtils {
 	@EnableModule
 	public static class AggregatorParentConfiguration {
 
+		@Bean
+		@ConditionalOnMissingBean(SharedChannelRegistry.class)
+		public SharedChannelRegistry sharedChannelRegistry() {
+			return new SharedChannelRegistry();
+		}
 	}
 
 }
