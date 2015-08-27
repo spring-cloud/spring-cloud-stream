@@ -67,7 +67,7 @@ public class ModuleLauncher {
 	 * The format of each module must conform to the <a href="http://www.eclipse.org/aether">Aether</a> convention:
 	 * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code>
 	 *
-	 * @param moduleLaunchRequests a list of modules with their (unqualified) arguments
+	 * @param moduleLaunchRequests a list of modules with their arguments
 	 */
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests) {
 		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);

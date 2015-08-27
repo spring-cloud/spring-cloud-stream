@@ -19,8 +19,6 @@ package org.springframework.cloud.stream.module.launcher;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.validation.constraints.AssertFalse;
-
 import org.hibernate.validator.constraints.NotEmpty;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;

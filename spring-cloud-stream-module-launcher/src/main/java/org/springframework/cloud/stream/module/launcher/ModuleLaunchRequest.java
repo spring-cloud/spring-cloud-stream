@@ -19,11 +19,9 @@ package org.springframework.cloud.stream.module.launcher;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.util.Assert;
-
 /**
  * Encapsulates a reference to a module (as maven coordinates) and a set of "arguments" that must be passed to it.
- * Those arguments will eventually be passed to the module by the launcher, using any way appropriate.
+ * Those arguments will be passed to the module by the launcher.
  *
  * @author Eric Bottard
  */

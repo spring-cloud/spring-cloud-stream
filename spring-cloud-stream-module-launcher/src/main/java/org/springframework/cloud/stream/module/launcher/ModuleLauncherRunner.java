@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Eric Bottard
  */
 @Component
 @EnableConfigurationProperties(ModuleLauncherProperties.class)
@@ -49,7 +50,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		List<ModuleLaunchRequest> launchRequests = toModuleLaunchRequests(moduleLauncherProperties);
+		List<ModuleLaunchRequest> launchRequests = generateModuleLaunchRequests();
 		if (log.isInfoEnabled()) {
 			StringBuilder sb = new StringBuilder("Launching\n");
 			for (ModuleLaunchRequest moduleLaunchRequest : launchRequests) {
@@ -60,15 +61,14 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		this.moduleLauncher.launch(launchRequests);
 	}
 
-	private List<ModuleLaunchRequest> toModuleLaunchRequests(ModuleLauncherProperties moduleLauncherProperties) {
+	private List<ModuleLaunchRequest> generateModuleLaunchRequests() {
 		List<ModuleLaunchRequest> requests = new ArrayList<>();
-		String[] modules = moduleLauncherProperties.getModules();
-		Map<Integer, Map<String, String>> arguments = moduleLauncherProperties.getArgs();
+		String[] modules = this.moduleLauncherProperties.getModules();
+		Map<Integer, Map<String, String>> arguments = this.moduleLauncherProperties.getArgs();
 		for (int i = 0; i < modules.length; i++) {
 			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], arguments.get(i));
 			requests.add(moduleLaunchRequest);
 		}
 		return requests;
-
 	}
 }
