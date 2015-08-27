@@ -64,7 +64,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		List<ModuleLaunchRequest> requests = new ArrayList<>();
 		String[] modules = moduleLauncherProperties.getModules();
 		Map<Integer, Map<String, String>> arguments = moduleLauncherProperties.getArgs();
-		for (int i = 0; i < moduleLauncherProperties.getModules().length; i++) {
+		for (int i = 0; i < modules.length; i++) {
 			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], arguments.get(i));
 			requests.add(moduleLaunchRequest);
 		}

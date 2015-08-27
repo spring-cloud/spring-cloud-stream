@@ -62,8 +62,7 @@ public class ModuleLauncher {
 	/**
 	 * Launches one or more modules, with the corresponding arguments, if any.
 	 *
-	 * Modules must be passed in "natural" left to right order, and will be deployed in reverse order
-	 * (<i>i.e.</i> consumers first).
+	 * Modules must be passed in "natural" left to right order.
 	 *
 	 * The format of each module must conform to the <a href="http://www.eclipse.org/aether">Aether</a> convention:
 	 * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code>
