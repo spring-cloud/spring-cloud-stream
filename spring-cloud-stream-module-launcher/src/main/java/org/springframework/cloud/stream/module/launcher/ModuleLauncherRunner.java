@@ -16,15 +16,18 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 /**
  * Spring boot {@link ApplicationRunner} that triggers {@link ModuleLauncher} to launch the modules.
@@ -34,7 +37,7 @@ import org.springframework.util.StringUtils;
  */
 @Component
 @EnableConfigurationProperties(ModuleLauncherProperties.class)
-public class ModuleLauncherRunner implements ApplicationRunner {
+public class ModuleLauncherRunner implements CommandLineRunner {
 
 	private final static Log log = LogFactory.getLog(ModuleLauncherRunner.class);
 
@@ -45,15 +48,27 @@ public class ModuleLauncherRunner implements ApplicationRunner {
 	private ModuleLauncher moduleLauncher;
 
 	@Override
-	public void run(ApplicationArguments applicationArguments) throws Exception {
-		String[] launchedModules = moduleLauncherProperties.getModules();
+	public void run(String... args) throws Exception {
+		List<ModuleLaunchRequest> launchRequests = toModuleLaunchRequests(moduleLauncherProperties);
 		if (log.isInfoEnabled()) {
-			log.info("Launching: "
-					+ StringUtils.arrayToCommaDelimitedString(launchedModules)
-					+ " with arguments: "
-					+ StringUtils.arrayToCommaDelimitedString(applicationArguments
-							.getSourceArgs()));
+			StringBuilder sb = new StringBuilder("Launching\n");
+			for (ModuleLaunchRequest moduleLaunchRequest : launchRequests) {
+				sb.append('\t').append(moduleLaunchRequest).append('\n');
+			}
+			log.info(sb.toString());
 		}
-		this.moduleLauncher.launch(launchedModules, applicationArguments.getSourceArgs());
+		this.moduleLauncher.launch(launchRequests);
+	}
+
+	private List<ModuleLaunchRequest> toModuleLaunchRequests(ModuleLauncherProperties moduleLauncherProperties) {
+		List<ModuleLaunchRequest> requests = new ArrayList<>();
+		String[] modules = moduleLauncherProperties.getModules();
+		Map<Integer, Map<String, String>> arguments = moduleLauncherProperties.getArgs();
+		for (int i = 0; i < modules.length; i++) {
+			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], arguments.get(i));
+			requests.add(moduleLaunchRequest);
+		}
+		return requests;
+
 	}
 }

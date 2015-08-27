@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Eric Bottard
  */
 @Configuration
 @EnableConfigurationProperties(ModuleResolverProperties.class)
