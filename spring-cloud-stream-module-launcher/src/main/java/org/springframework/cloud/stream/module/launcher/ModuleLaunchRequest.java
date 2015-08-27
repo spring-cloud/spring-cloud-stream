@@ -31,10 +31,11 @@ public class ModuleLaunchRequest {
 
 	private final String module;
 
-	private Map<String, String> arguments = new HashMap<>();
+	private final Map<String, String> arguments;
 
-	public ModuleLaunchRequest(String module) {
+	public ModuleLaunchRequest(String module, Map<String, String> arguments) {
 		this.module = module;
+		this.arguments = arguments;
 	}
 
 	public String getModule() {
@@ -43,11 +44,6 @@ public class ModuleLaunchRequest {
 
 	public Map<String, String> getArguments() {
 		return arguments;
-	}
-
-	public void setArguments(Map<String, String> arguments) {
-		Assert.notNull(arguments, "provided arguments Map must not be null");
-		this.arguments = new HashMap<>(arguments);
 	}
 
 	public void addArgument(String name, String value) {

@@ -17,6 +17,9 @@
 package org.springframework.cloud.stream.module.launcher;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,13 +62,18 @@ public class ModuleLauncher {
 	/**
 	 * Launches one or more modules, with the corresponding arguments, if any.
 	 *
+	 * Modules must be passed in "natural" left to right order, and will be deployed in reverse order
+	 * (<i>i.e.</i> consumers first).
+	 *
 	 * The format of each module must conform to the <a href="http://www.eclipse.org/aether">Aether</a> convention:
 	 * <code>&lt;groupId&gt;:&lt;artifactId&gt;[:&lt;extension&gt;[:&lt;classifier&gt;]]:&lt;version&gt;</code>
 	 *
 	 * @param moduleLaunchRequests a list of modules with their (unqualified) arguments
 	 */
-	public void launch(Iterable<ModuleLaunchRequest> moduleLaunchRequests) {
-		for (ModuleLaunchRequest moduleLaunchRequest : moduleLaunchRequests) {
+	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests) {
+		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);
+		Collections.reverse(reversed);
+		for (ModuleLaunchRequest moduleLaunchRequest : reversed) {
 			String module = moduleLaunchRequest.getModule();
 			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
 			launchModule(module, toArgArray(moduleLaunchRequest.getArguments()));
