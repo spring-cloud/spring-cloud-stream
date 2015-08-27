@@ -16,11 +16,10 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -40,7 +39,7 @@ public class ChannelBindingProperties {
 
 	private Properties producerProperties = new Properties();
 
-	private Map<String,Object> bindings = new HashMap<>();
+	private Map<String,Object> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	public Properties getConsumerProperties() {
 		return this.consumerProperties;
