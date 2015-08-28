@@ -21,6 +21,8 @@ import java.util.Map;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
+ * Utility class for handling the {@link Bindable}s in a given context.
+ *
  * @author Marius Bogoevici
  */
 public class BindingUtils {

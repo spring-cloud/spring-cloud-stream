@@ -23,7 +23,10 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 
 /**
+ * Coordinates binding/unbinding of input/output channels in accordance to the lifecycle of the host context.
+ *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationContextAware {
 

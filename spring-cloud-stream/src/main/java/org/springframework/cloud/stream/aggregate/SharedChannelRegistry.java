@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * A registry for channels that can be shared between modules. Useful for colocation
+ * A registry for channels that can be shared between modules, used for module aggregation.
  *
  * @author Marius Bogoevici
  */

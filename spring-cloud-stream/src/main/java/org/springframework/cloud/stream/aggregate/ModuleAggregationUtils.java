@@ -46,7 +46,7 @@ public class ModuleAggregationUtils {
 	private static final Log log = LogFactory.getLog(ModuleAggregationUtils.class);
 
 	/**
-	 * Supports the aggregation of {@link Source}, {@link Sink} and {@link Processor} modules by
+	 * Supports the aggregation of {@link Source}, {@link Sink} and {@link Processor} modules by instantiating and
 	 * binding them directly
 	 *
 	 * @param parentArgs arguments for the parent (prefixed with '--')
@@ -64,6 +64,13 @@ public class ModuleAggregationUtils {
 		return runAggregated(null, modules, null);
 	}
 
+	/**
+	 * Embeds a group of modules into an existing parent context
+	 *
+	 * @param parentContext the parent context
+	 * @param modules a list of classes, representing root context definitions for modules
+	 * @param args arguments for the modules
+	 */
 	public static void runEmbedded(ConfigurableApplicationContext parentContext, Class<?>[] modules,
 																 String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
@@ -105,14 +112,7 @@ public class ModuleAggregationUtils {
 		return moduleClassName + "_" + index;
 	}
 
-	/**
-	 * Allows embedding a module inside a context application. Invokers may supply information about channels
-	 * that will be bound through a {@link SharedChannelRegistry} bean deployed in the parent.
-	 *
-	 * @param args
-	 */
-
-	public static SpringApplicationBuilder embedModule(ConfigurableApplicationContext applicationContext, String namespace,
+	private static SpringApplicationBuilder embedModule(ConfigurableApplicationContext applicationContext, String namespace,
 																										 Class<?> module) {
 		return new SpringApplicationBuilder(module)
 				.web(false)
@@ -137,6 +137,9 @@ public class ModuleAggregationUtils {
 		}
 	}
 
+	/**
+	 * Basic configuration for a parent
+	 */
 	@EnableAutoConfiguration
 	@EnableModule
 	public static class AggregatorParentConfiguration {

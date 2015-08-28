@@ -23,12 +23,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Dispatches the binding of input/output channels.
+ * Handles the binding of input/output channels by delegating to an underlying {@link Binder}.
  *
  * @author Mark Fisher
  * @author Dave Syer
  * @author Marius Bogoevici
- * @author Ilayaperumal Gopinathan
  */
 public class ChannelBindingAdapter  {
 
