@@ -58,7 +58,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 			}
 			log.info(sb.toString());
 		}
-		this.moduleLauncher.launch(launchRequests, moduleLauncherProperties.isAggregate(), args);
+		this.moduleLauncher.launch(launchRequests, moduleLauncherProperties.isAggregate(), filterSpringProperties(args));
 	}
 
 	private List<ModuleLaunchRequest> generateModuleLaunchRequests() {
