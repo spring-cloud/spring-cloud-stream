@@ -53,6 +53,7 @@ public class RabbitServiceAutoConfiguration {
 		}
 
 		@Bean
+		@ConditionalOnMissingBean(ConnectionFactory.class)
 		ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
 			return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
 		}
