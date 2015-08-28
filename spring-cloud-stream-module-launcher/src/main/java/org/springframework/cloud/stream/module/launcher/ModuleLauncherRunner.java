@@ -72,4 +72,14 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		return requests;
 	}
 
+	private String[] filterSpringProperties(String[] args) {
+		List<String> filteredProperties = new ArrayList<>();
+		for (String arg : args) {
+			if (arg.startsWith("--spring.")) {
+				filteredProperties.add(arg);
+			}
+		}
+		return filteredProperties.toArray(new String[filteredProperties.size()]);
+	}
+
 }
