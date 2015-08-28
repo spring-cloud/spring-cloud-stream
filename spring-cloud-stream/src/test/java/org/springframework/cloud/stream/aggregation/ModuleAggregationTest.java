@@ -44,9 +44,12 @@ public class ModuleAggregationTest {
 
 	@Test
 	public void testModuleAggregation() {
-		ConfigurableApplicationContext aggregatedApplicationContext = ModuleAggregationUtils.runAggregated(TestSource.class, TestProcessor.class);
-		BindableContextWrapper testSourceWrapper = aggregatedApplicationContext.getBean(TestSource.class.getName(), BindableContextWrapper.class);
-		BindableContextWrapper testSinkWrapper = aggregatedApplicationContext.getBean(TestProcessor.class.getName(), BindableContextWrapper.class);
+		ConfigurableApplicationContext aggregatedApplicationContext = ModuleAggregationUtils.runAggregated(TestSource.class,
+				TestProcessor.class);
+		BindableContextWrapper testSourceWrapper = aggregatedApplicationContext.getBean(TestSource.class.getName() + "_" + 0,
+				BindableContextWrapper.class);
+		BindableContextWrapper testSinkWrapper = aggregatedApplicationContext.getBean(TestProcessor.class.getName() + "_" + 1,
+				BindableContextWrapper.class);
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
 		assertThat(sharedChannelRegistry.getSharedChannels().keySet(), hasSize(2));
 	}

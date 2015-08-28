@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.aggregate;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,12 +49,13 @@ public class ModuleAggregationUtils {
 	 * Supports the aggregation of {@link Source}, {@link Sink} and {@link Processor} modules by
 	 * binding them directly
 	 *
-	 * @param modules
-	 * @param moduleArgs
+	 * @param parentArgs arguments for the parent (prefixed with '--')
+	 * @param modules a list module classes to be aggregated
+	 * @param moduleArgs arguments for the modules (prefixed with '--")
 	 * @return
 	 */
 	public static ConfigurableApplicationContext runAggregated(String[] parentArgs,Class<?>[] modules, String[][] moduleArgs) {
-		ConfigurableApplicationContext parentContext = createParentContext(parentArgs);
+		ConfigurableApplicationContext parentContext = createParentContext(parentArgs != null ? parentArgs : new String[0]);
 		runEmbedded(parentContext, modules, moduleArgs);
 		return parentContext;
 	}
@@ -66,14 +68,14 @@ public class ModuleAggregationUtils {
 																 String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
 		prepareSharedChannelRegistry(bean, modules);
-		LinkedHashMap<String, SpringApplicationBuilder> children = createChildContexts(parentContext, modules, args);
-		for (Map.Entry<String, SpringApplicationBuilder> childContextEntry : children.entrySet()) {
-			ConfigurableApplicationContext childContext = childContextEntry.getValue().run();
+		// create child contexts first
+		LinkedHashMap<String, ConfigurableApplicationContext> children = createChildContexts(parentContext, modules, args);
+		for (Map.Entry<String, ConfigurableApplicationContext> childContextEntry : children.entrySet()) {
+			ConfigurableApplicationContext childContext = childContextEntry.getValue();
 			parentContext.getBeanFactory().registerSingleton(childContextEntry.getKey(),
 					new BindableContextWrapper(childContext));
 			childContext.setParent(parentContext);
 		}
-		BindingUtils.bindAll(parentContext);
 	}
 
 	private static ConfigurableApplicationContext createParentContext(String[] args) {
@@ -82,21 +84,25 @@ public class ModuleAggregationUtils {
 		aggregatorParentConfiguration.sources(AggregatorParentConfiguration.class)
 				.web(false)
 				.headless(true)
-				.properties(args != null ? args : new String[0])
+				.properties("spring.jmx.default-domain=" + UUID.randomUUID().toString().replace("-", ""))
 				.listeners(new UnbindOnCloseApplicationListener());
-		ConfigurableApplicationContext applicationContext =
-				aggregatorParentConfiguration.run("--spring.jmx.default-domain=" + UUID.randomUUID().toString().replace("-", ""));
-		return applicationContext;
+		return aggregatorParentConfiguration.run(args);
 	}
 
-	private static LinkedHashMap<String, SpringApplicationBuilder> createChildContexts(ConfigurableApplicationContext applicationContext, Class<?>[] modules,
+	private static LinkedHashMap<String, ConfigurableApplicationContext> createChildContexts(ConfigurableApplicationContext applicationContext, Class<?>[] modules,
 																																										 String args[][]) {
-		LinkedHashMap<String, SpringApplicationBuilder> children = new LinkedHashMap<>();
+		LinkedHashMap<String, ConfigurableApplicationContext> children = new LinkedHashMap<>();
 		for (int i = modules.length - 1; i >= 0; i--) {
-			SpringApplicationBuilder childModule = embedModule(applicationContext, modules[i], args!=null ? args[i] : null);
-			children.put(modules[i].getName(), childModule);
+			String moduleClassName = modules[i].getName();
+			SpringApplicationBuilder childModuleBuilder = embedModule(applicationContext, getNamespace(moduleClassName, i), modules[i]);
+			ConfigurableApplicationContext childContext = childModuleBuilder.run(args != null ? args[i] : new String[0]);
+			children.put(getNamespace(moduleClassName,i), childContext);
 		}
 		return children;
+	}
+
+	private static String getNamespace(String moduleClassName, int index) {
+		return moduleClassName + "_" + index;
 	}
 
 	/**
@@ -106,12 +112,12 @@ public class ModuleAggregationUtils {
 	 * @param args
 	 */
 
-	public static SpringApplicationBuilder embedModule(ConfigurableApplicationContext applicationContext, Class<?> module, String[] args) {
+	public static SpringApplicationBuilder embedModule(ConfigurableApplicationContext applicationContext, String namespace,
+																										 Class<?> module) {
 		return new SpringApplicationBuilder(module)
 				.web(false)
 				.showBanner(false)
-				.properties(BindableProxyFactory.CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + module.getName())
-				.properties(args != null ? args : new String[0])
+				.properties(BindableProxyFactory.CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
 				.registerShutdownHook(false)
 				.parent(applicationContext);
 	}
@@ -120,12 +126,13 @@ public class ModuleAggregationUtils {
 		DirectChannel sharedChannel = null;
 		for (int i = 0; i < modules.length; i++) {
 			Class<?> module = modules[i];
+			String moduleClassName = module.getName();
 			if (i > 0) {
-				sharedChannelRegistry.putSharedChannel(module.getName() + ".input", sharedChannel);
+				sharedChannelRegistry.putSharedChannel(getNamespace(moduleClassName,i) + ".input", sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
 			if (i < modules.length - 1) {
-				sharedChannelRegistry.putSharedChannel(module.getName() + ".output", sharedChannel);
+				sharedChannelRegistry.putSharedChannel(getNamespace(moduleClassName,i) + ".output", sharedChannel);
 			}
 		}
 	}

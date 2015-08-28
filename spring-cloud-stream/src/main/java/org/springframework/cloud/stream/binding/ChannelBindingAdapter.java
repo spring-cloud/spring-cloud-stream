@@ -16,14 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.beans.BeansException;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.config.ChannelBindingProperties;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.SmartLifecycle;
-import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -36,18 +30,11 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-@ManagedResource
-public class ChannelBindingAdapter implements SmartLifecycle, ApplicationContextAware {
+public class ChannelBindingAdapter  {
 
 	private Binder<MessageChannel> binder;
 
-	private boolean running = false;
-
-	private Object lifecycleMonitor = new Object();
-
 	private ChannelBindingProperties channelBindingProperties;
-
-	private ConfigurableApplicationContext applicationContext;
 
 	public ChannelBindingAdapter(ChannelBindingProperties channelBindingProperties,
 			Binder<MessageChannel> binder) {
@@ -55,11 +42,6 @@ public class ChannelBindingAdapter implements SmartLifecycle, ApplicationContext
 		this.binder = binder;
 	}
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
-		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-	}
 
 	public void bindMessageConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingProperties
@@ -101,55 +83,5 @@ public class ChannelBindingAdapter implements SmartLifecycle, ApplicationContext
 		this.binder.unbindProducers(outputChannelName);
 	}
 
-	@Override
-	public void start() {
-		if (!running) {
-			synchronized (lifecycleMonitor) {
-				if (!running) {
-					BindingUtils.bindAll(this.applicationContext);
-					this.running = true;
-				}
-			}
-		}
-	}
-
-	@Override
-	public void stop() {
-		if (running) {
-			synchronized (lifecycleMonitor) {
-				if (running) {
-					BindingUtils.unbindAll(this.applicationContext);
-					this.running = false;
-				}
-			}
-		}
-	}
-
-	@Override
-	public boolean isRunning() {
-		return running;
-	}
-
-	@Override
-	public boolean isAutoStartup() {
-		return true;
-	}
-
-	@Override
-	public void stop(Runnable callback) {
-		stop();
-		if (callback != null) {
-			callback.run();
-		}
-	}
-
-	/**
-	 * Return the lowest value to start this bean before any message producing lifecycle
-	 * beans.
-	 */
-	@Override
-	public int getPhase() {
-		return Integer.MIN_VALUE;
-	}
 
 }

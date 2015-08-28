@@ -59,7 +59,7 @@ public class ModuleLauncherProperties {
 	private String[] modules;
 
 	/**
-	 * Map of arguments, keyed by the 0-based index in the {@kink #modules array}.
+	 * Map of arguments, keyed by the 0-based index in the {@link #modules array}.
 	 */
 	private Map<Integer, Map<String, String>> args = new HashMap<>();
 

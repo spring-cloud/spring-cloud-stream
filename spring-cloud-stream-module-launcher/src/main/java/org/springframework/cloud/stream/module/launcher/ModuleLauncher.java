@@ -56,8 +56,6 @@ public class ModuleLauncher {
 
 	public static final String MODULE_AGGREGATOR_METHOD = "runAggregated";
 
-	public static final String SPRING_CLOUD_STREAM_ARG_PREFIX = "--spring.cloud.stream";
-
 	private Log log = LogFactory.getLog(ModuleLauncher.class);
 
 	private static final String DEFAULT_EXTENSION = "jar";
@@ -136,10 +134,10 @@ public class ModuleLauncher {
 					// avoid duplication based on unique JAR names
 					// TODO - read the metadata from the JARs, do proper version resolution on merge
 					String urlAsString = archive.getUrl().toString();
-					String urlWithoutLastPart = urlAsString.substring(0,urlAsString.lastIndexOf("!/"));
-					String jarName = urlWithoutLastPart.substring(urlWithoutLastPart.lastIndexOf("/") + 1);
-					if (!seenArchives.contains(jarName)) {
-						seenArchives.add(jarName);
+					String jarNameWithExtension = urlAsString.substring(0, urlAsString.lastIndexOf("!/"));
+					String jarNameWithoutExtension = jarNameWithExtension.substring(jarNameWithExtension.lastIndexOf("/") + 1);
+					if (!seenArchives.contains(jarNameWithoutExtension)) {
+						seenArchives.add(jarNameWithoutExtension);
 						jarURLs.add(archive.getUrl());
 					}
 				}
@@ -152,9 +150,6 @@ public class ModuleLauncher {
 			for (String mainClass : mainClassNames) {
 				mainClasses.add(ClassUtils.forName(mainClass, classLoader));
 			}
-
-			//TODO pass aggregate properties ..
-
 			Runnable moduleAggregatorRunner = new Runnable() {
 				@Override
 				public void run() {
@@ -174,10 +169,10 @@ public class ModuleLauncher {
 				}
 			};
 
-			Thread runnerThread = new Thread(moduleAggregatorRunner);
-			runnerThread.setContextClassLoader(classLoader);
-			runnerThread.setName(Thread.currentThread().getName());
-			runnerThread.start();
+			Thread moduleAggregatorRunnerThread = new Thread(moduleAggregatorRunner);
+			moduleAggregatorRunnerThread.setContextClassLoader(classLoader);
+			moduleAggregatorRunnerThread.setName(Thread.currentThread().getName());
+			moduleAggregatorRunnerThread.start();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

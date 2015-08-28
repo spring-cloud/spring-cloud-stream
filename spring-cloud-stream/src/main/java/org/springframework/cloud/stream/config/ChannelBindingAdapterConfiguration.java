@@ -29,8 +29,10 @@ import org.springframework.cloud.stream.binding.ChannelBindingAdapter;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
+import org.springframework.cloud.stream.binding.ChannelBindingLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
@@ -49,12 +51,20 @@ public class ChannelBindingAdapterConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(ChannelBindingAdapter.class)
-	public ChannelBindingAdapter bindingAdapter(ChannelBindingProperties module, Binder<MessageChannel> binder,ConfigurableListableBeanFactory beanFactory) {
+	public ChannelBindingAdapter bindingAdapter(ChannelBindingProperties module,
+			Binder<MessageChannel> binder, ConfigurableListableBeanFactory beanFactory) {
 		return new ChannelBindingAdapter(module, binder);
 	}
 
 	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver(Binder<MessageChannel> binder) {
+	@DependsOn("bindingAdapter")
+	public ChannelBindingLifecycle channelBindingLifecycle() {
+		return new ChannelBindingLifecycle();
+	}
+
+	@Bean
+	public BinderAwareChannelResolver binderAwareChannelResolver(
+			Binder<MessageChannel> binder) {
 		return new BinderAwareChannelResolver(binder, new Properties());
 	}
 
@@ -75,9 +85,12 @@ public class ChannelBindingAdapterConfiguration {
 						public MessageChannel resolveDestination(String name)
 								throws DestinationResolutionException {
 							if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
-								PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils.beanOfType(beanFactory, BinderAwareChannelResolver.class);
+								PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils
+										.beanOfType(beanFactory,
+												BinderAwareChannelResolver.class);
 							}
-							return PostProcessorConfiguration.this.binderAwareChannelResolver.resolveDestination(name);
+							return PostProcessorConfiguration.this.binderAwareChannelResolver
+									.resolveDestination(name);
 						}
 
 					});
