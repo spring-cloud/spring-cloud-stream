@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.config;
 
+import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -35,6 +36,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 public class SpelExpressionConverterConfiguration {
 
 	@Bean
+	@ConfigurationPropertiesBinding
 	public Converter<String, Expression> spelConverter() {
 		return new SpelConverter();
 	}
