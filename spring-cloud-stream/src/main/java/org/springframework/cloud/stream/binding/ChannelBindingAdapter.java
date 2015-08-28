@@ -152,7 +152,4 @@ public class ChannelBindingAdapter implements SmartLifecycle, ApplicationContext
 		return Integer.MIN_VALUE;
 	}
 
-	public String getChannelNamespace() {
-		return channelBindingProperties.getChannelNamespace();
-	}
 }

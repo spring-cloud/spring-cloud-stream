@@ -113,7 +113,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 							inputs.put(name, new ChannelHolder(sharedChannel, false));
 						}
 						else {
-							// handle the special case where the
+							// handle the special case where the shared channel is of a different nature
+							// (i.e. pollable vs subscribable) than the target channel
 							final MessageChannel inputChannel = createMessageChannel(inputChannelType);
 							if (isPollable(sharedChannel.getClass())) {
 								bridgePollableToSubscribableChannel(sharedChannel,
@@ -143,6 +144,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 							outputs.put(name, new ChannelHolder(sharedChannel, false));
 						}
 						else {
+							// handle the special case where the shared channel is of a different nature
+							// (i.e. pollable vs subscribable) than the target channel
 							final MessageChannel outputChannel = createMessageChannel(messageChannelType);
 							if (isPollable(messageChannelType)) {
 								bridgePollableToSubscribableChannel(outputChannel,

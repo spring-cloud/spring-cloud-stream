@@ -41,8 +41,6 @@ public class ChannelBindingProperties {
 
 	private Map<String,Object> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-	private String channelNamespace = "";
-
 	public Properties getConsumerProperties() {
 		return this.consumerProperties;
 	}
@@ -89,12 +87,5 @@ public class ChannelBindingProperties {
 	public String getTapChannelName(String channelName) {
 		return "tap:" + getBindingPath(channelName);
 	}
-
-	public String getChannelNamespace() {
-		return channelNamespace;
-	}
-
-	public void setChannelNamespace(String channelNamespace) {
-		this.channelNamespace = channelNamespace;
-	}
+	
 }

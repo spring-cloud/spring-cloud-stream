@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.aggregate;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.springframework.messaging.MessageChannel;
 
@@ -28,7 +29,7 @@ import org.springframework.messaging.MessageChannel;
  */
 public class SharedChannelRegistry {
 
-	private Map<String, MessageChannel> sharedChannels = new ConcurrentHashMap<>();
+	private Map<String, MessageChannel> sharedChannels = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	public SharedChannelRegistry() {
 		this(new ConcurrentHashMap<String, MessageChannel>());

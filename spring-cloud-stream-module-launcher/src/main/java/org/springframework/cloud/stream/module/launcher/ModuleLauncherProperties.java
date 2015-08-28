@@ -51,7 +51,7 @@ public class ModuleLauncherProperties {
 	/**
 	 * True if aggregating multiple modules when launched together
 	 */
-	private boolean aggregateOnLaunch;
+	private boolean aggregate;
 
 	/**
 	 * File path to a locally available maven repository, where modules will be downloaded.
@@ -67,12 +67,12 @@ public class ModuleLauncherProperties {
 		this.modules = modules;
 	}
 
-	public boolean isAggregateOnLaunch() {
-		return aggregateOnLaunch;
+	public boolean isAggregate() {
+		return aggregate;
 	}
 
-	public void setAggregateOnLaunch(boolean aggregateOnLaunch) {
-		this.aggregateOnLaunch = aggregateOnLaunch;
+	public void setAggregate(boolean aggregate) {
+		this.aggregate = aggregate;
 	}
 
 	@NotEmpty(message = "A list of modules must be specified.")
