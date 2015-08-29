@@ -19,8 +19,6 @@ package org.springframework.cloud.stream.aggregation;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertThat;
 
-import java.util.Map;
-
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -29,13 +27,7 @@ import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableModule;
 import org.springframework.cloud.stream.annotation.Processor;
 import org.springframework.cloud.stream.annotation.Source;
-import org.springframework.cloud.stream.binder.BinderUtils;
-import org.springframework.cloud.stream.binding.Bindable;
-import org.springframework.cloud.stream.binding.BindableContextWrapper;
-import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
 
 /**
  * @author Marius Bogoevici
@@ -46,10 +38,6 @@ public class ModuleAggregationTest {
 	public void testModuleAggregation() {
 		ConfigurableApplicationContext aggregatedApplicationContext = ModuleAggregationUtils.runAggregated(TestSource.class,
 				TestProcessor.class);
-		BindableContextWrapper testSourceWrapper = aggregatedApplicationContext.getBean(TestSource.class.getName() + "_" + 0,
-				BindableContextWrapper.class);
-		BindableContextWrapper testSinkWrapper = aggregatedApplicationContext.getBean(TestProcessor.class.getName() + "_" + 1,
-				BindableContextWrapper.class);
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
 		assertThat(sharedChannelRegistry.getSharedChannels().keySet(), hasSize(2));
 	}

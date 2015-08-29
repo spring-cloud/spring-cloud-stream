@@ -22,6 +22,8 @@ import java.util.Map;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
@@ -60,12 +62,21 @@ import org.springframework.util.ReflectionUtils;
 public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>,
 		BeanFactoryAware, Bindable, InitializingBean {
 
-	public static final String CHANNEL_NAMESPACE_PROPERTY_NAME = "spring.cloud.stream.internal.channelNamespace";
+	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
+
+	public static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
+
+	public static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
+
+	public static final String POLLABLE_BRIDGE_FREQUENCY_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".pollableBridge.frequency";
 
 	private Class<?> type;
 
 	@Value("${" + CHANNEL_NAMESPACE_PROPERTY_NAME + ":}")
 	private String channelNamespace;
+
+	@Value("${" + POLLABLE_BRIDGE_FREQUENCY_PROPERTY_NAME + ":1000}")
+	private int pollableBridgeDefaultFrequency;
 
 	private Object proxy = null;
 
@@ -184,7 +195,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		ConsumerEndpointFactoryBean consumerEndpointFactoryBean = new ConsumerEndpointFactoryBean();
 		consumerEndpointFactoryBean.setInputChannel(pollableChannel);
 		PollerMetadata pollerMetadata = new PollerMetadata();
-		pollerMetadata.setTrigger(new PeriodicTrigger(1000));
+		pollerMetadata.setTrigger(new PeriodicTrigger(pollableBridgeDefaultFrequency));
 		consumerEndpointFactoryBean.setPollerMetadata(pollerMetadata);
 		consumerEndpointFactoryBean
 				.setHandler(new MessageChannelBinderSupport.DirectHandler(
@@ -192,9 +203,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		consumerEndpointFactoryBean.setBeanFactory(beanFactory);
 		try {
 			consumerEndpointFactoryBean.afterPropertiesSet();
-		}
-		catch (Exception e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
 		}
 		consumerEndpointFactoryBean.start();
 	}
@@ -250,9 +260,15 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void bindInputs(ChannelBindingAdapter channelBindingAdapter) {
+		if (log.isDebugEnabled()) {
+			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace, this.type));
+		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : inputs.entrySet()) {
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			if (channelHolder.isBound()) {
+				if (log.isDebugEnabled()) {
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
+				}
 				channelBindingAdapter.bindMessageConsumer(
 						channelHolder.getMessageChannel(), channelHolderEntry.getKey());
 			}
@@ -261,8 +277,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void bindOutputs(ChannelBindingAdapter channelBindingAdapter) {
+		if (log.isDebugEnabled()) {
+			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
+		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : outputs.entrySet()) {
 			if (channelHolderEntry.getValue().isBound()) {
+				if (log.isDebugEnabled()) {
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
+				}
 				channelBindingAdapter.bindMessageProducer(channelHolderEntry.getValue()
 						.getMessageChannel(), channelHolderEntry.getKey());
 			}
@@ -271,8 +293,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void unbindInputs(ChannelBindingAdapter channelBindingAdapter) {
+		if (log.isDebugEnabled()) {
+			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace, this.type));
+		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : inputs.entrySet()) {
 			if (channelHolderEntry.getValue().isBound()) {
+				if (log.isDebugEnabled()) {
+					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
+				}
 				channelBindingAdapter.unbindConsumers(channelHolderEntry.getKey());
 			}
 		}
@@ -280,8 +308,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void unbindOutputs(ChannelBindingAdapter channelBindingAdapter) {
+		if (log.isDebugEnabled()) {
+			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace, this.type));
+		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : outputs.entrySet()) {
 			if (channelHolderEntry.getValue().isBound()) {
+				if (log.isDebugEnabled()) {
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
+				}
 				channelBindingAdapter.unbindProducers(channelHolderEntry.getKey());
 			}
 		}

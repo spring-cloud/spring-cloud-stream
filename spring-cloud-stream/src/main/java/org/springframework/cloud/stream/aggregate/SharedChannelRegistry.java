@@ -29,15 +29,10 @@ import org.springframework.messaging.MessageChannel;
  */
 public class SharedChannelRegistry {
 
+	/**
+	 * A {@link Map} of channels, indexed by name. A channel's name may be prefixed by a namespace.
+	 */
 	private Map<String, MessageChannel> sharedChannels = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
-
-	public SharedChannelRegistry() {
-		this(new ConcurrentHashMap<String, MessageChannel>());
-	}
-
-	private SharedChannelRegistry(Map<String, MessageChannel> sharedChannels) {
-		this.sharedChannels = sharedChannels;
-	}
 
 	public MessageChannel getSharedChannel(String id) {
 		return sharedChannels.get(id);
