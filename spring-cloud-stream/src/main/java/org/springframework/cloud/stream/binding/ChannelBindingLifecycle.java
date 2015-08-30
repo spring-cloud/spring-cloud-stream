@@ -30,9 +30,9 @@ import org.springframework.context.SmartLifecycle;
  */
 public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationContextAware {
 
-	private boolean running = false;
+	private volatile boolean running = false;
 
-	private Object lifecycleMonitor = new Object();
+	private final Object lifecycleMonitor = new Object();
 
 	private ConfigurableApplicationContext applicationContext;
 

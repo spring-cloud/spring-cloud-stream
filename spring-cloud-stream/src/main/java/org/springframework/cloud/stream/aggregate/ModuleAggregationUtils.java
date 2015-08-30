@@ -30,9 +30,7 @@ import org.springframework.cloud.stream.annotation.Sink;
 import org.springframework.cloud.stream.annotation.Source;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.LifecycleProcessor;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.channel.DirectChannel;
 
 /**
@@ -41,6 +39,10 @@ import org.springframework.integration.channel.DirectChannel;
 public class ModuleAggregationUtils {
 
 	private static final Log log = LogFactory.getLog(ModuleAggregationUtils.class);
+
+	public static final String INPUT_CHANNEL_NAME = "input";
+
+	public static final String OUTPUT_CHANNEL_NAME = "output";
 
 	/**
 	 * Supports the aggregation of {@link Source}, {@link Sink} and {@link Processor}
@@ -123,12 +125,12 @@ public class ModuleAggregationUtils {
 			String moduleClassName = module.getName();
 			if (i > 0) {
 				sharedChannelRegistry.putSharedChannel(getNamespace(moduleClassName, i)
-						+ ".input", sharedChannel);
+						+ "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
 			if (i < modules.length - 1) {
 				sharedChannelRegistry.putSharedChannel(getNamespace(moduleClassName, i)
-						+ ".output", sharedChannel);
+						+ "." + OUTPUT_CHANNEL_NAME, sharedChannel);
 			}
 		}
 	}
@@ -144,40 +146,6 @@ public class ModuleAggregationUtils {
 		@ConditionalOnMissingBean(SharedChannelRegistry.class)
 		public SharedChannelRegistry sharedChannelRegistry() {
 			return new SharedChannelRegistry();
-		}
-	}
-
-	@Configuration
-	public static class LifecycleProcessorControl {
-
-		@Bean
-		public LifecycleProcessor lifecycleProcessor() {
-			return new LifecycleProcessor() {
-				@Override
-				public void onRefresh() {
-
-				}
-
-				@Override
-				public void onClose() {
-
-				}
-
-				@Override
-				public void start() {
-
-				}
-
-				@Override
-				public void stop() {
-
-				}
-
-				@Override
-				public boolean isRunning() {
-					return false;
-				}
-			};
 		}
 	}
 

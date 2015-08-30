@@ -41,19 +41,18 @@ import org.springframework.util.StringUtils;
  */
 public abstract class BindingBeanDefinitionRegistryUtils {
 
-	public static void registerInputChannelBeanDefinition(String qualifierValue, String name,
-			String channelInterfaceBeanName, String channelInterfaceMethodName,
-			BeanDefinitionRegistry registry) {
-		registerChannelBeanDefinition(Input.class, qualifierValue, name, channelInterfaceBeanName,
-				channelInterfaceMethodName, registry);
+	public static void registerInputChannelBeanDefinition(String qualifierValue,
+			String name, String channelInterfaceBeanName,
+			String channelInterfaceMethodName, BeanDefinitionRegistry registry) {
+		registerChannelBeanDefinition(Input.class, qualifierValue, name,
+				channelInterfaceBeanName, channelInterfaceMethodName, registry);
 	}
 
-	public static void registerOutputChannelBeanDefinition(String qualifierValue, String name,
-																												 String channelInterfaceBeanName,
-																												 String channelInterfaceMethodName,
-																												 BeanDefinitionRegistry registry) {
-		registerChannelBeanDefinition(Output.class, qualifierValue, name, channelInterfaceBeanName,
-				channelInterfaceMethodName, registry);
+	public static void registerOutputChannelBeanDefinition(String qualifierValue,
+			String name, String channelInterfaceBeanName,
+			String channelInterfaceMethodName, BeanDefinitionRegistry registry) {
+		registerChannelBeanDefinition(Output.class, qualifierValue, name,
+				channelInterfaceBeanName, channelInterfaceMethodName, registry);
 	}
 
 	private static void registerChannelBeanDefinition(
@@ -64,44 +63,51 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
 		rootBeanDefinition.setFactoryBeanName(channelInterfaceBeanName);
 		rootBeanDefinition.setUniqueFactoryMethodName(channelInterfaceMethodName);
-		rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(qualifier, qualifierValue));
+		rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(qualifier,
+				qualifierValue));
 		registry.registerBeanDefinition(name, rootBeanDefinition);
 	}
 
-	public static void registerChannelBeanDefinitions(Class<?> type, final String channelInterfaceBeanName, final BeanDefinitionRegistry registry) {
+	public static void registerChannelBeanDefinitions(Class<?> type,
+			final String channelInterfaceBeanName, final BeanDefinitionRegistry registry) {
 		final List<String> channelNames = new ArrayList<>();
 		ReflectionUtils.doWithMethods(type, new MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException,
-			IllegalAccessException {
+					IllegalAccessException {
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
 					String name = getChannelName(input, method);
-					registerInputChannelBeanDefinition(input.value(), name, channelInterfaceBeanName, method.getName(), registry);
+					registerInputChannelBeanDefinition(input.value(), name,
+							channelInterfaceBeanName, method.getName(), registry);
 				}
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
 					String name = getChannelName(output, method);
-					registerOutputChannelBeanDefinition(output.value(), name, channelInterfaceBeanName, method.getName(),  registry);
+					registerOutputChannelBeanDefinition(output.value(), name,
+							channelInterfaceBeanName, method.getName(), registry);
 				}
 			}
 
 		});
 	}
 
-	public static void registerChannelsQualifiedBeanDefinitions(Class<?> parent, Class<?> type,
-			final BeanDefinitionRegistry registry) {
+	public static void registerChannelsQualifiedBeanDefinitions(Class<?> parent,
+			Class<?> type, final BeanDefinitionRegistry registry) {
 
 		if (type.isInterface()) {
-			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(BindableProxyFactory.class);
-			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(ModuleChannels.class, parent));
+			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+					BindableProxyFactory.class);
+			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(
+					ModuleChannels.class, parent));
 			rootBeanDefinition.getConstructorArgumentValues().addGenericArgumentValue(
 					type);
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 		else {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(type);
-			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(ModuleChannels.class, parent));
+			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(
+					ModuleChannels.class, parent));
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 	}
@@ -109,7 +115,8 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 	public static String getChannelName(Annotation annotation, Method method) {
 		Map<String, Object> attrs = AnnotationUtils.getAnnotationAttributes(annotation,
 				false);
-		if (attrs.containsKey("value") && StringUtils.hasText((CharSequence) attrs.get("value"))) {
+		if (attrs.containsKey("value")
+				&& StringUtils.hasText((CharSequence) attrs.get("value"))) {
 			return (String) attrs.get("value");
 		}
 		return method.getName();

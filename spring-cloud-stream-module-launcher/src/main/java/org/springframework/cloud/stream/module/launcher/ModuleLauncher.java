@@ -56,6 +56,8 @@ public class ModuleLauncher {
 
 	public static final String MODULE_AGGREGATOR_METHOD = "runAggregated";
 
+	public static final String MODULE_AGGREGATOR_RUNNER_THREAD_NAME = "module-aggregator-runner";
+
 	private Log log = LogFactory.getLog(ModuleLauncher.class);
 
 	private static final String DEFAULT_EXTENSION = "jar";
@@ -171,7 +173,7 @@ public class ModuleLauncher {
 
 			Thread moduleAggregatorRunnerThread = new Thread(moduleAggregatorRunner);
 			moduleAggregatorRunnerThread.setContextClassLoader(classLoader);
-			moduleAggregatorRunnerThread.setName(Thread.currentThread().getName());
+			moduleAggregatorRunnerThread.setName(MODULE_AGGREGATOR_RUNNER_THREAD_NAME);
 			moduleAggregatorRunnerThread.start();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
