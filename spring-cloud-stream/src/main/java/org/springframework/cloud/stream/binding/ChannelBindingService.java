@@ -29,14 +29,14 @@ import org.springframework.util.StringUtils;
  * @author Dave Syer
  * @author Marius Bogoevici
  */
-public class ChannelBindingAdapter  {
+public class ChannelBindingService {
 
 	private Binder<MessageChannel> binder;
 
 	private ChannelBindingProperties channelBindingProperties;
 
-	public ChannelBindingAdapter(ChannelBindingProperties channelBindingProperties,
-			Binder<MessageChannel> binder) {
+	public ChannelBindingService(ChannelBindingProperties channelBindingProperties,
+															 Binder<MessageChannel> binder) {
 		this.channelBindingProperties = channelBindingProperties;
 		this.binder = binder;
 	}

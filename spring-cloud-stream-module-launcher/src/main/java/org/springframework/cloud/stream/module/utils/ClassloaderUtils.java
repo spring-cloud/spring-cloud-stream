@@ -21,6 +21,13 @@ package org.springframework.cloud.stream.module.utils;
  */
 public class ClassloaderUtils {
 
+	/**
+	 * Retrieves the extension classloader of the current JVM, if accessible. In general the extension classloader is
+	 * found in a hierarchy as the parent of the application classloader. If such a hierarchy does not exist, it will
+	 * return the application classloader itself.
+	 *
+	 * @return the classloader
+	 */
 	public static ClassLoader getExtensionClassloader() {
 		ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
 		// try to retrieve the extension classloader

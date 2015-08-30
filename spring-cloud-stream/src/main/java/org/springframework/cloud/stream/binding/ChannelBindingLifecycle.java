@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.Map;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -47,7 +49,19 @@ public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationConte
 		if (!running) {
 			synchronized (lifecycleMonitor) {
 				if (!running) {
-					BindingUtils.bindAll(this.applicationContext);
+					// retrieve the ChannelBindingService lazily, avoiding early initialization
+					try {
+						ChannelBindingService channelBindingService = this.applicationContext.getBean(ChannelBindingService.class);
+						Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
+						for (Bindable bindable : bindables.values()) {
+							bindable.bindOutputs(channelBindingService);
+						}
+						for (Bindable bindable : bindables.values()) {
+							bindable.bindInputs(channelBindingService);
+						}
+					} catch (BeansException e) {
+						throw new IllegalStateException("Cannot perform binding, no proper implementation found",e);
+					}
 					this.running = true;
 				}
 			}
@@ -59,7 +73,19 @@ public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationConte
 		if (running) {
 			synchronized (lifecycleMonitor) {
 				if (running) {
-					BindingUtils.unbindAll(this.applicationContext);
+					try {
+						// retrieve the ChannelBindingService lazily, avoiding early initialization
+						ChannelBindingService channelBindingService = this.applicationContext.getBean(ChannelBindingService.class);
+						Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
+						for (Bindable bindable : bindables.values()) {
+							bindable.unbindInputs(channelBindingService);
+						}
+						for (Bindable bindable : bindables.values()) {
+							bindable.unbindOutputs(channelBindingService);
+						}
+					} catch (BeansException e) {
+						throw new IllegalStateException("Cannot perform binding, no proper implementation found",e);
+					}
 					this.running = false;
 				}
 			}

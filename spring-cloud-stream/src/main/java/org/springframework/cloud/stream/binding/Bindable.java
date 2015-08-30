@@ -28,21 +28,21 @@ public interface Bindable {
 	/**
 	 * Binds all the inputs associated with this instance.
 	 */
-	void bindInputs(ChannelBindingAdapter adapter);
+	void bindInputs(ChannelBindingService adapter);
 
 	/**
 	 * Binds all the outputs associated with this instance.
 	 */
-	void bindOutputs(ChannelBindingAdapter adapter);
+	void bindOutputs(ChannelBindingService adapter);
 
 	/**
 	 * Unbinds all the inputs associated with this instance.
 	 */
-	void unbindInputs(ChannelBindingAdapter adapter);
+	void unbindInputs(ChannelBindingService adapter);
 
 	/**
 	 * Unbinds all the outputs associated with this instance.
 	 */
-	void unbindOutputs(ChannelBindingAdapter adapter);
+	void unbindOutputs(ChannelBindingService adapter);
 
 }

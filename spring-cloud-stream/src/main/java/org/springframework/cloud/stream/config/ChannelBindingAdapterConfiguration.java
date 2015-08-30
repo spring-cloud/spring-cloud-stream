@@ -20,13 +20,9 @@ import java.util.Properties;
 
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.binding.Bindable;
-import org.springframework.cloud.stream.binding.ChannelBindingAdapter;
+import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
@@ -51,10 +47,10 @@ import org.springframework.messaging.core.DestinationResolver;
 public class ChannelBindingAdapterConfiguration {
 
 	@Bean
-	@ConditionalOnMissingBean(ChannelBindingAdapter.class)
-	public ChannelBindingAdapter bindingAdapter(ChannelBindingProperties module,
+	@ConditionalOnMissingBean(ChannelBindingService.class)
+	public ChannelBindingService bindingAdapter(ChannelBindingProperties module,
 			Binder<MessageChannel> binder, ConfigurableListableBeanFactory beanFactory) {
-		return new ChannelBindingAdapter(module, binder);
+		return new ChannelBindingService(module, binder);
 	}
 
 	@Bean
