@@ -265,7 +265,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : inputs.entrySet()) {
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
-			if (channelHolder.isBound()) {
+			if (channelHolder.isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
 				}
@@ -281,7 +281,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
 		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : outputs.entrySet()) {
-			if (channelHolderEntry.getValue().isBound()) {
+			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
 				}
@@ -297,7 +297,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace, this.type));
 		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : inputs.entrySet()) {
-			if (channelHolderEntry.getValue().isBound()) {
+			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
 				}
@@ -312,7 +312,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace, this.type));
 		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : outputs.entrySet()) {
-			if (channelHolderEntry.getValue().isBound()) {
+			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
 				}
@@ -326,25 +326,24 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	 * their status.
 	 *
 	 */
-	class ChannelHolder {
+	static class ChannelHolder {
 
 		private MessageChannel messageChannel;
 
-		private boolean bound;
+		private boolean bindable;
 
-		public ChannelHolder(MessageChannel messageChannel, boolean bound) {
+		public ChannelHolder(MessageChannel messageChannel, boolean bindable) {
 			this.messageChannel = messageChannel;
-			this.bound = bound;
+			this.bindable = bindable;
 		}
 
 		public MessageChannel getMessageChannel() {
 			return messageChannel;
 		}
 
-		public boolean isBound() {
-			return bound;
+		public boolean isBindable() {
+			return bindable;
 		}
-
 	}
 
 }
