@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -40,6 +41,9 @@ public class ChannelBindingProperties {
 	private Properties producerProperties = new Properties();
 
 	private Map<String,Object> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+	@Value("${spring.application.name:}")
+	private String applicationName;
 
 	public Properties getConsumerProperties() {
 		return this.consumerProperties;
@@ -80,8 +84,8 @@ public class ChannelBindingProperties {
 				}
 			}
 		}
-		// just return the channel name if not found
-		return channelName;
+		// the default path of the binding is the channel name itself
+		return (StringUtils.hasText(applicationName) ? applicationName + "." : "") + channelName;
 	}
 
 	public String getTapChannelName(String channelName) {
