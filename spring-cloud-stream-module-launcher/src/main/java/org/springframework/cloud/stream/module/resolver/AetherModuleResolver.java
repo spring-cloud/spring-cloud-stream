@@ -180,7 +180,9 @@ public class AetherModuleResolver implements ModuleResolver {
 				for (Coordinates include : includes) {
 					collectRequest.addDependency(new Dependency(toArtifact(include), JavaScopes.RUNTIME));
 				}
-				DependencyResult dependencyResult = repositorySystem.resolveDependencies(session, new DependencyRequest(collectRequest, null));
+				collectRequest.setRepositories(remoteRepositories);
+				DependencyResult dependencyResult =
+						repositorySystem.resolveDependencies(session, new DependencyRequest(collectRequest, null));
 				for (ArtifactResult artifactResult : dependencyResult.getArtifactResults()) {
 					// we are only interested in the jars or zips
 					if ("jar".equalsIgnoreCase(artifactResult.getArtifact().getExtension())) {
