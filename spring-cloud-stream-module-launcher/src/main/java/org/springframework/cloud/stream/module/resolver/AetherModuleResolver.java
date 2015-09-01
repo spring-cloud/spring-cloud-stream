@@ -182,7 +182,10 @@ public class AetherModuleResolver implements ModuleResolver {
 				}
 				DependencyResult dependencyResult = repositorySystem.resolveDependencies(session, new DependencyRequest(collectRequest, null));
 				for (ArtifactResult artifactResult : dependencyResult.getArtifactResults()) {
-					result.add(toResource(artifactResult));
+					// we are only interested in the jars or zips
+					if ("jar".equalsIgnoreCase(artifactResult.getArtifact().getExtension())) {
+						result.add(toResource(artifactResult));
+					}
 				}
 			} catch (DependencyResolutionException e) {
 				throw new RuntimeException(e);
