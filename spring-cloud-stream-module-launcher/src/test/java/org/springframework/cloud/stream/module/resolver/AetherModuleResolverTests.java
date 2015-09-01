@@ -53,7 +53,7 @@ public class AetherModuleResolverTests {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
-		Resource resource = defaultModuleResolver.resolve("foo.bar", "foo-bar", "jar", "", "1.0.0");
+		Resource resource = defaultModuleResolver.resolve(new Coordinates("foo.bar", "foo-bar", "jar", "", "1.0.0"));
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-bar-1.0.0.jar");
 	}
@@ -63,7 +63,7 @@ public class AetherModuleResolverTests {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
-		defaultModuleResolver.resolve("niente", "nada", "jar", "", "zilch");
+		defaultModuleResolver.resolve(new Coordinates("niente", "nada", "jar", "", "zilch"));
 	}
 
 	@Test
@@ -74,8 +74,8 @@ public class AetherModuleResolverTests {
 		Map<String, String> remoteRepos = new HashMap<>();
 		remoteRepos.put("modules", "http://repo.spring.io/libs-snapshot");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
-		Resource resource = defaultModuleResolver.resolve("org.springframework.cloud.stream.module", "time-source",
-				"jar", "exec", "1.0.0.BUILD-SNAPSHOT");
+		Resource resource = defaultModuleResolver.resolve(
+				new Coordinates("org.springframework.cloud.stream.module", "time-source", "jar", "exec", "1.0.0.BUILD-SNAPSHOT"));
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "time-source-1.0.0.BUILD-SNAPSHOT-exec.jar");
 	}
@@ -94,7 +94,7 @@ public class AetherModuleResolverTests {
 						.withStatus(200)
 						.withBodyFile(stubFileName)));
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
-		Resource resource = defaultModuleResolver.resolve("org.bar", "foo", "jar", "", "1.0.0");
+		Resource resource = defaultModuleResolver.resolve(new Coordinates("org.bar", "foo", "jar", "", "1.0.0"));
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-1.0.0.jar");
 	}
