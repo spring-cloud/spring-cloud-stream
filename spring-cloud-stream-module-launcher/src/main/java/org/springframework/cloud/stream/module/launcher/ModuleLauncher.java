@@ -52,9 +52,9 @@ import org.springframework.util.StringUtils;
  */
 public class ModuleLauncher {
 
-	public static final String MODULE_AGGREGATOR_CLASS = "org.springframework.cloud.stream.aggregate.ModuleAggregationUtils";
+	public static final String AGGREGATE_APPLICATION_CLASS = "org.springframework.cloud.stream.aggregate.AggregateApplication";
 
-	public static final String MODULE_AGGREGATOR_METHOD = "runAggregated";
+	public static final String AGGREGATE_APPLICATION_RUN_METHOD = "run";
 
 	public static final String MODULE_AGGREGATOR_RUNNER_THREAD_NAME = "module-aggregator-runner";
 
@@ -93,10 +93,10 @@ public class ModuleLauncher {
 		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);
 		Collections.reverse(reversed);
 		if (moduleLaunchRequests.size() == 1 || !aggregate) {
-			launchModulesIndividually(moduleLaunchRequests);
+			launchIndividualModules(moduleLaunchRequests);
 		}
 		else {
-			aggregateAndLaunchModules(moduleLaunchRequests, parentArgs);
+			launchAggregatedModules(moduleLaunchRequests, parentArgs);
 		}
 	}
 
@@ -121,7 +121,7 @@ public class ModuleLauncher {
 		return result;
 	}
 
-	public void aggregateAndLaunchModules(List<ModuleLaunchRequest> moduleLaunchRequests, final String[] parentArgs) {
+	public void launchAggregatedModules(List<ModuleLaunchRequest> moduleLaunchRequests, final String[] parentArgs) {
 		try {
 			List<String> mainClassNames = new ArrayList<>();
 			List<URL> jarURLs = new ArrayList<>();
@@ -152,35 +152,18 @@ public class ModuleLauncher {
 			for (String mainClass : mainClassNames) {
 				mainClasses.add(ClassUtils.forName(mainClass, classLoader));
 			}
-			Runnable moduleAggregatorRunner = new Runnable() {
-				@Override
-				public void run() {
-					try {
-						// we expect the class and method to be found on the module classpath
-						Class<?> moduleAggregatorClass = ClassUtils.forName(MODULE_AGGREGATOR_CLASS, classLoader);
-						Method aggregateMethod = ReflectionUtils.findMethod(moduleAggregatorClass,
-								MODULE_AGGREGATOR_METHOD, String[].class, Class[].class, String[][].class);
-						aggregateMethod.invoke(null,
-								parentArgs,
-								mainClasses.toArray(new Class<?>[mainClasses.size()]) ,
-								arguments.toArray(new String[][]{}));
-					} catch (Exception e) {
-						log.error("Cannot start module group ", e);
-						throw new RuntimeException(e);
-					}
-				}
-			};
+			Runnable moduleAggregatorRunner = new ModuleAggregatorRunner(classLoader, mainClasses, parentArgs, arguments);
 
 			Thread moduleAggregatorRunnerThread = new Thread(moduleAggregatorRunner);
 			moduleAggregatorRunnerThread.setContextClassLoader(classLoader);
 			moduleAggregatorRunnerThread.setName(MODULE_AGGREGATOR_RUNNER_THREAD_NAME);
 			moduleAggregatorRunnerThread.start();
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("failed to start aggregated modules: " + StringUtils.collectionToCommaDelimitedString(moduleLaunchRequests), e);
 		}
 	}
 
-	public void launchModulesIndividually(List<ModuleLaunchRequest> reversed) {
+	public void launchIndividualModules(List<ModuleLaunchRequest> reversed) {
 		for (ModuleLaunchRequest moduleLaunchRequest : reversed) {
 			String module = moduleLaunchRequest.getModule();
 			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
@@ -212,4 +195,37 @@ public class ModuleLauncher {
 		return this.moduleResolver.resolve(groupId, artifactId, extension, classifier, version);
 	}
 
+	private class ModuleAggregatorRunner implements Runnable {
+		
+		private final ClassLoader classLoader;
+
+		private final String[] parentArgs;
+
+		private final List<Class<?>> mainClasses;
+
+		private final List<String[]> arguments;
+
+		public ModuleAggregatorRunner(ClassLoader classLoader, List<Class<?>> mainClasses, String[] parentArgs, List<String[]> moduleArguments) {
+			this.classLoader = classLoader;
+			this.parentArgs = parentArgs;
+			this.mainClasses = mainClasses;
+			this.arguments = moduleArguments;
+		}
+
+		@Override
+		public void run() {
+			try {
+				// we expect the class and method to be found on the module classpath
+				Class<?> moduleAggregatorClass = ClassUtils.forName(AGGREGATE_APPLICATION_CLASS, classLoader);
+				Method aggregateMethod = ReflectionUtils.findMethod(moduleAggregatorClass,
+						AGGREGATE_APPLICATION_RUN_METHOD, Class[].class, String[].class, String[][].class);
+				aggregateMethod.invoke(null,
+						mainClasses.toArray(new Class<?>[mainClasses.size()]),
+						parentArgs, arguments.toArray(new String[][] {}));
+			} catch (Exception e) {
+				log.error("failed to launch aggregated modules :" + StringUtils.collectionToCommaDelimitedString(mainClasses), e);
+				throw new RuntimeException(e);
+			}
+		}
+	}
 }

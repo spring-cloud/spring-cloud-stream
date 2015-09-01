@@ -17,7 +17,7 @@
 package demo;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.stream.aggregate.ModuleAggregationUtils;
+import org.springframework.cloud.stream.aggregate.AggregateApplication;
 
 import config.sink.SinkApplication;
 import config.source.SourceApplication;
@@ -26,7 +26,7 @@ import config.source.SourceApplication;
 public class DoubleApplication {
 
 	public static void main(String[] args) {
-		ModuleAggregationUtils.runAggregated(SourceApplication.class, SinkApplication.class);
+		AggregateApplication.run(SourceApplication.class, SinkApplication.class);
 	}
 
 }

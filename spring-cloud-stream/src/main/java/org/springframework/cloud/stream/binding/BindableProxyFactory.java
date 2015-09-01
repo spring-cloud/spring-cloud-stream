@@ -68,14 +68,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	public static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
 
-	public static final String POLLABLE_BRIDGE_FREQUENCY_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".pollableBridge.frequency";
+	public static final String POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".pollableBridge.interval";
 
 	private Class<?> type;
 
 	@Value("${" + CHANNEL_NAMESPACE_PROPERTY_NAME + ":}")
 	private String channelNamespace;
 
-	@Value("${" + POLLABLE_BRIDGE_FREQUENCY_PROPERTY_NAME + ":1000}")
+	@Value("${" + POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME + ":1000}")
 	private int pollableBridgeDefaultFrequency;
 
 	private Object proxy = null;
@@ -269,7 +269,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
 				}
-				channelBindingService.bindMessageConsumer(
+				channelBindingService.bindConsumer(
 						channelHolder.getMessageChannel(), channelHolderEntry.getKey());
 			}
 		}
@@ -285,7 +285,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
 				}
-				channelBindingService.bindMessageProducer(channelHolderEntry.getValue()
+				channelBindingService.bindProducer(channelHolderEntry.getValue()
 						.getMessageChannel(), channelHolderEntry.getKey());
 			}
 		}

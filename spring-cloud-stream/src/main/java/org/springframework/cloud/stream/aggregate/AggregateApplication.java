@@ -36,9 +36,9 @@ import org.springframework.integration.channel.DirectChannel;
 /**
  * @author Marius Bogoevici
  */
-public class ModuleAggregationUtils {
+public class AggregateApplication {
 
-	private static final Log log = LogFactory.getLog(ModuleAggregationUtils.class);
+	private static final Log log = LogFactory.getLog(AggregateApplication.class);
 
 	public static final String INPUT_CHANNEL_NAME = "input";
 
@@ -51,18 +51,19 @@ public class ModuleAggregationUtils {
 	 * @param parentArgs arguments for the parent (prefixed with '--')
 	 * @param modules a list module classes to be aggregated
 	 * @param moduleArgs arguments for the modules (prefixed with '--")
-	 * @return
+	 *
+	 * @return the resulting parent context for the aggregate
 	 */
-	public static ConfigurableApplicationContext runAggregated(String[] parentArgs,
-			Class<?>[] modules, String[][] moduleArgs) {
+	public static ConfigurableApplicationContext run(Class<?>[] modules, String[] parentArgs,
+																									 String[][] moduleArgs) {
 		ConfigurableApplicationContext parentContext = createParentContext(parentArgs != null ? parentArgs
 				: new String[0]);
 		runEmbedded(parentContext, modules, moduleArgs);
 		return parentContext;
 	}
 
-	public static ConfigurableApplicationContext runAggregated(Class<?>... modules) {
-		return runAggregated(null, modules, null);
+	public static ConfigurableApplicationContext run(Class<?>... modules) {
+		return run(modules, null, null);
 	}
 
 	/**
@@ -88,7 +89,7 @@ public class ModuleAggregationUtils {
 				.headless(true)
 				.properties(
 						"spring.jmx.default-domain="
-								+ UUID.randomUUID().toString().replace("-", ""));
+								+ AggregatorParentConfiguration.class.getName());
 		return aggregatorParentConfiguration.run(args);
 	}
 

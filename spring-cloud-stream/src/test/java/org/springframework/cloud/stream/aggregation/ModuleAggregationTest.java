@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.stream.aggregate.ModuleAggregationUtils;
+import org.springframework.cloud.stream.aggregate.AggregateApplication;
 import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableModule;
 import org.springframework.cloud.stream.annotation.Processor;
@@ -36,7 +36,7 @@ public class ModuleAggregationTest {
 
 	@Test
 	public void testModuleAggregation() {
-		ConfigurableApplicationContext aggregatedApplicationContext = ModuleAggregationUtils.runAggregated(TestSource.class,
+		ConfigurableApplicationContext aggregatedApplicationContext = AggregateApplication.run(TestSource.class,
 				TestProcessor.class);
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
 		assertThat(sharedChannelRegistry.getSharedChannels().keySet(), hasSize(2));

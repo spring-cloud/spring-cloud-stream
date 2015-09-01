@@ -44,17 +44,16 @@ import org.springframework.messaging.core.DestinationResolver;
  */
 @Configuration
 @EnableConfigurationProperties(ChannelBindingProperties.class)
-public class ChannelBindingAdapterConfiguration {
+public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(ChannelBindingService.class)
-	public ChannelBindingService bindingAdapter(ChannelBindingProperties module,
-			Binder<MessageChannel> binder, ConfigurableListableBeanFactory beanFactory) {
-		return new ChannelBindingService(module, binder);
+	public ChannelBindingService bindingService(ChannelBindingProperties channelBindingProperties, Binder<MessageChannel> binder) {
+		return new ChannelBindingService(channelBindingProperties, binder);
 	}
 
 	@Bean
-	@DependsOn("bindingAdapter")
+	@DependsOn("bindingService")
 	public ChannelBindingLifecycle channelBindingLifecycle() {
 		return new ChannelBindingLifecycle();
 	}
