@@ -52,12 +52,6 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>io.reactivex</groupId>
-			<artifactId>rxjava</artifactId>
-			<version>1.0.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
