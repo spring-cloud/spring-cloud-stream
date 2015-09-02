@@ -176,8 +176,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private MessageChannel locateSharedChannel(String name) {
-		return sharedChannelRegistry != null ? sharedChannelRegistry
-				.getSharedChannel(getNamespacePrefixedChannelName(name)) : null;
+		return sharedChannelRegistry != null ? sharedChannelRegistry.get(getNamespacePrefixedChannelName(name)) : null;
 	}
 
 	private String getNamespacePrefixedChannelName(String name) {

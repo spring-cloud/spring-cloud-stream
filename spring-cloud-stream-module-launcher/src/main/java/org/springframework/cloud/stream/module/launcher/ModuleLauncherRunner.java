@@ -58,7 +58,9 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 			}
 			log.info(sb.toString());
 		}
-		this.moduleLauncher.launch(launchRequests, moduleLauncherProperties.isAggregate(), filterSpringProperties(args));
+		this.moduleLauncher.launch(launchRequests,
+				moduleLauncherProperties.isAggregate(),
+				moduleLauncherProperties.isAggregate() ? extractAggregateProperties(args) : new String[0]);
 	}
 
 	private List<ModuleLaunchRequest> generateModuleLaunchRequests() {
@@ -72,7 +74,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		return requests;
 	}
 
-	private String[] filterSpringProperties(String[] args) {
+	private String[] extractAggregateProperties(String[] args) {
 		List<String> filteredProperties = new ArrayList<>();
 		for (String arg : args) {
 			if (arg.startsWith("--spring.")) {

@@ -39,7 +39,7 @@ public class ModuleAggregationTest {
 		ConfigurableApplicationContext aggregatedApplicationContext = AggregateApplication.run(TestSource.class,
 				TestProcessor.class);
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
-		assertThat(sharedChannelRegistry.getSharedChannels().keySet(), hasSize(2));
+		assertThat(sharedChannelRegistry.getAll().keySet(), hasSize(2));
 	}
 
 

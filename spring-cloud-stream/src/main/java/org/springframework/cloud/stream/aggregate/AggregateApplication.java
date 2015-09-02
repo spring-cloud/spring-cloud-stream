@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.aggregate;
 
-import java.util.UUID;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -125,12 +123,12 @@ public class AggregateApplication {
 			Class<?> module = modules[i];
 			String moduleClassName = module.getName();
 			if (i > 0) {
-				sharedChannelRegistry.putSharedChannel(getNamespace(moduleClassName, i)
+				sharedChannelRegistry.register(getNamespace(moduleClassName, i)
 						+ "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
 			if (i < modules.length - 1) {
-				sharedChannelRegistry.putSharedChannel(getNamespace(moduleClassName, i)
+				sharedChannelRegistry.register(getNamespace(moduleClassName, i)
 						+ "." + OUTPUT_CHANNEL_NAME, sharedChannel);
 			}
 		}
