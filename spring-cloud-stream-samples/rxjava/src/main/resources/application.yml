@@ -1,0 +1,8 @@
+server:
+  port: 8082
+spring:
+  cloud:
+    stream:
+      bindings:
+        output: xformed
+        input: testtock
