@@ -49,17 +49,30 @@ import org.springframework.core.env.Environment;
 public class ModuleLauncherProperties {
 
 	/**
-	 * Array of coordinates for modules that need to be launched.
+	 * True if aggregating multiple modules when launched together
+	 */
+	private boolean aggregate;
+
+	/**
+	 * File path to a locally available maven repository, where modules will be downloaded.
 	 */
 	private String[] modules;
 
 	/**
-	 * Map of arguments, keyed by the 0-based index in the {@kink #modules array}.
+	 * Map of arguments, keyed by the 0-based index in the {@link #modules array}.
 	 */
 	private Map<Integer, Map<String, String>> args = new HashMap<>();
 
 	public void setModules(String[] modules) {
 		this.modules = modules;
+	}
+
+	public boolean isAggregate() {
+		return aggregate;
+	}
+
+	public void setAggregate(boolean aggregate) {
+		this.aggregate = aggregate;
 	}
 
 	@NotEmpty(message = "A list of modules must be specified.")

@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.adapter;
+package config.sink;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * @author Dave Syer
+ * @author Marius Bogoevici
  */
-public class InputChannelBinding extends ChannelBinding {
-
-	protected InputChannelBinding() {
-		super(null);
-	}
-
-	public InputChannelBinding(String localName) {
-		super(localName);
-	}
-
+@SpringBootApplication
+public class SinkApplication {
 }

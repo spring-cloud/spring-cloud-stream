@@ -36,6 +36,6 @@ public interface ModuleResolver {
 	 * @param version the version
 	 * @return the resource
 	 */
-	public Resource resolve(String groupId, String artifactId, String extension, String classifier, String version);
+	Resource resolve(String groupId, String artifactId, String extension, String classifier, String version);
 
 }

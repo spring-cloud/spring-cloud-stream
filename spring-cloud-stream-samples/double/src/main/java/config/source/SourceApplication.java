@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.adapter;
+package config.source;
+
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * @author Dave Syer
- *
+ * @author Marius Bogoevici
  */
-public interface ChannelLocator {
-
-	String locate(String name);
-
-	String tap(String name);
-
+@SpringBootApplication
+public class SourceApplication {
 }

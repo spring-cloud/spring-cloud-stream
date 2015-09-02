@@ -14,37 +14,26 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.adapter;
+package org.springframework.cloud.stream.module.launcher;
+
+import org.springframework.boot.loader.archive.Archive;
+import org.springframework.boot.loader.util.AsciiBytes;
 
 /**
- * Represents a binding between a local and remote message channel.
- *
- * @author Dave Syer
- * @author Mark Fisher
+ * @author Marius Bogoevici
  */
-public abstract class ChannelBinding {
+class ArchiveMatchingEntryFilter implements Archive.EntryFilter {
 
-	private String localName;
-	private String remoteName;
+	public static final ArchiveMatchingEntryFilter FILTER = new ArchiveMatchingEntryFilter();
 
-	protected ChannelBinding() {
-		this(null);
+	private static final AsciiBytes LIB = new AsciiBytes("lib/");
+
+	@Override
+	public boolean matches(Archive.Entry entry) {
+		return isNestedArchive(entry);
 	}
 
-	protected ChannelBinding(String localName) {
-		this.localName = localName;
+	protected boolean isNestedArchive(Archive.Entry entry) {
+		return !entry.isDirectory() && entry.getName().startsWith(LIB);
 	}
-
-	public String getLocalName() {
-		return this.localName;
-	}
-
-	public String getRemoteName() {
-		return this.remoteName;
-	}
-
-	public void setRemoteName(String name) {
-		this.remoteName = name;
-	}
-
 }
