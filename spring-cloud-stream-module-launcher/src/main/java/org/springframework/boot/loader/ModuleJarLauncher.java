@@ -18,6 +18,7 @@ package org.springframework.boot.loader;
 
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
 
 import org.springframework.boot.loader.archive.Archive;
@@ -80,12 +81,15 @@ public class ModuleJarLauncher extends ExecutableArchiveLauncher {
 	@Override
 	protected ClassLoader createClassLoader(URL[] urls) throws Exception {
 		ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-		// try to retrieve the extension classloader
-		ClassLoader extensionClassLoader = systemClassLoader != null ? systemClassLoader.getParent() : null;
-		// set the classloader for the module as the extension classloader if available
-		// fall back to the system classloader (which can also be null) if not available
-		ClassLoader classLoaderForModule = extensionClassLoader != null ? extensionClassLoader : systemClassLoader;
-		return new LaunchedURLClassLoader(urls, classLoaderForModule);
+		if (systemClassLoader instanceof URLClassLoader) {
+			URLClassLoader classLoader = (URLClassLoader) systemClassLoader;
+			URL[] toUse = new URL[urls.length + classLoader.getURLs().length];
+			System.arraycopy(urls, 0, toUse, 0, urls.length);
+			System.arraycopy(classLoader.getURLs(), 0, toUse, urls.length, classLoader.getURLs().length);
+			return new LaunchedURLClassLoader(toUse, null);
+		} else {
+			return new LaunchedURLClassLoader(urls, systemClassLoader);
+		}
 	}
 
 }
