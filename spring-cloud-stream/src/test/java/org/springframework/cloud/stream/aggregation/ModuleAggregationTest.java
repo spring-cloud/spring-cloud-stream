@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplication;
 import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
-import org.springframework.cloud.stream.annotation.EnableModule;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Processor;
 import org.springframework.cloud.stream.annotation.Source;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -46,13 +46,13 @@ public class ModuleAggregationTest {
 	}
 
 
-	@EnableModule(Source.class)
+	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	public static class TestSource {
 
 	}
 
-	@EnableModule(Processor.class)
+	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestProcessor {
 

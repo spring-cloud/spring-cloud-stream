@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.cloud.stream.annotation.EnableModule;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.ModuleChannels;
 import org.springframework.cloud.stream.annotation.Sink;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
@@ -65,7 +65,7 @@ public class BoundChannelsInterceptedTest {
 
 
 	@SpringBootApplication
-	@EnableModule(Sink.class)
+	@EnableBinding(Sink.class)
 	@Import(MockBinderConfiguration.class)
 	public static class Foo {
 

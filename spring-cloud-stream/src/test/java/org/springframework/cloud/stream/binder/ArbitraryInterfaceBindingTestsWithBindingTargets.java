@@ -29,7 +29,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.cloud.stream.annotation.EnableModule;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.ModuleChannels;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.context.annotation.Import;
@@ -61,7 +61,7 @@ public class ArbitraryInterfaceBindingTestsWithBindingTargets {
 		verifyNoMoreInteractions(binder);
 	}
 
-	@EnableModule(FooChannels.class)
+	@EnableBinding(FooChannels.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderConfiguration.class)
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/arbitrary-binding-test.properties")

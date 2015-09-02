@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.cloud.stream.annotation.EnableModule;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binding.BindingBeanDefinitionRegistryUtils;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
@@ -37,11 +37,11 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata,
 			BeanDefinitionRegistry registry) {
-		MultiValueMap<String, Object> attributes = metadata.getAllAnnotationAttributes(
-				EnableModule.class.getName(), false);
-		List<String> registeredChannelNames = new ArrayList<>();
+		MultiValueMap<String, Object> attributes = metadata.getAllAnnotationAttributes(EnableBinding.class.getName(),
+				false);
 		for (Class<?> type : collectClasses(attributes.get("value"))) {
-			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type, type.getName(), registry);
+			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type,
+					type.getName(), registry);
 			BindingBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
 					ClassUtils.resolveClassName(metadata.getClassName(), null), type,
 					registry);
