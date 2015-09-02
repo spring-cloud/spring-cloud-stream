@@ -31,7 +31,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.config.EnableIntegration;
 
 /**
- * Annotation that identifies a class as a module.
+ * Enables the binding of inputs and outputs to a broker, according to the list
+ * of interfaces passed as value to the annotation.
  *
  * @author Dave Syer
  * @author Marius Bogoevici
@@ -44,8 +45,12 @@ import org.springframework.integration.config.EnableIntegration;
 @Configuration
 @Import({ChannelBindingServiceConfiguration.class, AggregateBuilderConfiguration.class, BindingBeansRegistrar.class})
 @EnableIntegration
-public @interface EnableModule {
+public @interface EnableBinding {
 
+	/**
+	 * A list of interfaces having methods annotated with {@link Input} and/or
+	 * {@link Output} to indicate bindable components.
+	 */
 	Class<?>[] value() default {};
 
 }

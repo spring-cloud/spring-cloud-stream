@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.annotation;
+package org.springframework.cloud.stream.messaging;
 
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.messaging.MessageChannel;
 
+/**
+ * Bindable interface with one output channel.
+ *
+ * @see org.springframework.cloud.stream.annotation.EnableBinding
+ * @author Dave Syer
+ * @author Marius Bogoevici
+ */
 public interface Source {
 	
-	public static String OUTPUT = "output";
+	String OUTPUT = "output";
 	
 	@Output(Source.OUTPUT)
 	MessageChannel output();

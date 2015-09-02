@@ -19,9 +19,8 @@ package config.source;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.Source;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
@@ -32,7 +31,7 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Dave Syer
  * @author Marius Bogoevici
  */
-@EnableModule(Source.class)
+@EnableBinding(Source.class)
 public class SourceModuleDefinition {
 
 	private String format = "yyyy-MM-dd HH:mm:ss";

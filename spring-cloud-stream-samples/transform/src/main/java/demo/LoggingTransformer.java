@@ -19,15 +19,15 @@ package demo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.Processor;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.integration.annotation.ServiceActivator;
 
 /**
  * @author Dave Syer
  *
  */
-@EnableModule(Processor.class)
+@EnableBinding(Processor.class)
 @ConfigurationProperties("module.logging")
 public class LoggingTransformer {
 

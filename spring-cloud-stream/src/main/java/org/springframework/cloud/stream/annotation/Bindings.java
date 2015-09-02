@@ -26,10 +26,11 @@ import java.lang.annotation.Target;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Indicates an instance of a channels interface containing methods returning named
- * message channels.
+ * Indicates an instance of an interface containing methods returning bound
+ * inputs and outputs.
  *
  * @author Dave Syer
+ * @author Marius Bogoevici
  */
 
 @Qualifier
@@ -37,7 +38,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-public @interface ModuleChannels {
+public @interface Bindings {
 
 	Class<?> value();
 
