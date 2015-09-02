@@ -25,6 +25,7 @@
 		<module>tap</module>
 		<module>double</module>
 		<module>extended</module>
+		<module>rxjava-processor</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>

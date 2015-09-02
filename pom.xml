@@ -19,6 +19,7 @@
 	</scm>
 	<properties>
 		<java.version>1.7</java.version>
+		<rx-java.version>1.0.14</rx-java.version>
 		<spring-boot.version>1.3.0.BUILD-SNAPSHOT</spring-boot.version>
 		<spring-framework.version>4.2.1.BUILD-SNAPSHOT</spring-framework.version>
 		<spring-integration.version>4.2.0.BUILD-SNAPSHOT</spring-integration.version>
@@ -28,6 +29,7 @@
 		<module>spring-cloud-stream-binders</module>
 		<module>spring-cloud-stream-codec</module>
 		<module>spring-cloud-stream-starters</module>
+		<module>spring-cloud-stream-rxjava</module>
 		<module>spring-cloud-stream-samples</module>
 		<module>spring-cloud-stream-module-launcher</module>
 		<module>docs</module>
@@ -138,6 +140,11 @@
 				<groupId>com.esotericsoftware</groupId>
 				<artifactId>kryo-shaded</artifactId>
 				<version>3.0.3</version>
+			</dependency>
+			<dependency>
+				<groupId>io.reactivex</groupId>
+				<artifactId>rxjava</artifactId>
+				<version>${rx-java.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.objenesis</groupId>
