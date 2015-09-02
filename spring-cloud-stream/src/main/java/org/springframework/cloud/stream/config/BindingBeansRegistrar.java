@@ -40,8 +40,7 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 		MultiValueMap<String, Object> attributes = metadata.getAllAnnotationAttributes(EnableBinding.class.getName(),
 				false);
 		for (Class<?> type : collectClasses(attributes.get("value"))) {
-			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type,
-					type.getName(), registry);
+			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type,type.getName(), registry);
 			BindingBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
 					ClassUtils.resolveClassName(metadata.getClassName(), null), type,
 					registry);

@@ -43,8 +43,7 @@ import org.springframework.integration.config.EnableIntegration;
 @Documented
 @Inherited
 @Configuration
-@Import({ ChannelBindingServiceConfiguration.class, AggregateBuilderConfiguration.class,
-		BindingBeansRegistrar.class })
+@Import({ ChannelBindingServiceConfiguration.class, AggregateBuilderConfiguration.class, BindingBeansRegistrar.class })
 @EnableIntegration
 public @interface EnableBinding {
 
