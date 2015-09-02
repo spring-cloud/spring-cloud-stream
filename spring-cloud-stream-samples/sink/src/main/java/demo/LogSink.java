@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package config;
+package demo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,14 +24,14 @@ import org.springframework.integration.annotation.ServiceActivator;
 
 /**
  * @author Dave Syer
- * @author Marius Bogoevici
+ *
  */
 @EnableModule(Sink.class)
-public class TappingLoggingSink {
+public class LogSink {
 
-	private static Logger logger = LoggerFactory.getLogger(TappingLoggingSink.class);
+	private static Logger logger = LoggerFactory.getLogger(LogSink.class);
 
-	@ServiceActivator(inputChannel = Sink.INPUT)
+	@ServiceActivator(inputChannel=Sink.INPUT)
 	public void loggerSink(Object payload) {
 		logger.info("Received: " + payload);
 	}

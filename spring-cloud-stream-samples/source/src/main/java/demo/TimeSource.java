@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package source;
+package demo;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,9 +28,6 @@ import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.support.GenericMessage;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * @author Dave Syer

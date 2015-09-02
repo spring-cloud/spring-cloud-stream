@@ -21,9 +21,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.aggregate.AggregateBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateConfigurer;
 
-import sink.LogSink;
-import source.TimeSource;
-import transform.LoggingTransformer;
+import demo.LogSink;
+import demo.LoggingTransformer;
+import demo.TimeSource;
 
 @SpringBootApplication
 public class ExtendedApplication implements AggregateConfigurer {

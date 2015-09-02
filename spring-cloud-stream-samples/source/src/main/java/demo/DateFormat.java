@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package source;
+package demo;
 
 import static java.lang.annotation.ElementType.*;
 import static java.lang.annotation.RetentionPolicy.*;

@@ -6,7 +6,7 @@
 	<artifactId>spring-cloud-stream-sample-source</artifactId>
 	<packaging>jar</packaging>
 	<name>spring-cloud-stream-sample-source</name>
-	<description>Demo project for Spring XD module</description>
+	<description>Demo project for source module</description>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -15,9 +15,7 @@
 	</parent>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<start-class>demo.SourceApplication</start-class>
-		<java.version>1.8</java.version>
 	</properties>
 
 	<dependencies>
