@@ -21,13 +21,13 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.cloud.stream.annotation.rxjava.EnableRxJavaModule;
+import org.springframework.cloud.stream.annotation.rxjava.EnableRxJavaProcessor;
 import org.springframework.cloud.stream.annotation.rxjava.RxJavaProcessor;
 import org.springframework.context.annotation.Bean;
 
 import rx.Observable;
 
-@EnableRxJavaModule
+@EnableRxJavaProcessor
 public class RxJavaTransformer {
 
 	private static Logger logger = LoggerFactory.getLogger(RxJavaTransformer.class);

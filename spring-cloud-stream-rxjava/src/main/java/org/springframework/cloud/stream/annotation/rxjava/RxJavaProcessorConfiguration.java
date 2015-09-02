@@ -13,31 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.cloud.stream.annotation.rxjava;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import org.springframework.cloud.stream.annotation.EnableModule;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.Processor;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.messaging.MessageHandler;
 
 /**
- * Annotation that identifies the class as RxJava module. The class that has {@link EnableRxJavaModule} annotated is expected
- * to provide a bean that implements {@link RxJavaProcessor}.
+ * Configuration class for RxJava module support.
  *
  * @author Ilayaperumal Gopinathan
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Inherited
-@EnableModule(Processor.class)
-@Import(RxJavaConfiguration.class)
-public @interface EnableRxJavaModule {
+@Configuration
+public class RxJavaProcessorConfiguration {
+
+	@Autowired
+	RxJavaProcessor processor;
+
+	@ServiceActivator(inputChannel = Processor.INPUT)
+	@Bean
+	public MessageHandler subjectMessageHandler() {
+		SubjectMessageHandler messageHandler = new SubjectMessageHandler(processor);
+		messageHandler.setOutputChannelName(Processor.OUTPUT);
+		return messageHandler;
+	}
 }

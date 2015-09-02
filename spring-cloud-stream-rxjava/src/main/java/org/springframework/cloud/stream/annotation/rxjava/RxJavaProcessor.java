@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.annotation.rxjava;
 import rx.Observable;
 
 /**
- * Marker interface that RxJava module uses to provide the implementation bean.
+ * Marker interface that RxJava processor module uses to provide the implementation bean.
  *
  * @author Mark Pollack
  * @author Ilayaperumal Gopinathan

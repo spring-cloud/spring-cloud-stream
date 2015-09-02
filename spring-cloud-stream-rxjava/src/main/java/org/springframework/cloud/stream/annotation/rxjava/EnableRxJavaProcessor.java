@@ -13,31 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.annotation.rxjava;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.cloud.stream.annotation.EnableModule;
 import org.springframework.cloud.stream.annotation.Processor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.messaging.MessageHandler;
+import org.springframework.context.annotation.Import;
 
 /**
- * Configuration class for RxJava module support.
+ * Annotation that identifies the class as RxJava processor module. The class that has {@link EnableRxJavaProcessor}
+ * annotated is expected to provide a bean that implements {@link RxJavaProcessor}.
  *
  * @author Ilayaperumal Gopinathan
  */
-@Configuration
-public class RxJavaConfiguration {
-
-	@Autowired
-	RxJavaProcessor processor;
-
-	@ServiceActivator(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
-	@Bean
-	public MessageHandler subjectMessageHandler() {
-		SubjectMessageHandler messageHandler = new SubjectMessageHandler(processor);
-		messageHandler.setOutputChannelName(Processor.OUTPUT);
-		return messageHandler;
-	}
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@EnableModule(Processor.class)
+@Import(RxJavaProcessorConfiguration.class)
+public @interface EnableRxJavaProcessor {
 }
