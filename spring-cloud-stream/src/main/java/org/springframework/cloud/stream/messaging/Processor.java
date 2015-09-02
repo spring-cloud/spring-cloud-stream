@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.annotation;
+package org.springframework.cloud.stream.messaging;
 
-import org.springframework.messaging.SubscribableChannel;
-
-public interface Sink {
-
-	public static String INPUT = "input";
-
-	@Input(Sink.INPUT)
-	SubscribableChannel input();
+/**
+ * Bindable interface with one input and one output channel.
+ *
+ * @see org.springframework.cloud.stream.annotation.EnableBinding
+ * @author Dave Syer
+ * @author Marius Bogoevici
+ */
+public interface Processor extends Source, Sink {
 
 }

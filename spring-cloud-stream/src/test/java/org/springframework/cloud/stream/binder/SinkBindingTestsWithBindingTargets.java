@@ -30,8 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.ModuleChannels;
-import org.springframework.cloud.stream.annotation.Sink;
+import org.springframework.cloud.stream.annotation.Bindings;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
@@ -48,7 +48,7 @@ public class SinkBindingTestsWithBindingTargets {
 	@Autowired
 	private Binder binder;
 
-	@Autowired @ModuleChannels(TestSink.class)
+	@Autowired @Bindings(TestSink.class)
 	private Sink testSink;
 
 	@SuppressWarnings("unchecked")

@@ -14,8 +14,23 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.annotation;
+package org.springframework.cloud.stream.messaging;
 
-public interface Processor extends Source, Sink {
+import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.messaging.MessageChannel;
+
+/**
+ * Bindable interface with one output channel.
+ *
+ * @see org.springframework.cloud.stream.annotation.EnableBinding
+ * @author Dave Syer
+ * @author Marius Bogoevici
+ */
+public interface Source {
+	
+	String OUTPUT = "output";
+	
+	@Output(Source.OUTPUT)
+	MessageChannel output();
 
 }
