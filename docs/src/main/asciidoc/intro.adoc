@@ -1,4 +1,4 @@
-This project allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just add `@EnableModule` and run your app as a Spring Boot app (single application context). You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. The sample uses Redis.
+This project allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just add `@EnableBinding` and run your app as a Spring Boot app (single application context). You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. The sample uses Redis.
 
 Here's a sample source module (output channel only):
 
@@ -15,7 +15,7 @@ public class ModuleApplication {
 }
 
 @Configuration
-@EnableModule(Source.class)
+@EnableBinding(Source.class)
 public class TimerSource {
 
   @Value("${format}")
@@ -30,7 +30,7 @@ public class TimerSource {
 }
 ----
 
-`@EnableModule` is parameterized by an interface (in this case `Source`) which declares input and output channels. `Source`, `Sink` and `Processor` are provided off the shelf, but you can define others. Here's the definition of `Source`
+`@EnableBinding` is parameterized by an interface (in this case `Source`) which declares input and output channels. `Source`, `Sink` and `Processor` are provided off the shelf, but you can define others. Here's the definition of `Source`
 
 [source,java]
 ----
@@ -61,7 +61,7 @@ public class ModuleApplicationTests {
 }
 ----
 
-NOTE: In this case there is only one `Source` in the application context so there is no need to qualify it when it is autowired. If there is ambiguity, e.g. if you are composing one module from some others, you can use `@ModuleChannels` qualifier to inject a specific channel set. The `@ModuleChannels` qualifier takes a parameter which is the class that carries the `@EnableModule` annotation (in this case the `TimerSource`).
+NOTE: In this case there is only one `Source` in the application context so there is no need to qualify it when it is autowired. If there is ambiguity, e.g. if you are composing one module from some others, you can use `@ModuleChannels` qualifier to inject a specific channel set. The `@ModuleChannels` qualifier takes a parameter which is the class that carries the `@EnableBinding` annotation (in this case the `TimerSource`).
 
 == Multiple Input or Output Channels
 
