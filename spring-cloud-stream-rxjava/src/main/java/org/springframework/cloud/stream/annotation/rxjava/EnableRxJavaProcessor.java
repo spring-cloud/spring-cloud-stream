@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.annotation;
+package org.springframework.cloud.stream.annotation.rxjava;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,29 +23,21 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
-import org.springframework.cloud.stream.config.BindingBeansRegistrar;
-import org.springframework.cloud.stream.config.ChannelBindingServiceConfiguration;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.cloud.stream.annotation.EnableModule;
+import org.springframework.cloud.stream.annotation.Processor;
 import org.springframework.context.annotation.Import;
-import org.springframework.integration.config.EnableIntegration;
 
 /**
- * Annotation that identifies a class as a module.
+ * Annotation that identifies the class as RxJava processor module. The class that has {@link EnableRxJavaProcessor}
+ * annotated is expected to provide a bean that implements {@link RxJavaProcessor}.
  *
- * @author Dave Syer
- * @author Marius Bogoevici
- * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
-@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-@Configuration
-@Import({ChannelBindingServiceConfiguration.class, AggregateBuilderConfiguration.class, BindingBeansRegistrar.class})
-@EnableIntegration
-public @interface EnableModule {
-
-	Class<?>[] value() default {};
-
+@EnableModule(Processor.class)
+@Import(RxJavaProcessorConfiguration.class)
+public @interface EnableRxJavaProcessor {
 }
