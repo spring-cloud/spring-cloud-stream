@@ -25,27 +25,17 @@ import org.springframework.cloud.stream.annotation.rxjava.EnableRxJavaProcessor;
 import org.springframework.cloud.stream.annotation.rxjava.RxJavaProcessor;
 import org.springframework.context.annotation.Bean;
 
-import rx.Observable;
-
 @EnableRxJavaProcessor
 public class RxJavaTransformer {
 
 	private static Logger logger = LoggerFactory.getLogger(RxJavaTransformer.class);
 
 	@Bean
-	public RxJavaProcessor processor() {
-		return new RxJavaProcessor<String, String>() {
-
-			@Override
-			public Observable<String> process(Observable<String> inputStream) {
-				return inputStream.map(data -> {
-					logger.info("Got data = " + data);
-					return data;
-				})
-						.buffer(5)
-						.map(data -> String.valueOf(avg(data)));
-			}
-		};
+	public RxJavaProcessor<String,String> processor() {
+		return inputStream -> inputStream.map(data -> {
+			logger.info("Got data = " + data);
+			return data;
+		}).buffer(5).map(data -> String.valueOf(avg(data)));
 	}
 
 	private static Double avg(List<String> data) {
