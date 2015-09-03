@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.boot.loader.LaunchedURLClassLoader;
 import org.springframework.boot.loader.ModuleJarLauncher;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
@@ -146,8 +145,8 @@ public class ModuleLauncher {
 				mainClassNames.add(jarFileArchive.getMainClass());
 				arguments.add(toArgArray(moduleLaunchRequest.getArguments()));
 			}
-			final ClassLoader classLoader = new LaunchedURLClassLoader(jarURLs.toArray(new URL[jarURLs.size()]),
-					ClassloaderUtils.getExtensionClassloader());
+			final ClassLoader classLoader = ClassloaderUtils
+					.createModuleClassloader(jarURLs.toArray(new URL[jarURLs.size()]));
 			final List<Class<?>> mainClasses = new ArrayList<>();
 			for (String mainClass : mainClassNames) {
 				mainClasses.add(ClassUtils.forName(mainClass, classLoader));

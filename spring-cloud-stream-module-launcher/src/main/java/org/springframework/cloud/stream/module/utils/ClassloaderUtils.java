@@ -16,24 +16,39 @@
 
 package org.springframework.cloud.stream.module.utils;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+
+import org.springframework.boot.loader.LaunchedURLClassLoader;
+import org.springframework.util.Assert;
+
 /**
  * @author Marius Bogoevici
  */
 public class ClassloaderUtils {
 
 	/**
-	 * Retrieves the extension classloader of the current JVM, if accessible. In general the extension classloader is
-	 * found in a hierarchy as the parent of the application classloader. If such a hierarchy does not exist, it will
-	 * return the application classloader itself.
+	 * Creates a ClassLoader for the launched modules by merging the URLs supplied as argument with the URLs that
+	 * make up the additional classpath of the launched JVM (retrieved from the application classloader), and
+	 * setting the extension classloader of the JVM as parent, if accessible.
 	 *
-	 * @return the classloader
+	 * @param urls a list of library URLs
+	 * @return the resulting classloader
 	 */
-	public static ClassLoader getExtensionClassloader() {
+	public static ClassLoader createModuleClassloader(URL[] urls) {
 		ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-		// try to retrieve the extension classloader
-		ClassLoader extensionClassLoader = systemClassLoader != null ? systemClassLoader.getParent() : null;
-		// set the classloader for the module as the extension classloader if available
-		// fall back to the system classloader (which can also be null) if not available
-		return extensionClassLoader != null ? extensionClassLoader : systemClassLoader;
+		if (systemClassLoader instanceof URLClassLoader) {
+			// add the URLs of the application classloader to the created classloader
+			// to compensate for LaunchedURLClassLoader not delegating to parent to retrieve resources
+			@SuppressWarnings("resource")
+			URLClassLoader systemUrlClassLoader = (URLClassLoader) systemClassLoader;
+			URL[] mergedUrls = new URL[urls.length + systemUrlClassLoader.getURLs().length];
+			System.arraycopy(urls, 0, mergedUrls, 0, urls.length);
+			System.arraycopy(systemUrlClassLoader.getURLs(), 0, mergedUrls, urls.length,
+					systemUrlClassLoader.getURLs().length);
+			// add the extension classloader as parent to the created context, if accessible
+			return new LaunchedURLClassLoader(mergedUrls, systemUrlClassLoader.getParent());
+		}
+		return new LaunchedURLClassLoader(urls, systemClassLoader);
 	}
 }
