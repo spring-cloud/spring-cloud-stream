@@ -21,12 +21,14 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.module.resolver.AetherModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.cloud.stream.module.resolver.ModuleResolverProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 
 /**
  * Configuration class that has the beans required for module launcher.
@@ -61,4 +63,15 @@ public class ModuleLauncherConfiguration {
 		return new ModuleLauncher(moduleResolver);
 	}
 
+	@Bean
+	@ConfigurationPropertiesBinding
+	public Converter<String, ModuleOptionKey> stringToModuleOptionKeyConverter() {
+		return new Converter<String, ModuleOptionKey>() {
+			@Override
+			public ModuleOptionKey convert(String s) {
+				String[] keys = s.split(("[_\\-\\.]"));
+				return new ModuleOptionKey(Integer.valueOf(keys[0]), s.substring(keys[0].length() + 1));
+			}
+		};
+	}
 }

@@ -33,7 +33,7 @@ public class ModuleLaunchRequest {
 
 	public ModuleLaunchRequest(String module, Map<String, String> arguments) {
 		this.module = module;
-		this.arguments = arguments != null ? new HashMap<>(arguments) : new HashMap<String, String>();
+		this.arguments = arguments != null ? arguments : new HashMap<String, String>();
 	}
 
 	public String getModule() {

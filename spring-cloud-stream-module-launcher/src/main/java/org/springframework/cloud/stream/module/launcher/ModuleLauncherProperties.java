@@ -61,7 +61,7 @@ public class ModuleLauncherProperties {
 	/**
 	 * Map of arguments, keyed by the 0-based index in the {@link #modules array}.
 	 */
-	private Map<Integer, Map<String, String>> args = new HashMap<>();
+	private Map<ModuleOptionKey, String> args = new HashMap<>();
 
 	public void setModules(String[] modules) {
 		this.modules = modules;
@@ -80,12 +80,11 @@ public class ModuleLauncherProperties {
 		return modules;
 	}
 
-	public void setArgs(Map<Integer, Map<String, String>> args) {
+	public void setArgs(Map<ModuleOptionKey, String> args) {
 		this.args = args;
 	}
 
-	public Map<Integer, Map<String, String>> getArgs() {
+	public Map<ModuleOptionKey, String> getArgs() {
 		return args;
 	}
-
 }
