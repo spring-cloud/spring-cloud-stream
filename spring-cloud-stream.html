@@ -417,7 +417,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This project allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just add <code>@EnableModule</code> and run your app as a Spring Boot app (single application context). You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. The sample uses Redis.</p>
+<p>This project allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just add <code>@EnableBinding</code> and run your app as a Spring Boot app (single application context). You just need to connect to the physical broker for the bindings, which is automatic if the relevant binder implementation is available on the classpath. The sample uses Redis.</p>
 </div>
 <div class="paragraph">
 <p>Here&#8217;s a sample source module (output channel only):</p>
@@ -435,7 +435,7 @@ public class ModuleApplication {
 }
 
 @Configuration
-@EnableModule(Source.class)
+@EnableBinding(Source.class)
 public class TimerSource {
 
   @Value("${format}")
@@ -451,7 +451,7 @@ public class TimerSource {
 </div>
 </div>
 <div class="paragraph">
-<p><code>@EnableModule</code> is parameterized by an interface (in this case <code>Source</code>) which declares input and output channels. <code>Source</code>, <code>Sink</code> and <code>Processor</code> are provided off the shelf, but you can define others. Here&#8217;s the definition of <code>Source</code></p>
+<p><code>@EnableBinding</code> is parameterized by an interface (in this case <code>Source</code>) which declares input and output channels. <code>Source</code>, <code>Sink</code> and <code>Processor</code> are provided off the shelf, but you can define others. Here&#8217;s the definition of <code>Source</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -490,7 +490,7 @@ public class ModuleApplicationTests {
 <div class="title">Note</div>
 </td>
 <td class="content">
-In this case there is only one <code>Source</code> in the application context so there is no need to qualify it when it is autowired. If there is ambiguity, e.g. if you are composing one module from some others, you can use <code>@ModuleChannels</code> qualifier to inject a specific channel set. The <code>@ModuleChannels</code> qualifier takes a parameter which is the class that carries the <code>@EnableModule</code> annotation (in this case the <code>TimerSource</code>).
+In this case there is only one <code>Source</code> in the application context so there is no need to qualify it when it is autowired. If there is ambiguity, e.g. if you are composing one module from some others, you can use <code>@Bindings</code> qualifier to inject a specific channel set. The <code>@Bindings</code> qualifier takes a parameter which is the class that carries the <code>@EnableBinding</code> annotation (in this case the <code>TimerSource</code>).
 </td>
 </tr>
 </table>
@@ -582,7 +582,7 @@ The main set of samples are "vanilla" in the sense that they are not deployable 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2015-09-03 11:29:17 UTC
+Last updated 2015-09-03 11:50:26 UTC
 </div>
 </div>
 </body>
