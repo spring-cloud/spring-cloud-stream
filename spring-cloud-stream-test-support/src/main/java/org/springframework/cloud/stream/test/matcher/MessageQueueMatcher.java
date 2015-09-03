@@ -38,7 +38,7 @@ import org.springframework.messaging.Message;
  * public class TransformProcessorApplicationTests {
  *
  *    {@literal @}Autowired
- *    {@literal @}ModuleChannels(TransformProcessor.class)
+ *    {@literal @}Bindings(TransformProcessor.class)
  *    private Processor processor;
  *
  *    {@literal @}Autowired

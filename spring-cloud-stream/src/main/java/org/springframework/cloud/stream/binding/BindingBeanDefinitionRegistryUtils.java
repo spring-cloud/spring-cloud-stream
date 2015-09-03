@@ -25,8 +25,8 @@ import java.util.Map;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.ModuleChannels;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ReflectionUtils;
@@ -70,7 +70,6 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 
 	public static void registerChannelBeanDefinitions(Class<?> type,
 			final String channelInterfaceBeanName, final BeanDefinitionRegistry registry) {
-		final List<String> channelNames = new ArrayList<>();
 		ReflectionUtils.doWithMethods(type, new MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException,
@@ -99,7 +98,7 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
 					BindableProxyFactory.class);
 			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(
-					ModuleChannels.class, parent));
+					Bindings.class, parent));
 			rootBeanDefinition.getConstructorArgumentValues().addGenericArgumentValue(
 					type);
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
@@ -107,7 +106,7 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		else {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(type);
 			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(
-					ModuleChannels.class, parent));
+					Bindings.class, parent));
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 	}

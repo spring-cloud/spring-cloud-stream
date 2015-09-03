@@ -23,22 +23,34 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
+import org.springframework.cloud.stream.config.BindingBeansRegistrar;
+import org.springframework.cloud.stream.config.ChannelBindingServiceConfiguration;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.integration.config.EnableIntegration;
 
 /**
- * Indicates an instance of a channels interface containing methods returning named
- * message channels.
+ * Enables the binding of inputs and outputs to transport, according to the list of
+ * interfaces passed as value to the annotation.
  *
  * @author Dave Syer
+ * @author Marius Bogoevici
+ * @author David Turanski
  */
-
-@Qualifier
-@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE })
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Inherited
 @Documented
-public @interface ModuleChannels {
+@Inherited
+@Configuration
+@Import({ChannelBindingServiceConfiguration.class, AggregateBuilderConfiguration.class, BindingBeansRegistrar.class})
+@EnableIntegration
+public @interface EnableBinding {
 
-	Class<?> value();
+	/**
+	 * A list of interfaces with methods annotated with {@link Input} or {@link Output},
+	 * indicating bindable components.
+	 */
+	Class<?>[] value() default {};
 
 }

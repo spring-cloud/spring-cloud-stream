@@ -23,29 +23,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
-import org.springframework.cloud.stream.config.BindingBeansRegistrar;
-import org.springframework.cloud.stream.config.ChannelBindingServiceConfiguration;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.integration.config.EnableIntegration;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Annotation that identifies a class as a module.
+ * Indicates an instance of an interface containing methods returning bound
+ * inputs and outputs.
  *
  * @author Dave Syer
  * @author Marius Bogoevici
- * @author David Turanski
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Inherited
-@Configuration
-@Import({ChannelBindingServiceConfiguration.class, AggregateBuilderConfiguration.class, BindingBeansRegistrar.class})
-@EnableIntegration
-public @interface EnableModule {
 
-	Class<?>[] value() default {};
+@Qualifier
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@Documented
+public @interface Bindings {
+
+	Class<?> value();
 
 }

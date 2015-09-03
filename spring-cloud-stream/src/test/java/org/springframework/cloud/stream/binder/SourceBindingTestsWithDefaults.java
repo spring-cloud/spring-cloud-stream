@@ -29,9 +29,9 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.ModuleChannels;
-import org.springframework.cloud.stream.annotation.Source;
+import org.springframework.cloud.stream.annotation.Bindings;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -47,7 +47,7 @@ public class SourceBindingTestsWithDefaults {
 	@Autowired
 	private Binder binder;
 
-	@Autowired @ModuleChannels(TestSource.class)
+	@Autowired @Bindings(TestSource.class)
 	private Source testSource;
 
 	@SuppressWarnings("unchecked")
@@ -57,7 +57,7 @@ public class SourceBindingTestsWithDefaults {
 		verifyNoMoreInteractions(binder);
 	}
 
-	@EnableModule(Source.class)
+	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderConfiguration.class)
 	public static class TestSource {

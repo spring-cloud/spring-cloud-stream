@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
@@ -52,12 +53,12 @@ import org.springframework.util.ReflectionUtils;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
- * {@link org.springframework.cloud.stream.annotation.EnableModule}
+ * {@link EnableBinding}
  *
  * @author Marius Bogoevici
  * @author David Syer
  *
- * @see org.springframework.cloud.stream.annotation.EnableModule
+ * @see EnableBinding
  */
 public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>,
 		BeanFactoryAware, Bindable, InitializingBean {

@@ -19,10 +19,10 @@ package org.springframework.cloud.stream.aggregate;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.annotation.EnableModule;
-import org.springframework.cloud.stream.annotation.Processor;
-import org.springframework.cloud.stream.annotation.Sink;
-import org.springframework.cloud.stream.annotation.Source;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -129,7 +129,7 @@ public class AggregateApplication {
 	 * Basic configuration for a parent
 	 */
 	@EnableAutoConfiguration
-	@EnableModule
+	@EnableBinding
 	public static class AggregatorParentConfiguration {
 
 		@Bean
