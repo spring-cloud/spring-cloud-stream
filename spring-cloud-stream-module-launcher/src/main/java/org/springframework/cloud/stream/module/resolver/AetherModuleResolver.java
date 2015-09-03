@@ -150,10 +150,10 @@ public class AetherModuleResolver implements ModuleResolver {
 
 	@Override
 	public Resource[] resolve(Coordinates root, Coordinates[] includes, CoordinatesFilter[] excludes) {
-		Assert.hasText(root.getGroupId(), "'groupId' cannot be blank.");
-		Assert.hasText(root.getArtifactId(), "'artifactId' cannot be blank.");
-		Assert.hasText(root.getExtension(), "'extension' cannot be blank.");
-		Assert.hasText(root.getVersion(), "'version' cannot be blank.");
+		validateCoordinates(root);
+		for (Coordinates include : includes) {
+			validateCoordinates(include);
+		}
 
 		List<Resource> result = new ArrayList<>();
 
@@ -194,6 +194,13 @@ public class AetherModuleResolver implements ModuleResolver {
 			}
 		}
 		return result.toArray(new Resource[result.size()]);
+	}
+
+	private void validateCoordinates(Coordinates coordinates) {
+		Assert.hasText(coordinates.getGroupId(), "'groupId' cannot be blank.");
+		Assert.hasText(coordinates.getArtifactId(), "'artifactId' cannot be blank.");
+		Assert.hasText(coordinates.getExtension(), "'extension' cannot be blank.");
+		Assert.hasText(coordinates.getVersion(), "'version' cannot be blank.");
 	}
 
 	public FileSystemResource toResource(ArtifactResult resolvedArtifact) {
