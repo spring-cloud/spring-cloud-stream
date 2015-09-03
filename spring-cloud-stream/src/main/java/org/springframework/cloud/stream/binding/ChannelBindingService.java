@@ -45,7 +45,7 @@ public class ChannelBindingService {
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingProperties
 				.getBindingPath(inputChannelName);
-		if (isChannelPubSub(inputChannelName)) {
+		if (isChannelPubSub(channelBindingTarget)) {
 			this.binder.bindPubSubConsumer(channelBindingTarget, inputChannel,
 					this.channelBindingProperties.getConsumerProperties());
 		}
@@ -58,7 +58,7 @@ public class ChannelBindingService {
 	public void bindProducer(MessageChannel outputChannel, String outputChannelName) {
 		String channelBindingTarget = this.channelBindingProperties
 				.getBindingPath(outputChannelName);
-		if (isChannelPubSub(outputChannelName)) {
+		if (isChannelPubSub(channelBindingTarget)) {
 			this.binder.bindPubSubProducer(channelBindingTarget, outputChannel,
 					this.channelBindingProperties.getProducerProperties());
 		}
