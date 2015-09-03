@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binding;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -34,9 +35,9 @@ public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationConte
 
 	private volatile boolean running = false;
 
-	private final Object lifecycleMonitor = new Object();
-
 	private ConfigurableApplicationContext applicationContext;
+
+	private final AtomicBoolean active = new AtomicBoolean(false);
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext)
@@ -47,8 +48,8 @@ public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationConte
 	@Override
 	public void start() {
 		if (!running) {
-			synchronized (lifecycleMonitor) {
-				if (!running) {
+			if (!this.active.get()) {
+				if (this.active.compareAndSet(false, true)) {
 					// retrieve the ChannelBindingService lazily, avoiding early initialization
 					try {
 						ChannelBindingService channelBindingService = this.applicationContext.getBean(ChannelBindingService.class);
@@ -59,10 +60,13 @@ public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationConte
 						for (Bindable bindable : bindables.values()) {
 							bindable.bindInputs(channelBindingService);
 						}
-					} catch (BeansException e) {
-						throw new IllegalStateException("Cannot perform binding, no proper implementation found",e);
+					}
+					catch (BeansException e) {
+						throw new IllegalStateException("Cannot perform binding, no proper implementation found", e);
 					}
 					this.running = true;
+					this.applicationContext.start();
+					this.active.set(false);
 				}
 			}
 		}
@@ -71,8 +75,8 @@ public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationConte
 	@Override
 	public void stop() {
 		if (running) {
-			synchronized (lifecycleMonitor) {
-				if (running) {
+			if (!this.active.get()) {
+				if (this.active.compareAndSet(false, true)) {
 					try {
 						// retrieve the ChannelBindingService lazily, avoiding early initialization
 						ChannelBindingService channelBindingService = this.applicationContext.getBean(ChannelBindingService.class);
@@ -83,9 +87,12 @@ public class ChannelBindingLifecycle implements SmartLifecycle, ApplicationConte
 						for (Bindable bindable : bindables.values()) {
 							bindable.unbindOutputs(channelBindingService);
 						}
-					} catch (BeansException e) {
-						throw new IllegalStateException("Cannot perform binding, no proper implementation found",e);
 					}
+					catch (BeansException e) {
+						throw new IllegalStateException("Cannot perform binding, no proper implementation found", e);
+					}
+					this.applicationContext.stop();
+					this.active.set(false);
 					this.running = false;
 				}
 			}
