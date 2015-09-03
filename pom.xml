@@ -27,8 +27,9 @@
 		<module>spring-cloud-stream</module>
 		<module>spring-cloud-stream-binders</module>
 		<module>spring-cloud-stream-codec</module>
-		<module>spring-cloud-stream-module-launcher</module>
+		<module>spring-cloud-stream-starters</module>
 		<module>spring-cloud-stream-samples</module>
+		<module>spring-cloud-stream-module-launcher</module>
 		<module>docs</module>
 		<module>spring-cloud-stream-test-support</module>
 	</modules>
@@ -65,7 +66,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-spi</artifactId>
+				<artifactId>spring-cloud-stream-binder-kafka</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -85,7 +86,27 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-kafka</artifactId>
+				<artifactId>spring-cloud-starter-stream-kafka</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-starter-stream-local</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-starter-stream-redis</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-binder-spi</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
