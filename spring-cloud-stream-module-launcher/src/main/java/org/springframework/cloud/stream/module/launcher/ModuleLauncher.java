@@ -30,8 +30,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.loader.ModuleJarLauncher;
+import org.springframework.boot.loader.MultiJarLauncher;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
+import org.springframework.cloud.stream.module.resolver.Coordinates;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.cloud.stream.module.utils.ClassloaderUtils;
 import org.springframework.core.io.Resource;
@@ -61,10 +63,14 @@ public class ModuleLauncher {
 
 	private static final String DEFAULT_EXTENSION = "jar";
 
-	private static final String DEFAULT_CLASSIFIER = "exec";
+	private static final String DEFAULT_MODULE_CLASSIFIER = "exec";
 
 	private static final Pattern COORDINATES_PATTERN =
 			Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
+
+	private static final String INCLUDE_DEPENDENCIES_ARG = "includes";
+
+	private static final String EXCLUDE_DEPENDENCIES_ARG = "excludes";
 
 	private final ModuleResolver moduleResolver;
 
@@ -89,12 +95,11 @@ public class ModuleLauncher {
 	 * @param parentArgs a list of arguments for the whole aggregate
 	 */
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate, String parentArgs[]) {
-		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);
-		Collections.reverse(reversed);
 		if (moduleLaunchRequests.size() == 1 || !aggregate) {
 			launchIndividualModules(moduleLaunchRequests);
 		}
 		else {
+			//TODO add support for CP enhancement for aggregated modules
 			launchAggregatedModules(moduleLaunchRequests, parentArgs);
 		}
 	}
@@ -162,11 +167,22 @@ public class ModuleLauncher {
 		}
 	}
 
-	public void launchIndividualModules(List<ModuleLaunchRequest> reversed) {
+	public void launchIndividualModules(List<ModuleLaunchRequest> moduleLaunchRequests) {
+		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);
+		Collections.reverse(reversed);
 		for (ModuleLaunchRequest moduleLaunchRequest : reversed) {
 			String module = moduleLaunchRequest.getModule();
 			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
-			launchModule(module, toArgArray(moduleLaunchRequest.getArguments()));
+			Map<String, String> arguments = moduleLaunchRequest.getArguments();
+			if (arguments.containsKey(INCLUDE_DEPENDENCIES_ARG) || arguments.containsKey(EXCLUDE_DEPENDENCIES_ARG)) {
+				String includes = arguments.get(INCLUDE_DEPENDENCIES_ARG);
+				String excludes = arguments.get(EXCLUDE_DEPENDENCIES_ARG);
+				launchModuleWithDependencies(module, toArgArray(arguments),
+						StringUtils.commaDelimitedListToStringArray(includes),
+						StringUtils.commaDelimitedListToStringArray(excludes));
+			} else {
+				launchModule(module, toArgArray(arguments));
+			}
 		}
 	}
 
@@ -182,20 +198,48 @@ public class ModuleLauncher {
 		}
 	}
 
-	private Resource resolveModule(String coordinates) {
+	private void launchModuleWithDependencies(String module, String[] args, String[] includes, String[] excludes) {
+		try {
+			Resource[] libraries = this.moduleResolver.resolve(toCoordinates(module, DEFAULT_MODULE_CLASSIFIER), toCoordinateArray(includes), null);
+			List<Archive> archives = new ArrayList<>();
+			for (Resource library : libraries) {
+				archives.add(new JarFileArchive(library.getFile()));
+			}
+			MultiJarLauncher jarLauncher = new MultiJarLauncher(archives);
+			jarLauncher.launch(args);
+		}
+		catch (IOException e) {
+			throw new RuntimeException("failed to launch module: " + module, e);
+		}
+	}
+
+	private Resource resolveModule(String moduleCoordinates) {
+		Coordinates coordinates = toCoordinates(moduleCoordinates, DEFAULT_MODULE_CLASSIFIER);
+		return this.moduleResolver.resolve(coordinates);
+	}
+
+	private Coordinates toCoordinates(String coordinates, String defaultClassifier) {
 		Matcher matcher = COORDINATES_PATTERN.matcher(coordinates);
 		Assert.isTrue(matcher.matches(), "Bad artifact coordinates " + coordinates
 				+ ", expected format is <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>");
 		String groupId = matcher.group(1);
 		String artifactId = matcher.group(2);
 		String extension = StringUtils.hasLength(matcher.group(4)) ? matcher.group(4) : DEFAULT_EXTENSION;
-		String classifier = StringUtils.hasLength(matcher.group(6)) ? matcher.group(6) : DEFAULT_CLASSIFIER;
+		String classifier = StringUtils.hasLength(matcher.group(6)) ? matcher.group(6) : defaultClassifier;
 		String version = matcher.group(7);
-		return this.moduleResolver.resolve(groupId, artifactId, extension, classifier, version);
+		return new Coordinates(groupId, artifactId, extension, classifier, version);
+	}
+
+	private Coordinates[] toCoordinateArray(String[] coordinateList) {
+		List<Coordinates> result = new ArrayList<>();
+		for (String coordinates : coordinateList) {
+			result.add(toCoordinates(coordinates,""));
+		}
+		return result.toArray(new Coordinates[result.size()]);
 	}
 
 	private class ModuleAggregatorRunner implements Runnable {
-		
+
 		private final ClassLoader classLoader;
 
 		private final String[] parentArgs;
@@ -222,7 +266,8 @@ public class ModuleLauncher {
 						mainClasses.toArray(new Class<?>[mainClasses.size()]),
 						parentArgs, arguments.toArray(new String[][] {}));
 			} catch (Exception e) {
-				log.error("failed to launch aggregated modules :" + StringUtils.collectionToCommaDelimitedString(mainClasses), e);
+				log.error("failed to launch aggregated modules :"
+						+ StringUtils.collectionToCommaDelimitedString(mainClasses), e);
 				throw new RuntimeException(e);
 			}
 		}
