@@ -1,0 +1,80 @@
+/*
+ * Copyright 2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.cloud.stream.binder;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.cloud.stream.utils.MockBinderConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.Lifecycle;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+
+/**
+ * @author Marius Bogoevici
+ */
+public class LifecycleBinderTests {
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testNonSmartLifecyclesStarted() {
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class);
+		SimpleLifecycle simpleLifecycle = applicationContext.getBean(SimpleLifecycle.class);
+		assertTrue(simpleLifecycle.isRunning());
+		applicationContext.close();
+		assertFalse(simpleLifecycle.isRunning());
+	}
+
+	@EnableBinding(Source.class)
+	@EnableAutoConfiguration
+	@Import(MockBinderConfiguration.class)
+	public static class TestSource {
+
+		@Bean
+		public SimpleLifecycle simpleLifecycle() {
+			return new SimpleLifecycle();
+		}
+	}
+
+	public static class SimpleLifecycle implements Lifecycle {
+
+		private boolean running = false;
+
+		@Override
+		public synchronized void start() {
+			running = true;
+		}
+
+		@Override
+		public synchronized void stop() {
+			running = false;
+		}
+
+		@Override
+		public synchronized boolean isRunning() {
+			return running;
+		}
+	}
+}
