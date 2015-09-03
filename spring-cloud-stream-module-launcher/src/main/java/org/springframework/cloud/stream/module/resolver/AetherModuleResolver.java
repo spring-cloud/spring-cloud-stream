@@ -47,6 +47,7 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.util.filter.PatternExclusionsDependencyFilter;
 
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -149,20 +150,16 @@ public class AetherModuleResolver implements ModuleResolver {
 	}
 
 	@Override
-	public Resource[] resolve(Coordinates root, Coordinates[] includes, CoordinatesFilter[] excludes) {
+	public Resource[] resolve(Coordinates root, Coordinates[] includes, String[] excludePatterns) {
 		validateCoordinates(root);
 		for (Coordinates include : includes) {
 			validateCoordinates(include);
 		}
-
 		List<Resource> result = new ArrayList<>();
-
 		Artifact rootArtifact = toArtifact(root);
-
 		RepositorySystemSession session = newRepositorySystemSession(repositorySystem,
 				localRepository.getAbsolutePath());
-
-		if (ObjectUtils.isEmpty(includes) && ObjectUtils.isEmpty(excludes)) {
+		if (ObjectUtils.isEmpty(includes) && ObjectUtils.isEmpty(excludePatterns)) {
 			ArtifactResult resolvedArtifact;
 			try {
 				resolvedArtifact = repositorySystem.resolveArtifact(session,
@@ -182,7 +179,9 @@ public class AetherModuleResolver implements ModuleResolver {
 				}
 				collectRequest.setRepositories(remoteRepositories);
 				DependencyResult dependencyResult =
-						repositorySystem.resolveDependencies(session, new DependencyRequest(collectRequest, null));
+						repositorySystem.resolveDependencies(session,
+								new DependencyRequest(collectRequest,
+										new PatternExclusionsDependencyFilter(excludePatterns)));
 				for (ArtifactResult artifactResult : dependencyResult.getArtifactResults()) {
 					// we are only interested in the jars or zips
 					if ("jar".equalsIgnoreCase(artifactResult.getArtifact().getExtension())) {

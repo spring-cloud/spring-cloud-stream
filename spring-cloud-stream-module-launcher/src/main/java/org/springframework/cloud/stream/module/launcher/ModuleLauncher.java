@@ -240,7 +240,7 @@ public class ModuleLauncher {
 	}
 
 	private class ModuleAggregatorRunner implements Runnable {
-		
+
 		private final ClassLoader classLoader;
 
 		private final String[] parentArgs;
@@ -267,7 +267,8 @@ public class ModuleLauncher {
 						mainClasses.toArray(new Class<?>[mainClasses.size()]),
 						parentArgs, arguments.toArray(new String[][] {}));
 			} catch (Exception e) {
-				log.error("failed to launch aggregated modules :" + StringUtils.collectionToCommaDelimitedString(mainClasses), e);
+				log.error("failed to launch aggregated modules :"
+						+ StringUtils.collectionToCommaDelimitedString(mainClasses), e);
 				throw new RuntimeException(e);
 			}
 		}
