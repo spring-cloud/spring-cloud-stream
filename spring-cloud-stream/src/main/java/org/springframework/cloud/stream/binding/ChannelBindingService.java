@@ -45,8 +45,8 @@ public class ChannelBindingService {
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingProperties
 				.getBindingPath(inputChannelName);
-		if (isChannelPubSub(inputChannelName)) {
-			this.binder.bindPubSubConsumer(channelBindingTarget, inputChannel,
+		if (isChannelPubSub(channelBindingTarget)) {
+			this.binder.bindPubSubConsumer(removePrefix(channelBindingTarget), inputChannel,
 					this.channelBindingProperties.getConsumerProperties());
 		}
 		else {
@@ -58,8 +58,8 @@ public class ChannelBindingService {
 	public void bindProducer(MessageChannel outputChannel, String outputChannelName) {
 		String channelBindingTarget = this.channelBindingProperties
 				.getBindingPath(outputChannelName);
-		if (isChannelPubSub(outputChannelName)) {
-			this.binder.bindPubSubProducer(channelBindingTarget, outputChannel,
+		if (isChannelPubSub(channelBindingTarget)) {
+			this.binder.bindPubSubProducer(removePrefix(channelBindingTarget), outputChannel,
 					this.channelBindingProperties.getProducerProperties());
 		}
 		else {
@@ -68,10 +68,16 @@ public class ChannelBindingService {
 		}
 	}
 
-	private boolean isChannelPubSub(String channelName) {
-		Assert.isTrue(StringUtils.hasText(channelName),
-				"Channel name should not be empty/null.");
-		return channelName.startsWith("topic:");
+	private boolean isChannelPubSub(String bindingTarget) {
+		Assert.isTrue(StringUtils.hasText(bindingTarget),
+				"Binding target should not be empty/null.");
+		return bindingTarget.startsWith("topic:");
+	}
+
+	private String removePrefix(String bindingTarget) {
+		Assert.isTrue(StringUtils.hasText(bindingTarget),
+				"Binding target should not be empty/null.");
+		return bindingTarget.substring(bindingTarget.indexOf(":") + 1);
 	}
 
 	public void unbindConsumers(String inputChannelName) {
