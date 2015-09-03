@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.module.launcher;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,9 +67,17 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 	private List<ModuleLaunchRequest> generateModuleLaunchRequests() {
 		List<ModuleLaunchRequest> requests = new ArrayList<>();
 		String[] modules = this.moduleLauncherProperties.getModules();
-		Map<Integer, Map<String, String>> arguments = this.moduleLauncherProperties.getArgs();
+		Map<ModuleOptionKey, String> arguments = this.moduleLauncherProperties.getArgs();
+		Map<Integer, Map<String,String>> properties = new HashMap<>();
 		for (int i = 0; i < modules.length; i++) {
-			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], arguments.get(i));
+			Map<String, String> options = new HashMap<>();
+			for (Map.Entry<ModuleOptionKey, String> value: arguments.entrySet()) {
+				if (value.getKey().getIndex() == i) {
+					options.put(value.getKey().getOption(), value.getValue());
+				}
+			}
+			properties.put(i, options);
+			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], properties.get(i));
 			requests.add(moduleLaunchRequest);
 		}
 		return requests;
@@ -83,5 +92,4 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		}
 		return filteredProperties.toArray(new String[filteredProperties.size()]);
 	}
-
 }
