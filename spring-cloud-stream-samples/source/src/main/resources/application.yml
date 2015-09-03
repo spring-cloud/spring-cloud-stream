@@ -5,7 +5,7 @@ spring:
   cloud:
     stream:
       bindings:
-        output: testtock
+        output: topic:testtock
         # uncomment below to use the last digit of the seconds as a partition key
         # hashcode(key) % N is then applied with N being the partitionCount value
         # thus, even seconds should go to the 0 queue, odd seconds to the 1 queue
