@@ -18,7 +18,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<kafka.version>0.8.2.1</kafka.version>
 		<spring-integration-kafka.version>1.2.0.RELEASE</spring-integration-kafka.version>
-		<rxjava.version>1.0.0</rxjava.version>
+		<rxjava-math.version>1.0.0</rxjava-math.version>
 	</properties>
 
 	<dependencies>
@@ -67,12 +67,11 @@
 		<dependency>
 			<groupId>io.reactivex</groupId>
 			<artifactId>rxjava</artifactId>
-			<version>${rxjava.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.reactivex</groupId>
 			<artifactId>rxjava-math</artifactId>
-			<version>${rxjava.version}</version>
+			<version>${rxjava-math.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.xd</groupId>

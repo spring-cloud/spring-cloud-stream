@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
+import org.springframework.util.StringUtils;
 
 /**
  * @author David Turanski
@@ -33,9 +34,13 @@ import org.springframework.integration.kafka.support.ZookeeperConnect;
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka")
 public class KafkaMessageChannelBinderConfiguration {
 
-	private String zkAddress;
+	private String[] zkNodes;
 
-	private String brokers;
+	private String zkDefaultPort;
+
+	private String[] brokers;
+
+	private String brokersDefaultPort;
 
 	private KafkaMessageChannelBinder.Mode mode;
 
@@ -68,14 +73,14 @@ public class KafkaMessageChannelBinderConfiguration {
 	@Bean
 	ZookeeperConnect zookeeperConnect() {
 		ZookeeperConnect zookeeperConnect = new ZookeeperConnect();
-		zookeeperConnect.setZkConnect(zkAddress);
+		zookeeperConnect.setZkConnect(getZkConnectionString());
 		return zookeeperConnect;
 	}
 
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder() {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(zookeeperConnect(),
-				brokers, zkAddress, new String[0]);
+				getKafkaConnectionString(), getZkConnectionString());
 		kafkaMessageChannelBinder.setCodec(codec);
 		kafkaMessageChannelBinder.setMode(mode);
 		kafkaMessageChannelBinder.setOffsetStoreTopic(offsetStoreTopic);
@@ -106,12 +111,20 @@ public class KafkaMessageChannelBinderConfiguration {
 		return kafkaMessageChannelBinder;
 	}
 
-	public void setZkAddress(String zkAddress) {
-		this.zkAddress = zkAddress;
+	public void setZkNodes(String[] zkNodes) {
+		this.zkNodes = zkNodes;
 	}
 
-	public void setBrokers(String brokers) {
+	public void setZkDefaultPort(String zkDefaultPort) {
+		this.zkDefaultPort = zkDefaultPort;
+	}
+
+	public void setBrokers(String[] brokers) {
 		this.brokers = brokers;
+	}
+
+	public void setBrokersDefaultPort(String brokersDefaultPort) {
+		this.brokersDefaultPort = brokersDefaultPort;
 	}
 
 	public void setMode(KafkaMessageChannelBinder.Mode mode) {
@@ -162,4 +175,29 @@ public class KafkaMessageChannelBinderConfiguration {
 		this.codec = codec;
 	}
 
+	public String getZkConnectionString() {
+		return toConnectionString(this.zkNodes, this.zkDefaultPort);
+	}
+
+	public String getKafkaConnectionString() {
+		return toConnectionString(this.brokers, this.brokersDefaultPort);
+	}
+
+	/**
+	 * Converts an array of host values to a comma-separated String.
+	 *
+	 * It will append the default port value, if not already specified.
+	 */
+	private String toConnectionString(String[] hosts, String defaultPort) {
+		String[] fullyFormattedHosts = new String[hosts.length];
+		for (int i = 0; i < hosts.length; i++) {
+			if (hosts[i].contains(":") || StringUtils.isEmpty(defaultPort)) {
+				fullyFormattedHosts[i] = hosts[i];
+			}
+			else {
+				fullyFormattedHosts[i] = hosts[i] + ":" + defaultPort;
+			}
+		}
+		return StringUtils.arrayToCommaDelimitedString(fullyFormattedHosts);
+	}
 }
