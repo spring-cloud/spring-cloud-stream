@@ -67,7 +67,6 @@
 		<dependency>
 			<groupId>io.reactivex</groupId>
 			<artifactId>rxjava</artifactId>
-			<version>${rx-java.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.reactivex</groupId>

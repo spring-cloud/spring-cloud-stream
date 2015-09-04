@@ -34,7 +34,7 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka")
 public class KafkaMessageChannelBinderConfiguration {
 
-	private String[] zkAddress;
+	private String[] zkNodes;
 
 	private String zkDefaultPort;
 
@@ -111,8 +111,8 @@ public class KafkaMessageChannelBinderConfiguration {
 		return kafkaMessageChannelBinder;
 	}
 
-	public void setZkAddress(String[] zkAddress) {
-		this.zkAddress = zkAddress;
+	public void setZkNodes(String[] zkNodes) {
+		this.zkNodes = zkNodes;
 	}
 
 	public void setZkDefaultPort(String zkDefaultPort) {
@@ -176,7 +176,7 @@ public class KafkaMessageChannelBinderConfiguration {
 	}
 
 	public String getZkConnectionString() {
-		return toConnectionString(this.zkAddress, this.zkDefaultPort);
+		return toConnectionString(this.zkNodes, this.zkDefaultPort);
 	}
 
 	public String getKafkaConnectionString() {
