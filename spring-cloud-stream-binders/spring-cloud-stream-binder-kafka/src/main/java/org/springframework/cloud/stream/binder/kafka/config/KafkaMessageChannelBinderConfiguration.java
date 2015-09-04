@@ -28,6 +28,8 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author David Turanski
+ * @author Marius Bogoevici
+ * @author Mark Fisher
  */
 @Configuration
 @EnableConfigurationProperties(KafkaBinderConfigurationProperties.class)
@@ -36,11 +38,11 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	private String[] zkNodes;
 
-	private String zkDefaultPort;
+	private String defaultZkPort;
 
 	private String[] brokers;
 
-	private String brokersDefaultPort;
+	private String defaultBrokerPort;
 
 	private KafkaMessageChannelBinder.Mode mode;
 
@@ -115,16 +117,16 @@ public class KafkaMessageChannelBinderConfiguration {
 		this.zkNodes = zkNodes;
 	}
 
-	public void setZkDefaultPort(String zkDefaultPort) {
-		this.zkDefaultPort = zkDefaultPort;
+	public void setDefaultZkPort(String defaultZkPort) {
+		this.defaultZkPort = defaultZkPort;
 	}
 
 	public void setBrokers(String[] brokers) {
 		this.brokers = brokers;
 	}
 
-	public void setBrokersDefaultPort(String brokersDefaultPort) {
-		this.brokersDefaultPort = brokersDefaultPort;
+	public void setDefaultBrokerPort(String defaultBrokerPort) {
+		this.defaultBrokerPort = defaultBrokerPort;
 	}
 
 	public void setMode(KafkaMessageChannelBinder.Mode mode) {
@@ -176,11 +178,11 @@ public class KafkaMessageChannelBinderConfiguration {
 	}
 
 	public String getZkConnectionString() {
-		return toConnectionString(this.zkNodes, this.zkDefaultPort);
+		return toConnectionString(this.zkNodes, this.defaultZkPort);
 	}
 
 	public String getKafkaConnectionString() {
-		return toConnectionString(this.brokers, this.brokersDefaultPort);
+		return toConnectionString(this.brokers, this.defaultBrokerPort);
 	}
 
 	/**
