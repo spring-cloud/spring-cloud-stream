@@ -23,19 +23,30 @@ import org.springframework.core.io.Resource;
  * uber-jar based on its Maven coordinates.
  *
  * @author David Turanski
+ * @author Marius Bogoevici
+ * @author Eric Bottard
  */
 public interface ModuleResolver {
 
 	/**
 	 * Retrieve a resource given its coordinates.
 	 *
-	 * @param groupId the groupId
-	 * @param artifactId the artifactId
-	 * @param extension the file extension
-	 * @param classifier classifier
-	 * @param version the version
+	 * @param coordinates the coordinates of a resource
 	 * @return the resource
 	 */
-	Resource resolve(String groupId, String artifactId, String extension, String classifier, String version);
+	Resource resolve(Coordinates coordinates);
+
+	/**
+	 * Retrieve a set of resources given their coordinates, along with additional dependencies.
+	 * Exclusion rules patterns (conforming to {@link org.eclipse.aether.util.filter.PatternExclusionsDependencyFilter}
+	 * can be provided as well.
+	 *
+	 * @param root the coordinates of the main resource
+	 * @param includes a list of coordinates to include along the main resource
+	 * @param excludePatterns a list of exclusion patterns
+	 * @see org.eclipse.aether.util.filter.PatternExclusionsDependencyFilter
+	 * @return the main resource and the additional dependencies
+	 */
+	Resource[] resolve(Coordinates root, Coordinates[] includes, String[] excludePatterns);
 
 }
