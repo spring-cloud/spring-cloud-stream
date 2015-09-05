@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.module.resolver;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,22 +30,29 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
+import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.util.artifact.JavaScopes;
 
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -108,36 +116,13 @@ public class AetherModuleResolver implements ModuleResolver {
 	/**
 	 * Resolve an artifact and return its location in the local repository. Aether performs the normal
 	 * Maven resolution process ensuring that the latest update is cached to the local repository.
-	 * @param groupId the groupId
-	 * @param artifactId the artifactId
-	 * @param extension the file extension
-	 * @param classifier classifier can be null if none
-	 * @param version the version
+	 * @param coordinates the Maven coordinates of the artifact
 	 * @return a {@link FileSystemResource} representing the resolved artifact in the local repository
 	 * @throws RuntimeException if the artifact does not exist or the resolution fails
 	 */
 	@Override
-	public Resource resolve(String groupId, String artifactId, String extension, String classifier, String version) {
-		Assert.hasText(groupId, "'groupId' cannot be blank.");
-		Assert.hasText(artifactId, "'artifactId' cannot be blank.");
-		Assert.hasText(extension, "'extension' cannot be blank.");
-		if (classifier == null) {
-			classifier = "";
-		}
-		Assert.hasText(version, "'version' cannot be blank.");
-
-		Artifact artifact = new DefaultArtifact(groupId, artifactId, classifier, extension, version);
-		RepositorySystemSession session = newRepositorySystemSession(repositorySystem,
-				localRepository.getAbsolutePath());
-		ArtifactResult result;
-		try {
-			result = repositorySystem.resolveArtifact(session,
-					new ArtifactRequest(artifact, remoteRepositories, "runtime"));
-		}
-		catch (ArtifactResolutionException e) {
-			throw new RuntimeException(e);
-		}
-		return new FileSystemResource(result.getArtifact().getFile());
+	public Resource resolve(Coordinates coordinates) {
+		return this.resolve(coordinates, null, null)[0];
 	}
 
 	/*
@@ -168,5 +153,90 @@ public class AetherModuleResolver implements ModuleResolver {
 			}
 		});
 		return locator.getService(RepositorySystem.class);
+	}
+
+
+	/**
+	 * Resolve a set of artifacts based on their coordinates, including their dependencies, and return the locations of
+	 * the transitive set in the local repository. Aether performs the normal Maven resolution process ensuring that the
+	 * latest update is cached to the local repository. A number of additional includes and excludes can be specified,
+	 * allowing to override the transitive dependencies of the original set. Includes and their transitive dependencies
+	 * will always
+	 *
+	 * @param root the Maven coordinates of the artifacts
+	 * @return a {@link FileSystemResource} representing the resolved artifact in the local repository
+	 * @throws RuntimeException if the artifact does not exist or the resolution fails
+	 */
+	@Override
+	public Resource[] resolve(Coordinates root, Coordinates[] includes, String[] excludePatterns) {
+		Assert.notNull(root, "Root cannot be null");
+		validateCoordinates(root);
+		if (!ObjectUtils.isEmpty(includes)) {
+			for (Coordinates include : includes) {
+				Assert.notNull(include, "Includes cannot be null");
+				validateCoordinates(include);
+			}
+		}
+		List<Resource> result = new ArrayList<>();
+		Artifact rootArtifact = toArtifact(root);
+		RepositorySystemSession session = newRepositorySystemSession(repositorySystem,
+				localRepository.getAbsolutePath());
+		if (ObjectUtils.isEmpty(includes) && ObjectUtils.isEmpty(excludePatterns)) {
+			ArtifactResult resolvedArtifact;
+			try {
+				resolvedArtifact = repositorySystem.resolveArtifact(session,
+						new ArtifactRequest(rootArtifact, remoteRepositories, JavaScopes.RUNTIME));
+			}
+			catch (ArtifactResolutionException e) {
+				throw new RuntimeException(e);
+			}
+			result.add(toResource(resolvedArtifact));
+		}
+		else {
+			try {
+				CollectRequest collectRequest = new CollectRequest();
+				collectRequest.setRepositories(remoteRepositories);
+				collectRequest.setRoot(new Dependency(rootArtifact, JavaScopes.RUNTIME));
+				Artifact[] includeArtifacts = new Artifact[!ObjectUtils.isEmpty(includes) ? includes.length : 0];
+				int i = 0;
+				for (Coordinates include : includes) {
+					Artifact includedArtifact = toArtifact(include);
+					collectRequest.addDependency(new Dependency(includedArtifact, JavaScopes.RUNTIME));
+					includeArtifacts[i++] = includedArtifact;
+				}
+				DependencyResult dependencyResult =
+						repositorySystem.resolveDependencies(session,
+								new DependencyRequest(collectRequest,
+										new InclusionExclusionDependencyFilter(includeArtifacts, excludePatterns)));
+				for (ArtifactResult artifactResult : dependencyResult.getArtifactResults()) {
+					// we are only interested in the jars
+					if ("jar".equalsIgnoreCase(artifactResult.getArtifact().getExtension())) {
+						result.add(toResource(artifactResult));
+					}
+				}
+			} catch (DependencyResolutionException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return result.toArray(new Resource[result.size()]);
+	}
+
+	private void validateCoordinates(Coordinates coordinates) {
+		Assert.hasText(coordinates.getGroupId(), "'groupId' cannot be blank.");
+		Assert.hasText(coordinates.getArtifactId(), "'artifactId' cannot be blank.");
+		Assert.hasText(coordinates.getExtension(), "'extension' cannot be blank.");
+		Assert.hasText(coordinates.getVersion(), "'version' cannot be blank.");
+	}
+
+	public FileSystemResource toResource(ArtifactResult resolvedArtifact) {
+		return new FileSystemResource(resolvedArtifact.getArtifact().getFile());
+	}
+
+	private Artifact toArtifact(Coordinates root) {
+		return new DefaultArtifact(root.getGroupId(),
+				root.getArtifactId(),
+				root.getClassifier() != null ? root.getClassifier() : "",
+				root.getExtension(),
+				root.getVersion());
 	}
 }

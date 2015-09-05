@@ -19,8 +19,10 @@ package org.springframework.cloud.stream.module.launcher;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -31,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
+import org.springframework.cloud.stream.module.resolver.Coordinates;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
 import org.springframework.cloud.stream.module.utils.ClassloaderUtils;
 import org.springframework.core.io.Resource;
@@ -60,10 +63,14 @@ public class ModuleLauncher {
 
 	private static final String DEFAULT_EXTENSION = "jar";
 
-	private static final String DEFAULT_CLASSIFIER = "exec";
+	private static final String DEFAULT_MODULE_CLASSIFIER = "exec";
 
 	private static final Pattern COORDINATES_PATTERN =
 			Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
+
+	private static final String INCLUDE_DEPENDENCIES_ARG = "includes";
+
+	private static final String EXCLUDE_DEPENDENCIES_ARG = "excludes";
 
 	private final ModuleResolver moduleResolver;
 
@@ -87,20 +94,21 @@ public class ModuleLauncher {
 	 * @param aggregate whether the modules should be aggregated at launch
 	 * @param parentArgs a list of arguments for the whole aggregate
 	 */
+	@SuppressWarnings("unchecked")
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate, Map<String,String> parentArgs) {
 		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);
 		Collections.reverse(reversed);
 		if (moduleLaunchRequests.size() == 1 || !aggregate) {
-			launchIndividualModules(moduleLaunchRequests);
+			launchIndividualModules(reversed);
 		}
 		else {
-			launchAggregatedModules(moduleLaunchRequests, toArgArray(parentArgs));
+			launchAggregatedModules(moduleLaunchRequests, parentArgs != null ? parentArgs : Collections.EMPTY_MAP);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate) {
-		this.launch(moduleLaunchRequests, aggregate, Collections.EMPTY_MAP);
+		this.launch(moduleLaunchRequests, aggregate, Collections.<String,String>emptyMap());
 	}
 
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests) {
@@ -125,53 +133,106 @@ public class ModuleLauncher {
 		}
 	}
 
-	public void launchAggregatedModules(List<ModuleLaunchRequest> moduleLaunchRequests, final String[] parentArgs) {
+	public void launchAggregatedModules(List<ModuleLaunchRequest> moduleLaunchRequests, Map<String,String> parentArgs) {
 		try {
 			List<String> mainClassNames = new ArrayList<>();
-			List<URL> jarURLs = new ArrayList<>();
+			LinkedHashSet<URL> jarURLs = new LinkedHashSet<>();
 			List<String> seenArchives = new ArrayList<>();
 			final List<String[]> arguments = new ArrayList<>();
-			// aggregate jars from all modules and extract their main Classes
-			for (ModuleLaunchRequest moduleLaunchRequest : moduleLaunchRequests) {
-				Resource resource = resolveModule(moduleLaunchRequest.getModule());
-				JarFileArchive jarFileArchive = new JarFileArchive(resource.getFile());
-				jarURLs.add(jarFileArchive.getUrl());
-				for (Archive archive : jarFileArchive.getNestedArchives(ArchiveMatchingEntryFilter.FILTER)) {
-					// avoid duplication based on unique JAR names
-					// TODO - read the metadata from the JARs, do proper version resolution on merge
-					String urlAsString = archive.getUrl().toString();
-					String jarNameWithExtension = urlAsString.substring(0, urlAsString.lastIndexOf("!/"));
-					String jarNameWithoutExtension = jarNameWithExtension.substring(jarNameWithExtension.lastIndexOf("/") + 1);
-					if (!seenArchives.contains(jarNameWithoutExtension)) {
-						seenArchives.add(jarNameWithoutExtension);
-						jarURLs.add(archive.getUrl());
+			final ClassLoader classLoader;
+			if (!(parentArgs.containsKey(EXCLUDE_DEPENDENCIES_ARG) ||
+					parentArgs.containsKey(INCLUDE_DEPENDENCIES_ARG))) {
+				for (ModuleLaunchRequest moduleLaunchRequest : moduleLaunchRequests) {
+					Resource resource = resolveModule(moduleLaunchRequest.getModule());
+					JarFileArchive jarFileArchive = new JarFileArchive(resource.getFile());
+					jarURLs.add(jarFileArchive.getUrl());
+					for (Archive archive : jarFileArchive.getNestedArchives(ArchiveMatchingEntryFilter.FILTER)) {
+						// avoid duplication based on unique JAR names
+						// TODO - read the metadata from the JARs, do proper version resolution on merge
+						String urlAsString = archive.getUrl().toString();
+						String jarNameWithExtension = urlAsString.substring(0, urlAsString.lastIndexOf("!/"));
+						String jarNameWithoutExtension =
+								jarNameWithExtension.substring(jarNameWithExtension.lastIndexOf("/") + 1);
+						if (!seenArchives.contains(jarNameWithoutExtension)) {
+							seenArchives.add(jarNameWithoutExtension);
+							jarURLs.add(archive.getUrl());
+						}
 					}
+					mainClassNames.add(jarFileArchive.getMainClass());
+					arguments.add(toArgArray(moduleLaunchRequest.getArguments()));
 				}
-				mainClassNames.add(jarFileArchive.getMainClass());
-				arguments.add(toArgArray(moduleLaunchRequest.getArguments()));
+				classLoader = ClassloaderUtils.createModuleClassloader(jarURLs.toArray(new URL[jarURLs.size()]));
+			} else {
+				// First, resolve modules and extract main classes - while slightly less efficient than just
+				// doing the same processing after resolution, this ensures that module artifacts are processed
+				// correctly for extracting their main class names. It is not possible in the general case to
+				// identify, after resolution, whether a resource represents a module artifact which was part of the
+				// original request or not. We will include the first module as root and the next as direct dependencies
+				Coordinates root = null;
+				ArrayList<Coordinates> includeCoordinates = new ArrayList<>();
+				for (ModuleLaunchRequest moduleLaunchRequest : moduleLaunchRequests) {
+					Coordinates moduleCoordinates
+							= toCoordinates(moduleLaunchRequest.getModule(), DEFAULT_MODULE_CLASSIFIER);
+					if (root == null) {
+						root = moduleCoordinates;
+					}
+					else {
+						includeCoordinates.add(toCoordinates(moduleLaunchRequest.getModule(), 
+								DEFAULT_MODULE_CLASSIFIER));
+					}
+					Resource moduleResource = resolveModule(moduleLaunchRequest.getModule());
+					JarFileArchive moduleArchive = new JarFileArchive(moduleResource.getFile());
+					mainClassNames.add(moduleArchive.getMainClass());
+					arguments.add(toArgArray(moduleLaunchRequest.getArguments()));
+				}
+				for (String include :
+						StringUtils.commaDelimitedListToStringArray(parentArgs.get(INCLUDE_DEPENDENCIES_ARG))) {
+					includeCoordinates.add(toCoordinates(include, ""));
+				}
+				// Resolve all artifacts - since modules have been specified as direct dependencies, they will take
+				// precedence in the resolution order, ensuring that the already resolved artifacts will be returned as
+				// part of the response.
+				Resource[] libraries = moduleResolver.resolve(root,
+						includeCoordinates.toArray(new Coordinates[includeCoordinates.size()]),
+						StringUtils.commaDelimitedListToStringArray(parentArgs.get(EXCLUDE_DEPENDENCIES_ARG)));
+				for (Resource library : libraries) {
+					jarURLs.add(library.getURL());
+				}
+				classLoader = new URLClassLoader(jarURLs.toArray(new URL[jarURLs.size()]));
 			}
-			final ClassLoader classLoader = ClassloaderUtils
-					.createModuleClassloader(jarURLs.toArray(new URL[jarURLs.size()]));
+
 			final List<Class<?>> mainClasses = new ArrayList<>();
 			for (String mainClass : mainClassNames) {
 				mainClasses.add(ClassUtils.forName(mainClass, classLoader));
 			}
-			Runnable moduleAggregatorRunner = new ModuleAggregatorRunner(classLoader, mainClasses, parentArgs, arguments);
-
+			Runnable moduleAggregatorRunner = new ModuleAggregatorRunner(classLoader, mainClasses,
+					toArgArray(parentArgs), arguments);
 			Thread moduleAggregatorRunnerThread = new Thread(moduleAggregatorRunner);
 			moduleAggregatorRunnerThread.setContextClassLoader(classLoader);
 			moduleAggregatorRunnerThread.setName(MODULE_AGGREGATOR_RUNNER_THREAD_NAME);
 			moduleAggregatorRunnerThread.start();
 		} catch (Exception e) {
-			throw new RuntimeException("failed to start aggregated modules: " + StringUtils.collectionToCommaDelimitedString(moduleLaunchRequests), e);
+			throw new RuntimeException("failed to start aggregated modules: " +
+					StringUtils.collectionToCommaDelimitedString(moduleLaunchRequests), e);
 		}
 	}
 
-	public void launchIndividualModules(List<ModuleLaunchRequest> reversed) {
+	public void launchIndividualModules(List<ModuleLaunchRequest> moduleLaunchRequests) {
+		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);
+		Collections.reverse(reversed);
 		for (ModuleLaunchRequest moduleLaunchRequest : reversed) {
 			String module = moduleLaunchRequest.getModule();
 			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
-			launchModule(module, toArgArray(moduleLaunchRequest.getArguments()));
+			Map<String, String> arguments = moduleLaunchRequest.getArguments();
+			if (arguments.containsKey(INCLUDE_DEPENDENCIES_ARG) || arguments.containsKey(EXCLUDE_DEPENDENCIES_ARG)) {
+				String includes = arguments.get(INCLUDE_DEPENDENCIES_ARG);
+				String excludes = arguments.get(EXCLUDE_DEPENDENCIES_ARG);
+				launchModuleWithDependencies(module, toArgArray(arguments),
+						StringUtils.commaDelimitedListToStringArray(includes),
+						StringUtils.commaDelimitedListToStringArray(excludes));
+			} else {
+				launchModule(module, toArgArray(arguments));
+			}
 		}
 	}
 
@@ -187,20 +248,49 @@ public class ModuleLauncher {
 		}
 	}
 
-	private Resource resolveModule(String coordinates) {
+	private void launchModuleWithDependencies(String module, String[] args, String[] includes, String[] excludes) {
+		try {
+			Resource[] libraries = this.moduleResolver.resolve(toCoordinates(module, DEFAULT_MODULE_CLASSIFIER),
+					toCoordinateArray(includes), excludes);
+			List<Archive> archives = new ArrayList<>();
+			for (Resource library : libraries) {
+				archives.add(new JarFileArchive(library.getFile()));
+			}
+			MultiArchiveLauncher jarLauncher = new MultiArchiveLauncher(archives);
+			jarLauncher.launch(args);
+		}
+		catch (IOException e) {
+			throw new RuntimeException("failed to launch module: " + module, e);
+		}
+	}
+
+	private Resource resolveModule(String moduleCoordinates) {
+		Coordinates coordinates = toCoordinates(moduleCoordinates, DEFAULT_MODULE_CLASSIFIER);
+		return this.moduleResolver.resolve(coordinates);
+	}
+
+	private Coordinates toCoordinates(String coordinates, String defaultClassifier) {
 		Matcher matcher = COORDINATES_PATTERN.matcher(coordinates);
 		Assert.isTrue(matcher.matches(), "Bad artifact coordinates " + coordinates
 				+ ", expected format is <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>");
 		String groupId = matcher.group(1);
 		String artifactId = matcher.group(2);
 		String extension = StringUtils.hasLength(matcher.group(4)) ? matcher.group(4) : DEFAULT_EXTENSION;
-		String classifier = StringUtils.hasLength(matcher.group(6)) ? matcher.group(6) : DEFAULT_CLASSIFIER;
+		String classifier = StringUtils.hasLength(matcher.group(6)) ? matcher.group(6) : defaultClassifier;
 		String version = matcher.group(7);
-		return this.moduleResolver.resolve(groupId, artifactId, extension, classifier, version);
+		return new Coordinates(groupId, artifactId, extension, classifier, version);
+	}
+
+	private Coordinates[] toCoordinateArray(String[] coordinateList) {
+		List<Coordinates> result = new ArrayList<>();
+		for (String coordinates : coordinateList) {
+			result.add(toCoordinates(coordinates, ""));
+		}
+		return result.toArray(new Coordinates[result.size()]);
 	}
 
 	private class ModuleAggregatorRunner implements Runnable {
-		
+
 		private final ClassLoader classLoader;
 
 		private final String[] parentArgs;
@@ -209,7 +299,8 @@ public class ModuleLauncher {
 
 		private final List<String[]> arguments;
 
-		public ModuleAggregatorRunner(ClassLoader classLoader, List<Class<?>> mainClasses, String[] parentArgs, List<String[]> moduleArguments) {
+		public ModuleAggregatorRunner(ClassLoader classLoader, List<Class<?>> mainClasses, String[] parentArgs,
+									  List<String[]> moduleArguments) {
 			this.classLoader = classLoader;
 			this.parentArgs = parentArgs;
 			this.mainClasses = mainClasses;
@@ -227,7 +318,8 @@ public class ModuleLauncher {
 						mainClasses.toArray(new Class<?>[mainClasses.size()]),
 						parentArgs, arguments.toArray(new String[][] {}));
 			} catch (Exception e) {
-				log.error("failed to launch aggregated modules :" + StringUtils.collectionToCommaDelimitedString(mainClasses), e);
+				log.error("failed to launch aggregated modules :"
+						+ StringUtils.collectionToCommaDelimitedString(mainClasses), e);
 				throw new RuntimeException(e);
 			}
 		}

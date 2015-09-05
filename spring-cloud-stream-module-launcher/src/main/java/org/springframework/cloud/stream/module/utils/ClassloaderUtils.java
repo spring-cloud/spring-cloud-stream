@@ -20,7 +20,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import org.springframework.boot.loader.LaunchedURLClassLoader;
-import org.springframework.util.Assert;
 
 /**
  * @author Marius Bogoevici
