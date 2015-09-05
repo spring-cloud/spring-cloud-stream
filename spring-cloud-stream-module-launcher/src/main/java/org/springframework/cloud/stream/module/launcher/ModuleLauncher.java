@@ -88,19 +88,19 @@ public class ModuleLauncher {
 	 * @param aggregate whether the modules should be aggregated at launch
 	 * @param parentArgs a list of arguments for the whole aggregate
 	 */
-	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate, String parentArgs[]) {
+	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate, Map<String,String> parentArgs) {
 		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);
 		Collections.reverse(reversed);
 		if (moduleLaunchRequests.size() == 1 || !aggregate) {
 			launchIndividualModules(moduleLaunchRequests);
 		}
 		else {
-			launchAggregatedModules(moduleLaunchRequests, parentArgs);
+			launchAggregatedModules(moduleLaunchRequests, toArgArray(parentArgs));
 		}
 	}
 
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate) {
-		this.launch(moduleLaunchRequests, aggregate, new String[0]);
+		this.launch(moduleLaunchRequests, aggregate, null);
 	}
 
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests) {
@@ -112,12 +112,17 @@ public class ModuleLauncher {
 	 * {@literal --foo=bar} form.
 	 */
 	private String[] toArgArray(Map<String, String> args) {
-		String[] result = new String[args.size()];
-		int i = 0;
-		for (Map.Entry<String, String> kv : args.entrySet()) {
-			result[i++] = String.format("--%s=%s", kv.getKey(), kv.getValue());
+		if (args != null) {
+			String[] result = new String[args.size()];
+			int i = 0;
+			for (Map.Entry<String, String> kv : args.entrySet()) {
+				result[i++] = String.format("--%s=%s", kv.getKey(), kv.getValue());
+			}
+			return result;
 		}
-		return result;
+		else {
+			return new String[0];
+		}
 	}
 
 	public void launchAggregatedModules(List<ModuleLaunchRequest> moduleLaunchRequests, final String[] parentArgs) {

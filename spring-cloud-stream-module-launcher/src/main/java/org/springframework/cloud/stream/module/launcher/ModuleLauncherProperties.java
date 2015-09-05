@@ -32,12 +32,22 @@ import org.springframework.core.env.Environment;
  *     <li>{@literal modules = <list>}: an ordered list of maven coordinates of modules to launch</li>
  *     <li>{@literal args[<index>][<key>] = <value>}: key/value pairs that will become module arguments,
  *     where {@literal <index>} is the 0-based index of the module in the list above</li>
+ *     <li>{@literal aggregate = true | false}</li>: whether multiple modules launched together should be aggregated,
+ *     case in which they will be launched as a single individual unit;
+ *     <li>{@literal aggregateArgs[<key>] = <value>}: key/value pairs to be passed to the aggregate</li>
  * </ul>
  *
- * As an example, this is how one would launch {@literal time --fixedDelay=4 | log} canonical example:
+ * As an example, this is how one would launch the {@literal time --fixedDelay=4 | log} canonical example:
  * <pre>
  *     modules = org.springframework.cloud.modules:time-source:1.0.0-SNAPSHOT,org.springframework.cloud.modules:log-sink:1.0.0-SNAPSHOT
  *     args.0.fixedDelay=4
+ * </pre>
+ *
+ * And this is how one would launch the {@literal time --fixedDelay=4 | log} example as an aggregate:
+ * <pre>
+ *     modules = org.springframework.cloud.modules:time-source:1.0.0-SNAPSHOT,org.springframework.cloud.modules:log-sink:1.0.0-SNAPSHOT
+ *     args.0.fixedDelay=4
+ *     aggregate=true
  * </pre>
  * </p>
  *
@@ -64,9 +74,10 @@ public class ModuleLauncherProperties {
 	 */
 	private Map<String, Map<String, String>> args = new HashMap<>();
 
-	public void setModules(String[] modules) {
-		this.modules = modules;
-	}
+	/**
+	 * Map of arguments to be passed to the aggregate (if aggregate is true)
+	 */
+	private Map<String, String> aggregateArgs;
 
 	public boolean isAggregate() {
 		return aggregate;
@@ -74,6 +85,10 @@ public class ModuleLauncherProperties {
 
 	public void setAggregate(boolean aggregate) {
 		this.aggregate = aggregate;
+	}
+
+	public void setModules(String[] modules) {
+		this.modules = modules;
 	}
 
 	@NotEmpty(message = "A list of modules must be specified.")
@@ -89,4 +104,11 @@ public class ModuleLauncherProperties {
 		return args;
 	}
 
+	public Map<String, String> getAggregateArgs() {
+		return aggregateArgs;
+	}
+
+	public void setAggregateArgs(Map<String, String> aggregateArgs) {
+		this.aggregateArgs = aggregateArgs;
+	}
 }
