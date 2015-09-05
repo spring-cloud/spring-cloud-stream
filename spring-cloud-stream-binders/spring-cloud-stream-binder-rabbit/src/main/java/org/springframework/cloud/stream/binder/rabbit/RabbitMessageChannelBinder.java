@@ -29,7 +29,6 @@ import java.util.Set;
 import org.aopalliance.aop.Advice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -59,6 +58,12 @@ import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
+import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.BinderUtils;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.Resource;
@@ -84,12 +89,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
-import org.springframework.cloud.stream.binder.BinderUtils;
-import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.BinderProperties;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
-import org.springframework.cloud.stream.binder.MessageValues;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -435,8 +434,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 
 	@Override
 	public void bindConsumer(final String name, MessageChannel moduleInputChannel, Properties properties) {
-		if (logger.isInfoEnabled()) {
-			logger.info("declaring queue for inbound: " + name);
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("declaring queue for inbound: " + name);
 		}
 		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)) {
 			validateConsumerProperties(name, properties, SUPPORTED_NAMED_CONSUMER_PROPERTIES);
@@ -461,8 +460,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	@Override
 	public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, Properties properties) {
 		String exchangeName = BinderUtils.removeGroupFromPubSub(name);
-		if (logger.isInfoEnabled()) {
-			logger.info("declaring pubsub for inbound: " + name + ", bound to: " + exchangeName);
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("declaring pubsub for inbound: " + name + ", bound to: " + exchangeName);
 		}
 		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
 		validateConsumerProperties(name, properties, SUPPORTED_PUBSUB_CONSUMER_PROPERTIES);
@@ -601,8 +600,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
 		}
 		if (!bindNewProducerDirectlyIfPossible(name, (SubscribableChannel) moduleOutputChannel, accessor)) {
-			if (logger.isInfoEnabled()) {
-				logger.info("declaring queue for outbound: " + name);
+			if (this.logger.isInfoEnabled()) {
+				this.logger.info("declaring queue for outbound: " + name);
 			}
 			AmqpOutboundEndpoint queue = this.buildOutboundEndpoint(name, accessor, determineRabbitTemplate(accessor));
 			doRegisterProducer(name, moduleOutputChannel, queue, accessor);
@@ -700,8 +699,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	@Override
 	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies,
 			Properties properties) {
-		if (logger.isInfoEnabled()) {
-			logger.info("binding requestor: " + name);
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("binding requestor: " + name);
 		}
 		validateProducerProperties(name, properties, SUPPORTED_REQUESTING_PRODUCER_PROPERTIES);
 		Assert.isInstanceOf(SubscribableChannel.class, requests);
@@ -725,8 +724,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	@Override
 	public void bindReplier(String name, MessageChannel requests, MessageChannel replies,
 			Properties properties) {
-		if (logger.isInfoEnabled()) {
-			logger.info("binding replier: " + name);
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("binding replier: " + name);
 		}
 		validateConsumerProperties(name, properties, SUPPORTED_REPLYING_CONSUMER_PROPERTIES);
 		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
@@ -734,7 +733,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		declareQueueIfNotPresent(requestQueue);
 		this.doRegisterConsumer(name, requests, requestQueue, accessor, false);
 
-		AmqpOutboundEndpoint replyQueue = new AmqpOutboundEndpoint(rabbitTemplate);
+		AmqpOutboundEndpoint replyQueue = new AmqpOutboundEndpoint(this.rabbitTemplate);
 		replyQueue.setExpressionRoutingKey(EXPRESSION_PARSER.parseExpression("headers['" + AmqpHeaders.REPLY_TO +
 				"']"));
 		configureOutboundHandler(replyQueue, accessor);
@@ -779,8 +778,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	 * @param properties The properties accessor.
 	 */
 	private void autoBindDLQ(final String name, RabbitPropertiesAccessor properties) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("autoBindDLQ=" + properties.getAutoBindDLQ(this.defaultAutoBindDLQ)
+		if (this.logger.isDebugEnabled()) {
+			this.logger.debug("autoBindDLQ=" + properties.getAutoBindDLQ(this.defaultAutoBindDLQ)
 					+ " for: " + name);
 		}
 		if (properties.getAutoBindDLQ(this.defaultAutoBindDLQ)) {
@@ -853,7 +852,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 				((Channel) entry.getKey()).basicAck(entry.getValue(), true);
 			}
 			catch (IOException e) {
-				logger.error("Exception while manually acknowledging " + e);
+				this.logger.error("Exception while manually acknowledging " + e);
 			}
 		}
 	}
@@ -877,7 +876,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		protected void handleMessageInternal(Message<?> message) throws Exception {
 			MessageValues messageToSend = serializePayloadIfNecessary(message);
 
-			if (replyTo != null) {
+			if (this.replyTo != null) {
 				messageToSend.put(AmqpHeaders.REPLY_TO, this.replyTo);
 			}
 			if (this.partitioningMetadata.isPartitionedModule()) {
@@ -943,12 +942,12 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	private static class RabbitPropertiesAccessor extends AbstractBinderPropertiesAccessor {
 
 		/**
-		 * The acknowledge mode.
+		 * The acknowledge mode (i.e. NONE, MANUAL, AUTO).
 		 */
 		private static final String ACK_MODE = "ackMode";
 
 		/**
-		 * The delivery mode.
+		 * The delivery mode (i.e. NON_PERSISTENT, PERSISTENT).
 		 */
 		private static final String DELIVERY_MODE = "deliveryMode";
 
@@ -973,12 +972,12 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		private static final String REQUEST_HEADER_PATTERNS = "requestHeaderPatterns";
 
 		/**
-		 * Whether delivery failures should be requeued.
+		 * Whether delivery failures should be requeued (boolean).
 		 */
 		private static final String REQUEUE = "requeue";
 
 		/**
-		 * Whether to use transacted channels.
+		 * Whether to use transacted channels (boolean).
 		 */
 		private static final String TRANSACTED = "transacted";
 
@@ -988,12 +987,12 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		private static final String TX_SIZE = "txSize";
 
 		/**
-		 * Whether to automatically declare the DLQ and bind it to the binder DLX.
+		 * Whether to automatically declare the DLQ and bind it to the binder DLX (boolean).
 		 */
 		private static final String AUTO_BIND_DLQ = "autoBindDLQ";
 
 		/**
-		 * Whether to automatically declare the DLQ and bind it to the binder DLX.
+		 * Whether to automatically declare the DLQ and bind it to the binder DLX (boolean).
 		 */
 		private static final String REPUBLISH_TO_DLQ = "republishToDLQ";
 
