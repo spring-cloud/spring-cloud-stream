@@ -45,6 +45,8 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 
 	private final static String GLOBAL_ARGS_KEY = "*";
 
+	private final static String AGGREGATE_ARGS_KEY = "aggregate";
+
 	@Autowired
 	private ModuleLauncherProperties moduleLauncherProperties;
 
@@ -63,7 +65,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		}
 		this.moduleLauncher.launch(launchRequests,
 				moduleLauncherProperties.isAggregate(),
-				moduleLauncherProperties.isAggregate() ? extractAggregateProperties(args) : new String[0]);
+				moduleLauncherProperties.isAggregate() ? moduleLauncherProperties.getArgs().get(AGGREGATE_ARGS_KEY) : null);
 	}
 
 	private List<ModuleLaunchRequest> generateModuleLaunchRequests() {
@@ -91,14 +93,5 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		return requests;
 	}
 
-	private String[] extractAggregateProperties(String[] args) {
-		List<String> filteredProperties = new ArrayList<>();
-		for (String arg : args) {
-			if (arg.startsWith("--spring.")) {
-				filteredProperties.add(arg);
-			}
-		}
-		return filteredProperties.toArray(new String[filteredProperties.size()]);
-	}
 
 }
