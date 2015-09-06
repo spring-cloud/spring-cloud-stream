@@ -20,23 +20,31 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.hamcrest.Matchers;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.SocketUtils;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import wiremock.org.mortbay.resource.FileResource;
 
 /**
  * @author David Turanski
@@ -69,8 +77,8 @@ public class AetherModuleResolverTests {
 	@Test
 	@Ignore
 	public void testResolveRemote() throws IOException {
-		ClassPathResource cpr = new ClassPathResource("local-repo");
-		File localRepository = cpr.getFile();
+		File localRepository = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
+		localRepository.deleteOnExit();
 		Map<String, String> remoteRepos = new HashMap<>();
 		remoteRepos.put("modules", "http://repo.spring.io/libs-snapshot");
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
@@ -82,8 +90,8 @@ public class AetherModuleResolverTests {
 
 	@Test
 	public void testResolveMockRemote() throws IOException {
-		ClassPathResource cpr = new ClassPathResource("local-repo");
-		File localRepository = cpr.getFile();
+		File localRepository = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
+		localRepository.deleteOnExit();
 		ClassPathResource stubJarResource = new ClassPathResource("__files/foo.jar");
 		String stubFileName = stubJarResource.getFile().getName();
 		Map<String, String> remoteRepos = new HashMap<>();
@@ -97,5 +105,28 @@ public class AetherModuleResolverTests {
 		Resource resource = defaultModuleResolver.resolve("org.bar", "foo", "jar", "", "1.0.0");
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-1.0.0.jar");
+	}
+
+	@Test
+	public void testResolveOfflineWithMockRemote() throws IOException {
+		try {
+			File localRepository = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
+			localRepository.deleteOnExit();
+			ClassPathResource stubJarResource = new ClassPathResource("__files/foo.jar");
+			String stubFileName = stubJarResource.getFile().getName();
+			Map<String, String> remoteRepos = new HashMap<>();
+			remoteRepos.put("repo0", "http://localhost:" + port + "/repo0");
+			remoteRepos.put("repo1", "http://localhost:" + port + "/repo1");
+			stubFor(get(urlEqualTo("/repo1/org/bar/foo/1.0.0/foo-1.0.0.jar"))
+					.willReturn(aResponse()
+							.withStatus(200)
+							.withBodyFile(stubFileName)));
+			AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
+			defaultModuleResolver.setOffline(true);
+			defaultModuleResolver.resolve("org.bar", "foo", "jar", "", "1.0.0");
+		} catch (RuntimeException e) {
+			// remote resolution fails because the resolver is operating offline
+			assertThat(e.getCause(), instanceOf(ArtifactResolutionException.class));
+		}
 	}
 }

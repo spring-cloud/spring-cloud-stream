@@ -68,6 +68,8 @@ public class AetherModuleResolver implements ModuleResolver {
 
 	private final RepositorySystem repositorySystem;
 
+	private volatile boolean offline = false;
+
 	/**
 	 * Create an instance specifying the locations of the local and remote repositories.
 	 * @param localRepository the root path of the local maven repository
@@ -99,6 +101,10 @@ public class AetherModuleResolver implements ModuleResolver {
 		repositorySystem = newRepositorySystem();
 	}
 
+	public void setOffline(boolean offline) {
+		this.offline = offline;
+	}
+
 	/**
 	 * Resolve an artifact and return its location in the local repository. Aether performs the normal
 	 * Maven resolution process ensuring that the latest update is cached to the local repository.
@@ -107,8 +113,8 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * @param extension the file extension
 	 * @param classifier classifier can be null if none
 	 * @param version the version
-	 * @return a {@ link FileSystemResource} representing the resolved artifact in the local repository
-	 * @throws a RuntimeException if the artifact does not exist or the resolution fails
+	 * @return a {@link FileSystemResource} representing the resolved artifact in the local repository
+	 * @throws RuntimeException if the artifact does not exist or the resolution fails
 	 */
 	@Override
 	public Resource resolve(String groupId, String artifactId, String extension, String classifier, String version) {
@@ -141,6 +147,7 @@ public class AetherModuleResolver implements ModuleResolver {
 		DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 		LocalRepository localRepo = new LocalRepository(localRepoPath);
 		session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+		session.setOffline(this.offline);
 		return session;
 	}
 

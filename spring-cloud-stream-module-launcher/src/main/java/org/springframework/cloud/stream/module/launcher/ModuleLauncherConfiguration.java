@@ -53,7 +53,9 @@ public class ModuleLauncherConfiguration {
 		for (String repository: properties.getRemoteRepositories()) {
 			repositoriesMap.put("repository " + i++, repository);
 		}
-		return new AetherModuleResolver(properties.getLocalRepository(), repositoriesMap);
+		AetherModuleResolver aetherModuleResolver = new AetherModuleResolver(properties.getLocalRepository(), repositoriesMap);
+		aetherModuleResolver.setOffline(properties.isOffline());
+		return aetherModuleResolver;
 	}
 
 	@Bean

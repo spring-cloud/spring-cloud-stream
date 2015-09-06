@@ -39,6 +39,11 @@ public class ModuleResolverProperties {
 	 */
 	private String[] remoteRepositories = new String[] {"https://repo.spring.io/libs-snapshot"};
 
+	/**
+	 * Whether the resolver should operate in offline mode.
+	 */
+	private boolean offline = false;
+
 	public void setRemoteRepositories(String[] remoteRepositories) {
 		this.remoteRepositories = remoteRepositories;
 	}
@@ -54,4 +59,11 @@ public class ModuleResolverProperties {
 		return localRepository;
 	}
 
+	public boolean isOffline() {
+		return offline;
+	}
+
+	public void setOffline(boolean offline) {
+		this.offline = offline;
+	}
 }
