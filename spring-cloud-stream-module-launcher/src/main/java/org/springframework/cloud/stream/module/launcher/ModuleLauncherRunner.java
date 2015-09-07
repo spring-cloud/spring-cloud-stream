@@ -71,8 +71,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		String[] modules = this.moduleLauncherProperties.getModules();
 		Map<String, Map<String, String>> arguments = this.moduleLauncherProperties.getArgs();
 		for (int i = 0; i < modules.length; i++) {
-			// merge the global arguments
-			@SuppressWarnings("unckecked")
+			// merge the global arguments with the module specific arguments
 			Map<String, String> moduleArguments = new HashMap<>();
 			if (arguments != null) {
 				// by inserting the global args first and the module specific args next
