@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.stream.module.resolver.ModuleResolver;
@@ -99,8 +98,9 @@ public class ModuleLauncher {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate) {
-		this.launch(moduleLaunchRequests, aggregate, null);
+		this.launch(moduleLaunchRequests, aggregate, Collections.EMPTY_MAP);
 	}
 
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests) {
