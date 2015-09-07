@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.module.launcher;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +43,8 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 
 	private final static Log log = LogFactory.getLog(ModuleLauncherRunner.class);
 
+	private final static String GLOBAL_ARGS_KEY = "*";
+
 	@Autowired
 	private ModuleLauncherProperties moduleLauncherProperties;
 
@@ -66,9 +69,24 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 	private List<ModuleLaunchRequest> generateModuleLaunchRequests() {
 		List<ModuleLaunchRequest> requests = new ArrayList<>();
 		String[] modules = this.moduleLauncherProperties.getModules();
-		Map<Integer, Map<String, String>> arguments = this.moduleLauncherProperties.getArgs();
+		Map<String, Map<String, String>> arguments = this.moduleLauncherProperties.getArgs();
 		for (int i = 0; i < modules.length; i++) {
-			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], arguments.get(i));
+			// merge the global arguments
+			@SuppressWarnings("unckecked")
+			Map<String, String> moduleArguments = new HashMap<>();
+			if (arguments != null) {
+				// by inserting the global args first and the module specific args next
+				// we ensure that the latter have precedence
+				Map<String, String> globalArgs = arguments.get(GLOBAL_ARGS_KEY);
+				if (globalArgs != null) {
+					moduleArguments.putAll(globalArgs);
+				}
+				Map<String, String> moduleSpecificArgs = arguments.get(Integer.toString(i));
+				if (moduleSpecificArgs != null) {
+					moduleArguments.putAll(moduleSpecificArgs);
+				}
+			}
+			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], moduleArguments);
 			requests.add(moduleLaunchRequest);
 		}
 		return requests;
