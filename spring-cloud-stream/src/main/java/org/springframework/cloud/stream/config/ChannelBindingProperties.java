@@ -35,7 +35,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonInclude(Include.NON_DEFAULT)
 public class ChannelBindingProperties {
 
-	public static final String TARGET = "target";
+	public static final String DESTINATION = "destination";
 
 	public static final String PARTITION_COUNT = "partitionCount";
 
@@ -94,7 +94,7 @@ public class ChannelBindingProperties {
 	}
 
 
-	public String getBindingTarget(String channelName) {
+	public String getBindingDestination(String channelName) {
 		Object binding = bindings.get(channelName);
 		// we may shortcut directly to the path
 		if (binding != null) {
@@ -103,7 +103,7 @@ public class ChannelBindingProperties {
 			}
 			else if (binding instanceof Map) {
 				Map<?, ?> bindingProperties = (Map<?, ?>) binding;
-				Object bindingPath = bindingProperties.get(TARGET);
+				Object bindingPath = bindingProperties.get(DESTINATION);
 				if (bindingPath != null) {
 					return bindingPath.toString();
 				}
@@ -226,7 +226,7 @@ public class ChannelBindingProperties {
 	}
 
 	public String getTapChannelName(String channelName) {
-		return "tap:" + getBindingTarget(channelName);
+		return "tap:" + getBindingDestination(channelName);
 	}
 
 }

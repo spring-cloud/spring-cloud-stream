@@ -16,14 +16,10 @@
 
 package org.springframework.cloud.stream.binding;
 
-import java.util.Properties;
-
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.config.ChannelBindingProperties;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -48,7 +44,7 @@ public class ChannelBindingService {
 
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingProperties
-				.getBindingTarget(inputChannelName);
+				.getBindingDestination(inputChannelName);
 		if (isChannelPubSub(channelBindingTarget)) {
 			this.binder.bindPubSubConsumer(removePrefix(channelBindingTarget),
 					inputChannel, this.channelBindingProperties.getConsumerProperties(inputChannelName));
@@ -61,7 +57,7 @@ public class ChannelBindingService {
 
 	public void bindProducer(MessageChannel outputChannel, String outputChannelName) {
 		String channelBindingTarget = this.channelBindingProperties
-				.getBindingTarget(outputChannelName);
+				.getBindingDestination(outputChannelName);
 		if (isChannelPubSub(channelBindingTarget)) {
 			this.binder.bindPubSubProducer(removePrefix(channelBindingTarget),
 					outputChannel, this.channelBindingProperties.getProducerProperties(outputChannelName));
