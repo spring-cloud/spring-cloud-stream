@@ -23,7 +23,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Handles the binding of input/output channels by delegating to an underlying {@link Binder}.
+ * Handles the binding of input/output channels by delegating to an underlying
+ * {@link Binder}.
  *
  * @author Mark Fisher
  * @author Dave Syer
@@ -35,59 +36,50 @@ public class ChannelBindingService {
 
 	private ChannelBindingProperties channelBindingProperties;
 
-	public ChannelBindingService(ChannelBindingProperties channelBindingProperties,
-															 Binder<MessageChannel> binder) {
+	public ChannelBindingService(ChannelBindingProperties channelBindingProperties, Binder<MessageChannel> binder) {
 		this.channelBindingProperties = channelBindingProperties;
 		this.binder = binder;
 	}
 
-
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
-		String channelBindingTarget = this.channelBindingProperties
-				.getBindingPath(inputChannelName);
+		String channelBindingTarget = this.channelBindingProperties.getBindingDestination(inputChannelName);
 		if (isChannelPubSub(channelBindingTarget)) {
-			this.binder.bindPubSubConsumer(removePrefix(channelBindingTarget), inputChannel,
-					this.channelBindingProperties.getConsumerProperties());
+			this.binder.bindPubSubConsumer(removePrefix(channelBindingTarget),
+					inputChannel, this.channelBindingProperties.getConsumerProperties(inputChannelName));
 		}
 		else {
 			this.binder.bindConsumer(channelBindingTarget, inputChannel,
-					this.channelBindingProperties.getConsumerProperties());
+					this.channelBindingProperties.getConsumerProperties(inputChannelName));
 		}
 	}
 
 	public void bindProducer(MessageChannel outputChannel, String outputChannelName) {
-		String channelBindingTarget = this.channelBindingProperties
-				.getBindingPath(outputChannelName);
+		String channelBindingTarget = this.channelBindingProperties.getBindingDestination(outputChannelName);
 		if (isChannelPubSub(channelBindingTarget)) {
-			this.binder.bindPubSubProducer(removePrefix(channelBindingTarget), outputChannel,
-					this.channelBindingProperties.getProducerProperties());
+			this.binder.bindPubSubProducer(removePrefix(channelBindingTarget),
+					outputChannel, this.channelBindingProperties.getProducerProperties(outputChannelName));
 		}
 		else {
 			this.binder.bindProducer(channelBindingTarget, outputChannel,
-					this.channelBindingProperties.getProducerProperties());
+					this.channelBindingProperties.getProducerProperties(outputChannelName));
 		}
 	}
 
 	private boolean isChannelPubSub(String bindingTarget) {
-		Assert.isTrue(StringUtils.hasText(bindingTarget),
-				"Binding target should not be empty/null.");
+		Assert.isTrue(StringUtils.hasText(bindingTarget), "Binding target should not be empty/null.");
 		return bindingTarget.startsWith("topic:");
 	}
 
 	private String removePrefix(String bindingTarget) {
-		Assert.isTrue(StringUtils.hasText(bindingTarget),
-				"Binding target should not be empty/null.");
+		Assert.isTrue(StringUtils.hasText(bindingTarget), "Binding target should not be empty/null.");
 		return bindingTarget.substring(bindingTarget.indexOf(":") + 1);
 	}
 
 	public void unbindConsumers(String inputChannelName) {
-		this.binder.unbindConsumers
-				(inputChannelName);
+		this.binder.unbindConsumers(inputChannelName);
 	}
 
 	public void unbindProducers(String outputChannelName) {
 		this.binder.unbindProducers(outputChannelName);
 	}
-
-
 }

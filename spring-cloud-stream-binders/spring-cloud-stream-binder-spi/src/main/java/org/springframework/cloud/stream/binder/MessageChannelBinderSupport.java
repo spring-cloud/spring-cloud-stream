@@ -146,6 +146,7 @@ public abstract class MessageChannelBinderSupport
 					BinderProperties.PARTITION_KEY_EXTRACTOR_CLASS,
 					BinderProperties.PARTITION_SELECTOR_CLASS,
 					BinderProperties.PARTITION_SELECTOR_EXPRESSION,
+					BinderProperties.MIN_PARTITION_COUNT
 			}));
 
 	protected static final Set<Object> PRODUCER_BATCHING_BASIC_PROPERTIES = new HashSet<Object>(
