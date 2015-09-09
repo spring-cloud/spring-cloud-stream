@@ -23,9 +23,10 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binding.BindingBeanDefinitionRegistryUtils;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.MultiValueMap;
 
 /**
  * @author Marius Bogoevici
@@ -37,23 +38,23 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata,
 			BeanDefinitionRegistry registry) {
-		MultiValueMap<String, Object> attributes = metadata.getAllAnnotationAttributes(EnableBinding.class.getName(),
-				false);
-		for (Class<?> type : collectClasses(attributes.get("value"))) {
-			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type, type.getName(), registry);
+		AnnotationAttributes attrs = AnnotatedElementUtils.getMergedAnnotationAttributes(
+				ClassUtils.resolveClassName(metadata.getClassName(), null),
+				EnableBinding.class);
+		for (Class<?> type : collectClasses(attrs.get("value"))) {
+			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type,
+					type.getName(), registry);
 			BindingBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
 					ClassUtils.resolveClassName(metadata.getClassName(), null), type,
 					registry);
 		}
 	}
 
-	private List<Class<?>> collectClasses(List<Object> list) {
+	private List<Class<?>> collectClasses(Object object) {
 		ArrayList<Class<?>> result = new ArrayList<Class<?>>();
-		for (Object object : list) {
-			for (Object value : (Object[]) object) {
-				if (value instanceof Class && void.class != value) {
-					result.add((Class<?>) value);
-				}
+		for (Object value : (Object[]) object) {
+			if (value instanceof Class && void.class != value) {
+				result.add((Class<?>) value);
 			}
 		}
 		return result;
