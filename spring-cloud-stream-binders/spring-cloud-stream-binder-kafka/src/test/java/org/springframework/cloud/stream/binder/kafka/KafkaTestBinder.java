@@ -56,10 +56,10 @@ public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinde
 			binder.setCodec(getCodec());
 			binder.setDefaultBatchingEnabled(false);
 			binder.setMode(mode);
-			binder.afterPropertiesSet();
 			GenericApplicationContext context = new GenericApplicationContext();
 			context.refresh();
 			binder.setApplicationContext(context);
+			binder.afterPropertiesSet();
 			this.setBinder(binder);
 		}
 		catch (Exception e) {
