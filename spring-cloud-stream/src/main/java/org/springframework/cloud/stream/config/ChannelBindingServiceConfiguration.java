@@ -22,11 +22,11 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingLifecycle;
+import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -47,8 +47,13 @@ import org.springframework.messaging.core.DestinationResolver;
 public class ChannelBindingServiceConfiguration {
 
 	@Bean
+	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
+	// it is used to detect a ChannelBindingService in the parent context (which we know
+	// already exists).
 	@ConditionalOnMissingBean(ChannelBindingService.class)
-	public ChannelBindingService bindingService(ChannelBindingProperties channelBindingProperties, Binder<MessageChannel> binder) {
+	public ChannelBindingService bindingService(
+			ChannelBindingProperties channelBindingProperties,
+			Binder<MessageChannel> binder) {
 		return new ChannelBindingService(channelBindingProperties, binder);
 	}
 
