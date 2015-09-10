@@ -34,7 +34,7 @@ import org.springframework.core.env.Environment;
  *     where {@literal <index>} is the 0-based index of the module in the list above and '*' can be used for passing
  *     arguments to all modules</li>
  *     <li>{@literal aggregate = true | false}</li>: whether multiple modules launched together should be aggregated,
- *     case in which they will be launched as a single individual unit, and {@literal args['aggregate'[<key>] = <value>}
+ *     case in which they will be launched as a single individual unit, and {@literal args['aggregate'][<key>] = <value>}
  *     can be used for passing arguments to the aggregate;
  * </ul>
  *
@@ -74,11 +74,6 @@ public class ModuleLauncherProperties {
 	 * key for global arguments.
 	 */
 	private Map<String, Map<String, String>> args = new HashMap<>();
-
-	/**
-	 * Map of arguments to be passed to the aggregate (if aggregate is true)
-	 */
-	private Map<String, String> aggregateArgs;
 
 	public boolean isAggregate() {
 		return aggregate;
