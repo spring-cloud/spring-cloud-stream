@@ -31,10 +31,11 @@ import org.springframework.core.env.Environment;
  * properties, environment variables, program arguments, <i>etc.</i> _):<ul>
  *     <li>{@literal modules = <list>}: an ordered list of maven coordinates of modules to launch</li>
  *     <li>{@literal args[<index>][<key>] = <value>}: key/value pairs that will become module arguments,
- *     where {@literal <index>} is the 0-based index of the module in the list above</li>
+ *     where {@literal <index>} is the 0-based index of the module in the list above and '*' can be used for passing
+ *     arguments to all modules</li>
  *     <li>{@literal aggregate = true | false}</li>: whether multiple modules launched together should be aggregated,
- *     case in which they will be launched as a single individual unit;
- *     <li>{@literal aggregateArgs[<key>] = <value>}: key/value pairs to be passed to the aggregate</li>
+ *     case in which they will be launched as a single individual unit, and {@literal args['aggregate'[<key>] = <value>}
+ *     can be used for passing arguments to the aggregate;
  * </ul>
  *
  * As an example, this is how one would launch the {@literal time --fixedDelay=4 | log} canonical example:
@@ -102,13 +103,5 @@ public class ModuleLauncherProperties {
 
 	public Map<String, Map<String, String>> getArgs() {
 		return args;
-	}
-
-	public Map<String, String> getAggregateArgs() {
-		return aggregateArgs;
-	}
-
-	public void setAggregateArgs(Map<String, String> aggregateArgs) {
-		this.aggregateArgs = aggregateArgs;
 	}
 }
