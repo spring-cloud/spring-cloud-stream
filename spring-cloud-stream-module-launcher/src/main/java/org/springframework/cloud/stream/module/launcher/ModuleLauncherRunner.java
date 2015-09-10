@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.module.launcher;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +67,9 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		}
 		this.moduleLauncher.launch(launchRequests,
 				moduleLauncherProperties.isAggregate(),
-				moduleLauncherProperties.isAggregate() ? moduleLauncherProperties.getArgs().get(AGGREGATE_ARGS_KEY) : null);
+				moduleLauncherProperties.isAggregate() ?
+						moduleLauncherProperties.getArgs().get(AGGREGATE_ARGS_KEY) :
+						Collections.<String,String>emptyMap());
 	}
 
 	private List<ModuleLaunchRequest> generateModuleLaunchRequests() {
@@ -92,6 +96,4 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 		}
 		return requests;
 	}
-
-
 }
