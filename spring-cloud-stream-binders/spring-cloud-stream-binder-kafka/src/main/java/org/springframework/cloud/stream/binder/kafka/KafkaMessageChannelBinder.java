@@ -391,6 +391,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 			retryTemplate.setBackOffPolicy(backOffPolicy);
 			retryOperations = retryTemplate;
 		}
+		super.afterPropertiesSet();
 	}
 
 	/**
