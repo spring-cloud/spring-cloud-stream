@@ -17,7 +17,7 @@
 package org.springframework.cloud.stream.module.resolver;
 
 /**
- * Encapsulates a group of Maven coordinates.
+ * Encapsulates Maven coordinates.
  *
  * @author Marius Bogoevici
  * @author Eric Bottard

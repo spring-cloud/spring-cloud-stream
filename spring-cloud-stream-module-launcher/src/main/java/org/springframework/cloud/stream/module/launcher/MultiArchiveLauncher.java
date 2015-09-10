@@ -32,7 +32,8 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * A {@link Launcher} that provides a public {@link #launch(String[])} method.
+ * A {@link Launcher} for multiple independent JAR archives (which aren't nested in an uberjar). This class
+ * supports module aggregation and direct binding.
  *
  * @author Marius Bogoevici
  * @author Eric Bottard
