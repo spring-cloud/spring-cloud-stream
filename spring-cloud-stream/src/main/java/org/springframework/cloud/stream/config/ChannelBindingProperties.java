@@ -44,8 +44,7 @@ public class ChannelBindingProperties {
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
 	private int instanceIndex;
 
-	@Value("${INSTANCE_COUNT:1}")
-	private int instanceCount;
+	private int instanceCount = 1;
 
 	private Properties consumerProperties = new Properties();
 
@@ -171,9 +170,7 @@ public class ChannelBindingProperties {
 	public Properties getConsumerProperties(String inputChannelName) {
 		if (isPartitionedConsumer(inputChannelName)) {
 			Properties channelConsumerProperties = new Properties();
-			if (consumerProperties != null) {
-				channelConsumerProperties.putAll(consumerProperties);
-			}
+			channelConsumerProperties.putAll(consumerProperties);
 			channelConsumerProperties.setProperty(BinderProperties.COUNT,
 					Integer.toString(getInstanceCount()));
 			channelConsumerProperties.setProperty(BinderProperties.PARTITION_INDEX,
@@ -195,11 +192,7 @@ public class ChannelBindingProperties {
 	public Properties getProducerProperties(String outputChannelName) {
 		if (isPartitionedProducer(outputChannelName)) {
 			Properties channelProducerProperties = new Properties();
-			if (this.producerProperties != null) {
-				channelProducerProperties.putAll(this.producerProperties);
-			}
-			channelProducerProperties.put(BinderProperties.MIN_PARTITION_COUNT,
-					Integer.toString(getPartitionCount(outputChannelName)));
+			channelProducerProperties.putAll(this.producerProperties);
 			channelProducerProperties.setProperty(BinderProperties.NEXT_MODULE_COUNT,
 					Integer.toString(getPartitionCount(outputChannelName)));
 			copyChannelBindingProperty(outputChannelName, channelProducerProperties,

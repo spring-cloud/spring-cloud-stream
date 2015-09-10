@@ -62,7 +62,6 @@ public class PartitionedProducerTest {
 	public void testBindingPartitionedProducer() {
 		ArgumentCaptor<Properties> argumentCaptor = ArgumentCaptor.forClass(Properties.class);
 		verify(binder).bindProducer(eq("partOut"), eq(testSource.output()), argumentCaptor.capture());
-		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderProperties.MIN_PARTITION_COUNT), equalTo("3"));
 		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderProperties.NEXT_MODULE_COUNT), equalTo("3"));
 		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderProperties.PARTITION_KEY_EXPRESSION),
 				equalTo("payload"));
