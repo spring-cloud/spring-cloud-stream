@@ -92,17 +92,15 @@ public class ModuleLauncher {
 	 *
 	 * @param moduleLaunchRequests a list of modules with their arguments
 	 * @param aggregate whether the modules should be aggregated at launch
-	 * @param parentArgs a list of arguments for the whole aggregate
+	 * @param aggregateArgs a list of arguments for the whole aggregate
 	 */
 	@SuppressWarnings("unchecked")
-	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate, Map<String,String> parentArgs) {
-		List<ModuleLaunchRequest> reversed = new ArrayList<>(moduleLaunchRequests);
-		Collections.reverse(reversed);
+	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate, Map<String,String> aggregateArgs) {
 		if (moduleLaunchRequests.size() == 1 || !aggregate) {
-			launchIndividualModules(reversed);
+			launchIndividualModules(moduleLaunchRequests);
 		}
 		else {
-			launchAggregatedModules(moduleLaunchRequests, parentArgs != null ? parentArgs : Collections.EMPTY_MAP);
+			launchAggregatedModules(moduleLaunchRequests, aggregateArgs != null ? aggregateArgs : Collections.EMPTY_MAP);
 		}
 	}
 
@@ -133,15 +131,15 @@ public class ModuleLauncher {
 		}
 	}
 
-	public void launchAggregatedModules(List<ModuleLaunchRequest> moduleLaunchRequests, Map<String,String> parentArgs) {
+	public void launchAggregatedModules(List<ModuleLaunchRequest> moduleLaunchRequests, Map<String,String> aggregateArgs) {
 		try {
 			List<String> mainClassNames = new ArrayList<>();
 			LinkedHashSet<URL> jarURLs = new LinkedHashSet<>();
 			List<String> seenArchives = new ArrayList<>();
 			final List<String[]> arguments = new ArrayList<>();
 			final ClassLoader classLoader;
-			if (!(parentArgs.containsKey(EXCLUDE_DEPENDENCIES_ARG) ||
-					parentArgs.containsKey(INCLUDE_DEPENDENCIES_ARG))) {
+			if (!(aggregateArgs.containsKey(EXCLUDE_DEPENDENCIES_ARG) ||
+					aggregateArgs.containsKey(INCLUDE_DEPENDENCIES_ARG))) {
 				for (ModuleLaunchRequest moduleLaunchRequest : moduleLaunchRequests) {
 					Resource resource = resolveModule(moduleLaunchRequest.getModule());
 					JarFileArchive jarFileArchive = new JarFileArchive(resource.getFile());
@@ -186,7 +184,7 @@ public class ModuleLauncher {
 					arguments.add(toArgArray(moduleLaunchRequest.getArguments()));
 				}
 				for (String include :
-						StringUtils.commaDelimitedListToStringArray(parentArgs.get(INCLUDE_DEPENDENCIES_ARG))) {
+						StringUtils.commaDelimitedListToStringArray(aggregateArgs.get(INCLUDE_DEPENDENCIES_ARG))) {
 					includeCoordinates.add(toCoordinates(include, ""));
 				}
 				// Resolve all artifacts - since modules have been specified as direct dependencies, they will take
@@ -194,7 +192,7 @@ public class ModuleLauncher {
 				// part of the response.
 				Resource[] libraries = moduleResolver.resolve(root,
 						includeCoordinates.toArray(new Coordinates[includeCoordinates.size()]),
-						StringUtils.commaDelimitedListToStringArray(parentArgs.get(EXCLUDE_DEPENDENCIES_ARG)));
+						StringUtils.commaDelimitedListToStringArray(aggregateArgs.get(EXCLUDE_DEPENDENCIES_ARG)));
 				for (Resource library : libraries) {
 					jarURLs.add(library.getURL());
 				}
@@ -206,7 +204,7 @@ public class ModuleLauncher {
 				mainClasses.add(ClassUtils.forName(mainClass, classLoader));
 			}
 			Runnable moduleAggregatorRunner = new ModuleAggregatorRunner(classLoader, mainClasses,
-					toArgArray(parentArgs), arguments);
+					toArgArray(aggregateArgs), arguments);
 			Thread moduleAggregatorRunnerThread = new Thread(moduleAggregatorRunner);
 			moduleAggregatorRunnerThread.setContextClassLoader(classLoader);
 			moduleAggregatorRunnerThread.setName(MODULE_AGGREGATOR_RUNNER_THREAD_NAME);

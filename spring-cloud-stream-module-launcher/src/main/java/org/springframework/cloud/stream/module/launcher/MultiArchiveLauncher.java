@@ -26,14 +26,13 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.loader.Launcher;
 import org.springframework.boot.loader.archive.Archive;
-import org.springframework.cloud.stream.module.utils.ClassloaderUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * A {@link Launcher} for multiple independent JAR archives (which aren't nested in an uberjar). This class
- * supports module aggregation and direct binding.
+ * A {@link Launcher} for multiple independent JAR archives (which aren't nested in an uber jar). This class
+ * supports adding includes and excludes to a module's classpath.
  *
  * @author Marius Bogoevici
  * @author Eric Bottard
