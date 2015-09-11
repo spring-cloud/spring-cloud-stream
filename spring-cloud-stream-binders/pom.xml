@@ -18,7 +18,7 @@
 	<properties>
 		<kafka.version>0.8.2.1</kafka.version>
 		<curator.version>2.6.0</curator.version>
-		<spring-xd.version>1.2.1.BUILD-SNAPSHOT</spring-xd.version>
+		<spring-xd.version>1.2.1.RELEASE</spring-xd.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream-binder-spi</module>
