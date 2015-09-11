@@ -32,7 +32,8 @@
 		<module>spring-cloud-stream-module-launcher</module>
 		<module>docs</module>
 		<module>spring-cloud-stream-test-support</module>
-	</modules>
+    	<module>spring-cloud-stream-test-support-internal</module>
+  </modules>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -114,7 +115,12 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-test-support</artifactId>
+				<artifactId>spring-cloud-stream-test-support-internal</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-module-test-support</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

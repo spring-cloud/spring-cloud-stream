@@ -35,6 +35,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.ChannelCallback;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.cloud.stream.binder.BinderUtils;
@@ -57,10 +58,7 @@ public class RabbitBinderCleanerTests {
 	private static final String BINDER_PREFIX = "binder.rabbit.";
 
 	@Rule
-	public RabbitAdminTestSupport adminTest = new RabbitAdminTestSupport();
-
-	@Rule
-	public RabbitTestSupport test = new RabbitTestSupport();
+	public RabbitTestSupport rabbitWithMgmtEnabled = new RabbitTestSupport(true);
 
 	@Test
 	public void testCleanStream() {
@@ -93,7 +91,7 @@ public class RabbitBinderCleanerTests {
 					.buildAndExpand("/", MessageChannelBinderSupport.constructDLQName(queue1Name)).encode().toUri();
 			template.put(uri, new AmqpQueue(false, true));
 		}
-		CachingConnectionFactory connectionFactory = test.getResource();
+		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
 		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
 		final FanoutExchange fanout1 = new FanoutExchange(
 				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, MessageChannelBinderSupport.applyPubSub(

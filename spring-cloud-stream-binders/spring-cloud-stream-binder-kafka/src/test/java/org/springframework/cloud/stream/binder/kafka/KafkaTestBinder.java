@@ -22,6 +22,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
+import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
+import org.springframework.cloud.stream.test.junit.kafka.TestKafkaCluster;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.codec.kryo.KryoRegistrar;

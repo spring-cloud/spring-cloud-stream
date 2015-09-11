@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.rabbit;
+package org.springframework.cloud.stream.test.junit.rabbit;
 
-
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.cloud.stream.binder.AbstractExternalResourceTestSupport;
+import java.net.Socket;
 
 import javax.net.SocketFactory;
-import java.net.Socket;
+
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
 
 /**
  * JUnit {@link org.junit.Rule} that detects the fact that RabbitMQ is available on localhost.
