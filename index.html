@@ -26,7 +26,7 @@ badges:
 
 {% capture billboard_description %}
 
-Spring Cloud Stream allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just create `MessageChannels` "input" and/or "output" and add `@EnableChannelBinding` and run your app as a Spring Boot app (single application context).  You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. 
+Spring Cloud Stream allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just add `@EnableBinding` and run your app as a Spring Boot app (single application context).  You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. 
 
 {% endcapture %}
 
@@ -43,7 +43,7 @@ classpath any Spring Boot application with `@EnableChannelBinding` will bind to 
 
 ```java
 @SpringBootApplication
-@EnableChannelBinding
+@EnableBinding(Source.class)
 @ComponentScan(basePackageClasses=ModuleDefinition.class)
 public class ModuleApplication {
 
@@ -65,7 +65,7 @@ public class ModuleDefinition {
   }
 
   @Bean
-  @InboundChannelAdapter(value = "output", autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+  @InboundChannelAdapter(value = Source.OUTPUT, autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
   public MessageSource<String> timerMessageSource() {
     return () -> new GenericMessage<>(new SimpleDateFormat(format).format(new Date()));
   }
