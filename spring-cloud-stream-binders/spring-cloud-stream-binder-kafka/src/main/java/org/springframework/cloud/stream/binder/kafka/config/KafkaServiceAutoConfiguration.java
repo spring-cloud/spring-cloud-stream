@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.test.ImportAutoConfiguration;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 
 /**
@@ -30,6 +31,18 @@ import org.springframework.context.annotation.PropertySource;
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
 @ImportAutoConfiguration(KafkaMessageChannelBinderConfiguration.class)
-@PropertySource("classpath:/META-INF/spring-cloud-stream/kafka-binder.properties")
 public class KafkaServiceAutoConfiguration {
+
+	@Configuration
+	@Profile("!lattice")
+	@PropertySource("classpath:/META-INF/spring-cloud-stream/kafka-binder.properties")
+	public static class DefaultProperties {
+
+	}
+
+	@Configuration
+	@Profile("lattice")
+	@PropertySource("classpath:/META-INF/spring-cloud-stream/kafka-binder-lattice.properties")
+	public static class LatticeDefaultProperties {
+	}
 }
