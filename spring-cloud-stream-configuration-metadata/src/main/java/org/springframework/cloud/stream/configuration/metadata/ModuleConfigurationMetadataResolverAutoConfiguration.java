@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.module.launcher;
+package org.springframework.cloud.stream.configuration.metadata;
 
-import org.springframework.cloud.stream.module.resolver.ModuleResolver;
-import org.springframework.cloud.stream.module.resolver.ModuleResolverConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Bean;
 
 /**
- * Configuration class that has the beans required for module launcher.
+ * Automatically exposes a ModuleConfigurationMetadataResolver if none is already registered.
  *
- * @author Marius Bogoevici
- * @author Ilayaperumal Gopinathan
  * @author Eric Bottard
  */
 @Configuration
-@Import(ModuleResolverConfiguration.class)
-public class ModuleLauncherConfiguration {
+public class ModuleConfigurationMetadataResolverAutoConfiguration {
 
 	@Bean
-	public ModuleLauncher moduleLauncher(ModuleResolver moduleResolver) {
-		return new ModuleLauncher(moduleResolver);
+	@ConditionalOnMissingBean(ModuleConfigurationMetadataResolver.class)
+	public ModuleConfigurationMetadataResolver metadataResolver() {
+		return new ModuleConfigurationMetadataResolver();
 	}
-
 }
