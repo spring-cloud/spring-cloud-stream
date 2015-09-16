@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.bus.amqp;
+package org.springframework.cloud.bus;
 
-import lombok.Data;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.SubscribableChannel;
 
 /**
  * @author Dave Syer
  *
  */
-@ConfigurationProperties("spring.cloud.bus.amqp")
-@Data
-public class AmqpBusProperties {
-	
-	public static final String SPRING_CLOUD_BUS = "spring.cloud.bus";
-	
-	private boolean enabled;
-	
-	private String exchange = SPRING_CLOUD_BUS;
+public interface SpringCloudBusClient {
 
+	String INPUT = "springCloudBusInput";
+
+	String OUTPUT = "springCloudBusOutput";
+
+	@Output(SpringCloudBusClient.OUTPUT)
+	MessageChannel springCloudBusOutput();
+
+	@Input(SpringCloudBusClient.INPUT)
+	SubscribableChannel springCloudBusInput();
 }

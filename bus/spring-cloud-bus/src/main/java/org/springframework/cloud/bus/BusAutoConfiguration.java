@@ -14,22 +14,17 @@ import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.context.environment.EnvironmentManager;
 import org.springframework.cloud.context.scope.refresh.RefreshScope;
 import org.springframework.cloud.endpoint.RefreshEndpoint;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.interceptor.WireTap;
-import org.springframework.integration.config.GlobalChannelInterceptor;
-import org.springframework.integration.core.GenericSelector;
-import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.dsl.channel.MessageChannels;
-import org.springframework.integration.event.inbound.ApplicationEventListeningMessageProducer;
-import org.springframework.integration.event.outbound.ApplicationEventPublishingMessageHandler;
-import org.springframework.integration.handler.LoggingHandler;
+import org.springframework.context.event.EventListener;
+import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.PathMatcher;
 
@@ -39,93 +34,55 @@ import org.springframework.util.PathMatcher;
  */
 @Configuration
 @ConditionalOnBusEnabled
-public class BusAutoConfiguration {
+@EnableBinding(SpringCloudBusClient.class)
+public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	@Autowired
-	private ConfigurableApplicationContext context;
+	@Output(SpringCloudBusClient.OUTPUT)
+	private MessageChannel cloudBusOutboundChannel;
 
-	@Bean
-	public SubscribableChannel cloudBusOutboundChannel() {
-		return new DirectChannel();
+	@Autowired
+	private ServiceMatcher serviceMatcher;
+
+	private ApplicationEventPublisher applicationEventPublisher;
+
+	@Override
+	public void setApplicationEventPublisher(
+			ApplicationEventPublisher applicationEventPublisher) {
+		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
-	// TODO: is there a way to move these filters to rabbit while not losing the
-	// information once it is published to spring?
-	@Bean
-	public GenericSelector<?> outboundFilter() {
-		return new GenericSelector<RemoteApplicationEvent>() {
-			@Override
-			public boolean accept(RemoteApplicationEvent source) {
-				return serviceMatcher().isFromSelf(source);
-			}
-		};
+	@EventListener(classes = RemoteApplicationEvent.class)
+	public void acceptLocal(RemoteApplicationEvent event) {
+		if (this.serviceMatcher.isFromSelf(event)) {
+			this.cloudBusOutboundChannel.send(MessageBuilder.withPayload(event).build());
+		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private ApplicationEventListeningMessageProducer cloudBusOutboundMessageProducer() {
-		ApplicationEventListeningMessageProducer producer = new ApplicationEventListeningMessageProducer();
-		producer.setEventTypes(RemoteApplicationEvent.class);
-		return producer;
+	@ServiceActivator(inputChannel = SpringCloudBusClient.INPUT)
+	public void acceptRemote(RemoteApplicationEvent event) {
+		if (!this.serviceMatcher.isFromSelf(event) && this.serviceMatcher.isForSelf(event)
+				&& this.applicationEventPublisher != null) {
+			this.applicationEventPublisher.publishEvent(event);
+		}
 	}
 
-	@Bean
-	public IntegrationFlow cloudBusOutboundFlow() {
-		ApplicationEventListeningMessageProducer producer = cloudBusOutboundMessageProducer();
-		// Workaround for bug in IntegrationFlow (it won't register the listener)
-		context.addApplicationListener(producer);
-		return IntegrationFlows.from(producer).filter(outboundFilter())
-				.channel(cloudBusOutboundChannel()).get();
+	@Configuration
+	protected static class MatcherConfiguration {
+
+		@Bean
+		public PathMatcher busPathMatcher() {
+			return new AntPathMatcher(":");
+		}
+
+		@Bean
+		public ServiceMatcher serviceMatcher(PathMatcher pathMatcher) {
+			ServiceMatcher serviceMatcher = new ServiceMatcher();
+			serviceMatcher.setMatcher(pathMatcher);
+			return serviceMatcher;
+		}
+
 	}
-
-	@Bean
-	public MessageChannel cloudBusInboundChannel() {
-		return new DirectChannel();
-	}
-
-	@Bean
-	public GenericSelector<?> inboundFilter() {
-		return new GenericSelector<RemoteApplicationEvent>() {
-			@Override
-			public boolean accept(RemoteApplicationEvent event) {
-				return !serviceMatcher().isFromSelf(event) && serviceMatcher().isForSelf(event);
-			}
-		};
-	}
-
-	@Bean
-	public IntegrationFlow cloudBusInboundFlow() {
-		ApplicationEventPublishingMessageHandler messageHandler = new ApplicationEventPublishingMessageHandler();
-		return IntegrationFlows.from(cloudBusInboundChannel()).filter(inboundFilter())
-				.handle(messageHandler).get();
-	}
-
-	@Bean
-	@GlobalChannelInterceptor(patterns = "cloudBusInboundFlow*")
-	public WireTap wireTap() {
-		return new WireTap(cloudBusWiretapChannel());
-	}
-
-	@Bean
-	public DirectChannel cloudBusWiretapChannel() {
-		return MessageChannels.direct().get();
-	}
-
-	@Bean
-	public IntegrationFlow loggingFlow() {
-		LoggingHandler handler = new LoggingHandler("INFO");
-		handler.setShouldLogFullMessage(true);
-		return IntegrationFlows.from(cloudBusWiretapChannel()).handle(handler).get();
-	}
-
-    @Bean
-    public PathMatcher busPathMatcher() {
-        return new AntPathMatcher(":");
-    }
-
-    @Bean
-    public ServiceMatcher serviceMatcher() {
-        return new ServiceMatcher();
-    }
 
 	@Configuration
 	@ConditionalOnClass(Endpoint.class)
@@ -180,7 +137,5 @@ public class BusAutoConfiguration {
 			}
 		}
 	}
-
-
 
 }

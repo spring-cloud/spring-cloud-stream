@@ -26,6 +26,7 @@
         <bintray.package>bus</bintray.package>
         <spring-cloud-config.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-config.version>
         <spring-cloud-netflix.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-netflix.version>
+        <spring-cloud-stream.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
         <spring-integration.version>4.1.0.RELEASE</spring-integration.version>
         <spring-cloud-connector.version>1.1.0.RELEASE</spring-cloud-connector.version>
         <spring-integration-dsl.version>1.0.1.RELEASE</spring-integration-dsl.version>
@@ -88,6 +89,13 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-config</artifactId>
 				<version>${spring-cloud-config.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-parent</artifactId>
+				<version>${spring-cloud-stream.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
