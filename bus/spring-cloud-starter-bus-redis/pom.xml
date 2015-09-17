@@ -8,8 +8,8 @@
 		<version>1.1.0.BUILD-SNAPSHOT</version>
 		<relativePath>..</relativePath>
 	</parent>
-	<artifactId>spring-cloud-starter-bus-amqp</artifactId>
-	<name>spring-cloud-starter-bus-amqp</name>
+	<artifactId>spring-cloud-starter-bus-redis</artifactId>
+	<name>spring-cloud-starter-bus-redis</name>
 	<description>Spring Cloud Starter</description>
 	<url>http://projects.spring.io/spring-cloud</url>
 	<organization>
@@ -22,7 +22,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+			<artifactId>spring-cloud-starter-stream-redis</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
