@@ -19,6 +19,8 @@ package demo;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -38,13 +40,18 @@ import org.springframework.messaging.support.GenericMessage;
 @EnableConfigurationProperties(TimeSourceOptionsMetadata.class)
 public class TimeSource {
 
-	@Autowired
-	private TimeSourceOptionsMetadata options;
+    private static Logger logger = LoggerFactory.getLogger(TimeSource.class);
 
-	@Bean
-	@InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
-	public MessageSource<String> timerMessageSource() {
-		return () -> new GenericMessage<>(new SimpleDateFormat(this.options.getFormat()).format(new Date()));
-	}
+    @Autowired
+    private TimeSourceOptionsMetadata options;
 
+    @Bean
+    @InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
+    public MessageSource<String> timerMessageSource() {
+        return () -> {
+            String message = new SimpleDateFormat(this.options.getFormat()).format(new Date());
+            logger.info(String.format("Emit log payload: \"%s\"", message));
+            return new GenericMessage<>(message);
+        };
+    }
 }
