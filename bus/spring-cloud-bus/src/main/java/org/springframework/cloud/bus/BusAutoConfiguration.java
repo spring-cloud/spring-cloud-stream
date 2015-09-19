@@ -1,6 +1,7 @@
 package org.springframework.cloud.bus;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.endpoint.Endpoint;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -37,6 +38,8 @@ import org.springframework.util.PathMatcher;
 @EnableBinding(SpringCloudBusClient.class)
 public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
+	public static final String BUS_PATH_MATCHER_NAME = "busPathMatcher";
+
 	@Autowired
 	@Output(SpringCloudBusClient.OUTPUT)
 	private MessageChannel cloudBusOutboundChannel;
@@ -71,12 +74,13 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	protected static class MatcherConfiguration {
 
 		@Bean
+		@Qualifier(BUS_PATH_MATCHER_NAME)
 		public PathMatcher busPathMatcher() {
 			return new AntPathMatcher(":");
 		}
 
 		@Bean
-		public ServiceMatcher serviceMatcher(PathMatcher pathMatcher) {
+		public ServiceMatcher serviceMatcher(@Qualifier(BUS_PATH_MATCHER_NAME) PathMatcher pathMatcher) {
 			ServiceMatcher serviceMatcher = new ServiceMatcher();
 			serviceMatcher.setMatcher(pathMatcher);
 			return serviceMatcher;
