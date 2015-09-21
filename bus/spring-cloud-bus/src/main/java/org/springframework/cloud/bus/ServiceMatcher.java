@@ -25,16 +25,16 @@ public class ServiceMatcher implements ApplicationContextAware {
 	public boolean isFromSelf(RemoteApplicationEvent event) {
 		String originService = event.getOriginService();
 		String serviceId = getServiceId();
-		return matcher.match(originService, serviceId);
+		return this.matcher.match(originService, serviceId);
 	}
 
 	public boolean isForSelf(RemoteApplicationEvent event) {
 		String destinationService = event.getDestinationService();
-		return (destinationService == null || destinationService.trim().isEmpty() || matcher
+		return (destinationService == null || destinationService.trim().isEmpty() || this.matcher
 				.match(destinationService, getServiceId()));
 	}
 
 	private String getServiceId() {
-		return context.getId();
+		return this.context.getId();
 	}
 }

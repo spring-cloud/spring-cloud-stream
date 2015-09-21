@@ -1,10 +1,15 @@
 package org.springframework.cloud.bus;
 
+import java.util.Collections;
+import java.util.HashMap;
+
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.endpoint.Endpoint;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.bus.endpoint.BusEndpoint;
 import org.springframework.cloud.bus.endpoint.EnvironmentBusEndpoint;
@@ -17,6 +22,7 @@ import org.springframework.cloud.context.scope.refresh.RefreshScope;
 import org.springframework.cloud.endpoint.RefreshEndpoint;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.config.ChannelBindingProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -47,7 +53,16 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	@Autowired
 	private ServiceMatcher serviceMatcher;
 
+	@Autowired
+	private ChannelBindingProperties bindings;
+
 	private ApplicationEventPublisher applicationEventPublisher;
+
+	@PostConstruct
+	public void init() {
+		this.bindings.getBindings().put("springCloudBusInput", new HashMap<>(Collections.singletonMap("destination", "topic:springCloudBus")));
+		this.bindings.getBindings().put("springCloudBusOutput", new HashMap<>(Collections.singletonMap("destination", "topic:springCloudBus")));
+	}
 
 	@Override
 	public void setApplicationEventPublisher(
@@ -74,13 +89,15 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	protected static class MatcherConfiguration {
 
 		@Bean
-		@Qualifier(BUS_PATH_MATCHER_NAME)
+		@BusPathMatcher
+		// There is a @Bean of type PathMatcher coming from Spring MVC
+		@ConditionalOnMissingBean(name="busPathMatcher")
 		public PathMatcher busPathMatcher() {
 			return new AntPathMatcher(":");
 		}
 
 		@Bean
-		public ServiceMatcher serviceMatcher(@Qualifier(BUS_PATH_MATCHER_NAME) PathMatcher pathMatcher) {
+		public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher) {
 			ServiceMatcher serviceMatcher = new ServiceMatcher();
 			serviceMatcher.setMatcher(pathMatcher);
 			return serviceMatcher;
