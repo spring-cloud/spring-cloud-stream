@@ -16,15 +16,13 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binding.BindingBeanDefinitionRegistryUtils;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
 
@@ -41,7 +39,7 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 		AnnotationAttributes attrs = AnnotatedElementUtils.getMergedAnnotationAttributes(
 				ClassUtils.resolveClassName(metadata.getClassName(), null),
 				EnableBinding.class);
-		for (Class<?> type : collectClasses(attrs.get("value"))) {
+		for (Class<?> type : collectClasses(attrs, metadata.getClassName())) {
 			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type,
 					type.getName(), registry);
 			BindingBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
@@ -50,14 +48,10 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 		}
 	}
 
-	private List<Class<?>> collectClasses(Object object) {
-		ArrayList<Class<?>> result = new ArrayList<Class<?>>();
-		for (Object value : (Object[]) object) {
-			if (value instanceof Class && void.class != value) {
-				result.add((Class<?>) value);
-			}
-		}
-		return result;
+	private Class<?>[] collectClasses(AnnotationAttributes attrs, String className) {
+		EnableBinding enableBinding = AnnotationUtils.synthesizeAnnotation(attrs,
+				EnableBinding.class, ClassUtils.resolveClassName(className, null));
+		return enableBinding.value();
 	}
 
 }
