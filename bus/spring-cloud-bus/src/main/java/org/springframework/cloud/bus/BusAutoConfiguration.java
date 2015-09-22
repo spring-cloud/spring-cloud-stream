@@ -82,7 +82,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		}
 		@SuppressWarnings("unchecked")
 		Map<String, Object> output = (Map<String, Object>) this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
-		if (!output.containsKey("destination") || SpringCloudBusClient.INPUT.equals(outputBinding)) {
+		if (!output.containsKey("destination") || SpringCloudBusClient.OUTPUT.equals(outputBinding)) {
 			output.put("destination", this.bus.getDestination());
 		}
 	}
