@@ -10,11 +10,9 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
-import org.springframework.boot.autoconfigure.redis.RedisAutoConfiguration;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
 import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.binder.redis.config.RedisServiceAutoConfiguration;
-import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
+import org.springframework.cloud.stream.binder.local.config.LocalBinderAutoConfiguration;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -122,8 +120,7 @@ public class BusAutoConfigurationTests {
 	}
 
 	@Configuration
-	@Import({ BusAutoConfiguration.class, RedisAutoConfiguration.class,
-			RedisServiceAutoConfiguration.class, KryoCodecAutoConfiguration.class,
+	@Import({ BusAutoConfiguration.class, LocalBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
 	protected static class OutboundMessageHandlerConfiguration {
 
@@ -135,7 +132,7 @@ public class BusAutoConfigurationTests {
 
 		@PostConstruct
 		public void init() {
-			((DirectChannel)this.cloudBusOutboundChannel).addInterceptor(interceptor());
+			((DirectChannel) this.cloudBusOutboundChannel).addInterceptor(interceptor());
 		}
 
 		private ChannelInterceptor interceptor() {
@@ -151,8 +148,7 @@ public class BusAutoConfigurationTests {
 	}
 
 	@Configuration
-	@Import({ BusAutoConfiguration.class, RedisAutoConfiguration.class,
-			RedisServiceAutoConfiguration.class, KryoCodecAutoConfiguration.class,
+	@Import({ BusAutoConfiguration.class, LocalBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
 	protected static class InboundMessageHandlerConfiguration
 			implements ApplicationListener<RefreshRemoteApplicationEvent> {

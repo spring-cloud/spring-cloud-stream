@@ -46,7 +46,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-redis</artifactId>
+			<artifactId>spring-cloud-stream-binder-local</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

@@ -1,12 +1,12 @@
 package org.springframework.cloud.bus.event;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import org.springframework.context.ApplicationEvent;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author Spencer Gibb
@@ -24,14 +24,18 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 	protected RemoteApplicationEvent() {
 		// for serialization libs like jackson
 		super(TRANSIENT_SOURCE);
-		originService = null;
-		destinationService = null;
+		this.originService = null;
+		this.destinationService = null;
 	}
 
 	protected RemoteApplicationEvent(Object source, String originService,
 			String destinationService) {
 		super(source);
 		this.originService = originService;
+		if (!destinationService.contains(":")) {
+			// All instances of the destination unless specifically requested
+			destinationService = destinationService + ":**";
+		}
 		this.destinationService = destinationService;
 	}
 
