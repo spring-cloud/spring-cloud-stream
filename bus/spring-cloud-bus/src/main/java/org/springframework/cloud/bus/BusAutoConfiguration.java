@@ -1,7 +1,7 @@
 package org.springframework.cloud.bus;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.bus.endpoint.BusEndpoint;
 import org.springframework.cloud.bus.endpoint.EnvironmentBusEndpoint;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
@@ -42,6 +43,7 @@ import org.springframework.util.PathMatcher;
 @Configuration
 @ConditionalOnBusEnabled
 @EnableBinding(SpringCloudBusClient.class)
+@EnableConfigurationProperties(BusProperties.class)
 public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	public static final String BUS_PATH_MATCHER_NAME = "busPathMatcher";
@@ -56,12 +58,33 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	@Autowired
 	private ChannelBindingProperties bindings;
 
+	@Autowired
+	private BusProperties bus;
+
 	private ApplicationEventPublisher applicationEventPublisher;
 
 	@PostConstruct
 	public void init() {
-		this.bindings.getBindings().put("springCloudBusInput", new HashMap<>(Collections.singletonMap("destination", "topic:springCloudBus")));
-		this.bindings.getBindings().put("springCloudBusOutput", new HashMap<>(Collections.singletonMap("destination", "topic:springCloudBus")));
+		Object inputBinding = this.bindings.getBindings().get(SpringCloudBusClient.INPUT);
+		if (inputBinding == null || inputBinding instanceof String) {
+			this.bindings.getBindings().put(SpringCloudBusClient.INPUT,
+					new HashMap<String, Object>());
+		}
+		@SuppressWarnings("unchecked")
+		Map<String, Object> input = (Map<String, Object>) this.bindings.getBindings().get(SpringCloudBusClient.INPUT);
+		if (!input.containsKey("destination") || SpringCloudBusClient.INPUT.equals(inputBinding)) {
+			input.put("destination", this.bus.getDestination());
+		}
+		Object outputBinding = this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
+		if (outputBinding == null || outputBinding instanceof String) {
+			this.bindings.getBindings().put(SpringCloudBusClient.OUTPUT,
+					new HashMap<String, Object>());
+		}
+		@SuppressWarnings("unchecked")
+		Map<String, Object> output = (Map<String, Object>) this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
+		if (!output.containsKey("destination") || SpringCloudBusClient.INPUT.equals(outputBinding)) {
+			output.put("destination", this.bus.getDestination());
+		}
 	}
 
 	@Override
@@ -88,10 +111,10 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	@Configuration
 	protected static class MatcherConfiguration {
 
-		@Bean
 		@BusPathMatcher
 		// There is a @Bean of type PathMatcher coming from Spring MVC
-		@ConditionalOnMissingBean(name="busPathMatcher")
+		@ConditionalOnMissingBean(name = BusAutoConfiguration.BUS_PATH_MATCHER_NAME)
+		@Bean(name = BusAutoConfiguration.BUS_PATH_MATCHER_NAME)
 		public PathMatcher busPathMatcher() {
 			return new AntPathMatcher(":");
 		}
