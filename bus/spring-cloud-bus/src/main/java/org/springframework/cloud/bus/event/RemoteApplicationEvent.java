@@ -32,6 +32,9 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 			String destinationService) {
 		super(source);
 		this.originService = originService;
+		if (destinationService == null) {
+			destinationService = "*";
+		}
 		if (!destinationService.contains(":")) {
 			// All instances of the destination unless specifically requested
 			destinationService = destinationService + ":**";
