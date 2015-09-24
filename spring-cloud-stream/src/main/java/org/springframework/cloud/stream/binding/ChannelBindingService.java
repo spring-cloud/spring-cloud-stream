@@ -17,7 +17,7 @@
 package org.springframework.cloud.stream.binding;
 
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.config.ChannelBindingProperties;
+import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -34,34 +34,34 @@ public class ChannelBindingService {
 
 	private Binder<MessageChannel> binder;
 
-	private ChannelBindingProperties channelBindingProperties;
+	private ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	public ChannelBindingService(ChannelBindingProperties channelBindingProperties, Binder<MessageChannel> binder) {
-		this.channelBindingProperties = channelBindingProperties;
+	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties, Binder<MessageChannel> binder) {
+		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.binder = binder;
 	}
 
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
-		String channelBindingTarget = this.channelBindingProperties.getBindingDestination(inputChannelName);
+		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
 		if (isChannelPubSub(channelBindingTarget)) {
 			this.binder.bindPubSubConsumer(removePrefix(channelBindingTarget),
-					inputChannel, this.channelBindingProperties.getConsumerProperties(inputChannelName));
+					inputChannel, this.channelBindingServiceProperties.getConsumerProperties(inputChannelName));
 		}
 		else {
 			this.binder.bindConsumer(channelBindingTarget, inputChannel,
-					this.channelBindingProperties.getConsumerProperties(inputChannelName));
+					this.channelBindingServiceProperties.getConsumerProperties(inputChannelName));
 		}
 	}
 
 	public void bindProducer(MessageChannel outputChannel, String outputChannelName) {
-		String channelBindingTarget = this.channelBindingProperties.getBindingDestination(outputChannelName);
+		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(outputChannelName);
 		if (isChannelPubSub(channelBindingTarget)) {
 			this.binder.bindPubSubProducer(removePrefix(channelBindingTarget),
-					outputChannel, this.channelBindingProperties.getProducerProperties(outputChannelName));
+					outputChannel, this.channelBindingServiceProperties.getProducerProperties(outputChannelName));
 		}
 		else {
 			this.binder.bindProducer(channelBindingTarget, outputChannel,
-					this.channelBindingProperties.getProducerProperties(outputChannelName));
+					this.channelBindingServiceProperties.getProducerProperties(outputChannelName));
 		}
 	}
 
