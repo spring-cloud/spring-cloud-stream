@@ -21,6 +21,7 @@ import java.util.Properties;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
@@ -30,6 +31,7 @@ import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
@@ -43,7 +45,7 @@ import org.springframework.messaging.core.DestinationResolver;
  * @author Ilayaperumal Gopinathan
  */
 @Configuration
-@EnableConfigurationProperties(ChannelBindingProperties.class)
+@EnableConfigurationProperties(ChannelBindingServiceProperties.class)
 public class ChannelBindingServiceConfiguration {
 
 	@Bean
@@ -52,9 +54,9 @@ public class ChannelBindingServiceConfiguration {
 	// already exists).
 	@ConditionalOnMissingBean(ChannelBindingService.class)
 	public ChannelBindingService bindingService(
-			ChannelBindingProperties channelBindingProperties,
+			ChannelBindingServiceProperties channelBindingServiceProperties,
 			Binder<MessageChannel> binder) {
-		return new ChannelBindingService(channelBindingProperties, binder);
+		return new ChannelBindingService(channelBindingServiceProperties, binder);
 	}
 
 	@Bean
@@ -67,6 +69,12 @@ public class ChannelBindingServiceConfiguration {
 	public BinderAwareChannelResolver binderAwareChannelResolver(
 			Binder<MessageChannel> binder) {
 		return new BinderAwareChannelResolver(binder, new Properties());
+	}
+
+	@Bean
+	@ConfigurationPropertiesBinding
+	public Converter<String,BindingProperties> bindingPropertiesConverter() {
+		return new BindingPropertiesConverter();
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early

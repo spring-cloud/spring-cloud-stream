@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -33,16 +34,10 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
-public class ChannelBindingProperties {
-
-	public static final String DESTINATION = "destination";
-
-	public static final String PARTITION_COUNT = "partitionCount";
-
-	public static final String PARTITIONED = "partitioned";
+public class ChannelBindingServiceProperties {
 
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
-	private int instanceIndex;
+	private int instanceIndex = 0;
 
 	private int instanceCount = 1;
 
@@ -50,7 +45,7 @@ public class ChannelBindingProperties {
 
 	private Properties producerProperties = new Properties();
 
-	private Map<String,Object> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+	private Map<String,BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	private Properties getConsumerProperties() {
 		return this.consumerProperties;
@@ -68,11 +63,11 @@ public class ChannelBindingProperties {
 		this.producerProperties = producerProperties;
 	}
 
-	public Map<String, Object> getBindings() {
+	public Map<String, BindingProperties> getBindings() {
 		return bindings;
 	}
 
-	public void setBindings(Map<String, Object> bindings) {
+	public void setBindings(Map<String, BindingProperties> bindings) {
 		this.bindings = bindings;
 	}
 
@@ -94,70 +89,27 @@ public class ChannelBindingProperties {
 
 
 	public String getBindingDestination(String channelName) {
-		Object binding = bindings.get(channelName);
+		BindingProperties bindingProperties = bindings.get(channelName);
 		// we may shortcut directly to the path
-		if (binding != null) {
-			if (binding instanceof String) {
-				return (String) binding;
-			}
-			else if (binding instanceof Map) {
-				Map<?, ?> bindingProperties = (Map<?, ?>) binding;
-				Object bindingPath = bindingProperties.get(DESTINATION);
-				if (bindingPath != null) {
-					return bindingPath.toString();
-				}
-			}
-		}
 		// just return the channel name if not found
-		return channelName;
+		return bindingProperties != null && StringUtils.hasText(bindingProperties.getDestination()) ?
+				bindingProperties.getDestination() : channelName;
 	}
 
 	public int getPartitionCount(String channelName) {
-		Object binding = bindings.get(channelName);
-		// we may shortcut directly to the path
-		if (binding instanceof Map) {
-			try {
-				Map<?, ?> bindingProperties = (Map<?, ?>) binding;
-				Object bindingPath = bindingProperties.get(PARTITION_COUNT);
-				if (bindingPath != null) {
-					return Integer.parseInt(bindingPath.toString());
-				}
-			} catch (NumberFormatException e) {
-				// ignore and just return 1
-			}
-		}
-		return 1;
+		return bindings.containsKey(channelName) ? bindings.get(channelName).getPartitionCount() : 1;
 	}
 
 	public boolean isPartitionedConsumer(String channelName) {
-		Object binding = bindings.get(channelName);
-		// if the setting is just a target shortcut
-		if (binding == null || binding instanceof String) {
-			return false;
-		}
-		else if (binding instanceof Map) {
-			Map<?, ?> bindingProperties = (Map<?, ?>) binding;
-			Object bindingPath = bindingProperties.get(PARTITIONED);
-			if (bindingPath != null) {
-				return Boolean.valueOf(bindingPath.toString());
-			}
-		}
-		// just return the channel name if not found
-		return false;
+		return bindings.containsKey(channelName) && bindings.get(channelName).isPartitioned();
 	}
 
 	public boolean isPartitionedProducer(String channelName) {
-		Object binding = bindings.get(channelName);
-		// if the setting is just a target shortcut
-		if (binding == null || binding instanceof String) {
-			return false;
-		}
-		else if (binding instanceof Map) {
-			Map<?, ?> bindingProperties = (Map<?, ?>) binding;
-			return bindingProperties.get(BinderProperties.PARTITION_KEY_EXPRESSION) != null
-					|| bindingProperties.get(BinderProperties.PARTITION_KEY_EXTRACTOR_CLASS) != null;
-		}
-		return false;
+		BindingProperties bindingProperties = bindings.get(channelName);
+		return bindingProperties != null &&
+					(StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
+					|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass()));
+
 	}
 
 	/**
@@ -195,26 +147,29 @@ public class ChannelBindingProperties {
 			channelProducerProperties.putAll(this.producerProperties);
 			channelProducerProperties.setProperty(BinderProperties.NEXT_MODULE_COUNT,
 					Integer.toString(getPartitionCount(outputChannelName)));
-			copyChannelBindingProperty(outputChannelName, channelProducerProperties,
-					BinderProperties.PARTITION_KEY_EXPRESSION);
-			copyChannelBindingProperty(outputChannelName, channelProducerProperties,
-					BinderProperties.PARTITION_KEY_EXTRACTOR_CLASS);
-			copyChannelBindingProperty(outputChannelName, channelProducerProperties,
-					BinderProperties.PARTITION_SELECTOR_CLASS);
-			copyChannelBindingProperty(outputChannelName, channelProducerProperties,
-					BinderProperties.PARTITION_SELECTOR_EXPRESSION);
+			BindingProperties bindingProperties = bindings.get(outputChannelName);
+			if (bindingProperties != null) {
+				if (bindingProperties.getPartitionKeyExpression() != null) {
+					channelProducerProperties.setProperty(BinderProperties.PARTITION_KEY_EXPRESSION,
+							bindingProperties.getPartitionKeyExpression());
+				}
+				if (bindingProperties.getPartitionKeyExtractorClass() != null) {
+					channelProducerProperties.setProperty(BinderProperties.PARTITION_KEY_EXTRACTOR_CLASS,
+							bindingProperties.getPartitionKeyExtractorClass());
+				}
+				if (bindingProperties.getPartitionSelectorClass() != null) {
+					channelProducerProperties.setProperty(BinderProperties.PARTITION_SELECTOR_CLASS,
+							bindingProperties.getPartitionSelectorClass());
+				}
+				if (bindingProperties.getPartitionSelectorExpression() != null) {
+					channelProducerProperties.setProperty(BinderProperties.PARTITION_SELECTOR_EXPRESSION,
+							bindingProperties.getPartitionSelectorExpression());
+				}
+			}
 			return channelProducerProperties;
 		}
 		else {
 			return this.producerProperties;
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private void copyChannelBindingProperty(String outputChannelName, Properties targetProperties, String propertyName) {
-		Map<String, Object> channelBindingProperties = (Map<String, Object>) bindings.get(outputChannelName);
-		if (null != channelBindingProperties && channelBindingProperties.containsKey(propertyName)) {
-			targetProperties.setProperty(propertyName, (String) channelBindingProperties.get(propertyName));
 		}
 	}
 
