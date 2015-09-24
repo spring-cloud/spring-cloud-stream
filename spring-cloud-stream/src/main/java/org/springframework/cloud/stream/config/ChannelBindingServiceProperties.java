@@ -173,8 +173,6 @@ public class ChannelBindingServiceProperties {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-
 	public String getTapChannelName(String channelName) {
 		return "tap:" + getBindingDestination(channelName);
 	}
