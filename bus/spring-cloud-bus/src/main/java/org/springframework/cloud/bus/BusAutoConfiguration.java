@@ -23,7 +23,8 @@ import org.springframework.cloud.context.scope.refresh.RefreshScope;
 import org.springframework.cloud.endpoint.RefreshEndpoint;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.config.ChannelBindingProperties;
+import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -56,7 +57,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	private ServiceMatcher serviceMatcher;
 
 	@Autowired
-	private ChannelBindingProperties bindings;
+	private ChannelBindingServiceProperties bindings;
 
 	@Autowired
 	private BusProperties bus;
@@ -65,25 +66,23 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	@PostConstruct
 	public void init() {
-		Object inputBinding = this.bindings.getBindings().get(SpringCloudBusClient.INPUT);
-		if (inputBinding == null || inputBinding instanceof String) {
+		BindingProperties inputBinding = this.bindings.getBindings().get(SpringCloudBusClient.INPUT);
+		if (inputBinding == null) {
 			this.bindings.getBindings().put(SpringCloudBusClient.INPUT,
-					new HashMap<String, Object>());
+					new BindingProperties());
 		}
-		@SuppressWarnings("unchecked")
-		Map<String, Object> input = (Map<String, Object>) this.bindings.getBindings().get(SpringCloudBusClient.INPUT);
-		if (!input.containsKey("destination") || SpringCloudBusClient.INPUT.equals(inputBinding)) {
-			input.put("destination", this.bus.getDestination());
+		BindingProperties input = this.bindings.getBindings().get(SpringCloudBusClient.INPUT);
+		if (input.getDestination() == null) {
+			input.setDestination(this.bus.getDestination());
 		}
-		Object outputBinding = this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
-		if (outputBinding == null || outputBinding instanceof String) {
+		BindingProperties outputBinding = this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
+		if (outputBinding == null) {
 			this.bindings.getBindings().put(SpringCloudBusClient.OUTPUT,
-					new HashMap<String, Object>());
+					new BindingProperties());
 		}
-		@SuppressWarnings("unchecked")
-		Map<String, Object> output = (Map<String, Object>) this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
-		if (!output.containsKey("destination") || SpringCloudBusClient.OUTPUT.equals(outputBinding)) {
-			output.put("destination", this.bus.getDestination());
+		BindingProperties output = this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
+		if (output.getDestination() == null) {
+			output.setDestination(this.bus.getDestination());
 		}
 	}
 
