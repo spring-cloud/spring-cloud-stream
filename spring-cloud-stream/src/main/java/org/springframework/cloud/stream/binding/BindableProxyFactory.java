@@ -57,6 +57,7 @@ import org.springframework.util.ReflectionUtils;
  *
  * @author Marius Bogoevici
  * @author David Syer
+ * @author Ilayaperumal Gopinathan
  *
  * @see EnableBinding
  */
@@ -264,13 +265,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace, this.type));
 		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : inputs.entrySet()) {
+			String inputChannelName = channelHolderEntry.getKey();
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
+			channelBindingService.configureMessageConverters(channelHolder.getMessageChannel(), inputChannelName);
 			if (channelHolder.isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, inputChannelName));
 				}
-				channelBindingService.bindConsumer(
-						channelHolder.getMessageChannel(), channelHolderEntry.getKey());
+				channelBindingService.bindConsumer(channelHolder.getMessageChannel(), inputChannelName);
 			}
 		}
 	}
@@ -281,12 +283,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
 		}
 		for (Map.Entry<String, ChannelHolder> channelHolderEntry : outputs.entrySet()) {
+			ChannelHolder channelHolder = channelHolderEntry.getValue();
+			String outputChannelName = channelHolderEntry.getKey();
+			channelBindingService.configureMessageConverters(channelHolder.getMessageChannel(), outputChannelName);
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, outputChannelName));
 				}
-				channelBindingService.bindProducer(channelHolderEntry.getValue()
-						.getMessageChannel(), channelHolderEntry.getKey());
+				channelBindingService.bindProducer(channelHolder.getMessageChannel(), outputChannelName);
 			}
 		}
 	}

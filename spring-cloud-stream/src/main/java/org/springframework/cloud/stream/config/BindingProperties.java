@@ -20,6 +20,7 @@ package org.springframework.cloud.stream.config;
  * Contains the properties of a binding.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class BindingProperties {
 
@@ -36,6 +37,8 @@ public class BindingProperties {
 	private String partitionSelectorClass;
 
 	private String partitionSelectorExpression;
+
+	private String contentType;
 
 	public String getDestination() {
 		return destination;
@@ -92,4 +95,13 @@ public class BindingProperties {
 	public void setPartitionSelectorExpression(String partitionSelectorExpression) {
 		this.partitionSelectorExpression = partitionSelectorExpression;
 	}
+
+	public String getContentType() {
+		return this.contentType;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
+
 }
