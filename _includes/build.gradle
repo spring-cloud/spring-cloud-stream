@@ -13,7 +13,7 @@ dependencyManagement {
 }
 
 dependencies {
-    compile '{@= groupId @}:spring-cloud-streams'
+    compile '{@= groupId @}:spring-cloud-stream'
     compile 'org.springframework.boot:spring-boot-starter-redis'
-    compile 'org.springframework.xd:spring-xd-messagebus-redis'
+    compile 'org.springframework.cloud:spring-cloud-starter-stream-redis'
 }
