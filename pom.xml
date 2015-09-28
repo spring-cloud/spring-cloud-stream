@@ -26,6 +26,7 @@
 		<module>spring-cloud-stream</module>
 		<module>spring-cloud-stream-binders</module>
 		<module>spring-cloud-stream-codec</module>
+		<module>spring-cloud-stream-tuple</module>
 		<module>spring-cloud-stream-starters</module>
 		<module>spring-cloud-stream-rxjava</module>
 		<module>spring-cloud-stream-samples</module>
