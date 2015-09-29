@@ -15,6 +15,8 @@
  */
 package org.springframework.cloud.stream.converter;
 
+import org.springframework.cloud.stream.tuple.Tuple;
+import org.springframework.cloud.stream.tuple.TupleBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeTypeUtils;
 
@@ -24,6 +26,7 @@ import org.springframework.util.MimeTypeUtils;
  * to convert a Java object to a String using toString()
  *
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
 public class PojoToStringMessageConverter extends AbstractFromMessageConverter {
 
@@ -42,8 +45,17 @@ public class PojoToStringMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass) {
-		return buildConvertedMessage(message.getPayload().toString(), message.getHeaders(), MimeTypeUtils.TEXT_PLAIN);
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object hint) {
+		String payloadString = null;
+		if (message.getPayload() instanceof Tuple) {
+			TupleBuilder builder = TupleBuilder.tuple();
+			builder.putAll((Tuple)message.getPayload());
+			payloadString = builder.build().toString();
+		}
+		else {
+			payloadString = message.getPayload().toString();
+		}
+		return buildConvertedMessage(payloadString, message.getHeaders(), MimeTypeUtils.TEXT_PLAIN);
 	}
 
 }
