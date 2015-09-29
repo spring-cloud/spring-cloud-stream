@@ -20,10 +20,10 @@ import static org.springframework.util.MimeType.valueOf;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
 
-import org.springframework.cloud.stream.tuple.Tuple;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 import org.springframework.cloud.stream.tuple.DefaultTuple;
+import org.springframework.cloud.stream.tuple.Tuple;
 import org.springframework.util.StringUtils;
 
 
@@ -39,11 +39,6 @@ public class MessageConverterUtils {
 	 * An MimeType specifying a {@link Tuple}.
 	 */
 	public static final MimeType X_SPRING_TUPLE = MimeType.valueOf("application/x-spring-tuple");
-
-	/**
-	 * An MimeType for specifying a String.
-	 */
-	public static final MimeType X_SPRING_STRING = MimeType.valueOf("application/x-spring-string");
 
 	/**
 	 * A general MimeType for Java Types.
@@ -90,9 +85,6 @@ public class MessageConverterUtils {
 		}
 		else if (X_JAVA_SERIALIZED_OBJECT.includes(contentType)) {
 			return byte[].class;
-		}
-		else if (X_SPRING_STRING.includes(contentType)) {
-			return String.class;
 		}
 		return null;
 	}

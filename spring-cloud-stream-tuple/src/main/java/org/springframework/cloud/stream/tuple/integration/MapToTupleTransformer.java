@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.integration.transformer.AbstractPayloadTransformer;
 import org.springframework.cloud.stream.tuple.Tuple;
 import org.springframework.cloud.stream.tuple.TupleBuilder;
+import org.springframework.integration.transformer.AbstractPayloadTransformer;
 
 /**
  * Converts from a Map to the Tuple data structure.
  * 
  * @author Mark Pollack
+ * @author Ilayaperumal Gopinathan
  */
 public class MapToTupleTransformer extends AbstractPayloadTransformer<Map<Object, Object>, Tuple> {
 
@@ -36,11 +37,9 @@ public class MapToTupleTransformer extends AbstractPayloadTransformer<Map<Object
 
 		List<String> newNames = new ArrayList<String>();
 		List<Object> newValues = new ArrayList<Object>();
-		for (Object name : map.keySet()) {
-			newNames.add(name.toString());
-		}
-		for (Object value : map.values()) {
-			newValues.add(value);
+		for (Map.Entry<Object, Object> entry: map.entrySet()) {
+			newNames.add(entry.getKey().toString());
+			newValues.add(entry.getValue());
 		}
 		return TupleBuilder.tuple().ofNamesAndValues(newNames, newValues);
 

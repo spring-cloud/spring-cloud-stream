@@ -28,7 +28,6 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
-import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
@@ -41,6 +40,7 @@ import org.springframework.util.MimeType;
  * used with custom Message conversion. Only {@link #fromMessage} is supported.
  *
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
 public abstract class AbstractFromMessageConverter extends AbstractMessageConverter {
 
@@ -54,11 +54,11 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * @param targetMimeType the required target type
 	 */
 	protected AbstractFromMessageConverter(MimeType targetMimeType) {
-		this(new ArrayList<MimeType>(), targetMimeType, new StrictContentTypeResolver(targetMimeType));
+		this(new ArrayList<MimeType>(), targetMimeType);
 	}
 
 	protected AbstractFromMessageConverter(Collection<MimeType> targetMimeTypes) {
-		this(new ArrayList<MimeType>(), targetMimeTypes, new StringConvertingContentTypeResolver());
+		this(new ArrayList<MimeType>(), targetMimeTypes);
 	}
 
 	/**
@@ -67,11 +67,9 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * @param supportedSourceMimeTypes list of {@link MimeType} that may present in content-type header
 	 * @param targetMimeType the required target type
 	 */
-	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes, MimeType targetMimeType,
-			ContentTypeResolver contentTypeResolver) {
+	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes, MimeType targetMimeType) {
 		super(supportedSourceMimeTypes);
 		Assert.notNull(targetMimeType, "'targetMimeType' cannot be null");
-		setContentTypeResolver(contentTypeResolver);
 		this.targetMimeTypes = Collections.singletonList(targetMimeType);
 	}
 
@@ -80,14 +78,11 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 *
 	 * @param supportedSourceMimeTypes a list of supported content types
 	 * @param targetMimeTypes a list of supported target types
-	 * @param contentTypeResolver the {@link ContentTypeResolver} to use
 	 */
 	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes,
-			Collection<MimeType> targetMimeTypes,
-			ContentTypeResolver contentTypeResolver) {
+			Collection<MimeType> targetMimeTypes) {
 		super(supportedSourceMimeTypes);
 		Assert.notNull(targetMimeTypes, "'targetMimeTypes' cannot be null");
-		setContentTypeResolver(contentTypeResolver);
 		this.targetMimeTypes = new ArrayList<MimeType>(targetMimeTypes);
 	}
 
@@ -98,8 +93,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * @param targetMimeType the required target type
 	 */
 	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, MimeType targetMimeType) {
-		this(Collections.singletonList(supportedSourceMimeType), targetMimeType, new StrictContentTypeResolver(
-				supportedSourceMimeType));
+		this(Collections.singletonList(supportedSourceMimeType), targetMimeType);
 	}
 
 	/**
@@ -109,8 +103,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * @param targetMimeTypes a list of supported target types
 	 */
 	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, Collection<MimeType> targetMimeTypes) {
-		this(Collections.singletonList(supportedSourceMimeType), targetMimeTypes, new StrictContentTypeResolver(
-				supportedSourceMimeType));
+		this(Collections.singletonList(supportedSourceMimeType), targetMimeTypes);
 	}
 
 	/**
@@ -161,14 +154,6 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 			}
 		}
 		return false;
-	}
-
-	@Override
-	// TODO: This will likely be fixed in core Spring
-	public void setContentTypeResolver(ContentTypeResolver resolver) {
-		if (getContentTypeResolver() == null) {
-			super.setContentTypeResolver(resolver);
-		}
 	}
 
 	/**
