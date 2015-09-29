@@ -46,7 +46,7 @@ public class SerializedToJavaMessageConverter extends AbstractFromMessageConvert
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) (message.getPayload()));
 		Object result = null;
 		try {

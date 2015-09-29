@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binding;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.springframework.aop.framework.Advised;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -124,11 +126,17 @@ public class ChannelBindingService implements InitializingBean {
 	/**
 	 * Setup data-type and message converters for the given message channel.
 	 *
-	 * @param messageChannel message channel to set the data-type and message converters
+	 * @param channel message channel to set the data-type and message converters
 	 * @param channelName the channel name
 	 */
-	public void configureMessageConverters(MessageChannel messageChannel, String channelName) {
-		Assert.isAssignable(AbstractMessageChannel.class, messageChannel.getClass());
+	public void configureMessageConverters(Object channel, String channelName) {
+		AbstractMessageChannel messageChannel = null;
+		try {
+			messageChannel = getMessageChannel(channel);
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Could not get the message channel to configure message converters" + e);
+		}
 		BindingProperties bindingProperties = channelBindingServiceProperties.getBindings().get(channelName);
 		if (bindingProperties != null) {
 			String contentType = bindingProperties.getContentType();
@@ -137,9 +145,17 @@ public class ChannelBindingService implements InitializingBean {
 				MessageConverter messageConverter = messageConverterFactory.newInstance(mimeType);
 				Class<?> dataType = MessageConverterUtils.getJavaTypeForContentType(mimeType,
 						Thread.currentThread().getContextClassLoader());
-				((AbstractMessageChannel)messageChannel).setDatatypes(dataType);
-				((AbstractMessageChannel)messageChannel).setMessageConverter(messageConverter);
+				messageChannel.setDatatypes(dataType);
+				messageChannel.setMessageConverter(messageConverter);
 			}
 		}
+	}
+
+	private AbstractMessageChannel getMessageChannel(Object channel) throws Exception {
+		if (AopUtils.isJdkDynamicProxy(channel)) {
+			return (AbstractMessageChannel) (((Advised) channel).getTargetSource().getTarget());
+		}
+		Assert.isAssignable(AbstractMessageChannel.class, channel.getClass());
+		return (AbstractMessageChannel) channel;
 	}
 }

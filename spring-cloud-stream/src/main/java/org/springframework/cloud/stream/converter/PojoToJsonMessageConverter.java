@@ -60,7 +60,7 @@ public class PojoToJsonMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		Object result;
 		try {
 			if (prettyPrint) {

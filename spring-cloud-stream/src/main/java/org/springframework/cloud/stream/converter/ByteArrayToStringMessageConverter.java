@@ -61,7 +61,7 @@ public class ByteArrayToStringMessageConverter extends AbstractFromMessageConver
 	 * Don't need to manipulate message headers. Just return payload
 	 */
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		MimeType mimeType = getContentTypeResolver().resolve(message.getHeaders());
 
 		String converted = null;
