@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -43,6 +44,8 @@ public class KafkaMessageChannelBinderConfiguration {
 	private String[] brokers;
 
 	private String defaultBrokerPort;
+
+	private String[] headers;
 
 	private KafkaMessageChannelBinder.Mode mode;
 
@@ -81,8 +84,10 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder() {
-		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(zookeeperConnect(),
-				getKafkaConnectionString(), getZkConnectionString());
+		KafkaMessageChannelBinder kafkaMessageChannelBinder = ObjectUtils.isEmpty(headers) ?
+				new KafkaMessageChannelBinder(zookeeperConnect(), getKafkaConnectionString(), getZkConnectionString())
+				: new KafkaMessageChannelBinder(zookeeperConnect(), getKafkaConnectionString(), getZkConnectionString(),
+						headers);
 		kafkaMessageChannelBinder.setCodec(codec);
 		kafkaMessageChannelBinder.setMode(mode);
 		kafkaMessageChannelBinder.setOffsetStoreTopic(offsetStoreTopic);
@@ -127,6 +132,14 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	public void setDefaultBrokerPort(String defaultBrokerPort) {
 		this.defaultBrokerPort = defaultBrokerPort;
+	}
+
+	public String[] getHeaders() {
+		return headers;
+	}
+
+	public void setHeaders(String[] headers) {
+		this.headers = headers;
 	}
 
 	public void setMode(KafkaMessageChannelBinder.Mode mode) {
