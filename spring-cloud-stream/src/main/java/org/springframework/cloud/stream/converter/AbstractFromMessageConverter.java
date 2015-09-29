@@ -139,7 +139,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	private boolean supportsType(Class<?> clazz, Class<?>[] supportedTypes) {
 		if (supportedTypes != null) {
 			for (Class<?> targetType : supportedTypes) {
-				if (ClassUtils.isAssignable(clazz, targetType)) {
+				if (ClassUtils.isAssignable(targetType, clazz)) {
 					return true;
 				}
 			}
