@@ -18,17 +18,16 @@ package org.springframework.cloud.stream.tuple.kryo;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.cloud.stream.tuple.Tuple;
+import org.springframework.cloud.stream.tuple.TupleBuilder;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import org.springframework.cloud.stream.tuple.Tuple;
-import org.springframework.cloud.stream.tuple.TupleBuilder;
-
 /**
- * Deserializes Tuples by writing the field names and then the values as class/object pairs
- * followed by the tuple Id and timestamp.
+ * Serializes Tuples by writing the field names and then the values as class/object pairs.
  *
  * @author David Turanski
  */

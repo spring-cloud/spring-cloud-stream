@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.tuple.kryo;
+package org.springframework.cloud.stream.tuple.integration;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.cloud.stream.tuple.kryo.DefaultTupleSerializer;
 import org.springframework.integration.codec.kryo.AbstractKryoRegistrar;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.cloud.stream.tuple.DefaultTuple;
@@ -26,16 +27,15 @@ import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.serializers.CollectionSerializer;
 
 /**
- * A {@link KryoRegistrar}
- * used to register a Tuple serializer.
+ * A {@link KryoRegistrar} used to register a Tuple serializer.
+ *
  * @author David Turanski
- * @since 1.2
  */
 public class TupleKryoRegistrar extends AbstractKryoRegistrar {
 
-	private final static int TUPLE_REGISTRATION_ID = 41;
+	private final static int TUPLE_REGISTRATION_ID = 43;
 
-	private final static int ARRAY_LIST_REGISTRATION_ID = 42;
+	private final static int ARRAY_LIST_REGISTRATION_ID = 44;
 
 	private final DefaultTupleSerializer defaultTupleSerializer = new DefaultTupleSerializer();
 

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.messaging.Message;
-import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -32,10 +31,9 @@ import org.springframework.util.MimeTypeUtils;
  * the content-type header if any.
  *
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
 public class StringToByteArrayMessageConverter extends AbstractFromMessageConverter {
-
-	private final static ContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
 	private final static List<MimeType> targetMimeTypes = new ArrayList<MimeType>();
 	static {
@@ -60,8 +58,8 @@ public class StringToByteArrayMessageConverter extends AbstractFromMessageConver
 	 * Don't need to manipulate message headers. Just return the payload
 	 */
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass) {
-		MimeType mimeType = contentTypeResolver.resolve(message.getHeaders());
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		MimeType mimeType = getContentTypeResolver().resolve(message.getHeaders());
 		byte[] converted = null;
 		if (mimeType == null || mimeType.getParameter("Charset") == null) {
 			converted = ((String) message.getPayload()).getBytes();
