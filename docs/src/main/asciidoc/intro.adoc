@@ -51,7 +51,7 @@ The `@Output` annotation is used to identify output channels (messages leaving t
 public class ModuleApplicationTests {
 
 	@Autowired
-	private Source source
+	private Source source;
 
 	@Test
 	public void contextLoads() {
