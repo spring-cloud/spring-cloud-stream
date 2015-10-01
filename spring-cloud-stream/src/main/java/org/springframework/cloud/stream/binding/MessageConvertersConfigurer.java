@@ -20,7 +20,7 @@ import java.util.Collection;
 
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
@@ -49,7 +49,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Ilayaperumal Gopinathan
  */
-public class MessageConvertersConfigurer implements ApplicationContextAware, InitializingBean {
+public class MessageConvertersConfigurer implements ApplicationContextAware, SmartInitializingSingleton {
 
 	private static final String CUSTOM_MSG_CONVERTERS_BEAN_NAME = "customMessageConverters";
 
@@ -61,7 +61,7 @@ public class MessageConvertersConfigurer implements ApplicationContextAware, Ini
 	private CompositeMessageConverterFactory messageConverterFactory;
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
+	public void afterSingletonsInstantiated() {
 		Collection<AbstractFromMessageConverter> messageConverters = new ArrayList<AbstractFromMessageConverter>();
 		if (applicationContext.containsBean(CUSTOM_MSG_CONVERTERS_BEAN_NAME)) {
 			messageConverters.addAll(
