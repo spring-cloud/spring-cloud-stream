@@ -17,17 +17,23 @@
 package demo;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
+import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * @author Dave Syer
@@ -47,4 +53,28 @@ public class TimeSource {
 		return () -> new GenericMessage<>(new SimpleDateFormat(this.options.getFormat()).format(new Date()));
 	}
 
+	private final static List<MimeType> targetMimeTypes = new ArrayList<MimeType>();
+	static {
+		targetMimeTypes.add(MessageConverterUtils.X_JAVA_OBJECT);
+		targetMimeTypes.add(MimeTypeUtils.TEXT_PLAIN);
+	}
+
+	@Bean
+	public List<AbstractFromMessageConverter> customMessageConverters() {
+		List<AbstractFromMessageConverter> converters = new ArrayList<>();
+		converters.add(new AbstractFromMessageConverter(targetMimeTypes) {
+			@Override
+			protected Class<?>[] supportedTargetTypes() {
+				return new Class<?>[] { String.class };
+			}
+
+			@Override
+			protected Class<?>[] supportedPayloadTypes() {
+				return new Class<?>[] { byte[].class };
+			}
+
+
+		});
+		return converters;
+	}
 }

@@ -28,6 +28,7 @@ import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingLifecycle;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
+import org.springframework.cloud.stream.binding.MessageConvertersConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -53,16 +54,19 @@ public class ChannelBindingServiceConfiguration {
 	// it is used to detect a ChannelBindingService in the parent context (which we know
 	// already exists).
 	@ConditionalOnMissingBean(ChannelBindingService.class)
-	public ChannelBindingService bindingService(
-			ChannelBindingServiceProperties channelBindingServiceProperties,
-			Binder<MessageChannel> binder) {
-		return new ChannelBindingService(channelBindingServiceProperties, binder);
+	public ChannelBindingService bindingService() {
+		return new ChannelBindingService();
 	}
 
 	@Bean
 	@DependsOn("bindingService")
 	public ChannelBindingLifecycle channelBindingLifecycle() {
 		return new ChannelBindingLifecycle();
+	}
+
+	@Bean
+	public MessageConvertersConfigurer messageConvertersConfigurer() {
+		return new MessageConvertersConfigurer();
 	}
 
 	@Bean

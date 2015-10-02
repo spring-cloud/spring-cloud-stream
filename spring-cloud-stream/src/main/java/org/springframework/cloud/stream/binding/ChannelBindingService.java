@@ -16,32 +16,11 @@
 
 package org.springframework.cloud.stream.binding;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.springframework.aop.framework.Advised;
-import org.springframework.aop.support.AopUtils;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
-import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
-import org.springframework.cloud.stream.converter.ByteArrayToStringMessageConverter;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.converter.JavaToSerializedMessageConverter;
-import org.springframework.cloud.stream.converter.JsonToPojoMessageConverter;
-import org.springframework.cloud.stream.converter.JsonToTupleMessageConverter;
-import org.springframework.cloud.stream.converter.MessageConverterUtils;
-import org.springframework.cloud.stream.converter.PojoToJsonMessageConverter;
-import org.springframework.cloud.stream.converter.PojoToStringMessageConverter;
-import org.springframework.cloud.stream.converter.SerializedToJavaMessageConverter;
-import org.springframework.cloud.stream.converter.StringToByteArrayMessageConverter;
-import org.springframework.cloud.stream.converter.TupleToJsonMessageConverter;
-import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.Assert;
-import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
@@ -53,33 +32,16 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public class ChannelBindingService implements InitializingBean {
+public class ChannelBindingService {
 
+	@Autowired
 	private Binder<MessageChannel> binder;
 
+	@Autowired
 	private ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	private CompositeMessageConverterFactory messageConverterFactory;
-
-	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties, Binder<MessageChannel> binder) {
-		this.channelBindingServiceProperties = channelBindingServiceProperties;
-		this.binder = binder;
-	}
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		Set<AbstractFromMessageConverter> messageConverters = new HashSet<>();
-		messageConverters.add(new JsonToTupleMessageConverter());
-		messageConverters.add(new TupleToJsonMessageConverter());
-		messageConverters.add(new JsonToPojoMessageConverter());
-		messageConverters.add(new PojoToJsonMessageConverter());
-		messageConverters.add(new ByteArrayToStringMessageConverter());
-		messageConverters.add(new StringToByteArrayMessageConverter());
-		messageConverters.add(new PojoToStringMessageConverter());
-		messageConverters.add(new JavaToSerializedMessageConverter());
-		messageConverters.add(new SerializedToJavaMessageConverter());
-		this.messageConverterFactory = new CompositeMessageConverterFactory(messageConverters);
-	}
+	@Autowired
+	private MessageConvertersConfigurer messageConvertersConfigurer;
 
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
@@ -130,32 +92,6 @@ public class ChannelBindingService implements InitializingBean {
 	 * @param channelName the channel name
 	 */
 	public void configureMessageConverters(Object channel, String channelName) {
-		AbstractMessageChannel messageChannel = null;
-		try {
-			messageChannel = getMessageChannel(channel);
-		}
-		catch (Exception e) {
-			throw new IllegalStateException("Could not get the message channel to configure message converters" + e);
-		}
-		BindingProperties bindingProperties = channelBindingServiceProperties.getBindings().get(channelName);
-		if (bindingProperties != null) {
-			String contentType = bindingProperties.getContentType();
-			if (StringUtils.hasText(contentType)) {
-				MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
-				MessageConverter messageConverter = messageConverterFactory.newInstance(mimeType);
-				Class<?> dataType = MessageConverterUtils.getJavaTypeForContentType(mimeType,
-						Thread.currentThread().getContextClassLoader());
-				messageChannel.setDatatypes(dataType);
-				messageChannel.setMessageConverter(messageConverter);
-			}
-		}
-	}
-
-	private AbstractMessageChannel getMessageChannel(Object channel) throws Exception {
-		if (AopUtils.isJdkDynamicProxy(channel)) {
-			return (AbstractMessageChannel) (((Advised) channel).getTargetSource().getTarget());
-		}
-		Assert.isAssignable(AbstractMessageChannel.class, channel.getClass());
-		return (AbstractMessageChannel) channel;
+		messageConvertersConfigurer.configureMessageConverters(channel, channelName);
 	}
 }
