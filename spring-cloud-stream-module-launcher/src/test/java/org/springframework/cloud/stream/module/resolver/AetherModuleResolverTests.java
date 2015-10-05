@@ -76,7 +76,9 @@ public class AetherModuleResolverTests {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
 		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
-		Resource[] resources = defaultModuleResolver.resolve(new Coordinates("foo.bar", "foo-bar", "jar", "", "1.0.0"), new Coordinates[]{new Coordinates("qux.bar", "qux-bar", "jar", "", "1.0.0")},new String[]{});
+		Resource[] resources = defaultModuleResolver.resolve(
+				new Coordinates("foo.bar", "foo-bar", "jar", "", "1.0.0"),
+				new Coordinates[]{new Coordinates("qux.bar", "qux-bar", "jar", "", "1.0.0")},new String[]{});
 		assertThat(resources, arrayWithSize(2));
 		assertTrue(resources[0].exists());
 		assertTrue(resources[1].exists());
