@@ -59,7 +59,7 @@ public class ModuleLauncher {
 
 	public static final String MODULE_AGGREGATOR_RUNNER_THREAD_NAME = "module-aggregator-runner";
 
-	private Log log = LogFactory.getLog(ModuleLauncher.class);
+	private static Log log = LogFactory.getLog(ModuleLauncher.class);
 
 	private static final String DEFAULT_EXTENSION = "jar";
 

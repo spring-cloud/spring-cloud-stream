@@ -207,7 +207,7 @@ public class AetherModuleResolver implements ModuleResolver {
 				DependencyResult dependencyResult =
 						repositorySystem.resolveDependencies(session,
 								new DependencyRequest(collectRequest,
-										new InclusionExclusionDependencyFilter(includeArtifacts, excludePatterns)));
+										new ModuleDependencyFilter(includeArtifacts, excludePatterns)));
 				for (ArtifactResult artifactResult : dependencyResult.getArtifactResults()) {
 					// we are only interested in the jars
 					if ("jar".equalsIgnoreCase(artifactResult.getArtifact().getExtension())) {

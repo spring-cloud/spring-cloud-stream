@@ -20,7 +20,15 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
+import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
+import static org.hamcrest.object.HasToString.hasToString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -33,18 +41,15 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.hamcrest.Matchers;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.SocketUtils;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import wiremock.org.mortbay.resource.FileResource;
 
 /**
  * @author David Turanski
@@ -64,6 +69,21 @@ public class AetherModuleResolverTests {
 		Resource resource = defaultModuleResolver.resolve(new Coordinates("foo.bar", "foo-bar", "jar", "", "1.0.0"));
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-bar-1.0.0.jar");
+	}
+
+	@Test
+	public void testResolveLocalWithIncludes() throws IOException {
+		ClassPathResource cpr = new ClassPathResource("local-repo");
+		File localRepository = cpr.getFile();
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
+		Resource[] resources = defaultModuleResolver.resolve(new Coordinates("foo.bar", "foo-bar", "jar", "", "1.0.0"), new Coordinates[]{new Coordinates("qux.bar", "qux-bar", "jar", "", "1.0.0")},new String[]{});
+		assertThat(resources, arrayWithSize(2));
+		assertTrue(resources[0].exists());
+		assertTrue(resources[1].exists());
+		// the optional dependency 'foo.baz:foo-baz:1.0.0'of 'foo.bar:foo-bar' is not included
+		assertThat(resources, arrayContainingInAnyOrder(
+				hasToString(containsString("foo-bar-1.0.0.jar")),
+				hasToString(containsString("qux-bar-1.0.0.jar"))));
 	}
 
 	@Test(expected = RuntimeException.class)

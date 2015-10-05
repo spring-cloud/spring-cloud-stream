@@ -31,21 +31,29 @@ import org.springframework.util.ObjectUtils;
  *
  * @author Marius Bogoevici
  */
-public class InclusionExclusionDependencyFilter implements DependencyFilter {
+public class ModuleDependencyFilter implements DependencyFilter {
 
 	private final PatternExclusionsDependencyFilter patternExclusionsDependencyFilter;
 
 	private final Artifact[] includes;
+	
+	private boolean acceptOptional = false;
 
-	public InclusionExclusionDependencyFilter(Artifact[] includes, String... excludes) {
+	public ModuleDependencyFilter(Artifact[] includes, String... excludes) {
 		this.patternExclusionsDependencyFilter = new PatternExclusionsDependencyFilter(excludes);
 		this.includes = includes != null ? includes : new Artifact[0];
 	}
 
+	public void setAcceptOptional(boolean acceptOptional) {
+		this.acceptOptional = acceptOptional;
+	}
+
 	@Override
 	public boolean accept(DependencyNode node, List<DependencyNode> parents) {
+		// optional nodes are rejected conditionally
 		// nodes included explicitly are always accepted
-		return isIncludedDirectly(node) || patternExclusionsDependencyFilter.accept(node, parents);
+		return (acceptOptional || !node.getDependency().isOptional())
+				&& (isIncludedDirectly(node) || patternExclusionsDependencyFilter.accept(node, parents));
 	}
 
 	private boolean isIncludedDirectly(DependencyNode node) {
