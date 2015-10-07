@@ -26,7 +26,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
-import org.springframework.cloud.stream.binding.ChannelBindingLifecycle;
+import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
+import org.springframework.cloud.stream.binding.InputBindingLifecycle;
+import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,8 +63,20 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	@DependsOn("bindingService")
-	public ChannelBindingLifecycle channelBindingLifecycle() {
-		return new ChannelBindingLifecycle();
+	public OutputBindingLifecycle outputBindingLifecycle() {
+		return new OutputBindingLifecycle();
+	}
+
+	@Bean
+	@DependsOn("bindingService")
+	public InputBindingLifecycle inputBindingLifecycle() {
+		return new InputBindingLifecycle();
+	}
+
+	@Bean
+	@DependsOn("bindingService")
+	public ContextStartAfterRefreshListener contextStartAfterRefreshListener() {
+		return new ContextStartAfterRefreshListener();
 	}
 
 	@Bean
