@@ -106,11 +106,10 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 	}
 
 	/**
-	 * Return the lowest value to start this bean before any message producing lifecycle
-	 * beans.
+	 * Return a high value so that this bean is started after receiving Lifecycle beans are started. Beans that need to start after bindings will set a higher phase value.
 	 */
 	@Override
 	public int getPhase() {
-		return Integer.MAX_VALUE;
+		return Integer.MAX_VALUE - 1000;
 	}
 }

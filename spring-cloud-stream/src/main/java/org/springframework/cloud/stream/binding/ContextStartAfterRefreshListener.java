@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binding;
 
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -25,12 +28,19 @@ import org.springframework.context.event.ContextRefreshedEvent;
  *
  * @author Marius Bogoevici
  */
-public class ContextStartAfterRefreshListener implements ApplicationListener<ContextRefreshedEvent> {
+public class ContextStartAfterRefreshListener implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
+
+	private ApplicationContext applicationContext;
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
 
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		ConfigurableApplicationContext source = (ConfigurableApplicationContext) event.getSource();
-		if (!source.isRunning()) {
+		if (source == this.applicationContext && !source.isRunning()) {
 			source.start();
 		}
 	}

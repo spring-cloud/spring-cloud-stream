@@ -108,11 +108,10 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 	}
 
 	/**
-	 * Return the lowest value to start this bean before any message producing lifecycle
-	 * beans.
+	 * Return a low value so that this bean is started after receiving Lifecycle beans are started. Beans that need to start before bindings will set a lower phase value.
 	 */
 	@Override
 	public int getPhase() {
-		return Integer.MIN_VALUE;
+		return Integer.MIN_VALUE + 1000;
 	}
 }
