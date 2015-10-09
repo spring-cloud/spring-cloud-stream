@@ -16,9 +16,13 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
@@ -26,14 +30,19 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
+import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
+import org.springframework.cloud.stream.tuple.spel.TuplePropertyAccessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.expression.PropertyAccessor;
+import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
+import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.json.JsonPropertyAccessor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
@@ -119,6 +128,37 @@ public class ChannelBindingServiceConfiguration {
 					});
 		}
 
+		/**
+		 * Adds property accessors for use in SpEL expression evaluation
+		 */
+		@Bean
+		public static BeanPostProcessor propertyAccessorBeanPostProcessor() {
+			final Map<String, PropertyAccessor> accessors = new HashMap<>();
+			accessors.put("tuplePropertyAccessor", new TuplePropertyAccessor());
+			accessors.put("jsonPropertyAccessor", new JsonPropertyAccessor());
+			return new BeanPostProcessor() {
+
+				@Override
+				public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+					if (IntegrationContextUtils.INTEGRATION_EVALUATION_CONTEXT_BEAN_NAME.equals(beanName)) {
+						IntegrationEvaluationContextFactoryBean factoryBean = (IntegrationEvaluationContextFactoryBean) bean;
+						Map<String, PropertyAccessor> factoryBeanAccessors = factoryBean.getPropertyAccessors();
+						for (Map.Entry<String, PropertyAccessor> entry : accessors.entrySet()) {
+							if (!factoryBeanAccessors.containsKey(entry.getKey())) {
+								factoryBeanAccessors.put(entry.getKey(), entry.getValue());
+							}
+						}
+						factoryBean.setPropertyAccessors(factoryBeanAccessors);
+					}
+					return bean;
+				}
+
+				@Override
+				public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+					return bean;
+				}
+			};
+		}
 	}
 
 }
