@@ -18,8 +18,6 @@ package org.springframework.cloud.stream.binding;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
