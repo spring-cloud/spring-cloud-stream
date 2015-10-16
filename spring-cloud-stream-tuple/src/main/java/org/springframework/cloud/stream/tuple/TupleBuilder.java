@@ -26,9 +26,7 @@ import java.util.Locale;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
-import org.springframework.util.AlternativeJdkIdGenerator;
 import org.springframework.util.Assert;
-import org.springframework.util.IdGenerator;
 
 /**
  * Builder class to create Tuple instances.
@@ -42,7 +40,6 @@ import org.springframework.util.IdGenerator;
  * @author David Turanski
  * @author Michael Minella
  * @author Gunnar Hillert
- * 
  */
 public class TupleBuilder {
 
@@ -61,8 +58,6 @@ public class TupleBuilder {
 	private static Converter<Tuple, String> tupleToStringConverter = new TupleToJsonStringConverter();
 
 	private static Converter<String, Tuple> stringToTupleConverter = new JsonStringToTupleConverter();
-
-	private static final IdGenerator defaultIdGenerator = new AlternativeJdkIdGenerator();
 
 	static {
 		defaultConversionService = new DefaultTupleConversionService();
@@ -166,7 +161,7 @@ public class TupleBuilder {
 	protected Tuple newTuple(List<String> names, List<Object> values) {
 		DefaultTuple tuple;
 
-		if(customConversionService != null) {
+		if (customConversionService != null) {
 			tuple = new DefaultTuple(names, values, customConversionService);
 		}
 		else {
@@ -200,12 +195,12 @@ public class TupleBuilder {
 		public TupleBuilder setConfigurableConversionService(ConfigurableConversionService formattingConversionService) {
 			Assert.notNull(formattingConversionService);
 
-			if(locale != null) {
+			if (locale != null) {
 				formattingConversionService.addConverterFactory(new LocaleAwareStringToNumberConverterFactory(NumberFormat
 						.getInstance(locale)));
 			}
 
-			if(dateFormat != null) {
+			if (dateFormat != null) {
 				formattingConversionService.addConverter(new StringToDateConverter(dateFormat));
 			}
 

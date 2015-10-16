@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author David Turanski
- *
  */
 public class JsonStringToTupleConverter implements Converter<String, Tuple> {
 
@@ -54,15 +53,7 @@ public class JsonStringToTupleConverter implements Converter<String, Tuple> {
 					builder.addEntry(name, nodeToList(node));
 				}
 				else {
-					if (name.equals("id")) {//NOSONAR
-						// TODO how should this be handled?
-					}
-					else if (name.equals("timestamp")) {//NOSONAR
-						// TODO how should this be handled?
-					}
-					else {
-						builder.addEntry(name, node.asText());
-					}
+					builder.addEntry(name, node.asText());
 				}
 			}
 		}
