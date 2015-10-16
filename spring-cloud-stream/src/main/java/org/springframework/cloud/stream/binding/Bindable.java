@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.Set;
+
 /**
  * Marker interface for instances that can bind/unbind groups of inputs and outputs.
  *
@@ -44,5 +46,15 @@ public interface Bindable {
 	 * Unbinds all the outputs associated with this instance.
 	 */
 	void unbindOutputs(ChannelBindingService adapter);
+
+	/**
+	 * Enumerates all the input binding names.
+	 */
+	Set<String> getInputs();
+
+	/**
+	 * Enumerates all the output binding names.
+	 */
+	Set<String> getOutputs();
 
 }

@@ -19,12 +19,12 @@ package org.springframework.cloud.stream.binding;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -102,7 +102,17 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Assert.notNull(beanFactory, "Bean factory cannot be empty");
+		Assert.notNull(this.beanFactory, "Bean factory cannot be empty");
+	}
+
+	@Override
+	public Set<String> getInputs() {
+		return this.inputs.keySet();
+	}
+
+	@Override
+	public Set<String> getOutputs() {
+		return this.outputs.keySet();
 	}
 
 	private void createChannels(Class<?> type) throws Exception {
@@ -119,11 +129,11 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
 						MessageChannel inputChannel = createMessageChannel(inputChannelType);
-						inputs.put(name, new ChannelHolder(inputChannel, true));
+						BindableProxyFactory.this.inputs.put(name, new ChannelHolder(inputChannel, true));
 					}
 					else {
 						if (inputChannelType.isAssignableFrom(sharedChannel.getClass())) {
-							inputs.put(name, new ChannelHolder(sharedChannel, false));
+							BindableProxyFactory.this.inputs.put(name, new ChannelHolder(sharedChannel, false));
 						}
 						else {
 							// handle the special case where the shared channel is of a different nature
@@ -137,7 +147,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 								bridgeSubscribableToPollableChannel(
 										(SubscribableChannel) sharedChannel, inputChannel);
 							}
-							inputs.put(name, new ChannelHolder(inputChannel, false));
+							BindableProxyFactory.this.inputs.put(name, new ChannelHolder(inputChannel, false));
 						}
 					}
 				}
@@ -150,11 +160,11 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
 						MessageChannel outputChannel = createMessageChannel(messageChannelType);
-						outputs.put(name, new ChannelHolder(outputChannel, true));
+						BindableProxyFactory.this.outputs.put(name, new ChannelHolder(outputChannel, true));
 					}
 					else {
 						if (messageChannelType.isAssignableFrom(sharedChannel.getClass())) {
-							outputs.put(name, new ChannelHolder(sharedChannel, false));
+							BindableProxyFactory.this.outputs.put(name, new ChannelHolder(sharedChannel, false));
 						}
 						else {
 							// handle the special case where the shared channel is of a different nature
@@ -169,7 +179,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 										(SubscribableChannel) outputChannel,
 										sharedChannel);
 							}
-							outputs.put(name, new ChannelHolder(outputChannel, false));
+							BindableProxyFactory.this.outputs.put(name, new ChannelHolder(outputChannel, false));
 						}
 					}
 				}
@@ -178,11 +188,11 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private MessageChannel locateSharedChannel(String name) {
-		return sharedChannelRegistry != null ? sharedChannelRegistry.get(getNamespacePrefixedChannelName(name)) : null;
+		return this.sharedChannelRegistry != null ? this.sharedChannelRegistry.get(getNamespacePrefixedChannelName(name)) : null;
 	}
 
 	private String getNamespacePrefixedChannelName(String name) {
-		return channelNamespace + "." + name;
+		return this.channelNamespace + "." + name;
 	}
 
 	private void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel,
@@ -196,12 +206,12 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		ConsumerEndpointFactoryBean consumerEndpointFactoryBean = new ConsumerEndpointFactoryBean();
 		consumerEndpointFactoryBean.setInputChannel(pollableChannel);
 		PollerMetadata pollerMetadata = new PollerMetadata();
-		pollerMetadata.setTrigger(new PeriodicTrigger(pollableBridgeDefaultFrequency));
+		pollerMetadata.setTrigger(new PeriodicTrigger(this.pollableBridgeDefaultFrequency));
 		consumerEndpointFactoryBean.setPollerMetadata(pollerMetadata);
 		consumerEndpointFactoryBean
 				.setHandler(new MessageChannelBinderSupport.DirectHandler(
 						subscribableChannel));
-		consumerEndpointFactoryBean.setBeanFactory(beanFactory);
+		consumerEndpointFactoryBean.setBeanFactory(this.beanFactory);
 		try {
 			consumerEndpointFactoryBean.afterPropertiesSet();
 		} catch (Exception e) {
@@ -243,7 +253,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	public synchronized Object getObject() throws Exception {
 		if (this.proxy == null) {
 			createChannels(this.type);
-			ProxyFactory factory = new ProxyFactory(type, this);
+			ProxyFactory factory = new ProxyFactory(this.type, this);
 			this.proxy = factory.getProxy();
 		}
 		return this.proxy;
@@ -264,7 +274,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : inputs.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputs.entrySet()) {
 			String inputChannelName = channelHolderEntry.getKey();
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			channelBindingService.configureMessageConverters(channelHolder.getMessageChannel(), inputChannelName);
@@ -282,7 +292,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : outputs.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputs.entrySet()) {
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			String outputChannelName = channelHolderEntry.getKey();
 			channelBindingService.configureMessageConverters(channelHolder.getMessageChannel(), outputChannelName);
@@ -300,7 +310,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : inputs.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputs.entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
@@ -315,7 +325,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : outputs.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputs.entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
@@ -342,11 +352,11 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		}
 
 		public MessageChannel getMessageChannel() {
-			return messageChannel;
+			return this.messageChannel;
 		}
 
 		public boolean isBindable() {
-			return bindable;
+			return this.bindable;
 		}
 	}
 

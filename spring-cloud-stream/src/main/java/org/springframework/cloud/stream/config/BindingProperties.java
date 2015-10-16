@@ -16,12 +16,16 @@
 
 package org.springframework.cloud.stream.config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
  * Contains the properties of a binding.
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
+@JsonInclude(value = Include.NON_DEFAULT)
 public class BindingProperties {
 
 	private String destination;
@@ -41,7 +45,7 @@ public class BindingProperties {
 	private String contentType;
 
 	public String getDestination() {
-		return destination;
+		return this.destination;
 	}
 
 	public void setDestination(String destination) {
@@ -49,7 +53,7 @@ public class BindingProperties {
 	}
 
 	public boolean isPartitioned() {
-		return partitioned;
+		return this.partitioned;
 	}
 
 	public void setPartitioned(boolean partitioned) {
@@ -57,7 +61,7 @@ public class BindingProperties {
 	}
 
 	public int getPartitionCount() {
-		return partitionCount;
+		return this.partitionCount;
 	}
 
 	public void setPartitionCount(int partitionCount) {
@@ -65,7 +69,7 @@ public class BindingProperties {
 	}
 
 	public String getPartitionKeyExpression() {
-		return partitionKeyExpression;
+		return this.partitionKeyExpression;
 	}
 
 	public void setPartitionKeyExpression(String partitionKeyExpression) {
@@ -73,7 +77,7 @@ public class BindingProperties {
 	}
 
 	public String getPartitionKeyExtractorClass() {
-		return partitionKeyExtractorClass;
+		return this.partitionKeyExtractorClass;
 	}
 
 	public void setPartitionKeyExtractorClass(String partitionKeyExtractorClass) {
@@ -81,7 +85,7 @@ public class BindingProperties {
 	}
 
 	public String getPartitionSelectorClass() {
-		return partitionSelectorClass;
+		return this.partitionSelectorClass;
 	}
 
 	public void setPartitionSelectorClass(String partitionSelectorClass) {
@@ -89,7 +93,7 @@ public class BindingProperties {
 	}
 
 	public String getPartitionSelectorExpression() {
-		return partitionSelectorExpression;
+		return this.partitionSelectorExpression;
 	}
 
 	public void setPartitionSelectorExpression(String partitionSelectorExpression) {

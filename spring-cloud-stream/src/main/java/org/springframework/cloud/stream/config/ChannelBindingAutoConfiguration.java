@@ -16,11 +16,15 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
+import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.scheduling.PollerMetadata;
@@ -44,6 +48,12 @@ public class ChannelBindingAutoConfiguration {
 	@ConditionalOnMissingBean(PollerMetadata.class)
 	public PollerMetadata defaultPoller() {
 		return this.poller.getPollerMetadata();
+	}
+
+	@Bean
+	@Autowired(required=false)
+	public ChannelsEndpoint channelsEndpoint(List<Bindable> adapters, ChannelBindingServiceProperties properties) {
+		return new ChannelsEndpoint(adapters, properties);
 	}
 
 }
