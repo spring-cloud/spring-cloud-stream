@@ -610,11 +610,14 @@ public class DefaultTuple implements Tuple {
 		this.tupleToStringConverter = tupleToStringConverter;
 	}
 
-	@Override
 	/**
-	 * The format is of the form DefaultTuple [names="n1'
+	 * Returns a JSON representation of this Tuple.
 	 */
+	@Override
 	public String toString() {
+		if (tupleToStringConverter == null) {
+			return new TupleToJsonStringConverter().convert(this);
+		}
 		return tupleToStringConverter.convert(this);
 	}
 
