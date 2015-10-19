@@ -21,7 +21,6 @@ import java.util.Collection;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
@@ -49,10 +48,13 @@ import org.springframework.util.StringUtils;
  */
 public class MessageConvertersConfigurer implements SmartInitializingSingleton {
 
-	@Autowired
-	private ChannelBindingServiceProperties channelBindingServiceProperties;
+	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
 	private CompositeMessageConverterFactory messageConverterFactory;
+
+	public MessageConvertersConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties) {
+		this.channelBindingServiceProperties = channelBindingServiceProperties;
+	}
 
 	@Override
 	public void afterSingletonsInstantiated() {

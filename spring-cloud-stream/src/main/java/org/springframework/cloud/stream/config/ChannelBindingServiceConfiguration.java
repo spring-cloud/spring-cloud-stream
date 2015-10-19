@@ -65,8 +65,10 @@ public class ChannelBindingServiceConfiguration {
 	// it is used to detect a ChannelBindingService in the parent context (which we know
 	// already exists).
 	@ConditionalOnMissingBean(ChannelBindingService.class)
-	public ChannelBindingService bindingService() {
-		return new ChannelBindingService();
+	public ChannelBindingService bindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
+			Binder<MessageChannel> binder) {
+		return new ChannelBindingService(channelBindingServiceProperties, binder,
+				messageConvertersConfigurer(channelBindingServiceProperties));
 	}
 
 	@Bean
@@ -88,8 +90,9 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public MessageConvertersConfigurer messageConvertersConfigurer() {
-		return new MessageConvertersConfigurer();
+	public MessageConvertersConfigurer messageConvertersConfigurer(
+			ChannelBindingServiceProperties channelBindingServiceProperties) {
+		return new MessageConvertersConfigurer(channelBindingServiceProperties);
 	}
 
 	@Bean

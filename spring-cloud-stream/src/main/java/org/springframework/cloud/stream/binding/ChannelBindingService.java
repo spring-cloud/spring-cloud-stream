@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.messaging.MessageChannel;
@@ -34,14 +33,18 @@ import org.springframework.util.StringUtils;
  */
 public class ChannelBindingService {
 
-	@Autowired
-	private Binder<MessageChannel> binder;
+	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	@Autowired
-	private ChannelBindingServiceProperties channelBindingServiceProperties;
+	private final Binder<MessageChannel> binder;
 
-	@Autowired
-	private MessageConvertersConfigurer messageConvertersConfigurer;
+	private final MessageConvertersConfigurer messageConvertersConfigurer;
+
+	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
+			Binder<MessageChannel> binder, MessageConvertersConfigurer messageConvertersConfigurer) {
+		this.channelBindingServiceProperties = channelBindingServiceProperties;
+		this.binder = binder;
+		this.messageConvertersConfigurer = messageConvertersConfigurer;
+	}
 
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
