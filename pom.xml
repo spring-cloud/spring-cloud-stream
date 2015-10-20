@@ -33,6 +33,7 @@
 		<module>spring-cloud-stream-module-launcher</module>
 		<module>docs</module>
 		<module>spring-cloud-stream-test-support</module>
+		<module>spring-cloud-stream-configuration-metadata</module>
 	</modules>
 	<dependencyManagement>
 		<dependencies>

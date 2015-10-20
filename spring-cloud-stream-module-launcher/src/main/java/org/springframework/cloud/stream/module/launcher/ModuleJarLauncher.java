@@ -19,9 +19,11 @@ package org.springframework.cloud.stream.module.launcher;
 
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.List;
 
 import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.archive.Archive;
+import org.springframework.boot.loader.jar.JarFile;
 import org.springframework.cloud.stream.module.utils.ClassloaderUtils;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -45,6 +47,16 @@ public class ModuleJarLauncher extends JarLauncher {
 	@Override
 	public void launch(String[] args) {
 		super.launch(args);
+	}
+
+	/**
+	 * Create and return a new ClassLoader suitable for running the module, or accessing resources
+	 * in it. Disposing of the ClassLoader is the responsibility of the caller.
+	 */
+	public ClassLoader createClassLoader() throws Exception {
+		JarFile.registerUrlProtocolHandler();
+		List<Archive> classPathArchives = getClassPathArchives();
+		return createClassLoader(classPathArchives);
 	}
 
 	@Override
