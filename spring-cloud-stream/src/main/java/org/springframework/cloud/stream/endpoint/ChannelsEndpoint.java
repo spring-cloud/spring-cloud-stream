@@ -24,17 +24,16 @@ import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
-import org.springframework.cloud.stream.endpoint.ChannelsEndpoint.ChannelsMetaData;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author Dave Syer
  */
-@RestController
-public class ChannelsEndpoint extends AbstractEndpoint<ChannelsMetaData> {
+public class ChannelsEndpoint extends AbstractEndpoint<Map<String,Object>> {
 
 	private List<Bindable> adapters;
 
@@ -48,7 +47,7 @@ public class ChannelsEndpoint extends AbstractEndpoint<ChannelsMetaData> {
 	}
 
 	@Override
-	public ChannelsMetaData invoke() {
+	public Map<String,Object> invoke() {
 		ChannelsMetaData map = new ChannelsMetaData();
 		Map<String, BindingProperties> inputs = map.getInputs();
 		Map<String, BindingProperties> outputs = map.getOutputs();
@@ -63,7 +62,8 @@ public class ChannelsEndpoint extends AbstractEndpoint<ChannelsMetaData> {
 						: new BindingProperties());
 			}
 		}
-		return map;
+		return new ObjectMapper().convertValue(map, new TypeReference<Map<String,Object>>() {
+		});
 	}
 
 	@JsonInclude(value = Include.NON_DEFAULT)
