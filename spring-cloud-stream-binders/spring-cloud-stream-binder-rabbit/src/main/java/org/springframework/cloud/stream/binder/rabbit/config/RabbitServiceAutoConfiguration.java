@@ -20,6 +20,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.cloud.CloudAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
@@ -47,6 +48,7 @@ import org.springframework.context.annotation.PropertySource;
 public class RabbitServiceAutoConfiguration {
 	@Configuration
 	@Profile("cloud")
+	@ConditionalOnClass(Cloud.class)
 	protected static class CloudConfig {
 		@Bean
 		public Cloud cloud() {

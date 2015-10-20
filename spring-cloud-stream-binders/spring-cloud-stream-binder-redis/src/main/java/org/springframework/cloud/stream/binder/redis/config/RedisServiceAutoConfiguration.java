@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.redis.config;
 
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.cloud.CloudAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.redis.RedisAutoConfiguration;
 import org.springframework.cloud.Cloud;
@@ -46,6 +47,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 public class RedisServiceAutoConfiguration {
 
 	@Configuration
+	@ConditionalOnClass(Cloud.class)
 	@Profile("cloud")
 	protected static class CloudConfig {
 		@Bean

@@ -16,6 +16,12 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.springframework.util.MimeTypeUtils.ALL;
+import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
+import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
+import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN;
+import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -35,7 +41,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -67,12 +72,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.IdGenerator;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
-
-import static org.springframework.util.MimeTypeUtils.ALL;
-import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
-import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
-import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN;
-import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
 
 /**
  * @author David Turanski
@@ -265,7 +264,7 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	protected IdGenerator getIdGenerator() {
-		return idGenerator;
+		return this.idGenerator;
 	}
 
 	public void setIntegrationEvaluationContext(EvaluationContext evaluationContext) {
@@ -377,7 +376,7 @@ public abstract class MessageChannelBinderSupport
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Assert.notNull(applicationContext, "The 'applicationContext' property cannot be null");
+		Assert.notNull(this.applicationContext, "The 'applicationContext' property cannot be null");
 		onInit();
 		if (this.evaluationContext == null) {
 			this.evaluationContext = IntegrationContextUtils.getEvaluationContext(getBeanFactory());
@@ -555,8 +554,8 @@ public abstract class MessageChannelBinderSupport
 				bean.stop();
 			}
 			catch (Exception e) {
-				if (logger.isWarnEnabled()) {
-					logger.warn("failed to stop adapter", e);
+				if (this.logger.isWarnEnabled()) {
+					this.logger.warn("failed to stop adapter", e);
 				}
 			}
 		}
@@ -605,7 +604,7 @@ public abstract class MessageChannelBinderSupport
 	protected final MessageValues deserializePayloadIfNecessary(MessageValues message) {
 		MessageValues messageToSend = message;
 		Object originalPayload = message.getPayload();
-		MimeType contentType = contentTypeResolver.resolve(messageToSend);
+		MimeType contentType = this.contentTypeResolver.resolve(messageToSend);
 		Object payload = deserializePayload(originalPayload, contentType);
 		if (payload != null) {
 			messageToSend.setPayload(payload);
@@ -643,12 +642,12 @@ public abstract class MessageChannelBinderSupport
 			String className = JavaClassMimeTypeConversion.classNameFromMimeType(contentType);
 			try {
 				// Cache types to avoid unnecessary ClassUtils.forName calls.
-				Class<?> targetType = payloadTypeCache.get(className);
+				Class<?> targetType = this.payloadTypeCache.get(className);
 				if (targetType == null) {
 					targetType = ClassUtils.forName(className, null);
-					payloadTypeCache.put(className, targetType);
+					this.payloadTypeCache.put(className, targetType);
 				}
-				return codec.decode(bytes, targetType);
+				return this.codec.decode(bytes, targetType);
 			}
 			catch (ClassNotFoundException e) {
 				throw new SerializationFailedException("unable to deserialize [" + className + "]. Class not found.",
@@ -708,7 +707,7 @@ public abstract class MessageChannelBinderSupport
 			clazz = ClassUtils.forName(partitionKeyExtractorClassName, this.applicationContext.getClassLoader());
 		}
 		catch (Exception e) {
-			logger.error("Failed to load key extractor", e);
+			this.logger.error("Failed to load key extractor", e);
 			throw new BinderException("Failed to load key extractor: " + partitionKeyExtractorClassName, e);
 		}
 		try {
@@ -719,7 +718,7 @@ public abstract class MessageChannelBinderSupport
 			return ((PartitionKeyExtractorStrategy) extractor).extractKey(message);
 		}
 		catch (Exception e) {
-			logger.error("Failed to instantiate key extractor", e);
+			this.logger.error("Failed to instantiate key extractor", e);
 			throw new BinderException("Failed to instantiate key extractor: " + partitionKeyExtractorClassName, e);
 		}
 	}
@@ -734,7 +733,7 @@ public abstract class MessageChannelBinderSupport
 			clazz = ClassUtils.forName(partitionSelectorClassName, this.applicationContext.getClassLoader());
 		}
 		catch (Exception e) {
-			logger.error("Failed to load partition selector", e);
+			this.logger.error("Failed to load partition selector", e);
 			throw new BinderException("Failed to load partition selector: " + partitionSelectorClassName, e);
 		}
 		try {
@@ -745,7 +744,7 @@ public abstract class MessageChannelBinderSupport
 			return ((PartitionSelectorStrategy) extractor).selectPartition(key, partitionCount);
 		}
 		catch (Exception e) {
-			logger.error("Failed to instantiate partition selector", e);
+			this.logger.error("Failed to instantiate partition selector", e);
 			throw new BinderException("Failed to instantiate partition selector: " + partitionSelectorClassName,
 					e);
 		}
@@ -882,8 +881,8 @@ public abstract class MessageChannelBinderSupport
 		Binding binding = Binding.forDirectProducer(name, producerChannel, consumer, properties);
 		addBinding(binding);
 		binding.start();
-		if (logger.isInfoEnabled()) {
-			logger.info("Producer bound directly: " + binding);
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("Producer bound directly: " + binding);
 		}
 	}
 
@@ -934,14 +933,14 @@ public abstract class MessageChannelBinderSupport
 				if (directBinding != null) {
 					directBinding.stop();
 					this.bindings.remove(directBinding);
-					if (logger.isInfoEnabled()) {
-						logger.info("direct binding reverted: " + directBinding);
+					if (this.logger.isInfoEnabled()) {
+						this.logger.info("direct binding reverted: " + directBinding);
 					}
 				}
 			}
 		}
 		catch (Exception e) {
-			logger.error("Could not revert direct binding: " + binding, e);
+			this.logger.error("Could not revert direct binding: " + binding, e);
 		}
 	}
 
@@ -987,7 +986,7 @@ public abstract class MessageChannelBinderSupport
 		}
 
 		public int getPartitionCount() {
-			return partitionCount;
+			return this.partitionCount;
 		}
 	}
 
@@ -1014,11 +1013,11 @@ public abstract class MessageChannelBinderSupport
 		@SuppressWarnings("unchecked")
 		public T createAndRegisterChannel(String name) {
 			T channel = createSharedChannel(name);
-			ConfigurableListableBeanFactory beanFactory = applicationContext.getBeanFactory();
+			ConfigurableListableBeanFactory beanFactory = MessageChannelBinderSupport.this.applicationContext.getBeanFactory();
 			beanFactory.registerSingleton(name, channel);
 			channel = (T) beanFactory.initializeBean(channel, name);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Registered channel:" + name);
+			if (MessageChannelBinderSupport.this.logger.isDebugEnabled()) {
+				MessageChannelBinderSupport.this.logger.debug("Registered channel:" + name);
 			}
 			return channel;
 		}
@@ -1027,9 +1026,9 @@ public abstract class MessageChannelBinderSupport
 
 		public T lookupSharedChannel(String name) {
 			T channel = null;
-			if (applicationContext.containsBean(name)) {
+			if (MessageChannelBinderSupport.this.applicationContext.containsBean(name)) {
 				try {
-					channel = applicationContext.getBean(name, requiredType);
+					channel = MessageChannelBinderSupport.this.applicationContext.getBean(name, this.requiredType);
 				}
 				catch (Exception e) {
 					throw new IllegalArgumentException("bean '" + name
