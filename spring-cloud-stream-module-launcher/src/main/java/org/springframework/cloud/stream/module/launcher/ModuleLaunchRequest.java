@@ -29,7 +29,7 @@ import java.util.Map;
 public class ModuleLaunchRequest {
 
 	/**
-	 * String that uniquely identifies Module launch request. This is useful when there are multiple requests
+	 * String that uniquely identifies each module launch request. This is useful when there are multiple requests
 	 * with the same module that need to be uniquely identified.
 	 */
 	private final String requestId;
