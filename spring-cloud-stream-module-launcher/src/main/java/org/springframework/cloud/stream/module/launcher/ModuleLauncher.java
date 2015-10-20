@@ -220,7 +220,13 @@ public class ModuleLauncher {
 		Collections.reverse(reversed);
 		for (ModuleLaunchRequest moduleLaunchRequest : reversed) {
 			String module = moduleLaunchRequest.getModule();
-			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
+//			// TODO: this approach assumes server.port is always available for the module. This is currently true
+//			// as we always launch module with embedded servlet container
+//			String serverPort = moduleLaunchRequest.getArguments().get("server.port");
+//			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", ".")
+//					.concat("." + serverPort));
+			moduleLaunchRequest.addArgument("spring.jmx.default-domain", moduleLaunchRequest.getRequestId());
+			moduleLaunchRequest.addArgument("endpoints.jmx.unique-names", "true");
 			Map<String, String> arguments = moduleLaunchRequest.getArguments();
 			if (arguments.containsKey(INCLUDE_DEPENDENCIES_ARG) || arguments.containsKey(EXCLUDE_DEPENDENCIES_ARG)) {
 				String includes = arguments.get(INCLUDE_DEPENDENCIES_ARG);
