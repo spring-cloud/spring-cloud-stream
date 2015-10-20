@@ -137,12 +137,12 @@ public class ChannelBindingService implements InitializingBean {
 		catch (Exception e) {
 			throw new IllegalStateException("Could not get the message channel to configure message converters" + e);
 		}
-		BindingProperties bindingProperties = channelBindingServiceProperties.getBindings().get(channelName);
+		BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindings().get(channelName);
 		if (bindingProperties != null) {
 			String contentType = bindingProperties.getContentType();
 			if (StringUtils.hasText(contentType)) {
 				MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
-				MessageConverter messageConverter = messageConverterFactory.newInstance(mimeType);
+				MessageConverter messageConverter = this.messageConverterFactory.newInstance(mimeType);
 				Class<?> dataType = MessageConverterUtils.getJavaTypeForContentType(mimeType,
 						Thread.currentThread().getContextClassLoader());
 				messageChannel.setDatatypes(dataType);
