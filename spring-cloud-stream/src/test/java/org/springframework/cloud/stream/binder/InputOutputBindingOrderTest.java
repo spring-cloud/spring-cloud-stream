@@ -21,13 +21,11 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
 import java.util.Properties;
 
 import org.junit.Test;
 import org.mockito.Mockito;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -47,7 +45,8 @@ public class InputOutputBindingOrderTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testInputOutputBindingOrder() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class);
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
+		@SuppressWarnings("rawtypes")
 		Binder binder = applicationContext.getBean(Binder.class);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
@@ -82,20 +81,20 @@ public class InputOutputBindingOrderTest {
 
 		@Override
 		public synchronized void start() {
-			verify(binder).bindProducer(eq("output"), eq(processor.output()), Mockito.<Properties>any());
+			verify(this.binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<Properties>any());
 			// input was not bound yet
-			verifyNoMoreInteractions(binder);
+			verifyNoMoreInteractions(this.binder);
 			this.running = true;
 		}
 
 		@Override
 		public synchronized void stop() {
-			running = false;
+			this.running = false;
 		}
 
 		@Override
 		public synchronized boolean isRunning() {
-			return running;
+			return this.running;
 		}
 
 		@Override

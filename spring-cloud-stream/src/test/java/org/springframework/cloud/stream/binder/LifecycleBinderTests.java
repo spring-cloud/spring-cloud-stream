@@ -20,8 +20,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-import org.mockito.Mockito;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -37,10 +35,9 @@ import org.springframework.context.annotation.Import;
  */
 public class LifecycleBinderTests {
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testNonSmartLifecyclesStarted() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class);
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
 		SimpleLifecycle simpleLifecycle = applicationContext.getBean(SimpleLifecycle.class);
 		assertTrue(simpleLifecycle.isRunning());
 		applicationContext.close();
@@ -64,17 +61,17 @@ public class LifecycleBinderTests {
 
 		@Override
 		public synchronized void start() {
-			running = true;
+			this.running = true;
 		}
 
 		@Override
 		public synchronized void stop() {
-			running = false;
+			this.running = false;
 		}
 
 		@Override
 		public synchronized boolean isRunning() {
-			return running;
+			return this.running;
 		}
 	}
 }
