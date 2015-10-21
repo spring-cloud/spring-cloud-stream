@@ -24,16 +24,28 @@ import java.util.Map;
  * Those arguments will be passed to the module by the launcher.
  *
  * @author Eric Bottard
+ * @author Ilayaperumal Gopinathan
  */
 public class ModuleLaunchRequest {
+
+	/**
+	 * String that uniquely identifies each module launch request. This is useful when there are multiple requests
+	 * with the same module that need to be uniquely identified.
+	 */
+	private final String requestId;
 
 	private final String module;
 
 	private final Map<String, String> arguments;
 
-	public ModuleLaunchRequest(String module, Map<String, String> arguments) {
+	public ModuleLaunchRequest(String requestId, String module, Map<String, String> arguments) {
+		this.requestId = requestId;
 		this.module = module;
 		this.arguments = arguments != null ? new HashMap<>(arguments) : new HashMap<String, String>();
+	}
+
+	public String getRequestId() {
+		return requestId;
 	}
 
 	public String getModule() {

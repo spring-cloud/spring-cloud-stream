@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.module.launcher;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -91,7 +90,7 @@ public class ModuleLauncherRunner implements CommandLineRunner {
 					moduleArguments.putAll(moduleSpecificArgs);
 				}
 			}
-			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], moduleArguments);
+			ModuleLaunchRequest moduleLaunchRequest = new ModuleLaunchRequest(modules[i], modules[i], moduleArguments);
 			requests.add(moduleLaunchRequest);
 		}
 		return requests;
