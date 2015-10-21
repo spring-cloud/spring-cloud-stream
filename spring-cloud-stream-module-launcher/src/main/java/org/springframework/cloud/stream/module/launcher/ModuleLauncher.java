@@ -63,7 +63,7 @@ public class ModuleLauncher {
 
 	private static final String DEFAULT_EXTENSION = "jar";
 
-	private static final String DEFAULT_MODULE_CLASSIFIER = "exec";
+	private static final String DEFAULT_CLASSIFIER = "";
 
 	private static final Pattern COORDINATES_PATTERN =
 			Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
@@ -104,7 +104,6 @@ public class ModuleLauncher {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public void launch(List<ModuleLaunchRequest> moduleLaunchRequests, boolean aggregate) {
 		this.launch(moduleLaunchRequests, aggregate, Collections.<String,String>emptyMap());
 	}
@@ -170,13 +169,12 @@ public class ModuleLauncher {
 				ArrayList<Coordinates> includeCoordinates = new ArrayList<>();
 				for (ModuleLaunchRequest moduleLaunchRequest : moduleLaunchRequests) {
 					Coordinates moduleCoordinates
-							= toCoordinates(moduleLaunchRequest.getModule(), DEFAULT_MODULE_CLASSIFIER);
+							= toCoordinates(moduleLaunchRequest.getModule());
 					if (root == null) {
 						root = moduleCoordinates;
 					}
 					else {
-						includeCoordinates.add(toCoordinates(moduleLaunchRequest.getModule(), 
-								DEFAULT_MODULE_CLASSIFIER));
+						includeCoordinates.add(toCoordinates(moduleLaunchRequest.getModule()));
 					}
 					Resource moduleResource = resolveModule(moduleLaunchRequest.getModule());
 					JarFileArchive moduleArchive = new JarFileArchive(moduleResource.getFile());
@@ -185,7 +183,7 @@ public class ModuleLauncher {
 				}
 				for (String include :
 						StringUtils.commaDelimitedListToStringArray(aggregateArgs.get(INCLUDE_DEPENDENCIES_ARG))) {
-					includeCoordinates.add(toCoordinates(include, ""));
+					includeCoordinates.add(toCoordinates(include));
 				}
 				// Resolve all artifacts - since modules have been specified as direct dependencies, they will take
 				// precedence in the resolution order, ensuring that the already resolved artifacts will be returned as
@@ -248,7 +246,7 @@ public class ModuleLauncher {
 
 	private void launchModuleWithDependencies(String module, String[] args, String[] includes, String[] excludes) {
 		try {
-			Resource[] libraries = this.moduleResolver.resolve(toCoordinates(module, DEFAULT_MODULE_CLASSIFIER),
+			Resource[] libraries = this.moduleResolver.resolve(toCoordinates(module),
 					toCoordinateArray(includes), excludes);
 			List<Archive> archives = new ArrayList<>();
 			for (Resource library : libraries) {
@@ -263,18 +261,18 @@ public class ModuleLauncher {
 	}
 
 	private Resource resolveModule(String moduleCoordinates) {
-		Coordinates coordinates = toCoordinates(moduleCoordinates, DEFAULT_MODULE_CLASSIFIER);
+		Coordinates coordinates = toCoordinates(moduleCoordinates);
 		return this.moduleResolver.resolve(coordinates);
 	}
 
-	private Coordinates toCoordinates(String coordinates, String defaultClassifier) {
+	private Coordinates toCoordinates(String coordinates) {
 		Matcher matcher = COORDINATES_PATTERN.matcher(coordinates);
 		Assert.isTrue(matcher.matches(), "Bad artifact coordinates " + coordinates
 				+ ", expected format is <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>");
 		String groupId = matcher.group(1);
 		String artifactId = matcher.group(2);
 		String extension = StringUtils.hasLength(matcher.group(4)) ? matcher.group(4) : DEFAULT_EXTENSION;
-		String classifier = StringUtils.hasLength(matcher.group(6)) ? matcher.group(6) : defaultClassifier;
+		String classifier = StringUtils.hasLength(matcher.group(6)) ? matcher.group(6) : DEFAULT_CLASSIFIER;
 		String version = matcher.group(7);
 		return new Coordinates(groupId, artifactId, extension, classifier, version);
 	}
@@ -282,7 +280,7 @@ public class ModuleLauncher {
 	private Coordinates[] toCoordinateArray(String[] coordinateList) {
 		List<Coordinates> result = new ArrayList<>();
 		for (String coordinates : coordinateList) {
-			result.add(toCoordinates(coordinates, ""));
+			result.add(toCoordinates(coordinates));
 		}
 		return result.toArray(new Coordinates[result.size()]);
 	}
