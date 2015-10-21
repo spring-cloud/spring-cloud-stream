@@ -218,7 +218,6 @@ public class ModuleLauncher {
 		Collections.reverse(reversed);
 		for (ModuleLaunchRequest moduleLaunchRequest : reversed) {
 			String module = moduleLaunchRequest.getModule();
-			moduleLaunchRequest.addArgument("spring.jmx.default-domain", module.replace("/", ".").replace(":", "."));
 			Map<String, String> arguments = moduleLaunchRequest.getArguments();
 			if (arguments.containsKey(INCLUDE_DEPENDENCIES_ARG) || arguments.containsKey(EXCLUDE_DEPENDENCIES_ARG)) {
 				String includes = arguments.get(INCLUDE_DEPENDENCIES_ARG);
