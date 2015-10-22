@@ -20,7 +20,6 @@
 	<properties>
 		<java.version>1.7</java.version>
 		<rxjava.version>1.0.14</rxjava.version>
-		<spring-integration.version>4.2.0.RELEASE</spring-integration.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream</module>
