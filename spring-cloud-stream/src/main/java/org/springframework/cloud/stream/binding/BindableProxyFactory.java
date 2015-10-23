@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,31 +24,21 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.QueueChannel;
-import org.springframework.integration.config.ConsumerEndpointFactoryBean;
-import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.PollableChannel;
-import org.springframework.messaging.SubscribableChannel;
-import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
@@ -61,39 +50,20 @@ import org.springframework.util.ReflectionUtils;
  *
  * @see EnableBinding
  */
-public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>,
-		BeanFactoryAware, Bindable, InitializingBean {
+public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>, Bindable, BeanFactoryAware, InitializingBean {
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
-	public static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
-
-	public static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
-
-	public static final String POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".pollableBridge.interval";
+	@Value("${" + ChannelFactory.CHANNEL_NAMESPACE_PROPERTY_NAME + ":}")
+	private String channelNamespace;
 
 	private Class<?> type;
 
-	@Value("${" + CHANNEL_NAMESPACE_PROPERTY_NAME + ":}")
-	private String channelNamespace;
-
-	@Value("${" + POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME + ":1000}")
-	private int pollableBridgeDefaultFrequency;
-
 	private Object proxy = null;
-
-	private Map<String, ChannelHolder> inputs = new HashMap<>();
-
-	private Map<String, ChannelHolder> outputs = new HashMap<>();
 
 	private ConfigurableListableBeanFactory beanFactory;
 
-	@Autowired(required = false)
-	private SharedChannelRegistry sharedChannelRegistry;
-
-	public BindableProxyFactory(Class<?> type) {
-		this.type = type;
-	}
+	private ChannelFactory channelFactory;
 
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
@@ -102,130 +72,12 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Assert.notNull(this.beanFactory, "Bean factory cannot be empty");
+		this.channelFactory = beanFactory.getBean(ChannelFactory.class);
+		Assert.notNull(this.channelFactory, "ChannelFactory must not be null.");
 	}
 
-	@Override
-	public Set<String> getInputs() {
-		return this.inputs.keySet();
-	}
-
-	@Override
-	public Set<String> getOutputs() {
-		return this.outputs.keySet();
-	}
-
-	private void createChannels(Class<?> type) throws Exception {
-		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
-			@Override
-			public void doWith(Method method) throws IllegalArgumentException,
-					IllegalAccessException {
-
-				Input input = AnnotationUtils.findAnnotation(method, Input.class);
-				if (input != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getChannelName(
-							input, method);
-					Class<?> inputChannelType = method.getReturnType();
-					MessageChannel sharedChannel = locateSharedChannel(name);
-					if (sharedChannel == null) {
-						MessageChannel inputChannel = createMessageChannel(inputChannelType);
-						BindableProxyFactory.this.inputs.put(name, new ChannelHolder(inputChannel, true));
-					}
-					else {
-						if (inputChannelType.isAssignableFrom(sharedChannel.getClass())) {
-							BindableProxyFactory.this.inputs.put(name, new ChannelHolder(sharedChannel, false));
-						}
-						else {
-							// handle the special case where the shared channel is of a different nature
-							// (i.e. pollable vs subscribable) than the target channel
-							final MessageChannel inputChannel = createMessageChannel(inputChannelType);
-							if (isPollable(sharedChannel.getClass())) {
-								bridgePollableToSubscribableChannel(sharedChannel,
-										inputChannel);
-							}
-							else {
-								bridgeSubscribableToPollableChannel(
-										(SubscribableChannel) sharedChannel, inputChannel);
-							}
-							BindableProxyFactory.this.inputs.put(name, new ChannelHolder(inputChannel, false));
-						}
-					}
-				}
-
-				Output output = AnnotationUtils.findAnnotation(method, Output.class);
-				if (output != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getChannelName(
-							output, method);
-					Class<?> messageChannelType = method.getReturnType();
-					MessageChannel sharedChannel = locateSharedChannel(name);
-					if (sharedChannel == null) {
-						MessageChannel outputChannel = createMessageChannel(messageChannelType);
-						BindableProxyFactory.this.outputs.put(name, new ChannelHolder(outputChannel, true));
-					}
-					else {
-						if (messageChannelType.isAssignableFrom(sharedChannel.getClass())) {
-							BindableProxyFactory.this.outputs.put(name, new ChannelHolder(sharedChannel, false));
-						}
-						else {
-							// handle the special case where the shared channel is of a different nature
-							// (i.e. pollable vs subscribable) than the target channel
-							final MessageChannel outputChannel = createMessageChannel(messageChannelType);
-							if (isPollable(messageChannelType)) {
-								bridgePollableToSubscribableChannel(outputChannel,
-										sharedChannel);
-							}
-							else {
-								bridgeSubscribableToPollableChannel(
-										(SubscribableChannel) outputChannel,
-										sharedChannel);
-							}
-							BindableProxyFactory.this.outputs.put(name, new ChannelHolder(outputChannel, false));
-						}
-					}
-				}
-			}
-		});
-	}
-
-	private MessageChannel locateSharedChannel(String name) {
-		return this.sharedChannelRegistry != null ? this.sharedChannelRegistry.get(getNamespacePrefixedChannelName(name)) : null;
-	}
-
-	private String getNamespacePrefixedChannelName(String name) {
-		return this.channelNamespace + "." + name;
-	}
-
-	private void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel,
-			MessageChannel inputChannel) {
-		sharedChannel.subscribe(new MessageChannelBinderSupport.DirectHandler(
-				inputChannel));
-	}
-
-	private void bridgePollableToSubscribableChannel(MessageChannel pollableChannel,
-			MessageChannel subscribableChannel) {
-		ConsumerEndpointFactoryBean consumerEndpointFactoryBean = new ConsumerEndpointFactoryBean();
-		consumerEndpointFactoryBean.setInputChannel(pollableChannel);
-		PollerMetadata pollerMetadata = new PollerMetadata();
-		pollerMetadata.setTrigger(new PeriodicTrigger(this.pollableBridgeDefaultFrequency));
-		consumerEndpointFactoryBean.setPollerMetadata(pollerMetadata);
-		consumerEndpointFactoryBean
-				.setHandler(new MessageChannelBinderSupport.DirectHandler(
-						subscribableChannel));
-		consumerEndpointFactoryBean.setBeanFactory(this.beanFactory);
-		try {
-			consumerEndpointFactoryBean.afterPropertiesSet();
-		} catch (Exception e) {
-			throw new IllegalStateException(e);
-		}
-		consumerEndpointFactoryBean.start();
-	}
-
-	private MessageChannel createMessageChannel(Class<?> messageChannelType) {
-		return isPollable(messageChannelType) ? new QueueChannel() : new DirectChannel();
-	}
-
-	private boolean isPollable(Class<?> channelType) {
-		return PollableChannel.class.equals(channelType);
+	public BindableProxyFactory(Class<?> type) {
+		this.type = type;
 	}
 
 	@Override
@@ -236,13 +88,13 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			if (input != null) {
 				String name = BindingBeanDefinitionRegistryUtils.getChannelName(input,
 						method);
-				return this.inputs.get(name).getMessageChannel();
+				return this.channelFactory.getInputs().get(name).getMessageChannel();
 			}
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
 				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output,
 						method);
-				return this.outputs.get(name).getMessageChannel();
+				return this.channelFactory.getOutputs().get(name).getMessageChannel();
 			}
 		}
 		// ignore
@@ -252,7 +104,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public synchronized Object getObject() throws Exception {
 		if (this.proxy == null) {
-			createChannels(this.type);
+			this.channelFactory.createChannels(this.type);
 			ProxyFactory factory = new ProxyFactory(this.type, this);
 			this.proxy = factory.getProxy();
 		}
@@ -274,10 +126,9 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputs.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.channelFactory.getInputs().entrySet()) {
 			String inputChannelName = channelHolderEntry.getKey();
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
-			channelBindingService.configureMessageConverters(channelHolder.getMessageChannel(), inputChannelName);
 			if (channelHolder.isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, inputChannelName));
@@ -292,10 +143,9 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputs.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.channelFactory.getOutputs().entrySet()) {
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			String outputChannelName = channelHolderEntry.getKey();
-			channelBindingService.configureMessageConverters(channelHolder.getMessageChannel(), outputChannelName);
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, outputChannelName));
@@ -310,7 +160,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputs.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.channelFactory.getInputs().entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
@@ -325,7 +175,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputs.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.channelFactory.getOutputs().entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
@@ -335,29 +185,13 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		}
 	}
 
-	/**
-	 * Holds information about the channels exposed by the interface proxy, as well as
-	 * their status.
-	 *
-	 */
-	static class ChannelHolder {
-
-		private MessageChannel messageChannel;
-
-		private boolean bindable;
-
-		public ChannelHolder(MessageChannel messageChannel, boolean bindable) {
-			this.messageChannel = messageChannel;
-			this.bindable = bindable;
-		}
-
-		public MessageChannel getMessageChannel() {
-			return this.messageChannel;
-		}
-
-		public boolean isBindable() {
-			return this.bindable;
-		}
+	@Override
+	public Set<String> getInputs() {
+		return this.channelFactory.getInputs().keySet();
 	}
 
+	@Override
+	public Set<String> getOutputs() {
+		return this.channelFactory.getOutputs().keySet();
+	}
 }

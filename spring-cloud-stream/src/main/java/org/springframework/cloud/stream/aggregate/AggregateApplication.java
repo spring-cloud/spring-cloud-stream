@@ -20,7 +20,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binding.BindableProxyFactory;
+import org.springframework.cloud.stream.binding.ChannelFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
@@ -103,7 +103,7 @@ public class AggregateApplication {
 		return new SpringApplicationBuilder(module)
 				.web(false)
 				.showBanner(false)
-				.properties(BindableProxyFactory.CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
+				.properties(ChannelFactory.CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
 				.registerShutdownHook(false)
 				.parent(applicationContext);
 	}
