@@ -26,14 +26,8 @@
 
     <properties>
         <bintray.package>bus</bintray.package>
-        <spring-cloud-config.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-config.version>
-        <spring-cloud-netflix.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-netflix.version>
+        <spring-cloud-commons.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-commons.version>
         <spring-cloud-stream.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
-        <spring-integration.version>4.1.0.RELEASE</spring-integration.version>
-        <spring-cloud-connector.version>1.1.0.RELEASE</spring-cloud-connector.version>
-        <spring-integration-dsl.version>1.0.1.RELEASE</spring-integration-dsl.version>
-        <turbine.version>2.0.0-DP.2</turbine.version>
-        <rxjava.version>[1.0,1.1)</rxjava.version>
     </properties>
 
 	<profiles>
@@ -89,13 +83,6 @@
         <dependencies>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-config</artifactId>
-				<version>${spring-cloud-config.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-parent</artifactId>
 				<version>${spring-cloud-stream.version}</version>
 				<type>pom</type>
@@ -103,8 +90,8 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-netflix</artifactId>
-				<version>${spring-cloud-netflix.version}</version>
+				<artifactId>spring-cloud-commons</artifactId>
+				<version>${spring-cloud-commons.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -153,42 +140,6 @@
 			  <artifactId>spring-messaging</artifactId>
 			  <version>${spring.version}</version>
 		    </dependency>
-            <dependency>
-                <groupId>org.springframework.integration</groupId>
-                <artifactId>spring-integration-java-dsl</artifactId>
-                <version>${spring-integration-dsl.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.integration</groupId>
-                <artifactId>spring-integration-amqp</artifactId>
-                <version>${spring-integration.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.integration</groupId>
-                <artifactId>spring-integration-event</artifactId>
-                <version>${spring-integration.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-spring-service-connector</artifactId>
-                <version>${spring-cloud-connector.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>log4j</artifactId>
-                        <groupId>log4j</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-localconfig-connector</artifactId>
-                <version>${spring-cloud-connector.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-cloudfoundry-connector</artifactId>
-                <version>${spring-cloud-connector.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
