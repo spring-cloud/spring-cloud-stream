@@ -31,8 +31,11 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
+import org.springframework.cloud.stream.binding.ChannelFactory;
+import org.springframework.cloud.stream.binding.DefaultChannelFactory;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
+import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.tuple.spel.TuplePropertyAccessor;
 import org.springframework.context.annotation.Bean;
@@ -68,6 +71,16 @@ public class ChannelBindingServiceConfiguration {
 			ChannelBindingServiceProperties channelBindingServiceProperties,
 			Binder<MessageChannel> binder) {
 		return new ChannelBindingService(channelBindingServiceProperties, binder);
+	}
+
+	@Bean
+	public MessageConverterConfigurer messageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties) {
+		return new MessageConverterConfigurer(channelBindingServiceProperties);
+	}
+
+	@Bean
+	public ChannelFactory channelFactory() {
+		return new DefaultChannelFactory();
 	}
 
 	@Bean
