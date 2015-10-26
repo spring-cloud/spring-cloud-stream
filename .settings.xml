@@ -10,8 +10,8 @@
   <profiles>
 	<profile>
       <!--
-          N.B. this profile is only here to support users and IDEs that do not use Maven 3.3. 
-          It isn't needed on the command line if you use the wrapper script (mvnw) or if you use 
+          N.B. this profile is only here to support users and IDEs that do not use Maven 3.3.
+          It isn't needed on the command line if you use the wrapper script (mvnw) or if you use
           a native Maven with the right version. Eclipse users should points their Maven tooling to
           this settings file, or copy the profile into their ~/.m2/settings.xml.
       -->
@@ -40,6 +40,15 @@
 			<url>http://repo.spring.io/release</url>
 			<snapshots>
 				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>gemstone-release</id>
+			<name>GemStone Maven Release Repository</name>
+			<url>http://dist.gemstone.com/maven/release</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
 			</snapshots>
 		</repository>
 	  </repositories>
