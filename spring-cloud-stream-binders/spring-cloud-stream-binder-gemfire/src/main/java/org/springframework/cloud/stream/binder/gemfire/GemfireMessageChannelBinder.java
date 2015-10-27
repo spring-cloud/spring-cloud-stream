@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -82,6 +83,14 @@ public class GemfireMessageChannelBinder extends MessageChannelBinderSupport {
 	 */
 	private final Map<String, QueueReader> queueReaders = new ConcurrentHashMap<>();
 
+	/**
+	 * Map of message source names to the dedicated {@link ExecutorService}
+	 * for reading messages.
+	 *
+	 * @see #bindConsumer(String, MessageChannel, Properties)
+	 */
+	private final Map<String, ExecutorService> executors = new ConcurrentHashMap<>();
+
 	@Override
 	protected void onInit() {
 		// todo: obtain properties from the config classes
@@ -129,13 +138,16 @@ public class GemfireMessageChannelBinder extends MessageChannelBinderSupport {
 		QueueReader queueReader = new QueueReader(createConsumerMessageRegion(name),
 				inboundBindTarget, messageListener);
 		this.queueReaders.put(name, queueReader);
-		Executors.newSingleThreadExecutor(new CustomizableThreadFactory(name + "-QueueReader"))
-				.submit(queueReader);
+		ExecutorService service = Executors.newSingleThreadExecutor(
+				new CustomizableThreadFactory(name + "-QueueReader"));
+		this.executors.put(name, service);
+		service.submit(queueReader);
 	}
 
 	@Override
 	public void unbindConsumer(String name, MessageChannel channel) {
 		this.queueReaders.remove(name).shutdown();
+		this.executors.remove(name).shutdown();
 		super.unbindConsumer(name, channel);
 	}
 
