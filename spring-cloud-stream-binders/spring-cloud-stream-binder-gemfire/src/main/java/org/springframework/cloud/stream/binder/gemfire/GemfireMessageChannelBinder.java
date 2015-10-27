@@ -97,6 +97,7 @@ public class GemfireMessageChannelBinder extends MessageChannelBinderSupport {
 		Properties properties = new Properties();
 		properties.put("locators", "localhost[7777]");
 		properties.put("log-level", "warning");
+		properties.put("mcast-port", "0");
 		// todo: put application name once we figure out how to get it;
 		// getApplicationName is returning a null/empty string
 //		properties.put("name", super.getApplicationContext().getApplicationName());
@@ -255,8 +256,6 @@ public class GemfireMessageChannelBinder extends MessageChannelBinderSupport {
 								errorKeys.add(key);
 							}
 						}
-
-						// remove messages that were processed without error
 						// todo: consider adding un-processed messages to a "dead letter" region
 						if (errorKeys != null) {
 							keys.removeAll(errorKeys);
