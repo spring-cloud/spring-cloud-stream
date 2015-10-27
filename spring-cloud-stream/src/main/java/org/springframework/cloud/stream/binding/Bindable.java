@@ -50,11 +50,11 @@ public interface Bindable {
 	/**
 	 * Enumerates all the input binding names.
 	 */
-	Set<String> getInputs();
+	Set<String> getInputNames();
 
 	/**
 	 * Enumerates all the output binding names.
 	 */
-	Set<String> getOutputs();
+	Set<String> getOutputNames();
 
 }

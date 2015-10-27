@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,11 +27,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -50,7 +49,7 @@ import org.springframework.util.Assert;
  *
  * @see EnableBinding
  */
-public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>, Bindable, BeanFactoryAware, InitializingBean {
+public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>, Bindable, InitializingBean {
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
@@ -63,18 +62,12 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private ConfigurableListableBeanFactory beanFactory;
 
+	@Autowired
 	private ChannelFactory channelFactory;
 
-	@Override
-	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
-	}
+	private Map<String, ChannelHolder> inputs = new HashMap<>();
 
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		this.channelFactory = beanFactory.getBean(ChannelFactory.class);
-		Assert.notNull(this.channelFactory, "ChannelFactory must not be null.");
-	}
+	private Map<String, ChannelHolder> outputs = new HashMap<>();
 
 	public BindableProxyFactory(Class<?> type) {
 		this.type = type;
@@ -88,13 +81,13 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			if (input != null) {
 				String name = BindingBeanDefinitionRegistryUtils.getChannelName(input,
 						method);
-				return this.channelFactory.getInputs().get(name).getMessageChannel();
+				return this.inputs.get(name).getMessageChannel();
 			}
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
 				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output,
 						method);
-				return this.channelFactory.getOutputs().get(name).getMessageChannel();
+				return this.outputs.get(name).getMessageChannel();
 			}
 		}
 		// ignore
@@ -102,9 +95,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	@Override
+	public void afterPropertiesSet() throws Exception {
+		Assert.notNull(this.channelFactory, "ChannelFactory must not be null.");
+		this.channelFactory.createChannels(this.type, this.inputs, this.outputs);
+	}
+
+	@Override
 	public synchronized Object getObject() throws Exception {
 		if (this.proxy == null) {
-			this.channelFactory.createChannels(this.type);
 			ProxyFactory factory = new ProxyFactory(this.type, this);
 			this.proxy = factory.getProxy();
 		}
@@ -126,7 +124,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.channelFactory.getInputs().entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputs.entrySet()) {
 			String inputChannelName = channelHolderEntry.getKey();
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			if (channelHolder.isBindable()) {
@@ -143,7 +141,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.channelFactory.getOutputs().entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputs.entrySet()) {
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			String outputChannelName = channelHolderEntry.getKey();
 			if (channelHolderEntry.getValue().isBindable()) {
@@ -160,7 +158,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.channelFactory.getInputs().entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputs.entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
@@ -175,7 +173,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.channelFactory.getOutputs().entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputs.entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
@@ -186,12 +184,12 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	@Override
-	public Set<String> getInputs() {
-		return this.channelFactory.getInputs().keySet();
+	public Set<String> getInputNames() {
+		return this.inputs.keySet();
 	}
 
 	@Override
-	public Set<String> getOutputs() {
-		return this.channelFactory.getOutputs().keySet();
+	public Set<String> getOutputNames() {
+		return this.outputs.keySet();
 	}
 }

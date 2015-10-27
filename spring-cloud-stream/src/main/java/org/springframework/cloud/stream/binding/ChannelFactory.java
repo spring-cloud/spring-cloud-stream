@@ -16,7 +16,6 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -92,18 +91,6 @@ public class ChannelFactory implements BeanFactoryAware, InitializingBean {
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	private Map<String, ChannelHolder> inputs = new HashMap<>();
-
-	private Map<String, ChannelHolder> outputs = new HashMap<>();
-
-	Map<String, ChannelHolder> getInputs() {
-		return this.inputs;
-	}
-
-	Map<String, ChannelHolder> getOutputs() {
-		return this.outputs;
-	}
-
 	public ChannelFactory(ChannelBindingServiceProperties channelBindingServiceProperties) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 	}
@@ -129,7 +116,8 @@ public class ChannelFactory implements BeanFactoryAware, InitializingBean {
 		this.messageConverterFactory = new CompositeMessageConverterFactory(messageConverters);
 	}
 
-	void createChannels(Class<?> type) throws Exception {
+	void createChannels(Class<?> type, final Map<String, ChannelHolder> inputs, final Map<String, ChannelHolder> outputs)
+			throws Exception {
 		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException,
