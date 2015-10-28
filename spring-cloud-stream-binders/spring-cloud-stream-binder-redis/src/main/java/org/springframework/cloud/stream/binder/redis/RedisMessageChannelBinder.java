@@ -165,6 +165,8 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	@Override
 	protected void onInit() {
 		this.errorAdapter.setIntegrationEvaluationContext(this.evaluationContext);
+		this.errorAdapter.setBeanFactory(getBeanFactory());
+		this.errorAdapter.afterPropertiesSet();
 	}
 
 	@Override
@@ -424,7 +426,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 				transformed.put(PARTITION_HEADER, determinePartition(message, this.partitioningMetadata));
 			}
-			
+
 			byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
 					RedisMessageChannelBinder.this.headersToMap);
 			delegate.handleMessage(MessageBuilder.withPayload(messageToSend).copyHeaders(transformed).build());
@@ -458,6 +460,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 			// prevent returned message from being copied in superclass
 			return false;
 		}
+
 	}
 
 	private static class RedisPropertiesAccessor extends AbstractBinderPropertiesAccessor {
