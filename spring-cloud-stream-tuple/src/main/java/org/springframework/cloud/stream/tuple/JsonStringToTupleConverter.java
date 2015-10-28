@@ -52,6 +52,15 @@ public class JsonStringToTupleConverter implements Converter<String, Tuple> {
 				else if (node.isArray()) {
 					builder.addEntry(name, nodeToList(node));
 				}
+				else if (node.isNull()) {
+					builder.addEntry(name, null);
+				}
+				else if (node.isBoolean()) {
+					builder.addEntry(name, node.booleanValue());
+				}
+				else if (node.isNumber()) {
+					builder.addEntry(name, node.numberValue());
+				}
 				else {
 					builder.addEntry(name, node.asText());
 				}
@@ -72,6 +81,15 @@ public class JsonStringToTupleConverter implements Converter<String, Tuple> {
 			}
 			else if (item.isArray()) {
 				list.add(nodeToList(item));
+			}
+			else if (node.isNull()) {
+				list.add(null);
+			}
+			else if (node.isBoolean()) {
+				list.add(item.booleanValue());
+			}
+			else if (node.isNumber()) {
+				list.add(item.numberValue());
 			}
 			else {
 				list.add(item.asText());
