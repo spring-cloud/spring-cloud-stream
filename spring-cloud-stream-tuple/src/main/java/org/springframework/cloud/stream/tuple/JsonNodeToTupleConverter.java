@@ -45,6 +45,15 @@ public class JsonNodeToTupleConverter implements Converter<JsonNode, Tuple> {
 				else if (node.isArray()) {
 					builder.addEntry(name, nodeToList(node));
 				}
+				else if (node.isNull()) {
+					builder.addEntry(name, null);
+				}
+				else if (node.isBoolean()) {
+					builder.addEntry(name, node.booleanValue());
+				}
+				else if (node.isNumber()) {
+					builder.addEntry(name, node.numberValue());
+				}
 				else {
 					builder.addEntry(name, node.asText());
 				}
@@ -65,6 +74,15 @@ public class JsonNodeToTupleConverter implements Converter<JsonNode, Tuple> {
 			}
 			else if (item.isArray()) {
 				list.add(nodeToList(item));
+			}
+			else if (item.isNull()) {
+				list.add(null);
+			}
+			else if (item.isBoolean()) {
+				list.add(item.booleanValue());
+			}
+			else if (item.isNumber()) {
+				list.add(item.numberValue());
 			}
 			else {
 				list.add(item.asText());
