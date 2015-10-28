@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.messaging.MessageChannel;
 
 
@@ -39,7 +38,6 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	private C binder;
 
 	public void setBinder(C binder) {
-		binder.setIntegrationEvaluationContext(new StandardEvaluationContext());
 		try {
 			binder.afterPropertiesSet();
 		}

@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -55,8 +56,8 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.codec.Codec;
-import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
+import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -377,13 +378,9 @@ public abstract class MessageChannelBinderSupport
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		Assert.notNull(this.applicationContext, "The 'applicationContext' property cannot be null");
-		onInit();
 		if (this.evaluationContext == null) {
-			this.evaluationContext = IntegrationContextUtils.getEvaluationContext(getBeanFactory());
+			this.evaluationContext = ExpressionUtils.createStandardEvaluationContext(getBeanFactory());
 		}
-	}
-
-	protected void onInit() {
 	}
 
 	/**
@@ -602,18 +599,17 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	protected final MessageValues deserializePayloadIfNecessary(MessageValues message) {
-		MessageValues messageToSend = message;
 		Object originalPayload = message.getPayload();
-		MimeType contentType = this.contentTypeResolver.resolve(messageToSend);
+		MimeType contentType = this.contentTypeResolver.resolve(message);
 		Object payload = deserializePayload(originalPayload, contentType);
 		if (payload != null) {
-			messageToSend.setPayload(payload);
+			message.setPayload(payload);
 
-			Object originalContentType = messageToSend.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			messageToSend.put(MessageHeaders.CONTENT_TYPE, originalContentType);
-			messageToSend.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, null);
+			Object originalContentType = message.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			message.put(MessageHeaders.CONTENT_TYPE, originalContentType);
+			message.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, null);
 		}
-		return messageToSend;
+		return message;
 	}
 
 	private Object deserializePayload(Object payload, MimeType contentType) {
@@ -988,6 +984,7 @@ public abstract class MessageChannelBinderSupport
 		public int getPartitionCount() {
 			return this.partitionCount;
 		}
+
 	}
 
 	/**
@@ -1037,6 +1034,7 @@ public abstract class MessageChannelBinderSupport
 			}
 			return channel;
 		}
+
 	}
 
 	/**
@@ -1095,6 +1093,7 @@ public abstract class MessageChannelBinderSupport
 			}
 			return className;
 		}
+
 	}
 
 	public static class SetBuilder {

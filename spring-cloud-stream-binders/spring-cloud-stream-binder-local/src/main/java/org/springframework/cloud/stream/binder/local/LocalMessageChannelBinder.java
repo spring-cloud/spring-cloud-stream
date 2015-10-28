@@ -173,7 +173,8 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 	}
 
 	@Override
-	protected void onInit() {
+	public void afterPropertiesSet() throws Exception {
+		super.afterPropertiesSet();
 		this.executor.setCorePoolSize(this.executorCorePoolSize);
 		this.executor.setMaxPoolSize(this.executorMaxPoolSize);
 		this.executor.setQueueCapacity(this.executorQueueSize);

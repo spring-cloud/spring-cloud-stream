@@ -147,8 +147,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 			String... headersToMap) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		this.connectionFactory = connectionFactory;
-		this.errorAdapter = new RedisQueueOutboundChannelAdapter(
-				parser.parseExpression("headers['" + ERROR_HEADER + "']"), connectionFactory);
+
 		if (headersToMap != null && headersToMap.length > 0) {
 			String[] combinedHeadersToMap =
 					Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0, BinderHeaders.STANDARD_HEADERS.length
@@ -160,11 +159,17 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		else {
 			this.headersToMap = BinderHeaders.STANDARD_HEADERS;
 		}
+
+		this.errorAdapter = new RedisQueueOutboundChannelAdapter(
+				parser.parseExpression("headers['" + ERROR_HEADER + "']"), connectionFactory);
 	}
 
 	@Override
-	protected void onInit() {
+	public void afterPropertiesSet() throws Exception {
+		super.afterPropertiesSet();
 		this.errorAdapter.setIntegrationEvaluationContext(this.evaluationContext);
+		this.errorAdapter.setBeanFactory(getBeanFactory());
+		this.errorAdapter.afterPropertiesSet();
 	}
 
 	@Override
@@ -424,7 +429,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 				transformed.put(PARTITION_HEADER, determinePartition(message, this.partitioningMetadata));
 			}
-			
+
 			byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
 					RedisMessageChannelBinder.this.headersToMap);
 			delegate.handleMessage(MessageBuilder.withPayload(messageToSend).copyHeaders(transformed).build());
@@ -458,6 +463,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 			// prevent returned message from being copied in superclass
 			return false;
 		}
+
 	}
 
 	private static class RedisPropertiesAccessor extends AbstractBinderPropertiesAccessor {
