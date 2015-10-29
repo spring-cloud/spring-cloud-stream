@@ -147,8 +147,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 			String... headersToMap) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		this.connectionFactory = connectionFactory;
-		this.errorAdapter = new RedisQueueOutboundChannelAdapter(
-				parser.parseExpression("headers['" + ERROR_HEADER + "']"), connectionFactory);
+
 		if (headersToMap != null && headersToMap.length > 0) {
 			String[] combinedHeadersToMap =
 					Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0, BinderHeaders.STANDARD_HEADERS.length
@@ -160,10 +159,14 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		else {
 			this.headersToMap = BinderHeaders.STANDARD_HEADERS;
 		}
+
+		this.errorAdapter = new RedisQueueOutboundChannelAdapter(
+				parser.parseExpression("headers['" + ERROR_HEADER + "']"), connectionFactory);
 	}
 
 	@Override
-	protected void onInit() {
+	public void afterPropertiesSet() throws Exception {
+		super.afterPropertiesSet();
 		this.errorAdapter.setIntegrationEvaluationContext(this.evaluationContext);
 		this.errorAdapter.setBeanFactory(getBeanFactory());
 		this.errorAdapter.afterPropertiesSet();

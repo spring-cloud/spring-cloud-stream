@@ -381,10 +381,6 @@ public abstract class MessageChannelBinderSupport
 		if (this.evaluationContext == null) {
 			this.evaluationContext = ExpressionUtils.createStandardEvaluationContext(getBeanFactory());
 		}
-		onInit();
-	}
-
-	protected void onInit() {
 	}
 
 	/**

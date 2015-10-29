@@ -420,8 +420,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	}
 
 	@Override
-	protected void onInit() {
-		super.onInit();
+	public void afterPropertiesSet() throws Exception {
+		super.afterPropertiesSet();
 		if (this.clustered) {
 			Assert.state(this.addresses.length == this.adminAddresses.length
 					&& this.addresses.length == this.nodes.length,
