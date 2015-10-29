@@ -19,12 +19,15 @@ package demo;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Pattern;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
 /**
  * Describes options to the {@code time} source module.
  *
  * @author Eric Bottard
  * @author Gary Russell
  */
+@ConfigurationProperties
 public class TimeSourceOptionsMetadata {
 
 	/**
