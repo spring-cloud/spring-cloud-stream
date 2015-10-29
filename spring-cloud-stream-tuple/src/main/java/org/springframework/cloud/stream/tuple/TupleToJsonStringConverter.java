@@ -49,7 +49,10 @@ public class TupleToJsonStringConverter implements Converter<Tuple, String> {
 		for (int i = 0; i < source.size(); i++) {
 			Object value = source.getValues().get(i);
 			String name = source.getFieldNames().get(i);
-			if (value != null) {
+			if (value == null) {
+				root.putNull(name);
+			}
+			else {
 				if (value instanceof Tuple) {
 					root.putPOJO(name, toObjectNode((Tuple) value));
 				}
