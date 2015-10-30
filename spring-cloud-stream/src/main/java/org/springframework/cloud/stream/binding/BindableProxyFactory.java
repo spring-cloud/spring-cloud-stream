@@ -31,11 +31,13 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
@@ -60,6 +62,9 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Autowired
 	private ChannelFactory channelFactory;
+
+	@Autowired(required = false)
+	private SharedChannelRegistry sharedChannelRegistry;
 
 	private Map<String, ChannelHolder> inputs = new HashMap<>();
 
@@ -90,14 +95,62 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		ChannelHolder inputChannelHolder = this.channelFactory.createInputMessageChannel(this.type);
-		if (inputChannelHolder != null) {
-			this.inputs.put(inputChannelHolder.getName(), inputChannelHolder);
-		}
-		ChannelHolder outputChannelHolder = this.channelFactory.createOutputMessageChannel(this.type);
-		if (outputChannelHolder != null) {
-			this.outputs.put(outputChannelHolder.getName(), outputChannelHolder);
-		}
+		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
+			@Override
+			public void doWith(Method method) throws IllegalArgumentException {
+				try {
+					Input input = AnnotationUtils.findAnnotation(method, Input.class);
+					if (input != null) {
+						String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+						MessageChannel sharedChannel = locateSharedChannel(name);
+						if (sharedChannel == null) {
+							inputs.put(name,
+									new ChannelHolder(name,
+											channelFactory.createAndConfigureMessageChannel(name, method.getReturnType()), true));
+						}
+						else {
+							channelFactory.configureSharedMessageChannel(name, method.getReturnType(), sharedChannel);
+						}
+					}
+				}
+				catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+		});
+		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
+			@Override
+			public void doWith(Method method) throws IllegalArgumentException {
+				try {
+					Output output = AnnotationUtils.findAnnotation(method, Output.class);
+					if (output != null) {
+						String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+						Class<?> messageChannelType = method.getReturnType();
+						MessageChannel sharedChannel = locateSharedChannel(name);
+						if (sharedChannel == null) {
+							outputs.put(name,
+									new ChannelHolder(name,
+											channelFactory.createAndConfigureMessageChannel(name, method.getReturnType()), true));
+						}
+						else {
+							channelFactory.configureSharedMessageChannel(name, method.getReturnType(), sharedChannel);
+						}
+					}
+				}
+				catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+
+		});
+	}
+
+	private MessageChannel locateSharedChannel(String name) {
+		return this.sharedChannelRegistry != null ? this.sharedChannelRegistry.get(getNamespacePrefixedChannelName(name)) : null;
+	}
+
+	private String getNamespacePrefixedChannelName(String name) {
+		return this.channelNamespace + "." + name;
 	}
 
 	@Override
