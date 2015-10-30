@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.binding.ChannelFactory;
 import org.springframework.cloud.stream.binding.ChannelFactoryImpl;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
+import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.tuple.spel.TuplePropertyAccessor;
 import org.springframework.context.annotation.Bean;
@@ -73,8 +74,13 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public ChannelFactory channelFactory(ChannelBindingServiceProperties channelBindingServiceProperties) {
-		return new ChannelFactoryImpl(channelBindingServiceProperties);
+	public MessageConverterConfigurer messageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties) {
+		return new MessageConverterConfigurer(channelBindingServiceProperties);
+	}
+
+	@Bean
+	public ChannelFactory channelFactory() {
+		return new ChannelFactoryImpl();
 	}
 
 	@Bean

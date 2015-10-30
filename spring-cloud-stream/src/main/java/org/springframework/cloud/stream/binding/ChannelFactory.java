@@ -31,7 +31,5 @@ public interface ChannelFactory {
 
 	String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
 
-	MessageChannel createAndConfigureMessageChannel(String name, Class<?> channelType) throws Exception;
-
-	void configureSharedMessageChannel(String name, Class<?> channelType, MessageChannel sharedChannel);
+	MessageChannel createChannel(String name, Class<?> channelType) throws Exception;
 }
