@@ -53,11 +53,11 @@ public class ChannelsEndpoint extends AbstractEndpoint<Map<String,Object>> {
 		Map<String, BindingProperties> outputs = map.getOutputs();
 		for (Bindable factory : this.adapters) {
 			Map<String, BindingProperties> bindings = this.properties.getBindings();
-			for (String name : factory.getInputs()) {
+			for (String name : factory.getInputNames()) {
 				inputs.put(name, bindings.containsKey(name) ? bindings.get(name)
 						: new BindingProperties());
 			}
-			for (String name : factory.getOutputs()) {
+			for (String name : factory.getOutputNames()) {
 				outputs.put(name, bindings.containsKey(name) ? bindings.get(name)
 						: new BindingProperties());
 			}
