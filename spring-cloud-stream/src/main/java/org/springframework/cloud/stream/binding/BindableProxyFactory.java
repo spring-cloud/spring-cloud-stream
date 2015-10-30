@@ -31,13 +31,11 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.util.Assert;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
@@ -60,8 +58,6 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private Object proxy = null;
 
-	private ConfigurableListableBeanFactory beanFactory;
-
 	@Autowired
 	private ChannelFactory channelFactory;
 
@@ -79,25 +75,29 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (MessageChannel.class.isAssignableFrom(method.getReturnType())) {
 			Input input = AnnotationUtils.findAnnotation(method, Input.class);
 			if (input != null) {
-				String name = BindingBeanDefinitionRegistryUtils.getChannelName(input,
-						method);
+				String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
 				return this.inputs.get(name).getMessageChannel();
 			}
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
-				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output,
-						method);
+				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
 				return this.outputs.get(name).getMessageChannel();
 			}
 		}
-		// ignore
+		//ignore
 		return null;
 	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Assert.notNull(this.channelFactory, "ChannelFactory must not be null.");
-		this.channelFactory.createChannels(this.type, this.inputs, this.outputs);
+		ChannelHolder inputChannelHolder = this.channelFactory.createInputMessageChannel(this.type);
+		if (inputChannelHolder != null) {
+			this.inputs.put(inputChannelHolder.getName(), inputChannelHolder);
+		}
+		ChannelHolder outputChannelHolder = this.channelFactory.createOutputMessageChannel(this.type);
+		if (outputChannelHolder != null) {
+			this.outputs.put(outputChannelHolder.getName(), outputChannelHolder);
+		}
 	}
 
 	@Override

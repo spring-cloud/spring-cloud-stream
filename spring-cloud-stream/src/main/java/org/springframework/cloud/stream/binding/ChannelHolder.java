@@ -8,16 +8,24 @@ import org.springframework.messaging.MessageChannel;
  * their status.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class ChannelHolder {
+
+	private String name;
 
 	private MessageChannel messageChannel;
 
 	private boolean bindable;
 
-	public ChannelHolder(MessageChannel messageChannel, boolean bindable) {
+	public ChannelHolder(String name, MessageChannel messageChannel, boolean bindable) {
+		this.name = name;
 		this.messageChannel = messageChannel;
 		this.bindable = bindable;
+	}
+
+	public String getName() {
+		return this.name;
 	}
 
 	public MessageChannel getMessageChannel() {

@@ -16,8 +16,9 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.BeansException;
@@ -116,84 +117,86 @@ public class ChannelFactory implements BeanFactoryAware, InitializingBean {
 		this.messageConverterFactory = new CompositeMessageConverterFactory(messageConverters);
 	}
 
-	void createChannels(Class<?> type, final Map<String, ChannelHolder> inputs, final Map<String, ChannelHolder> outputs)
-			throws Exception {
+	ChannelHolder createInputMessageChannel(Class<?> type) throws Exception {
+		final List<ChannelHolder> channelHolderList = new ArrayList<>();
 		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
 			@Override
-			public void doWith(Method method) throws IllegalArgumentException,
-					IllegalAccessException {
+			public void doWith(Method method) throws IllegalArgumentException {
 
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getChannelName(
-							input, method);
+					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
 					Class<?> inputChannelType = method.getReturnType();
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
-						MessageChannel inputChannel = createMessageChannel(inputChannelType, name);
-						inputs.put(name, new ChannelHolder(inputChannel, true));
+						MessageChannel inputChannel = createMessageChannel(inputChannelType);
 						configureMessageConverters(inputChannel, name);
+						channelHolderList.add(new ChannelHolder(name, inputChannel, true));
 					}
 					else {
 						if (inputChannelType.isAssignableFrom(sharedChannel.getClass())) {
-							inputs.put(name, new ChannelHolder(sharedChannel, false));
 							configureMessageConverters(sharedChannel, name);
+							channelHolderList.add(new ChannelHolder(name, sharedChannel, false));
 						}
 						else {
 							// handle the special case where the shared channel is of a different nature
 							// (i.e. pollable vs subscribable) than the target channel
-							final MessageChannel inputChannel = createMessageChannel(inputChannelType, name);
+							final MessageChannel inputChannel = createMessageChannel(inputChannelType);
 							if (isPollable(sharedChannel.getClass())) {
-								bridgePollableToSubscribableChannel(sharedChannel,
-										inputChannel);
+								bridgePollableToSubscribableChannel(sharedChannel, inputChannel);
 							}
 							else {
-								bridgeSubscribableToPollableChannel(
-										(SubscribableChannel) sharedChannel, inputChannel);
+								bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel, inputChannel);
 							}
-							inputs.put(name, new ChannelHolder(inputChannel, false));
 							configureMessageConverters(inputChannel, name);
-						}
-
-					}
-				}
-
-				Output output = AnnotationUtils.findAnnotation(method, Output.class);
-				if (output != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getChannelName(
-							output, method);
-					Class<?> messageChannelType = method.getReturnType();
-					MessageChannel sharedChannel = locateSharedChannel(name);
-					if (sharedChannel == null) {
-						MessageChannel outputChannel = createMessageChannel(messageChannelType, name);
-						outputs.put(name, new ChannelHolder(outputChannel, true));
-						configureMessageConverters(outputChannel, name);
-					}
-					else {
-						if (messageChannelType.isAssignableFrom(sharedChannel.getClass())) {
-							outputs.put(name, new ChannelHolder(sharedChannel, false));
-							configureMessageConverters(sharedChannel, name);
-						}
-						else {
-							// handle the special case where the shared channel is of a different nature
-							// (i.e. pollable vs subscribable) than the target channel
-							final MessageChannel outputChannel = createMessageChannel(messageChannelType, name);
-							if (isPollable(messageChannelType)) {
-								bridgePollableToSubscribableChannel(outputChannel,
-										sharedChannel);
-							}
-							else {
-								bridgeSubscribableToPollableChannel(
-										(SubscribableChannel) outputChannel,
-										sharedChannel);
-							}
-							outputs.put(name, new ChannelHolder(outputChannel, false));
-							configureMessageConverters(outputChannel, name);
+							channelHolderList.add(new ChannelHolder(name, inputChannel, false));
 						}
 					}
 				}
 			}
 		});
+		return (channelHolderList.isEmpty()) ? null : channelHolderList.get(0);
+	}
+
+	ChannelHolder createOutputMessageChannel(Class<?> type) throws Exception {
+		final List<ChannelHolder> channelHolderList = new ArrayList<>();
+		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
+			@Override
+			public void doWith(Method method) throws IllegalArgumentException {
+
+				Output output = AnnotationUtils.findAnnotation(method, Output.class);
+				if (output != null) {
+					String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+					Class<?> messageChannelType = method.getReturnType();
+					MessageChannel sharedChannel = locateSharedChannel(name);
+					if (sharedChannel == null) {
+						MessageChannel outputChannel = createMessageChannel(messageChannelType);
+						configureMessageConverters(outputChannel, name);
+						channelHolderList.add(new ChannelHolder(name, outputChannel, true));
+					}
+					else {
+						if (messageChannelType.isAssignableFrom(sharedChannel.getClass())) {
+							configureMessageConverters(sharedChannel, name);
+							channelHolderList.add(new ChannelHolder(name, sharedChannel, false));
+						}
+						else {
+							// handle the special case where the shared channel is of a different nature
+							// (i.e. pollable vs subscribable) than the target channel
+							final MessageChannel outputChannel = createMessageChannel(messageChannelType);
+							if (isPollable(messageChannelType)) {
+								bridgePollableToSubscribableChannel(outputChannel, sharedChannel);
+							}
+							else {
+								bridgeSubscribableToPollableChannel((SubscribableChannel) outputChannel, sharedChannel);
+							}
+							configureMessageConverters(outputChannel, name);
+							channelHolderList.add(new ChannelHolder(name, outputChannel, false));
+						}
+					}
+				}
+			}
+		});
+		return (channelHolderList.isEmpty()) ? null : channelHolderList.get(0);
 	}
 
 	private MessageChannel locateSharedChannel(String name) {
@@ -223,15 +226,15 @@ public class ChannelFactory implements BeanFactoryAware, InitializingBean {
 		consumerEndpointFactoryBean.setBeanFactory(this.beanFactory);
 		try {
 			consumerEndpointFactoryBean.afterPropertiesSet();
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 		consumerEndpointFactoryBean.start();
 	}
 
-	private MessageChannel createMessageChannel(Class<?> messageChannelType, String channelName) {
-		MessageChannel messageChannel = isPollable(messageChannelType) ? new QueueChannel() : new DirectChannel();
-		return messageChannel;
+	private MessageChannel createMessageChannel(Class<?> messageChannelType) {
+		return isPollable(messageChannelType) ? new QueueChannel() : new DirectChannel();
 	}
 
 	/**
