@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.bus;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
 import lombok.Data;
 
 /**
@@ -23,11 +25,14 @@ import lombok.Data;
  *
  */
 @Data
+@ConfigurationProperties("spring.cloud.bus")
 public class BusProperties {
 
 	private Env env = new Env();
 	private Refresh refresh = new Refresh();
 	private String destination = "topic:springCloudBus";
+
+	private boolean enabled = true;
 
 	public String getDestination() {
 		if (this.destination.startsWith("topic:")) {

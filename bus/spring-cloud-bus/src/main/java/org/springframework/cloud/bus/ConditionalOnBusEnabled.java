@@ -15,5 +15,5 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Target({ ElementType.TYPE, ElementType.METHOD })
 public @interface ConditionalOnBusEnabled {
 
-	public static String SPRING_CLOUD_BUS_ENABLED = "spring.cloud.bus.amqp.enabled";
+	public static String SPRING_CLOUD_BUS_ENABLED = "spring.cloud.bus.enabled";
 }
