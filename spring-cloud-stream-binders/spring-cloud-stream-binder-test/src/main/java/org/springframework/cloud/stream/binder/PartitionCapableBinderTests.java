@@ -40,6 +40,7 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 
@@ -52,7 +53,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	@Test
 	public void testBadProperties() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("foo", "bar");
 		properties.put("baz", "qux");
@@ -81,7 +82,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	@Test
 	public void testPartitionedModuleSpEL() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("partitionKeyExpression", "payload");
 		properties.put("partitionSelectorExpression", "hashCode()");
@@ -182,7 +183,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	@Test
 	public void testPartitionedModuleJava() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("partitionKeyExtractorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
 		properties.put("partitionSelectorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
@@ -266,7 +267,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 	protected String getPubSubEndpointRouting(AbstractEndpoint endpoint) {
 		throw new UnsupportedOperationException();
 	}
-	
+
 	protected abstract String getClassUnderTestName();
 
 }

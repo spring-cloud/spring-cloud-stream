@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -32,7 +31,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
@@ -40,32 +39,32 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Marius Bogoevici
+ * @author Gary Russell
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(ProcessorBindingTestsWithPubSubBindingTargets.TestProcessor.class)
-public class ProcessorBindingTestsWithPubSubBindingTargets {
+@SpringApplicationConfiguration(SinkBindingPubSubTests.TestSink.class)
+public class SinkBindingPubSubTests {
 
 	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestProcessor.class)
-	private Processor testProcessor;
+	@Autowired @Bindings(TestSink.class)
+	private Sink testSink;
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindPubSubConsumer(eq("testtock.0"), eq(testProcessor.input()), anyString(),
-				any(Properties.class));
-		verify(binder).bindPubSubProducer(eq("testtock.1"), eq(testProcessor.output()), any(Properties.class));
+		verify(binder).bindPubSubConsumer(eq("testpubsub"), eq(testSink.input()), eq("tgroup"), any(Properties.class));
 		verifyNoMoreInteractions(binder);
 	}
 
-	@EnableBinding(Processor.class)
+	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderConfiguration.class)
-	@PropertySource("classpath:/org/springframework/cloud/stream/binder/processor-binding-test-pubsub.properties")
-	public static class TestProcessor {
+	@PropertySource("classpath:/org/springframework/cloud/stream/binder/sink-binding-pubsub-test.properties")
+	public static class TestSink {
 
 	}
+
 }

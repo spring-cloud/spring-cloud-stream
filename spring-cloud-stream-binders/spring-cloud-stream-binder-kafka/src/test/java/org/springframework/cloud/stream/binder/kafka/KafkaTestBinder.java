@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.List;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
-
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.cloud.stream.test.junit.kafka.TestKafkaCluster;
@@ -31,6 +28,9 @@ import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
+
 
 /**
  * Test support class for {@link KafkaMessageChannelBinder}.
@@ -38,6 +38,7 @@ import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author David Turanski
+ * @author Gary Russell
  */
 public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder> {
 
@@ -77,10 +78,10 @@ public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinde
 	private static Codec getCodec() {
 		return new PojoCodec(new TupleRegistrar());
 	}
-	
+
 	//TODO: temporary wrapper for compatibility with SI Codec types
 	private static class TupleRegistrar implements KryoRegistrar {
-		private TupleKryoRegistrar delegate = new TupleKryoRegistrar();
+		private final TupleKryoRegistrar delegate = new TupleKryoRegistrar();
 
 		@Override
 		public void registerTypes(Kryo kryo) {

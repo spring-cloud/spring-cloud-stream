@@ -19,6 +19,14 @@ package org.springframework.cloud.stream.test.junit.kafka;
 
 import java.util.Properties;
 
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.exception.ZkInterruptedException;
+import org.junit.Rule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
+
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.utils.SystemTime$;
@@ -27,14 +35,6 @@ import kafka.utils.TestZKUtils;
 import kafka.utils.Utils;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
-
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.exception.ZkInterruptedException;
-import org.junit.Rule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
 
 
 /**
@@ -62,7 +62,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 
 	private KafkaServer kafkaServer;
 
-	private Properties brokerConfig = TestUtils.createBrokerConfig(0, TestUtils.choosePort(), false);
+	private final Properties brokerConfig = TestUtils.createBrokerConfig(0, TestUtils.choosePort(), false);
 
 	// caches previous failures to reach the external server - preventing repeated retries
 	private static boolean hasFailedAlready = false;
@@ -108,8 +108,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 					zookeeper = new EmbeddedZookeeper(TestZKUtils.zookeeperConnect());
 					log.debug("Started Zookeeper at " + zookeeper.getConnectString());
 					try {
-						int zkConnectionTimeout = 6000;
-						int zkSessionTimeout = 6000;
+						int zkConnectionTimeout = 10000;
+						int zkSessionTimeout = 10000;
 						zkClient = new ZkClient(getZkConnectString(), zkSessionTimeout, zkConnectionTimeout, ZKStringSerializer$.MODULE$);
 					}
 					catch (Exception e) {
@@ -133,7 +133,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 				}
 			}
 			else {
-				this.zkClient = new ZkClient(DEFAULT_ZOOKEEPER_CONNECT, 2000, 2000, ZKStringSerializer$.MODULE$);
+				this.zkClient = new ZkClient(DEFAULT_ZOOKEEPER_CONNECT, 10000, 10000, ZKStringSerializer$.MODULE$);
 				if (ZkUtils.getAllBrokersInCluster(zkClient).size() == 0) {
 					hasFailedAlready = true;
 					throw new RuntimeException("Kafka server not available");
