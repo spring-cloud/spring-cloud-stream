@@ -36,6 +36,7 @@ public class SubtypeModuleTests {
 
 	@JsonTypeName("my")
 	public static class MyRemoteApplicationEvent extends RemoteApplicationEvent {
+		@SuppressWarnings("unused")
 		private MyRemoteApplicationEvent() {
 		}
 
@@ -51,6 +52,7 @@ public class SubtypeModuleTests {
 
 	@JsonTypeName("another")
 	public static class AnotherRemoteApplicationEvent extends RemoteApplicationEvent {
+		@SuppressWarnings("unused")
 		private AnotherRemoteApplicationEvent() {
 		}
 
