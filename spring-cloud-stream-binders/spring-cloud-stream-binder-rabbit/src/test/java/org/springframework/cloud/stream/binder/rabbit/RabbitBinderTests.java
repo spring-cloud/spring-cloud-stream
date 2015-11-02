@@ -16,6 +16,21 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -53,25 +68,11 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.GenericMessage;
-
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Mark Fisher
@@ -88,7 +89,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 	public RabbitTestSupport rabbitAvailableRule = new RabbitTestSupport();
 
 	@Override
-	protected Binder getBinder() {
+	protected Binder<MessageChannel> getBinder() {
 		if (testBinder == null) {
 			testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource());
 		}
@@ -102,12 +103,12 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testSendAndReceiveBad() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		DirectChannel moduleInputChannel = new DirectChannel();
 		binder.bindProducer("bad.0", moduleOutputChannel, null);
 		binder.bindConsumer("bad.0", moduleInputChannel, null);
-		Message<?> message = MessageBuilder.withPayload("bad").setHeader(MessageHeaders.CONTENT_TYPE, 
+		Message<?> message = MessageBuilder.withPayload("bad").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		final CountDownLatch latch = new CountDownLatch(3);
 		moduleInputChannel.subscribe(new MessageHandler() {
@@ -126,7 +127,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testConsumerProperties() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("transacted", "true"); // test transacted with defaults; not allowed with ackmode NONE
 		binder.bindConsumer("props.0", new DirectChannel(), properties);
@@ -202,13 +203,12 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testProducerProperties() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		binder.bindProducer("props.0", new DirectChannel(), null);
 		@SuppressWarnings("unchecked")
 		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
 		AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
-		assertEquals(RabbitMessageChannelBinder.DEFAULT_RABBIT_PREFIX + "props.0", TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKey"));
 		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
 				MessageDeliveryMode.class);
 		assertEquals(MessageDeliveryMode.PERSISTENT, mode);
@@ -233,7 +233,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		endpoint = bindings.get(0).getEndpoint();
 		assertEquals(
 				"'foo.props.0-' + headers['partition']",
-				TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKeyExpression", 
+				TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKeyExpression",
 						SpelExpression.class).getExpressionString());
 		mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
 				MessageDeliveryMode.class);
@@ -273,7 +273,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testRequestReplyRequestorProperties() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("prefix", "foo.");
 		properties.put("deliveryMode", "NON_PERSISTENT");
@@ -299,8 +299,6 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 		assertEquals(2, bindings.size());
 		AbstractEndpoint endpoint = bindings.get(0).getEndpoint(); // producer
-		assertEquals("foo.props.0.requests",
-				TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKey"));
 		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
 				MessageDeliveryMode.class);
 		assertEquals(MessageDeliveryMode.NON_PERSISTENT, mode);
@@ -339,7 +337,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testRequestReplyReplierProperties() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("prefix", "foo.");
 		properties.put("deliveryMode", "NON_PERSISTENT");
@@ -367,7 +365,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		AbstractEndpoint endpoint = bindings.get(1).getEndpoint(); // producer
 		assertEquals(
 				"headers['amqp_replyTo']",
-				TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKeyExpression", 
+				TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKeyExpression",
 						SpelExpression.class).getExpressionString());
 		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
 				MessageDeliveryMode.class);
@@ -410,7 +408,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 	public void testDurablePubSubWithAutoBindDLQ() throws Exception {
 		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
 
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 
 		Properties properties = new Properties();
 		properties.put("prefix", TEST_PREFIX);
@@ -428,14 +426,14 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 			}
 
 		});
-		binder.bindPubSubConsumer("teststream.tap:stream:durabletest.0", moduleInputChannel, properties);
+		binder.bindPubSubConsumer("durabletest.0", moduleInputChannel, "tgroup", properties);
 
 		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
-		template.convertAndSend(TEST_PREFIX + "topic.tap:stream:durabletest.0", "", "foo");
+		template.convertAndSend(TEST_PREFIX + "durabletest.0", "", "foo");
 
 		int n = 0;
 		while (n++ < 100) {
-			Object deadLetter = template.receiveAndConvert(TEST_PREFIX + "teststream.tap:stream:durabletest.0.dlq");
+			Object deadLetter = template.receiveAndConvert(TEST_PREFIX + "tgroup.durabletest.0.dlq");
 			if (deadLetter != null) {
 				assertEquals("foo", deadLetter);
 				break;
@@ -444,11 +442,13 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		assertTrue(n < 100);
 
-		binder.unbindConsumer("teststream.tap:stream:durabletest.0", moduleInputChannel);
-		assertNotNull(admin.getQueueProperties(TEST_PREFIX + "teststream.tap:stream:durabletest.0.dlq"));
-		admin.deleteQueue(TEST_PREFIX + "teststream.tap:stream:durabletest.0.dlq");
-		admin.deleteQueue(TEST_PREFIX + "teststream.tap:stream:durabletest.0");
-		admin.deleteExchange(TEST_PREFIX + "topic.tap:stream:durabletest.0");
+		binder.unbindConsumer("durabletest.0", moduleInputChannel);
+		binder.unbindPubSubConsumers("durabletest.0", "tgroup1");
+		binder.unbindPubSubConsumers("durabletest.0", "tgroup2");
+		assertNotNull(admin.getQueueProperties(TEST_PREFIX + "tgroup.durabletest.0.dlq"));
+		admin.deleteQueue(TEST_PREFIX + "tgroup.durabletest.0.dlq");
+		admin.deleteQueue(TEST_PREFIX + "tgroup.durabletest.0");
+		admin.deleteExchange(TEST_PREFIX + "durabletest.0");
 		admin.deleteExchange(TEST_PREFIX + "DLX");
 	}
 
@@ -456,7 +456,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 	public void testNonDurablePubSubWithAutoBindDLQ() throws Exception {
 		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
 
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("prefix", TEST_PREFIX);
 		properties.put("autoBindDLQ", "true");
@@ -473,19 +473,19 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 			}
 
 		});
-		binder.bindPubSubConsumer("teststream.tap:stream:nondurabletest.0", moduleInputChannel, properties);
+		binder.bindPubSubConsumer("nondurabletest.0", moduleInputChannel, "tgroup", properties);
 
-		binder.unbindConsumer("teststream.tap:stream:nondurabletest.0", moduleInputChannel);
-		assertNull(admin.getQueueProperties(TEST_PREFIX + "teststream.tap:stream:nondurabletest.0.dlq"));
-		admin.deleteQueue(TEST_PREFIX + "teststream.tap:stream:nondurabletest.0");
-		admin.deleteExchange(TEST_PREFIX + "topic.tap:stream:nondurabletest.0");
+		binder.unbindPubSubConsumers("nondurabletest.0", "tgroup");
+		assertNull(admin.getQueueProperties(TEST_PREFIX + "nondurabletest.0.dlq"));
+		admin.deleteQueue(TEST_PREFIX + "tgroup.nondurabletest.0");
+		admin.deleteExchange(TEST_PREFIX + "nondurabletest.0");
 	}
 
 	@Test
 	public void testAutoBindDLQ() throws Exception {
 		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
 
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("prefix", TEST_PREFIX);
 		properties.put("autoBindDLQ", "true");
@@ -532,7 +532,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		Queue queue = new Queue(TEST_PREFIX + "dlqpubtest", true, false, false, args);
 		admin.declareQueue(queue);
 
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("prefix", TEST_PREFIX);
 		properties.put("autoBindDLQ", "true");
@@ -576,7 +576,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 	@Test
 	public void testBatchingAndCompression() throws Exception {
 		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("deliveryMode", "NON_PERSISTENT");
 		properties.put("batchingEnabled", "true");
@@ -689,13 +689,13 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 	@Override
 	protected String getEndpointRouting(AbstractEndpoint endpoint) {
-		return TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKeyExpression", 
+		return TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKeyExpression",
 				SpelExpression.class).getExpressionString();
 	}
 
 	@Override
 	protected String getPubSubEndpointRouting(AbstractEndpoint endpoint) {
-		return TestUtils.getPropertyValue(endpoint, "handler.delegate.exchangeNameExpression", 
+		return TestUtils.getPropertyValue(endpoint, "handler.delegate.exchangeNameExpression",
 				SpelExpression.class).getExpressionString();
 	}
 

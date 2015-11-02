@@ -17,37 +17,38 @@
 package org.springframework.cloud.stream.binder.rabbit;
 
 
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.DefaultConsumer;
 import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.ChannelCallback;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.RabbitAdminException;
 import org.springframework.cloud.stream.binder.RabbitManagementUtils;
+import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.DefaultConsumer;
 
 /**
  * @author Gary Russell
@@ -55,7 +56,7 @@ import static org.junit.Assert.fail;
  */
 public class RabbitBinderCleanerTests {
 
-	private static final String BINDER_PREFIX = "binder.rabbit.";
+	private static final String BINDER_PREFIX = "binder.";
 
 	@Rule
 	public RabbitTestSupport rabbitWithMgmtEnabled = new RabbitTestSupport(true);
@@ -63,11 +64,13 @@ public class RabbitBinderCleanerTests {
 	@Test
 	public void testCleanStream() {
 		final RabbitBindingCleaner cleaner = new RabbitBindingCleaner();
-		final RestTemplate template = RabbitManagementUtils.buildRestTemplate("http://localhost:15672", "guest", 
+		final RestTemplate template = RabbitManagementUtils.buildRestTemplate("http://localhost:15672", "guest",
 				"guest");
 		final String stream1 = UUID.randomUUID().toString();
 		String stream2 = stream1 + "-1";
 		String firstQueue = null;
+		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
+		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
 		for (int i = 0; i < 5; i++) {
 			String queue1Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX,
 					BinderUtils.constructPipeName(stream1, i));
@@ -90,19 +93,24 @@ public class RabbitBinderCleanerTests {
 					.pathSegment("{vhost}", "{queue}")
 					.buildAndExpand("/", MessageChannelBinderSupport.constructDLQName(queue1Name)).encode().toUri();
 			template.put(uri, new AmqpQueue(false, true));
+			TopicExchange exchange = new TopicExchange(queue1Name);
+			rabbitAdmin.declareExchange(exchange);
+			rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(queue1Name)).to(exchange).with(queue1Name));
+			exchange = new TopicExchange(queue2Name);
+			rabbitAdmin.declareExchange(exchange);
+			rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(queue2Name)).to(exchange).with(queue2Name));
 		}
-		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
-		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
-		final FanoutExchange fanout1 = new FanoutExchange(
-				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, MessageChannelBinderSupport.applyPubSub(
-						BinderUtils.constructTapPrefix(stream1) + ".foo.bar")));
-		rabbitAdmin.declareExchange(fanout1);
-		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(fanout1));
-		final FanoutExchange fanout2 = new FanoutExchange(
-				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, MessageChannelBinderSupport.applyPubSub(
-						BinderUtils.constructTapPrefix(stream2) + ".foo.bar")));
-		rabbitAdmin.declareExchange(fanout2);
-		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(fanout2));
+		final TopicExchange topic1 = new TopicExchange(
+				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + ".foo.bar"));
+		rabbitAdmin.declareExchange(topic1);
+		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(topic1).with("#"));
+		String foreignQueue = UUID.randomUUID().toString();
+		rabbitAdmin.declareQueue(new Queue(foreignQueue));
+		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(foreignQueue)).to(topic1).with("#"));
+		final TopicExchange topic2 = new TopicExchange(
+				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream2 + ".foo.bar"));
+		rabbitAdmin.declareExchange(topic2);
+		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(topic2).with("#"));
 		new RabbitTemplate(connectionFactory).execute(new ChannelCallback<Void>() {
 
 			@Override
@@ -125,8 +133,8 @@ public class RabbitBinderCleanerTests {
 					fail("Expected exception");
 				}
 				catch (RabbitAdminException e) {
-					assertThat(e.getMessage(), startsWith("Cannot delete exchange " +
-							fanout1.getName() + "; it has bindings:"));
+					assertThat(e.getMessage(), containsString("Cannot delete exchange "));
+					assertThat(e.getMessage(), containsString("; it has bindings:"));
 				}
 				return null;
 			}
@@ -148,8 +156,9 @@ public class RabbitBinderCleanerTests {
 			}
 
 		});
-		rabbitAdmin.deleteExchange(fanout1.getName()); // easier than deleting the binding
-		rabbitAdmin.declareExchange(fanout1);
+		rabbitAdmin.deleteExchange(topic1.getName()); // easier than deleting the binding
+		rabbitAdmin.declareExchange(topic1);
+		rabbitAdmin.deleteQueue(foreignQueue);
 		connectionFactory.destroy();
 		Map<String, List<String>> cleanedMap = cleaner.clean(stream1, false);
 		assertEquals(2, cleanedMap.size());
@@ -161,8 +170,7 @@ public class RabbitBinderCleanerTests {
 			assertEquals(BINDER_PREFIX + stream1 + "." + i + ".dlq", cleanedQueues.get(i * 2 + 1));
 		}
 		List<String> cleanedExchanges = cleanedMap.get("exchanges");
-		assertEquals(1, cleanedExchanges.size());
-		assertEquals(fanout1.getName(), cleanedExchanges.get(0));
+		assertEquals(6, cleanedExchanges.size());
 
 		// wild card *should* clean stream2
 		cleanedMap = cleaner.clean(stream1 + "*", false);
@@ -173,8 +181,7 @@ public class RabbitBinderCleanerTests {
 			assertEquals(BINDER_PREFIX + stream2 + "." + i, cleanedQueues.get(i));
 		}
 		cleanedExchanges = cleanedMap.get("exchanges");
-		assertEquals(1, cleanedExchanges.size());
-		assertEquals(fanout2.getName(), cleanedExchanges.get(0));
+		assertEquals(6, cleanedExchanges.size());
 	}
 
 	public static class AmqpQueue {

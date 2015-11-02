@@ -25,13 +25,13 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.cloud.stream.binder.BindingCleaner;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.cloud.stream.binder.BinderUtils;
+import org.springframework.cloud.stream.binder.BindingCleaner;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.RabbitAdminException;
 import org.springframework.cloud.stream.binder.RabbitManagementUtils;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 
 /**
@@ -44,7 +44,7 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	private final static Logger logger = LoggerFactory.getLogger(RabbitBindingCleaner.class);
 
-	public static final String BINDER_PREFIX = "binder.rabbit.";
+	public static final String BINDER_PREFIX = "binder.";
 
 	@Override
 	public Map<String, List<String>> clean(String entity, boolean isJob) {
@@ -69,21 +69,7 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		List<String> removedQueues = isJob
 				? null
 				: findStreamQueues(adminUri, vhost, binderPrefix, entity, restTemplate);
-		ExchangeCandidateCallback callback = null;
-		if (isJob) {
-		}
-		else {
-			final String tapPrefix = adjustPrefix(MessageChannelBinderSupport.applyPrefix(binderPrefix,
-					MessageChannelBinderSupport.applyPubSub(BinderUtils.constructTapPrefix(entity))));
-			callback = new ExchangeCandidateCallback() {
-
-				@Override
-				public boolean isCandidate(String exchangeName) {
-					return exchangeName.startsWith(tapPrefix);
-				}
-			};
-		}
-		List<String> removedExchanges = findExchanges(adminUri, vhost, binderPrefix, entity, restTemplate, callback);
+		List<String> removedExchanges = findExchanges(adminUri, vhost, binderPrefix, entity, restTemplate);
 		// Delete the queues in reverse order to enable re-running after a partial success.
 		// The queue search above starts with 0 and terminates on a not found.
 		for (int i = removedQueues.size() - 1; i >= 0; i--) {
@@ -157,20 +143,21 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	@SuppressWarnings("unchecked")
 	private List<String> findExchanges(String adminUri, String vhost, String binderPrefix, String entity,
-			RestTemplate restTemplate, ExchangeCandidateCallback callback) {
+			RestTemplate restTemplate) {
 		List<String> removedExchanges = new ArrayList<>();
 		URI uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
 				.pathSegment("exchanges", "{vhost}")
 				.buildAndExpand(vhost).encode().toUri();
 		List<Map<String, Object>> exchanges = restTemplate.getForObject(uri, List.class);
+		String exchangeNamePrefix = adjustPrefix(MessageChannelBinderSupport.applyPrefix(binderPrefix, entity));
 		for (Map<String, Object> exchange : exchanges) {
 			String exchangeName = (String) exchange.get("name");
-			if (callback.isCandidate(exchangeName)) {
+			if (exchangeName.startsWith(exchangeNamePrefix)) {
 				uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
 						.pathSegment("exchanges", "{vhost}", "{name}", "bindings", "source")
 						.buildAndExpand(vhost, exchangeName).encode().toUri();
 				List<Map<String, Object>> bindings = restTemplate.getForObject(uri, List.class);
-				if (bindings.size() == 0) {
+				if (hasNoForeignBindings(bindings, exchangeNamePrefix)) {
 					uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
 							.pathSegment("exchanges", "{vhost}", "{name}", "bindings", "destination")
 							.buildAndExpand(vhost, exchangeName).encode().toUri();
@@ -192,9 +179,19 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		return removedExchanges;
 	}
 
-	private interface ExchangeCandidateCallback {
-
-		boolean isCandidate(String exchangeName);
+	public boolean hasNoForeignBindings(List<Map<String, Object>> bindings, String exchangeNamePrefix) {
+		if (bindings.size() == 0) {
+			return true;
+		}
+		boolean noForeign = true;
+		for (Map<String, Object> binding : bindings) {
+			if (!("queue".equals(binding.get("destination_type")))
+					|| !((String) binding.get("destination")).startsWith(exchangeNamePrefix)) {
+				noForeign = false;
+				break;
+			}
+		}
+		return noForeign;
 	}
 
 }

@@ -23,7 +23,13 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -47,12 +53,6 @@ import org.springframework.retry.RetryContext;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
-import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.BinderProperties;
-import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
-import org.springframework.cloud.stream.binder.MessageValues;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by Redis.
@@ -221,6 +221,13 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		adapter.setSerializer(null);
 		adapter.setTopics(applyPubSub(name));
 		doRegisterConsumer(name, name, moduleInputChannel, adapter, new RedisPropertiesAccessor(properties));
+	}
+
+	@Override
+	public void bindPubSubConsumer(final String name, MessageChannel moduleInputChannel, String group,
+			Properties properties) {
+		// TODO
+		bindPubSubConsumer(name, moduleInputChannel, properties);
 	}
 
 	private void doRegisterConsumer(String bindingName, String channelName, MessageChannel moduleInputChannel,

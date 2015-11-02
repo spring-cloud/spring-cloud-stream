@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.util.regex.Pattern;
-
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -43,25 +41,6 @@ public class BinderUtils {
 	 */
 	public static final String TOPIC_CHANNEL_PREFIX = "topic:";
 
-	public static final Pattern PUBSUB_NAMED_CHANNEL_PATTERN = Pattern.compile("[^.]+\\.(tap|topic):");
-
-	public static String addGroupToPubSub(String group, String inputChannelName) {
-		if (inputChannelName.startsWith(TAP_CHANNEL_PREFIX)
-				|| inputChannelName.startsWith(TOPIC_CHANNEL_PREFIX)) {
-			inputChannelName = group + "." + inputChannelName;
-		}
-		return inputChannelName;
-	}
-
-	public static String removeGroupFromPubSub(String name) {
-		if (PUBSUB_NAMED_CHANNEL_PATTERN.matcher(name).find()) {
-			return name.substring(name.indexOf(".") + 1);
-		}
-		else {
-			return name;
-		}
-	}
-
 	/**
 	 * Determine whether the provided channel name represents a pub/sub channel (i.e. topic or tap).
 	 * @param channelName name of the channel to check
@@ -69,8 +48,7 @@ public class BinderUtils {
 	 */
 	public static boolean isChannelPubSub(String channelName) {
 		Assert.isTrue(StringUtils.hasText(channelName), "Channel name should not be empty/null.");
-		// Check if the channelName starts with tap: or topic:
-		return (channelName.startsWith(TAP_CHANNEL_PREFIX) || channelName.startsWith(TOPIC_CHANNEL_PREFIX));
+		return channelName.startsWith(TOPIC_CHANNEL_PREFIX);
 	}
 
 	/**
@@ -85,6 +63,16 @@ public class BinderUtils {
 
 	public static String constructTapPrefix(String group) {
 		return TAP_CHANNEL_PREFIX + "stream:" + group;
+	}
+
+	/**
+	 * Construct a name comprised of the group and name.
+	 * @param name the name.
+	 * @param group the group.
+	 * @return the constructed name.
+	 */
+	public static String groupedName(String name, String group) {
+		return group == null ? name : group + BinderUtils.GROUP_INDEX_DELIMITER + name;
 	}
 
 }

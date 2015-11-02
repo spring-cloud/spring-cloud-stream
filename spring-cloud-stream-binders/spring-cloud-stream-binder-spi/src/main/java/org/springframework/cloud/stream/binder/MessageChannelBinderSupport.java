@@ -472,6 +472,11 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	@Override
+	public void unbindPubSubConsumers(String name, String group) {
+		unbindConsumers(BinderUtils.groupedName(name, group));
+	}
+
+	@Override
 	public void unbindProducers(String name) {
 		deleteBindings("outbound." + name);
 	}
@@ -484,11 +489,6 @@ public abstract class MessageChannelBinderSupport
 	@Override
 	public void unbindProducer(String name, MessageChannel channel) {
 		deleteBinding("outbound." + name, channel);
-	}
-
-	@Override
-	public boolean isCapable(Capability capability) {
-		return false;
 	}
 
 	protected void addBinding(Binding binding) {

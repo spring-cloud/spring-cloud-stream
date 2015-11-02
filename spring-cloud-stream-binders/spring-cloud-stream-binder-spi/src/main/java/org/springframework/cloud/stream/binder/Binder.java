@@ -39,14 +39,26 @@ public interface Binder<T> {
 	 */
 	void bindConsumer(String name, T inboundBindTarget, Properties properties);
 
+	/**
+	 * Bind a message consumer on a pub/sub channel.
+	 * @param name the logical identity of the message source
+	 * @param inboundBindTarget the module interface to be bound as a pub/sub consumer
+	 * @param properties arbitrary String key/value pairs that will be used in the binding
+	 * @deprecated use {@link #bindPubSubConsumer(String, Object, String, Properties)} pubsubs
+	 * bound with this method may act like queues with some binders
+	 */
+	@Deprecated
+	void bindPubSubConsumer(final String name, T inboundBindTarget, Properties properties);
 
 	/**
 	 * Bind a message consumer on a pub/sub channel
 	 * @param name the logical identity of the message source
 	 * @param inboundBindTarget the module interface to be bound as a pub/sub consumer
+	 * @param group the consumer group to which this consumer belongs - subscriptions are shared among consumers
+	 * in the same group
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
 	 */
-	void bindPubSubConsumer(final String name, T inboundBindTarget, Properties properties);
+	void bindPubSubConsumer(final String name, T inboundBindTarget, String group, Properties properties);
 
 	/**
 	 * Bind a message producer on a p2p channel.
@@ -70,6 +82,14 @@ public interface Binder<T> {
 	 * @param name the channel name
 	 */
 	void unbindConsumers(String name);
+
+	/**
+	 * Unbind inbound module components and stop any active components that use the channel
+	 * with the supplied consumer group.
+	 * @param name the channel name
+	 * @param group the consumer group
+	 */
+	void unbindPubSubConsumers(String name, String group);
 
 	/**
 	 * Unbind outbound module components and stop any active components that use the channel.
@@ -127,22 +147,5 @@ public interface Binder<T> {
 	 * @return The bound Object.
 	 */
 	T bindDynamicPubSubProducer(String name, Properties properties);
-
-	/**
-	 * Return true if the binder supports the capability.
-	 * @param capability the capability.
-	 * @return true if the capability is supported.
-	 */
-	boolean isCapable(Capability capability);
-
-	public enum Capability {
-
-		/**
-		 * When a binder supports durable subscriptions to a pub/sub channel, the stream
-		 * name will be included in the consumer name.
-		 */
-		DURABLE_PUBSUB
-
-	}
 
 }

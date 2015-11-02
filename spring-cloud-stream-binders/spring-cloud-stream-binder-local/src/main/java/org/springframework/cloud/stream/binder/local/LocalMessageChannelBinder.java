@@ -23,6 +23,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
+import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.ExecutorChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -40,10 +44,6 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
-import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.BinderProperties;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 
 /**
  * A simple implementation of {@link org.springframework.cloud.stream.binder.Binder} for in-process use. For inbound and outbound, creates a
@@ -227,6 +227,12 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 	public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, Properties properties) {
 		validateConsumerProperties(name, properties, CONSUMER_STANDARD_PROPERTIES);
 		doRegisterConsumer(name, moduleInputChannel, this.pubsubChannelProvider, properties);
+	}
+
+	@Override
+	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
+		// TODO
+		bindPubSubConsumer(name, inputChannel, properties);
 	}
 
 	private void doRegisterConsumer(String name, MessageChannel moduleInputChannel,

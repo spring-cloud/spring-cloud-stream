@@ -60,6 +60,12 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	}
 
 	@Override
+	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
+		binder.bindPubSubConsumer(name, inputChannel, group, properties);
+		addTopic(name);
+	}
+
+	@Override
 	public void bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties) {
 		binder.bindProducer(name, moduleOutputChannel, properties);
 		queues.add(name);
@@ -101,6 +107,11 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	}
 
 	@Override
+	public void unbindPubSubConsumers(String name, String group) {
+		binder.unbindPubSubConsumers(name, group);
+	}
+
+	@Override
 	public void unbindProducers(String name) {
 		binder.unbindProducers(name);
 	}
@@ -127,12 +138,7 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 		return this.binder.bindDynamicPubSubProducer(name, properties);
 	}
 
-	@Override
-	public boolean isCapable(Capability capability) {
-		return this.binder.isCapable(capability);
-	}
-
-	public Binder getBinder() {
+	public C getBinder() {
 		return this.binder;
 	}
 

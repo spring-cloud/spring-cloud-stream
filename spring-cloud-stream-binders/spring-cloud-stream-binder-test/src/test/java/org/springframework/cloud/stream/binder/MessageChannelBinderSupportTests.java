@@ -16,13 +16,15 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,9 +44,8 @@ import org.springframework.xd.tuple.Tuple;
 import org.springframework.xd.tuple.TupleBuilder;
 import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 
 /**
  * @author Gary Russell
@@ -52,7 +53,7 @@ import static org.junit.Assert.assertSame;
  */
 public class MessageChannelBinderSupportTests {
 
-	private ContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
+	private final ContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
 	private final TestMessageChannelBinder binder = new TestMessageChannelBinder();
 
@@ -277,6 +278,11 @@ public class MessageChannelBinderSupportTests {
 		}
 
 		@Override
+		public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, String group,
+				Properties properties) {
+		}
+
+		@Override
 		public void bindPubSubProducer(String name, MessageChannel moduleOutputChannel,
 				Properties properties) {
 		}
@@ -298,7 +304,7 @@ public class MessageChannelBinderSupportTests {
 
 	//TODO: temporary wrapper for compatibility with SI Codec types
 	private static class TupleRegistrar implements KryoRegistrar {
-		private TupleKryoRegistrar delegate = new TupleKryoRegistrar();
+		private final TupleKryoRegistrar delegate = new TupleKryoRegistrar();
 
 		@Override
 		public void registerTypes(Kryo kryo) {

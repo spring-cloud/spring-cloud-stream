@@ -30,12 +30,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import kafka.admin.AdminUtils;
-import kafka.api.OffsetRequest;
-import kafka.serializer.Decoder;
-import kafka.serializer.DefaultDecoder;
-import kafka.utils.ZkUtils;
-
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
@@ -43,8 +37,14 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
+import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.FixedSubscriberChannel;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
@@ -79,13 +79,12 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
-import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.BinderProperties;
-import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
-import org.springframework.cloud.stream.binder.MessageValues;
 
+import kafka.admin.AdminUtils;
+import kafka.api.OffsetRequest;
+import kafka.serializer.Decoder;
+import kafka.serializer.DefaultDecoder;
+import kafka.utils.ZkUtils;
 import scala.collection.Seq;
 
 /**
@@ -240,11 +239,11 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private final ZookeeperConnect zookeeperConnect;
 
-	private String brokers;
+	private final String brokers;
 
 	private String[] headersToMap;
 
-	private String zkAddress;
+	private final String zkAddress;
 
 	// -------- Default values for properties -------
 	private int defaultReplicationFactor = 1;
@@ -475,6 +474,12 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		// they've been bound
 		String group = UUID.randomUUID().toString();
 		createKafkaConsumer(name, inputChannel, properties, group, OffsetRequest.LatestTime());
+	}
+
+	@Override
+	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
+		// TODO
+		bindPubSubConsumer(name, inputChannel, properties);
 	}
 
 	@Override

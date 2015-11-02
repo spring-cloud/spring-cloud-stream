@@ -24,7 +24,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.test.matcher.MessageQueueMatcher;
-import org.springframework.integration.channel.QueueChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -39,6 +38,7 @@ import org.springframework.util.Assert;
  * </ul>
  *
  * @author Eric Bottard
+ * @author Gary Russell
  * @see MessageQueueMatcher
  */
 public class TestSupportBinder implements Binder<MessageChannel> {
@@ -52,6 +52,11 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 	@Override
 	public void bindPubSubConsumer(String name, MessageChannel inboundBindTarget, Properties properties) {
+
+	}
+
+	@Override
+	public void bindPubSubConsumer(String name, MessageChannel inboundBindTarget, String group, Properties properties) {
 
 	}
 
@@ -87,6 +92,11 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	}
 
 	@Override
+	public void unbindPubSubConsumers(String name, String group) {
+
+	}
+
+	@Override
 	public void unbindProducers(String name) {
 
 	}
@@ -116,11 +126,6 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 		return null;
 	}
 
-	@Override
-	public boolean isCapable(Capability capability) {
-		return false;
-	}
-
 	public MessageCollector messageCollector() {
 		return messageCollector;
 	}
@@ -132,7 +137,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	 */
 	private static class MessageCollectorImpl implements MessageCollector{
 
-		private Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
+		private final Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
 
 		private BlockingQueue register(MessageChannel channel) {
 			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
@@ -145,6 +150,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 			Assert.notNull(results.remove(channel), "Trying to unregister a mapping for an unknown channel [" + channel + "]");
 		}
 
+		@Override
 		public BlockingQueue<Message<?>> forChannel(MessageChannel channel) {
 			BlockingQueue<Message<?>> queue = results.get(channel);
 			Assert.notNull(queue, "Channel [" + channel + "] was not bound by " + TestSupportBinder.class);

@@ -32,7 +32,11 @@ import java.util.Properties;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.TestUtils;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -42,10 +46,6 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.BinderProperties;
-import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.TestUtils;
 
 /**
  * @author Marius Bogoevici
@@ -192,7 +192,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		QueueChannel module2InputChannel = new QueueChannel();
 		QueueChannel module3InputChannel = new QueueChannel();
 		// Create the tap first
-		String fooTapName = binder.isCapable(Binder.Capability.DURABLE_PUBSUB) ? "foo.tap:baz.http" : "tap:baz.http";
+		String fooTapName = "baz.0";
 		binder.bindPubSubConsumer(fooTapName, module2InputChannel, null);
 
 		// Then create the stream
@@ -202,7 +202,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		binder.bindPubSubProducer("tap:baz.http", tapChannel, null);
 
 		// Another new module is using tap as an input channel
-		String barTapName = binder.isCapable(Binder.Capability.DURABLE_PUBSUB) ? "bar.tap:baz.http" : "tap:baz.http";
+		String barTapName = "baz.0";
 		binder.bindPubSubConsumer(barTapName, module3InputChannel, null);
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
 		boolean success = false;
@@ -242,7 +242,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		// Clean up as StreamPlugin would
 		binder.unbindConsumer("baz.0", moduleInputChannel);
 		binder.unbindProducer("baz.0", moduleOutputChannel);
-		binder.unbindProducers("tap:baz.http");
+		binder.unbindConsumers("baz.0");
 		assertTrue(getBindings(binder).isEmpty());
 	}
 
@@ -273,6 +273,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	}
 
+	@Override
 	@Test
 	public void testSendAndReceivePubSub() throws Exception {
 		Binder binder = getBinder();
@@ -287,10 +288,10 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		moduleOutputChannel.addInterceptor(new WireTap(tapChannel));
 		binder.bindPubSubProducer("tap:baz.http", tapChannel, null);
 		// A new module is using the tap as an input channel
-		String fooTapName = binder.isCapable(Binder.Capability.DURABLE_PUBSUB) ? "foo.tap:baz.http" : "tap:baz.http";
+		String fooTapName = "baz.0";
 		binder.bindPubSubConsumer(fooTapName, module2InputChannel, null);
 		// Another new module is using tap as an input channel
-		String barTapName = binder.isCapable(Binder.Capability.DURABLE_PUBSUB) ? "bar.tap:baz.http" : "tap:baz.http";
+		String barTapName = "baz.0";
 		binder.bindPubSubConsumer(barTapName, module3InputChannel, null);
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		boolean success = false;
@@ -330,7 +331,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		// Clean up as StreamPlugin would
 		binder.unbindConsumer("baz.0", moduleInputChannel);
 		binder.unbindProducer("baz.0", moduleOutputChannel);
-		binder.unbindProducers("tap:baz.http");
+		binder.unbindConsumers("baz.0");
 		assertTrue(getBindings(binder).isEmpty());
 	}
 
