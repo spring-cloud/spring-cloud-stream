@@ -38,7 +38,6 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.ChannelCallback;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.RabbitAdminException;
 import org.springframework.cloud.stream.binder.RabbitManagementUtils;
@@ -72,10 +71,8 @@ public class RabbitBinderCleanerTests {
 		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
 		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
 		for (int i = 0; i < 5; i++) {
-			String queue1Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX,
-					BinderUtils.constructPipeName(stream1, i));
-			String queue2Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX,
-					BinderUtils.constructPipeName(stream2, i));
+			String queue1Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + "." + i);
+			String queue2Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream2 + "." + i);
 			if (firstQueue == null) {
 				firstQueue = queue1Name;
 			}
@@ -115,8 +112,7 @@ public class RabbitBinderCleanerTests {
 
 			@Override
 			public Void doInRabbit(Channel channel) throws Exception {
-				String queueName = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX,
-						BinderUtils.constructPipeName(stream1, 4));
+				String queueName = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + "." + 4);
 				String consumerTag = channel.basicConsume(queueName, new DefaultConsumer(channel));
 				try {
 					waitForConsumerStateNot(queueName, 0);

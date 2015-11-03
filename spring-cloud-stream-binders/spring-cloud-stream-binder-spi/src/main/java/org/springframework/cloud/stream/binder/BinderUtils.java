@@ -32,11 +32,6 @@ public class BinderUtils {
 	public static final String GROUP_INDEX_DELIMITER = ".";
 
 	/**
-	 * The prefix for the consumer/producer when creating a tap.
-	 */
-	public static final String TAP_CHANNEL_PREFIX = "tap:";
-
-	/**
 	 * The prefix for the consumer/producer when creating a topic.
 	 */
 	public static final String TOPIC_CHANNEL_PREFIX = "topic:";
@@ -49,20 +44,6 @@ public class BinderUtils {
 	public static boolean isChannelPubSub(String channelName) {
 		Assert.isTrue(StringUtils.hasText(channelName), "Channel name should not be empty/null.");
 		return channelName.startsWith(TOPIC_CHANNEL_PREFIX);
-	}
-
-	/**
-	 * Construct a pipe name from the group and index.
-	 * @param group the group.
-	 * @param index the index.
-	 * @return the name.
-	 */
-	public static String constructPipeName(String group, int index) {
-		return group + GROUP_INDEX_DELIMITER + index;
-	}
-
-	public static String constructTapPrefix(String group) {
-		return TAP_CHANNEL_PREFIX + "stream:" + group;
 	}
 
 	/**
