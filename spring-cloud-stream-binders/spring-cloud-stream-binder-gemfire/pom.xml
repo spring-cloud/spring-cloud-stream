@@ -61,6 +61,24 @@
 			<artifactId>spring-xd-tuple</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.oracle.tools</groupId>
+			<artifactId>oracle-tools-runtime</artifactId>
+			<version>2.0.0-RC9</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.oracle.tools</groupId>
+			<artifactId>oracle-tools-core</artifactId>
+			<version>2.0.0-RC9</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.oracle.tools</groupId>
+			<artifactId>oracle-tools-testing-support</artifactId>
+			<version>2.0.0-RC9</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>
 
