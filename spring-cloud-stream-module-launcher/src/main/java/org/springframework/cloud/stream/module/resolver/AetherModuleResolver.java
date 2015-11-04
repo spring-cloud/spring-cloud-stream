@@ -18,9 +18,11 @@ package org.springframework.cloud.stream.module.resolver;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -70,9 +72,9 @@ public class AetherModuleResolver implements ModuleResolver {
 
 	private static final String DEFAULT_CONTENT_TYPE = "default";
 
-	private final File localRepository;
+	private File localRepository;
 
-	private final List<RemoteRepository> remoteRepositories;
+	private List<RemoteRepository> remoteRepositories;
 
 	private final RepositorySystem repositorySystem;
 
@@ -111,6 +113,28 @@ public class AetherModuleResolver implements ModuleResolver {
 
 	public void setOffline(boolean offline) {
 		this.offline = offline;
+	}
+
+	public void setLocalRepository(File localRepository) {
+		this.localRepository = localRepository;
+	}
+
+	public void setRemoteRepositories(Set<String> remoteRepositories) {
+		if (!this.remoteRepositories.isEmpty()) {
+			this.remoteRepositories.clear();
+		}
+		if (!CollectionUtils.isEmpty(remoteRepositories)) {
+			int i = 1;
+			Map<String, String> repositoriesMap = new HashMap<>();
+			for (String repository: remoteRepositories) {
+				repositoriesMap.put("repository " + i++, repository);
+			}
+			for (Map.Entry<String, String> remoteRepo : repositoriesMap.entrySet()) {
+				RemoteRepository remoteRepository = new RemoteRepository.Builder(remoteRepo.getKey(),
+						DEFAULT_CONTENT_TYPE, remoteRepo.getValue()).build();
+				this.remoteRepositories.add(remoteRepository);
+			}
+		}
 	}
 
 	/**
