@@ -252,6 +252,7 @@ public class GemfireMessageChannelBinder extends MessageChannelBinderSupport {
 			// only messages that are present in this JVM will be processed
 			Region<MessageKey, Message<?>> localMessageRegion =
 					PartitionRegionHelper.getLocalData(this.messageRegion);
+			List<MessageKey> errorKeys = new ArrayList<>();
 
 			while (isRunning()) {
 				if (localMessageRegion.isEmpty()) {
@@ -277,7 +278,6 @@ public class GemfireMessageChannelBinder extends MessageChannelBinderSupport {
 						keys = keys.subList(0, this.batchSize);
 					}
 
-					List<MessageKey> errorKeys = null;
 					Map<MessageKey, Message<?>> messages = localMessageRegion.getAll(keys);
 					for (MessageKey key : keys) {
 						Message<?> message = messages.get(key);
@@ -287,16 +287,14 @@ public class GemfireMessageChannelBinder extends MessageChannelBinderSupport {
 						}
 						catch (Exception e) {
 							logger.warn("Exception processing message", e);
-							if (errorKeys == null) {
-								errorKeys = new ArrayList<>();
-							}
 							errorKeys.add(key);
 						}
 					}
 					// todo: add retry logic
 					// todo: add un-delivered messages to a "dead letter" region
-					if (errorKeys != null) {
+					if (!errorKeys.isEmpty()) {
 						keys.removeAll(errorKeys);
+						errorKeys.clear();
 					}
 					localMessageRegion.removeAll(keys);
 				}

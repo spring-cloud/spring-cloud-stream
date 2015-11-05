@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.gemfire")
 @EnableConfigurationProperties(GemfireExecutorConfigurationProperties.class)
-
 public class GemfireMessageChannelBinderConfiguration {
 
 	@Bean

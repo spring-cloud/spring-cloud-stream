@@ -42,13 +42,20 @@ import org.springframework.messaging.Message;
  *
  * @author Patrick Peralta
  */
-public class MessageKey implements Externalizable, Comparable<MessageKey>,
+public final class MessageKey implements Externalizable, Comparable<MessageKey>,
 		PartitionResolver<MessageKey, Message<?>> {
 
 	/**
 	 * Unique sequential id for message.
 	 */
 	private long sequenceId;
+
+	/**
+	 * Time stamp of when the producer process started. Marked
+	 * {@code transient} because this value is serialized as
+	 * part of {@link #producerId}.
+	 */
+	private transient long producerTimestamp;
 
 	/**
 	 * Encoded identifier for producer. First (leftmost) 16 bits are
@@ -78,6 +85,7 @@ public class MessageKey implements Externalizable, Comparable<MessageKey>,
 	 */
 	public MessageKey(long sequenceId, long producerTimestamp, int producerPid) {
 		this.sequenceId = sequenceId;
+		this.producerTimestamp = producerTimestamp;
 		this.producerId = producerId(producerTimestamp, producerPid);
 		this.routingHash = this.hashCode();
 	}
@@ -93,6 +101,7 @@ public class MessageKey implements Externalizable, Comparable<MessageKey>,
 	 */
 	public MessageKey(long sequenceId, long producerTimestamp, int producerPid, int routingHash) {
 		this.sequenceId = sequenceId;
+		this.producerTimestamp = producerTimestamp;
 		this.producerId = producerId(producerTimestamp, producerPid);
 		this.routingHash = routingHash;
 	}
@@ -110,8 +119,7 @@ public class MessageKey implements Externalizable, Comparable<MessageKey>,
 	 * @return producer id
 	 */
 	private long producerId(long producerTimestamp, int producerPid) {
-		long longPid = producerPid;
-		longPid = longPid << 48;
+		long longPid = (long) producerPid << 48;
 		return longPid ^ producerTimestamp;
 	}
 
@@ -149,12 +157,12 @@ public class MessageKey implements Externalizable, Comparable<MessageKey>,
 	 * @return producer startup timestamp
 	 */
 	public long getProducerTimestamp() {
-		return producerId << 16 >> 16;
+		return producerTimestamp;
 	}
 
 	@Override
 	public int compareTo(MessageKey that) {
-		int c = Long.compare(this.getProducerTimestamp(), that.getProducerTimestamp());
+		int c = Long.compare(this.producerTimestamp, that.producerTimestamp);
 		return (c == 0 ? Long.compare(this.sequenceId, that.sequenceId) : c);
 	}
 
@@ -167,7 +175,8 @@ public class MessageKey implements Externalizable, Comparable<MessageKey>,
 
 		MessageKey that = (MessageKey) o;
 		return this.sequenceId == that.sequenceId
-				&& this.producerId == that.producerId;
+				&& this.producerId == that.producerId
+				&& this.routingHash == that.routingHash;
 	}
 
 	@Override
@@ -214,16 +223,5 @@ public class MessageKey implements Externalizable, Comparable<MessageKey>,
 		routingHash = in.readInt();
 	}
 
-	/**
-	 * Simple program to print the size of a serialized key.
-	 */
-	public static void main(String[] args) throws IOException {
-		MessageKey key = new MessageKey(Long.MAX_VALUE, Long.MAX_VALUE, Integer.MAX_VALUE);
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-		objectOutputStream.writeObject(key);
-		System.out.println(byteArrayOutputStream.toByteArray().length);
-		System.out.write(byteArrayOutputStream.toByteArray());
-	}
 }
 
