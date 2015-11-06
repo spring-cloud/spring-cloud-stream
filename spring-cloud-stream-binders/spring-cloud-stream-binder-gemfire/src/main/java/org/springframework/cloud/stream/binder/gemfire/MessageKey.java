@@ -16,12 +16,10 @@
 
 package org.springframework.cloud.stream.binder.gemfire;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 
 import com.gemstone.gemfire.cache.EntryOperation;
 import com.gemstone.gemfire.cache.PartitionResolver;
@@ -190,8 +188,10 @@ public final class MessageKey implements Externalizable, Comparable<MessageKey>,
 	@Override
 	public String toString() {
 		return "MessageKey{" +
-				"id=" + sequenceId +
+				"sequenceId=" + sequenceId +
+				", producerTimestamp=" + producerTimestamp +
 				", producerId=" + producerId +
+				", routingHash=" + routingHash +
 				'}';
 	}
 
@@ -221,6 +221,7 @@ public final class MessageKey implements Externalizable, Comparable<MessageKey>,
 		sequenceId = in.readLong();
 		producerId = in.readLong();
 		routingHash = in.readInt();
+		producerTimestamp = producerId << 16 >> 16;
 	}
 
 }
