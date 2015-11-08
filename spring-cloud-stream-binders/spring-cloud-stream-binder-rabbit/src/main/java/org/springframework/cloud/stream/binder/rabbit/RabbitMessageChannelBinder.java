@@ -34,7 +34,6 @@ import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
-import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
@@ -669,7 +668,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		validateProducerProperties(name, properties, SUPPORTED_PUBSUB_PRODUCER_PROPERTIES);
 		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
 		String exchangeName = applyPrefix(accessor.getPrefix(this.defaultPrefix), name);
-		declareExchangeIfNotPresent(new FanoutExchange(exchangeName));
+		declareExchangeIfNotPresent(new TopicExchange(exchangeName));
 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(determineRabbitTemplate(accessor));
 		endpoint.setExchangeName(exchangeName);
 		endpoint.setRoutingKey(name);
