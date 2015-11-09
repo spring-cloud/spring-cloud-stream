@@ -54,12 +54,6 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	}
 
 	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inputChannel, Properties properties) {
-		binder.bindPubSubConsumer(name, inputChannel, properties);
-		addTopic(name);
-	}
-
-	@Override
 	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
 		binder.bindPubSubConsumer(name, inputChannel, group, properties);
 		addTopic(name);

@@ -178,7 +178,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertEquals("foo.props.0", container.getQueueNames()[0]);
 
 		try {
-			binder.bindPubSubConsumer("dummy", null, properties);
+			binder.bindPubSubConsumer("dummy", null, null, properties);
 			fail("Expected exception");
 		}
 		catch (IllegalArgumentException e) {

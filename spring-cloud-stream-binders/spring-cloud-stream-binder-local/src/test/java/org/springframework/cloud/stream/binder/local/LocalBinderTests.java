@@ -133,7 +133,7 @@ public class LocalBinderTests extends AbstractBinderTests {
 				tapped.countDown();
 				throw new RuntimeException("bang");
 			}
-		}, null);
+		}, null, null);
 		moduleOutputChannel.send(new GenericMessage<String>("Foo"));
 		assertTrue(tapped.await(10, TimeUnit.SECONDS));
 		assertTrue(messageReceived.get());

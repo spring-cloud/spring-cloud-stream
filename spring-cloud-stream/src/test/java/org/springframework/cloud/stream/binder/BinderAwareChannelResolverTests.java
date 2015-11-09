@@ -129,7 +129,7 @@ public class BinderAwareChannelResolverTests {
 					latch.countDown();
 				}
 			});
-			binder.bindPubSubConsumer("topic:bar", testChannel, null);
+			binder.bindPubSubConsumer("topic:bar", testChannel, null, null);
 		}
 		assertEquals(0, received.size());
 		registered.send(MessageBuilder.withPayload("hello").build());

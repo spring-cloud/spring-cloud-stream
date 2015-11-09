@@ -224,15 +224,10 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 	}
 
 	@Override
-	public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, Properties properties) {
+	public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, String group,
+			Properties properties) {
 		validateConsumerProperties(name, properties, CONSUMER_STANDARD_PROPERTIES);
 		doRegisterConsumer(name, moduleInputChannel, this.pubsubChannelProvider, properties);
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
-		// TODO
-		bindPubSubConsumer(name, inputChannel, properties);
 	}
 
 	private void doRegisterConsumer(String name, MessageChannel moduleInputChannel,

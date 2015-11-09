@@ -210,7 +210,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	}
 
 	@Override
-	public void bindPubSubConsumer(final String name, MessageChannel moduleInputChannel,
+	public void bindPubSubConsumer(final String name, MessageChannel moduleInputChannel, String group,
 			Properties properties) {
 		if (logger.isInfoEnabled()) {
 			logger.info("declaring pubsub for inbound: " + name);
@@ -221,13 +221,6 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		adapter.setSerializer(null);
 		adapter.setTopics(applyPubSub(name));
 		doRegisterConsumer(name, name, moduleInputChannel, adapter, new RedisPropertiesAccessor(properties));
-	}
-
-	@Override
-	public void bindPubSubConsumer(final String name, MessageChannel moduleInputChannel, String group,
-			Properties properties) {
-		// TODO
-		bindPubSubConsumer(name, moduleInputChannel, properties);
 	}
 
 	private void doRegisterConsumer(String bindingName, String channelName, MessageChannel moduleInputChannel,

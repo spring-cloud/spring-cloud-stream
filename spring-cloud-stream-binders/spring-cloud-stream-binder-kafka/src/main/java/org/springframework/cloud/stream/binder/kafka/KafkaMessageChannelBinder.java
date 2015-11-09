@@ -468,18 +468,14 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	}
 
 	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inputChannel, Properties properties) {
-		// Usage of a different consumer group each time achieves pub-sub
+	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
+		// If the caller provides a group, use it; otherwise
+		// usage of a different consumer group each time achieves pub-sub
+		// but multiple instances of this binding will each get all messages
 		// PubSub consumers reset at the latest time, which allows them to receive only messages sent after
 		// they've been bound
-		String group = UUID.randomUUID().toString();
-		createKafkaConsumer(name, inputChannel, properties, group, OffsetRequest.LatestTime());
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
-		// TODO
-		bindPubSubConsumer(name, inputChannel, properties);
+		String consumerGroup = group == null ? UUID.randomUUID().toString() : group;
+		createKafkaConsumer(name, inputChannel, properties, consumerGroup, OffsetRequest.LatestTime());
 	}
 
 	@Override

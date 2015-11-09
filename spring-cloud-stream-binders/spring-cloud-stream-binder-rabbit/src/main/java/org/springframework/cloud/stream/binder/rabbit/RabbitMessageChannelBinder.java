@@ -501,11 +501,6 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		}
 	}
 
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, Properties properties) {
-		bindPubSubConsumer(name, moduleInputChannel, null, properties);
-	}
-
 	private Map<String, Object> queueArgs(RabbitPropertiesAccessor accessor, String queueName) {
 		Map<String, Object> args = new HashMap<>();
 		if (accessor.getAutoBindDLQ(this.defaultAutoBindDLQ)) {

@@ -51,11 +51,6 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	}
 
 	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inboundBindTarget, Properties properties) {
-
-	}
-
-	@Override
 	public void bindPubSubConsumer(String name, MessageChannel inboundBindTarget, String group, Properties properties) {
 
 	}

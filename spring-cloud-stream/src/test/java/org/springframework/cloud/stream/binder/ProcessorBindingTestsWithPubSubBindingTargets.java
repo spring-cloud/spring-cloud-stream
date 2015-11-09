@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -24,7 +26,6 @@ import java.util.Properties;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -54,8 +55,9 @@ public class ProcessorBindingTestsWithPubSubBindingTargets {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindPubSubConsumer(eq("testtock.0"), eq(testProcessor.input()), Mockito.<Properties>any());
-		verify(binder).bindPubSubProducer(eq("testtock.1"), eq(testProcessor.output()), Mockito.<Properties>any());
+		verify(binder).bindPubSubConsumer(eq("testtock.0"), eq(testProcessor.input()), anyString(),
+				any(Properties.class));
+		verify(binder).bindPubSubProducer(eq("testtock.1"), eq(testProcessor.output()), any(Properties.class));
 		verifyNoMoreInteractions(binder);
 	}
 

@@ -40,17 +40,6 @@ public interface Binder<T> {
 	void bindConsumer(String name, T inboundBindTarget, Properties properties);
 
 	/**
-	 * Bind a message consumer on a pub/sub channel.
-	 * @param name the logical identity of the message source
-	 * @param inboundBindTarget the module interface to be bound as a pub/sub consumer
-	 * @param properties arbitrary String key/value pairs that will be used in the binding
-	 * @deprecated use {@link #bindPubSubConsumer(String, Object, String, Properties)} pubsubs
-	 * bound with this method may act like queues with some binders
-	 */
-	@Deprecated
-	void bindPubSubConsumer(final String name, T inboundBindTarget, Properties properties);
-
-	/**
 	 * Bind a message consumer on a pub/sub channel
 	 * @param name the logical identity of the message source
 	 * @param inboundBindTarget the module interface to be bound as a pub/sub consumer

@@ -273,11 +273,6 @@ public class MessageChannelBinderSupportTests {
 		}
 
 		@Override
-		public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel,
-				Properties properties) {
-		}
-
-		@Override
 		public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, String group,
 				Properties properties) {
 		}
