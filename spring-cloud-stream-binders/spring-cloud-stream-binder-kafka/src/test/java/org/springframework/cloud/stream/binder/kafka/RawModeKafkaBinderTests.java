@@ -201,7 +201,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		binder.bindProducer("baz.0", moduleOutputChannel, null);
 		binder.bindConsumer("baz.0", moduleInputChannel, null);
 		moduleOutputChannel.addInterceptor(new WireTap(tapChannel));
-		binder.bindPubSubProducer("tap:baz.http", tapChannel, null);
+		binder.bindPubSubProducer(fooTapName, tapChannel, null);
 
 		// Another new module is using tap as an input channel
 		String barTapName = "baz.0";
@@ -243,7 +243,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		binder.unbindConsumer(fooTapName, module2InputChannel);
 		// Clean up as StreamPlugin would
 		binder.unbindConsumer("baz.0", moduleInputChannel);
-		binder.unbindProducer("baz.0", moduleOutputChannel);
+		binder.unbindProducers("baz.0");
 		binder.unbindConsumers("baz.0");
 		assertTrue(getBindings(binder).isEmpty());
 	}
@@ -288,9 +288,9 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		binder.bindProducer("baz.0", moduleOutputChannel, null);
 		binder.bindConsumer("baz.0", moduleInputChannel, null);
 		moduleOutputChannel.addInterceptor(new WireTap(tapChannel));
-		binder.bindPubSubProducer("tap:baz.http", tapChannel, null);
 		// A new module is using the tap as an input channel
 		String fooTapName = "baz.0";
+		binder.bindPubSubProducer(fooTapName, tapChannel, null);
 		binder.bindPubSubConsumer(fooTapName, module2InputChannel, null, null);
 		// Another new module is using tap as an input channel
 		String barTapName = "baz.0";
@@ -332,7 +332,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		binder.unbindConsumer(fooTapName, module2InputChannel);
 		// Clean up as StreamPlugin would
 		binder.unbindConsumer("baz.0", moduleInputChannel);
-		binder.unbindProducer("baz.0", moduleOutputChannel);
+		binder.unbindProducers("baz.0");
 		binder.unbindConsumers("baz.0");
 		assertTrue(getBindings(binder).isEmpty());
 	}

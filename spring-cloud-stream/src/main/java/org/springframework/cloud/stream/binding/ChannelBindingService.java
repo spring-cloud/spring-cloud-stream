@@ -85,8 +85,11 @@ public class ChannelBindingService implements InitializingBean {
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
 		if (BinderUtils.isChannelPubSub(channelBindingTarget)) {
+			BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindings()
+					.get(inputChannelName);
+			String group = bindingProperties == null ? null : bindingProperties.getGroup();
 			this.binder.bindPubSubConsumer(removePrefix(channelBindingTarget),
-					inputChannel, this.channelBindingServiceProperties.getGroup(),
+					inputChannel, group,
 					this.channelBindingServiceProperties.getConsumerProperties(inputChannelName));
 		}
 		else {

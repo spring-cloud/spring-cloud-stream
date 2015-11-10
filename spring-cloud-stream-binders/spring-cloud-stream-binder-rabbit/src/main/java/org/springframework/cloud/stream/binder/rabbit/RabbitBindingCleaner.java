@@ -179,7 +179,7 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		return removedExchanges;
 	}
 
-	public boolean hasNoForeignBindings(List<Map<String, Object>> bindings, String exchangeNamePrefix) {
+	private boolean hasNoForeignBindings(List<Map<String, Object>> bindings, String exchangeNamePrefix) {
 		if (bindings.size() == 0) {
 			return true;
 		}

@@ -37,8 +37,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonInclude(Include.NON_DEFAULT)
 public class ChannelBindingServiceProperties {
 
-	private String group = null;
-
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
 	private int instanceIndex = 0;
 
@@ -72,14 +70,6 @@ public class ChannelBindingServiceProperties {
 
 	public void setBindings(Map<String, BindingProperties> bindings) {
 		this.bindings = bindings;
-	}
-
-	public String getGroup() {
-		return group;
-	}
-
-	public void setGroup(String group) {
-		this.group = group;
 	}
 
 	public int getInstanceIndex() {

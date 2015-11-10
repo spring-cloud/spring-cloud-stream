@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 @JsonInclude(value = Include.NON_DEFAULT)
 public class BindingProperties {
@@ -41,6 +42,8 @@ public class BindingProperties {
 	private String partitionSelectorClass;
 
 	private String partitionSelectorExpression;
+
+	private String group;
 
 	private String contentType;
 
@@ -98,6 +101,14 @@ public class BindingProperties {
 
 	public void setPartitionSelectorExpression(String partitionSelectorExpression) {
 		this.partitionSelectorExpression = partitionSelectorExpression;
+	}
+
+	public String getGroup() {
+		return group;
+	}
+
+	public void setGroup(String group) {
+		this.group = group;
 	}
 
 	public String getContentType() {
