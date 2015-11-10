@@ -130,6 +130,8 @@ public class GemfireBinderTests {
 		deleteFile(workingPath.resolve(String.format("%s.log", LOCATOR_NAME)).toFile());
 		deleteFile(workingPath.resolve(String.format("locator%dstate.dat", LOCATOR_PORT)).toFile());
 		deleteFile(workingPath.resolve(String.format("locator%dviews.log", LOCATOR_PORT)).toFile());
+		deleteFile(workingPath.resolve("BACKUPDEFAULT.if").toFile());
+		deleteFile(workingPath.resolve("DRLK_IFDEFAULT.lk").toFile());
 	}
 
 	/**
