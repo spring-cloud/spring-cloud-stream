@@ -16,6 +16,13 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -29,20 +36,10 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.integration.channel.interceptor.WireTap;
-import org.springframework.integration.codec.Codec;
-import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.cloud.stream.binder.Binder.Capability;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author Gary Russell
@@ -57,7 +54,7 @@ public abstract class AbstractBinderTests {
 
 	@Test
 	public void testClean() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		binder.bindProducer("foo.0", new DirectChannel(), null);
 		binder.bindConsumer("foo.0", new DirectChannel(), null);
 		binder.bindProducer("foo.1", new DirectChannel(), null);
@@ -77,7 +74,7 @@ public abstract class AbstractBinderTests {
 
 	@Test
 	public void testSendAndReceive() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		binder.bindProducer("foo.0", moduleOutputChannel, null);
@@ -98,7 +95,7 @@ public abstract class AbstractBinderTests {
 
 	@Test
 	public void testSendAndReceiveNoOriginalContentType() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		binder.bindProducer("bar.0", moduleOutputChannel, null);
@@ -118,23 +115,19 @@ public abstract class AbstractBinderTests {
 
 	@Test
 	public void testSendAndReceivePubSub() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
-		// Test pub/sub by emulating how StreamPlugin handles taps
-		DirectChannel tapChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		QueueChannel module2InputChannel = new QueueChannel();
 		QueueChannel module3InputChannel = new QueueChannel();
 		binder.bindProducer("baz.0", moduleOutputChannel, null);
 		binder.bindConsumer("baz.0", moduleInputChannel, null);
-		moduleOutputChannel.addInterceptor(new WireTap(tapChannel));
-		binder.bindPubSubProducer("tap:baz.http", tapChannel, null);
 		// A new module is using the tap as an input channel
-		String fooTapName = binder.isCapable(Capability.DURABLE_PUBSUB) ? "foo.tap:baz.http" : "tap:baz.http";
-		binder.bindPubSubConsumer(fooTapName, module2InputChannel, null);
+		String fooTapName = "baz.0";
+		binder.bindPubSubConsumer(fooTapName, module2InputChannel, "tgroup1", null);
 		// Another new module is using tap as an input channel
-		String barTapName = binder.isCapable(Capability.DURABLE_PUBSUB) ? "bar.tap:baz.http" : "tap:baz.http";
-		binder.bindPubSubConsumer(barTapName, module3InputChannel, null);
+		String barTapName = "baz.0";
+		binder.bindPubSubConsumer(barTapName, module3InputChannel, "tgroup2", null);
 		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		boolean success = false;
@@ -163,7 +156,7 @@ public abstract class AbstractBinderTests {
 			assertEquals("foo/bar", tapped2.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		}
 		// delete one tap stream is deleted
-		binder.unbindConsumer(barTapName, module3InputChannel);
+		binder.unbindPubSubConsumers(barTapName, "tgroup2");
 		Message<?> message2 = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		moduleOutputChannel.send(message2);
@@ -180,32 +173,28 @@ public abstract class AbstractBinderTests {
 		// Clean up as StreamPlugin would
 		binder.unbindConsumer("baz.0", moduleInputChannel);
 		binder.unbindProducer("baz.0", moduleOutputChannel);
-		binder.unbindProducers("tap:baz.http");
+		binder.unbindPubSubConsumers(fooTapName, "tgroup1");
 		assertTrue(getBindings(binder).isEmpty());
 	}
 
 	@Test
 	public void createInboundPubSubBeforeOutboundPubSub() throws Exception {
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
-		// Test pub/sub by emulating how StreamPlugin handles taps
-		DirectChannel tapChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		QueueChannel module2InputChannel = new QueueChannel();
 		QueueChannel module3InputChannel = new QueueChannel();
 		// Create the tap first
-		String fooTapName = binder.isCapable(Capability.DURABLE_PUBSUB) ? "foo.tap:baz.http" : "tap:baz.http";
-		binder.bindPubSubConsumer(fooTapName, module2InputChannel, null);
+		String fooTapName = "baz.0";
+		binder.bindPubSubConsumer(fooTapName, module2InputChannel, "tgroup1", null);
 
 		// Then create the stream
 		binder.bindProducer("baz.0", moduleOutputChannel, null);
 		binder.bindConsumer("baz.0", moduleInputChannel, null);
-		moduleOutputChannel.addInterceptor(new WireTap(tapChannel));
-		binder.bindPubSubProducer("tap:baz.http", tapChannel, null);
 
 		// Another new module is using tap as an input channel
-		String barTapName = binder.isCapable(Capability.DURABLE_PUBSUB) ? "bar.tap:baz.http" : "tap:baz.http";
-		binder.bindPubSubConsumer(barTapName, module3InputChannel, null);
+		String barTapName = "baz.0";
+		binder.bindPubSubConsumer(barTapName, module3InputChannel, "tgroup2", null);
 		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		boolean success = false;
@@ -234,7 +223,7 @@ public abstract class AbstractBinderTests {
 			assertEquals("foo/bar", tapped2.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		}
 		// delete one tap stream is deleted
-		binder.unbindConsumer(barTapName, module3InputChannel);
+		binder.unbindPubSubConsumers(barTapName, "tgroup2");
 		Message<?> message2 = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE,
 				"foo/bar").build();
 		moduleOutputChannel.send(message2);
@@ -251,7 +240,7 @@ public abstract class AbstractBinderTests {
 		// Clean up as StreamPlugin would
 		binder.unbindConsumer("baz.0", moduleInputChannel);
 		binder.unbindProducer("baz.0", moduleOutputChannel);
-		binder.unbindProducers("tap:baz.http");
+		binder.unbindPubSubConsumers(fooTapName, "tgroup1");
 		assertTrue(getBindings(binder).isEmpty());
 	}
 
@@ -259,7 +248,7 @@ public abstract class AbstractBinderTests {
 	public void testBadDynamic() throws Exception {
 		Properties properties = new Properties();
 		properties.setProperty(BinderProperties.PARTITION_KEY_EXPRESSION, "'foo'");
-		Binder binder = getBinder();
+		Binder<MessageChannel> binder = getBinder();
 		try {
 			binder.bindDynamicProducer("queue:foo", properties);
 			fail("Exception expected");
@@ -275,19 +264,19 @@ public abstract class AbstractBinderTests {
 		}
 	}
 
-	protected Collection<?> getBindings(Binder testBinder) {
+	protected Collection<?> getBindings(Binder<MessageChannel> testBinder) {
 		if (testBinder instanceof AbstractTestBinder) {
 			return getBindingsFromBinder(((AbstractTestBinder) testBinder).getCoreBinder());
 		}
 		return Collections.EMPTY_LIST;
 	}
 
-	protected Collection<?> getBindingsFromBinder(Binder binder) {
+	protected Collection<?> getBindingsFromBinder(Binder<MessageChannel> binder) {
 		DirectFieldAccessor accessor = new DirectFieldAccessor(binder);
 		return (List<?>) accessor.getPropertyValue("bindings");
 	}
 
-	protected abstract Binder getBinder() throws Exception;
+	protected abstract Binder<MessageChannel> getBinder() throws Exception;
 
 	@After
 	public void cleanup() {

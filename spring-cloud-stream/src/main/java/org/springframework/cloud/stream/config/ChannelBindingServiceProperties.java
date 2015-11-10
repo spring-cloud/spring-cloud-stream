@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 /**
  * @author Dave Syer
  * @author Marius Bogoevici
+ * @author Gary Russell
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
@@ -45,7 +46,7 @@ public class ChannelBindingServiceProperties {
 
 	private Properties producerProperties = new Properties();
 
-	private Map<String,BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	private Properties getConsumerProperties() {
 		return this.consumerProperties;
@@ -171,10 +172,6 @@ public class ChannelBindingServiceProperties {
 		else {
 			return this.producerProperties;
 		}
-	}
-
-	public String getTapChannelName(String channelName) {
-		return "tap:" + getBindingDestination(channelName);
 	}
 
 }
