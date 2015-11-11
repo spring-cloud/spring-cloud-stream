@@ -185,6 +185,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Test
 	@Override
+	@Ignore
 	public void createInboundPubSubBeforeOutboundPubSub() throws Exception {
 		Binder<MessageChannel> binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
