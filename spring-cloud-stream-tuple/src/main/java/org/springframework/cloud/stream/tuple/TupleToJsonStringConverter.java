@@ -16,10 +16,14 @@
 
 package org.springframework.cloud.stream.tuple;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import org.springframework.core.convert.converter.Converter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import java.util.List;
 
 /**
  * Converts a Tuple to JSON representation
@@ -51,20 +55,39 @@ public class TupleToJsonStringConverter implements Converter<Tuple, String> {
 			String name = source.getFieldNames().get(i);
 			if (value == null) {
 				root.putNull(name);
-			}
-			else {
-				if (value instanceof Tuple) {
-					root.putPOJO(name, toObjectNode((Tuple) value));
-				}
-				else if (!value.getClass().isPrimitive()) {
-					root.putPOJO(name, root.pojoNode(value));
-				}
-				else {
-					root.put(name, value.toString());
-				}
+			} else {
+				root.putPOJO(name, toNode(value));
 			}
 		}
 		return root;
+	}
+
+	private ArrayNode toArrayNode(List<?> source) {
+		ArrayNode array = mapper.createArrayNode();
+		for (Object value : source) {
+			if (value != null) {
+				array.add(toNode(value));
+			}
+		}
+		return array;
+	}
+
+	private BaseJsonNode toNode(Object value) {
+		if (value != null) {
+			if (value instanceof Tuple) {
+				return toObjectNode((Tuple) value);
+			}
+			else if (value instanceof List<?>) {
+				return toArrayNode((List<?>) value);
+			}
+			else if (!value.getClass().isPrimitive()) {
+				return mapper.getNodeFactory().pojoNode(value);
+			}
+			else {
+				return mapper.valueToTree(value);
+			}
+		}
+		return null;
 	}
 
 }
