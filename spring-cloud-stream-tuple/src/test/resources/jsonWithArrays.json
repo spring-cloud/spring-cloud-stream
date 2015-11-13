@@ -1,0 +1,53 @@
+{
+  "body" : [ {
+    "dataType" : "har",
+    "har" : {
+      "log" : {
+        "browser" : {
+          "name" : "Google Chrome",
+          "version" : "44.0.2403.155"
+        },
+        "creator" : {
+          "name" : "My extension",
+          "version" : "0.23.6"
+        },
+        "pages" : [ {
+          "_requestTimings" : {
+            "blocked" : -1,
+            "connect" : -1,
+            "dns" : -1,
+            "receive" : 11,
+            "send" : -1,
+            "ssl" : -1,
+            "wait" : null
+          },
+          "_requestUrl" : "https://google.com"
+        }, {
+          "_requestTimings" : {
+            "blocked" : -1,
+            "connect" : -1,
+            "dns" : -1,
+            "receive" : 11,
+            "send" : -1,
+            "ssl" : -1,
+            "wait" : 244
+          },
+          "_requestUrl" : "https://google.com"
+        } ],
+        "version" : "1.2"
+      }
+    },
+    "testId" : 1
+  } ],
+  "bodyType" : "models.MultiMessage",
+  "headers" : {
+    "appInstance" : "localhost/127.0.0.1:8080",
+    "clientIp" : "0:0:0:0:0:0:0:1",
+    "host" : "localhost:8080",
+    "requestId" : "27acf948-33ff-491c-8be7-1beb4b8c95d9",
+    "requestMethod" : "POST",
+    "requestUrl" : "http://localhost:8080/har",
+    "timestamp" : 1445914510549,
+    "userPrincipal" : "235"
+  }
+}
