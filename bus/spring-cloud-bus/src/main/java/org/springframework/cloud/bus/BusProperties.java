@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.bus;
 
+import java.util.UUID;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import lombok.Data;
@@ -31,6 +33,7 @@ public class BusProperties {
 	private Env env = new Env();
 	private Refresh refresh = new Refresh();
 	private String destination = "topic:springCloudBus";
+	private String group = UUID.randomUUID().toString();
 
 	private boolean enabled = true;
 
