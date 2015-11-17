@@ -84,9 +84,6 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		if (output.getDestination() == null) {
 			output.setDestination(this.bus.getDestination());
 		}
-		if (output.getGroup() == null) {
-			output.setGroup(this.bus.getGroup());
-		}
 	}
 
 	@Override
