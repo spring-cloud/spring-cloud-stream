@@ -31,8 +31,23 @@
 			<artifactId>spring-messaging</artifactId>
 		</dependency>
 		<dependency>
+<<<<<<< 4e5277c0d0d46c2b9644b68a8e6188a12df5d78a
 			<groupId>org.springframework.integration</groupId>
 			<artifactId>spring-integration-core</artifactId>
+=======
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-tuple</artifactId>
+			<version>1.0.0.BUILD-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-metadata</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-binder-local</artifactId>
+			<optional>true</optional>
+>>>>>>> Introduce synthetic configuration properties via @ImplicitExpression
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -46,6 +61,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-implicit-expression-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
