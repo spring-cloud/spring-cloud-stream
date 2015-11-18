@@ -48,6 +48,7 @@ public class ClassloaderUtils {
 		if (systemClassLoader instanceof URLClassLoader) {
 			// add the URLs of the application classloader to the created classloader
 			// to compensate for LaunchedURLClassLoader not delegating to parent to retrieve resources
+			@SuppressWarnings("resource")
 			URLClassLoader systemUrlClassLoader = (URLClassLoader) systemClassLoader;
 			URL[] mergedUrls = new URL[urls.length + systemUrlClassLoader.getURLs().length];
 			if (log.isDebugEnabled()) {
