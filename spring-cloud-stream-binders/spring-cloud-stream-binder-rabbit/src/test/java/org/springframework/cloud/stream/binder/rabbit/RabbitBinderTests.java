@@ -27,6 +27,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,6 +50,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
@@ -56,12 +58,14 @@ import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
+import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -627,6 +631,98 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 		binder.unbindProducers("batching.0");
 		binder.unbindConsumers("batching.0");
+	}
+
+	/*
+	 * Test late binding due to broker down; queues with and without DLQs, and
+	 * partitioned queues.
+	 */
+	@Test
+	public void testLateBinding() throws Exception {
+		RabbitTestSupport.RabbitProxy proxy = new RabbitTestSupport.RabbitProxy();
+		CachingConnectionFactory cf = new CachingConnectionFactory("localhost", proxy.getPort());
+		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(cf);
+		AbstractApplicationContext applicationContext = mock(AbstractApplicationContext.class);
+		when(applicationContext.getBeanFactory()).thenReturn(mock(ConfigurableListableBeanFactory.class));
+		binder.setApplicationContext(applicationContext);
+		binder.setDefaultAutoBindDLQ(true);
+		binder.afterPropertiesSet();
+		Properties properties = new Properties();
+		properties.put("prefix", "latebinder.");
+
+		MessageChannel moduleOutputChannel = new DirectChannel();
+		binder.bindProducer("late.0", moduleOutputChannel, properties);
+
+		QueueChannel moduleInputChannel = new QueueChannel();
+		binder.bindConsumer("late.0", moduleInputChannel, properties);
+
+		properties.put("partitionKeyExpression", "payload.equals('0') ? 0 : 1");
+		properties.put("partitionSelectorExpression", "hashCode()");
+		properties.put("nextModuleCount", "2");
+
+		MessageChannel partOutputChannel = new DirectChannel();
+		binder.bindProducer("partlate.0", partOutputChannel, properties);
+
+		QueueChannel partInputChannel0 = new QueueChannel();
+		QueueChannel partInputChannel1 = new QueueChannel();
+		properties.clear();
+		properties.put("prefix", "latebinder.");
+		properties.put("partitionIndex", "0");
+		binder.bindConsumer("partlate.0", partInputChannel0, properties);
+		properties.put("partitionIndex", "1");
+		binder.bindConsumer("partlate.0", partInputChannel1, properties);
+
+		binder.setDefaultAutoBindDLQ(false);
+		properties.clear();
+		properties.put("prefix", "latebinder.");
+		MessageChannel noDLQOutputChannel = new DirectChannel();
+		binder.bindProducer("lateNoDLQ.0", noDLQOutputChannel, properties);
+
+		QueueChannel noDLQInputChannel = new QueueChannel();
+		binder.bindConsumer("lateNoDLQ.0", noDLQInputChannel, properties);
+
+		proxy.start();
+
+		moduleOutputChannel.send(new GenericMessage<>("foo"));
+		Message<?> message = moduleInputChannel.receive(10000);
+		assertNotNull(message);
+		assertEquals("foo", message.getPayload());
+
+		noDLQOutputChannel.send(new GenericMessage<>("bar"));
+		message = noDLQInputChannel.receive(10000);
+		assertNotNull(message);
+		assertEquals("bar", message.getPayload());
+
+		partOutputChannel.send(new GenericMessage<>("0"));
+		partOutputChannel.send(new GenericMessage<>("1"));
+		message = partInputChannel0.receive(10000);
+		assertNotNull(message);
+		assertEquals("0", message.getPayload());
+		message = partInputChannel1.receive(10000);
+		assertNotNull(message);
+		assertEquals("1", message.getPayload());
+
+		binder.unbindProducer("late.0", moduleOutputChannel);
+		binder.unbindConsumer("late.0", moduleInputChannel);
+		binder.unbindProducer("partlate.0", moduleOutputChannel);
+		binder.unbindConsumers("partlate.0");
+
+		proxy.stop();
+		cf.destroy();
+
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		admin.deleteQueue("latebinder.late.0");
+		admin.deleteQueue("latebinder.lateNoDLQ.0");
+		admin.deleteQueue("latebinder.partlate.0-0");
+		admin.deleteQueue("latebinder.partlate.0-1");
+		admin.deleteQueue("latebinder.late.0.dlq");
+		admin.deleteQueue("latebinder.partlate.0-0.dlq");
+		admin.deleteQueue("latebinder.partlate.0-1.dlq");
+		admin.deleteExchange("latebinder.late.0");
+		admin.deleteExchange("latebinder.lateNoDLQ.0");
+		admin.deleteExchange("latebinder.partlate.0");
+		admin.deleteExchange("latebinder.DLX");
+		this.rabbitAvailableRule.getResource().destroy();
 	}
 
 	private SimpleMessageListenerContainer verifyContainer(AbstractEndpoint endpoint) {
