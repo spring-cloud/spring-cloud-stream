@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.loader.Launcher;
 import org.springframework.boot.loader.archive.Archive;
+import org.springframework.cloud.stream.module.utils.ClassloaderUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -94,7 +95,7 @@ public class MultiArchiveLauncher extends Launcher {
 
 	@Override
 	protected ClassLoader createClassLoader(URL[] urls) throws Exception {
-		return new URLClassLoader(urls);
+		return ClassloaderUtils.createModuleClassloader(urls);
 	}
 
 }
