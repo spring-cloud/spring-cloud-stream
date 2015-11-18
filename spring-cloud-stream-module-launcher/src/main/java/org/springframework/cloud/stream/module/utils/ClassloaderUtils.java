@@ -19,12 +19,18 @@ package org.springframework.cloud.stream.module.utils;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.boot.loader.LaunchedURLClassLoader;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Marius Bogoevici
  */
 public class ClassloaderUtils {
+
+	private static final Log log = LogFactory.getLog(ClassloaderUtils.class);
 
 	/**
 	 * Creates a ClassLoader for the launched modules by merging the URLs supplied as argument with the URLs that
@@ -36,16 +42,27 @@ public class ClassloaderUtils {
 	 */
 	public static ClassLoader createModuleClassloader(URL[] urls) {
 		ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+		if (log.isDebugEnabled()) {
+			log.debug("systemClassLoader is " + systemClassLoader);
+		}
 		if (systemClassLoader instanceof URLClassLoader) {
 			// add the URLs of the application classloader to the created classloader
 			// to compensate for LaunchedURLClassLoader not delegating to parent to retrieve resources
-			@SuppressWarnings("resource")
 			URLClassLoader systemUrlClassLoader = (URLClassLoader) systemClassLoader;
 			URL[] mergedUrls = new URL[urls.length + systemUrlClassLoader.getURLs().length];
+			if (log.isDebugEnabled()) {
+				log.debug("Original URLs: " +
+						StringUtils.arrayToCommaDelimitedString(urls));
+				log.debug("Java Classpath URLs: " +
+						StringUtils.arrayToCommaDelimitedString(systemUrlClassLoader.getURLs()));
+			}
 			System.arraycopy(urls, 0, mergedUrls, 0, urls.length);
 			System.arraycopy(systemUrlClassLoader.getURLs(), 0, mergedUrls, urls.length,
 					systemUrlClassLoader.getURLs().length);
 			// add the extension classloader as parent to the created context, if accessible
+			if (log.isDebugEnabled()) {
+				log.debug("Classloader URLs: " + StringUtils.arrayToCommaDelimitedString(mergedUrls));
+			}
 			return new LaunchedURLClassLoader(mergedUrls, systemUrlClassLoader.getParent());
 		}
 		return new LaunchedURLClassLoader(urls, systemClassLoader);
