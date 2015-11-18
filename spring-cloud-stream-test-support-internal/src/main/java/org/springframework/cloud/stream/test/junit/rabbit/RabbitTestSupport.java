@@ -16,8 +16,15 @@
 
 package org.springframework.cloud.stream.test.junit.rabbit;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
 
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -56,6 +63,104 @@ public class RabbitTestSupport extends AbstractExternalResourceTestSupport<Cachi
 	@Override
 	protected void cleanupResource() throws Exception {
 		resource.destroy();
+	}
+
+	/**
+	 * Test class to allow testing deferred entity declarations when RabbitMQ is down.
+	 *
+	 */
+	public static class RabbitProxy {
+
+		private final int port;
+
+		private final ExecutorService serverExec = Executors.newSingleThreadExecutor();
+
+		private final ExecutorService socketExec = Executors.newCachedThreadPool();
+
+		private volatile ServerSocket serverSocket;
+
+		public RabbitProxy() throws IOException {
+			ServerSocket serverSocket = ServerSocketFactory.getDefault().createServerSocket(0);
+			this.port = serverSocket.getLocalPort();
+			serverSocket.close();
+		}
+
+		public int getPort() {
+			return this.port;
+		}
+
+		public void start() throws IOException {
+			this.serverSocket = ServerSocketFactory.getDefault().createServerSocket(this.port);
+			this.serverExec.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						while (true) {
+							final Socket socket = serverSocket.accept();
+							socketExec.execute(new Runnable() {
+
+								@Override
+								public void run() {
+									try {
+										final Socket rabbitSocket = SocketFactory.getDefault().createSocket("localhost",
+												5672);
+										socketExec.execute(new Runnable() {
+
+											@Override
+											public void run() {
+												try {
+													InputStream is = rabbitSocket.getInputStream();
+													OutputStream os = socket.getOutputStream();
+													int c;
+													while ((c = is.read()) >= 0) {
+														os.write(c);
+													}
+												}
+												catch (IOException e) {
+													try {
+														socket.close();
+														rabbitSocket.close();
+													}
+													catch (IOException e1) {
+													}
+												}
+											}
+										});
+										InputStream is = socket.getInputStream();
+										OutputStream os = rabbitSocket.getOutputStream();
+										int c;
+										while ((c = is.read()) >= 0) {
+											os.write(c);
+										}
+									}
+									catch (IOException e) {
+										try {
+											socket.close();
+										}
+										catch (IOException e1) {
+										}
+									}
+								}
+
+							});
+						}
+					}
+					catch (IOException e) {
+						try {
+							serverSocket.close();
+						}
+						catch (IOException e1) {
+						}
+					}
+				}
+			});
+		}
+
+		public void stop() throws IOException {
+			this.serverSocket.close();
+		}
+
 	}
 
 }

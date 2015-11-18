@@ -30,6 +30,7 @@ import org.aopalliance.aop.Advice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -42,7 +43,6 @@ import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
-import org.springframework.amqp.rabbit.core.ChannelCallback;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.core.support.BatchingStrategy;
@@ -309,6 +309,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 		this.autoDeclareContext.refresh();
 		this.rabbitAdmin.setApplicationContext(this.autoDeclareContext);
+		this.rabbitAdmin.setIgnoreDeclarationExceptions(true);
 		this.rabbitAdmin.afterPropertiesSet();
 	}
 
@@ -447,17 +448,19 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
 		String queueName = applyPrefix(accessor.getPrefix(this.defaultPrefix), name);
 		TopicExchange exchange = new TopicExchange(queueName);
-		declareExchangeIfNotPresent(exchange);
+		declareExchange(queueName, exchange);
 		int partitionIndex = accessor.getPartitionIndex();
+		String dlqNameRoot = name;
 		if (partitionIndex >= 0) {
-			queueName += "-" + partitionIndex;
+			String partitionSuffix = "-" + partitionIndex;
+			queueName += partitionSuffix;
+			dlqNameRoot += partitionSuffix;
 		}
-		Map<String, Object> args = queueArgs(accessor, queueName);
-		Queue queue = new Queue(queueName, true, false, false, args);
-		declareQueueIfNotPresent(queue);
-		autoBindDLQ(name, accessor);
+		Queue queue = new Queue(queueName, true, false, false, queueArgs(accessor, queueName));
+		declareQueue(queueName, queue);
+		autoBindDLQ(dlqNameRoot, accessor);
 		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(queueName);
-		this.rabbitAdmin.declareBinding(binding);
+		declareBinding(queueName, binding);
 		doRegisterConsumer(name, moduleInputChannel, queue, accessor, false);
 		bindExistingProducerDirectlyIfPossible(name, moduleInputChannel);
 	}
@@ -473,28 +476,18 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		validateConsumerProperties(name, properties, SUPPORTED_PUBSUB_CONSUMER_PROPERTIES);
 		String prefix = accessor.getPrefix(this.defaultPrefix);
 		TopicExchange exchange = new TopicExchange(applyPrefix(prefix, exchangeName));
-		declareExchangeIfNotPresent(exchange);
+		declareExchange(exchange.getName(), exchange);
 		Queue queue;
 		boolean durable = accessor.isDurable(this.defaultDurableSubscription);
 		String queueName = applyPrefix(prefix, name);
 		if (durable) {
-			Map<String, Object> args = queueArgs(accessor, queueName);
-			queue = new Queue(queueName, true, false, false, args);
+			queue = new Queue(queueName, true, false, false, queueArgs(accessor, queueName));
 		}
 		else {
 			queue = new Queue(queueName, false, false, true);
 		}
-		declareQueueIfNotPresent(queue);
-		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with("#");
-		this.rabbitAdmin.declareBinding(binding);
-		// register with context so they will be redeclared after a connection failure if auto-delete
-		if (!durable && !this.autoDeclareContext.containsBean(name)) {
-			this.autoDeclareContext.getBeanFactory().registerSingleton(name, queue);
-		}
-		String bindingBeanName = exchange.getName() + "." + queue.getName() + ".binding";
-		if (!durable && !this.autoDeclareContext.containsBean(bindingBeanName)) {
-			this.autoDeclareContext.getBeanFactory().registerSingleton(bindingBeanName, binding);
-		}
+		declareQueue(queueName, queue);
+		declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with("#"));
 		doRegisterConsumer(name, moduleInputChannel, queue, accessor, true);
 		if (durable) {
 			autoBindDLQ(name, accessor);
@@ -586,7 +579,6 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			RepublishMessageRecoverer republishMessageRecoverer = new RepublishMessageRecoverer(errorTemplate,
 					deadLetterExchangeName(prefix),
 					applyPrefix(prefix, name));
-			// TODO: Add container id to republished message headers? (Needs AMQP-489).
 			return republishMessageRecoverer;
 		}
 		else {
@@ -621,26 +613,27 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		String partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
 		Expression partitionKeyExpression = properties.getPartitionKeyExpression();
 		TopicExchange exchange = new TopicExchange(queueName);
-		declareExchangeIfNotPresent(exchange);
+		declareExchange(queueName, exchange);
 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(rabbitTemplate);
 		endpoint.setExchangeName(exchange.getName());
 		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
-			Queue queue = new Queue(queueName);
-			declareQueueIfNotPresent(queue);
+			Queue queue = new Queue(queueName, true, false, false, queueArgs(properties, queueName));
+			declareQueue(name, queue);
+			autoBindDLQ(name, properties);
 			endpoint.setRoutingKey(queueName);
 			org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(queueName);
-			this.rabbitAdmin.declareBinding(binding);
+			declareBinding(queueName, binding);
 		}
 		else {
 			endpoint.setExpressionRoutingKey(EXPRESSION_PARSER.parseExpression(buildPartitionRoutingExpression
 					(queueName)));
 			// if the stream is partitioned, create one queue for each target partition
 			for (int i = 0; i < properties.getNextModuleCount(); i++) {
-				Queue queue = new Queue(queueName + "-" + i);
-				this.rabbitAdmin.declareQueue(queue);
-				org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange)
-						.with(queue.getName());
-				this.rabbitAdmin.declareBinding(binding);
+				String partitionSuffix = "-" + i;
+				Queue queue = new Queue(queueName + partitionSuffix, true, false, false, queueArgs(properties, queueName));
+				declareQueue(queue.getName(), queue);
+				autoBindDLQ(name + partitionSuffix, properties);
+				declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(queue.getName()));
 			}
 		}
 		configureOutboundHandler(endpoint, properties);
@@ -663,7 +656,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		validateProducerProperties(name, properties, SUPPORTED_PUBSUB_PRODUCER_PROPERTIES);
 		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
 		String exchangeName = applyPrefix(accessor.getPrefix(this.defaultPrefix), name);
-		declareExchangeIfNotPresent(new TopicExchange(exchangeName));
+		TopicExchange exchange = new TopicExchange(exchangeName);
+		declareExchange(exchangeName, exchange);
 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(determineRabbitTemplate(accessor));
 		endpoint.setExchangeName(exchangeName);
 		endpoint.setRoutingKey(name);
@@ -731,11 +725,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 				+ this.getIdGenerator().generateId();
 		this.doRegisterProducer(name, requests, queue, replyQueueName, accessor);
 		Queue replyQueue = new Queue(replyQueueName, false, false, true); // auto-delete
-		declareQueueIfNotPresent(replyQueue);
-		// register with context so it will be redeclared after a connection failure
-		if (!this.autoDeclareContext.containsBean(replyQueueName)) {
-			this.autoDeclareContext.getBeanFactory().registerSingleton(replyQueueName, replyQueue);
-		}
+		declareQueue(replyQueueName, replyQueue);
 		this.doRegisterConsumer(name, replies, replyQueue, accessor, false);
 	}
 
@@ -748,7 +738,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		validateConsumerProperties(name, properties, SUPPORTED_REPLYING_CONSUMER_PROPERTIES);
 		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
 		Queue requestQueue = new Queue(applyPrefix(accessor.getPrefix(this.defaultPrefix), applyRequests(name)));
-		declareQueueIfNotPresent(requestQueue);
+		declareQueue(requestQueue.getName(), requestQueue);
 		this.doRegisterConsumer(name, requests, requestQueue, accessor, false);
 
 		AmqpOutboundEndpoint replyQueue = new AmqpOutboundEndpoint(this.rabbitTemplate);
@@ -756,37 +746,6 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 				"']"));
 		configureOutboundHandler(replyQueue, accessor);
 		doRegisterProducer(name, replies, replyQueue, accessor);
-	}
-
-	/**
-	 * Try passive declaration first, in case the user has pre-configured the queue with incompatible arguments.
-	 * @param queue The queue.
-	 */
-	private void declareQueueIfNotPresent(Queue queue) {
-		if (this.rabbitAdmin.getQueueProperties(queue.getName()) == null) {
-			this.rabbitAdmin.declareQueue(queue);
-		}
-	}
-
-	/**
-	 * Try passive declaration first, in case the user has pre-configured the exchange with incompatible arguments.
-	 * @param exchange
-	 */
-	private void declareExchangeIfNotPresent(final Exchange exchange) {
-		this.rabbitTemplate.execute(new ChannelCallback<Void>() {
-
-			@Override
-			public Void doInRabbit(Channel channel) throws Exception {
-				try {
-					channel.exchangeDeclarePassive(exchange.getName());
-				}
-				catch (IOException e) {
-					RabbitMessageChannelBinder.this.rabbitAdmin.declareExchange(exchange);
-				}
-				return null;
-			}
-
-		});
 	}
 
 	/**
@@ -805,12 +764,48 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			String queueName = applyPrefix(prefix, name);
 			String dlqName = constructDLQName(queueName);
 			Queue dlq = new Queue(dlqName);
-			declareQueueIfNotPresent(dlq);
+			declareQueue(dlqName, dlq);
 			final String dlxName = deadLetterExchangeName(prefix);
 			final DirectExchange dlx = new DirectExchange(dlxName);
-			declareExchangeIfNotPresent(dlx);
-			this.rabbitAdmin.declareBinding(BindingBuilder.bind(dlq).to(dlx).with(queueName));
+			declareExchange(dlxName, dlx);
+			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(queueName));
 		}
+	}
+
+	public void declareQueue(String beanName, Queue queue) {
+		try {
+			this.rabbitAdmin.declareQueue(queue);
+		}
+		catch (AmqpConnectException e) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Declaration of queue: " + queue.getName() + " deferred - connection not available");
+			}
+		}
+		addToAutoDeclareContext(beanName, queue);
+	}
+
+	public void declareExchange(final String rootName, final Exchange exchange) {
+		try {
+			this.rabbitAdmin.declareExchange(exchange);
+		}
+		catch (AmqpConnectException e) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Declaration of exchange: " + exchange.getName() + " deferred - connection not available");
+			}
+		}
+		addToAutoDeclareContext(rootName + ".exchange", exchange);
+	}
+
+	public void declareBinding(String rootName, org.springframework.amqp.core.Binding binding) {
+		try {
+			this.rabbitAdmin.declareBinding(binding);
+		}
+		catch (AmqpConnectException e) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Declaration of binding: " + rootName + ".binding deferred - connection not available");
+			}
+		}
+		addToAutoDeclareContext(rootName + ".binding", binding);
 	}
 
 	private String deadLetterExchangeName(String prefix) {
@@ -835,11 +830,21 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		cleanAutoDeclareContext(BinderUtils.groupedName(name, group));
 	}
 
+	private void addToAutoDeclareContext(String name, Object bean) {
+		synchronized (this.autoDeclareContext) {
+			if (!this.autoDeclareContext.containsBean(name)) {
+				this.autoDeclareContext.getBeanFactory().registerSingleton(name, bean);
+			}
+		}
+	}
+
 	private void cleanAutoDeclareContext(String name) {
-		if (this.autoDeclareContext.containsBean(name)) {
-			ConfigurableListableBeanFactory beanFactory = this.autoDeclareContext.getBeanFactory();
-			if (beanFactory instanceof DefaultListableBeanFactory) {
-				((DefaultListableBeanFactory) beanFactory).destroySingleton(name);
+		synchronized(this.autoDeclareContext) {
+			if (this.autoDeclareContext.containsBean(name)) {
+				ConfigurableListableBeanFactory beanFactory = this.autoDeclareContext.getBeanFactory();
+				if (beanFactory instanceof DefaultListableBeanFactory) {
+					((DefaultListableBeanFactory) beanFactory).destroySingleton(name);
+				}
 			}
 		}
 	}
