@@ -64,10 +64,16 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
-	@Value("${" + ChannelFactory.CHANNEL_NAMESPACE_PROPERTY_NAME + ":}")
+	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
+
+	private static final String POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".pollableBridge.interval";
+
+	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
+
+	@Value("${" + CHANNEL_NAMESPACE_PROPERTY_NAME + ":}")
 	private String channelNamespace;
 
-	@Value("${" + ChannelFactory.POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME + ":1000}")
+	@Value("${" + POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME + ":1000}")
 	private int pollableBridgeDefaultFrequency;
 
 	@Autowired

@@ -28,7 +28,7 @@ import org.springframework.messaging.PollableChannel;
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  */
-public class ChannelFactoryImpl implements ChannelFactory {
+public class DefaultChannelFactory implements ChannelFactory {
 
 	@Autowired
 	MessageConverterConfigurer messageConverterConfigurer;

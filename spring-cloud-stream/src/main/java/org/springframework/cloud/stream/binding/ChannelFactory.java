@@ -25,11 +25,5 @@ import org.springframework.messaging.MessageChannel;
  */
 public interface ChannelFactory {
 
-	String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
-
-	String POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".pollableBridge.interval";
-
-	String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
-
 	MessageChannel createChannel(String name, Class<?> channelType) throws Exception;
 }
