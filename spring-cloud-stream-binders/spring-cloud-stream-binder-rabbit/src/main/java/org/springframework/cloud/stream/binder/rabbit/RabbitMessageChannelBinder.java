@@ -490,7 +490,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with("#"));
 		doRegisterConsumer(name, moduleInputChannel, queue, accessor, true);
 		if (durable) {
-			autoBindDLQ(queueName, accessor);
+			autoBindDLQ(name, accessor);
 		}
 	}
 

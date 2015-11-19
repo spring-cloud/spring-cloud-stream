@@ -533,6 +533,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
 		Map<String, Object> args = new HashMap<String, Object>();
 		args.put("x-dead-letter-exchange", TEST_PREFIX + "DLX");
+		args.put("x-dead-letter-routing-key", TEST_PREFIX + "dlqpubtest");
 		Queue queue = new Queue(TEST_PREFIX + "dlqpubtest", true, false, false, args);
 		admin.declareQueue(queue);
 
@@ -681,6 +682,14 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		QueueChannel noDLQInputChannel = new QueueChannel();
 		binder.bindConsumer("lateNoDLQ.0", noDLQInputChannel, properties);
 
+		MessageChannel pubSubOutputChannel = new DirectChannel();
+		binder.bindPubSubProducer("latePubSub", pubSubOutputChannel, properties);
+		QueueChannel pubSubInputChannel = new QueueChannel();
+		binder.bindPubSubConsumer("latePubSub", pubSubInputChannel, "lategroup", properties);
+		QueueChannel durablePubSubInputChannel = new QueueChannel();
+		properties.setProperty("durableSubscription", "true");
+		binder.bindPubSubConsumer("latePubSub", durablePubSubInputChannel, "lateDurableGroup", properties);
+
 		proxy.start();
 
 		moduleOutputChannel.send(new GenericMessage<>("foo"));
@@ -692,6 +701,14 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		message = noDLQInputChannel.receive(10000);
 		assertNotNull(message);
 		assertEquals("bar", message.getPayload());
+
+		pubSubOutputChannel.send(new GenericMessage<>("baz"));
+		message = pubSubInputChannel.receive(10000);
+		assertNotNull(message);
+		assertEquals("baz", message.getPayload());
+		message = durablePubSubInputChannel.receive(10000);
+		assertNotNull(message);
+		assertEquals("baz", message.getPayload());
 
 		partOutputChannel.send(new GenericMessage<>("0"));
 		partOutputChannel.send(new GenericMessage<>("1"));
@@ -718,9 +735,11 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		admin.deleteQueue("latebinder.late.0.dlq");
 		admin.deleteQueue("latebinder.partlate.0-0.dlq");
 		admin.deleteQueue("latebinder.partlate.0-1.dlq");
+		admin.deleteQueue("latebinder.lateDurableGroup.latePubSub");
 		admin.deleteExchange("latebinder.late.0");
 		admin.deleteExchange("latebinder.lateNoDLQ.0");
 		admin.deleteExchange("latebinder.partlate.0");
+		admin.deleteExchange("latebinder.latePubSub");
 		admin.deleteExchange("latebinder.DLX");
 		this.rabbitAvailableRule.getResource().destroy();
 	}
