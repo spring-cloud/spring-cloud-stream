@@ -28,8 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.BindingCleaner;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
-import org.springframework.cloud.stream.binder.RabbitAdminException;
-import org.springframework.cloud.stream.binder.RabbitManagementUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 

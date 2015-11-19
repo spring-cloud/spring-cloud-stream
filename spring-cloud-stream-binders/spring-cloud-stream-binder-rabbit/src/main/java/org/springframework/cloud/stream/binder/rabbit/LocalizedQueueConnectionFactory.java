@@ -35,7 +35,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.cloud.stream.binder.RabbitManagementUtils;
 
 
 /**

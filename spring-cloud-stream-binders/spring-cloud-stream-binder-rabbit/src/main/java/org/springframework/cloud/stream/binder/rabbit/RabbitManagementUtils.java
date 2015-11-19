@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder;
+package org.springframework.cloud.stream.binder.rabbit;
 
 import java.net.URI;
 import java.net.URISyntaxException;
