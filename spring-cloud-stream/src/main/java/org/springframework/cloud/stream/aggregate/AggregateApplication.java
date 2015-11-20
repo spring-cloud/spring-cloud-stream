@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.aggregate;
 
+import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -105,7 +106,7 @@ public class AggregateApplication {
 			Class<?> module) {
 		return new SpringApplicationBuilder(module)
 				.web(false)
-				.showBanner(false)
+				.bannerMode(Mode.OFF)
 				.properties(CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
 				.registerShutdownHook(false)
 				.parent(applicationContext);

@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.springframework.beans.BeansException;
+import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -183,7 +185,7 @@ public class AggregateBuilder implements ApplicationContextAware {
 	private ChildContextBuilder childContext(Class<?> type) {
 		return new ChildContextBuilder(new SpringApplicationBuilder(type,
 				SeedConfiguration.class).parent(AggregateBuilder.this.parent)
-				.showBanner(false).web(false)
+				.bannerMode(Mode.OFF).web(false)
 				.initializers(new BeanPostProcessorInitializer()));
 	}
 
