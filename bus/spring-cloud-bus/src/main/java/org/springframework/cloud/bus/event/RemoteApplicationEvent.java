@@ -1,5 +1,7 @@
 package org.springframework.cloud.bus.event;
 
+import java.util.UUID;
+
 import org.springframework.context.ApplicationEvent;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,12 +22,11 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 	private static final Object TRANSIENT_SOURCE = new Object();
 	private final String originService;
 	private final String destinationService;
+	private final String id;
 
 	protected RemoteApplicationEvent() {
 		// for serialization libs like jackson
-		super(TRANSIENT_SOURCE);
-		this.originService = null;
-		this.destinationService = null;
+		this(TRANSIENT_SOURCE, null, null);
 	}
 
 	protected RemoteApplicationEvent(Object source, String originService,
@@ -40,6 +41,7 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 			destinationService = destinationService + ":**";
 		}
 		this.destinationService = destinationService;
+		this.id = UUID.randomUUID().toString();
 	}
 
 	protected RemoteApplicationEvent(Object source, String originService) {
