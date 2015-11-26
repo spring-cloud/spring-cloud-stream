@@ -4,6 +4,7 @@ import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.Endpoint;
+import org.springframework.boot.actuate.trace.TraceRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -12,9 +13,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.bus.endpoint.BusEndpoint;
 import org.springframework.cloud.bus.endpoint.EnvironmentBusEndpoint;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
+import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.EnvironmentChangeListener;
 import org.springframework.cloud.bus.event.RefreshListener;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
+import org.springframework.cloud.bus.event.SentApplicationEvent;
+import org.springframework.cloud.bus.event.TraceListener;
 import org.springframework.cloud.context.environment.EnvironmentManager;
 import org.springframework.cloud.context.scope.refresh.RefreshScope;
 import org.springframework.cloud.endpoint.RefreshEndpoint;
@@ -63,24 +67,28 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	@PostConstruct
 	public void init() {
-		BindingProperties inputBinding = this.bindings.getBindings().get(SpringCloudBusClient.INPUT);
+		BindingProperties inputBinding = this.bindings.getBindings()
+				.get(SpringCloudBusClient.INPUT);
 		if (inputBinding == null) {
 			this.bindings.getBindings().put(SpringCloudBusClient.INPUT,
 					new BindingProperties());
 		}
-		BindingProperties input = this.bindings.getBindings().get(SpringCloudBusClient.INPUT);
+		BindingProperties input = this.bindings.getBindings()
+				.get(SpringCloudBusClient.INPUT);
 		if (input.getDestination() == null) {
 			input.setDestination(this.bus.getDestination());
 		}
 		if (input.getGroup() == null) {
 			input.setGroup(this.bus.getGroup());
 		}
-		BindingProperties outputBinding = this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
+		BindingProperties outputBinding = this.bindings.getBindings()
+				.get(SpringCloudBusClient.OUTPUT);
 		if (outputBinding == null) {
 			this.bindings.getBindings().put(SpringCloudBusClient.OUTPUT,
 					new BindingProperties());
 		}
-		BindingProperties output = this.bindings.getBindings().get(SpringCloudBusClient.OUTPUT);
+		BindingProperties output = this.bindings.getBindings()
+				.get(SpringCloudBusClient.OUTPUT);
 		if (output.getDestination() == null) {
 			output.setDestination(this.bus.getDestination());
 		}
@@ -94,16 +102,43 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	@EventListener(classes = RemoteApplicationEvent.class)
 	public void acceptLocal(RemoteApplicationEvent event) {
-		if (this.serviceMatcher.isFromSelf(event)) {
+		if (this.serviceMatcher.isFromSelf(event)
+				&& !(event instanceof AckRemoteApplicationEvent)) {
 			this.cloudBusOutboundChannel.send(MessageBuilder.withPayload(event).build());
 		}
 	}
 
 	@ServiceActivator(inputChannel = SpringCloudBusClient.INPUT)
 	public void acceptRemote(RemoteApplicationEvent event) {
-		if (!this.serviceMatcher.isFromSelf(event) && this.serviceMatcher.isForSelf(event)
+		if (event instanceof AckRemoteApplicationEvent) {
+			if (this.bus.getTrace().isEnabled() && !this.serviceMatcher.isFromSelf(event)
+					&& this.applicationEventPublisher != null) {
+				this.applicationEventPublisher.publishEvent(event);
+			}
+			// If it's an ACK we are finished processing at this point
+			return;
+		}
+		if (this.serviceMatcher.isForSelf(event)
 				&& this.applicationEventPublisher != null) {
-			this.applicationEventPublisher.publishEvent(event);
+			if (!this.serviceMatcher.isFromSelf(event)) {
+				this.applicationEventPublisher.publishEvent(event);
+			}
+			if (this.bus.getAck().isEnabled()) {
+				AckRemoteApplicationEvent ack = new AckRemoteApplicationEvent(this,
+						this.serviceMatcher.getServiceId(),
+						this.bus.getAck().getDestinationService(),
+						event.getDestinationService(), event.getId(), event.getClass());
+				this.cloudBusOutboundChannel
+						.send(MessageBuilder.withPayload(ack).build());
+				this.applicationEventPublisher.publishEvent(ack);
+			}
+		}
+		if (this.bus.getTrace().isEnabled() && this.applicationEventPublisher != null) {
+			// We are set to register sent events so publish it for local consumption,
+			// irrespective of the origin
+			this.applicationEventPublisher.publishEvent(new SentApplicationEvent(this,
+					event.getOriginService(), event.getDestinationService(),
+					event.getId(), event.getClass()));
 		}
 	}
 
@@ -155,6 +190,20 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 					BusEndpoint busEndpoint) {
 				return new RefreshBusEndpoint(context, context.getId(), busEndpoint);
 			}
+		}
+
+	}
+
+	@Configuration
+	@ConditionalOnClass({ Endpoint.class })
+	@ConditionalOnBean(TraceRepository.class)
+	@ConditionalOnProperty(value = "spring.cloud.bus.trace.enabled", matchIfMissing = false)
+	protected static class BusAckTraceConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		public TraceListener ackTraceListener(TraceRepository repository) {
+			return new TraceListener(repository);
 		}
 
 	}

@@ -1,7 +1,11 @@
 package org.springframework.cloud.bus;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
@@ -10,13 +14,15 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
+import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binder.local.config.LocalBinderAutoConfiguration;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.event.EventListener;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -42,7 +48,8 @@ public class BusAutoConfigurationTests {
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "bar", "bar")));
-		assertNull(this.context.getBean(InboundMessageHandlerConfiguration.class).event);
+		assertNull(
+				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
 	}
 
 	@Test
@@ -52,7 +59,8 @@ public class BusAutoConfigurationTests {
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
-		assertNull(this.context.getBean(InboundMessageHandlerConfiguration.class).event);
+		assertNull(
+				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
 	}
 
 	@Test
@@ -63,7 +71,65 @@ public class BusAutoConfigurationTests {
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
 		assertNotNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).event);
+				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
+	}
+
+	@Test
+	public void inboundNotFromSelfWithAck() throws Exception {
+		this.context = SpringApplication
+				.run(new Object[] { InboundMessageHandlerConfiguration.class,
+						OutboundMessageHandlerConfiguration.class,
+						SentMessageConfiguration.class }, new String[] {});
+		this.context.setId("bar");
+		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
+				.send(new GenericMessage<>(
+						new RefreshRemoteApplicationEvent(this, "foo", null)));
+		RefreshRemoteApplicationEvent refresh = this.context
+				.getBean(InboundMessageHandlerConfiguration.class).refresh;
+		assertNotNull(refresh);
+		OutboundMessageHandlerConfiguration outbound = this.context
+				.getBean(OutboundMessageHandlerConfiguration.class);
+		outbound.latch.await(2000L, TimeUnit.MILLISECONDS);
+		AckRemoteApplicationEvent message = (AckRemoteApplicationEvent) outbound.message
+				.getPayload();
+		assertEquals(refresh.getId(), message.getAckId());
+	}
+
+	@Test
+	public void inboundNotFromSelfWithTrace() throws Exception {
+		this.context = SpringApplication.run(
+				new Object[] { InboundMessageHandlerConfiguration.class,
+						OutboundMessageHandlerConfiguration.class,
+						SentMessageConfiguration.class },
+				new String[] { "--spring.cloud.bus.trace.enabled=true" });
+		this.context.setId("bar");
+		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
+				.send(new GenericMessage<>(
+						new RefreshRemoteApplicationEvent(this, "foo", null)));
+		RefreshRemoteApplicationEvent refresh = this.context
+				.getBean(InboundMessageHandlerConfiguration.class).refresh;
+		assertNotNull(refresh);
+		SentMessageConfiguration sent = this.context
+				.getBean(SentMessageConfiguration.class);
+		assertNotNull(sent.event);
+		assertEquals(1, sent.count);
+	}
+
+	@Test
+	public void inboundAckWithTrace() throws Exception {
+		this.context = SpringApplication.run(
+				new Object[] { InboundMessageHandlerConfiguration.class,
+						OutboundMessageHandlerConfiguration.class,
+						AckMessageConfiguration.class },
+				new String[] { "--spring.cloud.bus.trace.enabled=true" });
+		this.context.setId("bar");
+		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
+				.send(new GenericMessage<>(new AckRemoteApplicationEvent(this, "foo",
+						null, "ID", "bar", RefreshRemoteApplicationEvent.class)));
+		AckMessageConfiguration sent = this.context
+				.getBean(AckMessageConfiguration.class);
+		assertNotNull(sent.event);
+		assertEquals(1, sent.count);
 	}
 
 	@Test
@@ -72,9 +138,10 @@ public class BusAutoConfigurationTests {
 				"--debug=true");
 		this.context.setId("foo");
 		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", null));
-		Thread.sleep(2000L);
-		assertNotNull(
-				this.context.getBean(OutboundMessageHandlerConfiguration.class).message);
+		OutboundMessageHandlerConfiguration outbound = this.context
+				.getBean(OutboundMessageHandlerConfiguration.class);
+		outbound.latch.await(2000L, TimeUnit.MILLISECONDS);
+		assertNotNull(outbound.message);
 	}
 
 	@Test
@@ -94,7 +161,7 @@ public class BusAutoConfigurationTests {
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar:*")));
 		assertNotNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).event);
+				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
 	}
 
 	@Test
@@ -105,7 +172,7 @@ public class BusAutoConfigurationTests {
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar:**")));
 		assertNotNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).event);
+				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
 	}
 
 	@Test
@@ -116,7 +183,7 @@ public class BusAutoConfigurationTests {
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar*")));
 		assertNotNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).event);
+				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
 	}
 
 	@Configuration
@@ -127,6 +194,8 @@ public class BusAutoConfigurationTests {
 		@Autowired
 		@Output(SpringCloudBusClient.OUTPUT)
 		private MessageChannel cloudBusOutboundChannel;
+
+		private CountDownLatch latch = new CountDownLatch(1);
 
 		private Message<?> message;
 
@@ -141,6 +210,7 @@ public class BusAutoConfigurationTests {
 				public void postSend(Message<?> message, MessageChannel channel,
 						boolean sent) {
 					OutboundMessageHandlerConfiguration.this.message = message;
+					OutboundMessageHandlerConfiguration.this.latch.countDown();
 				}
 			};
 		}
@@ -150,16 +220,39 @@ public class BusAutoConfigurationTests {
 	@Configuration
 	@Import({ BusAutoConfiguration.class, LocalBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
-	protected static class InboundMessageHandlerConfiguration
-			implements ApplicationListener<RefreshRemoteApplicationEvent> {
+	protected static class InboundMessageHandlerConfiguration {
 
-		private RefreshRemoteApplicationEvent event;
+		private RefreshRemoteApplicationEvent refresh;
 
-		@Override
-		public void onApplicationEvent(RefreshRemoteApplicationEvent event) {
-			this.event = event;
+		@EventListener(RefreshRemoteApplicationEvent.class)
+		public void refresh(RefreshRemoteApplicationEvent event) {
+			this.refresh = event;
 		}
 
+	}
+
+	@Configuration
+	protected static class SentMessageConfiguration {
+		private SentApplicationEvent event;
+		private int count;
+
+		@EventListener
+		public void onSend(SentApplicationEvent event) {
+			this.event = event;
+			this.count++;
+		}
+	}
+
+	@Configuration
+	protected static class AckMessageConfiguration {
+		private AckRemoteApplicationEvent event;
+		private int count;
+
+		@EventListener
+		public void onSend(AckRemoteApplicationEvent event) {
+			this.event = event;
+			this.count++;
+		}
 	}
 
 }

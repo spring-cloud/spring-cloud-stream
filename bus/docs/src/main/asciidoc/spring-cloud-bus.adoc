@@ -24,16 +24,77 @@ The "destination" parameter is used in a Spring `PathMatcher` (with the path sep
 
 The bus tries to eliminate processing an event twice, once from the original `ApplicationEvent` and once from the queue.  To do this, it checks the sending application context id againts the current application context id.  If multiple instances of a service have the same application context id, events will not be processed.  Running on a local machine, each service will be on a different port and that will be part of the application context id.  Cloud Foundry supplies an index to differentiate.  To ensure that the application context id is the unique, set `spring.application.index` to something unique for each instance of a service.  For example, in lattice, set `spring.application.index=${INSTANCE_INDEX}` in application.properties (or bootstrap.properties if using configserver).
 
-== Customizing the AMQP ConnectionFactory
+== Customizing the Message Broker
 
-If you are using AMQP there needs to be a `ConnectionFactory` (from
-Spring Rabbit) in the application context. If there is a single
-`ConnectionFactory` it will be used, or if there is a one qualified as
-`@BusConnectionFactory` it will be preferred over others, otherwise
-the `@Primary` one will be used. If there are multiple unqualified
-connection factories there will be an error.
+Spring Cloud Bus uses
+https://cloud.spring.io/spring-cloud-stream[Spring Cloud Stream] to
+broadcast the messages so to get messages to flow you only need to
+include the binder implementation of your choice in the
+classpath. There are convenient starters specifically for the bus with
+AMQP, Kafka and Redis
+(`spring-cloud-starter-bus-[amqp,kafka,redis]`). Generally speaking
+Spring Cloud Stream relies on Spring Boot autoconfiguration
+conventions for configuring middleware, so for instance the AMQP
+broker address can be changed with `spring.rabbitmq.{asterisk}`
+configuration properties. Spring Cloud Bus has a handful of native
+configuration properties in `spring.cloud.bus.{asterisk}`
+(e.g. `spring.cloud.bus.destination` is the name of the topic to use
+the the externall middleware). Normally the defaults will suffice.
 
-Note that Spring Boot (as of 1.2.2) creates a `ConnectionFactory` that
-is _not_ `@Primary`, so if you want to use one connection factory for
-the bus and another for business messages, you need to create both,
-and annotate them `@BusConnectionFactory` and `@Primary` respectively.
+To lean more about how to customize the message broker settings
+consult the Spring Cloud Stream documentation.
+
+== Tracing Bus Events
+
+Bus events (subclasses of `RemoteApplicationEvent`) can be traced by
+setting `spring.cloud.bus.trace.enabled=true`. If you do this then the
+Spring Boot `TraceRepository` (if it is present) will show each event
+sent and all the acks from each service instance. Example (from the
+`/trace` endpoint):
+
+[source,json]
+----
+{
+  "timestamp": "2015-11-26T10:24:44.411+0000",
+  "info": {
+    "signal": "spring.cloud.bus.ack",
+    "type": "RefreshRemoteApplicationEvent",
+    "id": "c4d374b7-58ea-4928-a312-31984def293b",
+    "origin": "stores:8081",
+    "destination": "*:**"
+  }
+  },
+  {
+  "timestamp": "2015-11-26T10:24:41.864+0000",
+  "info": {
+    "signal": "spring.cloud.bus.sent",
+    "type": "RefreshRemoteApplicationEvent",
+    "id": "c4d374b7-58ea-4928-a312-31984def293b",
+    "origin": "customers:9000",
+    "destination": "*:**"
+  }
+  },
+  {
+  "timestamp": "2015-11-26T10:24:41.862+0000",
+  "info": {
+    "signal": "spring.cloud.bus.ack",
+    "type": "RefreshRemoteApplicationEvent",
+    "id": "c4d374b7-58ea-4928-a312-31984def293b",
+    "origin": "customers:9000",
+    "destination": "*:**"
+  }
+}
+----
+
+This trace shows that a `RefreshRemoteApplicationEvent` was sent from
+`customers:9000`, broadcast to all services, and it was received
+(acked) by `customers:9000` and `stores:8081`.
+
+To handle the ack signals yourself you could add an `@EventListener`
+for the `AckRemoteAppplicationEvent` and `SentApplicationEvent` types
+to your app (and enable tracing). Or you could tap into the
+`TraceRepository` and mine the data from there.
+
+NOTE: Any Bus application can trace acks, but sometimes it will be
+useful to do this in a central service that can do more complex
+queries on the data. Or forward it to a specialized tracing service.

@@ -34,7 +34,8 @@ public class ServiceMatcher implements ApplicationContextAware {
 				.match(destinationService, getServiceId()));
 	}
 
-	private String getServiceId() {
+	public String getServiceId() {
 		return this.context.getId();
 	}
+
 }

@@ -32,7 +32,16 @@ public class BusProperties {
 
 	private Env env = new Env();
 	private Refresh refresh = new Refresh();
+	private Ack ack = new Ack();
+	private Trace trace = new Trace();
+	/**
+	 * Name of Spring Cloud Stream destination for messages.
+	 */
 	private String destination = "topic:springCloudBus";
+	/**
+	 * Group ID for message consumer. Usually globally unique (so all consumers get a
+	 * copy of all messages).
+	 */
 	private String group = UUID.randomUUID().toString();
 
 	private boolean enabled = true;
@@ -46,11 +55,38 @@ public class BusProperties {
 
 	@Data
 	public static class Env {
+		/**
+		 * Flag to switch off environment change events (default on).
+		 */
 		private boolean enabled = true;
 	}
 
 	@Data
 	public static class Refresh {
+		/**
+		 * Flag to switch off refresh events (default on).
+		 */
 		private boolean enabled = true;
 	}
+
+	@Data
+	public static class Ack {
+		/**
+		 * Flag to switch off acks (default on).
+		 */
+		private boolean enabled = true;
+		/**
+		 * Service that wants to listen to acks. By default null (meaning all services).
+		 */
+		private String destinationService;
+	}
+
+	@Data
+	public static class Trace {
+		/**
+		 * Flag to switch on tracing of acks (default off).
+		 */
+		private boolean enabled = false;
+	}
+
 }
