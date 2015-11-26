@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.boot.configurationmetadata.ConfigurationMetadataGroup;
 import org.springframework.boot.configurationmetadata.ConfigurationMetadataProperty;
 import org.springframework.boot.configurationmetadata.ConfigurationMetadataRepositoryJsonBuilder;
 import org.springframework.boot.loader.archive.Archive;
@@ -42,6 +43,46 @@ public class ModuleConfigurationMetadataResolver {
 
 	public ModuleConfigurationMetadataResolver() {
 		JarFile.registerUrlProtocolHandler();
+	}
+
+	/**
+	 * Return metadata about configuration properties (as groups) that are documented via
+	 * <a href="http://docs.spring.io/spring-boot/docs/current/reference/html/configuration-metadata.html">
+	 * Spring Boot configuration metadata</a> and visible in a module.
+	 *
+	 * @param module a Spring Cloud Stream module; typically a Boot uberjar,
+	 * but directories are supported as well
+	 */
+	public List<ConfigurationMetadataGroup> listPropertyGroups(Resource module) {
+		List<ConfigurationMetadataGroup> result = new ArrayList<>();
+		ClassLoader classLoader = null;
+		try {
+			File moduleFile = module.getFile();
+			Archive archive = moduleFile.isDirectory() ? new ExplodedArchive(moduleFile) : new JarFileArchive(moduleFile);
+			classLoader = createClassLoader(archive);
+			ConfigurationMetadataRepositoryJsonBuilder builder = ConfigurationMetadataRepositoryJsonBuilder.create();
+			ResourcePatternResolver moduleResourceLoader = new PathMatchingResourcePatternResolver(classLoader);
+			for (Resource r : moduleResourceLoader.getResources("classpath*:/META-INF/*spring-configuration-metadata.json")) {
+				builder.withJsonResource(r.getInputStream());
+			}
+			for (ConfigurationMetadataGroup group : builder.build().getAllGroups().values()) {
+				result.add(group);
+			}
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Exception trying to list configuration properties for module " + module, e);
+		}
+		finally {
+			if (classLoader instanceof Closeable) {
+				try {
+					((Closeable) classLoader).close();
+				}
+				catch (IOException e) {
+					// ignore
+				}
+			}
+		}
+		return result;
 	}
 
 	/**
