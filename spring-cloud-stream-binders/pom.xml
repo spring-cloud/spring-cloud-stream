@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<artifactId>spring-cloud-stream-binders-parent</artifactId>
 	<packaging>pom</packaging>
 	<url>http://projects.spring.io/spring-xd/</url>
@@ -24,8 +24,9 @@
 		<module>spring-cloud-stream-binder-rabbit</module>
 		<module>spring-cloud-stream-binder-redis</module>
 		<module>spring-cloud-stream-binder-kafka</module>
+		<module>spring-cloud-stream-binder-gemfire</module>
 	</modules>
-	
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -72,7 +73,7 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
