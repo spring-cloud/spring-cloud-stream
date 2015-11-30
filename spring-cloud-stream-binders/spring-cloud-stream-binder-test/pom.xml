@@ -41,7 +41,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-spi</artifactId>
+			<artifactId>spring-cloud-stream</artifactId>
 		</dependency>
 	</dependencies>
 </project>

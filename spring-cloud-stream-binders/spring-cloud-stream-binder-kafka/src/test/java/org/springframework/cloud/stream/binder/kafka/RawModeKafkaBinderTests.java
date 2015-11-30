@@ -54,6 +54,7 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Gary Russell
  */
 
+@Ignore
 public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Override
