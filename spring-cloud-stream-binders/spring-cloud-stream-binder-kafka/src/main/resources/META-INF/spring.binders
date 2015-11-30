@@ -1,2 +1,2 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
+kafka:\
 org.springframework.cloud.stream.binder.kafka.config.KafkaServiceAutoConfiguration

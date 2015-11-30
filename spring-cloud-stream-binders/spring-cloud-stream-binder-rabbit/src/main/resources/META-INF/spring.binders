@@ -1,2 +1,2 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
+rabbit:\
 org.springframework.cloud.stream.binder.rabbit.config.RabbitServiceAutoConfiguration

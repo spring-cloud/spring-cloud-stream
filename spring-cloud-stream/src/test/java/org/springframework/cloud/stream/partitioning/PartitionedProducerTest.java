@@ -37,7 +37,7 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderProperties;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.utils.MockBinderConfiguration;
+import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -71,7 +71,7 @@ public class PartitionedProducerTest {
 
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderConfiguration.class)
+	@Import(MockBinderRegistryConfiguration.class)
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/partitioned-producer-test.properties")
 	public static class TestSource {
 

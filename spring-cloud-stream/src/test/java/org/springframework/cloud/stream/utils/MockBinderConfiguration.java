@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.cloud.stream.utils;
 
 import org.mockito.Mockito;
 
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * A simple configuration that creates mock {@link org.springframework.cloud.stream.binder.Binder}s.
- *
  * @author Marius Bogoevici
  */
+@Configuration
 public class MockBinderConfiguration {
 
 	@Bean

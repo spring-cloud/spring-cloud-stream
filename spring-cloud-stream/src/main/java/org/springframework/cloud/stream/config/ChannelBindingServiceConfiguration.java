@@ -27,13 +27,13 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.ChannelFactory;
-import org.springframework.cloud.stream.binding.DefaultChannelFactory;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
+import org.springframework.cloud.stream.binding.DefaultChannelFactory;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
@@ -69,8 +69,8 @@ public class ChannelBindingServiceConfiguration {
 	@ConditionalOnMissingBean(ChannelBindingService.class)
 	public ChannelBindingService bindingService(
 			ChannelBindingServiceProperties channelBindingServiceProperties,
-			Binder<MessageChannel> binder) {
-		return new ChannelBindingService(channelBindingServiceProperties, binder);
+			BinderFactory<MessageChannel> binderFactory) {
+		return new ChannelBindingService(channelBindingServiceProperties, binderFactory);
 	}
 
 	@Bean
@@ -103,8 +103,8 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	public BinderAwareChannelResolver binderAwareChannelResolver(
-			Binder<MessageChannel> binder) {
-		return new BinderAwareChannelResolver(binder, new Properties());
+			BinderFactory<MessageChannel> binderFactory) {
+		return new BinderAwareChannelResolver(binderFactory, new Properties());
 	}
 
 	@Bean

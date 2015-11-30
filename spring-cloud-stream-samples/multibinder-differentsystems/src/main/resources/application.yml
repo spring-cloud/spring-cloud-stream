@@ -1,0 +1,33 @@
+server:
+  port: 8082
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: dataIn
+          binder: kafka1
+        output:
+          destination: dataOut
+          binder: kafka2
+      binders:
+        kafka1:
+         type: kafka
+         properties:
+           spring:
+             cloud:
+               stream:
+                binder:
+                  kafka:
+                    brokers: ${kafkaBroker1}
+                    zkNodes: ${zk1}
+        kafka2:
+         type: kafka
+         properties:
+           spring:
+             cloud:
+               stream:
+                 binder:
+                   kafka:
+                     brokers: ${kafkaBroker2}
+                     zkNodes: ${zk2}

@@ -26,12 +26,13 @@ import java.util.Properties;
 
 import org.junit.Test;
 import org.mockito.Mockito;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.utils.MockBinderConfiguration;
+import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
@@ -47,7 +48,7 @@ public class InputOutputBindingOrderTest {
 	public void testInputOutputBindingOrder() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
 		@SuppressWarnings("rawtypes")
-		Binder binder = applicationContext.getBean(Binder.class);
+		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
 		verify(binder).bindConsumer(eq("input"), eq(processor.input()), Mockito.<Properties>any());
@@ -59,7 +60,7 @@ public class InputOutputBindingOrderTest {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderConfiguration.class)
+	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestSource {
 
 		@Bean

@@ -33,7 +33,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.utils.MockBinderConfiguration;
+import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -63,7 +63,7 @@ public class ProcessorBindingTestsWithPubSubBindingTargets {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderConfiguration.class)
+	@Import(MockBinderRegistryConfiguration.class)
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/processor-binding-test-pubsub.properties")
 	public static class TestProcessor {
 

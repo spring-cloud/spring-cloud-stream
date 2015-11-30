@@ -29,9 +29,9 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Bindings;
-import org.springframework.cloud.stream.utils.MockBinderConfiguration;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -62,7 +62,7 @@ public class ArbitraryInterfaceBindingTestsWithDefaults {
 
 	@EnableBinding(FooChannels.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderConfiguration.class)
+	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestFooChannels {
 
 	}

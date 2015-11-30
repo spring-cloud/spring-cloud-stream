@@ -19,6 +19,13 @@ package org.springframework.cloud.stream.test.junit.kafka;
 
 import java.util.Properties;
 
+import kafka.server.KafkaConfig;
+import kafka.server.KafkaServer;
+import kafka.utils.SystemTime$;
+import kafka.utils.TestUtils;
+import kafka.utils.Utils;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.junit.Rule;
@@ -26,15 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
-
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
-import kafka.utils.SystemTime$;
-import kafka.utils.TestUtils;
-import kafka.utils.TestZKUtils;
-import kafka.utils.Utils;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
+import org.springframework.util.SocketUtils;
 
 
 /**
@@ -105,7 +104,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 			if (embedded) {
 				try {
 					log.debug("Starting Zookeeper");
-					zookeeper = new EmbeddedZookeeper(TestZKUtils.zookeeperConnect());
+					zookeeper = new EmbeddedZookeeper("127.0.0.1:" + SocketUtils.findAvailableTcpPort());
 					log.debug("Started Zookeeper at " + zookeeper.getConnectString());
 					try {
 						int zkConnectionTimeout = 10000;
@@ -119,6 +118,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 					try {
 						log.debug("Creating Kafka server");
 						Properties brokerConfigProperties = brokerConfig;
+						brokerConfig.put("zookeeper.connect", zookeeper.getConnectString());
 						kafkaServer = TestUtils.createServer(new KafkaConfig(brokerConfigProperties), SystemTime$.MODULE$);
 						log.debug("Created Kafka server at " + kafkaServer.config().hostName() + ":" + kafkaServer.config().port());
 					}

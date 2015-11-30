@@ -1,2 +1,2 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
+redis:\
 org.springframework.cloud.stream.binder.redis.config.RedisServiceAutoConfiguration

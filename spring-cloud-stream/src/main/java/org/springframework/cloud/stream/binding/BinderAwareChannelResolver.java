@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binding;
 import java.util.Properties;
 
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
 import org.springframework.messaging.core.DestinationResolutionException;
@@ -26,18 +27,17 @@ import org.springframework.messaging.core.DestinationResolutionException;
 /**
  * A {@link org.springframework.messaging.core.DestinationResolver} implementation that first checks for any channel
  * whose name begins with a colon in the {@link Binder}.
- *
  * @author Mark Fisher
  * @author Gary Russell
  */
 public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
 
-	private final Binder<MessageChannel> binder;
+	private final BinderFactory<MessageChannel> binderFactory;
 
 	private final Properties producerProperties;
 
-	public BinderAwareChannelResolver(Binder<MessageChannel> binder, Properties producerProperties) {
-		this.binder = binder;
+	public BinderAwareChannelResolver(BinderFactory<MessageChannel> binderFactory, Properties producerProperties) {
+		this.binderFactory = binderFactory;
 		this.producerProperties = producerProperties;
 	}
 
@@ -49,15 +49,28 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		}
 		catch (DestinationResolutionException e) {
 		}
-		if (name.indexOf(":") != -1) {
-			if (binder != null) {
+		if (name.contains(":")) {
+			if (binderFactory != null) {
 				String[] tokens = name.split(":", 2);
-				String type = tokens[0];
+				String transport = null;
+				String type;
+				if (tokens.length == 2) {
+					type = tokens[0];
+				}
+				else if (tokens.length == 3) {
+					transport = tokens[0];
+					type = tokens[1];
+				}
+				else {
+					throw new IllegalArgumentException("Unrecognized channel naming scheme: " + name + " , should be" +
+							" [<transport>:]<type>:<name>");
+				}
+				Binder<MessageChannel> binder = binderFactory.getBinder(transport);
 				if ("queue".equals(type)) {
-					channel = this.binder.bindDynamicProducer(name, this.producerProperties);
+					channel = binder.bindDynamicProducer(name, this.producerProperties);
 				}
 				else if ("topic".equals(type)) {
-					channel = this.binder.bindDynamicPubSubProducer(name, this.producerProperties);
+					channel = binder.bindDynamicPubSubProducer(name, this.producerProperties);
 				}
 				else {
 					throw new IllegalArgumentException("unrecognized channel type: " + type);
