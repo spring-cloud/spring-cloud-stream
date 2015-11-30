@@ -32,6 +32,7 @@ import org.springframework.util.StringUtils;
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 public class ChannelBindingService {
 
@@ -47,11 +48,8 @@ public class ChannelBindingService {
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
 		if (BinderUtils.isChannelPubSub(channelBindingTarget)) {
-			BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindings()
-					.get(inputChannelName);
-			String group = bindingProperties == null ? null : bindingProperties.getGroup();
 			this.binder.bindPubSubConsumer(removePrefix(channelBindingTarget),
-					inputChannel, group,
+					inputChannel, consumerGroup(inputChannelName),
 					this.channelBindingServiceProperties.getConsumerProperties(inputChannelName));
 		}
 		else {
@@ -78,10 +76,22 @@ public class ChannelBindingService {
 	}
 
 	public void unbindConsumers(String inputChannelName) {
-		this.binder.unbindConsumers(inputChannelName);
+		if (BinderUtils.isChannelPubSub(this.channelBindingServiceProperties.getBindingDestination(inputChannelName))) {
+			this.binder.unbindPubSubConsumers(inputChannelName, consumerGroup(inputChannelName));
+		}
+		else {
+			this.binder.unbindConsumers(inputChannelName);
+		}
 	}
 
 	public void unbindProducers(String outputChannelName) {
 		this.binder.unbindProducers(outputChannelName);
 	}
+
+	private String consumerGroup(String inputChannelName) {
+		BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindings()
+				.get(inputChannelName);
+		return bindingProperties == null ? null : bindingProperties.getGroup();
+	}
+
 }

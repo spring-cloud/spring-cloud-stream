@@ -447,8 +447,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertTrue(n < 100);
 
 		binder.unbindConsumer("durabletest.0", moduleInputChannel);
-		binder.unbindPubSubConsumers("durabletest.0", "tgroup1");
-		binder.unbindPubSubConsumers("durabletest.0", "tgroup2");
+		binder.unbindPubSubConsumers("durabletest.0", "tgroup");
 		assertNotNull(admin.getQueueProperties(TEST_PREFIX + "tgroup.durabletest.0.dlq"));
 		admin.deleteQueue(TEST_PREFIX + "tgroup.durabletest.0.dlq");
 		admin.deleteQueue(TEST_PREFIX + "tgroup.durabletest.0");

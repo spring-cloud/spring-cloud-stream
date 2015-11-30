@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.UUID;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -43,7 +45,7 @@ public class BindingProperties {
 
 	private String partitionSelectorExpression;
 
-	private String group;
+	private String group = UUID.randomUUID().toString();
 
 	private String contentType;
 
