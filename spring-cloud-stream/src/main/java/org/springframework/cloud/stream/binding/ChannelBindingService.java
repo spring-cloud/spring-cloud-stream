@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binding;
 
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
@@ -36,36 +37,39 @@ import org.springframework.util.StringUtils;
  */
 public class ChannelBindingService {
 
-	private final Binder<MessageChannel> binder;
+	private BinderFactory<MessageChannel> binderFactory;
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties, Binder<MessageChannel> binder) {
+	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
+								 BinderFactory<MessageChannel> binderFactory) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
-		this.binder = binder;
+		this.binderFactory = binderFactory;
 	}
 
 	public void bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
+		Binder<MessageChannel> binder = getBinderForChannel(inputChannelName);
 		if (BinderUtils.isChannelPubSub(channelBindingTarget)) {
-			this.binder.bindPubSubConsumer(removePrefix(channelBindingTarget),
+			binder.bindPubSubConsumer(removePrefix(channelBindingTarget),
 					inputChannel, consumerGroup(inputChannelName),
 					this.channelBindingServiceProperties.getConsumerProperties(inputChannelName));
 		}
 		else {
-			this.binder.bindConsumer(channelBindingTarget, inputChannel,
+			binder.bindConsumer(channelBindingTarget, inputChannel,
 					this.channelBindingServiceProperties.getConsumerProperties(inputChannelName));
 		}
 	}
 
 	public void bindProducer(MessageChannel outputChannel, String outputChannelName) {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(outputChannelName);
+		Binder<MessageChannel> binder = getBinderForChannel(outputChannelName);
 		if (BinderUtils.isChannelPubSub(channelBindingTarget)) {
-			this.binder.bindPubSubProducer(removePrefix(channelBindingTarget),
+			binder.bindPubSubProducer(removePrefix(channelBindingTarget),
 					outputChannel, this.channelBindingServiceProperties.getProducerProperties(outputChannelName));
 		}
 		else {
-			this.binder.bindProducer(channelBindingTarget, outputChannel,
+			binder.bindProducer(channelBindingTarget, outputChannel,
 					this.channelBindingServiceProperties.getProducerProperties(outputChannelName));
 		}
 	}
@@ -76,16 +80,23 @@ public class ChannelBindingService {
 	}
 
 	public void unbindConsumers(String inputChannelName) {
+		Binder<MessageChannel> binder = getBinderForChannel(inputChannelName);
 		if (BinderUtils.isChannelPubSub(this.channelBindingServiceProperties.getBindingDestination(inputChannelName))) {
-			this.binder.unbindPubSubConsumers(inputChannelName, consumerGroup(inputChannelName));
+			binder.unbindPubSubConsumers(inputChannelName, consumerGroup(inputChannelName));
 		}
 		else {
-			this.binder.unbindConsumers(inputChannelName);
+			binder.unbindConsumers(inputChannelName);
 		}
 	}
 
 	public void unbindProducers(String outputChannelName) {
-		this.binder.unbindProducers(outputChannelName);
+		Binder<MessageChannel> binder = getBinderForChannel(outputChannelName);
+		binder.unbindProducers(outputChannelName);
+	}
+
+	private Binder<MessageChannel> getBinderForChannel(String channelName) {
+		String transport = this.channelBindingServiceProperties.getBinder(channelName);
+		return binderFactory.getBinder(transport);
 	}
 
 	private String consumerGroup(String inputChannelName) {

@@ -25,6 +25,8 @@
 		<module>tap</module>
 		<module>double</module>
 		<module>extended</module>
+		<module>multibinder</module>
+		<module>multibinder-differentsystems</module>
 		<module>rxjava-processor</module>
 	</modules>
 	<dependencyManagement>

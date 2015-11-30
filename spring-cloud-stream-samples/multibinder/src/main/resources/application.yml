@@ -1,0 +1,12 @@
+server:
+  port: 8082
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: dataIn
+          binder: redis
+        output:
+          destination: dataOut
+          binder: rabbit

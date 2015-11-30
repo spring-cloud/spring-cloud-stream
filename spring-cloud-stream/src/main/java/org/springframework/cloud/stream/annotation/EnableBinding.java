@@ -24,6 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.config.AggregateBuilderConfiguration;
+import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.config.BindingBeansRegistrar;
 import org.springframework.cloud.stream.config.ChannelBindingServiceConfiguration;
 import org.springframework.context.annotation.Configuration;
@@ -33,7 +34,6 @@ import org.springframework.integration.config.EnableIntegration;
 /**
  * Enables the binding of inputs and outputs to a broker, according to the list
  * of interfaces passed as value to the annotation.
- *
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author David Turanski
@@ -43,7 +43,8 @@ import org.springframework.integration.config.EnableIntegration;
 @Documented
 @Inherited
 @Configuration
-@Import({ChannelBindingServiceConfiguration.class, AggregateBuilderConfiguration.class, BindingBeansRegistrar.class})
+@Import({ChannelBindingServiceConfiguration.class, AggregateBuilderConfiguration.class, BindingBeansRegistrar.class,
+		BinderFactoryConfiguration.class})
 @EnableIntegration
 public @interface EnableBinding {
 

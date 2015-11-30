@@ -1,2 +1,2 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
+test:\
 org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration
