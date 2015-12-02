@@ -112,7 +112,6 @@ public abstract class ImplicitExpressionConfigurationTests {
 		}
 
 		public void setOtherExpression(Expression otherExpression) {
-			System.out.println("Setting1 " + otherExpression);
 			this.otherExpression = otherExpression;
 		}
 
@@ -121,7 +120,6 @@ public abstract class ImplicitExpressionConfigurationTests {
 		}
 
 		public void setNameExpression(Expression nameExpression) {
-			System.out.println("Setting2 " + nameExpression);
 			this.nameExpression = nameExpression;
 		}
 	}
