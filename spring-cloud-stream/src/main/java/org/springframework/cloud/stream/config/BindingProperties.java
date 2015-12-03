@@ -31,6 +31,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonInclude(value = Include.NON_DEFAULT)
 public class BindingProperties {
 
+	private static final String COMMA = ",";
+
 	private String destination;
 
 	private boolean partitioned = false;
@@ -50,6 +52,8 @@ public class BindingProperties {
 	private String contentType;
 
 	private String binder;
+
+	private boolean trackHistory;
 
 	public String getDestination() {
 		return this.destination;
@@ -123,6 +127,7 @@ public class BindingProperties {
 		this.contentType = contentType;
 	}
 
+
 	public String getBinder() {
 		return binder;
 	}
@@ -130,4 +135,46 @@ public class BindingProperties {
 	public void setBinder(String binder) {
 		this.binder = binder;
 	}
+
+	public Boolean getTrackHistory() {
+		return this.trackHistory;
+	}
+
+	public void setTrackHistory(boolean trackHistory) {
+		this.trackHistory = trackHistory;
+	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("destination=" + destination);
+		sb.append(COMMA);
+		sb.append("group=" + group);
+		sb.append(COMMA);
+		sb.append("contentType="+ contentType);
+		sb.append(COMMA);
+		sb.append("binder="+ binder);
+		sb.append(COMMA);
+		sb.append("trackHistory=" + trackHistory);
+		sb.append(COMMA);
+		sb.append("partitioned=" + partitioned);
+		sb.append(COMMA);
+		if (this.partitionKeyExpression != null && !this.partitionKeyExpression.isEmpty()) {
+			sb.append("partitionKeyExpression=" + partitionKeyExpression);
+			sb.append(COMMA);
+		}
+		if (this.partitionKeyExtractorClass != null && !this.partitionKeyExtractorClass.isEmpty()) {
+			sb.append("partitionKeyExtractorClass=" + partitionKeyExtractorClass);
+			sb.append(COMMA);
+		}
+		if (this.partitionSelectorClass != null && !this.partitionSelectorClass.isEmpty()) {
+			sb.append("partitionSelectorClass=" + partitionSelectorClass);
+			sb.append(COMMA);
+		}
+		if (this.partitionSelectorClass != null && !this.partitionSelectorClass.isEmpty()) {
+			sb.append("partitionSelectorExpression=" + partitionSelectorExpression);
+		}
+		sb.deleteCharAt(sb.lastIndexOf(COMMA));
+		return "BinderProperties{" + sb.toString() + "}";
+	}
+
 }

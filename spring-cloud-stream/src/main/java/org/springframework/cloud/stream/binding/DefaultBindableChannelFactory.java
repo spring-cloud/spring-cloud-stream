@@ -29,23 +29,23 @@ import org.springframework.messaging.SubscribableChannel;
  */
 public class DefaultBindableChannelFactory implements BindableChannelFactory {
 
-	private final MessageConverterConfigurer messageConverterConfigurer;
+	private final MessageChannelConfigurer messageChannelConfigurer;
 
-	public DefaultBindableChannelFactory(MessageConverterConfigurer messageConverterConfigurer) {
-		this.messageConverterConfigurer = messageConverterConfigurer;
+	public DefaultBindableChannelFactory(MessageChannelConfigurer messageChannelConfigurer) {
+		this.messageChannelConfigurer = messageChannelConfigurer;
 	}
 
 	@Override
 	public PollableChannel createPollableChannel(String name) {
 		PollableChannel pollableChannel = new QueueChannel();
-		messageConverterConfigurer.configureMessageConverters(pollableChannel, name);
+		messageChannelConfigurer.configureMessageChannel(pollableChannel, name);
 		return pollableChannel;
 	}
 
 	@Override
 	public SubscribableChannel createSubscribableChannel(String name) {
 		SubscribableChannel subscribableChannel = new DirectChannel();
-		messageConverterConfigurer.configureMessageConverters(subscribableChannel, name);
+		messageChannelConfigurer.configureMessageChannel(subscribableChannel, name);
 		return subscribableChannel;
 	}
 }

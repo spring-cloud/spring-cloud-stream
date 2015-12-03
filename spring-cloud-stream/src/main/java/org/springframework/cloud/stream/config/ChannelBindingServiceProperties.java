@@ -21,12 +21,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * @author Dave Syer
@@ -127,8 +127,8 @@ public class ChannelBindingServiceProperties {
 	public boolean isPartitionedProducer(String channelName) {
 		BindingProperties bindingProperties = bindings.get(channelName);
 		return bindingProperties != null &&
-					(StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
-					|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass()));
+				(StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
+						|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass()));
 
 	}
 
@@ -198,6 +198,28 @@ public class ChannelBindingServiceProperties {
 			return null;
 		}
 		return bindings.get(channelName).getBinder();
+	}
+
+	/**
+	 * Return configuration properties as Map.
+	 * @return map of channel binding configuration properties.
+	 */
+	public Map<String, Object> asMapProperties() {
+		Map<String, Object> properties = new HashMap<>();
+		properties.put("instanceIndex", String.valueOf(getInstanceIndex()));
+		properties.put("instanceCount", String.valueOf(getInstanceCount()));
+		Properties consumerProperties = getConsumerProperties();
+		for (String name : consumerProperties.stringPropertyNames()) {
+			properties.put("consumer." + name, consumerProperties.getProperty(name));
+		}
+		Properties producerProperties = getProducerProperties();
+		for (String name : producerProperties.stringPropertyNames()) {
+			properties.put("producer." + name, producerProperties.getProperty(name));
+		}
+		for (Map.Entry<String, BindingProperties> entry : getBindings().entrySet()) {
+			properties.put(entry.getKey(), entry.getValue().toString());
+		}
+		return properties;
 	}
 
 }
