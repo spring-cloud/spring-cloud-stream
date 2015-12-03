@@ -52,37 +52,27 @@ Spring Cloud Stream allows a user to develop and run messaging microservices usi
 As long as Spring Cloud Stream and a Spring XD Message Bus is on the
 classpath any Spring Boot application with `@EnableBinding` will bind to an external broker provided by the bus (e.g. redis, rabbit, kafka, depending on the implementation you choose). Sample application:
 
+Head over to http://start.spring.io and create a project with the 'Stream Redis' dependency.  Modify the main class as shown below:
+
 ```java
 @SpringBootApplication
 @EnableBinding(Source.class)
-@ComponentScan(basePackageClasses=ModuleDefinition.class)
-public class ModuleApplication {
+public class StreamdemoApplication {
 
-  public static void main(String[] args) throws InterruptedException {
-    SpringApplication.run(ModuleApplication.class, args);
-  }
+    public static void main(String[] args) {
+        SpringApplication.run(StreamdemoApplication.class, args);
+    }
 
-}
-
-@Configuration
-public class ModuleDefinition {
-
-  @Value("${format}")
-  private String format;
-
-  @Bean
-  public MessageChannel output() {
-    return new DirectChannel();
-  }
-
-  @Bean
-  @InboundChannelAdapter(value = Source.OUTPUT, autoStartup = "false", poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
-  public MessageSource<String> timerMessageSource() {
-    return () -> new GenericMessage<>(new SimpleDateFormat(format).format(new Date()));
-  }
+    @Bean
+    @InboundChannelAdapter(value = Source.OUTPUT)
+    public MessageSource<String> timerMessageSource() {
+        return () -> new GenericMessage<>(new SimpleDateFormat().format(new Date()));
+    }
 
 }
 ```
+
+Make sure Redis is running when you run the application.  In the redis-cli console execute the monitor command and you will see a timestamp string being LPUSH'ed into a queue named 'queue.output'.
 
 {% endcapture %}
 
