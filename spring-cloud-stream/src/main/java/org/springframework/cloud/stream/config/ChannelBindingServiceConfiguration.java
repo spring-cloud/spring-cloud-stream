@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -28,14 +30,17 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binding.BindableChannelFactory;
+import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
-import org.springframework.cloud.stream.binding.BindableChannelFactory;
+import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.binding.MessageHistoryTrackerConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.tuple.spel.TuplePropertyAccessor;
 import org.springframework.context.annotation.Bean;
@@ -74,13 +79,29 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public MessageConverterConfigurer messageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties) {
+	MessageConverterConfigurer messageConverterConfigurer
+			(ChannelBindingServiceProperties channelBindingServiceProperties) {
 		return new MessageConverterConfigurer(channelBindingServiceProperties);
 	}
 
 	@Bean
 	public BindableChannelFactory channelFactory(ChannelBindingServiceProperties channelBindingServiceProperties) {
-		return new DefaultBindableChannelFactory(messageConverterConfigurer(channelBindingServiceProperties));
+		return new DefaultBindableChannelFactory(compositeMessageChannelConfigurer(channelBindingServiceProperties));
+	}
+
+	@Bean
+	public MessageHistoryTrackerConfigurer messageHistoryTrackerConfigurer
+			(ChannelBindingServiceProperties channelBindingServiceProperties) {
+		return new MessageHistoryTrackerConfigurer(channelBindingServiceProperties);
+	}
+
+	@Bean
+	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer
+			(ChannelBindingServiceProperties channelBindingServiceProperties) {
+		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
+		configurerList.add(messageConverterConfigurer(channelBindingServiceProperties));
+		configurerList.add((messageHistoryTrackerConfigurer(channelBindingServiceProperties)));
+		return new CompositeMessageChannelConfigurer(configurerList);
 	}
 
 	@Bean
@@ -109,7 +130,7 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	@ConfigurationPropertiesBinding
-	public Converter<String,BindingProperties> bindingPropertiesConverter() {
+	public Converter<String, BindingProperties> bindingPropertiesConverter() {
 		return new BindingPropertiesConverter();
 	}
 

@@ -33,6 +33,7 @@
 		<module>spring-cloud-stream-module-launcher</module>
 		<module>spring-cloud-stream-test-support</module>
 		<module>spring-cloud-stream-test-support-internal</module>
+		<module>spring-cloud-stream-integration-tests</module>
 		<module>spring-cloud-stream-configuration-metadata</module>
 		<module>spring-cloud-stream-docs</module>
 	</modules>

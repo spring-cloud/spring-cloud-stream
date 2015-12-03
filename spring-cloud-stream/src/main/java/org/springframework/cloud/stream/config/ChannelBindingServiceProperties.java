@@ -127,8 +127,8 @@ public class ChannelBindingServiceProperties {
 	public boolean isPartitionedProducer(String channelName) {
 		BindingProperties bindingProperties = bindings.get(channelName);
 		return bindingProperties != null &&
-					(StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
-					|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass()));
+				(StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
+						|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass()));
 
 	}
 
@@ -198,6 +198,26 @@ public class ChannelBindingServiceProperties {
 			return null;
 		}
 		return bindings.get(channelName).getBinder();
+	}
+
+	/**
+	 * Return configuration properties as Map.
+	 * @return map of channel binding configuration properties.
+	 */
+	public Map<String, Object> asMapProperties() {
+		Map<String, Object> properties = new HashMap<>();
+		properties.put("instanceIndex", String.valueOf(getInstanceIndex()));
+		properties.put("instanceCount", String.valueOf(getInstanceCount()));
+		for (String name : getConsumerProperties().stringPropertyNames()) {
+			properties.put(name, getConsumerProperties());
+		}
+		for (String name : getProducerProperties().stringPropertyNames()) {
+			properties.put(name, getProducerProperties());
+		}
+		for (Map.Entry<String, BindingProperties> entry : getBindings().entrySet()) {
+			properties.put(entry.getKey(), entry.getValue());
+		}
+		return properties;
 	}
 
 }

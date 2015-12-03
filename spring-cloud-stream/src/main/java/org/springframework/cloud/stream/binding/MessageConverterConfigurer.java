@@ -48,7 +48,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Ilayaperumal Gopinathan
  */
-public class MessageConverterConfigurer implements BeanFactoryAware, InitializingBean {
+public class MessageConverterConfigurer implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
 
 	private ConfigurableListableBeanFactory beanFactory;
 
@@ -87,7 +87,8 @@ public class MessageConverterConfigurer implements BeanFactoryAware, Initializin
 	 * @param channel message channel to set the data-type and message converters
 	 * @param channelName the channel name
 	 */
-	 void configureMessageConverters(MessageChannel channel, String channelName) {
+	@Override
+	public void configureMessageChannel(MessageChannel channel, String channelName) {
 		Assert.isAssignable(AbstractMessageChannel.class, channel.getClass());
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
 		BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindings().get(channelName);

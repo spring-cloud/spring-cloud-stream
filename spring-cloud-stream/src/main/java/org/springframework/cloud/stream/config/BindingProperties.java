@@ -51,6 +51,8 @@ public class BindingProperties {
 
 	private String binder;
 
+	private boolean trackHistory;
+
 	public String getDestination() {
 		return this.destination;
 	}
@@ -123,6 +125,7 @@ public class BindingProperties {
 		this.contentType = contentType;
 	}
 
+
 	public String getBinder() {
 		return binder;
 	}
@@ -130,4 +133,13 @@ public class BindingProperties {
 	public void setBinder(String binder) {
 		this.binder = binder;
 	}
+
+	public Boolean getTrackHistory() {
+		return this.trackHistory;
+	}
+
+	public void setTrackHistory(boolean trackHistory) {
+		this.trackHistory = trackHistory;
+	}
+
 }
