@@ -62,7 +62,6 @@ public class ImplicitExpressionConfiguration implements EnvironmentAware, Priori
 			ConfigurableEnvironment configurableEnvironment = (ConfigurableEnvironment) environment;
 
 			Map<String, Object> map = new HashMap<>();
-			MapPropertySource fakeValues = new MapPropertySource("Implicit expressions", map);
 			for (Map.Entry<String, ConfigurationMetadataProperty> entry : allProperties.entrySet()) {
 				String raw = environment.getProperty(entry.getKey());
 				if (raw != null) {
@@ -70,7 +69,7 @@ public class ImplicitExpressionConfiguration implements EnvironmentAware, Priori
 					map.put(entry.getKey() + "-expression", literalExpression(raw, type));
 				}
 			}
-			configurableEnvironment.getPropertySources().addLast(fakeValues);
+			configurableEnvironment.getPropertySources().addLast(new MapPropertySource("Implicit expressions", map));
 		}
 	}
 
