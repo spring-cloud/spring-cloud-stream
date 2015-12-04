@@ -1,5 +1,3 @@
-image::https://travis-ci.org/spring-cloud/spring-cloud-stream.svg?branch=master[Build Status, link=https://travis-ci.org/spring-cloud/spring-cloud-stream]
-
 include::intro.adoc[]
 
 == Building
