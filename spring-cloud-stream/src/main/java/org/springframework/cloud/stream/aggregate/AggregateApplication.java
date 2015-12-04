@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.binding.ChannelFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
@@ -29,7 +30,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.DirectChannel;
 
 /**
+ * Class that is responsible for embedding modules using shared channel registry.
+ *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class AggregateApplication {
 
@@ -72,7 +76,8 @@ public class AggregateApplication {
 	public static void runEmbedded(ConfigurableApplicationContext parentContext,
 			Class<?>[] modules, String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
-		prepareSharedChannelRegistry(bean, modules);
+		ChannelFactory channelFactory = parentContext.getBean(ChannelFactory.class);
+		prepareSharedChannelRegistry(bean, modules, channelFactory);
 		// create child contexts first
 		createChildContexts(parentContext, modules, args);
 	}
@@ -112,7 +117,8 @@ public class AggregateApplication {
 				.parent(applicationContext);
 	}
 
-	private static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] modules) {
+	private static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] modules,
+			ChannelFactory channelFactory) {
 		DirectChannel sharedChannel = null;
 		for (int i = 0; i < modules.length; i++) {
 			Class<?> module = modules[i];
@@ -121,7 +127,7 @@ public class AggregateApplication {
 				sharedChannelRegistry.register(getNamespace(moduleClassName, i)
 						+ "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
-			sharedChannel = new DirectChannel();
+			sharedChannel = (DirectChannel) channelFactory.createSharedChannel(DirectChannel.class);
 			if (i < modules.length - 1) {
 				sharedChannelRegistry.register(getNamespace(moduleClassName, i)
 						+ "." + OUTPUT_CHANNEL_NAME, sharedChannel);

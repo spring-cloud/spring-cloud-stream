@@ -34,10 +34,15 @@ public class DefaultChannelFactory implements ChannelFactory {
 	MessageConverterConfigurer messageConverterConfigurer;
 
 	@Override
-	public MessageChannel createChannel(String name, Class<?> inputChannelType) throws Exception {
-		MessageChannel messageChannel = createMessageChannel(inputChannelType);
+	public MessageChannel createBindableChannel(String name, Class<?> channelType) throws Exception {
+		MessageChannel messageChannel = createMessageChannel(channelType);
 		messageConverterConfigurer.configureMessageConverters(messageChannel, name);
 		return messageChannel;
+	}
+
+	@Override
+	public MessageChannel createSharedChannel(Class<?> channelType) {
+		return createMessageChannel(channelType);
 	}
 
 	private MessageChannel createMessageChannel(Class<?> messageChannelType) {

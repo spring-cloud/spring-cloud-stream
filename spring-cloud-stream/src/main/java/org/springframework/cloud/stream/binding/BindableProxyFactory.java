@@ -79,9 +79,6 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Autowired
 	private ChannelFactory channelFactory;
 
-	@Autowired
-	private MessageConverterConfigurer messageConverterConfigurer;
-
 	@Autowired(required = false)
 	private SharedChannelRegistry sharedChannelRegistry;
 
@@ -130,7 +127,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 						MessageChannel sharedChannel = locateSharedChannel(name);
 						if (sharedChannel == null) {
 							inputHolders.put(name, new ChannelHolder(
-									channelFactory.createChannel(name, method.getReturnType()), true));
+									channelFactory.createBindableChannel(name, method.getReturnType()), true));
 						}
 						else {
 							configureSharedMessageChannel(name, method.getReturnType(), sharedChannel);
@@ -152,7 +149,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 						MessageChannel sharedChannel = locateSharedChannel(name);
 						if (sharedChannel == null) {
 							outputHolders.put(name, new ChannelHolder(
-									channelFactory.createChannel(name, method.getReturnType()), true));
+									channelFactory.createBindableChannel(name, method.getReturnType()), true));
 						}
 						else {
 							configureSharedMessageChannel(name, method.getReturnType(), sharedChannel);
@@ -178,20 +175,16 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private void configureSharedMessageChannel(String name, Class<?> channelType, MessageChannel sharedChannel)
 			throws Exception {
-		if (channelType.isAssignableFrom(sharedChannel.getClass())) {
-			messageConverterConfigurer.configureMessageConverters(sharedChannel, name);
-		}
-		else {
+		if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
 			// handle the special case where the shared channel is of a different nature
 			// (i.e. pollable vs subscribable) than the target channel
-			final MessageChannel inputChannel = this.channelFactory.createChannel(name, channelType);
+			final MessageChannel inputChannel = this.channelFactory.createSharedChannel(channelType);
 			if (isPollable(sharedChannel.getClass())) {
 				bridgePollableToSubscribableChannel(sharedChannel, inputChannel);
 			}
 			else {
 				bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel, inputChannel);
 			}
-			messageConverterConfigurer.configureMessageConverters(inputChannel, name);
 		}
 	}
 
