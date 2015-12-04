@@ -15,36 +15,37 @@
  */
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.PollableChannel;
+import org.springframework.messaging.SubscribableChannel;
 
 /**
- * Class that {@link BindableProxyFactory} uses to create message channels.
+ * Class that {@link BindableProxyFactory} uses to create and configure message channels.
  *
  * @author Marius Bogoevici
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  */
-public class DefaultChannelFactory implements ChannelFactory {
+public class BindableChannelFactory implements ChannelFactory {
 
-	@Autowired
-	MessageConverterConfigurer messageConverterConfigurer;
+	private final MessageConverterConfigurer messageConverterConfigurer;
+
+	public BindableChannelFactory(MessageConverterConfigurer messageConverterConfigurer) {
+		this.messageConverterConfigurer = messageConverterConfigurer;
+	}
 
 	@Override
-	public MessageChannel createChannel(String name, Class<?> inputChannelType) throws Exception {
-		MessageChannel messageChannel = createMessageChannel(inputChannelType);
-		messageConverterConfigurer.configureMessageConverters(messageChannel, name);
-		return messageChannel;
+	public PollableChannel createPollableChannel(String name) {
+		PollableChannel pollableChannel = new QueueChannel();
+		messageConverterConfigurer.configureMessageConverters(pollableChannel, name);
+		return pollableChannel;
 	}
 
-	private MessageChannel createMessageChannel(Class<?> messageChannelType) {
-		return isPollable(messageChannelType) ? new QueueChannel() : new DirectChannel();
-	}
-
-	private boolean isPollable(Class<?> channelType) {
-		return PollableChannel.class.equals(channelType);
+	@Override
+	public SubscribableChannel createSubscribableChannel(String name) {
+		SubscribableChannel subscribableChannel = new DirectChannel();
+		messageConverterConfigurer.configureMessageConverters(subscribableChannel, name);
+		return subscribableChannel;
 	}
 }

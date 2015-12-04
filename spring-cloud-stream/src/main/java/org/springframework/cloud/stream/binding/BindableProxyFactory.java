@@ -41,6 +41,8 @@ import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.config.ConsumerEndpointFactoryBean;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.MessageChannel;
@@ -78,9 +80,6 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Autowired
 	private ChannelFactory channelFactory;
-
-	@Autowired
-	private MessageConverterConfigurer messageConverterConfigurer;
 
 	@Autowired(required = false)
 	private SharedChannelRegistry sharedChannelRegistry;
@@ -123,48 +122,47 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
-				try {
-					Input input = AnnotationUtils.findAnnotation(method, Input.class);
-					if (input != null) {
-						String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
-						MessageChannel sharedChannel = locateSharedChannel(name);
-						if (sharedChannel == null) {
-							inputHolders.put(name, new ChannelHolder(
-									channelFactory.createChannel(name, method.getReturnType()), true));
-						}
-						else {
-							configureSharedMessageChannel(name, method.getReturnType(), sharedChannel);
+				Input input = AnnotationUtils.findAnnotation(method, Input.class);
+				if (input != null) {
+					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+					Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
+					MessageChannel sharedChannel = locateSharedChannel(name);
+					if (sharedChannel == null) {
+						inputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
+					}
+					else {
+						if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
+							bridgeSharedChannel(channelType, sharedChannel);
 						}
 					}
-				}
-				catch (Exception e) {
-					throw new RuntimeException(e);
 				}
 			}
 		});
 		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
-				try {
-					Output output = AnnotationUtils.findAnnotation(method, Output.class);
-					if (output != null) {
-						String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
-						MessageChannel sharedChannel = locateSharedChannel(name);
-						if (sharedChannel == null) {
-							outputHolders.put(name, new ChannelHolder(
-									channelFactory.createChannel(name, method.getReturnType()), true));
-						}
-						else {
-							configureSharedMessageChannel(name, method.getReturnType(), sharedChannel);
+				Output output = AnnotationUtils.findAnnotation(method, Output.class);
+				if (output != null) {
+					String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+					Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
+					MessageChannel sharedChannel = locateSharedChannel(name);
+					if (sharedChannel == null) {
+						outputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
+					}
+					else {
+						if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
+							bridgeSharedChannel(channelType, sharedChannel);
 						}
 					}
-				}
-				catch (Exception e) {
-					throw new RuntimeException(e);
 				}
 			}
 
 		});
+	}
+
+	private MessageChannel createBindableChannel(String name, Class<? extends MessageChannel> channelType) {
+		return isPollable(channelType) ? this.channelFactory.createPollableChannel(name) :
+				this.channelFactory.createSubscribableChannel(name);
 	}
 
 	private MessageChannel locateSharedChannel(String name) {
@@ -176,22 +174,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		return this.channelNamespace + "." + name;
 	}
 
-	private void configureSharedMessageChannel(String name, Class<?> channelType, MessageChannel sharedChannel)
-			throws Exception {
-		if (channelType.isAssignableFrom(sharedChannel.getClass())) {
-			messageConverterConfigurer.configureMessageConverters(sharedChannel, name);
+	private void bridgeSharedChannel(Class<? extends MessageChannel> channelType, MessageChannel sharedChannel) {
+		// handle the special case where the shared channel is of a different nature
+		// (i.e. pollable vs subscribable) than the target channel
+		if (isPollable(sharedChannel.getClass())) {
+			bridgePollableToSubscribableChannel(sharedChannel, new DirectChannel());
 		}
 		else {
-			// handle the special case where the shared channel is of a different nature
-			// (i.e. pollable vs subscribable) than the target channel
-			final MessageChannel inputChannel = this.channelFactory.createChannel(name, channelType);
-			if (isPollable(sharedChannel.getClass())) {
-				bridgePollableToSubscribableChannel(sharedChannel, inputChannel);
-			}
-			else {
-				bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel, inputChannel);
-			}
-			messageConverterConfigurer.configureMessageConverters(inputChannel, name);
+			bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel, new QueueChannel());
 		}
 	}
 
@@ -200,8 +190,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel, MessageChannel inputChannel) {
-		sharedChannel.subscribe(new MessageChannelBinderSupport.DirectHandler(
-				inputChannel));
+		sharedChannel.subscribe(new MessageChannelBinderSupport.DirectHandler(inputChannel));
 	}
 
 	private void bridgePollableToSubscribableChannel(MessageChannel pollableChannel,

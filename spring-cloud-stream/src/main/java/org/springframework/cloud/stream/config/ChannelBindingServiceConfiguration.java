@@ -33,7 +33,7 @@ import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcess
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.ChannelFactory;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
-import org.springframework.cloud.stream.binding.DefaultChannelFactory;
+import org.springframework.cloud.stream.binding.BindableChannelFactory;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
@@ -79,8 +79,8 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public ChannelFactory channelFactory() {
-		return new DefaultChannelFactory();
+	public ChannelFactory channelFactory(ChannelBindingServiceProperties channelBindingServiceProperties) {
+		return new BindableChannelFactory(messageConverterConfigurer(channelBindingServiceProperties));
 	}
 
 	@Bean
