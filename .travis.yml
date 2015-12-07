@@ -11,5 +11,5 @@ install: true
 # The environment variable ${TRAVIS_PULL_REQUEST} is set to "false" when the build 
 # is for a normal branch commit. When the build is for a pull request, it will 
 # contain the pull request’s number.
-script
+script:
   - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s .settings.xml package -nsu -Dmaven.test.redirectTestOutputToFile=false'
