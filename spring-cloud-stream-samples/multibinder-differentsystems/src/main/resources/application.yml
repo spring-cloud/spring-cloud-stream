@@ -13,7 +13,7 @@ spring:
       binders:
         kafka1:
          type: kafka
-         properties:
+         environment:
            spring:
              cloud:
                stream:
@@ -23,7 +23,7 @@ spring:
                     zkNodes: ${zk1}
         kafka2:
          type: kafka
-         properties:
+         environment:
            spring:
              cloud:
                stream:

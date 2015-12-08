@@ -20,18 +20,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -39,6 +40,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -57,7 +59,6 @@ import org.springframework.scheduling.support.PeriodicTrigger;
  * @author Mark Fisher
  * @author Gary Russell
  */
-@Ignore
 public class BinderAwareChannelResolverTests {
 
 	private final StaticApplicationContext context = new StaticApplicationContext();
@@ -71,7 +72,12 @@ public class BinderAwareChannelResolverTests {
 		this.binder = new LocalMessageChannelBinder();
 		this.binder.setApplicationContext(context);
 		this.binder.afterPropertiesSet();
-		this.resolver = new BinderAwareChannelResolver(Mockito.mock(BinderFactory.class), null);
+		this.resolver = new BinderAwareChannelResolver(new BinderFactory<MessageChannel>() {
+			@Override
+			public Binder<MessageChannel> getBinder(String configurationName) {
+				return binder;
+			}
+		}, null);
 		this.resolver.setBeanFactory(context);
 		context.getBeanFactory().registerSingleton("channelResolver",
 				this.resolver);
@@ -160,18 +166,20 @@ public class BinderAwareChannelResolverTests {
 	public void propertyPassthrough() {
 		Properties properties = new Properties();
 		@SuppressWarnings("rawtypes")
-		Binder binder = mock(Binder.class);
-		doReturn(new DirectChannel()).when(binder).bindDynamicProducer("queue:foo", properties);
-		doReturn(new DirectChannel()).when(binder).bindDynamicPubSubProducer("topic:bar", properties);
+		Binder binderFactory = mock(Binder.class);
+		doReturn(new DirectChannel()).when(binderFactory).bindDynamicProducer("queue:foo", properties);
+		doReturn(new DirectChannel()).when(binderFactory).bindDynamicPubSubProducer("topic:bar", properties);
+		BinderFactory mockBinderFactory = Mockito.mock(BinderFactory.class);
+		Mockito.when(mockBinderFactory.getBinder(anyString())).thenReturn(binderFactory);
 		@SuppressWarnings("unchecked")
 		BinderAwareChannelResolver resolver =
-				new BinderAwareChannelResolver(Mockito.mock(BinderFactory.class), properties);
+				new BinderAwareChannelResolver(mockBinderFactory, properties);
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
 		resolver.resolveDestination("queue:foo");
 		resolver.resolveDestination("topic:bar");
-		verify(binder).bindDynamicProducer("queue:foo", properties);
-		verify(binder).bindDynamicPubSubProducer("topic:bar", properties);
+		verify(binderFactory).bindDynamicProducer("queue:foo", properties);
+		verify(binderFactory).bindDynamicPubSubProducer("topic:bar", properties);
 	}
 
 }

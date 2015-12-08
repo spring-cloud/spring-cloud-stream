@@ -26,7 +26,7 @@ public class BinderProperties {
 
 	private String type;
 
-	private Properties properties;
+	private Properties environment;
 
 	public String getType() {
 		return type;
@@ -36,12 +36,12 @@ public class BinderProperties {
 		this.type = name;
 	}
 
-	public Properties getProperties() {
-		return properties;
+	public Properties getEnvironment() {
+		return environment;
 	}
 
-	public void setProperties(Properties properties) {
-		this.properties = properties;
+	public void setEnvironment(Properties environment) {
+		this.environment = environment;
 	}
 
 }

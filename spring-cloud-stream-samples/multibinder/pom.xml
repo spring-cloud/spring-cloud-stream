@@ -5,7 +5,7 @@
 	<artifactId>spring-cloud-stream-sample-multibinder</artifactId>
 	<packaging>jar</packaging>
 	<name>spring-cloud-stream-sample-multibinder</name>
-	<description>Demo project for extended module using aggregate builder</description>
+	<description>Demo project for multiple binders of different types (Redis and Rabbit)</description>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>

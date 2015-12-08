@@ -28,7 +28,7 @@ import java.util.Properties;
  */
 public class BinderConfiguration {
 
-	private BinderType binderType;
+	private final BinderType binderType;
 
 	private final Properties properties;
 

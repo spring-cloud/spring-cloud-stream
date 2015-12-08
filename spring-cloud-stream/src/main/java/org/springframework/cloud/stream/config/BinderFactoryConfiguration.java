@@ -63,14 +63,14 @@ public class BinderFactoryConfiguration {
 				if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
 					binderConfigurations.put(binderEntry.getKey(),
 							new BinderConfiguration(binderTypeRegistry.get(binderEntry.getKey()),
-									binderProperties.getProperties()));
+									binderProperties.getEnvironment()));
 				}
 				else {
 					Assert.hasText(binderProperties.getType(), "No 'type' property present for custom " +
 							"binder " + binderEntry.getKey());
 					binderConfigurations.put(binderEntry.getKey(),
 							new BinderConfiguration(binderTypeRegistry.get(binderProperties.getType()),
-									binderProperties.getProperties()));
+									binderProperties.getEnvironment()));
 				}
 			}
 		}

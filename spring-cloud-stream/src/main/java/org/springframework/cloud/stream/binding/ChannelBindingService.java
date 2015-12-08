@@ -52,9 +52,6 @@ public class ChannelBindingService {
 		String transport = this.channelBindingServiceProperties.getBinder(inputChannelName);
 		Binder<MessageChannel> binder = binderFactory.getBinder(transport);
 		if (BinderUtils.isChannelPubSub(channelBindingTarget)) {
-			BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindings()
-					.get(inputChannelName);
-			String group = bindingProperties == null ? null : bindingProperties.getGroup();
 			binder.bindPubSubConsumer(removePrefix(channelBindingTarget),
 					inputChannel, consumerGroup(inputChannelName),
 					this.channelBindingServiceProperties.getConsumerProperties(inputChannelName));

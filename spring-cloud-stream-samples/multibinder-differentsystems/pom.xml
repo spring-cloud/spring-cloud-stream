@@ -4,8 +4,10 @@
 
 	<artifactId>spring-cloud-stream-sample-multibinder-differentsystems</artifactId>
 	<packaging>jar</packaging>
-	<name>spring-cloud-stream-sample-multibinder-different-systems</name>
-	<description>Demo project for extended module using aggregate builder</description>
+	<name>spring-cloud-stream-sample-multibinder-differentsystems</name>
+	<description>
+		Demo project for multiple binders of the same type (Kafka), connecting to different systems (broker groups)
+	</description>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
