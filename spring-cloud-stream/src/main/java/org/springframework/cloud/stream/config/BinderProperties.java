@@ -26,7 +26,7 @@ public class BinderProperties {
 
 	private String type;
 
-	private Properties environment;
+	private Properties environment = new Properties();
 
 	public String getType() {
 		return type;
