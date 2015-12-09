@@ -16,6 +16,7 @@
 package org.springframework.cloud.stream.binding;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.messaging.MessageChannel;
@@ -28,24 +29,25 @@ import org.springframework.messaging.PollableChannel;
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  */
-public class DefaultChannelFactory implements ChannelFactory {
+public class DefaultChannelFactory implements ChannelFactory<MessageChannel> {
 
 	@Autowired
 	MessageConverterConfigurer messageConverterConfigurer;
 
 	@Override
-	public MessageChannel createBindableChannel(String name, Class<?> channelType) throws Exception {
+	public <T extends MessageChannel> MessageChannel createBindableChannel(String name, Class<?> channelType)
+			throws Exception {
 		MessageChannel messageChannel = createMessageChannel(channelType);
 		messageConverterConfigurer.configureMessageConverters(messageChannel, name);
 		return messageChannel;
 	}
 
 	@Override
-	public MessageChannel createSharedChannel(Class<?> channelType) {
+	public  <T extends MessageChannel> MessageChannel createSharedChannel(Class<?> channelType) throws Exception {
 		return createMessageChannel(channelType);
 	}
 
-	private MessageChannel createMessageChannel(Class<?> messageChannelType) {
+	private AbstractMessageChannel createMessageChannel(Class<?> messageChannelType) {
 		return isPollable(messageChannelType) ? new QueueChannel() : new DirectChannel();
 	}
 

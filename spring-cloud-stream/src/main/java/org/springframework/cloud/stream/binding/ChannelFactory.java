@@ -23,9 +23,9 @@ import org.springframework.messaging.MessageChannel;
  *
  * @author Ilayaperumal Gopinathan
  */
-public interface ChannelFactory {
+public interface ChannelFactory<T> {
 
-	MessageChannel createBindableChannel(String name, Class<?> channelType) throws Exception;
+	<T extends MessageChannel> MessageChannel createBindableChannel(String name, Class<?> channelType) throws Exception;
 
-	MessageChannel createSharedChannel(Class<?> channelType);
+	<T extends MessageChannel> MessageChannel createSharedChannel(Class<?> channelType) throws Exception;
 }
