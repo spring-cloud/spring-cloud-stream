@@ -111,6 +111,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				defaultDomain += ".";
 			}
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
+			args.add("--spring.application.admin.enabled=false");
 			SpringApplicationBuilder springApplicationBuilder =
 					new SpringApplicationBuilder()
 							.sources(binderConfiguration.getBinderType().getConfigurationClasses())
