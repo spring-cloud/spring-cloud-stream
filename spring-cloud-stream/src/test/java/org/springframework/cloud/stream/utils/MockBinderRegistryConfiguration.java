@@ -23,28 +23,28 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderType;
+import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
+import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
 
 /**
  * A simple configuration that creates mock {@link org.springframework.cloud.stream.binder.Binder}s.
- *
  * @author Marius Bogoevici
  */
 @Configuration
 public class MockBinderRegistryConfiguration {
 
 	@Bean
-	public BinderFactory<?> binderFactory() {
-		return new DefaultBinderFactory<>(Collections.singletonMap("mock",new BinderConfiguration(
-				new BinderType("",new Class[]{MockBinderConfiguration.class}),new Properties())));
+	public BinderTypeRegistry binderTypeRegistry() {
+		return new DefaultBinderTypeRegistry(
+				Collections.singletonMap("mock", new BinderType("", new Class[]{MockBinderConfiguration.class})));
 	}
 
 	@Bean
 	public Binder<?> defaultBinder(BinderFactory<MessageChannel> binderFactory) {
 		return binderFactory.getBinder(null);
 	}
-
 }

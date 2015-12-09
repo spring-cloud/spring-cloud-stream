@@ -54,7 +54,6 @@ public class BinderFactoryConfiguration {
 	@ConditionalOnMissingBean(BinderFactory.class)
 	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
 									   ChannelBindingServiceProperties channelBindingServiceProperties) {
-
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
 		if (!CollectionUtils.isEmpty(channelBindingServiceProperties.getBinders())) {
 			for (Map.Entry<String, BinderProperties> binderEntry :
@@ -95,6 +94,10 @@ public class BinderFactoryConfiguration {
 		}
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
+			if (resources == null || !resources.hasMoreElements()) {
+				throw new BeanCreationException("Cannot create binder factory, no `META-INF/spring.binders` " +
+						"resources found on the classpath");
+			}
 			while (resources.hasMoreElements()) {
 				URL url = resources.nextElement();
 				UrlResource resource = new UrlResource(url);

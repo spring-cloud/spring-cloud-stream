@@ -59,8 +59,8 @@ public class BinderFactoryConfigurationTests {
 	@Test
 	public void loadBinderTypeRegistry() throws Exception {
 		try {
-			ConfigurableApplicationContext context = createBinderTestContext(
-					new String[]{});
+			ConfigurableApplicationContext context = createBinderTestContext(new String[]{});
+			fail();
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getMessage(),containsString("Cannot create binder factory, no `META-INF/spring.binders` " +
