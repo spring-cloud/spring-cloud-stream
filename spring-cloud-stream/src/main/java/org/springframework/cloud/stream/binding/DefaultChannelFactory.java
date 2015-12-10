@@ -16,7 +16,6 @@
 package org.springframework.cloud.stream.binding;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.messaging.MessageChannel;
@@ -29,29 +28,29 @@ import org.springframework.messaging.PollableChannel;
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  */
-public class DefaultChannelFactory implements ChannelFactory<MessageChannel> {
+public class DefaultChannelFactory implements ChannelFactory {
 
 	@Autowired
 	MessageConverterConfigurer messageConverterConfigurer;
 
 	@Override
-	public <T extends MessageChannel> MessageChannel createBindableChannel(String name, Class<?> channelType)
+	public <T extends MessageChannel> T createBindableChannel(String name, Class<T> channelType)
 			throws Exception {
-		MessageChannel messageChannel = createMessageChannel(channelType);
+		T messageChannel = createMessageChannel(channelType);
 		messageConverterConfigurer.configureMessageConverters(messageChannel, name);
 		return messageChannel;
 	}
 
 	@Override
-	public  <T extends MessageChannel> MessageChannel createSharedChannel(Class<?> channelType) throws Exception {
+	public <T extends MessageChannel> T createSharedChannel(Class<T> channelType) throws Exception {
 		return createMessageChannel(channelType);
 	}
 
-	private AbstractMessageChannel createMessageChannel(Class<?> messageChannelType) {
-		return isPollable(messageChannelType) ? new QueueChannel() : new DirectChannel();
+	private <T extends MessageChannel> T createMessageChannel(Class<T> messageChannelType) {
+		return isPollable(messageChannelType) ? (T) new QueueChannel() : (T) new DirectChannel();
 	}
 
-	private boolean isPollable(Class<?> channelType) {
+	private <T extends MessageChannel> boolean isPollable(Class<T> channelType) {
 		return PollableChannel.class.equals(channelType);
 	}
 }

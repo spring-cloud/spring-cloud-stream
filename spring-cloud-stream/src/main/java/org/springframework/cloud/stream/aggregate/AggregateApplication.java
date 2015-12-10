@@ -28,7 +28,6 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.messaging.MessageChannel;
 
 /**
  * Class that is responsible for embedding modules using shared channel registry.
@@ -90,7 +89,7 @@ public class AggregateApplication {
 				.web(false)
 				.headless(true)
 				.properties("spring.jmx.default-domain="
-								+ AggregatorParentConfiguration.class.getName());
+						+ AggregatorParentConfiguration.class.getName());
 		return aggregatorParentConfiguration.run(args);
 	}
 
@@ -120,7 +119,7 @@ public class AggregateApplication {
 
 	private static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] modules,
 			ChannelFactory channelFactory) {
-		MessageChannel sharedChannel = null;
+		DirectChannel sharedChannel = null;
 		for (int i = 0; i < modules.length; i++) {
 			Class<?> module = modules[i];
 			String moduleClassName = module.getName();
@@ -131,8 +130,8 @@ public class AggregateApplication {
 			try {
 				sharedChannel = channelFactory.createSharedChannel(DirectChannel.class);
 			}
-			catch(Exception e) {
-
+			catch (Exception e) {
+				throw new RuntimeException("Exception while creating shared channel " + e);
 			}
 			if (i < modules.length - 1) {
 				sharedChannelRegistry.register(getNamespace(moduleClassName, i)
