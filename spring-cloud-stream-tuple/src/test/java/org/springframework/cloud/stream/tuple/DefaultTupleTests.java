@@ -16,14 +16,18 @@
 
 package org.springframework.cloud.stream.tuple;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.springframework.core.convert.ConverterNotFoundException;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.springframework.cloud.stream.tuple.TupleBuilder.tuple;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -33,14 +37,13 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.cloud.stream.tuple.TupleBuilder.tuple;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import org.springframework.core.convert.ConverterNotFoundException;
 
 public class DefaultTupleTests {
 
@@ -299,7 +302,9 @@ public class DefaultTupleTests {
 	public void testGetStringThatFails() {
 		Tuple tuple = TupleBuilder.tuple().of("up", "down", "charm", 2, "top", 2.0f, "black", Color.black);
 		thrown.expect(ConverterNotFoundException.class);
-		thrown.expectMessage("No converter found capable of converting from type java.awt.Color to type java.lang.String");
+		thrown.expectMessage(allOf(containsString("No converter found capable of converting from type"),
+				containsString("java.awt.Color"),
+				containsString("java.lang.String")));
 		assertThat(tuple.getString("black"), equalTo("omg"));
 	}
 
