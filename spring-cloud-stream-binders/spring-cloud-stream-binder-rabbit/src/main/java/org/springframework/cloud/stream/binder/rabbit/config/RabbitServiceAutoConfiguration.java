@@ -61,4 +61,11 @@ public class RabbitServiceAutoConfiguration {
 			return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
 		}
 	}
+
+	@Configuration
+	@Profile("!cloud")
+	@Import(RabbitAutoConfiguration.class)
+	protected static class NoCloudConfig {
+
+	}
 }

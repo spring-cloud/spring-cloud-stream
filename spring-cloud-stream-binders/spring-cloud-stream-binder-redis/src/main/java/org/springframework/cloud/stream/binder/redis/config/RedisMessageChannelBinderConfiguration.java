@@ -34,7 +34,7 @@ import org.springframework.integration.codec.Codec;
  */
 @Configuration
 @EnableConfigurationProperties(RedisBinderConfigurationProperties.class)
-@Import({RedisAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class, KryoCodecAutoConfiguration.class})
+@Import({PropertyPlaceholderAutoConfiguration.class, KryoCodecAutoConfiguration.class})
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.redis")
 public class RedisMessageChannelBinderConfiguration {
 

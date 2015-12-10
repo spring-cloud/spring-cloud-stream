@@ -26,7 +26,6 @@ import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPos
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
-import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.rabbit.ConnectionFactorySettings;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
@@ -37,7 +36,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.codec.Codec;
 
 @Configuration
-@Import({RabbitAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class, KryoCodecAutoConfiguration.class})
+@Import({PropertyPlaceholderAutoConfiguration.class, KryoCodecAutoConfiguration.class})
 @EnableConfigurationProperties({RabbitBinderConfigurationProperties.class})
 public class RabbitMessageChannelBinderConfiguration {
 
