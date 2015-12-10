@@ -131,7 +131,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 											(Class<? extends MessageChannel>)method.getReturnType()), true));
 						}
 						else {
-							configureSharedMessageChannel(name, method.getReturnType(), sharedChannel);
+							configureSharedMessageChannel(name,
+									(Class<? extends MessageChannel>) method.getReturnType(), sharedChannel);
 						}
 					}
 				}
@@ -153,7 +154,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 									channelFactory.createBindableChannel(name, (Class<? extends MessageChannel>) method.getReturnType()), true));
 						}
 						else {
-							configureSharedMessageChannel(name, method.getReturnType(), sharedChannel);
+							configureSharedMessageChannel(name, (Class<? extends MessageChannel>)method.getReturnType(),
+									sharedChannel);
 						}
 					}
 				}
@@ -174,13 +176,12 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		return this.channelNamespace + "." + name;
 	}
 
-	private void configureSharedMessageChannel(String name, Class<?> channelType, MessageChannel sharedChannel)
+	private void configureSharedMessageChannel(String name, Class<? extends MessageChannel> channelType, MessageChannel sharedChannel)
 			throws Exception {
 		if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
 			// handle the special case where the shared channel is of a different nature
 			// (i.e. pollable vs subscribable) than the target channel
-			final MessageChannel inputChannel = this.channelFactory.
-					createSharedChannel((Class<? extends MessageChannel>) channelType);
+			final MessageChannel inputChannel = this.channelFactory.createSharedChannel(channelType);
 			if (isPollable(sharedChannel.getClass())) {
 				bridgePollableToSubscribableChannel(sharedChannel, inputChannel);
 			}
