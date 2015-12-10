@@ -17,11 +17,14 @@
 package org.springframework.cloud.stream.binder.kafka.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
+import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.util.ObjectUtils;
@@ -34,6 +37,7 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @EnableConfigurationProperties(KafkaBinderConfigurationProperties.class)
+@Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka")
 public class KafkaMessageChannelBinderConfiguration {
 

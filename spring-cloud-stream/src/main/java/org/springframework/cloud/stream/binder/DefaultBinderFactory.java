@@ -155,8 +155,6 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	/**
 	 * Configuration class that enables autoconfiguration for the binders
 	 */
-	// TODO: Reconsider the use of autoconfiguration as part of binder configuration refactoring
-	@EnableAutoConfiguration
 	public static class SeedConfiguration {
 	}
 }
