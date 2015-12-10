@@ -23,7 +23,6 @@ import java.util.Properties;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.EnvironmentAware;
@@ -115,7 +114,6 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 			SpringApplicationBuilder springApplicationBuilder =
 					new SpringApplicationBuilder()
 							.sources(binderConfiguration.getBinderType().getConfigurationClasses())
-							.sources(SeedConfiguration.class)
 							.bannerMode(Mode.OFF)
 							.web(false);
 			ConfigurableApplicationContext binderProducingContext =
@@ -150,13 +148,5 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 		public ConfigurableApplicationContext getBinderContext() {
 			return binderContext;
 		}
-	}
-
-	/**
-	 * Configuration class that enables autoconfiguration for the binders
-	 */
-	// TODO: Reconsider the use of autoconfiguration as part of binder configuration refactoring
-	@EnableAutoConfiguration
-	public static class SeedConfiguration {
 	}
 }

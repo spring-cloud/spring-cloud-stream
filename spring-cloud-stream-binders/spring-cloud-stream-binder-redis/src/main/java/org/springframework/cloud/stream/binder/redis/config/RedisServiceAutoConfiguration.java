@@ -61,4 +61,9 @@ public class RedisServiceAutoConfiguration {
 		}
 	}
 
+	@Profile("!cloud")
+	@Import(RedisAutoConfiguration.class)
+	protected static class NoCloudConfig {
+	}
+
 }
