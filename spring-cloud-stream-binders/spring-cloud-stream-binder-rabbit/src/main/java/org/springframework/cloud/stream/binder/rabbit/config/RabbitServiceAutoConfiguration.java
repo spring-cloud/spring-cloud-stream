@@ -66,6 +66,5 @@ public class RabbitServiceAutoConfiguration {
 	@Profile("!cloud")
 	@Import(RabbitAutoConfiguration.class)
 	protected static class NoCloudConfig {
-
 	}
 }

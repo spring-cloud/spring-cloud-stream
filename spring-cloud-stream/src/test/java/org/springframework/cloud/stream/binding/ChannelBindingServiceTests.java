@@ -51,7 +51,9 @@ public class ChannelBindingServiceTests {
 		properties.setBindings(bindings);
 		@SuppressWarnings("unchecked")
 		DefaultBinderFactory<MessageChannel> binderFactory =
-				new DefaultBinderFactory<>(Collections.singletonMap("mock", new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}), new Properties())));
+				new DefaultBinderFactory<>(Collections.singletonMap("mock",
+						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
+								new Properties(), true)));
 		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
@@ -73,7 +75,9 @@ public class ChannelBindingServiceTests {
 		properties.setBindings(bindings);
 		@SuppressWarnings("unchecked")
 		DefaultBinderFactory<MessageChannel> binderFactory =
-				new DefaultBinderFactory<>(Collections.singletonMap("mock", new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}), new Properties())));
+				new DefaultBinderFactory<>(Collections.singletonMap("mock",
+						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
+								new Properties(), true)));
 		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();

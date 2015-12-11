@@ -32,13 +32,17 @@ public class BinderConfiguration {
 
 	private final Properties properties;
 
+	private final boolean inheritEnvironment;
+
 	/**
 	 * @param binderType the binder type used by this configuration
 	 * @param properties the properties for setting up the binder
+	 * @param inheritEnvironment whether the binder should inherit the environment of the module
 	 */
-	public BinderConfiguration(BinderType binderType, Properties properties) {
+	public BinderConfiguration(BinderType binderType, Properties properties, boolean inheritEnvironment) {
 		this.binderType = binderType;
 		this.properties = properties;
+		this.inheritEnvironment = inheritEnvironment;
 	}
 
 	public BinderType getBinderType() {
@@ -47,5 +51,9 @@ public class BinderConfiguration {
 
 	public Properties getProperties() {
 		return properties;
+	}
+
+	public boolean isInheritEnvironment() {
+		return inheritEnvironment;
 	}
 }

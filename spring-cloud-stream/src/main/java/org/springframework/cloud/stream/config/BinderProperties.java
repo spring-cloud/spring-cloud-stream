@@ -28,6 +28,8 @@ public class BinderProperties {
 
 	private Properties environment = new Properties();
 
+	private boolean inheritEnvironment = true;
+
 	public String getType() {
 		return type;
 	}
@@ -44,4 +46,11 @@ public class BinderProperties {
 		this.environment = environment;
 	}
 
+	public boolean isInheritEnvironment() {
+		return inheritEnvironment;
+	}
+
+	public void setInheritEnvironment(boolean inheritEnvironment) {
+		this.inheritEnvironment = inheritEnvironment;
+	}
 }

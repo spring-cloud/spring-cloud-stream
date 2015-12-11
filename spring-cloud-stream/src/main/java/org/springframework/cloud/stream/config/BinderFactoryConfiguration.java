@@ -62,21 +62,23 @@ public class BinderFactoryConfiguration {
 				if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
 					binderConfigurations.put(binderEntry.getKey(),
 							new BinderConfiguration(binderTypeRegistry.get(binderEntry.getKey()),
-									binderProperties.getEnvironment()));
+									binderProperties.getEnvironment(), binderProperties.isInheritEnvironment()));
 				}
 				else {
 					Assert.hasText(binderProperties.getType(), "No 'type' property present for custom " +
 							"binder " + binderEntry.getKey());
+					BinderType binderType = binderTypeRegistry.get(binderProperties.getType());
+					Assert.notNull(binderType, "Binder type " + binderProperties.getType() + " is not defined");
 					binderConfigurations.put(binderEntry.getKey(),
-							new BinderConfiguration(binderTypeRegistry.get(binderProperties.getType()),
-									binderProperties.getEnvironment()));
+							new BinderConfiguration(binderType, binderProperties.getEnvironment(),
+									binderProperties.isInheritEnvironment()));
 				}
 			}
 		}
 		else {
 			for (Map.Entry<String, BinderType> entry : binderTypeRegistry.getAll().entrySet()) {
 				binderConfigurations.put(entry.getKey(),
-						new BinderConfiguration(entry.getValue(), new Properties()));
+						new BinderConfiguration(entry.getValue(), new Properties(), true));
 			}
 		}
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory<>(binderConfigurations);

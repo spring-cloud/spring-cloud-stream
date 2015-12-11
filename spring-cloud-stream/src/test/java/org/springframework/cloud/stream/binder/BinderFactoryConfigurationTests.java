@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -97,6 +98,33 @@ public class BinderFactoryConfigurationTests {
 
 		Binder binder1 = binderFactory.getBinder("binder1");
 		assertThat(((StubBinder1)binder1).getName(), is(equalTo("foo")));
+	}
+
+	@Test
+	public void loadBinderTypeRegistryWithOneCustomBinderAndSharedEnvironment() throws Exception {
+		ConfigurableApplicationContext context = createBinderTestContext(
+				new String[] {"binder1"}, "binder1.name=foo",
+						"spring.cloud.stream.binders.custom.properties.foo=bar",
+						"spring.cloud.stream.binders.custom.type=binder1");
+
+		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+
+		Binder binder1 = binderFactory.getBinder("custom");
+		assertThat(((StubBinder1)binder1).getName(), is(equalTo("foo")));
+	}
+
+	@Test
+	public void loadBinderTypeRegistryWithOneCustomBinderAndIsolatedEnvironment() throws Exception {
+		ConfigurableApplicationContext context = createBinderTestContext(
+				new String[] {"binder1"}, "binder1.name=foo",
+				"spring.cloud.stream.binders.custom.type=binder1",
+				"spring.cloud.stream.binders.custom.environment.foo=bar",
+				"spring.cloud.stream.binders.custom.inheritEnvironment=false");
+
+		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+
+		Binder binder1 = binderFactory.getBinder("custom");
+		assertThat(((StubBinder1)binder1).getName(),isEmptyOrNullString());
 	}
 
 	@Test

@@ -24,10 +24,10 @@ import java.util.Properties;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Environment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.StringUtils;
 
@@ -36,13 +36,13 @@ import org.springframework.util.StringUtils;
  *
  * @author Marius Bogoevici
  */
-public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean, EnvironmentAware {
+public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean, ApplicationContextAware {
 
 	private final Map<String, BinderConfiguration> binderConfigurations;
 
 	private final Map<String, BinderInstanceHolder<T>> binderInstanceCache = new HashMap<>();
 
-	private volatile Environment environment;
+	private volatile ConfigurableApplicationContext context;
 
 	private volatile String defaultBinder;
 
@@ -51,8 +51,8 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	}
 
 	@Override
-	public void setEnvironment(Environment environment) {
-		this.environment = environment;
+	public void setApplicationContext(ApplicationContext applicationContext) {
+		this.context = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	public void setDefaultBinder(String defaultBinder) {
@@ -104,7 +104,8 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				args.add(String.format("--%s=%s",property.getKey(),property.getValue()));
 			}
 			// Initialize the domain with a unique name based on the bootstrapping context setting
-			String defaultDomain = this.environment != null ? this.environment.getProperty("spring.jmx.default-domain") : null;
+			ConfigurableEnvironment environment = context != null ? context.getEnvironment() : null;
+			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain") : null;
 			if (defaultDomain == null) {
 				defaultDomain = "";
 			}
@@ -112,16 +113,22 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				defaultDomain += ".";
 			}
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
-			args.add("--spring.application.admin.enabled=false");
 			SpringApplicationBuilder springApplicationBuilder =
 					new SpringApplicationBuilder()
 							.sources(binderConfiguration.getBinderType().getConfigurationClasses())
 							.bannerMode(Mode.OFF)
 							.web(false);
-			if (this.environment instanceof ConfigurableEnvironment) {
-				StandardEnvironment environment = new StandardEnvironment();
-				environment.merge((ConfigurableEnvironment) this.environment);
-				springApplicationBuilder.environment(environment);
+			// If the environment is not customized and a main context is available, we will set the latter as parent.
+			// This ensures that the defaults and user-defined customizations (e.g. custom connection factory beans)
+			// are propagated to the binder context. If the environment is customized, then the binder context should
+			// not inherit any beans from the parent
+			if (binderProperties.isEmpty() && context != null) {
+				springApplicationBuilder.parent(context);
+			}
+			else if (environment != null && binderConfiguration.isInheritEnvironment()) {
+				StandardEnvironment binderEnvironment = new StandardEnvironment();
+				binderEnvironment.merge(environment);
+				springApplicationBuilder.environment(binderEnvironment);
 			}
 			ConfigurableApplicationContext binderProducingContext =
 					springApplicationBuilder.run(args.toArray(new String[args.size()]));
