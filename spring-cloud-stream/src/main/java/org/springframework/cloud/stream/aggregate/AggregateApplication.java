@@ -131,7 +131,7 @@ public class AggregateApplication {
 				sharedChannel = channelFactory.createSharedChannel(DirectChannel.class);
 			}
 			catch (Exception e) {
-				throw new RuntimeException("Exception while creating shared channel " + e);
+				throw new RuntimeException("Exception while creating shared channel", e);
 			}
 			if (i < modules.length - 1) {
 				sharedChannelRegistry.register(getNamespace(moduleClassName, i)

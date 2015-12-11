@@ -44,7 +44,7 @@ public class ModuleAggregationTest {
 		ConfigurableApplicationContext aggregatedApplicationContext = AggregateApplication.run(TestSource.class,
 				TestProcessor.class);
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
-		ChannelFactory channelFactory= aggregatedApplicationContext.getBean(ChannelFactory.class);
+		ChannelFactory channelFactory = aggregatedApplicationContext.getBean(ChannelFactory.class);
 		assertNotNull(channelFactory);
 		assertThat(sharedChannelRegistry.getAll().keySet(), hasSize(2));
 	}

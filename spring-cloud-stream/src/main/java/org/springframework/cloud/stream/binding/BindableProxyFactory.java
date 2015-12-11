@@ -124,15 +124,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 					Input input = AnnotationUtils.findAnnotation(method, Input.class);
 					if (input != null) {
 						String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+						Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
 						MessageChannel sharedChannel = locateSharedChannel(name);
 						if (sharedChannel == null) {
 							inputHolders.put(name, new ChannelHolder(
-									channelFactory.createBindableChannel(name,
-											(Class<? extends MessageChannel>)method.getReturnType()), true));
+									channelFactory.createBindableChannel(name, channelType), true));
 						}
 						else {
-							configureSharedMessageChannel(name,
-									(Class<? extends MessageChannel>) method.getReturnType(), sharedChannel);
+							configureSharedMessageChannel(name, channelType, sharedChannel);
 						}
 					}
 				}
@@ -148,14 +147,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 					Output output = AnnotationUtils.findAnnotation(method, Output.class);
 					if (output != null) {
 						String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+						Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
 						MessageChannel sharedChannel = locateSharedChannel(name);
 						if (sharedChannel == null) {
 							outputHolders.put(name, new ChannelHolder(
-									channelFactory.createBindableChannel(name, (Class<? extends MessageChannel>) method.getReturnType()), true));
+									channelFactory.createBindableChannel(name, channelType), true));
 						}
 						else {
-							configureSharedMessageChannel(name, (Class<? extends MessageChannel>)method.getReturnType(),
-									sharedChannel);
+							configureSharedMessageChannel(name, channelType, sharedChannel);
 						}
 					}
 				}
