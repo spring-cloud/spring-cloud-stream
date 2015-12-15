@@ -26,7 +26,9 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.StringUtils;
 
 /**
@@ -59,7 +61,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 
 	@Override
 	public void destroy() throws Exception {
-		for (Map.Entry<String, BinderInstanceHolder<T>> entry : binderInstanceCache.entrySet()) {
+		for (Map.Entry<String, BinderInstanceHolder<T>> entry : this.binderInstanceCache.entrySet()) {
 			BinderInstanceHolder<T> binderInstanceHolder = entry.getValue();
 			binderInstanceHolder.getBinderContext().close();
 		}
@@ -70,28 +72,28 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 		String configurationName;
 		// Fall back to a default if no argument is provided
 		if (StringUtils.isEmpty(name)) {
-			if (binderConfigurations.size() == 0) {
+			if (this.binderConfigurations.size() == 0) {
 				throw new IllegalStateException("A default binder has been requested, but there there is no binder available");
 			}
-			else if (binderConfigurations.size() == 1) {
-				configurationName = binderConfigurations.keySet().iterator().next();
+			else if (this.binderConfigurations.size() == 1) {
+				configurationName = this.binderConfigurations.keySet().iterator().next();
 			}
 			else {
-				if (StringUtils.hasText(defaultBinder)) {
-					configurationName = defaultBinder;
+				if (StringUtils.hasText(this.defaultBinder)) {
+					configurationName = this.defaultBinder;
 				}
 				else {
 					throw new IllegalStateException(
 							"A default binder has been requested, but there is more than one binder available: "
-									+ StringUtils.collectionToCommaDelimitedString(binderConfigurations.keySet()) + ", and"
+									+ StringUtils.collectionToCommaDelimitedString(this.binderConfigurations.keySet()) + ", and"
 									+ " no default binder has been set.");
 				}
 			}
 		} else {
 			configurationName = name;
 		}
-		if (!binderInstanceCache.containsKey(configurationName)) {
-			BinderConfiguration binderConfiguration = binderConfigurations.get(configurationName);
+		if (!this.binderInstanceCache.containsKey(configurationName)) {
+			BinderConfiguration binderConfiguration = this.binderConfigurations.get(configurationName);
 			if (binderConfiguration == null) {
 				throw new IllegalStateException("Unknown binder configuration: " + configurationName);
 			}
@@ -102,7 +104,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				args.add(String.format("--%s=%s",property.getKey(),property.getValue()));
 			}
 			// Initialize the domain with a unique name based on the bootstrapping context setting
-			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain") : null;
+			String defaultDomain = this.environment != null ? this.environment.getProperty("spring.jmx.default-domain") : null;
 			if (defaultDomain == null) {
 				defaultDomain = "";
 			}
@@ -116,13 +118,18 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 							.sources(binderConfiguration.getBinderType().getConfigurationClasses())
 							.bannerMode(Mode.OFF)
 							.web(false);
+			if (this.environment instanceof ConfigurableEnvironment) {
+				StandardEnvironment environment = new StandardEnvironment();
+				environment.merge((ConfigurableEnvironment) this.environment);
+				springApplicationBuilder.environment(environment);
+			}
 			ConfigurableApplicationContext binderProducingContext =
 					springApplicationBuilder.run(args.toArray(new String[args.size()]));
 			@SuppressWarnings("unchecked")
-			Binder<T> binder = (Binder<T>) binderProducingContext.getBean(Binder.class);
-			binderInstanceCache.put(configurationName, new BinderInstanceHolder<>(binder, binderProducingContext));
+			Binder<T> binder = binderProducingContext.getBean(Binder.class);
+			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder<>(binder, binderProducingContext));
 		}
-		return binderInstanceCache.get(configurationName).getBinderInstance();
+		return this.binderInstanceCache.get(configurationName).getBinderInstance();
 	}
 
 	/**
@@ -142,11 +149,11 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 		}
 
 		public Binder<T> getBinderInstance() {
-			return binderInstance;
+			return this.binderInstance;
 		}
 
 		public ConfigurableApplicationContext getBinderContext() {
-			return binderContext;
+			return this.binderContext;
 		}
 	}
 }
