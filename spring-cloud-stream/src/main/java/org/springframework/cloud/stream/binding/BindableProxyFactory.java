@@ -127,8 +127,10 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 						Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
 						MessageChannel sharedChannel = locateSharedChannel(name);
 						if (sharedChannel == null) {
-							inputHolders.put(name, new ChannelHolder(
-									channelFactory.createBindableChannel(name, channelType), true));
+							final MessageChannel inputChannel = isPollable(channelType) ?
+									channelFactory.createPollableBindableChannel(name) :
+									channelFactory.createSubscribableBindableChannel(name);
+							inputHolders.put(name, new ChannelHolder(inputChannel, true));
 						}
 						else {
 							configureSharedMessageChannel(name, channelType, sharedChannel);
@@ -150,8 +152,10 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 						Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
 						MessageChannel sharedChannel = locateSharedChannel(name);
 						if (sharedChannel == null) {
-							outputHolders.put(name, new ChannelHolder(
-									channelFactory.createBindableChannel(name, channelType), true));
+							final MessageChannel outputChannel = isPollable(channelType) ?
+									channelFactory.createPollableBindableChannel(name) :
+									channelFactory.createSubscribableBindableChannel(name);
+							outputHolders.put(name, new ChannelHolder(outputChannel, true));
 						}
 						else {
 							configureSharedMessageChannel(name, channelType, sharedChannel);
@@ -180,11 +184,12 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
 			// handle the special case where the shared channel is of a different nature
 			// (i.e. pollable vs subscribable) than the target channel
-			final MessageChannel inputChannel = this.channelFactory.createSharedChannel(channelType);
 			if (isPollable(sharedChannel.getClass())) {
+				final MessageChannel inputChannel = this.channelFactory.createPollableSharedChannel();
 				bridgePollableToSubscribableChannel(sharedChannel, inputChannel);
 			}
 			else {
+				final MessageChannel inputChannel = this.channelFactory.createSubscribableSharedChannel();
 				bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel, inputChannel);
 			}
 		}

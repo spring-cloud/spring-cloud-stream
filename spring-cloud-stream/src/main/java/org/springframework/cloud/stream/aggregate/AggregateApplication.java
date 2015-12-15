@@ -27,7 +27,7 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.integration.channel.DirectChannel;
+import org.springframework.messaging.SubscribableChannel;
 
 /**
  * Class that is responsible for embedding modules using shared channel registry.
@@ -119,7 +119,7 @@ public class AggregateApplication {
 
 	private static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] modules,
 			ChannelFactory channelFactory) {
-		DirectChannel sharedChannel = null;
+		SubscribableChannel sharedChannel = null;
 		for (int i = 0; i < modules.length; i++) {
 			Class<?> module = modules[i];
 			String moduleClassName = module.getName();
@@ -128,7 +128,7 @@ public class AggregateApplication {
 						+ "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
 			try {
-				sharedChannel = channelFactory.createSharedChannel(DirectChannel.class);
+				sharedChannel = channelFactory.createSubscribableSharedChannel();
 			}
 			catch (Exception e) {
 				throw new RuntimeException("Exception while creating shared channel", e);

@@ -15,11 +15,10 @@
  */
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.PollableChannel;
+import org.springframework.messaging.SubscribableChannel;
 
 /**
  * Class that {@link BindableProxyFactory} uses to create message channels.
@@ -30,27 +29,33 @@ import org.springframework.messaging.PollableChannel;
  */
 public class DefaultChannelFactory implements ChannelFactory {
 
-	@Autowired
-	MessageConverterConfigurer messageConverterConfigurer;
+	private final MessageConverterConfigurer messageConverterConfigurer;
 
-	@Override
-	public <T extends MessageChannel> T createBindableChannel(String name, Class<T> channelType)
-			throws Exception {
-		T messageChannel = createMessageChannel(channelType);
-		messageConverterConfigurer.configureMessageConverters(messageChannel, name);
-		return messageChannel;
+	public DefaultChannelFactory(MessageConverterConfigurer messageConverterConfigurer) {
+		this.messageConverterConfigurer = messageConverterConfigurer;
 	}
 
 	@Override
-	public <T extends MessageChannel> T createSharedChannel(Class<T> channelType) throws Exception {
-		return createMessageChannel(channelType);
+	public PollableChannel createPollableBindableChannel(String name) throws Exception {
+		PollableChannel pollableChannel = new QueueChannel();
+		messageConverterConfigurer.configureMessageConverters(pollableChannel, name);
+		return pollableChannel;
 	}
 
-	private <T extends MessageChannel> T createMessageChannel(Class<T> messageChannelType) {
-		return isPollable(messageChannelType) ? (T) new QueueChannel() : (T) new DirectChannel();
+	@Override
+	public SubscribableChannel createSubscribableBindableChannel(String name) throws Exception {
+		SubscribableChannel subscribableChannel = new DirectChannel();
+		messageConverterConfigurer.configureMessageConverters(subscribableChannel, name);
+		return subscribableChannel;
 	}
 
-	private <T extends MessageChannel> boolean isPollable(Class<T> channelType) {
-		return PollableChannel.class.equals(channelType);
+	@Override
+	public SubscribableChannel createSubscribableSharedChannel() throws Exception {
+		return new DirectChannel();
+	}
+
+	@Override
+	public PollableChannel createPollableSharedChannel() throws Exception {
+		return new QueueChannel();
 	}
 }

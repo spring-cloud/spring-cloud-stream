@@ -79,8 +79,8 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public ChannelFactory channelFactory() {
-		return new DefaultChannelFactory();
+	public ChannelFactory channelFactory(ChannelBindingServiceProperties channelBindingServiceProperties) {
+		return new DefaultChannelFactory(messageConverterConfigurer(channelBindingServiceProperties));
 	}
 
 	@Bean
