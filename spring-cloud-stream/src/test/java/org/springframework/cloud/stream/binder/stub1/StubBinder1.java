@@ -25,6 +25,16 @@ import org.springframework.cloud.stream.binder.Binder;
  */
 public class StubBinder1 implements Binder {
 
+	private String name;
+
+	public String getName() {
+		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	@Override
 	public void bindConsumer(String name, Object inboundBindTarget, Properties properties) {
 

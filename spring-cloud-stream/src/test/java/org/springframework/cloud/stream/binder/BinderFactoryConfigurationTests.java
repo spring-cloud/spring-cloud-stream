@@ -33,7 +33,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import org.junit.Test;
-
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -87,6 +86,17 @@ public class BinderFactoryConfigurationTests {
 
 		Binder defaultBinder = binderFactory.getBinder(null);
 		assertThat(defaultBinder, is(binder1));
+	}
+
+	@Test
+	public void loadBinderTypeRegistryWithOneBinderAndSharedEnvironment() throws Exception {
+		ConfigurableApplicationContext context = createBinderTestContext(
+				new String[] {"binder1"}, "binder1.name=foo");
+
+		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+
+		Binder binder1 = binderFactory.getBinder("binder1");
+		assertThat(((StubBinder1)binder1).getName(), is(equalTo("foo")));
 	}
 
 	@Test
