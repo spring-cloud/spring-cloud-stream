@@ -63,9 +63,9 @@ public class EmbeddedHeadersMessageConverter {
 					: original.get(header);
 			if (value != null) {
 				String json = this.objectMapper.toJson(value);
-				headerValues[n++] = json.getBytes("UTF-8");
+				headerValues[n] = json.getBytes("UTF-8");
 				headerCount++;
-				headersLength += header.length() + json.length();
+				headersLength += header.length() + headerValues[n++].length;
 			}
 			else {
 				headerValues[n++] = null;

@@ -54,6 +54,24 @@ public class MessageConverterTests {
 	}
 
 	@Test
+	public void testUnicodeHeader() throws Exception {
+		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
+		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
+				.setHeader("foo", "bar")
+				.setHeader("baz", "ØØØØØØØØ")
+				.build();
+		byte[] embedded = converter.embedHeaders(new MessageValues(message), "foo", "baz");
+		assertEquals(0xff, embedded[0] & 0xff);
+		assertEquals("\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0012\"ØØØØØØØØ\"Hello",
+				new String(embedded, "UTF-8").substring(1));
+
+		MessageValues extracted = converter.extractHeaders(MessageBuilder.withPayload(embedded).build(), false);
+		assertEquals("Hello", new String((byte[])extracted.getPayload()));
+		assertEquals("bar", extracted.get("foo"));
+		assertEquals("ØØØØØØØØ", extracted.get("baz"));
+	}
+
+	@Test
 	public void testHeaderEmbeddingMissingHeader() throws Exception {
 		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
