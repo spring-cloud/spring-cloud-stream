@@ -29,6 +29,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -52,6 +53,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) {
+		Assert.isInstanceOf(ConfigurableApplicationContext.class, applicationContext);
 		this.context = (ConfigurableApplicationContext) applicationContext;
 	}
 

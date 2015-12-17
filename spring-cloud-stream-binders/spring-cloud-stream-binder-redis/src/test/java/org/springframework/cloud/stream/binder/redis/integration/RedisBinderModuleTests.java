@@ -48,7 +48,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 public class RedisBinderModuleTests {
 
 	@ClassRule
-	public static RedisTestSupport rabbitTestSupport = new RedisTestSupport();
+	public static RedisTestSupport redisTestSupport = new RedisTestSupport();
 
 	private ConfigurableApplicationContext context = null;
 
@@ -66,8 +66,8 @@ public class RedisBinderModuleTests {
 	@Test
 	public void testParentConnectionFactoryInheritedByDefault() {
 		context = SpringApplication.run(SimpleProcessor.class);
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null);
+		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
+		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RedisMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		RedisConnectionFactory binderConnectionFactory =
@@ -80,8 +80,8 @@ public class RedisBinderModuleTests {
 	@Test
 	public void testParentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run();
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null);
+		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
+		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RedisMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		RedisConnectionFactory binderConnectionFactory =
@@ -99,8 +99,8 @@ public class RedisBinderModuleTests {
 		params.add("--spring.cloud.stream.binders.custom.type=redis");
 		params.add("--spring.cloud.stream.binders.custom.environment.foo=bar");
 		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[]{}));
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null);
+		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
+		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RedisMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		RedisConnectionFactory binderConnectionFactory =
