@@ -111,6 +111,73 @@ An input channel is configured to receive partitioned data by setting its `parti
 
 While setting up multiple instances for partitioned data processing may be complex in the standalone case, Spring Cloud Data Flow can simplify the process significantly, by populating both the input and output values correctly, as well as relying on the runtime infrastructure to provide information about the instance index and instance count. 
 
+=== Binder selection
+
+Spring Cloud Stream relies on implementations of the Binder SPI to perform the task of connecting channels to message brokers. Each binder implementation typically connects to one type of system. Spring Cloud Stream provides out of the box binders for Redis, Rabbit and Kafka.
+
+====== Classpath detection
+
+By default, Spring Cloud Stream relies on auto-configuration configure the binding process. If a single binder implementation is found on the classpath, Spring Cloud Stream will use it automatically. So, for example, a Spring Cloud Stream project that aims to connect to Rabbit MQ can simply adding the following dependency:
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
+</dependency>
+----
+
+====== Multiple binders on the classpath
+
+When multiple binders are present on the classpath, the application must indicate what binder has to be used for the channel. Each binder configuration contains a `META-INF/spring.binders`, which is in fact a property file:
+
+[source]
+----
+rabbit:\
+org.springframework.cloud.stream.binder.rabbit.config.RabbitServiceAutoConfiguration
+----
+
+Similar files exist for the other binder implementations (i.e. Kafka and Redis), and it is expected that custom binder implementations will provide them, too. The key represents an identifying name for the binder implementation, whereas the value is a comma-separated list of configuration classes that contain one and only one bean definition of the type `org.springframework.cloud.stream.binder.Binder`.
+
+Selecting the binder can be done globally by either using the `spring.cloud.stream.defaultBinder` property, e.g. `spring.cloud.stream.defaultBinder=redis`, or by individually configuring them on each channel.
+
+For instance, a processor module that reads from Rabbit and writes to Redis can specify the following configuration: `spring.cloud.stream.bindings.input.binder=rabbit`,`spring.cloud.stream.bindings.output.binder=redis`.
+
+====== Connecting to multiple systems
+
+By default, binders share the Spring Boot autoconfiguration of the application module, and the default is to create one instance of each binder found on the classpath. In scenarios where a module should connect to more than one broker of the same type, Spring Cloud Stream allows to specify multiple binder configurations, with different environment settings. Please note that turning on explicit binder configuration will disable the default binder configuration process altogether, so all the binders in use must be included in the configuration. 
+
+For example, this is the typical configuration for a processor that connects to two rabbit instances:
+
+[source,yml]
+----
+spring:
+  cloud:
+    stream: 
+      bindings:
+        input: 
+          destination: foo
+          binder: rabbit1
+        output:
+          destination: bar
+          binder: rabbit2
+      binders:
+        rabbit1:
+          type: rabbit
+          environment:
+            spring:
+              rabbit:
+                host: <host1>
+        rabbit2:
+          type: rabbit
+          environment:
+            spring:
+              rabbit:
+                host: <host2>
+----
+
+
+
 === Managed vs standalone
 
 Code using this library can be deployed as a standalone application or as a Spring Cloud Data Flow module. In standalone mode your application will run happily as a service or in any PaaS (Cloud Foundry, Lattice, Heroku, Azure, etc.). Spring Cloud Data Flow helps orchestrating the communication between instances, so the aspects of module configuration that deal with module interconnection will be configured transparently.
