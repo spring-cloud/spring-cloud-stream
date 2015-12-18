@@ -161,8 +161,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private MessageChannel createBindableChannel(String name, Class<? extends MessageChannel> channelType) {
-			return isPollable(channelType) ? this.channelFactory.createPollableChannel(name) :
-					this.channelFactory.createSubscribableChannel(name);
+		return isPollable(channelType) ? this.channelFactory.createPollableChannel(name) :
+				this.channelFactory.createSubscribableChannel(name);
 	}
 
 	private MessageChannel locateSharedChannel(String name) {
