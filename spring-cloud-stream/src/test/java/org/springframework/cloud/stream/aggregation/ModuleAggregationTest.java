@@ -27,7 +27,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplication;
 import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binding.ChannelFactory;
+import org.springframework.cloud.stream.binding.BindableChannelFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -44,7 +44,7 @@ public class ModuleAggregationTest {
 		ConfigurableApplicationContext aggregatedApplicationContext = AggregateApplication.run(TestSource.class,
 				TestProcessor.class);
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
-		ChannelFactory channelFactory = aggregatedApplicationContext.getBean(ChannelFactory.class);
+		BindableChannelFactory channelFactory = aggregatedApplicationContext.getBean(BindableChannelFactory.class);
 		assertNotNull(channelFactory);
 		assertThat(sharedChannelRegistry.getAll().keySet(), hasSize(2));
 	}

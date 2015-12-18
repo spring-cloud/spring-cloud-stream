@@ -13,39 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.QueueChannel;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * Class that {@link BindableProxyFactory} uses to create and configure message channels.
+ * Defines methods to create/configure the {@link org.springframework.messaging.MessageChannel}s defined
+ * in {@link org.springframework.cloud.stream.annotation.EnableBinding}.
  *
- * @author Marius Bogoevici
- * @author David Syer
  * @author Ilayaperumal Gopinathan
  */
-public class BindableChannelFactory implements ChannelFactory {
+public interface BindableChannelFactory {
 
-	private final MessageConverterConfigurer messageConverterConfigurer;
+	/**
+	 * Create a {@link SubscribableChannel} that will be bound via the message channel
+	 * {@link org.springframework.cloud.stream.binder.Binder}.
+	 *
+	 * @param name name of the message channel
+	 * @return subscribable message channel
+	 */
+	SubscribableChannel createSubscribableChannel(String name);
 
-	public BindableChannelFactory(MessageConverterConfigurer messageConverterConfigurer) {
-		this.messageConverterConfigurer = messageConverterConfigurer;
-	}
+	/**
+	 * Create a {@link PollableChannel} that will be bound via the message channel
+	 * {@link org.springframework.cloud.stream.binder.Binder}.
+	 *
+	 * @param name name of the message channel
+	 * @return pollable message channel
+	 */
+	PollableChannel createPollableChannel(String name);
 
-	@Override
-	public PollableChannel createPollableChannel(String name) {
-		PollableChannel pollableChannel = new QueueChannel();
-		messageConverterConfigurer.configureMessageConverters(pollableChannel, name);
-		return pollableChannel;
-	}
-
-	@Override
-	public SubscribableChannel createSubscribableChannel(String name) {
-		SubscribableChannel subscribableChannel = new DirectChannel();
-		messageConverterConfigurer.configureMessageConverters(subscribableChannel, name);
-		return subscribableChannel;
-	}
 }

@@ -79,7 +79,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	private int pollableBridgeDefaultFrequency;
 
 	@Autowired
-	private ChannelFactory channelFactory;
+	private BindableChannelFactory channelFactory;
 
 	@Autowired(required = false)
 	private SharedChannelRegistry sharedChannelRegistry;
