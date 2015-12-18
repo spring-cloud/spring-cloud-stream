@@ -27,35 +27,25 @@ import org.springframework.messaging.SubscribableChannel;
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  */
-public class DefaultChannelFactory implements ChannelFactory {
+public class BindableChannelFactory implements ChannelFactory {
 
 	private final MessageConverterConfigurer messageConverterConfigurer;
 
-	public DefaultChannelFactory(MessageConverterConfigurer messageConverterConfigurer) {
+	public BindableChannelFactory(MessageConverterConfigurer messageConverterConfigurer) {
 		this.messageConverterConfigurer = messageConverterConfigurer;
 	}
 
 	@Override
-	public PollableChannel createPollableBindableChannel(String name) throws Exception {
+	public PollableChannel createPollableChannel(String name) throws Exception {
 		PollableChannel pollableChannel = new QueueChannel();
 		messageConverterConfigurer.configureMessageConverters(pollableChannel, name);
 		return pollableChannel;
 	}
 
 	@Override
-	public SubscribableChannel createSubscribableBindableChannel(String name) throws Exception {
+	public SubscribableChannel createSubscribableChannel(String name) throws Exception {
 		SubscribableChannel subscribableChannel = new DirectChannel();
 		messageConverterConfigurer.configureMessageConverters(subscribableChannel, name);
 		return subscribableChannel;
-	}
-
-	@Override
-	public SubscribableChannel createSubscribableSharedChannel() throws Exception {
-		return new DirectChannel();
-	}
-
-	@Override
-	public PollableChannel createPollableSharedChannel() throws Exception {
-		return new QueueChannel();
 	}
 }

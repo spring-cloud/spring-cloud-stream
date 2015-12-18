@@ -21,12 +21,12 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binding.ChannelFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
@@ -76,8 +76,7 @@ public class AggregateApplication {
 	public static void runEmbedded(ConfigurableApplicationContext parentContext,
 			Class<?>[] modules, String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
-		ChannelFactory channelFactory = parentContext.getBean(ChannelFactory.class);
-		prepareSharedChannelRegistry(bean, modules, channelFactory);
+		prepareSharedChannelRegistry(bean, modules);
 		// create child contexts first
 		createChildContexts(parentContext, modules, args);
 	}
@@ -117,8 +116,7 @@ public class AggregateApplication {
 				.parent(applicationContext);
 	}
 
-	private static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] modules,
-			ChannelFactory channelFactory) {
+	private static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] modules) {
 		SubscribableChannel sharedChannel = null;
 		for (int i = 0; i < modules.length; i++) {
 			Class<?> module = modules[i];
@@ -128,7 +126,7 @@ public class AggregateApplication {
 						+ "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
 			try {
-				sharedChannel = channelFactory.createSubscribableSharedChannel();
+				sharedChannel = new DirectChannel();
 			}
 			catch (Exception e) {
 				throw new RuntimeException("Exception while creating shared channel", e);

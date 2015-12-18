@@ -34,7 +34,7 @@ public interface ChannelFactory {
 	 * @return Subscribable message channel
 	 * @throws Exception
 	 */
-	SubscribableChannel createSubscribableBindableChannel(String name) throws Exception;
+	SubscribableChannel createSubscribableChannel(String name) throws Exception;
 
 	/**
 	 * Create a {@link PollableChannel} that will be bound to the message channel
@@ -44,24 +44,6 @@ public interface ChannelFactory {
 	 * @return Pollable message channel
 	 * @throws Exception
 	 */
-	PollableChannel createPollableBindableChannel(String name) throws Exception;
-
-	/**
-	 * Create a {@link SubscribableChannel} that will be shared by the embedded modules in
-	 * {@link org.springframework.cloud.stream.aggregate.AggregateApplication}.
-	 *
-	 * @return Subscribable message channel
-	 * @throws Exception
-	 */
-	SubscribableChannel createSubscribableSharedChannel() throws Exception;
-
-	/**
-	 * Create a {@link PollableChannel} that will be shared by the embedded modules in
-	 * {@link org.springframework.cloud.stream.aggregate.AggregateApplication}.
-	 *
-	 * @return Pollable message channel
-	 * @throws Exception
-	 */
-	PollableChannel createPollableSharedChannel() throws Exception;
+	PollableChannel createPollableChannel(String name) throws Exception;
 
 }

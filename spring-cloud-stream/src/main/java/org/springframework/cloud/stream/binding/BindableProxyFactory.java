@@ -41,6 +41,8 @@ import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.config.ConsumerEndpointFactoryBean;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.MessageChannel;
@@ -120,58 +122,53 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
-				try {
-					Input input = AnnotationUtils.findAnnotation(method, Input.class);
-					if (input != null) {
-						String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
-						Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
-						MessageChannel sharedChannel = locateSharedChannel(name);
-						if (sharedChannel == null) {
-							final MessageChannel inputChannel = isPollable(channelType) ?
-									channelFactory.createPollableBindableChannel(name) :
-									channelFactory.createSubscribableBindableChannel(name);
-							inputHolders.put(name, new ChannelHolder(inputChannel, true));
-						}
-						else {
-							if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
-								bridgeSharedChannel(channelType, sharedChannel);
-							}
+				Input input = AnnotationUtils.findAnnotation(method, Input.class);
+				if (input != null) {
+					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+					Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
+					MessageChannel sharedChannel = locateSharedChannel(name);
+					if (sharedChannel == null) {
+						inputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
+					}
+					else {
+						if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
+							bridgeSharedChannel(channelType, sharedChannel);
 						}
 					}
-				}
-				catch (Exception e) {
-					throw new RuntimeException(e);
 				}
 			}
 		});
 		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
-				try {
-					Output output = AnnotationUtils.findAnnotation(method, Output.class);
-					if (output != null) {
-						String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
-						Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
-						MessageChannel sharedChannel = locateSharedChannel(name);
-						if (sharedChannel == null) {
-							final MessageChannel outputChannel = isPollable(channelType) ?
-									channelFactory.createPollableBindableChannel(name) :
-									channelFactory.createSubscribableBindableChannel(name);
-							outputHolders.put(name, new ChannelHolder(outputChannel, true));
-						}
-						else {
-							if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
-								bridgeSharedChannel(channelType, sharedChannel);
-							}
+				Output output = AnnotationUtils.findAnnotation(method, Output.class);
+				if (output != null) {
+					String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+					Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
+					MessageChannel sharedChannel = locateSharedChannel(name);
+					if (sharedChannel == null) {
+						outputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
+					}
+					else {
+						if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
+							bridgeSharedChannel(channelType, sharedChannel);
 						}
 					}
-				}
-				catch (Exception e) {
-					throw new RuntimeException(e);
 				}
 			}
 
 		});
+	}
+
+	private MessageChannel createBindableChannel(String name, Class<? extends MessageChannel> channelType) {
+		try {
+			return isPollable(channelType) ?
+					this.channelFactory.createPollableChannel(name) :
+					this.channelFactory.createSubscribableChannel(name);
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private MessageChannel locateSharedChannel(String name) {
@@ -183,16 +180,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		return this.channelNamespace + "." + name;
 	}
 
-	private void bridgeSharedChannel(Class<? extends MessageChannel> channelType, MessageChannel sharedChannel)
-			throws Exception {
+	private void bridgeSharedChannel(Class<? extends MessageChannel> channelType, MessageChannel sharedChannel) {
 		// handle the special case where the shared channel is of a different nature
 		// (i.e. pollable vs subscribable) than the target channel
 		if (isPollable(sharedChannel.getClass())) {
-			bridgePollableToSubscribableChannel(sharedChannel, this.channelFactory.createSubscribableSharedChannel());
+			bridgePollableToSubscribableChannel(sharedChannel, new DirectChannel());
 		}
 		else {
-			bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel,
-					this.channelFactory.createPollableSharedChannel());
+			bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel, new QueueChannel());
 		}
 	}
 
@@ -201,8 +196,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel, MessageChannel inputChannel) {
-		sharedChannel.subscribe(new MessageChannelBinderSupport.DirectHandler(
-				inputChannel));
+		sharedChannel.subscribe(new MessageChannelBinderSupport.DirectHandler(inputChannel));
 	}
 
 	private void bridgePollableToSubscribableChannel(MessageChannel pollableChannel,
