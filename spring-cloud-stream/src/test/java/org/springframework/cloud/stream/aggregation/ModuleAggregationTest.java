@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.aggregation;
 
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import org.junit.Ignore;
@@ -26,6 +27,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplication;
 import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.binding.ChannelFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -42,6 +44,8 @@ public class ModuleAggregationTest {
 		ConfigurableApplicationContext aggregatedApplicationContext = AggregateApplication.run(TestSource.class,
 				TestProcessor.class);
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
+		ChannelFactory channelFactory = aggregatedApplicationContext.getBean(ChannelFactory.class);
+		assertNotNull(channelFactory);
 		assertThat(sharedChannelRegistry.getAll().keySet(), hasSize(2));
 	}
 
