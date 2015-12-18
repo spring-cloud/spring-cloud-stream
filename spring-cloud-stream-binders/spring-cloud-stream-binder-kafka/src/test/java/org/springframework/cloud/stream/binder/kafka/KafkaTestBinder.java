@@ -18,6 +18,9 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.List;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
+
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.cloud.stream.test.junit.kafka.TestKafkaCluster;
@@ -27,9 +30,6 @@ import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
 
 
 /**
@@ -79,7 +79,6 @@ public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinde
 		return new PojoCodec(new TupleRegistrar());
 	}
 
-	//TODO: temporary wrapper for compatibility with SI Codec types
 	private static class TupleRegistrar implements KryoRegistrar {
 		private final TupleKryoRegistrar delegate = new TupleKryoRegistrar();
 

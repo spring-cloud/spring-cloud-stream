@@ -145,7 +145,6 @@ public class ModuleLauncher {
 					jarURLs.add(jarFileArchive.getUrl());
 					for (Archive archive : jarFileArchive.getNestedArchives(ArchiveMatchingEntryFilter.FILTER)) {
 						// avoid duplication based on unique JAR names
-						// TODO - read the metadata from the JARs, do proper version resolution on merge
 						String urlAsString = archive.getUrl().toString();
 						String jarNameWithExtension = urlAsString.substring(0, urlAsString.lastIndexOf("!/"));
 						String jarNameWithoutExtension =

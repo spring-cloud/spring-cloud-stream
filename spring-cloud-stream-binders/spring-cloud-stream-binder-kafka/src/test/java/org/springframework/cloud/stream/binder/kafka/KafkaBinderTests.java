@@ -29,6 +29,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import kafka.api.OffsetRequest;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -46,8 +47,6 @@ import org.springframework.integration.kafka.listener.KafkaMessageListenerContai
 import org.springframework.integration.kafka.listener.MessageListener;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-
-import kafka.api.OffsetRequest;
 
 
 /**
@@ -312,11 +311,11 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		binder.unbindConsumers("foo" + uniqueBindingId + ".0");
 	}
 
-	@Override @Ignore // TODO
+	@Override @Ignore("https://github.com/spring-cloud/spring-cloud-stream/issues/243")
 	public void testSendAndReceivePubSub() throws Exception {
 	}
 
-	@Override @Ignore // TODO
+	@Override @Ignore("https://github.com/spring-cloud/spring-cloud-stream/issues/243")
 	public void createInboundPubSubBeforeOutboundPubSub() throws Exception {
 	}
 

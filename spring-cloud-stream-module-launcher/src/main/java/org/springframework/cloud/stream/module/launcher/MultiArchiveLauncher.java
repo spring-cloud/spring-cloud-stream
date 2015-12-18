@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.module.launcher;
 
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -65,7 +64,6 @@ public class MultiArchiveLauncher extends Launcher {
 	}
 
 	@Override
-	// TODO: this method is protected in Spring Boot but we need it to be public here
 	public void launch(String[] args) {
 		super.launch(args);
 	}

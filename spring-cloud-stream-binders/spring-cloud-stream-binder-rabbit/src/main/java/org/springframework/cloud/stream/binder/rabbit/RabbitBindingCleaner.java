@@ -56,7 +56,6 @@ public class RabbitBindingCleaner implements BindingCleaner {
 				user == null ? "guest" : user,
 				pw == null ? "guest" : pw,
 				vhost == null ? "/" : vhost,
-				//TODO: Change prefix
 				binderPrefix == null ? BINDER_PREFIX  : binderPrefix,
 				entity, isJob);
 	}

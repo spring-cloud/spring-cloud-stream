@@ -272,7 +272,6 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 			Properties properties) {
 		validateConsumerProperties(name, properties, CONSUMER_REQUEST_REPLY_PROPERTIES);
 		final MessageChannel requestChannel = this.findOrCreateRequestReplyChannel(name, "requestor.", properties);
-		// TODO: handle Pollable ?
 		Assert.isInstanceOf(SubscribableChannel.class, requests);
 		((SubscribableChannel) requests).subscribe(new MessageHandler() {
 
@@ -305,7 +304,6 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 			}
 		});
 
-		// TODO: handle Pollable ?
 		Assert.isInstanceOf(SubscribableChannel.class, replies);
 		final SubscribableChannel replyChannel = this.findOrCreateRequestReplyChannel(name, "replier.", properties);
 		((SubscribableChannel) replies).subscribe(new MessageHandler() {

@@ -43,7 +43,6 @@ public class ConnectionFactorySettings {
 	private Resource sslPropertiesLocation;
 
 	@Bean
-	// TODO: Move to spring boot
 	public ConnectionFactory rabbitConnectionFactory(RabbitProperties config,
 			com.rabbitmq.client.ConnectionFactory rabbitConnectionFactory) throws Exception {
 		CachingConnectionFactory factory = new CachingConnectionFactory(rabbitConnectionFactory);

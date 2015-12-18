@@ -21,12 +21,6 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.integration.kafka.core.Partition;
-import org.springframework.integration.kafka.listener.OffsetManager;
-import org.springframework.util.Assert;
-
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;
@@ -39,6 +33,12 @@ import rx.subjects.PublishSubject;
 import rx.subjects.SerializedSubject;
 import rx.subjects.Subject;
 
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.integration.kafka.core.Partition;
+import org.springframework.integration.kafka.listener.OffsetManager;
+import org.springframework.util.Assert;
+
 /**
  * An {@link OffsetManager} that aggregates writes over a time or count window, using an underlying delegate to
  * do the actual operations. Its purpose is to reduce the performance impact of writing operations
@@ -48,7 +48,6 @@ import rx.subjects.Subject;
  *
  * @author Marius Bogoevici
  */
-//TODO: Move this class to spring-integration-kafka
 public class WindowingOffsetManager implements OffsetManager, InitializingBean, DisposableBean {
 
 	private final CreatePartitionAndOffsetFunction createPartitionAndOffsetFunction = new CreatePartitionAndOffsetFunction();

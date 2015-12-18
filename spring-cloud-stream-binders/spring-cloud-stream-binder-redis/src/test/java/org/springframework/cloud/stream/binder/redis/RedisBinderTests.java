@@ -88,10 +88,10 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 
 	@Override
 	@Test
-	@Ignore // TODO
+	@Ignore("https://github.com/spring-cloud/spring-cloud-stream/issues/247")
 	public void testSendAndReceivePubSub() throws Exception {
 
-		TimeUnit.SECONDS.sleep(2); //TODO remove timing issue
+		//TimeUnit.SECONDS.sleep(2);
 
 		super.testSendAndReceivePubSub();
 	}
@@ -352,7 +352,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		assertTrue(headers.contains("bar"));
 	}
 
-	@Override @Ignore // TODO
+	@Override @Ignore("https://github.com/spring-cloud/spring-cloud-stream/issues/247")
 	public void createInboundPubSubBeforeOutboundPubSub() throws Exception {
 	}
 

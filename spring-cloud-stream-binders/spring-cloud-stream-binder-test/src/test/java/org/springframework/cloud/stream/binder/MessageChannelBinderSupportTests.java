@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,9 +45,6 @@ import org.springframework.xd.tuple.DefaultTuple;
 import org.springframework.xd.tuple.Tuple;
 import org.springframework.xd.tuple.TupleBuilder;
 import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
 
 /**
  * @author Gary Russell
@@ -297,7 +296,6 @@ public class MessageChannelBinderSupportTests {
 		}
 	}
 
-	//TODO: temporary wrapper for compatibility with SI Codec types
 	private static class TupleRegistrar implements KryoRegistrar {
 		private final TupleKryoRegistrar delegate = new TupleKryoRegistrar();
 

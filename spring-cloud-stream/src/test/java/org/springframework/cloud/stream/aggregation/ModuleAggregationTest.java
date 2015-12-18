@@ -35,8 +35,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 /**
  * @author Marius Bogoevici
  */
-// TODO re-enable once we can test with a Mock binder
-@Ignore
+@Ignore("https://github.com/spring-cloud/spring-cloud-stream/issues/241")
 public class ModuleAggregationTest {
 
 	@Test

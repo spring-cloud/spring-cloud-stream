@@ -16,17 +16,6 @@
 
 package org.springframework.cloud.stream.tuple;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.core.convert.ConversionFailedException;
-
-import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -37,6 +26,18 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.springframework.cloud.stream.tuple.TupleBuilder.tuple;
+
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import org.springframework.core.convert.ConversionFailedException;
 
 /**
  * This is a port of the FieldSet tests from Spring Batch
@@ -317,7 +318,6 @@ public class DefaultTupleTestForBatch {
 			tuple.getBigDecimal(index);
 			fail("field value is not a number, exception expected");
 		}
-		// TODO - in batch this used to be IllegalArgumentException (which is the nested exception type now)
 		catch (ConversionFailedException e) {
 			assertTrue(e.getMessage().indexOf("TestString") > 0);
 		}
@@ -332,8 +332,6 @@ public class DefaultTupleTestForBatch {
 		}
 		catch (ConversionFailedException e) {
 			assertTrue(e.getMessage().indexOf("TestString") > 0);
-			// TODO - in batch this is part of the message, indicating what the name of the field is...
-			// assertTrue(e.getMessage().indexOf("name: [String]") > 0);
 		}
 	}
 
@@ -382,7 +380,6 @@ public class DefaultTupleTestForBatch {
 		}
 		catch (ConversionFailedException e) {
 			assertTrue(e.getMessage().indexOf("TestString") > 0);
-			// TODO - in batch this is part of the message, indicating what the name of the field is...
 			// assertTrue(e.getMessage().indexOf("name: [String]") > 0);
 		}
 
