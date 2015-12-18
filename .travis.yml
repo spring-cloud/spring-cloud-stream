@@ -13,3 +13,5 @@ install: true
 # contain the pull request’s number.
 script:
   - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s .settings.xml package -Pfull -U -Dmaven.test.redirectTestOutputToFile=false'
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || ./mvnw -s .settings.xml package -DskipTests -U -Dmaven.test.redirectTestOutputToFile=false'
+
