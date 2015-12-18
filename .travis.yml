@@ -12,4 +12,4 @@ install: true
 # is for a normal branch commit. When the build is for a pull request, it will 
 # contain the pull request’s number.
 script:
-  - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s .settings.xml package -U -Dmaven.test.redirectTestOutputToFile=false'
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s .settings.xml package -Pfull -U -Dmaven.test.redirectTestOutputToFile=false'
