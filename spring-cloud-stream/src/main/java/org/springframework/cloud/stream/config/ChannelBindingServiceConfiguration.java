@@ -79,7 +79,7 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	MessageConverterConfigurer messageConverterConfigurer
+	public MessageConverterConfigurer messageConverterConfigurer
 			(ChannelBindingServiceProperties channelBindingServiceProperties) {
 		return new MessageConverterConfigurer(channelBindingServiceProperties);
 	}

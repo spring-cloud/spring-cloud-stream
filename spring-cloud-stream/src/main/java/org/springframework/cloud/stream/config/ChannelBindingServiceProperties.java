@@ -21,12 +21,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * @author Dave Syer
@@ -208,14 +208,16 @@ public class ChannelBindingServiceProperties {
 		Map<String, Object> properties = new HashMap<>();
 		properties.put("instanceIndex", String.valueOf(getInstanceIndex()));
 		properties.put("instanceCount", String.valueOf(getInstanceCount()));
-		for (String name : getConsumerProperties().stringPropertyNames()) {
-			properties.put(name, getConsumerProperties());
+		Properties consumerProperties = getConsumerProperties();
+		for (String name : consumerProperties.stringPropertyNames()) {
+			properties.put("consumer." + name, consumerProperties.getProperty(name));
 		}
-		for (String name : getProducerProperties().stringPropertyNames()) {
-			properties.put(name, getProducerProperties());
+		Properties producerProperties = getProducerProperties();
+		for (String name : producerProperties.stringPropertyNames()) {
+			properties.put("producer." + name, producerProperties.getProperty(name));
 		}
 		for (Map.Entry<String, BindingProperties> entry : getBindings().entrySet()) {
-			properties.put(entry.getKey(), entry.getValue());
+			properties.put(entry.getKey(), entry.getValue().toString());
 		}
 		return properties;
 	}
