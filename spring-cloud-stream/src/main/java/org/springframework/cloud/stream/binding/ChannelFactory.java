@@ -27,23 +27,21 @@ import org.springframework.messaging.SubscribableChannel;
 public interface ChannelFactory {
 
 	/**
-	 * Create a {@link SubscribableChannel} that will be bound to the message channel
+	 * Create a {@link SubscribableChannel} that will be bound via the message channel
 	 * {@link org.springframework.cloud.stream.binder.Binder}.
 	 *
 	 * @param name name of the message channel
 	 * @return Subscribable message channel
-	 * @throws Exception
 	 */
-	SubscribableChannel createSubscribableChannel(String name) throws Exception;
+	SubscribableChannel createSubscribableChannel(String name);
 
 	/**
-	 * Create a {@link PollableChannel} that will be bound to the message channel
+	 * Create a {@link PollableChannel} that will be bound via the message channel
 	 * {@link org.springframework.cloud.stream.binder.Binder}.
 	 *
 	 * @param name name of the message channel
 	 * @return Pollable message channel
-	 * @throws Exception
 	 */
-	PollableChannel createPollableChannel(String name) throws Exception;
+	PollableChannel createPollableChannel(String name);
 
 }

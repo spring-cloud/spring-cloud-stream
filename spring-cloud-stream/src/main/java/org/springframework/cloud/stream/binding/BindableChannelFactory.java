@@ -21,7 +21,7 @@ import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * Class that {@link BindableProxyFactory} uses to create message channels.
+ * Class that {@link BindableProxyFactory} uses to create and configure message channels.
  *
  * @author Marius Bogoevici
  * @author David Syer
@@ -36,14 +36,14 @@ public class BindableChannelFactory implements ChannelFactory {
 	}
 
 	@Override
-	public PollableChannel createPollableChannel(String name) throws Exception {
+	public PollableChannel createPollableChannel(String name) {
 		PollableChannel pollableChannel = new QueueChannel();
 		messageConverterConfigurer.configureMessageConverters(pollableChannel, name);
 		return pollableChannel;
 	}
 
 	@Override
-	public SubscribableChannel createSubscribableChannel(String name) throws Exception {
+	public SubscribableChannel createSubscribableChannel(String name) {
 		SubscribableChannel subscribableChannel = new DirectChannel();
 		messageConverterConfigurer.configureMessageConverters(subscribableChannel, name);
 		return subscribableChannel;
