@@ -20,11 +20,13 @@ import java.util.UUID;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -39,6 +41,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
+/**
+ * @author Marius Bogoevici
+ * @author Gary Russell
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = MultibinderApplication.class)
 @WebAppConfiguration
@@ -54,6 +60,13 @@ public class RabbitAndRedisBinderApplicationTests {
 	@Autowired
 	private BinderFactory<MessageChannel> binderFactory;
 
+	@After
+	public void cleanUp() {
+		RabbitAdmin admin = new RabbitAdmin(rabbitTestSupport.getResource());
+		admin.deleteQueue("binder.dataOut");
+		admin.deleteExchange("binder.dataOut");
+	}
+
 	@Test
 	public void contextLoads() {
 	}
@@ -61,11 +74,11 @@ public class RabbitAndRedisBinderApplicationTests {
 	@Test
 	public void messagingWorks() {
 		DirectChannel dataProducer = new DirectChannel();
-		binderFactory.getBinder("redis").bindProducer("dataIn", dataProducer,null);
+		binderFactory.getBinder("redis").bindProducer("dataIn", dataProducer, null);
 
 		QueueChannel dataConsumer = new QueueChannel();
 		binderFactory.getBinder("rabbit").bindPubSubConsumer("dataOut", dataConsumer,
-				UUID.randomUUID().toString(),null);
+				UUID.randomUUID().toString(), null);
 
 		String testPayload = "testFoo" + UUID.randomUUID().toString();
 		dataProducer.send(MessageBuilder.withPayload(testPayload).build());

@@ -31,6 +31,7 @@ import org.mockito.Mockito;
 
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -45,6 +46,7 @@ import org.springframework.context.annotation.Bean;
 
 /**
  * @author Marius Bogoevici
+ * @author Gary Russell
  */
 public class RabbitBinderModuleTests {
 
@@ -53,7 +55,8 @@ public class RabbitBinderModuleTests {
 
 	private ConfigurableApplicationContext context = null;
 
-	public static final ConnectionFactory MOCK_CONNECTION_FACTORY = Mockito.mock(ConnectionFactory.class, Mockito.RETURNS_MOCKS);
+	public static final ConnectionFactory MOCK_CONNECTION_FACTORY =
+			Mockito.mock(ConnectionFactory.class, Mockito.RETURNS_MOCKS);
 
 	@After
 	public void tearDown() {
@@ -61,13 +64,18 @@ public class RabbitBinderModuleTests {
 			context.close();
 			context = null;
 		}
+		RabbitAdmin admin = new RabbitAdmin(rabbitTestSupport.getResource());
+		admin.deleteQueue("binder.input");
+		admin.deleteQueue("binder.output");
+		admin.deleteExchange("binder.input");
+		admin.deleteExchange("binder.output");
 	}
 
 	@Test
 	public void testParentConnectionFactoryInheritedByDefault() {
 		context = SpringApplication.run(SimpleProcessor.class);
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null);
+		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
+		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory =
@@ -80,8 +88,8 @@ public class RabbitBinderModuleTests {
 	@Test
 	public void testParentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run();
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null);
+		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
+		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory =
@@ -98,9 +106,9 @@ public class RabbitBinderModuleTests {
 		params.add("--spring.cloud.stream.output.binder=custom");
 		params.add("--spring.cloud.stream.binders.custom.type=rabbit");
 		params.add("--spring.cloud.stream.binders.custom.environment.foo=bar");
-		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[]{}));
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null);
+		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[params.size()]));
+		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
+		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory =
@@ -121,5 +129,7 @@ public class RabbitBinderModuleTests {
 		public ConnectionFactory connectionFactory() {
 			return MOCK_CONNECTION_FACTORY;
 		}
+
 	}
+
 }
