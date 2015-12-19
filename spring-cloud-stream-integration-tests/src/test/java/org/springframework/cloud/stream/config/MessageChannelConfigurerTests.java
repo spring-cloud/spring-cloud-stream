@@ -32,7 +32,6 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.redis.config.RedisMessageChannelBinderConfiguration;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.junit.redis.RedisTestSupport;
@@ -50,7 +49,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration({MessageChannelConfigurerTests.TestSource.class,
-		MessageChannelConfigurerTests.TestProcessor.class,
 		MessageChannelConfigurerTests.TestSink.class})
 public class MessageChannelConfigurerTests {
 
@@ -63,10 +61,6 @@ public class MessageChannelConfigurerTests {
 	@Autowired
 	@Bindings(TestSource.class)
 	private Source testSource;
-
-	@Autowired
-	@Bindings(TestProcessor.class)
-	private Processor testProcessor;
 
 	@Test
 	public void testContentTypeConfigurer() throws Exception {
@@ -112,39 +106,10 @@ public class MessageChannelConfigurerTests {
 				latch1.countDown();
 			}
 		};
-		testProcessor.input().subscribe(messageHandler1);
-		final CountDownLatch latch2 = new CountDownLatch(1);
-		MessageHandler messageHandler2 = new MessageHandler() {
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				assertTrue("Message header should have tracking history info",
-						message.getHeaders().containsKey("SPRING_CLOUD_STREAM_HISTORY"));
-				Map<String, String> headerValue = ((Map) ((List) message.getHeaders()
-						.get("SPRING_CLOUD_STREAM_HISTORY")).get(0));
-				String inputBindingProps = (String) headerValue.get("input");
-				assertTrue(inputBindingProps.contains("destination=configure"));
-				assertTrue(inputBindingProps.contains("trackHistory=true"));
-				assertTrue(headerValue.get("instanceIndex").equals("0"));
-				assertTrue(headerValue.get("instanceCount").equals("1"));
-				assertTrue(headerValue.get("producer.nextModuleCount").equals("1"));
-				assertTrue(headerValue.get("consumer.concurrency").equals("1"));
-				String outputBindingProps = (String) ((Map) ((List) message.getHeaders()
-						.get("SPRING_CLOUD_STREAM_HISTORY")).get(0)).get("output");
-				;
-				assertTrue(outputBindingProps.contains("destination=configure"));
-				assertTrue(outputBindingProps.contains("trackHistory=true"));
-				latch2.countDown();
-			}
-		};
-		testSink.input().subscribe(messageHandler2);
+		testSink.input().subscribe(messageHandler1);
 		testSource.output().send(MessageBuilder.withPayload("{\"test\":\"value\"}").build());
-		testProcessor.output().send(MessageBuilder.withPayload("{\"test\":\"value2\"}").build());
 		latch1.await(10, TimeUnit.SECONDS);
-		assertTrue(latch1.getCount() == 0);
-		latch2.await(10, TimeUnit.SECONDS);
-		assertTrue(latch2.getCount() == 0);
-		testProcessor.input().unsubscribe(messageHandler1);
-		testSink.input().unsubscribe(messageHandler2);
+		testSink.input().unsubscribe(messageHandler1);
 	}
 
 	@EnableBinding(Source.class)
@@ -160,14 +125,6 @@ public class MessageChannelConfigurerTests {
 	@Import(RedisMessageChannelBinderConfiguration.class)
 	@PropertySource("classpath:/org/springframework/cloud/stream/config/sink-channel-configurers.properties")
 	public static class TestSink {
-
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	@Import(RedisMessageChannelBinderConfiguration.class)
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/processor-channel-configurers.properties")
-	public static class TestProcessor {
 
 	}
 }
