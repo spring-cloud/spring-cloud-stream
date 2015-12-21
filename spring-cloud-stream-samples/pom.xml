@@ -4,7 +4,7 @@
 	
 	<artifactId>spring-cloud-stream-samples</artifactId>
 	<packaging>pom</packaging>
-	<url>http://projects.spring.io/spring-xd/</url>
+	<url>http://cloud.spring.io/spring-cloud-stream/</url>
 	<organization>
 		<name>Pivotal Software, Inc.</name>
 		<url>http://www.spring.io</url>
@@ -22,7 +22,6 @@
 		<module>source</module>
 		<module>sink</module>
 		<module>transform</module>
-		<module>tap</module>
 		<module>double</module>
 		<module>extended</module>
 		<module>multibinder</module>
