@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.bus;
 
-import java.util.UUID;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import lombok.Data;
@@ -38,11 +36,6 @@ public class BusProperties {
 	 * Name of Spring Cloud Stream destination for messages.
 	 */
 	private String destination = "topic:springCloudBus";
-	/**
-	 * Group ID for message consumer. Usually globally unique (so all consumers get a
-	 * copy of all messages).
-	 */
-	private String group = UUID.randomUUID().toString();
 
 	private boolean enabled = true;
 

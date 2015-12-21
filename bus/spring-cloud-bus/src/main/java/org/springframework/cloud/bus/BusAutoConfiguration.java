@@ -78,9 +78,6 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		if (input.getDestination() == null) {
 			input.setDestination(this.bus.getDestination());
 		}
-		if (input.getGroup() == null) {
-			input.setGroup(this.bus.getGroup());
-		}
 		BindingProperties outputBinding = this.bindings.getBindings()
 				.get(SpringCloudBusClient.OUTPUT);
 		if (outputBinding == null) {
