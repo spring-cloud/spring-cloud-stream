@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,91 +16,12 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.junit.Test;
-
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
-import org.springframework.messaging.support.GenericMessage;
-
-
 /**
  * Tests for binders that use an external broker.
  *
  * @author Gary Russell
  */
-public abstract class BrokerBinderTests extends
-		AbstractBinderTests {
-
-	@Test
-	public void testDirectBinding() throws Exception {
-		Binder binder = getBinder();
-		Properties properties = new Properties();
-		properties.setProperty(BinderPropertyKeys.DIRECT_BINDING_ALLOWED, "true");
-
-		DirectChannel moduleInputChannel = new DirectChannel();
-		moduleInputChannel.setBeanName("direct.input");
-		DirectChannel moduleOutputChannel = new DirectChannel();
-		moduleOutputChannel.setBeanName("direct.output");
-		binder.bindConsumer("direct.0", moduleInputChannel, null);
-		binder.bindProducer("direct.0", moduleOutputChannel, properties);
-
-		final AtomicReference<Thread> caller = new AtomicReference<Thread>();
-		final AtomicInteger count = new AtomicInteger();
-		moduleInputChannel.subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				caller.set(Thread.currentThread());
-				count.incrementAndGet();
-			}
-		});
-
-		moduleOutputChannel.send(new GenericMessage<String>("foo"));
-		moduleOutputChannel.send(new GenericMessage<String>("foo"));
-
-		assertNotNull(caller.get());
-		assertSame(Thread.currentThread(), caller.get());
-		assertEquals(2, count.get());
-		assertNull(spyOn("direct.0").receive(true));
-
-		// Remove direct binding and bind the producer
-		binder.unbindConsumers("direct.0");
-		binderBindUnbindLatency();
-
-		Spy spy = spyOn("direct.0");
-		count.set(0);
-		moduleOutputChannel.send(new GenericMessage<String>("bar"));
-		moduleOutputChannel.send(new GenericMessage<String>("baz"));
-		Object bar = spy.receive(false);
-		assertEquals("bar", bar);
-		Object baz = spy.receive(false);
-		assertEquals("baz", baz);
-		assertEquals(0, count.get());
-
-		// Unbind producer from binder and bind directly again
-		caller.set(null);
-		binder.bindConsumer("direct.0", moduleInputChannel, null);
-		moduleOutputChannel.send(new GenericMessage<String>("foo"));
-		moduleOutputChannel.send(new GenericMessage<String>("foo"));
-		assertNotNull(caller.get());
-		assertSame(Thread.currentThread(), caller.get());
-		assertEquals(2, count.get());
-		assertNull(spy.receive(true));
-
-		binder.unbindProducers("direct.0");
-		binder.unbindConsumers("direct.0");
-	}
+public abstract class BrokerBinderTests extends AbstractBinderTests {
 
 	/**
 	 * Create a new spy on the given 'queue'. This allows de-correlating the creation of
@@ -108,7 +29,5 @@ public abstract class BrokerBinderTests extends
 	 * see messages sent after connection creation.
 	 */
 	public abstract Spy spyOn(final String name);
-
-
 
 }

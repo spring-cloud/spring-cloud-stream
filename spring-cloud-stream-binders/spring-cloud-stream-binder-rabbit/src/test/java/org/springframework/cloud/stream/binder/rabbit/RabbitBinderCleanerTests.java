@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,8 +69,8 @@ public class RabbitBinderCleanerTests {
 		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
 		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
 		for (int i = 0; i < 5; i++) {
-			String queue1Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + "." + i);
-			String queue2Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream2 + "." + i);
+			String queue1Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + ".default." + i);
+			String queue2Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream2 + ".default." + i);
 			if (firstQueue == null) {
 				firstQueue = queue1Name;
 			}
@@ -110,7 +110,7 @@ public class RabbitBinderCleanerTests {
 
 			@Override
 			public Void doInRabbit(Channel channel) throws Exception {
-				String queueName = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + "." + 4);
+				String queueName = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + ".default." + 4);
 				String consumerTag = channel.basicConsume(queueName, new DefaultConsumer(channel));
 				try {
 					waitForConsumerStateNot(queueName, 0);
@@ -160,8 +160,8 @@ public class RabbitBinderCleanerTests {
 		// should *not* clean stream2
 		assertEquals(10, cleanedQueues.size());
 		for (int i = 0; i < 5; i++) {
-			assertEquals(BINDER_PREFIX + stream1 + "." + i, cleanedQueues.get(i * 2));
-			assertEquals(BINDER_PREFIX + stream1 + "." + i + ".dlq", cleanedQueues.get(i * 2 + 1));
+			assertEquals(BINDER_PREFIX + stream1 + ".default." + i, cleanedQueues.get(i * 2));
+			assertEquals(BINDER_PREFIX + stream1 + ".default." + i + ".dlq", cleanedQueues.get(i * 2 + 1));
 		}
 		List<String> cleanedExchanges = cleanedMap.get("exchanges");
 		assertEquals(6, cleanedExchanges.size());
@@ -172,7 +172,7 @@ public class RabbitBinderCleanerTests {
 		cleanedQueues = cleanedMap.get("queues");
 		assertEquals(5, cleanedQueues.size());
 		for (int i = 0; i < 5; i++) {
-			assertEquals(BINDER_PREFIX + stream2 + "." + i, cleanedQueues.get(i));
+			assertEquals(BINDER_PREFIX + stream2 + ".default." + i, cleanedQueues.get(i));
 		}
 		cleanedExchanges = cleanedMap.get("exchanges");
 		assertEquals(6, cleanedExchanges.size());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -54,8 +55,8 @@ public class ArbitraryInterfaceBindingTestsWithBindingTargets {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
-		verify(binder).bindConsumer(eq("someQueue.0"), eq(fooChannels.foo()), Mockito.<Properties>any());
-		verify(binder).bindConsumer(eq("someQueue.1"), eq(fooChannels.bar()), Mockito.<Properties>any());
+		verify(binder).bindConsumer(eq("someQueue.0"), anyString(), eq(fooChannels.foo()), Mockito.<Properties>any());
+		verify(binder).bindConsumer(eq("someQueue.1"), anyString(), eq(fooChannels.bar()), Mockito.<Properties>any());
 		verify(binder).bindProducer(eq("someQueue.2"), eq(fooChannels.baz()), Mockito.<Properties>any());
 		verify(binder).bindProducer(eq("someQueue.3"), eq(fooChannels.qux()), Mockito.<Properties>any());
 		verifyNoMoreInteractions(binder);

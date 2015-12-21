@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binding;
 
 import static org.mockito.Mockito.verify;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderType;
+import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
@@ -36,12 +38,12 @@ import org.springframework.messaging.MessageChannel;
 
 /**
  * @author Gary Russell
- *
+ * @author Mark Fisher
  */
 public class ChannelBindingServiceTests {
 
 	@Test
-	public void testSimple() throws Exception {
+	public void testDefaultGroup() throws Exception {
 		ChannelBindingServiceProperties properties = new ChannelBindingServiceProperties();
 		Map<String, BindingProperties> bindings = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -49,7 +51,6 @@ public class ChannelBindingServiceTests {
 		String name = "foo";
 		bindings.put(name, props);
 		properties.setBindings(bindings);
-		@SuppressWarnings("unchecked")
 		DefaultBinderFactory<MessageChannel> binderFactory =
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
@@ -57,23 +58,22 @@ public class ChannelBindingServiceTests {
 		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
-		service.bindConsumer(inputChannel, name);
+		Binding<MessageChannel> binding = service.bindConsumer(inputChannel, name);
 		service.unbindConsumers(name);
-		verify(binder).bindConsumer(name, inputChannel, properties.getConsumerProperties(name));
-		verify(binder).unbindConsumers(name);
+		verify(binder).bindConsumer(name, props.getGroup(), inputChannel, properties.getConsumerProperties(name));
+		verify(binder).unbind(binding);
 		binderFactory.destroy();
 	}
 
 	@Test
-	public void testPubSub() throws Exception {
+	public void testExplicitGroup() throws Exception {
 		ChannelBindingServiceProperties properties = new ChannelBindingServiceProperties();
 		Map<String, BindingProperties> bindings = new HashMap<>();
 		BindingProperties props = new BindingProperties();
-		props.setDestination("topic:foo");
+		props.setDestination("foo");
 		String name = "foo";
 		bindings.put(name, props);
 		properties.setBindings(bindings);
-		@SuppressWarnings("unchecked")
 		DefaultBinderFactory<MessageChannel> binderFactory =
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
@@ -81,10 +81,10 @@ public class ChannelBindingServiceTests {
 		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
-		service.bindConsumer(inputChannel, name);
+		Binding<MessageChannel> binding = service.bindConsumer(inputChannel, name);
 		service.unbindConsumers(name);
-		verify(binder).bindPubSubConsumer(name, inputChannel, props.getGroup(), properties.getConsumerProperties(name));
-		verify(binder).unbindPubSubConsumers(name, props.getGroup());
+		verify(binder).bindConsumer(name, props.getGroup(), inputChannel, properties.getConsumerProperties(name));
+		verify(binder).unbind(binding);
 		binderFactory.destroy();
 	}
 

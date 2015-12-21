@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,76 +18,74 @@ package org.springframework.cloud.stream.binder;
 
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.endpoint.AbstractEndpoint;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 
 /**
- * Represents a binding between a module's channel and an adapter endpoint that connects to the Binder. The binding
- * could be for a consumer or a producer. A consumer binding represents a connection from an adapter on the binder to a
- * module's input channel. A producer binding represents a connection from a module's output channel to an adapter on
- * the binder.
+ * Represents a binding between a channel and an adapter endpoint that connects via a Binder. The binding
+ * could be for a consumer or a producer. A consumer binding represents a connection from an adapter to an
+ * input channel. A producer binding represents a connection from an output channel to an adapter.
  *
  * @author Jennifer Hickey
  * @author Mark Fisher
  * @author Gary Russell
  */
-public class Binding implements Lifecycle {
+public class Binding<T> implements Lifecycle {
 
-	public static final String PRODUCER = "producer";
-
-	public static final String CONSUMER = "consumer";
-
-	public static final String DIRECT = "direct";
+	public static enum Type {
+		producer, consumer
+	}
 
 	private final String name;
 
-	private final MessageChannel channel;
+	private final String group;
+
+	private final T target;
 
 	private final AbstractEndpoint endpoint;
 
-	private final String type;
+	private final Type type;
 
 	private final AbstractBindingPropertiesAccessor properties;
 
-	private Binding(String name, MessageChannel channel, AbstractEndpoint endpoint, String type,
+	private Binding(String name, String group, T target, AbstractEndpoint endpoint, Type type,
 			AbstractBindingPropertiesAccessor properties) {
-		Assert.notNull(channel, "channel must not be null");
+		Assert.notNull(target, "target must not be null");
 		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
-		this.channel = channel;
+		this.group = group;
+		this.target = target;
 		this.endpoint = endpoint;
 		this.type = type;
 		this.properties = properties;
 	}
 
-	public static Binding forConsumer(String name, AbstractEndpoint adapterFromBinder, MessageChannel moduleInputChannel,
+	public static <T> Binding<T> forConsumer(String name, String group, AbstractEndpoint adapterFromBinder, T inputTarget,
 			AbstractBindingPropertiesAccessor properties) {
-		return new Binding(name, moduleInputChannel, adapterFromBinder, CONSUMER, properties);
+		return new Binding<T>(name, group, inputTarget, adapterFromBinder, Type.consumer, properties);
 	}
 
-	public static Binding forProducer(String name, MessageChannel moduleOutputChannel, AbstractEndpoint adapterToBinder,
+	public static <T> Binding<T> forProducer(String name, T outputTarget, AbstractEndpoint adapterToBinder,
 			AbstractBindingPropertiesAccessor properties) {
-		return new Binding(name, moduleOutputChannel, adapterToBinder, PRODUCER, properties);
-	}
-
-	public static Binding forDirectProducer(String name, MessageChannel moduleOutputChannel,
-			AbstractEndpoint adapter, AbstractBindingPropertiesAccessor properties) {
-		return new Binding(name, moduleOutputChannel, adapter, DIRECT, properties);
+		return new Binding<T>(name, null, outputTarget, adapterToBinder, Type.producer, properties);
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public MessageChannel getChannel() {
-		return channel;
+	public String getGroup() {
+		return group;
+	}
+
+	public T getTarget() {
+		return target;
 	}
 
 	public AbstractEndpoint getEndpoint() {
 		return endpoint;
 	}
 
-	public String getType() {
+	public Type getType() {
 		return type;
 	}
 
@@ -112,8 +110,60 @@ public class Binding implements Lifecycle {
 
 	@Override
 	public String toString() {
-		return type + " Binding [name=" + name + ", channel=" + channel + ", endpoint=" + endpoint.getComponentName()
+		return type + " Binding [name=" + name + ", target=" + target + ", endpoint=" + endpoint.getComponentName()
 				+ "]";
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((endpoint == null) ? 0 : endpoint.hashCode());
+		result = prime * result + ((group == null) ? 0 : group.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((properties == null) ? 0 : properties.hashCode());
+		result = prime * result + ((target == null) ? 0 : target.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Binding<?> other = (Binding<?>) obj;
+		if (endpoint == null) {
+			if (other.endpoint != null)
+				return false;
+		} else if (!endpoint.equals(other.endpoint))
+			return false;
+		if (group == null) {
+			if (other.group != null)
+				return false;
+		} else if (!group.equals(other.group))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (properties == null) {
+			if (other.properties != null)
+				return false;
+		} else if (!properties.equals(other.properties))
+			return false;
+		if (target == null) {
+			if (other.target != null)
+				return false;
+		} else if (!target.equals(other.target))
+			return false;
+		if (type != other.type)
+			return false;
+		return true;
 	}
 
 }

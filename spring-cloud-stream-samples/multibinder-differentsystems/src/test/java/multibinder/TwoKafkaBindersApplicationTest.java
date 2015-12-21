@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,8 +76,8 @@ public class TwoKafkaBindersApplicationTest {
 		binderFactory.getBinder("kafka1").bindProducer("dataIn", dataProducer, null);
 
 		QueueChannel dataConsumer = new QueueChannel();
-		binderFactory.getBinder("kafka2").bindPubSubConsumer("dataOut", dataConsumer,
-				UUID.randomUUID().toString(), null);
+		binderFactory.getBinder("kafka2").bindConsumer("dataOut", UUID.randomUUID().toString(),
+				dataConsumer, null);
 
 		String testPayload = "testFoo" + UUID.randomUUID().toString();
 		dataProducer.send(MessageBuilder.withPayload(testPayload).build());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.partitioning;
 
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -61,10 +62,9 @@ public class PartitionedConsumerTest {
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedConsumer() {
 		ArgumentCaptor<Properties> argumentCaptor = ArgumentCaptor.forClass(Properties.class);
-		verify(binder).bindConsumer(eq("partIn"), eq(testSink.input()), argumentCaptor.capture());
+		verify(binder).bindConsumer(eq("partIn"), anyString(), eq(testSink.input()), argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.PARTITION_INDEX), equalTo("0"));
-		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.COUNT),
-				equalTo("2"));
+		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.COUNT), equalTo("2"));
 		verifyNoMoreInteractions(binder);
 	}
 

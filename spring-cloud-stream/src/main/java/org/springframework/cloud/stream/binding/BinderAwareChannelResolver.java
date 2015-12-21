@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,21 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.Properties;
 
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
 import org.springframework.messaging.core.DestinationResolutionException;
 
 /**
- * A {@link org.springframework.messaging.core.DestinationResolver} implementation that first checks for any channel
- * whose name begins with a colon in the {@link Binder}.
+ * A {@link org.springframework.messaging.core.DestinationResolver} implementation that
+ * resolves the channel from the bean factory and, if not present, creates a new channel
+ * and adds it to the factory after binding it to the binder. The binder is optionally
+ * determined with a prefix preceding a colon.
  * @author Mark Fisher
  * @author Gary Russell
  */
@@ -36,9 +42,19 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private final Properties producerProperties;
 
+	private DefaultListableBeanFactory beanFactory;
+
 	public BinderAwareChannelResolver(BinderFactory<MessageChannel> binderFactory, Properties producerProperties) {
 		this.binderFactory = binderFactory;
 		this.producerProperties = producerProperties;
+	}
+
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) {
+		super.setBeanFactory(beanFactory);
+		if (beanFactory instanceof ConfigurableBeanFactory) {
+			this.beanFactory = (DefaultListableBeanFactory) beanFactory;
+		}
 	}
 
 	@Override
@@ -49,38 +65,32 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		}
 		catch (DestinationResolutionException e) {
 		}
-		if (name.contains(":")) {
-			if (binderFactory != null) {
-				String[] tokens = name.split(":", 2);
+		synchronized (this) {
+			try {
+				return super.resolveDestination(name);
+			}
+			catch (DestinationResolutionException e) {
+			}
+			if (this.beanFactory != null && this.binderFactory != null) {
+				channel = new DirectChannel();
+				this.beanFactory.registerSingleton(name, channel);
+				channel = (MessageChannel) this.beanFactory.initializeBean(channel, name);
 				String transport = null;
-				String type;
-				if (tokens.length == 2) {
-					type = tokens[0];
-				}
-				else if (tokens.length == 3) {
-					transport = tokens[0];
-					type = tokens[1];
-				}
-				else {
-					throw new IllegalArgumentException("Unrecognized channel naming scheme: " + name + " , should be" +
-							" [<transport>:]<type>:<name>");
+				if (name.contains(":")) {
+					String[] tokens = name.split(":", 2);
+					if (tokens.length == 2) {
+						transport = tokens[0];
+					}
+					else if (tokens.length != 1) {
+						throw new IllegalArgumentException("Unrecognized channel naming scheme: " + name + " , should be" +
+								" [<transport>:]<name>");
+					}
 				}
 				Binder<MessageChannel> binder = binderFactory.getBinder(transport);
-				if ("queue".equals(type)) {
-					channel = binder.bindDynamicProducer(name, this.producerProperties);
-				}
-				else if ("topic".equals(type)) {
-					channel = binder.bindDynamicPubSubProducer(name, this.producerProperties);
-				}
-				else {
-					throw new IllegalArgumentException("unrecognized channel type: " + type);
-				}
+				binder.bindProducer(name, channel, this.producerProperties);
 			}
+			return channel;
 		}
-		if (channel == null) {
-			channel = super.resolveDestination(name);
-		}
-		return channel;
 	}
 
 }

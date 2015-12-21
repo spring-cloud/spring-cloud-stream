@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -56,14 +55,12 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.codec.Codec;
-import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
-import org.springframework.messaging.SubscribableChannel;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -78,17 +75,22 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
+ * @author Mark Fisher
  */
 public abstract class MessageChannelBinderSupport
 		implements Binder<MessageChannel>, ApplicationContextAware, InitializingBean {
 
-	protected static final String P2P_NAMED_CHANNEL_TYPE_PREFIX = "queue:";
-
-	protected static final String PUBSUB_NAMED_CHANNEL_TYPE_PREFIX = "topic:";
-
-	protected static final String JOB_CHANNEL_TYPE_PREFIX = "job:";
-
 	protected static final String PARTITION_HEADER = "partition";
+
+	/**
+	 * Default group name (used if <code>null</code> or empty String is provided).
+	 */
+	protected static final String DEFAULT_CONSUMER_GROUP = "default";
+
+	/**
+	 * The delimiter between a group and index when constructing a binder consumer/producer.
+	 */
+	private static final String GROUP_INDEX_DELIMITER = ".";
 
 	protected final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -97,8 +99,6 @@ public abstract class MessageChannelBinderSupport
 	private volatile Codec codec;
 
 	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
-
-	private final ThreadLocal<Boolean> revertingDirectBinding = new ThreadLocal<Boolean>();
 
 	protected static final List<MimeType> MEDIATYPES_MEDIATYPE_ALL = Collections.singletonList(ALL);
 
@@ -161,7 +161,7 @@ public abstract class MessageChannelBinderSupport
 					BinderPropertyKeys.BATCH_BUFFER_LIMIT,
 			}));
 
-	private final List<Binding> bindings = Collections.synchronizedList(new ArrayList<Binding>());
+	private final List<Binding<MessageChannel>> bindings = Collections.synchronizedList(new ArrayList<Binding<MessageChannel>>());
 
 	private final IdGenerator idGenerator = new AlternativeJdkIdGenerator();
 
@@ -206,7 +206,7 @@ public abstract class MessageChannelBinderSupport
 
 	protected volatile boolean defaultCompress = false;
 
-	protected volatile boolean defaultDurableSubscription = false;
+	protected volatile boolean defaultDurableSubscription = true;
 
 	// Payload type cache
 	private volatile Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
@@ -218,23 +218,6 @@ public abstract class MessageChannelBinderSupport
 	 */
 	public static String applyPrefix(String prefix, String name) {
 		return prefix + name;
-	}
-
-	/**
-	 * For binder implementations that include a pub/sub component in identifiers, construct the name.
-	 * @param name the name.
-	 */
-	public static String applyPubSub(String name) {
-		return "topic." + name;
-	}
-
-	/**
-	 * Build the requests entity name.
-	 * @param name the name.
-	 * @return the request entity name.
-	 */
-	public static String applyRequests(String name) {
-		return name + ".requests";
 	}
 
 	/**
@@ -383,16 +366,13 @@ public abstract class MessageChannelBinderSupport
 		}
 	}
 
-	/**
-	 * Dynamically create a producer for the named channel.
-	 * @param name The name.
-	 * @param properties The properties.
-	 * @return The channel.
-	 */
 	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
-		return doBindDynamicProducer(name, name, properties);
+	public final Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
+		group = (StringUtils.hasText(group)) ? group : DEFAULT_CONSUMER_GROUP;
+		return doBindConsumer(name, group, inputChannel, properties);
 	}
+
+	protected abstract Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties);
 
 	/**
 	 * Create a producer for the named channel and bind it to the binder. Synchronized to avoid creating multiple
@@ -419,44 +399,6 @@ public abstract class MessageChannelBinderSupport
 		return channel;
 	}
 
-	/**
-	 * Dynamically create a producer for the named channel. Note: even though it's pub/sub, we still use a direct
-	 * channel. It will be bridged to a pub/sub channel in the local binder and bound to an appropriate element for other
-	 * binders.
-	 * @param name The name.
-	 * @param properties The properties.
-	 * @return The channel.
-	 */
-	@Override
-	public MessageChannel bindDynamicPubSubProducer(String name, Properties properties) {
-		return doBindDynamicPubSubProducer(name, name, properties);
-	}
-
-	/**
-	 * Create a producer for the named channel and bind it to the binder. Synchronized to avoid creating multiple
-	 * instances.
-	 * @param name The name.
-	 * @param channelName The name of the channel to be created, and registered as bean.
-	 * @param properties The properties.
-	 * @return The channel.
-	 */
-	protected synchronized MessageChannel doBindDynamicPubSubProducer(String name, String channelName,
-			Properties properties) {
-		MessageChannel channel = this.directChannelProvider.lookupSharedChannel(channelName);
-		if (channel == null) {
-			try {
-				channel = this.directChannelProvider.createAndRegisterChannel(channelName);
-				bindPubSubProducer(name, channel, properties);
-			}
-			catch (RuntimeException e) {
-				destroyCreatedChannel(channelName, channel);
-				throw new BinderException(
-						"Failed to bind dynamic channel '" + name + "' with properties " + properties, e);
-			}
-		}
-		return channel;
-	}
-
 	private void destroyCreatedChannel(String name, MessageChannel channel) {
 		BeanFactory beanFactory = this.applicationContext.getBeanFactory();
 		if (beanFactory.containsBean(name)) {
@@ -467,82 +409,17 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	@Override
-	public void unbindConsumers(String name) {
-		deleteBindings("inbound." + name);
-	}
-
-	@Override
-	public void unbindPubSubConsumers(String name, String group) {
-		unbindConsumers(BinderUtils.groupedName(name, group));
-	}
-
-	@Override
-	public void unbindProducers(String name) {
-		deleteBindings("outbound." + name);
-	}
-
-	@Override
-	public void unbindConsumer(String name, MessageChannel channel) {
-		deleteBinding("inbound." + name, channel);
-	}
-
-	@Override
-	public void unbindProducer(String name, MessageChannel channel) {
-		deleteBinding("outbound." + name, channel);
-	}
-
-	protected void addBinding(Binding binding) {
-		this.bindings.add(binding);
-	}
-
-	protected void deleteBindings(String name) {
-		Assert.hasText(name, "a valid name is required to remove bindings");
-		List<Binding> bindingsToRemove = new ArrayList<Binding>();
-		synchronized (this.bindings) {
-			Iterator<Binding> iterator = this.bindings.iterator();
-			while (iterator.hasNext()) {
-				Binding binding = iterator.next();
-				if (binding.getEndpoint().getComponentName().equals(name)) {
-					bindingsToRemove.add(binding);
-				}
-			}
-			for (Binding binding : bindingsToRemove) {
-				doDeleteBinding(binding);
-			}
-		}
-	}
-
-	protected void deleteBinding(String name, MessageChannel channel) {
-		Assert.hasText(name, "a valid name is required to remove a binding");
-		Assert.notNull(channel, "a valid channel is required to remove a binding");
-		Binding bindingToRemove = null;
-		synchronized (this.bindings) {
-			Iterator<Binding> iterator = this.bindings.iterator();
-			while (iterator.hasNext()) {
-				Binding binding = iterator.next();
-				if (binding.getChannel().equals(channel) &&
-						binding.getEndpoint().getComponentName().equals(name)) {
-					bindingToRemove = binding;
-					break;
-				}
-			}
-			if (bindingToRemove != null) {
-				doDeleteBinding(bindingToRemove);
-			}
-		}
-
-	}
-
-	private void doDeleteBinding(Binding binding) {
-		if (Binding.CONSUMER.equals(binding.getType())) {
-			/*
-			 * Revert the direct binding before stopping the consumer; the module
-			 * outputChannel will temporarily have 2 subscribers.
-			 */
-			revertDirectBindingIfNecessary(binding);
-		}
+	public void unbind(Binding<MessageChannel> binding) {
 		binding.stop();
 		this.bindings.remove(binding);
+		afterUnbind(binding);
+	}
+
+	protected void afterUnbind(Binding<MessageChannel> binding) {
+	}
+
+	protected void addBinding(Binding<MessageChannel> binding) {
+		this.bindings.add(binding);
 	}
 
 	protected void stopBindings() {
@@ -556,6 +433,19 @@ public abstract class MessageChannelBinderSupport
 				}
 			}
 		}
+	}
+
+	/**
+	 * Construct a name comprised of the name and group.
+	 * @param name the name.
+	 * @param group the group.
+	 * @return the constructed name.
+	 */
+	protected final String groupedName(String name, String group) {
+		if (!StringUtils.hasText(group)) {
+			group = "default";
+		}
+		return name + GROUP_INDEX_DELIMITER + group;
 	}
 
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
@@ -818,125 +708,6 @@ public abstract class MessageChannelBinderSupport
 		}
 		else {
 			return null;
-		}
-	}
-
-	protected boolean isNamedChannel(String name) {
-		return name.startsWith(PUBSUB_NAMED_CHANNEL_TYPE_PREFIX) || name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)
-				|| name.startsWith(JOB_CHANNEL_TYPE_PREFIX);
-	}
-
-	/**
-	 * Attempt to create a direct binding (avoiding the broker) if the consumer is local. Named channel producers are not
-	 * bound directly.
-	 * @param name The name.
-	 * @param moduleOutputChannel The channel to bind.
-	 * @param properties The producer properties.
-	 * @return true if the producer is bound.
-	 */
-	protected boolean bindNewProducerDirectlyIfPossible(String name, SubscribableChannel moduleOutputChannel,
-			AbstractBindingPropertiesAccessor properties) {
-		if (!properties.isDirectBindingAllowed()) {
-			return false;
-		}
-		else if (isNamedChannel(name)) {
-			return false;
-		}
-		else if (this.revertingDirectBinding.get() != null) {
-			// we're in the process of unbinding a direct binding
-			this.revertingDirectBinding.remove();
-			return false;
-		}
-		else {
-			Binding consumerBinding = null;
-			synchronized (this.bindings) {
-				for (Binding binding : this.bindings) {
-					if (binding.getName().equals(name) && Binding.CONSUMER.equals(binding.getType())) {
-						consumerBinding = binding;
-						break;
-					}
-				}
-			}
-			if (consumerBinding == null) {
-				return false;
-			}
-			else {
-				bindProducerDirectly(name, moduleOutputChannel, consumerBinding.getChannel(), properties);
-				return true;
-			}
-		}
-	}
-
-	private void bindProducerDirectly(String name, SubscribableChannel producerChannel,
-			MessageChannel consumerChannel, AbstractBindingPropertiesAccessor properties) {
-		DirectHandler handler = new DirectHandler(consumerChannel);
-		EventDrivenConsumer consumer = new EventDrivenConsumer(producerChannel, handler);
-		consumer.setBeanFactory(getBeanFactory());
-		consumer.setBeanName("outbound." + name);
-		consumer.afterPropertiesSet();
-		Binding binding = Binding.forDirectProducer(name, producerChannel, consumer, properties);
-		addBinding(binding);
-		binding.start();
-		if (this.logger.isInfoEnabled()) {
-			this.logger.info("Producer bound directly: " + binding);
-		}
-	}
-
-	/**
-	 * Attempt to bind a producer directly (avoiding the broker) if there is already a local producer. PubSub producers
-	 * cannot be bound directly. Create the direct binding, then unbind the existing producer.
-	 * @param name The name.
-	 * @param consumerChannel The channel to bind the producer to.
-	 */
-	protected void bindExistingProducerDirectlyIfPossible(String name, MessageChannel consumerChannel) {
-		if (!isNamedChannel(name)) {
-			Binding producerBinding = null;
-			synchronized (this.bindings) {
-				for (Binding binding : this.bindings) {
-					if (binding.getName().equals(name) && Binding.PRODUCER.equals(binding.getType())) {
-						producerBinding = binding;
-						break;
-					}
-				}
-				if (producerBinding != null && producerBinding.getChannel() instanceof SubscribableChannel) {
-					AbstractBindingPropertiesAccessor properties = producerBinding.getPropertiesAccessor();
-					if (properties.isDirectBindingAllowed()) {
-						bindProducerDirectly(name, (SubscribableChannel) producerBinding.getChannel(), consumerChannel,
-								properties);
-						producerBinding.stop();
-						this.bindings.remove(producerBinding);
-					}
-				}
-			}
-		}
-	}
-
-	private void revertDirectBindingIfNecessary(Binding binding) {
-		try {
-			synchronized (this.bindings) { // Not necessary, called while synchronized, but just in case...
-				Binding directBinding = null;
-				Iterator<Binding> iterator = this.bindings.iterator();
-				while (iterator.hasNext()) {
-					Binding producer = iterator.next();
-					if (Binding.DIRECT.equals(producer.getType()) && binding.getName().equals(producer.getName())) {
-						this.revertingDirectBinding.set(Boolean.TRUE);
-						bindProducer(producer.getName(), producer.getChannel(),
-								producer.getPropertiesAccessor().getProperties());
-						directBinding = producer;
-						break;
-					}
-				}
-				if (directBinding != null) {
-					directBinding.stop();
-					this.bindings.remove(directBinding);
-					if (this.logger.isInfoEnabled()) {
-						this.logger.info("direct binding reverted: " + directBinding);
-					}
-				}
-			}
-		}
-		catch (Exception e) {
-			this.logger.error("Could not revert direct binding: " + binding, e);
 		}
 	}
 

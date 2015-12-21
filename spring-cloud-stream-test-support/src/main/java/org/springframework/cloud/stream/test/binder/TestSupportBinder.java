@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.test.matcher.MessageQueueMatcher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -39,6 +40,7 @@ import org.springframework.util.Assert;
  *
  * @author Eric Bottard
  * @author Gary Russell
+ * @author Mark Fisher
  * @see MessageQueueMatcher
  */
 public class TestSupportBinder implements Binder<MessageChannel> {
@@ -47,78 +49,29 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 
 	@Override
-	public void bindConsumer(String name, MessageChannel inboundBindTarget, Properties properties) {
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inboundBindTarget, String group, Properties properties) {
-
+	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
+		return null;
 	}
 
 	/**
 	 * Registers a single subscriber to the channel, that enqueues messages for later retrieval and assertion in tests.
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
-	public void bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
-		final BlockingQueue queue = messageCollector.register(outboundBindTarget);
+	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
+		final BlockingQueue<Message<?>> queue = messageCollector.register(outboundBindTarget);
 		((SubscribableChannel)outboundBindTarget).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				queue.add(message);
 			}
 		});
-
-	}
-
-	@Override
-	public void unbindProducer(String name, MessageChannel channel) {
-		messageCollector.unregister(channel);
-	}
-
-	@Override
-	public void bindPubSubProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
-
-	}
-
-	@Override
-	public void unbindConsumers(String name) {
-
-	}
-
-	@Override
-	public void unbindPubSubConsumers(String name, String group) {
-
-	}
-
-	@Override
-	public void unbindProducers(String name) {
-
-	}
-
-	@Override
-	public void unbindConsumer(String name, MessageChannel inboundBindTarget) {
-
-	}
-
-	@Override
-	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-
-	}
-
-	@Override
-	public void bindReplier(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-
-	}
-
-	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
 		return null;
 	}
 
 	@Override
-	public MessageChannel bindDynamicPubSubProducer(String name, Properties properties) {
-		return null;
+	public void unbind(Binding<MessageChannel> binding) {
+		if (Binding.Type.producer.equals(binding.getType()))
+		messageCollector.unregister(binding.getTarget());
 	}
 
 	public MessageCollector messageCollector() {
@@ -134,7 +87,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 		private final Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
 
-		private BlockingQueue register(MessageChannel channel) {
+		private BlockingQueue<Message<?>> register(MessageChannel channel) {
 			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
 			Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
 			results.put(channel, result);

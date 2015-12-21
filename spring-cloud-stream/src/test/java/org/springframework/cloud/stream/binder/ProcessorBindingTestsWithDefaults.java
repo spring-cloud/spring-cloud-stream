@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -52,7 +53,7 @@ public class ProcessorBindingTestsWithDefaults {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		Mockito.verify(binder).bindConsumer(eq("input"), eq(processor.input()), Mockito.<Properties>any());
+		Mockito.verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<Properties>any());
 		Mockito.verify(binder).bindProducer(eq("output"), eq(processor.output()), Mockito.<Properties>any());
 		verifyNoMoreInteractions(binder);
 	}

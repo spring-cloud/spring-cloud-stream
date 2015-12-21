@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -51,7 +52,7 @@ public class InputOutputBindingOrderTest {
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
-		verify(binder).bindConsumer(eq("input"), eq(processor.input()), Mockito.<Properties>any());
+		verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<Properties>any());
 		SomeLifecycle someLifecycle = applicationContext.getBean(SomeLifecycle.class);
 		assertTrue(someLifecycle.isRunning());
 		applicationContext.close();
@@ -81,6 +82,7 @@ public class InputOutputBindingOrderTest {
 		private Processor processor;
 
 		@Override
+		@SuppressWarnings("unchecked")
 		public synchronized void start() {
 			verify(this.binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<Properties>any());
 			// input was not bound yet

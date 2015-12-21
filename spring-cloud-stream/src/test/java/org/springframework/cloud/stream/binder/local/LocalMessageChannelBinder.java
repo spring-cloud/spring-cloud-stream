@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,12 @@
 package org.springframework.cloud.stream.binder.local;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
-import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.ExecutorChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.config.ConsumerEndpointFactoryBean;
@@ -37,10 +31,7 @@ import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.PollableChannel;
-import org.springframework.messaging.SubscribableChannel;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
@@ -60,6 +51,8 @@ import org.springframework.util.MimeType;
  */
 public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 
+	public static final String THREAD_NAME_PREFIX = "binder.local-";
+
 	private static final int DEFAULT_EXECUTOR_CORE_POOL_SIZE = 0;
 
 	private static final int DEFAULT_EXECUTOR_MAX_POOL_SIZE = 200;
@@ -68,18 +61,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private static final int DEFAULT_EXECUTOR_KEEPALIVE_SECONDS = 60;
 
-	private static final int DEFAULT_REQ_REPLY_CONCURRENCY = 1;
-
-	protected static final Set<Object> CONSUMER_REQUEST_REPLY_PROPERTIES = new SetBuilder()
-			.addAll(CONSUMER_STANDARD_PROPERTIES)
-			.add(BinderPropertyKeys.CONCURRENCY)
-			.build();
-
-	public static final String THREAD_NAME_PREFIX = "binder.local-";
-
 	private volatile PollerMetadata poller;
-
-	private final Map<String, ExecutorChannel> requestReplyChannels = new HashMap<String, ExecutorChannel>();
 
 	private final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
@@ -90,23 +72,6 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 	private volatile int executorQueueSize = DEFAULT_EXECUTOR_QUEUE_SIZE;
 
 	private volatile int executorKeepAliveSeconds = DEFAULT_EXECUTOR_KEEPALIVE_SECONDS;
-
-	private volatile int queueSize = Integer.MAX_VALUE;
-
-	private final Map<String, ThreadPoolTaskExecutor> reqRepExecutors = new ConcurrentHashMap<>();
-
-	/**
-	 * Used to create and customize {@link QueueChannel}s when the binding operation involves aliased names.
-	 */
-	private final SharedChannelProvider<QueueChannel> queueChannelProvider = new SharedChannelProvider<QueueChannel>(
-			QueueChannel.class) {
-
-		@Override
-		protected QueueChannel createSharedChannel(String name) {
-			QueueChannel queueChannel = new QueueChannel(queueSize);
-			return queueChannel;
-		}
-	};
 
 	private final SharedChannelProvider<PublishSubscribeChannel> pubsubChannelProvider = new SharedChannelProvider<PublishSubscribeChannel>(
 			PublishSubscribeChannel.class) {
@@ -124,13 +89,6 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 	 */
 	public void setPoller(PollerMetadata poller) {
 		this.poller = poller;
-	}
-
-	/**
-	 * Set the size of the queue when using {@link QueueChannel}s.
-	 */
-	public void setQueueSize(int queueSize) {
-		this.queueSize = queueSize;
 	}
 
 	/**
@@ -183,61 +141,23 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 		this.executor.initialize();
 	}
 
-	/**
-	 * For the local binder we bridge the router "output" channel to a queue channel; the queue
-	 * channel gets the name and the source channel is named 'dynamic.output.to.' + name.
-	 * {@inheritDoc}
-	 */
 	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
-		return doBindDynamicProducer(name, "dynamic.output.to." + name, properties);
-	}
-
-	/**
-	 * For the local binder we bridge the router "output" channel to a pub/sub channel; the pub/sub
-	 * channel gets the name and the source channel is named 'dynamic.output.to.' + name.
-	 * {@inheritDoc}
-	 */
-	@Override
-	public MessageChannel bindDynamicPubSubProducer(String name, Properties properties) {
-		return doBindDynamicPubSubProducer(name, "dynamic.output.to." + name, properties);
-	}
-
-	private SharedChannelProvider<?> getChannelProvider(String name) {
-		SharedChannelProvider<?> channelProvider = directChannelProvider;
-		// Use queue channel provider in case of named channels:
-		// point-to-point type syntax (queue:) and job input channel syntax (job:)
-		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX) || name.startsWith(JOB_CHANNEL_TYPE_PREFIX)) {
-			channelProvider = queueChannelProvider;
-		}
-		return channelProvider;
-	}
-
-	/**
-	 * Looks up or creates a DirectChannel with the given name and creates a bridge from that channel to the provided
-	 * channel instance.
-	 */
-	@Override
-	public void bindConsumer(String name, MessageChannel moduleInputChannel, Properties properties) {
-		validateConsumerProperties(name, properties, CONSUMER_STANDARD_PROPERTIES);
-		doRegisterConsumer(name, moduleInputChannel, getChannelProvider(name), properties);
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, String group,
+	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel moduleInputChannel,
 			Properties properties) {
 		validateConsumerProperties(name, properties, CONSUMER_STANDARD_PROPERTIES);
-		doRegisterConsumer(name, moduleInputChannel, this.pubsubChannelProvider, properties);
+		return doRegisterConsumer(name, moduleInputChannel, this.pubsubChannelProvider, properties);
 	}
 
-	private void doRegisterConsumer(String name, MessageChannel moduleInputChannel,
+	private Binding<MessageChannel> doRegisterConsumer(String name, MessageChannel moduleInputChannel,
 			SharedChannelProvider<?> channelProvider, Properties properties) {
 		Assert.hasText(name, "a valid name is required to register an inbound channel");
 		Assert.notNull(moduleInputChannel, "channel must not be null");
-		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel(name);
+		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel("localbinder." + name);
 		bridge(name, registeredChannel, moduleInputChannel,
 				"inbound." + ((NamedComponent) registeredChannel).getComponentName(),
 				new LocalBindingPropertiesAccessor(properties));
+		// TODO: ?
+		return null;
 	}
 
 	/**
@@ -245,109 +165,25 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 	 * channel instance.
 	 */
 	@Override
-	public void bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties) {
+	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties) {
 		validateConsumerProperties(name, properties, PRODUCER_STANDARD_PROPERTIES);
-		doRegisterProducer(name, moduleOutputChannel, getChannelProvider(name), properties);
+		return doRegisterProducer(name, moduleOutputChannel, this.pubsubChannelProvider, properties);
 	}
 
-	@Override
-	public void bindPubSubProducer(String name, MessageChannel moduleOutputChannel,
-			Properties properties) {
-		validateConsumerProperties(name, properties, PRODUCER_STANDARD_PROPERTIES);
-		doRegisterProducer(name, moduleOutputChannel, this.pubsubChannelProvider, properties);
-	}
-
-	private void doRegisterProducer(String name, MessageChannel moduleOutputChannel,
+	private Binding<MessageChannel> doRegisterProducer(String name, MessageChannel moduleOutputChannel,
 			SharedChannelProvider<?> channelProvider, Properties properties) {
 		Assert.hasText(name, "a valid name is required to register an outbound channel");
 		Assert.notNull(moduleOutputChannel, "channel must not be null");
-		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel(name);
+		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel("localbinder." + name);
 		bridge(name, moduleOutputChannel, registeredChannel,
 				"outbound." + ((NamedComponent) registeredChannel).getComponentName(),
 				new LocalBindingPropertiesAccessor(properties));
+		// TODO: ?
+		return null;
 	}
 
 	@Override
-	public void bindRequestor(final String name, MessageChannel requests, final MessageChannel replies,
-			Properties properties) {
-		validateConsumerProperties(name, properties, CONSUMER_REQUEST_REPLY_PROPERTIES);
-		final MessageChannel requestChannel = this.findOrCreateRequestReplyChannel(name, "requestor.", properties);
-		Assert.isInstanceOf(SubscribableChannel.class, requests);
-		((SubscribableChannel) requests).subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				requestChannel.send(message);
-			}
-		});
-
-		ExecutorChannel replyChannel = this.findOrCreateRequestReplyChannel(name, "replier.", properties);
-		replyChannel.subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				replies.send(message);
-			}
-		});
-	}
-
-	@Override
-	public void bindReplier(String name, final MessageChannel requests, MessageChannel replies,
-			Properties properties) {
-		validateConsumerProperties(name, properties, CONSUMER_REQUEST_REPLY_PROPERTIES);
-		SubscribableChannel requestChannel = this.findOrCreateRequestReplyChannel(name, "requestor.", properties);
-		requestChannel.subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				requests.send(message);
-			}
-		});
-
-		Assert.isInstanceOf(SubscribableChannel.class, replies);
-		final SubscribableChannel replyChannel = this.findOrCreateRequestReplyChannel(name, "replier.", properties);
-		((SubscribableChannel) replies).subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				replyChannel.send(message);
-			}
-		});
-	}
-
-	private synchronized ExecutorChannel findOrCreateRequestReplyChannel(String name, String prefix,
-			Properties properties) {
-		String channelName = prefix + name;
-		ExecutorChannel channel = this.requestReplyChannels.get(channelName);
-		if (channel == null) {
-			ThreadPoolTaskExecutor executor = createRequestReplyExecutor(name, properties);
-			channel = new ExecutorChannel(executor);
-			channel.setBeanFactory(getBeanFactory());
-			this.requestReplyChannels.put(channelName, channel);
-			this.reqRepExecutors.put(name, executor);
-		}
-		return channel;
-	}
-
-	private ThreadPoolTaskExecutor createRequestReplyExecutor(String name, Properties properties) {
-		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-		executor.setCorePoolSize(new LocalBindingPropertiesAccessor(properties).getConcurrency(DEFAULT_REQ_REPLY_CONCURRENCY));
-		executor.setThreadNamePrefix(THREAD_NAME_PREFIX + name + "-");
-		executor.initialize();
-		return executor;
-	}
-
-	@Override
-	public void unbindProducer(String name, MessageChannel channel) {
-		this.requestReplyChannels.remove("replier." + name);
-		MessageChannel requestChannel = this.requestReplyChannels.remove("requestor." + name);
-		if (requestChannel == null) {
-			super.unbindProducer(name, channel);
-		}
-		ThreadPoolTaskExecutor executor = this.reqRepExecutors.remove(name);
-		if (executor != null) {
-			executor.shutdown();
-		}
+	public void unbind(Binding<MessageChannel> binding) {
 	}
 
 	protected BridgeHandler bridge(String name, MessageChannel from, MessageChannel to, String bridgeName,
@@ -397,7 +233,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 
 		try {
 			cefb.getObject().setComponentName(handler.getComponentName());
-			Binding binding = isInbound ? Binding.forConsumer(name, cefb.getObject(), to, properties)
+			Binding<MessageChannel> binding = isInbound ? Binding.forConsumer(name, null, cefb.getObject(), to, properties)
 					: Binding.forProducer(name, from, cefb.getObject(), properties);
 			addBinding(binding);
 			binding.start();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,16 @@
 
 package org.springframework.cloud.stream.binder.redis;
 
+import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.integration.channel.DefaultHeaderChannelRegistry;
-import org.springframework.integration.codec.Codec;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.cloud.stream.binder.AbstractTestBinder;
-
 
 /**
  * Test support class for {@link RedisMessageChannelBinder}.

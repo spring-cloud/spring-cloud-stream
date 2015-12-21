@@ -269,31 +269,13 @@ public class MessageChannelBinderSupportTests {
 	public class TestMessageChannelBinder extends MessageChannelBinderSupport {
 
 		@Override
-		public void bindConsumer(String name, MessageChannel channel, Properties properties) {
+		protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel channel, Properties properties) {
+			return null;
 		}
 
 		@Override
-		public void bindPubSubConsumer(String name, MessageChannel moduleInputChannel, String group,
-				Properties properties) {
-		}
-
-		@Override
-		public void bindPubSubProducer(String name, MessageChannel moduleOutputChannel,
-				Properties properties) {
-		}
-
-		@Override
-		public void bindProducer(String name, MessageChannel channel, Properties properties) {
-		}
-
-		@Override
-		public void bindRequestor(String name, MessageChannel requests, MessageChannel replies,
-				Properties properties) {
-		}
-
-		@Override
-		public void bindReplier(String name, MessageChannel requests, MessageChannel replies,
-				Properties properties) {
+		public Binding<MessageChannel> bindProducer(String name, MessageChannel channel, Properties properties) {
+			return null;
 		}
 	}
 

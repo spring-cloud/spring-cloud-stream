@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package org.springframework.cloud.stream.binder.redis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -31,6 +33,8 @@ import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.channel.DirectChannel;
@@ -38,9 +42,7 @@ import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
-import org.springframework.integration.redis.inbound.RedisInboundChannelAdapter;
 import org.springframework.integration.redis.inbound.RedisQueueMessageDrivenEndpoint;
-import org.springframework.integration.redis.outbound.RedisPublishingMessageHandler;
 import org.springframework.integration.redis.outbound.RedisQueueOutboundChannelAdapter;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -56,6 +58,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by Redis.
+ *
  * @author Mark Fisher
  * @author Gary Russell
  * @author David Turanski
@@ -65,54 +68,23 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	private static final String ERROR_HEADER = "errorKey";
 
+	private static final String CONSUMER_GROUPS_KEY_PREFIX = "groups.";
+
 	private static final SpelExpressionParser parser = new SpelExpressionParser();
 
 	private final String[] headersToMap;
 
-	/**
-	 * Retry only.
-	 */
-	private static final Set<Object> SUPPORTED_PUBSUB_CONSUMER_PROPERTIES = new SetBuilder()
-			.addAll(CONSUMER_STANDARD_PROPERTIES)
-			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.build();
+	private final RedisOperations<String, String> redisOperations;
 
 	/**
-	 * Retry + concurrency.
-	 */
-	private static final Set<Object> SUPPORTED_NAMED_CONSUMER_PROPERTIES = new SetBuilder()
-			.addAll(CONSUMER_STANDARD_PROPERTIES)
-			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(BinderPropertyKeys.CONCURRENCY)
-			.build();
-
-	/**
-	 * Named + partitioning.
+	 * Retry + concurrency + partitioning.
 	 */
 	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
-			.addAll(SUPPORTED_NAMED_CONSUMER_PROPERTIES)
-			.add(BinderPropertyKeys.PARTITION_INDEX)
-			.build();
-
-	/**
-	 * Retry + concurrency (request).
-	 */
-	private static final Set<Object> SUPPORTED_REPLYING_CONSUMER_PROPERTIES = new SetBuilder()
-			// request
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
 			.addAll(CONSUMER_RETRY_PROPERTIES)
 			.add(BinderPropertyKeys.CONCURRENCY)
+			.add(BinderPropertyKeys.PARTITION_INDEX)
 			.build();
-
-	/**
-	 * None.
-	 */
-	private static final Set<Object> SUPPORTED_PUBSUB_PRODUCER_PROPERTIES = PRODUCER_STANDARD_PROPERTIES;
-
-	/**
-	 * None.
-	 */
-	private static final Set<Object> SUPPORTED_NAMED_PRODUCER_PROPERTIES = PRODUCER_STANDARD_PROPERTIES;
 
 	/**
 	 * Partitioning.
@@ -120,16 +92,6 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(PRODUCER_STANDARD_PROPERTIES)
-			.add(BinderPropertyKeys.DIRECT_BINDING_ALLOWED)
-			.build();
-
-	/**
-	 * Retry, concurrency (reply).
-	 */
-	private static final Set<Object> SUPPORTED_REQUESTING_PRODUCER_PROPERTIES = new SetBuilder()
-			// reply
-			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	private final RedisConnectionFactory connectionFactory;
@@ -143,11 +105,12 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		this(connectionFactory, new String[0]);
 	}
 
-	public RedisMessageChannelBinder(RedisConnectionFactory connectionFactory,
-			String... headersToMap) {
+	public RedisMessageChannelBinder(RedisConnectionFactory connectionFactory, String... headersToMap) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		this.connectionFactory = connectionFactory;
-
+		StringRedisTemplate template = new StringRedisTemplate(connectionFactory);
+		template.afterPropertiesSet();
+		this.redisOperations = template;
 		if (headersToMap != null && headersToMap.length > 0) {
 			String[] combinedHeadersToMap =
 					Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0, BinderHeaders.STANDARD_HEADERS.length
@@ -159,7 +122,6 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		else {
 			this.headersToMap = BinderHeaders.STANDARD_HEADERS;
 		}
-
 		this.errorAdapter = new RedisQueueOutboundChannelAdapter(
 				parser.parseExpression("headers['" + ERROR_HEADER + "']"), connectionFactory);
 	}
@@ -173,23 +135,16 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	}
 
 	@Override
-	public void bindConsumer(final String name, MessageChannel moduleInputChannel, Properties properties) {
-		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)) {
-			validateConsumerProperties(name, properties, SUPPORTED_NAMED_CONSUMER_PROPERTIES);
-		}
-		else {
-			validateConsumerProperties(name, properties, SUPPORTED_CONSUMER_PROPERTIES);
-		}
+	protected Binding<MessageChannel> doBindConsumer(final String name, String group, MessageChannel moduleInputChannel, Properties properties) {
 		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
-		String queueName = "queue." + name;
+		String queueName = groupedName(name, group);
+		validateConsumerProperties(queueName, properties, SUPPORTED_CONSUMER_PROPERTIES);
 		int partitionIndex = accessor.getPartitionIndex();
 		if (partitionIndex >= 0) {
 			queueName += "-" + partitionIndex;
 		}
 		MessageProducerSupport adapter = createInboundAdapter(accessor, queueName);
-		doRegisterConsumer(name, name + (partitionIndex >= 0 ? "-" + partitionIndex : ""), moduleInputChannel, adapter,
-				accessor);
-		bindExistingProducerDirectlyIfPossible(name, moduleInputChannel);
+		return doRegisterConsumer(name, group, queueName, moduleInputChannel, adapter, accessor);
 	}
 
 	private MessageProducerSupport createInboundAdapter(RedisPropertiesAccessor accessor, String queueName) {
@@ -209,37 +164,25 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		return adapter;
 	}
 
-	@Override
-	public void bindPubSubConsumer(final String name, MessageChannel moduleInputChannel, String group,
-			Properties properties) {
-		if (logger.isInfoEnabled()) {
-			logger.info("declaring pubsub for inbound: " + name);
-		}
-		validateConsumerProperties(name, properties, SUPPORTED_PUBSUB_CONSUMER_PROPERTIES);
-		RedisInboundChannelAdapter adapter = new RedisInboundChannelAdapter(this.connectionFactory);
-		adapter.setBeanFactory(this.getBeanFactory());
-		adapter.setSerializer(null);
-		adapter.setTopics(applyPubSub(name));
-		doRegisterConsumer(name, name, moduleInputChannel, adapter, new RedisPropertiesAccessor(properties));
-	}
-
-	private void doRegisterConsumer(String bindingName, String channelName, MessageChannel moduleInputChannel,
+	private Binding<MessageChannel> doRegisterConsumer(String bindingName, String group, String channelName, MessageChannel moduleInputChannel,
 			MessageProducerSupport adapter, RedisPropertiesAccessor properties) {
 		DirectChannel bridgeToModuleChannel = new DirectChannel();
 		bridgeToModuleChannel.setBeanFactory(this.getBeanFactory());
 		bridgeToModuleChannel.setBeanName(channelName + ".bridge");
 		MessageChannel bridgeInputChannel = addRetryIfNeeded(channelName, bridgeToModuleChannel, properties);
 		adapter.setOutputChannel(bridgeInputChannel);
-		adapter.setBeanName("inbound." + bindingName);
+		adapter.setBeanName("inbound." + channelName);
 		adapter.afterPropertiesSet();
-		Binding consumerBinding = Binding.forConsumer(bindingName, adapter, moduleInputChannel, properties);
+		Binding<MessageChannel> consumerBinding = Binding.forConsumer(channelName, group, adapter, moduleInputChannel, properties);
 		addBinding(consumerBinding);
 		ReceivingHandler convertingBridge = new ReceivingHandler();
 		convertingBridge.setOutputChannel(moduleInputChannel);
 		convertingBridge.setBeanName(channelName + ".bridge.handler");
 		convertingBridge.afterPropertiesSet();
 		bridgeToModuleChannel.subscribe(convertingBridge);
+		this.redisOperations.boundZSetOps(CONSUMER_GROUPS_KEY_PREFIX + bindingName).incrementScore(group, 1);
 		consumerBinding.start();
+		return consumerBinding;
 	}
 
 	/**
@@ -300,101 +243,49 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	}
 
 	@Override
-	public void bindProducer(final String name, MessageChannel moduleOutputChannel,
-			Properties properties) {
-		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
-		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)) {
-			validateProducerProperties(name, properties, SUPPORTED_NAMED_PRODUCER_PROPERTIES);
-		}
-		else {
-			validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
-		}
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
-		if (!bindNewProducerDirectlyIfPossible(name, (SubscribableChannel) moduleOutputChannel, accessor)) {
-			String partitionKeyExtractorClass = accessor.getPartitionKeyExtractorClass();
-			Expression partitionKeyExpression = accessor.getPartitionKeyExpression();
-			RedisQueueOutboundChannelAdapter queue;
-			String queueName = "queue." + name;
-			if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
-				queue = new RedisQueueOutboundChannelAdapter(queueName, this.connectionFactory);
-			}
-			else {
-				queue = new RedisQueueOutboundChannelAdapter(
-						parser.parseExpression(buildPartitionRoutingExpression(queueName)), this.connectionFactory);
-			}
-			queue.setIntegrationEvaluationContext(this.evaluationContext);
-			queue.setBeanFactory(this.getBeanFactory());
-			queue.afterPropertiesSet();
-			doRegisterProducer(name, moduleOutputChannel, queue, accessor);
+	protected void afterUnbind(Binding<MessageChannel> binding) {
+		if (Binding.Type.consumer.equals(binding.getType())) {
+			String key = CONSUMER_GROUPS_KEY_PREFIX + binding.getName();
+			this.redisOperations.boundZSetOps(key).incrementScore(binding.getGroup(), -1);
 		}
 	}
 
 	@Override
-	public void bindPubSubProducer(final String name, MessageChannel moduleOutputChannel,
-			Properties properties) {
-		validateProducerProperties(name, properties, SUPPORTED_PUBSUB_PRODUCER_PROPERTIES);
-		RedisPublishingMessageHandler topic = new RedisPublishingMessageHandler(connectionFactory);
-		topic.setBeanFactory(this.getBeanFactory());
-		topic.setTopic(applyPubSub(name));
-		topic.afterPropertiesSet();
-		doRegisterProducer(name, moduleOutputChannel, topic, new RedisPropertiesAccessor(properties));
-	}
-
-	private void doRegisterProducer(final String name, MessageChannel moduleOutputChannel, MessageHandler delegate,
-			RedisPropertiesAccessor properties) {
-		this.doRegisterProducer(name, moduleOutputChannel, delegate, null, properties);
-	}
-
-	private void doRegisterProducer(final String name, MessageChannel moduleOutputChannel, MessageHandler delegate,
-			String replyTo, RedisPropertiesAccessor properties) {
+	public Binding<MessageChannel> bindProducer(final String name, MessageChannel moduleOutputChannel, Properties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
-		MessageHandler handler = new SendingHandler(delegate, replyTo, properties);
+		validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
+		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
+		return doRegisterProducer(name, moduleOutputChannel, accessor);
+	}
+
+	private RedisQueueOutboundChannelAdapter createProducerEndpoint(String name, RedisPropertiesAccessor accessor) {
+		String partitionKeyExtractorClass = accessor.getPartitionKeyExtractorClass();
+		Expression partitionKeyExpression = accessor.getPartitionKeyExpression();
+		RedisQueueOutboundChannelAdapter queue;
+		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
+			queue = new RedisQueueOutboundChannelAdapter(name, this.connectionFactory);
+		}
+		else {
+			queue = new RedisQueueOutboundChannelAdapter(
+					parser.parseExpression(buildPartitionRoutingExpression(name)), this.connectionFactory);
+		}
+		queue.setIntegrationEvaluationContext(this.evaluationContext);
+		queue.setBeanFactory(this.getBeanFactory());
+		queue.afterPropertiesSet();
+		return queue;
+	}
+
+	private Binding<MessageChannel> doRegisterProducer(final String name, MessageChannel moduleOutputChannel, RedisPropertiesAccessor properties) {
+		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
+		MessageHandler handler = new SendingHandler(name, properties);
 		EventDrivenConsumer consumer = new EventDrivenConsumer((SubscribableChannel) moduleOutputChannel, handler);
 		consumer.setBeanFactory(this.getBeanFactory());
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
-		Binding producerBinding = Binding.forProducer(name, moduleOutputChannel, consumer, properties);
+		Binding<MessageChannel> producerBinding = Binding.forProducer(name, moduleOutputChannel, consumer, properties);
 		addBinding(producerBinding);
 		producerBinding.start();
-	}
-
-	@Override
-	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies,
-			Properties properties) {
-		if (logger.isInfoEnabled()) {
-			logger.info("binding requestor: " + name);
-		}
-		Assert.isInstanceOf(SubscribableChannel.class, requests);
-		validateProducerProperties(name, properties, SUPPORTED_REQUESTING_PRODUCER_PROPERTIES);
-		RedisQueueOutboundChannelAdapter queue = new RedisQueueOutboundChannelAdapter("queue." + applyRequests(name),
-				this.connectionFactory);
-		queue.setBeanFactory(this.getBeanFactory());
-		queue.afterPropertiesSet();
-		String replyQueueName = name + ".replies." + this.getIdGenerator().generateId();
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
-		this.doRegisterProducer(name, requests, queue, replyQueueName, accessor);
-		MessageProducerSupport adapter = createInboundAdapter(accessor, replyQueueName);
-		this.doRegisterConsumer(name, name, replies, adapter, accessor);
-	}
-
-	@Override
-	public void bindReplier(String name, MessageChannel requests, MessageChannel replies,
-			Properties properties) {
-		if (logger.isInfoEnabled()) {
-			logger.info("binding replier: " + name);
-		}
-		validateConsumerProperties(name, properties, SUPPORTED_REPLYING_CONSUMER_PROPERTIES);
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
-		MessageProducerSupport adapter = createInboundAdapter(accessor, "queue." + applyRequests(name));
-		this.doRegisterConsumer(name, name, requests, adapter, accessor);
-
-		RedisQueueOutboundChannelAdapter replyQueue = new RedisQueueOutboundChannelAdapter(
-				RedisMessageChannelBinder.parser.parseExpression("headers['" + BinderHeaders.REPLY_TO + "']"),
-				this.connectionFactory);
-		replyQueue.setBeanFactory(this.getBeanFactory());
-		replyQueue.setIntegrationEvaluationContext(this.evaluationContext);
-		replyQueue.afterPropertiesSet();
-		this.doRegisterProducer(name, replies, replyQueue, accessor);
+		return producerBinding;
 	}
 
 	@Override
@@ -404,37 +295,48 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	private class SendingHandler extends AbstractMessageHandler {
 
-		private final MessageHandler delegate;
-
-		private final String replyTo;
+		private final String bindingName;
 
 		private final PartitioningMetadata partitioningMetadata;
 
+		private final RedisPropertiesAccessor accessor;
 
-		private SendingHandler(MessageHandler delegate, String replyTo, RedisPropertiesAccessor properties) {
-			this.delegate = delegate;
-			this.replyTo = replyTo;
+		private final Map<String, RedisQueueOutboundChannelAdapter> adapters = new HashMap<>();
+
+		private SendingHandler(String bindingName, RedisPropertiesAccessor properties) {
+			this.bindingName = bindingName;
+			this.accessor = properties;
 			this.partitioningMetadata = new PartitioningMetadata(properties, properties.getNextModuleCount());
 			this.setBeanFactory(RedisMessageChannelBinder.this.getBeanFactory());
+			refreshChannelAdapters();
 		}
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) throws Exception {
 			MessageValues transformed = serializePayloadIfNecessary(message);
 
-			if (replyTo != null) {
-				transformed.put(BinderHeaders.REPLY_TO, this.replyTo);
-			}
 			if (this.partitioningMetadata.isPartitionedModule()) {
-
 				transformed.put(PARTITION_HEADER, determinePartition(message, this.partitioningMetadata));
 			}
 
 			byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
 					RedisMessageChannelBinder.this.headersToMap);
-			delegate.handleMessage(MessageBuilder.withPayload(messageToSend).copyHeaders(transformed).build());
+			
+			refreshChannelAdapters();
+			for (RedisQueueOutboundChannelAdapter adapter : adapters.values()) {
+				adapter.handleMessage((MessageBuilder.withPayload(messageToSend).copyHeaders(transformed).build()));
+			}
 		}
 
+		private void refreshChannelAdapters() {
+			Set<String> groups = redisOperations.boundZSetOps(CONSUMER_GROUPS_KEY_PREFIX + bindingName).rangeByScore(1, Double.MAX_VALUE);
+			for (String group : groups) {
+				if (!adapters.containsKey(group)) {
+					String channel = String.format("%s.%s", this.bindingName, group);
+					adapters.put(group, createProducerEndpoint(channel, accessor));
+				}
+			}
+		}
 	}
 
 	private class ReceivingHandler extends AbstractReplyProducingMessageHandler {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,11 +117,13 @@ import scala.collection.Seq;
  * that better be greater than number of containers</td>
  * </tr>
  * </table>
+ *
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author David Turanski
  * @author Gary Russell
+ * @author Mark Fisher
  */
 public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
@@ -184,12 +186,6 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 				KafkaMessageChannelBinder.COMPRESSION_CODEC,
 			}));
 
-	/**
-	 * The consumer group to use when achieving point to point semantics (that consumer group name is static and hence
-	 * shared by all containers).
-	 */
-	private static final String POINT_TO_POINT_SEMANTICS_CONSUMER_GROUP = "springXD";
-
 	private static final Set<Object> KAFKA_CONSUMER_PROPERTIES = new SetBuilder()
 			.add(BinderPropertyKeys.MIN_PARTITION_COUNT)
 			.build();
@@ -211,24 +207,11 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 			.build();
 
 	/**
-	 * Basic + concurrency.
-	 */
-	private static final Set<Object> SUPPORTED_NAMED_CONSUMER_PROPERTIES = new SetBuilder()
-			.addAll(CONSUMER_STANDARD_PROPERTIES)
-			.build();
-
-	private static final Set<Object> SUPPORTED_NAMED_PRODUCER_PROPERTIES = new SetBuilder()
-			.addAll(PRODUCER_STANDARD_PROPERTIES)
-			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
-			.build();
-
-	/**
 	 * Partitioning + kafka producer properties.
 	 */
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(PRODUCER_STANDARD_PROPERTIES)
-			.add(BinderPropertyKeys.DIRECT_BINDING_ALLOWED)
 			.addAll(KAFKA_PRODUCER_PROPERTIES)
 			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
 			.addAll(PRODUCER_COMPRESSION_PROPERTIES)
@@ -246,6 +229,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private final String zkAddress;
 
 	// -------- Default values for properties -------
+
 	private int defaultReplicationFactor = 1;
 
 	private String defaultCompressionCodec = DEFAULT_COMPRESSION_CODEC;
@@ -306,7 +290,6 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		else {
 			this.headersToMap = BinderHeaders.STANDARD_HEADERS;
 		}
-
 	}
 
 	public void setOffsetStoreTopic(String offsetStoreTopic) {
@@ -332,7 +315,6 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	public void setOffsetStoreMaxFetchSize(int offsetStoreMaxFetchSize) {
 		this.offsetStoreMaxFetchSize = offsetStoreMaxFetchSize;
 	}
-
 
 	public void setOffsetUpdateTimeWindow(int offsetUpdateTimeWindow) {
 		this.offsetUpdateTimeWindow = offsetUpdateTimeWindow;
@@ -460,99 +442,66 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	}
 
 	@Override
-	public void bindConsumer(String name, final MessageChannel moduleInputChannel, Properties properties) {
-		// Point-to-point consumers reset at the earliest time, which allows them to catch up with all messages
-		createKafkaConsumer(name, moduleInputChannel, properties, POINT_TO_POINT_SEMANTICS_CONSUMER_GROUP,
-				OffsetRequest.EarliestTime());
-		bindExistingProducerDirectlyIfPossible(name, moduleInputChannel);
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
+	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
 		// If the caller provides a group, use it; otherwise
 		// usage of a different consumer group each time achieves pub-sub
 		// but multiple instances of this binding will each get all messages
 		// PubSub consumers reset at the latest time, which allows them to receive only messages sent after
 		// they've been bound
 		String consumerGroup = group == null ? UUID.randomUUID().toString() : group;
-		createKafkaConsumer(name, inputChannel, properties, consumerGroup, OffsetRequest.LatestTime());
+		return createKafkaConsumer(name, inputChannel, properties, consumerGroup, OffsetRequest.LatestTime());
 	}
 
 	@Override
-	public void bindProducer(final String name, MessageChannel moduleOutputChannel, Properties properties) {
-
+	public Binding<MessageChannel> bindProducer(final String name, MessageChannel moduleOutputChannel, Properties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
 		KafkaPropertiesAccessor producerPropertiesAccessor = new KafkaPropertiesAccessor(properties);
-		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)) {
-			validateProducerProperties(name, properties, SUPPORTED_NAMED_PRODUCER_PROPERTIES);
-		}
-		else {
-			validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
-		}
-		if (!bindNewProducerDirectlyIfPossible(name, (SubscribableChannel) moduleOutputChannel,
-				producerPropertiesAccessor)) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Using kafka topic for outbound: " + name);
-			}
-
-			final String topicName = escapeTopicName(name);
-
-			int numPartitions = producerPropertiesAccessor.getNumberOfKafkaPartitionsForProducer();
-
-			Collection<Partition> partitions = ensureTopicCreated(topicName, numPartitions, defaultReplicationFactor);
-
-			ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(
-					topicName, byte[].class, byte[].class, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
-			producerMetadata.setCompressionType(ProducerMetadata.CompressionType.valueOf(
-					producerPropertiesAccessor.getCompressionCodec(this.defaultCompressionCodec)));
-			producerMetadata.setBatchBytes(producerPropertiesAccessor.getBatchSize(this.defaultBatchSize));
-			Properties additionalProps = new Properties();
-			additionalProps.put(ProducerConfig.ACKS_CONFIG,
-					String.valueOf(producerPropertiesAccessor.getRequiredAcks(this
-							.defaultRequiredAcks)));
-			additionalProps.put(ProducerConfig.LINGER_MS_CONFIG,
-					String.valueOf(producerPropertiesAccessor.getBatchTimeout(this
-							.defaultBatchTimeout)));
-			ProducerFactoryBean<byte[], byte[]> producerFB =
-					new ProducerFactoryBean<>(producerMetadata, brokers, additionalProps);
-
-			try {
-				final ProducerConfiguration<byte[], byte[]> producerConfiguration = new ProducerConfiguration<>(
-						producerMetadata, producerFB.getObject());
-
-				MessageHandler handler = new SendingHandler(topicName, producerPropertiesAccessor,
-						partitions.size(), producerConfiguration);
-				EventDrivenConsumer consumer = new EventDrivenConsumer((SubscribableChannel) moduleOutputChannel,
-						handler);
-				consumer.setBeanFactory(this.getBeanFactory());
-				consumer.setBeanName("outbound." + name);
-				consumer.afterPropertiesSet();
-				Binding producerBinding = Binding.forProducer(name, moduleOutputChannel, consumer,
-						producerPropertiesAccessor);
-				addBinding(producerBinding);
-				producerBinding.start();
-			}
-			catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-
+		validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
+		if (logger.isInfoEnabled()) {
+			logger.info("Using kafka topic for outbound: " + name);
 		}
 
-	}
+		final String topicName = escapeTopicName(name);
 
-	@Override
-	public void bindPubSubProducer(String name, MessageChannel outputChannel, Properties properties) {
-		bindProducer(name, outputChannel, properties);
-	}
+		int numPartitions = producerPropertiesAccessor.getNumberOfKafkaPartitionsForProducer();
 
-	@Override
-	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-		throw new UnsupportedOperationException("requestor binding is not supported by this binder");
-	}
+		Collection<Partition> partitions = ensureTopicCreated(topicName, numPartitions, defaultReplicationFactor);
 
-	@Override
-	public void bindReplier(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-		throw new UnsupportedOperationException("replier binding is not supported by this binder");
+		ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(
+				topicName, byte[].class, byte[].class, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
+		producerMetadata.setCompressionType(ProducerMetadata.CompressionType.valueOf(
+				producerPropertiesAccessor.getCompressionCodec(this.defaultCompressionCodec)));
+		producerMetadata.setBatchBytes(producerPropertiesAccessor.getBatchSize(this.defaultBatchSize));
+		Properties additionalProps = new Properties();
+		additionalProps.put(ProducerConfig.ACKS_CONFIG,
+				String.valueOf(producerPropertiesAccessor.getRequiredAcks(this
+						.defaultRequiredAcks)));
+		additionalProps.put(ProducerConfig.LINGER_MS_CONFIG,
+				String.valueOf(producerPropertiesAccessor.getBatchTimeout(this
+						.defaultBatchTimeout)));
+		ProducerFactoryBean<byte[], byte[]> producerFB =
+				new ProducerFactoryBean<>(producerMetadata, brokers, additionalProps);
+
+		try {
+			final ProducerConfiguration<byte[], byte[]> producerConfiguration = new ProducerConfiguration<>(
+					producerMetadata, producerFB.getObject());
+
+			MessageHandler handler = new SendingHandler(topicName, producerPropertiesAccessor,
+					partitions.size(), producerConfiguration);
+			EventDrivenConsumer consumer = new EventDrivenConsumer((SubscribableChannel) moduleOutputChannel,
+					handler);
+			consumer.setBeanFactory(this.getBeanFactory());
+			consumer.setBeanName("outbound." + name);
+			consumer.afterPropertiesSet();
+			Binding<MessageChannel> producerBinding = Binding.forProducer(name, moduleOutputChannel, consumer,
+					producerPropertiesAccessor);
+			addBinding(producerBinding);
+			producerBinding.start();
+			return producerBinding;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -610,15 +559,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		}
 	}
 
-	private void createKafkaConsumer(String name, final MessageChannel moduleInputChannel, Properties properties,
+	private Binding<MessageChannel> createKafkaConsumer(String name, final MessageChannel moduleInputChannel, Properties properties,
 			String group, long referencePoint) {
 
-		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)) {
-			validateConsumerProperties(name, properties, SUPPORTED_NAMED_CONSUMER_PROPERTIES);
-		}
-		else {
-			validateConsumerProperties(name, properties, SUPPORTED_CONSUMER_PROPERTIES);
-		}
+		validateConsumerProperties(groupedName(name, group), properties, SUPPORTED_CONSUMER_PROPERTIES);
 		KafkaPropertiesAccessor accessor = new KafkaPropertiesAccessor(properties);
 
 		int maxConcurrency = accessor.getConcurrency(defaultConcurrency);
@@ -702,12 +646,13 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 				super.doStop();
 			}
 		};
-		edc.setBeanName("inbound." + name);
+		String groupedName = groupedName(name, group);
+		edc.setBeanName("inbound." + groupedName);
 
-		Binding consumerBinding = Binding.forConsumer(name, edc, moduleInputChannel, accessor);
+		Binding<MessageChannel> consumerBinding = Binding.forConsumer(name, group, edc, moduleInputChannel, accessor);
 		addBinding(consumerBinding);
 		consumerBinding.start();
-
+		return consumerBinding;
 	}
 
 	public KafkaMessageListenerContainer createMessageListenerContainer(Properties properties, String group,
