@@ -50,6 +50,8 @@ public class ChannelBindingServiceProperties {
 
 	private String defaultBinder;
 
+	private String[] outboundChannelNames = new String[0];
+
 	public Map<String, BindingProperties> getBindings() {
 		return bindings;
 	}
@@ -209,6 +211,14 @@ public class ChannelBindingServiceProperties {
 						Integer.toString(getInstanceIndex()));
 			}
 		}
+	}
+
+	public String[] getOutboundChannelNames() {
+		return outboundChannelNames;
+	}
+
+	public void setOutboundChannelNames(String[] outboundChannelNames) {
+		this.outboundChannelNames = outboundChannelNames;
 	}
 
 	public String getBinder(String channelName) {
