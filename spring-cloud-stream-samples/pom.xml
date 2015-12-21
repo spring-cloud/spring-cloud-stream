@@ -22,7 +22,6 @@
 		<module>source</module>
 		<module>sink</module>
 		<module>transform</module>
-		<module>tap</module>
 		<module>double</module>
 		<module>extended</module>
 		<module>multibinder</module>
