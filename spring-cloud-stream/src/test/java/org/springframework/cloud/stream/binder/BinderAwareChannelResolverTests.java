@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.integration.support.MessageBuilder;
@@ -91,8 +90,8 @@ public class BinderAwareChannelResolverTests {
 	}
 
 	@Test
-	public void resolveQueueChannel() {
-		MessageChannel registered = resolver.resolveDestination("queue:foo");
+	public void resolveChannel() {
+		MessageChannel registered = resolver.resolveDestination("foo");
 		DirectChannel testChannel = new DirectChannel();
 		final CountDownLatch latch = new CountDownLatch(1);
 		final List<Message<?>> received = new ArrayList<Message<?>>();
@@ -104,7 +103,7 @@ public class BinderAwareChannelResolverTests {
 				latch.countDown();
 			}
 		});
-		binder.bindConsumer("queue:foo", testChannel, null);
+		binder.bindConsumer("foo", null, testChannel, null);
 		assertEquals(0, received.size());
 		registered.send(MessageBuilder.withPayload("hello").build());
 		try {
@@ -120,53 +119,17 @@ public class BinderAwareChannelResolverTests {
 	}
 
 	@Test
-	public void resolveTopicChannel() {
-		MessageChannel registered = resolver.resolveDestination("topic:bar");
-		PublishSubscribeChannel[] testChannels = {
-			new PublishSubscribeChannel(), new PublishSubscribeChannel(), new PublishSubscribeChannel()
-		};
-		final CountDownLatch latch = new CountDownLatch(testChannels.length);
-		final List<Message<?>> received = new ArrayList<Message<?>>();
-		for (PublishSubscribeChannel testChannel : testChannels) {
-			testChannel.subscribe(new MessageHandler() {
-
-				@Override
-				public void handleMessage(Message<?> message) throws MessagingException {
-					received.add(message);
-					latch.countDown();
-				}
-			});
-			binder.bindPubSubConsumer("topic:bar", testChannel, null, null);
-		}
-		assertEquals(0, received.size());
-		registered.send(MessageBuilder.withPayload("hello").build());
-		try {
-			assertTrue("latch timed out", latch.await(1, TimeUnit.SECONDS));
-		}
-		catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			fail("interrupted while awaiting latch");
-		}
-		assertEquals(3, received.size());
-		assertEquals("hello", received.get(0).getPayload());
-		assertEquals("hello", received.get(1).getPayload());
-		assertEquals("hello", received.get(2).getPayload());
-		context.close();
-	}
-
-	@Test
 	public void resolveNonRegisteredChannel() {
 		MessageChannel other = resolver.resolveDestination("other");
 		assertSame(context.getBean("other"), other);
 	}
 
 	@Test
+	@SuppressWarnings("rawtypes")
 	public void propertyPassthrough() {
 		Properties properties = new Properties();
-		@SuppressWarnings("rawtypes")
 		Binder binderFactory = mock(Binder.class);
-		doReturn(new DirectChannel()).when(binderFactory).bindDynamicProducer("queue:foo", properties);
-		doReturn(new DirectChannel()).when(binderFactory).bindDynamicPubSubProducer("topic:bar", properties);
+		doReturn(new DirectChannel()).when(binderFactory).bindDynamicProducer("foo", properties);
 		BinderFactory mockBinderFactory = Mockito.mock(BinderFactory.class);
 		Mockito.when(mockBinderFactory.getBinder(anyString())).thenReturn(binderFactory);
 		@SuppressWarnings("unchecked")
@@ -174,10 +137,8 @@ public class BinderAwareChannelResolverTests {
 				new BinderAwareChannelResolver(mockBinderFactory, properties);
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
-		resolver.resolveDestination("queue:foo");
-		resolver.resolveDestination("topic:bar");
-		verify(binderFactory).bindDynamicProducer("queue:foo", properties);
-		verify(binderFactory).bindDynamicPubSubProducer("topic:bar", properties);
+		resolver.resolveDestination("foo");
+		verify(binderFactory).bindDynamicProducer("foo", properties);
 	}
 
 }

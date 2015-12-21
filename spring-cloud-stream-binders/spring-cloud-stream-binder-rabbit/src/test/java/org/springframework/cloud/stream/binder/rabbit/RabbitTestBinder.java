@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-
 
 /**
  * Test support class for {@link RabbitMessageChannelBinder}.
@@ -60,39 +59,15 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 	}
 
 	@Override
-	public void bindConsumer(String name, MessageChannel moduleInputChannel, Properties properties) {
+	public void bindConsumer(String name, String group, MessageChannel moduleInputChannel, Properties properties) {
 		capturePrefix(properties);
-		super.bindConsumer(name, moduleInputChannel, properties);
+		super.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
 	@Override
 	public void bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties) {
 		capturePrefix(properties);
 		super.bindProducer(name, moduleOutputChannel, properties);
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
-		capturePrefix(properties);
-		super.bindPubSubConsumer(name, inputChannel, group, properties);
-	}
-
-	@Override
-	public void bindPubSubProducer(String name, MessageChannel outputChannel, Properties properties) {
-		capturePrefix(properties);
-		super.bindPubSubProducer(name, outputChannel, properties);
-	}
-
-	@Override
-	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-		capturePrefix(properties);
-		super.bindRequestor(name, requests, replies, properties);
-	}
-
-	@Override
-	public void bindReplier(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-		capturePrefix(properties);
-		super.bindReplier(name, requests, replies, properties);
 	}
 
 	public void capturePrefix(Properties properties) {

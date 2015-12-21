@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,33 +49,20 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		}
 		catch (DestinationResolutionException e) {
 		}
-		if (name.contains(":")) {
-			if (binderFactory != null) {
+		if (binderFactory != null) {
+			String transport = null;
+			if (name.contains(":")) {
 				String[] tokens = name.split(":", 2);
-				String transport = null;
-				String type;
 				if (tokens.length == 2) {
-					type = tokens[0];
-				}
-				else if (tokens.length == 3) {
 					transport = tokens[0];
-					type = tokens[1];
 				}
-				else {
+				else if (tokens.length != 1) {
 					throw new IllegalArgumentException("Unrecognized channel naming scheme: " + name + " , should be" +
-							" [<transport>:]<type>:<name>");
-				}
-				Binder<MessageChannel> binder = binderFactory.getBinder(transport);
-				if ("queue".equals(type)) {
-					channel = binder.bindDynamicProducer(name, this.producerProperties);
-				}
-				else if ("topic".equals(type)) {
-					channel = binder.bindDynamicPubSubProducer(name, this.producerProperties);
-				}
-				else {
-					throw new IllegalArgumentException("unrecognized channel type: " + type);
+							" [<transport>:]<name>");
 				}
 			}
+			Binder<MessageChannel> binder = binderFactory.getBinder(transport);
+			channel = binder.bindDynamicProducer(name, this.producerProperties);
 		}
 		if (channel == null) {
 			channel = super.resolveDestination(name);

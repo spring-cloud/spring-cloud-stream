@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.messaging.MessageChannel;
-
 
 /**
  * Abstract class that adds test support for {@link Binder}.
@@ -48,45 +47,15 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	}
 
 	@Override
-	public void bindConsumer(String name, MessageChannel moduleInputChannel, Properties properties) {
-		binder.bindConsumer(name, moduleInputChannel, properties);
+	public void bindConsumer(String name, String group, MessageChannel moduleInputChannel, Properties properties) {
+		binder.bindConsumer(name, group, moduleInputChannel, properties);
 		queues.add(name);
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inputChannel, String group, Properties properties) {
-		binder.bindPubSubConsumer(name, inputChannel, group, properties);
-		addTopic(name);
 	}
 
 	@Override
 	public void bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties) {
 		binder.bindProducer(name, moduleOutputChannel, properties);
 		queues.add(name);
-	}
-
-	@Override
-	public void bindPubSubProducer(String name, MessageChannel outputChannel, Properties properties) {
-		binder.bindPubSubProducer(name, outputChannel, properties);
-		addTopic(name);
-	}
-
-	@Override
-	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies,
-			Properties properties) {
-		binder.bindRequestor(name, requests, replies, properties);
-		queues.add(name + ".requests");
-	}
-
-	@Override
-	public void bindReplier(String name, MessageChannel requests, MessageChannel replies,
-			Properties properties) {
-		binder.bindReplier(name, requests, replies, properties);
-		queues.add(name + ".requests");
-	}
-
-	private void addTopic(String topicName) {
-		topics.add("topic." + topicName);
 	}
 
 	public C getCoreBinder() {
@@ -96,13 +65,8 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	public abstract void cleanup();
 
 	@Override
-	public void unbindConsumers(String name) {
-		binder.unbindConsumers(name);
-	}
-
-	@Override
-	public void unbindPubSubConsumers(String name, String group) {
-		binder.unbindPubSubConsumers(name, group);
+	public void unbindConsumers(String name, String group) {
+		binder.unbindConsumers(name, group);
 	}
 
 	@Override
@@ -111,8 +75,8 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	}
 
 	@Override
-	public void unbindConsumer(String name, MessageChannel channel) {
-		binder.unbindConsumer(name, channel);
+	public void unbindConsumer(String name, String group, MessageChannel channel) {
+		binder.unbindConsumer(name, group, channel);
 	}
 
 	@Override
@@ -124,12 +88,6 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	public MessageChannel bindDynamicProducer(String name, Properties properties) {
 		this.queues.add(name);
 		return this.binder.bindDynamicProducer(name, properties);
-	}
-
-	@Override
-	public MessageChannel bindDynamicPubSubProducer(String name, Properties properties) {
-		this.topics.add(name);
-		return this.binder.bindDynamicPubSubProducer(name, properties);
 	}
 
 	public C getBinder() {
