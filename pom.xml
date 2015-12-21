@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-stream-parent</artifactId>
-	<version>1.0.0.M3</version>
+	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -49,12 +49,12 @@
 			<dependency>
 		                <groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-codec</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -64,7 +64,7 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-kafka</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -74,17 +74,17 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-redis</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-kafka</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -94,32 +94,32 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-redis</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-test</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-module-launcher</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support-internal</artifactId>
-				<version>1.0.0.M3</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>

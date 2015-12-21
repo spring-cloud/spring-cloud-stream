@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>1.0.0.M3</version>
+		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 
 	<properties>
@@ -37,7 +37,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-tuple</artifactId>
-			<version>1.0.0.M3</version>
+			<version>1.0.0.BUILD-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.retry</groupId>
