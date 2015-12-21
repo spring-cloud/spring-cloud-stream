@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -31,7 +30,6 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesBindin
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
-import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
@@ -39,6 +37,7 @@ import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigure
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
+import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageHistoryTrackerConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
@@ -62,6 +61,7 @@ import org.springframework.messaging.core.DestinationResolver;
  * @author David Turanski
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 @Configuration
 @EnableConfigurationProperties(ChannelBindingServiceProperties.class)
@@ -124,8 +124,9 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	public BinderAwareChannelResolver binderAwareChannelResolver(
-			BinderFactory<MessageChannel> binderFactory) {
-		return new BinderAwareChannelResolver(binderFactory, new Properties());
+			BinderFactory<MessageChannel> binderFactory,
+			ChannelBindingServiceProperties channelBindingServiceProperties) {
+		return new BinderAwareChannelResolver(binderFactory, channelBindingServiceProperties);
 	}
 
 	@Bean

@@ -16,17 +16,19 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
 import org.springframework.messaging.core.DestinationResolutionException;
+import org.springframework.util.Assert;
 
 /**
  * A {@link org.springframework.messaging.core.DestinationResolver} implementation that
@@ -40,36 +42,41 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private final BinderFactory<MessageChannel> binderFactory;
 
-	private final Properties producerProperties;
+	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	private DefaultListableBeanFactory beanFactory;
+	private ConfigurableListableBeanFactory beanFactory;
 
-	public BinderAwareChannelResolver(BinderFactory<MessageChannel> binderFactory, Properties producerProperties) {
+	public BinderAwareChannelResolver(BinderFactory<MessageChannel> binderFactory,
+			ChannelBindingServiceProperties channelBindingServiceProperties) {
+		Assert.notNull(binderFactory, "'binderFactory' cannot be null");
 		this.binderFactory = binderFactory;
-		this.producerProperties = producerProperties;
+		this.channelBindingServiceProperties = channelBindingServiceProperties;
 	}
 
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) {
 		super.setBeanFactory(beanFactory);
-		if (beanFactory instanceof ConfigurableBeanFactory) {
-			this.beanFactory = (DefaultListableBeanFactory) beanFactory;
+		if (beanFactory instanceof ConfigurableListableBeanFactory) {
+			this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 		}
 	}
 
 	@Override
 	public MessageChannel resolveDestination(String name) {
 		MessageChannel channel = null;
+		DestinationResolutionException destinationResolutionException;
 		try {
 			return super.resolveDestination(name);
 		}
 		catch (DestinationResolutionException e) {
+			destinationResolutionException = e;
 		}
 		synchronized (this) {
 			try {
 				return super.resolveDestination(name);
 			}
 			catch (DestinationResolutionException e) {
+				destinationResolutionException = e;
 			}
 			if (this.beanFactory != null && this.binderFactory != null) {
 				channel = new DirectChannel();
@@ -86,8 +93,23 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 								" [<transport>:]<name>");
 					}
 				}
-				Binder<MessageChannel> binder = binderFactory.getBinder(transport);
-				binder.bindProducer(name, channel, this.producerProperties);
+				String[] dynamicDestinations = null;
+				Properties producerProperties = null;
+				if (this.channelBindingServiceProperties != null) {
+					dynamicDestinations = this.channelBindingServiceProperties.getDynamicDestinations();
+					// TODO: need the props to return some defaults if not found
+					producerProperties = this.channelBindingServiceProperties.getProducerProperties(name);
+				}
+				boolean dynamicAllowed = dynamicDestinations == null
+						|| dynamicDestinations.length == 0
+						|| Arrays.asList(dynamicDestinations).contains(name);
+				if (dynamicAllowed) {
+					Binder<MessageChannel> binder = binderFactory.getBinder(transport);
+					binder.bindProducer(name, channel, producerProperties);
+				}
+				else {
+					throw destinationResolutionException;
+				}
 			}
 			return channel;
 		}

@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.springframework.cloud.stream.binder.Binder;
@@ -47,6 +49,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 	private final MessageCollectorImpl messageCollector = new MessageCollectorImpl();
 
+	private final ConcurrentMap<String, MessageChannel> messageChannels = new ConcurrentHashMap<>();
 
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
@@ -65,17 +68,23 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 				queue.add(message);
 			}
 		});
+		this.messageChannels.put(name, outboundBindTarget);
 		return null;
 	}
 
 	@Override
 	public void unbind(Binding<MessageChannel> binding) {
-		if (Binding.Type.producer.equals(binding.getType()))
-		messageCollector.unregister(binding.getTarget());
+		if (Binding.Type.producer.equals(binding.getType())) {
+			messageCollector.unregister(binding.getTarget());
+		}
 	}
 
 	public MessageCollector messageCollector() {
 		return messageCollector;
+	}
+
+	public MessageChannel getChannelForName(String name) {
+		return this.messageChannels.get(name);
 	}
 
 	/**
