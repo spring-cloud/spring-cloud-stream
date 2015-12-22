@@ -174,7 +174,7 @@ public class BindingProperties {
 			sb.append("partitionSelectorExpression=" + partitionSelectorExpression);
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));
-		return "BinderProperties{" + sb.toString() + "}";
+		return "BindingProperties{" + sb.toString() + "}";
 	}
 
 }
