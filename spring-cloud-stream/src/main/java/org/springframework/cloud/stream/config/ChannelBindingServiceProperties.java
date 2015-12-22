@@ -23,6 +23,7 @@ import java.util.TreeMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.CommonBinderProperties;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -32,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author Gary Russell
+ * @author Ilayaperumal Gopinathan
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
@@ -42,31 +44,11 @@ public class ChannelBindingServiceProperties {
 
 	private int instanceCount = 1;
 
-	private Properties consumerProperties = new Properties();
-
-	private Properties producerProperties = new Properties();
-
 	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	private Map<String, BinderProperties> binders = new HashMap<>();
 
 	private String defaultBinder;
-
-	public Properties getConsumerProperties() {
-		return this.consumerProperties;
-	}
-
-	public void setConsumerProperties(Properties consumerProperties) {
-		this.consumerProperties = consumerProperties;
-	}
-
-	public Properties getProducerProperties() {
-		return this.producerProperties;
-	}
-
-	public void setProducerProperties(Properties producerProperties) {
-		this.producerProperties = producerProperties;
-	}
 
 	public Map<String, BindingProperties> getBindings() {
 		return bindings;
@@ -116,80 +98,112 @@ public class ChannelBindingServiceProperties {
 				bindingProperties.getDestination() : channelName;
 	}
 
-	public int getPartitionCount(String channelName) {
-		return bindings.containsKey(channelName) ? bindings.get(channelName).getPartitionCount() : 1;
-	}
-
-	public boolean isPartitionedConsumer(String channelName) {
-		return bindings.containsKey(channelName) && bindings.get(channelName).isPartitioned();
-	}
-
-	public boolean isPartitionedProducer(String channelName) {
-		BindingProperties bindingProperties = bindings.get(channelName);
-		return bindingProperties != null &&
-				(StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
-						|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass()));
-
-	}
-
 	/**
-	 * Merge general properties provided by 'spring.cloud.stream.consumerProperties.*' with individual binding
-	 * properties supplied via binders.
+	 * Get consumer properties for the given input channel name.
 	 *
 	 * @param inputChannelName the input channel name
 	 * @return merged consumer properties
 	 */
 	public Properties getConsumerProperties(String inputChannelName) {
-		if (isPartitionedConsumer(inputChannelName)) {
-			Properties channelConsumerProperties = new Properties();
-			channelConsumerProperties.putAll(consumerProperties);
-			channelConsumerProperties.setProperty(org.springframework.cloud.stream.binder.BinderProperties.COUNT,
-					Integer.toString(getInstanceCount()));
-			channelConsumerProperties.setProperty(org.springframework.cloud.stream.binder.BinderProperties.PARTITION_INDEX,
-					Integer.toString(getInstanceIndex()));
-			return channelConsumerProperties;
+		Properties channelConsumerProperties = new Properties();
+		BindingProperties bindingProperties = this.bindings.get(inputChannelName);
+		if (bindingProperties != null) {
+			if (bindingProperties.getConcurrency() != null) {
+				channelConsumerProperties.setProperty(CommonBinderProperties.CONCURRENCY,
+						Integer.toString(bindingProperties.getConcurrency()));
+			}
+			updateConsumerPartitionProperties(inputChannelName, channelConsumerProperties);
 		}
-		else {
-			return getConsumerProperties();
-		}
+		return channelConsumerProperties;
 	}
 
 	/**
-	 * Merge general properties provided by 'spring.cloud.stream.producerProperties.*' with individual binding
-	 * properties supplied via binders.
+	 * Get producer properties for the given output channel name.
 	 *
 	 * @param outputChannelName the output channel name
 	 * @return merged producer properties
 	 */
 	public Properties getProducerProperties(String outputChannelName) {
-		if (isPartitionedProducer(outputChannelName)) {
-			Properties channelProducerProperties = new Properties();
-			channelProducerProperties.putAll(this.producerProperties);
-			channelProducerProperties.setProperty(org.springframework.cloud.stream.binder.BinderProperties.NEXT_MODULE_COUNT,
-					Integer.toString(getPartitionCount(outputChannelName)));
-			BindingProperties bindingProperties = bindings.get(outputChannelName);
-			if (bindingProperties != null) {
+		Properties channelProducerProperties = new Properties();
+		updateBatchProperties(outputChannelName, channelProducerProperties);
+		updateProducerPartitionProperties(outputChannelName, channelProducerProperties);
+		return channelProducerProperties;
+	}
+
+	private boolean isPartitionedConsumer(String channelName) {
+		BindingProperties bindingProperties = bindings.get(channelName);
+		return bindingProperties != null && bindingProperties.getPartitioned();
+	}
+
+	private boolean isPartitionedProducer(String channelName) {
+		BindingProperties bindingProperties = bindings.get(channelName);
+		return (bindingProperties != null && (StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
+				|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass())));
+	}
+
+	private void updateBatchProperties(String outputChannelName, Properties producerProperties) {
+		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
+		if (bindingProperties != null) {
+			if (bindingProperties.getBatchingEnabled() != null) {
+				producerProperties.setProperty(CommonBinderProperties.BATCHING_ENABLED,
+						String.valueOf(bindingProperties.getBatchingEnabled()));
+			}
+			if (bindingProperties.getBatchSize() != null) {
+				producerProperties.setProperty(CommonBinderProperties.BATCH_SIZE,
+						String.valueOf(bindingProperties.getBatchSize()));
+			}
+			if (bindingProperties.getBatchBufferLimit() != null) {
+				producerProperties.setProperty(CommonBinderProperties.BATCH_BUFFER_LIMIT,
+						String.valueOf(bindingProperties.getBatchBufferLimit()));
+			}
+			if (bindingProperties.getBatchTimeout() != null) {
+				producerProperties.setProperty(CommonBinderProperties.BATCH_TIMEOUT,
+						String.valueOf(bindingProperties.getBatchTimeout()));
+			}
+		}
+	}
+
+	private void updateProducerPartitionProperties(String outputChannelName, Properties producerProperties) {
+		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
+		if (bindingProperties != null) {
+			if (isPartitionedProducer(outputChannelName)) {
 				if (bindingProperties.getPartitionKeyExpression() != null) {
-					channelProducerProperties.setProperty(org.springframework.cloud.stream.binder.BinderProperties.PARTITION_KEY_EXPRESSION,
+					producerProperties.setProperty(CommonBinderProperties.PARTITION_KEY_EXPRESSION,
 							bindingProperties.getPartitionKeyExpression());
 				}
 				if (bindingProperties.getPartitionKeyExtractorClass() != null) {
-					channelProducerProperties.setProperty(org.springframework.cloud.stream.binder.BinderProperties.PARTITION_KEY_EXTRACTOR_CLASS,
+					producerProperties.setProperty(CommonBinderProperties.PARTITION_KEY_EXTRACTOR_CLASS,
 							bindingProperties.getPartitionKeyExtractorClass());
 				}
 				if (bindingProperties.getPartitionSelectorClass() != null) {
-					channelProducerProperties.setProperty(org.springframework.cloud.stream.binder.BinderProperties.PARTITION_SELECTOR_CLASS,
+					producerProperties.setProperty(CommonBinderProperties.PARTITION_SELECTOR_CLASS,
 							bindingProperties.getPartitionSelectorClass());
 				}
 				if (bindingProperties.getPartitionSelectorExpression() != null) {
-					channelProducerProperties.setProperty(org.springframework.cloud.stream.binder.BinderProperties.PARTITION_SELECTOR_EXPRESSION,
+					producerProperties.setProperty(CommonBinderProperties.PARTITION_SELECTOR_EXPRESSION,
 							bindingProperties.getPartitionSelectorExpression());
 				}
+				if (bindingProperties.getPartitionCount() != null) {
+					producerProperties.setProperty(CommonBinderProperties.NEXT_MODULE_COUNT,
+							Integer.toString(bindingProperties.getPartitionCount()));
+				}
+				if (bindingProperties.getNextModuleConcurrency() != null) {
+					producerProperties.setProperty(CommonBinderProperties.NEXT_MODULE_CONCURRENCY,
+							Integer.toString(bindingProperties.getNextModuleConcurrency()));
+				}
 			}
-			return channelProducerProperties;
 		}
-		else {
-			return this.producerProperties;
+	}
+
+	private void updateConsumerPartitionProperties(String inputChannelName, Properties consumerProperties) {
+		BindingProperties bindingProperties = this.bindings.get(inputChannelName);
+		if (bindingProperties != null) {
+			if (isPartitionedConsumer(inputChannelName)) {
+				consumerProperties.setProperty(CommonBinderProperties.COUNT,
+						Integer.toString(getInstanceCount()));
+				consumerProperties.setProperty(CommonBinderProperties.PARTITION_INDEX,
+						Integer.toString(getInstanceIndex()));
+			}
 		}
 	}
 
@@ -208,16 +222,13 @@ public class ChannelBindingServiceProperties {
 		Map<String, Object> properties = new HashMap<>();
 		properties.put("instanceIndex", String.valueOf(getInstanceIndex()));
 		properties.put("instanceCount", String.valueOf(getInstanceCount()));
-		Properties consumerProperties = getConsumerProperties();
-		for (String name : consumerProperties.stringPropertyNames()) {
-			properties.put("consumer." + name, consumerProperties.getProperty(name));
-		}
-		Properties producerProperties = getProducerProperties();
-		for (String name : producerProperties.stringPropertyNames()) {
-			properties.put("producer." + name, producerProperties.getProperty(name));
-		}
+		// Add Bindings properties
 		for (Map.Entry<String, BindingProperties> entry : getBindings().entrySet()) {
 			properties.put(entry.getKey(), entry.getValue().toString());
+		}
+		// Add Binder config properties
+		for (Map.Entry<String, BinderProperties> entry : binders.entrySet()) {
+			properties.put(entry.getKey(), entry.getValue());
 		}
 		return properties;
 	}

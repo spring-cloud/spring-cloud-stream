@@ -123,42 +123,42 @@ public abstract class MessageChannelBinderSupport
 	 */
 
 	protected static final Set<Object> CONSUMER_STANDARD_PROPERTIES = new SetBuilder()
-			.add(BinderProperties.COUNT)
-			.add(BinderProperties.SEQUENCE)
+			.add(CommonBinderProperties.COUNT)
+			.add(CommonBinderProperties.SEQUENCE)
 			.build();
 
 	protected static final Set<Object> PRODUCER_STANDARD_PROPERTIES = new HashSet<Object>(Arrays.asList(
-			BinderProperties.NEXT_MODULE_COUNT,
-			BinderProperties.NEXT_MODULE_CONCURRENCY
+			CommonBinderProperties.NEXT_MODULE_COUNT,
+			CommonBinderProperties.NEXT_MODULE_CONCURRENCY
 	));
 
 
 	protected static final Set<Object> CONSUMER_RETRY_PROPERTIES = new HashSet<Object>(Arrays.asList(new String[] {
-			BinderProperties.BACK_OFF_INITIAL_INTERVAL,
-			BinderProperties.BACK_OFF_MAX_INTERVAL,
-			BinderProperties.BACK_OFF_MULTIPLIER,
-			BinderProperties.MAX_ATTEMPTS
+			CommonBinderProperties.BACK_OFF_INITIAL_INTERVAL,
+			CommonBinderProperties.BACK_OFF_MAX_INTERVAL,
+			CommonBinderProperties.BACK_OFF_MULTIPLIER,
+			CommonBinderProperties.MAX_ATTEMPTS
 	}));
 
 	protected static final Set<Object> PRODUCER_PARTITIONING_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
-					BinderProperties.PARTITION_KEY_EXPRESSION,
-					BinderProperties.PARTITION_KEY_EXTRACTOR_CLASS,
-					BinderProperties.PARTITION_SELECTOR_CLASS,
-					BinderProperties.PARTITION_SELECTOR_EXPRESSION,
-					BinderProperties.MIN_PARTITION_COUNT
+					CommonBinderProperties.PARTITION_KEY_EXPRESSION,
+					CommonBinderProperties.PARTITION_KEY_EXTRACTOR_CLASS,
+					CommonBinderProperties.PARTITION_SELECTOR_CLASS,
+					CommonBinderProperties.PARTITION_SELECTOR_EXPRESSION,
+					CommonBinderProperties.MIN_PARTITION_COUNT
 			}));
 
 	protected static final Set<Object> PRODUCER_BATCHING_BASIC_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
-					BinderProperties.BATCHING_ENABLED,
-					BinderProperties.BATCH_SIZE,
-					BinderProperties.BATCH_TIMEOUT,
+					CommonBinderProperties.BATCHING_ENABLED,
+					CommonBinderProperties.BATCH_SIZE,
+					CommonBinderProperties.BATCH_TIMEOUT,
 			}));
 
 	protected static final Set<Object> PRODUCER_BATCHING_ADVANCED_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
-					BinderProperties.BATCH_BUFFER_LIMIT,
+					CommonBinderProperties.BATCH_BUFFER_LIMIT,
 			}));
 
 	private final List<Binding> bindings = Collections.synchronizedList(new ArrayList<Binding>());

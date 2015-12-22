@@ -34,7 +34,7 @@ import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.CommonBinderProperties;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.TestUtils;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
@@ -69,8 +69,8 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Properties properties = new Properties();
 		properties.put("partitionKeyExtractorClass", "org.springframework.cloud.stream.binder.kafka.RawKafkaPartitionTestSupport");
 		properties.put("partitionSelectorClass", "org.springframework.cloud.stream.binder.kafka.RawKafkaPartitionTestSupport");
-		properties.put(BinderProperties.NEXT_MODULE_COUNT, "3");
-		properties.put(BinderProperties.NEXT_MODULE_CONCURRENCY, "2");
+		properties.put(CommonBinderProperties.NEXT_MODULE_COUNT, "3");
+		properties.put(CommonBinderProperties.NEXT_MODULE_CONCURRENCY, "2");
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
@@ -123,8 +123,8 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Properties properties = new Properties();
 		properties.put("partitionKeyExpression", "payload[0]");
 		properties.put("partitionSelectorExpression", "hashCode()");
-		properties.put(BinderProperties.NEXT_MODULE_COUNT, "3");
-		properties.put(BinderProperties.NEXT_MODULE_CONCURRENCY, "2");
+		properties.put(CommonBinderProperties.NEXT_MODULE_COUNT, "3");
+		properties.put(CommonBinderProperties.NEXT_MODULE_CONCURRENCY, "2");
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");

@@ -247,7 +247,7 @@ public abstract class AbstractBinderTests {
 	@Test
 	public void testBadDynamic() throws Exception {
 		Properties properties = new Properties();
-		properties.setProperty(BinderProperties.PARTITION_KEY_EXPRESSION, "'foo'");
+		properties.setProperty(CommonBinderProperties.PARTITION_KEY_EXPRESSION, "'foo'");
 		Binder<MessageChannel> binder = getBinder();
 		try {
 			binder.bindDynamicProducer("queue:foo", properties);

@@ -33,11 +33,27 @@ public class BindingProperties {
 
 	private static final String COMMA = ",";
 
+	/**
+	 * The physical name at the broker that the binder binds to.
+	 */
 	private String destination;
 
-	private boolean partitioned = false;
+	/**
+	 * Unique name that the binding belongs to.
+	 */
+	private String group = UUID.randomUUID().toString();
 
-	private int partitionCount = 1;
+	// Properties for both inbound/outbound
+
+	private String contentType;
+
+	private String binder;
+
+	private Boolean trackHistory;
+
+	// Outbound properties
+
+	// Partition properties
 
 	private String partitionKeyExpression;
 
@@ -47,13 +63,31 @@ public class BindingProperties {
 
 	private String partitionSelectorExpression;
 
-	private String group = UUID.randomUUID().toString();
+	private Integer partitionCount = 1;
 
-	private String contentType;
+	private Integer nextModuleCount;
 
-	private String binder;
+	private Integer nextModuleConcurrency;
 
-	private boolean trackHistory;
+	// Batching properties
+	private Boolean batchingEnabled;
+
+	private Integer batchSize;
+
+	private Integer batchBufferLimit;
+
+	private Integer batchTimeout;
+
+
+	// Inbound properties
+
+	private Integer concurrency;
+
+	// Partition properties
+	private String partitionIndex;
+
+	private Boolean partitioned = false;
+
 
 	public String getDestination() {
 		return this.destination;
@@ -63,20 +97,36 @@ public class BindingProperties {
 		this.destination = destination;
 	}
 
-	public boolean isPartitioned() {
-		return this.partitioned;
+	public String getGroup() {
+		return group;
 	}
 
-	public void setPartitioned(boolean partitioned) {
-		this.partitioned = partitioned;
+	public void setGroup(String group) {
+		this.group = group;
 	}
 
-	public int getPartitionCount() {
-		return this.partitionCount;
+	public String getContentType() {
+		return this.contentType;
 	}
 
-	public void setPartitionCount(int partitionCount) {
-		this.partitionCount = partitionCount;
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
+
+	public String getBinder() {
+		return binder;
+	}
+
+	public void setBinder(String binder) {
+		this.binder = binder;
+	}
+
+	public Boolean getTrackHistory() {
+		return this.trackHistory;
+	}
+
+	public void setTrackHistory(Boolean trackHistory) {
+		this.trackHistory = trackHistory;
 	}
 
 	public String getPartitionKeyExpression() {
@@ -111,53 +161,104 @@ public class BindingProperties {
 		this.partitionSelectorExpression = partitionSelectorExpression;
 	}
 
-	public String getGroup() {
-		return group;
+	public Integer getNextModuleCount() {
+		return this.nextModuleCount;
 	}
 
-	public void setGroup(String group) {
-		this.group = group;
+	public void setNextModuleCount(Integer nextModuleCount) {
+		this.nextModuleCount = nextModuleCount;
 	}
 
-	public String getContentType() {
-		return this.contentType;
+	public Integer getNextModuleConcurrency() {
+		return this.nextModuleConcurrency;
 	}
 
-	public void setContentType(String contentType) {
-		this.contentType = contentType;
+	public void setNextModuleConcurrency(Integer nextModuleConcurrency) {
+		this.nextModuleConcurrency = nextModuleConcurrency;
 	}
 
-
-	public String getBinder() {
-		return binder;
+	public Boolean getBatchingEnabled() {
+		return this.batchingEnabled;
 	}
 
-	public void setBinder(String binder) {
-		this.binder = binder;
+	public void setBatchingEnabled(Boolean batchingEnabled) {
+		this.batchingEnabled = batchingEnabled;
 	}
 
-	public Boolean getTrackHistory() {
-		return this.trackHistory;
+	public Integer getBatchSize() {
+		return this.batchSize;
 	}
 
-	public void setTrackHistory(boolean trackHistory) {
-		this.trackHistory = trackHistory;
+	public void setBatchSize(Integer batchSize) {
+		this.batchSize = batchSize;
+	}
+
+	public Integer getBatchBufferLimit() {
+		return this.batchBufferLimit;
+	}
+
+	public void setBatchBufferLimit(Integer batchBufferLimit) {
+		this.batchBufferLimit = batchBufferLimit;
+	}
+
+	public Integer getBatchTimeout() {
+		return this.batchTimeout;
+	}
+
+	public void setBatchTimeout(Integer batchTimeout) {
+		this.batchTimeout = batchTimeout;
+	}
+
+	public Integer getPartitionCount() {
+		return this.partitionCount;
+	}
+
+	public void setPartitionCount(Integer partitionCount) {
+		this.partitionCount = partitionCount;
+	}
+
+	public Integer getConcurrency() {
+		return this.concurrency;
+	}
+
+	public void setConcurrency(Integer concurrency) {
+		this.concurrency = concurrency;
+	}
+
+	public String getPartitionIndex() {
+		return this.partitionIndex;
+	}
+
+	public void setPartitionIndex(String partitionIndex) {
+		this.partitionIndex = partitionIndex;
+	}
+
+	public Boolean getPartitioned() {
+		return this.partitioned;
+	}
+
+	public void setPartitioned(Boolean partitioned) {
+		this.partitioned = partitioned;
 	}
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("destination=" + destination);
+		sb.append("destination=" + this.destination);
 		sb.append(COMMA);
-		sb.append("group=" + group);
+		sb.append("group=" + this.group);
 		sb.append(COMMA);
-		sb.append("contentType="+ contentType);
-		sb.append(COMMA);
-		sb.append("binder="+ binder);
-		sb.append(COMMA);
-		sb.append("trackHistory=" + trackHistory);
-		sb.append(COMMA);
-		sb.append("partitioned=" + partitioned);
-		sb.append(COMMA);
+		if (this.contentType != null) {
+			sb.append("contentType=" + this.contentType);
+			sb.append(COMMA);
+		}
+		if (this.binder != null) {
+			sb.append("binder=" + this.binder);
+			sb.append(COMMA);
+		}
+		if (this.trackHistory != null) {
+			sb.append("trackHistory=" + this.trackHistory);
+			sb.append(COMMA);
+		}
 		if (this.partitionKeyExpression != null && !this.partitionKeyExpression.isEmpty()) {
 			sb.append("partitionKeyExpression=" + partitionKeyExpression);
 			sb.append(COMMA);
@@ -172,6 +273,45 @@ public class BindingProperties {
 		}
 		if (this.partitionSelectorClass != null && !this.partitionSelectorClass.isEmpty()) {
 			sb.append("partitionSelectorExpression=" + partitionSelectorExpression);
+			sb.append(COMMA);
+		}
+		if (this.partitioned) {
+			sb.append("partitionCount=" + this.partitionCount);
+			sb.append(COMMA);
+		}
+		if (this.nextModuleCount != null) {
+			sb.append("nextModuleCount=" + this.nextModuleCount);
+			sb.append(COMMA);
+		}
+		if (this.nextModuleConcurrency != null) {
+			sb.append("nextModuleConcurrency=" + this.nextModuleConcurrency);
+			sb.append(COMMA);
+		}
+		if (this.batchingEnabled != null) {
+			sb.append("batchingEnabled=" + this.batchingEnabled);
+			sb.append(COMMA);
+		}
+		if (this.batchSize != null) {
+			sb.append("batchSize=" + this.batchSize);
+			sb.append(COMMA);
+		}
+		if (this.batchBufferLimit != null) {
+			sb.append("batchBufferLimit=" + this.batchBufferLimit);
+			sb.append(COMMA);
+		}
+		if (this.batchTimeout != null) {
+			sb.append("batchTimeout=" + this.batchTimeout);
+			sb.append(COMMA);
+		}
+		sb.append("partitioned=" + this.partitioned);
+		sb.append(COMMA);
+		if (this.partitionIndex != null) {
+			sb.append("partitionIndex=" + this.partitionIndex);
+			sb.append(COMMA);
+		}
+		if (this.concurrency != null) {
+			sb.append("concurrency=" + this.concurrency);
+			sb.append(COMMA);
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));
 		return "BindingProperties{" + sb.toString() + "}";

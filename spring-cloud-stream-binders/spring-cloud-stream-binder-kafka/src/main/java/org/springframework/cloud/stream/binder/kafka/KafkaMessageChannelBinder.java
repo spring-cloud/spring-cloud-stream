@@ -40,7 +40,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.CommonBinderProperties;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
@@ -191,7 +191,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private static final String POINT_TO_POINT_SEMANTICS_CONSUMER_GROUP = "springXD";
 
 	private static final Set<Object> KAFKA_CONSUMER_PROPERTIES = new SetBuilder()
-			.add(BinderProperties.MIN_PARTITION_COUNT)
+			.add(CommonBinderProperties.MIN_PARTITION_COUNT)
 			.build();
 
 	/**
@@ -200,14 +200,14 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
 			.addAll(KAFKA_CONSUMER_PROPERTIES)
-			.add(BinderProperties.PARTITION_INDEX) // Not actually used
-			.add(BinderProperties.COUNT) // Not actually used
-			.add(BinderProperties.CONCURRENCY)
+			.add(CommonBinderProperties.PARTITION_INDEX) // Not actually used
+			.add(CommonBinderProperties.COUNT) // Not actually used
+			.add(CommonBinderProperties.CONCURRENCY)
 			.add(FETCH_SIZE)
 			.build();
 
 	private static final Set<Object> KAFKA_PRODUCER_PROPERTIES = new SetBuilder()
-			.add(BinderProperties.MIN_PARTITION_COUNT)
+			.add(CommonBinderProperties.MIN_PARTITION_COUNT)
 			.build();
 
 	/**
@@ -228,7 +228,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(PRODUCER_STANDARD_PROPERTIES)
-			.add(BinderProperties.DIRECT_BINDING_ALLOWED)
+			.add(CommonBinderProperties.DIRECT_BINDING_ALLOWED)
 			.addAll(KAFKA_PRODUCER_PROPERTIES)
 			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
 			.addAll(PRODUCER_COMPRESSION_PROPERTIES)

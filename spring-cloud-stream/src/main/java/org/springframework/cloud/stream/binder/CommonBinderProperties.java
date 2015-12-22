@@ -22,7 +22,7 @@ package org.springframework.cloud.stream.binder;
  *
  * @author Gary Russell
  */
-public interface BinderProperties {
+public interface CommonBinderProperties {
 
 	/**
 	 * The retry back off initial interval.

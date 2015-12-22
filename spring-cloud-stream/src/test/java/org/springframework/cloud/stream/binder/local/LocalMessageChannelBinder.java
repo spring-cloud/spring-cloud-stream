@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
-import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.CommonBinderProperties;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.integration.channel.DirectChannel;
@@ -72,7 +72,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 
 	protected static final Set<Object> CONSUMER_REQUEST_REPLY_PROPERTIES = new SetBuilder()
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
-			.add(BinderProperties.CONCURRENCY)
+			.add(CommonBinderProperties.CONCURRENCY)
 			.build();
 
 	public static final String THREAD_NAME_PREFIX = "binder.local-";

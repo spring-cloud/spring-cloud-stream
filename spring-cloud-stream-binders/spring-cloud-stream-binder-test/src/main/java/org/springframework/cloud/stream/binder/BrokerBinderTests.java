@@ -46,7 +46,7 @@ public abstract class BrokerBinderTests extends
 	public void testDirectBinding() throws Exception {
 		Binder binder = getBinder();
 		Properties properties = new Properties();
-		properties.setProperty(BinderProperties.DIRECT_BINDING_ALLOWED, "true");
+		properties.setProperty(CommonBinderProperties.DIRECT_BINDING_ALLOWED, "true");
 
 		DirectChannel moduleInputChannel = new DirectChannel();
 		moduleInputChannel.setBeanName("direct.input");
