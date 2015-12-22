@@ -21,6 +21,7 @@ package org.springframework.cloud.stream.binder;
  * Common binder properties.
  *
  * @author Gary Russell
+ * @author Ilayaperumal Gopinathan
  */
 public interface BinderProperties {
 
@@ -70,6 +71,16 @@ public interface BinderProperties {
 	 * The consumer's partition index.
 	 */
 	public static final String PARTITION_INDEX = "partitionIndex";
+
+	/**
+	 * Property to use for Message Tracking History.
+	 */
+	public static final String TRACK_HISTORY = "trackHistory";
+
+	/**
+	 * Property to indicate the consumer that the upstream module is partitioned.
+	 */
+	public static final String PARTITIONED = "partitioned";
 
 	/**
 	 * The partition key expression.

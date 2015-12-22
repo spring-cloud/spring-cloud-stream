@@ -125,6 +125,8 @@ public abstract class MessageChannelBinderSupport
 	protected static final Set<Object> CONSUMER_STANDARD_PROPERTIES = new SetBuilder()
 			.add(BinderProperties.COUNT)
 			.add(BinderProperties.SEQUENCE)
+			.add(BinderProperties.TRACK_HISTORY)
+			.add(BinderProperties.PARTITIONED)
 			.build();
 
 	protected static final Set<Object> PRODUCER_STANDARD_PROPERTIES = new HashSet<Object>(Arrays.asList(

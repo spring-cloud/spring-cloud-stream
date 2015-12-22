@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,25 +36,16 @@ public class BindingProperties {
 
 	private String destination;
 
-	private boolean partitioned = false;
-
-	private int partitionCount = 1;
-
-	private String partitionKeyExpression;
-
-	private String partitionKeyExtractorClass;
-
-	private String partitionSelectorClass;
-
-	private String partitionSelectorExpression;
-
 	private String group = UUID.randomUUID().toString();
 
 	private String contentType;
 
 	private String binder;
 
-	private boolean trackHistory;
+	/**
+	 *  Config properties thar are set per-binding level (like producer/consumer properties per-binding).
+	 */
+	private Map<String, String> config;
 
 	public String getDestination() {
 		return this.destination;
@@ -61,54 +53,6 @@ public class BindingProperties {
 
 	public void setDestination(String destination) {
 		this.destination = destination;
-	}
-
-	public boolean isPartitioned() {
-		return this.partitioned;
-	}
-
-	public void setPartitioned(boolean partitioned) {
-		this.partitioned = partitioned;
-	}
-
-	public int getPartitionCount() {
-		return this.partitionCount;
-	}
-
-	public void setPartitionCount(int partitionCount) {
-		this.partitionCount = partitionCount;
-	}
-
-	public String getPartitionKeyExpression() {
-		return this.partitionKeyExpression;
-	}
-
-	public void setPartitionKeyExpression(String partitionKeyExpression) {
-		this.partitionKeyExpression = partitionKeyExpression;
-	}
-
-	public String getPartitionKeyExtractorClass() {
-		return this.partitionKeyExtractorClass;
-	}
-
-	public void setPartitionKeyExtractorClass(String partitionKeyExtractorClass) {
-		this.partitionKeyExtractorClass = partitionKeyExtractorClass;
-	}
-
-	public String getPartitionSelectorClass() {
-		return this.partitionSelectorClass;
-	}
-
-	public void setPartitionSelectorClass(String partitionSelectorClass) {
-		this.partitionSelectorClass = partitionSelectorClass;
-	}
-
-	public String getPartitionSelectorExpression() {
-		return this.partitionSelectorExpression;
-	}
-
-	public void setPartitionSelectorExpression(String partitionSelectorExpression) {
-		this.partitionSelectorExpression = partitionSelectorExpression;
 	}
 
 	public String getGroup() {
@@ -127,7 +71,6 @@ public class BindingProperties {
 		this.contentType = contentType;
 	}
 
-
 	public String getBinder() {
 		return binder;
 	}
@@ -136,12 +79,12 @@ public class BindingProperties {
 		this.binder = binder;
 	}
 
-	public Boolean getTrackHistory() {
-		return this.trackHistory;
+	public Map<String, String> getConfig() {
+		return this.config;
 	}
 
-	public void setTrackHistory(boolean trackHistory) {
-		this.trackHistory = trackHistory;
+	public void setConfig(Map<String, String> properties) {
+		this.config = properties;
 	}
 
 	public String toString() {
@@ -150,28 +93,24 @@ public class BindingProperties {
 		sb.append(COMMA);
 		sb.append("group=" + group);
 		sb.append(COMMA);
-		sb.append("contentType="+ contentType);
+		sb.append("contentType=" + contentType);
 		sb.append(COMMA);
-		sb.append("binder="+ binder);
+		sb.append("binder=" + binder);
 		sb.append(COMMA);
-		sb.append("trackHistory=" + trackHistory);
-		sb.append(COMMA);
-		sb.append("partitioned=" + partitioned);
-		sb.append(COMMA);
-		if (this.partitionKeyExpression != null && !this.partitionKeyExpression.isEmpty()) {
-			sb.append("partitionKeyExpression=" + partitionKeyExpression);
-			sb.append(COMMA);
+		if (config != null) {
+			StringBuilder props = new StringBuilder();
+			props.append("Properties{");
+			for (Map.Entry<String, String> entry : config.entrySet()) {
+				props.append(String.format("%s=%s,", entry.getKey(), entry.getValue()));
+			}
+			if (props.lastIndexOf(COMMA) > 0) {
+				props.deleteCharAt(props.lastIndexOf(COMMA));
+			}
+			props.append("}");
+			sb.append(props);
 		}
-		if (this.partitionKeyExtractorClass != null && !this.partitionKeyExtractorClass.isEmpty()) {
-			sb.append("partitionKeyExtractorClass=" + partitionKeyExtractorClass);
-			sb.append(COMMA);
-		}
-		if (this.partitionSelectorClass != null && !this.partitionSelectorClass.isEmpty()) {
-			sb.append("partitionSelectorClass=" + partitionSelectorClass);
-			sb.append(COMMA);
-		}
-		if (this.partitionSelectorClass != null && !this.partitionSelectorClass.isEmpty()) {
-			sb.append("partitionSelectorExpression=" + partitionSelectorExpression);
+		else {
+			sb.deleteCharAt(sb.lastIndexOf(COMMA));
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));
 		return "BindingProperties{" + sb.toString() + "}";
