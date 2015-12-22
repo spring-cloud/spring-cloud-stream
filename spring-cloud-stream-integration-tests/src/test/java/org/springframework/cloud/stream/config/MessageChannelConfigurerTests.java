@@ -96,15 +96,15 @@ public class MessageChannelConfigurerTests {
 				String inputBindingProps = headerValue.get("input");
 				assertTrue(inputBindingProps.contains("destination=configure"));
 				assertTrue(inputBindingProps.contains("trackHistory=true"));
+				assertTrue(inputBindingProps.contains("concurrency=1"));
 				assertTrue(headerValue.get("instanceIndex").equals("0"));
 				assertTrue(headerValue.get("instanceCount").equals("1"));
-				assertTrue(headerValue.get("producer.nextModuleCount").equals("1"));
-				assertTrue(headerValue.get("consumer.concurrency").equals("1"));
 				String outputBindingProps = (String) ((Map<?, ?>) ((List<?>) message.getHeaders()
 						.get("SPRING_CLOUD_STREAM_HISTORY")).get(0)).get("output");
 				;
 				assertTrue(outputBindingProps.contains("destination=configure"));
-				assertTrue(outputBindingProps.contains("trackHistory=false"));
+				assertTrue(!outputBindingProps.contains("trackHistory"));
+				assertTrue(outputBindingProps.contains("nextModuleCount=1"));
 				latch1.countDown();
 			}
 		};
