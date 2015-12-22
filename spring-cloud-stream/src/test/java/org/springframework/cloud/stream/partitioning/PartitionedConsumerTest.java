@@ -55,13 +55,13 @@ public class PartitionedConsumerTest {
 	private Binder binder;
 
 	@Autowired @Bindings(TestSink.class)
-	private Sink testSource;
+	private Sink testSink;
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedConsumer() {
 		ArgumentCaptor<Properties> argumentCaptor = ArgumentCaptor.forClass(Properties.class);
-		verify(binder).bindConsumer(eq("partIn"), eq(testSource.input()), argumentCaptor.capture());
+		verify(binder).bindConsumer(eq("partIn"), eq(testSink.input()), argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderProperties.PARTITION_INDEX), equalTo("0"));
 		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderProperties.COUNT),
 				equalTo("2"));
