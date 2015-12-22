@@ -18,11 +18,13 @@ import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.binder.local.config.LocalBinderAutoConfiguration;
+import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.event.EventListener;
+import org.springframework.integration.annotation.MessageEndpoint;
+import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -187,7 +189,7 @@ public class BusAutoConfigurationTests {
 	}
 
 	@Configuration
-	@Import({ BusAutoConfiguration.class, LocalBinderAutoConfiguration.class,
+	@Import({ MessageConsumer.class, BusAutoConfiguration.class, TestSupportBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
 	protected static class OutboundMessageHandlerConfiguration {
 
@@ -216,9 +218,18 @@ public class BusAutoConfigurationTests {
 		}
 
 	}
+	
+	@Configuration
+	@MessageEndpoint
+	protected static class MessageConsumer {
+		
+		@ServiceActivator(inputChannel=SpringCloudBusClient.OUTPUT)
+		public void handle(Message<?> msg) {}
+		
+	}
 
 	@Configuration
-	@Import({ BusAutoConfiguration.class, LocalBinderAutoConfiguration.class,
+	@Import({ MessageConsumer.class, BusAutoConfiguration.class, TestSupportBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
 	protected static class InboundMessageHandlerConfiguration {
 
