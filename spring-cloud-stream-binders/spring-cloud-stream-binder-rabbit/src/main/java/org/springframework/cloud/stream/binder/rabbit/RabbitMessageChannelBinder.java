@@ -59,8 +59,8 @@ import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
-import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
@@ -128,7 +128,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 
 	private static final Set<Object> RABBIT_CONSUMER_PROPERTIES = new HashSet<Object>(Arrays.asList(new String[] {
 
-		BinderProperties.MAX_CONCURRENCY,
+		BinderPropertyKeys.MAX_CONCURRENCY,
 		RabbitPropertiesAccessor.ACK_MODE,
 		RabbitPropertiesAccessor.PREFETCH,
 		RabbitPropertiesAccessor.PREFIX,
@@ -151,7 +151,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 
 	private static final Set<Object> SUPPORTED_PUBSUB_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderProperties.DURABLE)
+			.add(BinderPropertyKeys.DURABLE)
 			.build();
 
 	/**
@@ -159,7 +159,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	 */
 	private static final Set<Object> SUPPORTED_NAMED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	/**
@@ -167,8 +167,8 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	 */
 	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderProperties.CONCURRENCY)
-			.add(BinderProperties.PARTITION_INDEX)
+			.add(BinderPropertyKeys.CONCURRENCY)
+			.add(BinderPropertyKeys.PARTITION_INDEX)
 			.build();
 
 	/**
@@ -177,7 +177,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	private static final Set<Object> SUPPORTED_REPLYING_CONSUMER_PROPERTIES = new SetBuilder()
 			// request
 			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			// reply
 			.add(RabbitPropertiesAccessor.REPLY_HEADER_PATTERNS)
 			.add(RabbitPropertiesAccessor.DELIVERY_MODE)
@@ -191,7 +191,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			.add(RabbitPropertiesAccessor.DELIVERY_MODE)
 			.add(RabbitPropertiesAccessor.PREFIX)
 			.add(RabbitPropertiesAccessor.REQUEST_HEADER_PATTERNS)
-			.add(BinderProperties.COMPRESS)
+			.add(BinderPropertyKeys.COMPRESS)
 			.build();
 
 	private static final Set<Object> SUPPORTED_PUBSUB_PRODUCER_PROPERTIES = new SetBuilder()
@@ -212,7 +212,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(SUPPORTED_BASIC_PRODUCER_PROPERTIES)
-			.add(BinderProperties.DIRECT_BINDING_ALLOWED)
+			.add(BinderPropertyKeys.DIRECT_BINDING_ALLOWED)
 			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
 			.addAll(PRODUCER_BATCHING_ADVANCED_PROPERTIES)
 			.build();
@@ -225,7 +225,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			.addAll(SUPPORTED_BASIC_PRODUCER_PROPERTIES)
 			// reply
 			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.add(RabbitPropertiesAccessor.REPLY_HEADER_PATTERNS)
 			.build();
 
@@ -958,7 +958,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	 * Property accessor for the RabbitBinder. Refer to the Spring-AMQP documentation for information on the
 	 * specific properties.
 	 */
-	private static class RabbitPropertiesAccessor extends AbstractBinderPropertiesAccessor {
+	private static class RabbitPropertiesAccessor extends AbstractBindingPropertiesAccessor {
 
 		/**
 		 * The acknowledge mode (i.e. NONE, MANUAL, AUTO).

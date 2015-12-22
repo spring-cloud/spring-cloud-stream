@@ -86,8 +86,8 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		Properties properties = new Properties();
 		properties.put("partitionKeyExpression", "payload");
 		properties.put("partitionSelectorExpression", "hashCode()");
-		properties.put(BinderProperties.NEXT_MODULE_COUNT, "3");
-		properties.put(BinderProperties.NEXT_MODULE_CONCURRENCY, "2");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
@@ -187,8 +187,8 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		Properties properties = new Properties();
 		properties.put("partitionKeyExtractorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
 		properties.put("partitionSelectorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
-		properties.put(BinderProperties.NEXT_MODULE_COUNT, "3");
-		properties.put(BinderProperties.NEXT_MODULE_CONCURRENCY, "2");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");

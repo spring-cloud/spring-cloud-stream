@@ -24,18 +24,18 @@ import org.springframework.util.StringUtils;
 
 
 /**
- * Base class for binder-specific property accessors; common properties
+ * Base class for binding-specific property accessors; common properties
  * are defined here.
  *
  * @author Gary Russell
  */
-public abstract class AbstractBinderPropertiesAccessor implements BinderProperties {
+public abstract class AbstractBindingPropertiesAccessor {
 
 	private static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
 	private final Properties properties;
 
-	public AbstractBinderPropertiesAccessor(Properties properties) {
+	public AbstractBindingPropertiesAccessor(Properties properties) {
 		if (properties == null) {
 			this.properties = new Properties();
 		}
@@ -147,7 +147,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The property or default value.
 	 */
 	public int getConcurrency(int defaultValue) {
-		return getProperty(CONCURRENCY, defaultValue);
+		return getProperty(BinderPropertyKeys.CONCURRENCY, defaultValue);
 	}
 
 	/**
@@ -157,7 +157,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The property or default value.
 	 */
 	public int getMaxConcurrency(int defaultValue) {
-		return getProperty(MAX_CONCURRENCY, defaultValue);
+		return getProperty(BinderPropertyKeys.MAX_CONCURRENCY, defaultValue);
 	}
 
 	// Retry properties
@@ -170,7 +170,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The property or default value.
 	 */
 	public int getMaxAttempts(int defaultValue) {
-		return getProperty(MAX_ATTEMPTS, defaultValue);
+		return getProperty(BinderPropertyKeys.MAX_ATTEMPTS, defaultValue);
 	}
 
 	/**
@@ -181,7 +181,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The property or default value.
 	 */
 	public long getBackOffInitialInterval(long defaultValue) {
-		return getProperty(BACK_OFF_INITIAL_INTERVAL, defaultValue);
+		return getProperty(BinderPropertyKeys.BACK_OFF_INITIAL_INTERVAL, defaultValue);
 	}
 
 	/**
@@ -192,7 +192,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The property or default value.
 	 */
 	public double getBackOffMultiplier(double defaultValue) {
-		return getProperty(BACK_OFF_MULTIPLIER, defaultValue);
+		return getProperty(BinderPropertyKeys.BACK_OFF_MULTIPLIER, defaultValue);
 	}
 
 	/**
@@ -203,7 +203,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The property or default value.
 	 */
 	public long getBackOffMaxInterval(long defaultValue) {
-		return getProperty(BACK_OFF_MAX_INTERVAL, defaultValue);
+		return getProperty(BinderPropertyKeys.BACK_OFF_MAX_INTERVAL, defaultValue);
 	}
 
 	// Partitioning
@@ -213,7 +213,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The class name,
 	 */
 	public String getPartitionKeyExtractorClass() {
-		return getProperty(PARTITION_KEY_EXTRACTOR_CLASS);
+		return getProperty(BinderPropertyKeys.PARTITION_KEY_EXTRACTOR_CLASS);
 	}
 
 	/**
@@ -222,7 +222,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The key.
 	 */
 	public Expression getPartitionKeyExpression() {
-		String partionKeyExpression = getProperty(PARTITION_KEY_EXPRESSION);
+		String partionKeyExpression = getProperty(BinderPropertyKeys.PARTITION_KEY_EXPRESSION);
 		Expression expression = null;
 		if (partionKeyExpression != null) {
 			expression = spelExpressionParser.parseExpression(partionKeyExpression);
@@ -235,7 +235,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The class name,
 	 */
 	public String getPartitionSelectorClass() {
-		return getProperty(PARTITION_SELECTOR_CLASS);
+		return getProperty(BinderPropertyKeys.PARTITION_SELECTOR_CLASS);
 	}
 
 	/**
@@ -246,7 +246,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The expression.
 	 */
 	public Expression getPartitionSelectorExpression() {
-		String partionSelectorExpression = getProperty(PARTITION_SELECTOR_EXPRESSION);
+		String partionSelectorExpression = getProperty(BinderPropertyKeys.PARTITION_SELECTOR_EXPRESSION);
 		Expression expression = null;
 		if (partionSelectorExpression != null) {
 			expression = spelExpressionParser.parseExpression(partionSelectorExpression);
@@ -260,7 +260,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the sequence number.
 	 */
 	public int getSequence() {
-		return getProperty(SEQUENCE, 1);
+		return getProperty(BinderPropertyKeys.SEQUENCE, 1);
 	}
 
 	/**
@@ -269,7 +269,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the module count.
 	 */
 	public int getCount() {
-		return getProperty(COUNT, 1);
+		return getProperty(BinderPropertyKeys.COUNT, 1);
 	}
 
 	/**
@@ -277,7 +277,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the next module count
 	 */
 	public int getNextModuleCount() {
-		return getProperty(NEXT_MODULE_COUNT, 1);
+		return getProperty(BinderPropertyKeys.NEXT_MODULE_COUNT, 1);
 	}
 
 	/**
@@ -285,7 +285,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return The partition index.
 	 */
 	public int getPartitionIndex() {
-		return getProperty(PARTITION_INDEX, -1);
+		return getProperty(BinderPropertyKeys.PARTITION_INDEX, -1);
 	}
 
 	// Direct Binding
@@ -294,7 +294,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * If true, the binder can attempt a direct binding.
 	 */
 	public boolean isDirectBindingAllowed() {
-		return getProperty(DIRECT_BINDING_ALLOWED, false);
+		return getProperty(BinderPropertyKeys.DIRECT_BINDING_ALLOWED, false);
 	}
 
 	// Batching
@@ -305,7 +305,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the property or default value.
 	 */
 	public boolean isBatchingEnabled(boolean defaultValue) {
-		return getProperty(BATCHING_ENABLED, defaultValue);
+		return getProperty(BinderPropertyKeys.BATCHING_ENABLED, defaultValue);
 	}
 
 	/**
@@ -314,7 +314,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the property or default value.
 	 */
 	public int getBatchSize(int defaultValue) {
-		return getProperty(BATCH_SIZE, defaultValue);
+		return getProperty(BinderPropertyKeys.BATCH_SIZE, defaultValue);
 	}
 
 	/**
@@ -323,7 +323,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the property or default value.
 	 */
 	public int geteBatchBufferLimit(int defaultValue) {
-		return getProperty(BATCH_BUFFER_LIMIT, defaultValue);
+		return getProperty(BinderPropertyKeys.BATCH_BUFFER_LIMIT, defaultValue);
 	}
 
 	/**
@@ -332,7 +332,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the property or default value.
 	 */
 	public long getBatchTimeout(long defaultValue) {
-		return getProperty(BATCH_TIMEOUT, defaultValue);
+		return getProperty(BinderPropertyKeys.BATCH_TIMEOUT, defaultValue);
 	}
 
 	/**
@@ -341,7 +341,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the property or default value.
 	 */
 	public boolean isCompress(boolean defaultValue) {
-		return getProperty(COMPRESS, defaultValue);
+		return getProperty(BinderPropertyKeys.COMPRESS, defaultValue);
 	}
 
 	/**
@@ -350,7 +350,7 @@ public abstract class AbstractBinderPropertiesAccessor implements BinderProperti
 	 * @return the property or default value.
 	 */
 	public boolean isDurable(boolean defaultValue) {
-		return getProperty(DURABLE, defaultValue);
+		return getProperty(BinderPropertyKeys.DURABLE, defaultValue);
 	}
 
 	// Utility methods

@@ -23,9 +23,9 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
+import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.BinderProperties;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
@@ -83,7 +83,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	private static final Set<Object> SUPPORTED_NAMED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
 			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(BinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	/**
@@ -91,7 +91,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	 */
 	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(SUPPORTED_NAMED_CONSUMER_PROPERTIES)
-			.add(BinderProperties.PARTITION_INDEX)
+			.add(BinderPropertyKeys.PARTITION_INDEX)
 			.build();
 
 	/**
@@ -101,7 +101,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 			// request
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
 			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(BinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	/**
@@ -120,7 +120,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(PRODUCER_STANDARD_PROPERTIES)
-			.add(BinderProperties.DIRECT_BINDING_ALLOWED)
+			.add(BinderPropertyKeys.DIRECT_BINDING_ALLOWED)
 			.build();
 
 	/**
@@ -129,7 +129,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	private static final Set<Object> SUPPORTED_REQUESTING_PRODUCER_PROPERTIES = new SetBuilder()
 			// reply
 			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(BinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	private final RedisConnectionFactory connectionFactory;
@@ -466,7 +466,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	}
 
-	private static class RedisPropertiesAccessor extends AbstractBinderPropertiesAccessor {
+	private static class RedisPropertiesAccessor extends AbstractBindingPropertiesAccessor {
 
 		public RedisPropertiesAccessor(Properties properties) {
 			super(properties);
