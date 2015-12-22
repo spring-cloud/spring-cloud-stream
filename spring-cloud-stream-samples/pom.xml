@@ -4,6 +4,7 @@
 	
 	<artifactId>spring-cloud-stream-samples</artifactId>
 	<packaging>pom</packaging>
+	<url>http://cloud.spring.io/spring-cloud-stream/</url>
 	<organization>
 		<name>Pivotal Software, Inc.</name>
 		<url>http://www.spring.io</url>
