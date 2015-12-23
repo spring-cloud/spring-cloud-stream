@@ -47,10 +47,10 @@ public class Binding implements Lifecycle {
 
 	private final String type;
 
-	private final AbstractBinderPropertyKeysAccessor properties;
+	private final AbstractBinderPropertiesAccessor properties;
 
 	private Binding(String name, MessageChannel channel, AbstractEndpoint endpoint, String type,
-			AbstractBinderPropertyKeysAccessor properties) {
+			AbstractBinderPropertiesAccessor properties) {
 		Assert.notNull(channel, "channel must not be null");
 		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
@@ -61,17 +61,17 @@ public class Binding implements Lifecycle {
 	}
 
 	public static Binding forConsumer(String name, AbstractEndpoint adapterFromBinder, MessageChannel moduleInputChannel,
-			AbstractBinderPropertyKeysAccessor properties) {
+			AbstractBinderPropertiesAccessor properties) {
 		return new Binding(name, moduleInputChannel, adapterFromBinder, CONSUMER, properties);
 	}
 
 	public static Binding forProducer(String name, MessageChannel moduleOutputChannel, AbstractEndpoint adapterToBinder,
-			AbstractBinderPropertyKeysAccessor properties) {
+			AbstractBinderPropertiesAccessor properties) {
 		return new Binding(name, moduleOutputChannel, adapterToBinder, PRODUCER, properties);
 	}
 
 	public static Binding forDirectProducer(String name, MessageChannel moduleOutputChannel,
-			AbstractEndpoint adapter, AbstractBinderPropertyKeysAccessor properties) {
+			AbstractEndpoint adapter, AbstractBinderPropertiesAccessor properties) {
 		return new Binding(name, moduleOutputChannel, adapter, DIRECT, properties);
 	}
 
@@ -91,7 +91,7 @@ public class Binding implements Lifecycle {
 		return type;
 	}
 
-	public AbstractBinderPropertyKeysAccessor getPropertiesAccessor() {
+	public AbstractBinderPropertiesAccessor getPropertiesAccessor() {
 		return properties;
 	}
 
