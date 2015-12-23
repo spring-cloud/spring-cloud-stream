@@ -23,7 +23,7 @@ import java.util.TreeMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.stream.binder.CommonBinderProperties;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -109,7 +109,7 @@ public class ChannelBindingServiceProperties {
 		BindingProperties bindingProperties = this.bindings.get(inputChannelName);
 		if (bindingProperties != null) {
 			if (bindingProperties.getConcurrency() != null) {
-				channelConsumerProperties.setProperty(CommonBinderProperties.CONCURRENCY,
+				channelConsumerProperties.setProperty(BinderPropertyKeys.CONCURRENCY,
 						Integer.toString(bindingProperties.getConcurrency()));
 			}
 			updateConsumerPartitionProperties(inputChannelName, channelConsumerProperties);
@@ -145,19 +145,19 @@ public class ChannelBindingServiceProperties {
 		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
 		if (bindingProperties != null) {
 			if (bindingProperties.getBatchingEnabled() != null) {
-				producerProperties.setProperty(CommonBinderProperties.BATCHING_ENABLED,
+				producerProperties.setProperty(BinderPropertyKeys.BATCHING_ENABLED,
 						String.valueOf(bindingProperties.getBatchingEnabled()));
 			}
 			if (bindingProperties.getBatchSize() != null) {
-				producerProperties.setProperty(CommonBinderProperties.BATCH_SIZE,
+				producerProperties.setProperty(BinderPropertyKeys.BATCH_SIZE,
 						String.valueOf(bindingProperties.getBatchSize()));
 			}
 			if (bindingProperties.getBatchBufferLimit() != null) {
-				producerProperties.setProperty(CommonBinderProperties.BATCH_BUFFER_LIMIT,
+				producerProperties.setProperty(BinderPropertyKeys.BATCH_BUFFER_LIMIT,
 						String.valueOf(bindingProperties.getBatchBufferLimit()));
 			}
 			if (bindingProperties.getBatchTimeout() != null) {
-				producerProperties.setProperty(CommonBinderProperties.BATCH_TIMEOUT,
+				producerProperties.setProperty(BinderPropertyKeys.BATCH_TIMEOUT,
 						String.valueOf(bindingProperties.getBatchTimeout()));
 			}
 		}
@@ -168,27 +168,27 @@ public class ChannelBindingServiceProperties {
 		if (bindingProperties != null) {
 			if (isPartitionedProducer(outputChannelName)) {
 				if (bindingProperties.getPartitionKeyExpression() != null) {
-					producerProperties.setProperty(CommonBinderProperties.PARTITION_KEY_EXPRESSION,
+					producerProperties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXPRESSION,
 							bindingProperties.getPartitionKeyExpression());
 				}
 				if (bindingProperties.getPartitionKeyExtractorClass() != null) {
-					producerProperties.setProperty(CommonBinderProperties.PARTITION_KEY_EXTRACTOR_CLASS,
+					producerProperties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXTRACTOR_CLASS,
 							bindingProperties.getPartitionKeyExtractorClass());
 				}
 				if (bindingProperties.getPartitionSelectorClass() != null) {
-					producerProperties.setProperty(CommonBinderProperties.PARTITION_SELECTOR_CLASS,
+					producerProperties.setProperty(BinderPropertyKeys.PARTITION_SELECTOR_CLASS,
 							bindingProperties.getPartitionSelectorClass());
 				}
 				if (bindingProperties.getPartitionSelectorExpression() != null) {
-					producerProperties.setProperty(CommonBinderProperties.PARTITION_SELECTOR_EXPRESSION,
+					producerProperties.setProperty(BinderPropertyKeys.PARTITION_SELECTOR_EXPRESSION,
 							bindingProperties.getPartitionSelectorExpression());
 				}
 				if (bindingProperties.getPartitionCount() != null) {
-					producerProperties.setProperty(CommonBinderProperties.NEXT_MODULE_COUNT,
+					producerProperties.setProperty(BinderPropertyKeys.NEXT_MODULE_COUNT,
 							Integer.toString(bindingProperties.getPartitionCount()));
 				}
 				if (bindingProperties.getNextModuleConcurrency() != null) {
-					producerProperties.setProperty(CommonBinderProperties.NEXT_MODULE_CONCURRENCY,
+					producerProperties.setProperty(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY,
 							Integer.toString(bindingProperties.getNextModuleConcurrency()));
 				}
 			}
@@ -199,9 +199,9 @@ public class ChannelBindingServiceProperties {
 		BindingProperties bindingProperties = this.bindings.get(inputChannelName);
 		if (bindingProperties != null) {
 			if (isPartitionedConsumer(inputChannelName)) {
-				consumerProperties.setProperty(CommonBinderProperties.COUNT,
+				consumerProperties.setProperty(BinderPropertyKeys.COUNT,
 						Integer.toString(getInstanceCount()));
-				consumerProperties.setProperty(CommonBinderProperties.PARTITION_INDEX,
+				consumerProperties.setProperty(BinderPropertyKeys.PARTITION_INDEX,
 						Integer.toString(getInstanceIndex()));
 			}
 		}

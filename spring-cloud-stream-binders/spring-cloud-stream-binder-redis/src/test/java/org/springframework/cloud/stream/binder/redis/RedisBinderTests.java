@@ -39,7 +39,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.CommonBinderProperties;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
@@ -171,7 +171,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		properties.put("partitionKeyExtractorClass", "foo");
 		properties.put("partitionSelectorExpression", "0");
 		properties.put("partitionSelectorClass", "foo");
-		properties.put(CommonBinderProperties.NEXT_MODULE_COUNT, "1");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
 
 		binder.bindProducer("props.0", new DirectChannel(), properties);
 		assertEquals(1, bindings.size());
@@ -287,7 +287,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		properties.put("partitionKeyExtractorClass", "foo");
 		properties.put("partitionSelectorExpression", "0");
 		properties.put("partitionSelectorClass", "foo");
-		properties.put(CommonBinderProperties.NEXT_MODULE_COUNT, "1");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
 		properties.put("partitionIndex", "0");
 		try {
 			binder.bindReplier("dummy", new DirectChannel(), new DirectChannel(), properties);

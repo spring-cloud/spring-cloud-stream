@@ -37,10 +37,10 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
+import org.springframework.cloud.stream.binder.AbstractBinderPropertyKeysAccessor;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.CommonBinderProperties;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
@@ -191,7 +191,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private static final String POINT_TO_POINT_SEMANTICS_CONSUMER_GROUP = "springXD";
 
 	private static final Set<Object> KAFKA_CONSUMER_PROPERTIES = new SetBuilder()
-			.add(CommonBinderProperties.MIN_PARTITION_COUNT)
+			.add(BinderPropertyKeys.MIN_PARTITION_COUNT)
 			.build();
 
 	/**
@@ -200,14 +200,14 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
 			.addAll(KAFKA_CONSUMER_PROPERTIES)
-			.add(CommonBinderProperties.PARTITION_INDEX) // Not actually used
-			.add(CommonBinderProperties.COUNT) // Not actually used
-			.add(CommonBinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.PARTITION_INDEX) // Not actually used
+			.add(BinderPropertyKeys.COUNT) // Not actually used
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.add(FETCH_SIZE)
 			.build();
 
 	private static final Set<Object> KAFKA_PRODUCER_PROPERTIES = new SetBuilder()
-			.add(CommonBinderProperties.MIN_PARTITION_COUNT)
+			.add(BinderPropertyKeys.MIN_PARTITION_COUNT)
 			.build();
 
 	/**
@@ -228,7 +228,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(PRODUCER_STANDARD_PROPERTIES)
-			.add(CommonBinderProperties.DIRECT_BINDING_ALLOWED)
+			.add(BinderPropertyKeys.DIRECT_BINDING_ALLOWED)
 			.addAll(KAFKA_PRODUCER_PROPERTIES)
 			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
 			.addAll(PRODUCER_COMPRESSION_PROPERTIES)
@@ -482,7 +482,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	public void bindProducer(final String name, MessageChannel moduleOutputChannel, Properties properties) {
 
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
-		KafkaPropertiesAccessor producerPropertiesAccessor = new KafkaPropertiesAccessor(properties);
+		KafkaPropertyKeysAccessor producerPropertiesAccessor = new KafkaPropertyKeysAccessor(properties);
 		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)) {
 			validateProducerProperties(name, properties, SUPPORTED_NAMED_PRODUCER_PROPERTIES);
 		}
@@ -619,7 +619,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		else {
 			validateConsumerProperties(name, properties, SUPPORTED_CONSUMER_PROPERTIES);
 		}
-		KafkaPropertiesAccessor accessor = new KafkaPropertiesAccessor(properties);
+		KafkaPropertyKeysAccessor accessor = new KafkaPropertyKeysAccessor(properties);
 
 		int maxConcurrency = accessor.getConcurrency(defaultConcurrency);
 
@@ -712,16 +712,16 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	public KafkaMessageListenerContainer createMessageListenerContainer(Properties properties, String group,
 			int maxConcurrency, String topic, long referencePoint) {
-		return createMessageListenerContainer(new KafkaPropertiesAccessor(properties), group, maxConcurrency, topic,
+		return createMessageListenerContainer(new KafkaPropertyKeysAccessor(properties), group, maxConcurrency, topic,
 				null, referencePoint);
 	}
 
-	private KafkaMessageListenerContainer createMessageListenerContainer(KafkaPropertiesAccessor accessor,
+	private KafkaMessageListenerContainer createMessageListenerContainer(KafkaPropertyKeysAccessor accessor,
 			String group, int maxConcurrency, Collection<Partition> listenedPartitions, long referencePoint) {
 		return createMessageListenerContainer(accessor, group, maxConcurrency, null, listenedPartitions, referencePoint);
 	}
 
-	private KafkaMessageListenerContainer createMessageListenerContainer(KafkaPropertiesAccessor accessor,
+	private KafkaMessageListenerContainer createMessageListenerContainer(KafkaPropertyKeysAccessor accessor,
 			String group, int maxConcurrency, String topic, Collection<Partition> listenedPartitions,
 			long referencePoint) {
 		Assert.isTrue(StringUtils.hasText(topic) ^ !CollectionUtils.isEmpty(listenedPartitions),
@@ -787,9 +787,9 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		}
 	}
 
-	private class KafkaPropertiesAccessor extends AbstractBinderPropertiesAccessor {
+	private class KafkaPropertyKeysAccessor extends AbstractBinderPropertyKeysAccessor {
 
-		public KafkaPropertiesAccessor(Properties properties) {
+		public KafkaPropertyKeysAccessor(Properties properties) {
 			super(properties);
 		}
 
@@ -888,7 +888,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		private final ProducerConfiguration<byte[], byte[]> producerConfiguration;
 
 
-		private SendingHandler(String topicName, KafkaPropertiesAccessor properties, int numberOfPartitions,
+		private SendingHandler(String topicName, KafkaPropertyKeysAccessor properties, int numberOfPartitions,
 				ProducerConfiguration<byte[], byte[]> producerConfiguration) {
 			this.topicName = topicName;
 			this.numberOfKafkaPartitions = numberOfPartitions;

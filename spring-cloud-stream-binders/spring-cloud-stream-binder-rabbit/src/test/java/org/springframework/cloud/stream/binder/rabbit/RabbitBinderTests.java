@@ -60,7 +60,7 @@ import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.CommonBinderProperties;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
@@ -230,7 +230,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("partitionKeyExtractorClass", "foo");
 		properties.put("partitionSelectorExpression", "0");
 		properties.put("partitionSelectorClass", "foo");
-		properties.put(CommonBinderProperties.NEXT_MODULE_COUNT, "1");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
 
 		binder.bindProducer("props.0", new DirectChannel(), properties);
 		assertEquals(1, bindings.size());
@@ -318,7 +318,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("partitionKeyExtractorClass", "foo");
 		properties.put("partitionSelectorExpression", "0");
 		properties.put("partitionSelectorClass", "foo");
-		properties.put(CommonBinderProperties.NEXT_MODULE_COUNT, "1");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
 		properties.put("partitionIndex", "0");
 		try {
 			binder.bindRequestor("dummy", null, null, properties);
@@ -387,7 +387,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("partitionKeyExtractorClass", "foo");
 		properties.put("partitionSelectorExpression", "0");
 		properties.put("partitionSelectorClass", "foo");
-		properties.put(CommonBinderProperties.NEXT_MODULE_COUNT, "1");
+		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
 		properties.put("partitionIndex", "0");
 		try {
 			binder.bindReplier("dummy", null, null, properties);

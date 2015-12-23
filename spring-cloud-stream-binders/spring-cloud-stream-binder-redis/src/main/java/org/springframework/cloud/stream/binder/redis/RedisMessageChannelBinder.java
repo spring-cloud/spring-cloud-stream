@@ -23,9 +23,9 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
+import org.springframework.cloud.stream.binder.AbstractBinderPropertyKeysAccessor;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.CommonBinderProperties;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
@@ -83,7 +83,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	private static final Set<Object> SUPPORTED_NAMED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
 			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(CommonBinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	/**
@@ -91,7 +91,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	 */
 	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(SUPPORTED_NAMED_CONSUMER_PROPERTIES)
-			.add(CommonBinderProperties.PARTITION_INDEX)
+			.add(BinderPropertyKeys.PARTITION_INDEX)
 			.build();
 
 	/**
@@ -101,7 +101,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 			// request
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
 			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(CommonBinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	/**
@@ -120,7 +120,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(PRODUCER_STANDARD_PROPERTIES)
-			.add(CommonBinderProperties.DIRECT_BINDING_ALLOWED)
+			.add(BinderPropertyKeys.DIRECT_BINDING_ALLOWED)
 			.build();
 
 	/**
@@ -129,7 +129,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	private static final Set<Object> SUPPORTED_REQUESTING_PRODUCER_PROPERTIES = new SetBuilder()
 			// reply
 			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(CommonBinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	private final RedisConnectionFactory connectionFactory;
@@ -180,7 +180,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		else {
 			validateConsumerProperties(name, properties, SUPPORTED_CONSUMER_PROPERTIES);
 		}
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
+		RedisPropertyKeysAccessor accessor = new RedisPropertyKeysAccessor(properties);
 		String queueName = "queue." + name;
 		int partitionIndex = accessor.getPartitionIndex();
 		if (partitionIndex >= 0) {
@@ -192,7 +192,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		bindExistingProducerDirectlyIfPossible(name, moduleInputChannel);
 	}
 
-	private MessageProducerSupport createInboundAdapter(RedisPropertiesAccessor accessor, String queueName) {
+	private MessageProducerSupport createInboundAdapter(RedisPropertyKeysAccessor accessor, String queueName) {
 		MessageProducerSupport adapter;
 		int concurrency = accessor.getConcurrency(this.defaultConcurrency);
 		concurrency = concurrency > 0 ? concurrency : 1;
@@ -220,11 +220,11 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		adapter.setBeanFactory(this.getBeanFactory());
 		adapter.setSerializer(null);
 		adapter.setTopics(applyPubSub(name));
-		doRegisterConsumer(name, name, moduleInputChannel, adapter, new RedisPropertiesAccessor(properties));
+		doRegisterConsumer(name, name, moduleInputChannel, adapter, new RedisPropertyKeysAccessor(properties));
 	}
 
 	private void doRegisterConsumer(String bindingName, String channelName, MessageChannel moduleInputChannel,
-			MessageProducerSupport adapter, RedisPropertiesAccessor properties) {
+			MessageProducerSupport adapter, RedisPropertyKeysAccessor properties) {
 		DirectChannel bridgeToModuleChannel = new DirectChannel();
 		bridgeToModuleChannel.setBeanFactory(this.getBeanFactory());
 		bridgeToModuleChannel.setBeanName(channelName + ".bridge");
@@ -251,7 +251,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	 * @return The channel, or a wrapper.
 	 */
 	private MessageChannel addRetryIfNeeded(final String name, final DirectChannel bridgeToModuleChannel,
-			RedisPropertiesAccessor properties) {
+			RedisPropertyKeysAccessor properties) {
 		final RetryTemplate retryTemplate = buildRetryTemplateIfRetryEnabled(properties);
 		if (retryTemplate == null) {
 			return bridgeToModuleChannel;
@@ -309,7 +309,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		else {
 			validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
 		}
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
+		RedisPropertyKeysAccessor accessor = new RedisPropertyKeysAccessor(properties);
 		if (!bindNewProducerDirectlyIfPossible(name, (SubscribableChannel) moduleOutputChannel, accessor)) {
 			String partitionKeyExtractorClass = accessor.getPartitionKeyExtractorClass();
 			Expression partitionKeyExpression = accessor.getPartitionKeyExpression();
@@ -337,16 +337,16 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		topic.setBeanFactory(this.getBeanFactory());
 		topic.setTopic(applyPubSub(name));
 		topic.afterPropertiesSet();
-		doRegisterProducer(name, moduleOutputChannel, topic, new RedisPropertiesAccessor(properties));
+		doRegisterProducer(name, moduleOutputChannel, topic, new RedisPropertyKeysAccessor(properties));
 	}
 
 	private void doRegisterProducer(final String name, MessageChannel moduleOutputChannel, MessageHandler delegate,
-			RedisPropertiesAccessor properties) {
+			RedisPropertyKeysAccessor properties) {
 		this.doRegisterProducer(name, moduleOutputChannel, delegate, null, properties);
 	}
 
 	private void doRegisterProducer(final String name, MessageChannel moduleOutputChannel, MessageHandler delegate,
-			String replyTo, RedisPropertiesAccessor properties) {
+			String replyTo, RedisPropertyKeysAccessor properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
 		MessageHandler handler = new SendingHandler(delegate, replyTo, properties);
 		EventDrivenConsumer consumer = new EventDrivenConsumer((SubscribableChannel) moduleOutputChannel, handler);
@@ -371,7 +371,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		queue.setBeanFactory(this.getBeanFactory());
 		queue.afterPropertiesSet();
 		String replyQueueName = name + ".replies." + this.getIdGenerator().generateId();
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
+		RedisPropertyKeysAccessor accessor = new RedisPropertyKeysAccessor(properties);
 		this.doRegisterProducer(name, requests, queue, replyQueueName, accessor);
 		MessageProducerSupport adapter = createInboundAdapter(accessor, replyQueueName);
 		this.doRegisterConsumer(name, name, replies, adapter, accessor);
@@ -384,7 +384,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 			logger.info("binding replier: " + name);
 		}
 		validateConsumerProperties(name, properties, SUPPORTED_REPLYING_CONSUMER_PROPERTIES);
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
+		RedisPropertyKeysAccessor accessor = new RedisPropertyKeysAccessor(properties);
 		MessageProducerSupport adapter = createInboundAdapter(accessor, "queue." + applyRequests(name));
 		this.doRegisterConsumer(name, name, requests, adapter, accessor);
 
@@ -411,7 +411,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		private final PartitioningMetadata partitioningMetadata;
 
 
-		private SendingHandler(MessageHandler delegate, String replyTo, RedisPropertiesAccessor properties) {
+		private SendingHandler(MessageHandler delegate, String replyTo, RedisPropertyKeysAccessor properties) {
 			this.delegate = delegate;
 			this.replyTo = replyTo;
 			this.partitioningMetadata = new PartitioningMetadata(properties, properties.getNextModuleCount());
@@ -466,9 +466,9 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	}
 
-	private static class RedisPropertiesAccessor extends AbstractBinderPropertiesAccessor {
+	private static class RedisPropertyKeysAccessor extends AbstractBinderPropertyKeysAccessor {
 
-		public RedisPropertiesAccessor(Properties properties) {
+		public RedisPropertyKeysAccessor(Properties properties) {
 			super(properties);
 		}
 

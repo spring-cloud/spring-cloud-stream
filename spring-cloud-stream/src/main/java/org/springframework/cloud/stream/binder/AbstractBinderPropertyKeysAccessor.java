@@ -29,13 +29,13 @@ import org.springframework.util.StringUtils;
  *
  * @author Gary Russell
  */
-public abstract class AbstractBinderPropertiesAccessor implements CommonBinderProperties {
+public abstract class AbstractBinderPropertyKeysAccessor extends BinderPropertyKeys {
 
 	private static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
 	private final Properties properties;
 
-	public AbstractBinderPropertiesAccessor(Properties properties) {
+	public AbstractBinderPropertyKeysAccessor(Properties properties) {
 		if (properties == null) {
 			this.properties = new Properties();
 		}

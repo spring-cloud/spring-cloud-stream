@@ -35,7 +35,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.CommonBinderProperties;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
@@ -62,8 +62,8 @@ public class PartitionedConsumerTest {
 	public void testBindingPartitionedConsumer() {
 		ArgumentCaptor<Properties> argumentCaptor = ArgumentCaptor.forClass(Properties.class);
 		verify(binder).bindConsumer(eq("partIn"), eq(testSink.input()), argumentCaptor.capture());
-		Assert.assertThat(argumentCaptor.getValue().getProperty(CommonBinderProperties.PARTITION_INDEX), equalTo("0"));
-		Assert.assertThat(argumentCaptor.getValue().getProperty(CommonBinderProperties.COUNT),
+		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.PARTITION_INDEX), equalTo("0"));
+		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.COUNT),
 				equalTo("2"));
 		verifyNoMoreInteractions(binder);
 	}

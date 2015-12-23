@@ -123,42 +123,42 @@ public abstract class MessageChannelBinderSupport
 	 */
 
 	protected static final Set<Object> CONSUMER_STANDARD_PROPERTIES = new SetBuilder()
-			.add(CommonBinderProperties.COUNT)
-			.add(CommonBinderProperties.SEQUENCE)
+			.add(BinderPropertyKeys.COUNT)
+			.add(BinderPropertyKeys.SEQUENCE)
 			.build();
 
 	protected static final Set<Object> PRODUCER_STANDARD_PROPERTIES = new HashSet<Object>(Arrays.asList(
-			CommonBinderProperties.NEXT_MODULE_COUNT,
-			CommonBinderProperties.NEXT_MODULE_CONCURRENCY
+			BinderPropertyKeys.NEXT_MODULE_COUNT,
+			BinderPropertyKeys.NEXT_MODULE_CONCURRENCY
 	));
 
 
 	protected static final Set<Object> CONSUMER_RETRY_PROPERTIES = new HashSet<Object>(Arrays.asList(new String[] {
-			CommonBinderProperties.BACK_OFF_INITIAL_INTERVAL,
-			CommonBinderProperties.BACK_OFF_MAX_INTERVAL,
-			CommonBinderProperties.BACK_OFF_MULTIPLIER,
-			CommonBinderProperties.MAX_ATTEMPTS
+			BinderPropertyKeys.BACK_OFF_INITIAL_INTERVAL,
+			BinderPropertyKeys.BACK_OFF_MAX_INTERVAL,
+			BinderPropertyKeys.BACK_OFF_MULTIPLIER,
+			BinderPropertyKeys.MAX_ATTEMPTS
 	}));
 
 	protected static final Set<Object> PRODUCER_PARTITIONING_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
-					CommonBinderProperties.PARTITION_KEY_EXPRESSION,
-					CommonBinderProperties.PARTITION_KEY_EXTRACTOR_CLASS,
-					CommonBinderProperties.PARTITION_SELECTOR_CLASS,
-					CommonBinderProperties.PARTITION_SELECTOR_EXPRESSION,
-					CommonBinderProperties.MIN_PARTITION_COUNT
+					BinderPropertyKeys.PARTITION_KEY_EXPRESSION,
+					BinderPropertyKeys.PARTITION_KEY_EXTRACTOR_CLASS,
+					BinderPropertyKeys.PARTITION_SELECTOR_CLASS,
+					BinderPropertyKeys.PARTITION_SELECTOR_EXPRESSION,
+					BinderPropertyKeys.MIN_PARTITION_COUNT
 			}));
 
 	protected static final Set<Object> PRODUCER_BATCHING_BASIC_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
-					CommonBinderProperties.BATCHING_ENABLED,
-					CommonBinderProperties.BATCH_SIZE,
-					CommonBinderProperties.BATCH_TIMEOUT,
+					BinderPropertyKeys.BATCHING_ENABLED,
+					BinderPropertyKeys.BATCH_SIZE,
+					BinderPropertyKeys.BATCH_TIMEOUT,
 			}));
 
 	protected static final Set<Object> PRODUCER_BATCHING_ADVANCED_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
-					CommonBinderProperties.BATCH_BUFFER_LIMIT,
+					BinderPropertyKeys.BATCH_BUFFER_LIMIT,
 			}));
 
 	private final List<Binding> bindings = Collections.synchronizedList(new ArrayList<Binding>());
@@ -802,7 +802,7 @@ public abstract class MessageChannelBinderSupport
 	 * @param properties The properties.
 	 * @return The retry template, or null if retry is not enabled.
 	 */
-	protected RetryTemplate buildRetryTemplateIfRetryEnabled(AbstractBinderPropertiesAccessor properties) {
+	protected RetryTemplate buildRetryTemplateIfRetryEnabled(AbstractBinderPropertyKeysAccessor properties) {
 		int maxAttempts = properties.getMaxAttempts(this.defaultMaxAttempts);
 		if (maxAttempts > 1) {
 			RetryTemplate template = new RetryTemplate();
@@ -835,7 +835,7 @@ public abstract class MessageChannelBinderSupport
 	 * @return true if the producer is bound.
 	 */
 	protected boolean bindNewProducerDirectlyIfPossible(String name, SubscribableChannel moduleOutputChannel,
-			AbstractBinderPropertiesAccessor properties) {
+			AbstractBinderPropertyKeysAccessor properties) {
 		if (!properties.isDirectBindingAllowed()) {
 			return false;
 		}
@@ -868,7 +868,7 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	private void bindProducerDirectly(String name, SubscribableChannel producerChannel,
-			MessageChannel consumerChannel, AbstractBinderPropertiesAccessor properties) {
+			MessageChannel consumerChannel, AbstractBinderPropertyKeysAccessor properties) {
 		DirectHandler handler = new DirectHandler(consumerChannel);
 		EventDrivenConsumer consumer = new EventDrivenConsumer(producerChannel, handler);
 		consumer.setBeanFactory(getBeanFactory());
@@ -899,7 +899,7 @@ public abstract class MessageChannelBinderSupport
 					}
 				}
 				if (producerBinding != null && producerBinding.getChannel() instanceof SubscribableChannel) {
-					AbstractBinderPropertiesAccessor properties = producerBinding.getPropertiesAccessor();
+					AbstractBinderPropertyKeysAccessor properties = producerBinding.getPropertiesAccessor();
 					if (properties.isDirectBindingAllowed()) {
 						bindProducerDirectly(name, (SubscribableChannel) producerBinding.getChannel(), consumerChannel,
 								properties);
@@ -969,7 +969,7 @@ public abstract class MessageChannelBinderSupport
 
 		private final int partitionCount;
 
-		public PartitioningMetadata(AbstractBinderPropertiesAccessor properties, int partitionCount) {
+		public PartitioningMetadata(AbstractBinderPropertyKeysAccessor properties, int partitionCount) {
 			this.partitionCount = partitionCount;
 			this.partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
 			this.partitionKeyExpression = properties.getPartitionKeyExpression();

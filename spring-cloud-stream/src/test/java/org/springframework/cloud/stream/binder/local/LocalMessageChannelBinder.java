@@ -23,8 +23,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
-import org.springframework.cloud.stream.binder.CommonBinderProperties;
+import org.springframework.cloud.stream.binder.AbstractBinderPropertyKeysAccessor;
+import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.integration.channel.DirectChannel;
@@ -72,7 +72,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 
 	protected static final Set<Object> CONSUMER_REQUEST_REPLY_PROPERTIES = new SetBuilder()
 			.addAll(CONSUMER_STANDARD_PROPERTIES)
-			.add(CommonBinderProperties.CONCURRENCY)
+			.add(BinderPropertyKeys.CONCURRENCY)
 			.build();
 
 	public static final String THREAD_NAME_PREFIX = "binder.local-";
@@ -237,7 +237,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel(name);
 		bridge(name, registeredChannel, moduleInputChannel,
 				"inbound." + ((NamedComponent) registeredChannel).getComponentName(),
-				new LocalBinderPropertiesAccessor(properties));
+				new LocalBinderPropertyKeysAccessor(properties));
 	}
 
 	/**
@@ -264,7 +264,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel(name);
 		bridge(name, moduleOutputChannel, registeredChannel,
 				"outbound." + ((NamedComponent) registeredChannel).getComponentName(),
-				new LocalBinderPropertiesAccessor(properties));
+				new LocalBinderPropertyKeysAccessor(properties));
 	}
 
 	@Override
@@ -331,7 +331,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private ThreadPoolTaskExecutor createRequestReplyExecutor(String name, Properties properties) {
 		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-		executor.setCorePoolSize(new LocalBinderPropertiesAccessor(properties).getConcurrency(DEFAULT_REQ_REPLY_CONCURRENCY));
+		executor.setCorePoolSize(new LocalBinderPropertyKeysAccessor(properties).getConcurrency(DEFAULT_REQ_REPLY_CONCURRENCY));
 		executor.setThreadNamePrefix(THREAD_NAME_PREFIX + name + "-");
 		executor.initialize();
 		return executor;
@@ -351,13 +351,13 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 	}
 
 	protected BridgeHandler bridge(String name, MessageChannel from, MessageChannel to, String bridgeName,
-			LocalBinderPropertiesAccessor properties) {
+			LocalBinderPropertyKeysAccessor properties) {
 		return bridge(name, from, to, bridgeName, null, properties);
 	}
 
 
 	protected BridgeHandler bridge(String name, MessageChannel from, MessageChannel to, String bridgeName,
-			final Collection<MimeType> acceptedMimeTypes, LocalBinderPropertiesAccessor properties) {
+			final Collection<MimeType> acceptedMimeTypes, LocalBinderPropertyKeysAccessor properties) {
 
 		final boolean isInbound = bridgeName.startsWith("inbound.");
 
@@ -412,9 +412,9 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 		return getApplicationContext().getBean(name, requiredType);
 	}
 
-	private static class LocalBinderPropertiesAccessor extends AbstractBinderPropertiesAccessor {
+	private static class LocalBinderPropertyKeysAccessor extends AbstractBinderPropertyKeysAccessor {
 
-		public LocalBinderPropertiesAccessor(Properties properties) {
+		public LocalBinderPropertyKeysAccessor(Properties properties) {
 			super(properties);
 		}
 

@@ -21,8 +21,9 @@ package org.springframework.cloud.stream.binder;
  * Common binder properties.
  *
  * @author Gary Russell
+ * @author Ilayaperumal Gopinathan
  */
-public interface CommonBinderProperties {
+public abstract class BinderPropertyKeys {
 
 	/**
 	 * The retry back off initial interval.
