@@ -28,15 +28,30 @@ import lombok.Data;
 @ConfigurationProperties("spring.cloud.bus")
 public class BusProperties {
 
+	/**
+	 * Environment change event related properties.
+	 */
 	private Env env = new Env();
+	/**
+	 * Refresh event related properties.
+	 */
 	private Refresh refresh = new Refresh();
+	/**
+	 * Properties related to acks.
+	 */
 	private Ack ack = new Ack();
+	/**
+	 * Properties related to tracing of acks.
+	 */
 	private Trace trace = new Trace();
 	/**
 	 * Name of Spring Cloud Stream destination for messages.
 	 */
 	private String destination = "topic:springCloudBus";
 
+	/**
+	 * Flag to indicate that the bus is enabled.
+	 */
 	private boolean enabled = true;
 
 	public String getDestination() {
