@@ -802,7 +802,7 @@ public abstract class MessageChannelBinderSupport
 	 * @param properties The properties.
 	 * @return The retry template, or null if retry is not enabled.
 	 */
-	protected RetryTemplate buildRetryTemplateIfRetryEnabled(AbstractBinderPropertiesAccessor properties) {
+	protected RetryTemplate buildRetryTemplateIfRetryEnabled(AbstractBindingPropertiesAccessor properties) {
 		int maxAttempts = properties.getMaxAttempts(this.defaultMaxAttempts);
 		if (maxAttempts > 1) {
 			RetryTemplate template = new RetryTemplate();
@@ -835,7 +835,7 @@ public abstract class MessageChannelBinderSupport
 	 * @return true if the producer is bound.
 	 */
 	protected boolean bindNewProducerDirectlyIfPossible(String name, SubscribableChannel moduleOutputChannel,
-			AbstractBinderPropertiesAccessor properties) {
+			AbstractBindingPropertiesAccessor properties) {
 		if (!properties.isDirectBindingAllowed()) {
 			return false;
 		}
@@ -868,7 +868,7 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	private void bindProducerDirectly(String name, SubscribableChannel producerChannel,
-			MessageChannel consumerChannel, AbstractBinderPropertiesAccessor properties) {
+			MessageChannel consumerChannel, AbstractBindingPropertiesAccessor properties) {
 		DirectHandler handler = new DirectHandler(consumerChannel);
 		EventDrivenConsumer consumer = new EventDrivenConsumer(producerChannel, handler);
 		consumer.setBeanFactory(getBeanFactory());
@@ -899,7 +899,7 @@ public abstract class MessageChannelBinderSupport
 					}
 				}
 				if (producerBinding != null && producerBinding.getChannel() instanceof SubscribableChannel) {
-					AbstractBinderPropertiesAccessor properties = producerBinding.getPropertiesAccessor();
+					AbstractBindingPropertiesAccessor properties = producerBinding.getPropertiesAccessor();
 					if (properties.isDirectBindingAllowed()) {
 						bindProducerDirectly(name, (SubscribableChannel) producerBinding.getChannel(), consumerChannel,
 								properties);
@@ -969,7 +969,7 @@ public abstract class MessageChannelBinderSupport
 
 		private final int partitionCount;
 
-		public PartitioningMetadata(AbstractBinderPropertiesAccessor properties, int partitionCount) {
+		public PartitioningMetadata(AbstractBindingPropertiesAccessor properties, int partitionCount) {
 			this.partitionCount = partitionCount;
 			this.partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
 			this.partitionKeyExpression = properties.getPartitionKeyExpression();

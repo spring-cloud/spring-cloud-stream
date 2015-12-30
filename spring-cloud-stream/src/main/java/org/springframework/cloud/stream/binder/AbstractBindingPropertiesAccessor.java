@@ -24,18 +24,18 @@ import org.springframework.util.StringUtils;
 
 
 /**
- * Base class for binder-specific property accessors; common properties
+ * Base class for binding-specific property accessors; common properties
  * are defined here.
  *
  * @author Gary Russell
  */
-public abstract class AbstractBinderPropertiesAccessor {
+public abstract class AbstractBindingPropertiesAccessor {
 
 	private static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
 	private final Properties properties;
 
-	public AbstractBinderPropertiesAccessor(Properties properties) {
+	public AbstractBindingPropertiesAccessor(Properties properties) {
 		if (properties == null) {
 			this.properties = new Properties();
 		}

@@ -59,7 +59,7 @@ import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
+import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.Binding;
@@ -958,7 +958,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	 * Property accessor for the RabbitBinder. Refer to the Spring-AMQP documentation for information on the
 	 * specific properties.
 	 */
-	private static class RabbitPropertiesAccessor extends AbstractBinderPropertiesAccessor {
+	private static class RabbitPropertiesAccessor extends AbstractBindingPropertiesAccessor {
 
 		/**
 		 * The acknowledge mode (i.e. NONE, MANUAL, AUTO).

@@ -23,7 +23,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.cloud.stream.binder.AbstractBinderPropertiesAccessor;
+import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
@@ -466,7 +466,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	}
 
-	private static class RedisPropertiesAccessor extends AbstractBinderPropertiesAccessor {
+	private static class RedisPropertiesAccessor extends AbstractBindingPropertiesAccessor {
 
 		public RedisPropertiesAccessor(Properties properties) {
 			super(properties);
