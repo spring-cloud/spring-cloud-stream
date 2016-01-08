@@ -17,6 +17,7 @@
     </parent>
 
     <modules>
+        <module>spring-cloud-bus-dependencies</module>
         <module>spring-cloud-bus</module>
 		<module>spring-cloud-starter-bus-amqp</module>
 		<module>spring-cloud-starter-bus-kafka</module>
@@ -26,8 +27,6 @@
 
     <properties>
         <bintray.package>bus</bintray.package>
-        <spring-cloud-commons.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-commons.version>
-        <spring-cloud-stream.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
     </properties>
 
 	<profiles>
@@ -83,63 +82,11 @@
         <dependencies>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-commons</artifactId>
-				<version>${spring-cloud-commons.version}</version>
+				<artifactId>spring-cloud-bus-dependencies</artifactId>
+				<version>${project.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-parent</artifactId>
-				<version>${spring-cloud-stream.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-starter-bus-amqp</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-starter-bus-redis</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-starter-bus-kafka</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-starter-bus-redis</artifactId>
-				<version>1.1.0.BUILD-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-starter-bus-kafka</artifactId>
-				<version>1.1.0.BUILD-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-bus</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-		    <dependency>
-			  <groupId>org.springframework</groupId>
-			  <artifactId>spring-context</artifactId>
-			  <version>${spring.version}</version>
-		    </dependency>
-		    <dependency>
-			  <groupId>org.springframework</groupId>
-			  <artifactId>spring-expression</artifactId>
-			  <version>${spring.version}</version>
-		    </dependency>
-		    <dependency>
-			  <groupId>org.springframework</groupId>
-			  <artifactId>spring-messaging</artifactId>
-			  <version>${spring.version}</version>
-		    </dependency>
         </dependencies>
     </dependencyManagement>
 
