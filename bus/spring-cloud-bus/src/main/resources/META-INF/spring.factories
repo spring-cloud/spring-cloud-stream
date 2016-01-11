@@ -1,3 +1,5 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.springframework.cloud.bus.BusAutoConfiguration,\
 org.springframework.cloud.bus.jackson.BusJacksonAutoConfiguration
+org.springframework.context.ApplicationContextInitializer=\
+org.springframework.cloud.bus.context.ContextIdApplicationContextInitializer
