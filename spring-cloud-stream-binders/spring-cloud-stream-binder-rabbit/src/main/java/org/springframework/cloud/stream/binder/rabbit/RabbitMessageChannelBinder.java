@@ -537,7 +537,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
 			Queue queue = new Queue(baseQueueName, true, false, false, queueArgs(properties, baseQueueName));
 			declareQueue(baseQueueName, queue);
-			autoBindDLQ(name, properties);
+			autoBindDLQ(name + ".default", properties);
 			endpoint.setRoutingKey(name);
 			org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(name);
 			declareBinding(baseQueueName, binding);
