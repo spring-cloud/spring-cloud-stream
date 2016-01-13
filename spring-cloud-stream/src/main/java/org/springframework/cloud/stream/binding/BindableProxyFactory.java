@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,6 +131,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 						inputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
 					}
 					else {
+						inputHolders.put(name, new ChannelHolder(sharedChannel, false));
 						if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
 							bridgeSharedChannel(channelType, sharedChannel);
 						}
@@ -150,6 +151,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 						outputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
 					}
 					else {
+						outputHolders.put(name, new ChannelHolder(sharedChannel, false));
 						if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
 							bridgeSharedChannel(channelType, sharedChannel);
 						}
