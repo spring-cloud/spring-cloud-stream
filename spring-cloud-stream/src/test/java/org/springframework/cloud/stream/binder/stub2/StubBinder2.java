@@ -26,7 +26,7 @@ import org.springframework.cloud.stream.binder.Binder;
 public class StubBinder2 implements Binder<Object> {
 
 	@SuppressWarnings("unused")
-	private StubBinder2Dependency stubBinder2Dependency;
+	private final StubBinder2Dependency stubBinder2Dependency;
 
 	public StubBinder2(StubBinder2Dependency stubBinder2Dependency) {
 		this.stubBinder2Dependency = stubBinder2Dependency;
@@ -60,11 +60,6 @@ public class StubBinder2 implements Binder<Object> {
 	@Override
 	public void unbindProducer(String name, Object outboundBindTarget) {
 
-	}
-
-	@Override
-	public Object bindDynamicProducer(String name, Properties properties) {
-		return null;
 	}
 
 }

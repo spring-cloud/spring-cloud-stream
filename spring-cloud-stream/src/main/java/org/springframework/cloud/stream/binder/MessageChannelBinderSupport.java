@@ -364,17 +364,6 @@ public abstract class MessageChannelBinderSupport
 		doBindConsumer(name, group, inputChannel, properties);
 	}
 
-	/**
-	 * Dynamically create a producer for the named channel.
-	 * @param name The name.
-	 * @param properties The properties.
-	 * @return The channel.
-	 */
-	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
-		return doBindDynamicProducer(name, name, properties);
-	}
-
 	protected abstract void doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties);
 
 	/**

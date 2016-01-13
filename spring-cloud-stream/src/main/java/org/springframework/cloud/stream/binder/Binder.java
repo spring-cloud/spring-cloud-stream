@@ -78,13 +78,4 @@ public interface Binder<T> {
 	 */
 	void unbindProducer(String name, T outboundBindTarget);
 
-	/**
-	 * Create an object and bind a producer dynamically, creating the infrastructure
-	 * required by the binder technology.
-	 * @param name The name of the channel.
-	 * @param properties arbitrary String key/value pairs that will be used in the binding.
-	 * @return The bound object.
-	 */
-	T bindDynamicProducer(String name, Properties properties);
-
 }

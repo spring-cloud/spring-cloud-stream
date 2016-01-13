@@ -65,9 +65,4 @@ public class StubBinder1 implements Binder<Object> {
 
 	}
 
-	@Override
-	public Object bindDynamicProducer(String name, Properties properties) {
-		return null;
-	}
-
 }

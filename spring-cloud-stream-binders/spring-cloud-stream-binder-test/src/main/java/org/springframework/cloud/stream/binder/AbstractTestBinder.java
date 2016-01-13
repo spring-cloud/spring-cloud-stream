@@ -84,12 +84,6 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 		binder.unbindProducer(name, channel);
 	}
 
-	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
-		this.queues.add(name);
-		return this.binder.bindDynamicProducer(name, properties);
-	}
-
 	public C getBinder() {
 		return this.binder;
 	}

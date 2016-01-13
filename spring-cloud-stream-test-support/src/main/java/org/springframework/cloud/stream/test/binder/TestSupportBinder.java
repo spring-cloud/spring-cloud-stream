@@ -85,11 +85,6 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 	}
 
-	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
-		return null;
-	}
-
 	public MessageCollector messageCollector() {
 		return messageCollector;
 	}

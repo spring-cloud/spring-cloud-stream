@@ -141,16 +141,6 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 		this.executor.initialize();
 	}
 
-	/**
-	 * For the local binder we bridge the router "output" channel to a channel; the channel
-	 * gets the name and the source channel is named 'dynamic.output.to.' + name.
-	 * {@inheritDoc}
-	 */
-	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
-		return doBindDynamicProducer(name, "dynamic.output.to." + name, properties);
-	}
-
 	@Override
 	protected void doBindConsumer(String name, String group, MessageChannel moduleInputChannel,
 			Properties properties) {
@@ -162,7 +152,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 			SharedChannelProvider<?> channelProvider, Properties properties) {
 		Assert.hasText(name, "a valid name is required to register an inbound channel");
 		Assert.notNull(moduleInputChannel, "channel must not be null");
-		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel(name);
+		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel("localbinder." + name);
 		bridge(name, registeredChannel, moduleInputChannel,
 				"inbound." + ((NamedComponent) registeredChannel).getComponentName(),
 				new LocalBindingPropertiesAccessor(properties));
@@ -182,7 +172,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 			SharedChannelProvider<?> channelProvider, Properties properties) {
 		Assert.hasText(name, "a valid name is required to register an outbound channel");
 		Assert.notNull(moduleOutputChannel, "channel must not be null");
-		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel(name);
+		MessageChannel registeredChannel = channelProvider.lookupOrCreateSharedChannel("localbinder." + name);
 		bridge(name, moduleOutputChannel, registeredChannel,
 				"outbound." + ((NamedComponent) registeredChannel).getComponentName(),
 				new LocalBindingPropertiesAccessor(properties));

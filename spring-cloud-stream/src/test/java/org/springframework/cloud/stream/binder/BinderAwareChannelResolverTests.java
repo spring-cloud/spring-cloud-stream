@@ -20,8 +20,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -75,7 +76,7 @@ public class BinderAwareChannelResolverTests {
 				return binder;
 			}
 		}, null);
-		this.resolver.setBeanFactory(context);
+		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver",
 				this.resolver);
 		context.registerSingleton("other", DirectChannel.class);
@@ -128,8 +129,8 @@ public class BinderAwareChannelResolverTests {
 	@SuppressWarnings("rawtypes")
 	public void propertyPassthrough() {
 		Properties properties = new Properties();
-		Binder binderFactory = mock(Binder.class);
-		doReturn(new DirectChannel()).when(binderFactory).bindDynamicProducer("foo", properties);
+		@SuppressWarnings("unchecked")
+		Binder<MessageChannel> binderFactory = mock(Binder.class);
 		BinderFactory mockBinderFactory = Mockito.mock(BinderFactory.class);
 		Mockito.when(mockBinderFactory.getBinder(anyString())).thenReturn(binderFactory);
 		@SuppressWarnings("unchecked")
@@ -137,8 +138,12 @@ public class BinderAwareChannelResolverTests {
 				new BinderAwareChannelResolver(mockBinderFactory, properties);
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
-		resolver.resolveDestination("foo");
-		verify(binderFactory).bindDynamicProducer("foo", properties);
+		MessageChannel resolved = resolver.resolveDestination("foo");
+		verify(binderFactory).bindProducer(eq("foo"), any(MessageChannel.class), eq(properties));
+		assertSame(resolved, beanFactory.getBean("foo"));
+		resolved = resolver.resolveDestination("someTransport:foo");
+		verify(binderFactory).bindProducer(eq("someTransport:foo"), any(MessageChannel.class), eq(properties));
+		assertSame(resolved, beanFactory.getBean("someTransport:foo"));
 	}
 
 }
