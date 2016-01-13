@@ -44,8 +44,15 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 
 	private final Set<String> prefixes = new HashSet<>();
 
+	private final Set<String> queues = new HashSet<String>();
+
+	private final Set<String> exchanges = new HashSet<String>();
+
 	public RabbitTestBinder(ConnectionFactory connectionFactory) {
-		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(connectionFactory);
+		this(connectionFactory, new RabbitMessageChannelBinder(connectionFactory));
+	}
+
+	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitMessageChannelBinder binder) {
 		GenericApplicationContext context = new GenericApplicationContext();
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.setPoolSize(1);
@@ -60,50 +67,47 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 
 	@Override
 	public void bindConsumer(String name, String group, MessageChannel moduleInputChannel, Properties properties) {
-		capturePrefix(properties);
+		this.queues.add(prefix(properties) + name + (group == null ? ".default" : "." + group));
+		this.exchanges.add(prefix(properties) + name);
 		super.bindConsumer(name, group, moduleInputChannel, properties);
+
 	}
 
 	@Override
 	public void bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties) {
-		capturePrefix(properties);
+		this.queues.add(prefix(properties) + name + ".default");
+		this.exchanges.add(prefix(properties) + name);
 		super.bindProducer(name, moduleOutputChannel, properties);
 	}
 
-	public void capturePrefix(Properties properties) {
+	public String prefix(Properties properties) {
 		if (properties != null) {
 			String prefix = properties.getProperty("prefix");
 			if (prefix != null) {
 				this.prefixes.add(prefix);
+				return prefix;
 			}
 		}
+		return BINDER_PREFIX;
 	}
 
 	@Override
 	public void cleanup() {
-		if (!queues.isEmpty()) {
-			for (String queue : queues) {
-				rabbitAdmin.deleteQueue(BINDER_PREFIX + queue);
-				// delete any partitioned queues
-				for (int i = 0; i < 10; i++) {
-					rabbitAdmin.deleteQueue(BINDER_PREFIX + queue + "-" + i);
-				}
-				for (String prefix : this.prefixes) {
-					rabbitAdmin.deleteQueue(prefix + queue);
-					// delete any partitioned queues
-					for (int i = 0; i < 10; i++) {
-						rabbitAdmin.deleteQueue(prefix + queue + "-" + i);
-					}
-					rabbitAdmin.deleteExchange(prefix + queue);
-					rabbitAdmin.deleteExchange(prefix + queue + ".requests");
-				}
-				rabbitAdmin.deleteExchange(BINDER_PREFIX + queue);
+		for (String queue : this.queues) {
+			this.rabbitAdmin.deleteQueue(queue);
+			this.rabbitAdmin.deleteQueue(queue + ".dlq");
+			// delete any partitioned queues
+			for (int i = 0; i < 10; i++) {
+				this.rabbitAdmin.deleteQueue(queue + "-" + i);
+				this.rabbitAdmin.deleteQueue(queue + "-" + i + ".dlq");
 			}
 		}
-		if (!topics.isEmpty()) {
-			for (String exchange : topics) {
-				rabbitAdmin.deleteExchange(BINDER_PREFIX + exchange);
-			}
+		for (String exchange : this.exchanges) {
+			this.rabbitAdmin.deleteExchange(exchange);
+		}
+		for (String prefix : this.prefixes) {
+			this.rabbitAdmin.deleteExchange(prefix + "DLX");
 		}
 	}
+
 }

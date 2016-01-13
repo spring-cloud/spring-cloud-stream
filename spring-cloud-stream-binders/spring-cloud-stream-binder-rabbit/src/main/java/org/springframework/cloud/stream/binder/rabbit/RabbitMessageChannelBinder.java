@@ -408,7 +408,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			queueName += partitionSuffix;
 			dlqNameRoot += partitionSuffix;
 		}
-		
+
 		Queue queue;
 		boolean durable = accessor.isDurable(this.defaultDurableSubscription);
 		if (durable) {

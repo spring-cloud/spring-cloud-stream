@@ -32,8 +32,6 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 
 	protected Set<String> queues = new HashSet<String>();
 
-	protected Set<String> topics = new HashSet<String>();
-
 	private C binder;
 
 	public void setBinder(C binder) {

@@ -25,7 +25,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,14 +55,13 @@ import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
-import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -267,10 +265,6 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		binder.unbindConsumer("durabletest.0", "tgroup", moduleInputChannel);
 		binder.unbindConsumers("durabletest.0", "tgroup");
 		assertNotNull(admin.getQueueProperties(TEST_PREFIX + "durabletest.0.tgroup.dlq"));
-		admin.deleteQueue(TEST_PREFIX + "durabletest.0.tgroup.dlq");
-		admin.deleteQueue(TEST_PREFIX + "durabletest.0.tgroup");
-		admin.deleteExchange(TEST_PREFIX + "durabletest.0");
-		admin.deleteExchange(TEST_PREFIX + "DLX");
 	}
 
 	@Test
@@ -298,14 +292,10 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 		binder.unbindConsumers("nondurabletest.0", "tgroup");
 		assertNull(admin.getQueueProperties(TEST_PREFIX + "nondurabletest.0.dlq"));
-		admin.deleteQueue(TEST_PREFIX + "nondurabletest.0.tgroup");
-		admin.deleteExchange(TEST_PREFIX + "nondurabletest.0");
 	}
 
 	@Test
 	public void testAutoBindDLQ() throws Exception {
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
-
 		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("prefix", TEST_PREFIX);
@@ -339,9 +329,6 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertTrue(n < 100);
 
 		binder.unbindConsumer("dlqtest", "default", moduleInputChannel);
-		admin.deleteQueue(TEST_PREFIX + "dlqtest.default.dlq");
-		admin.deleteQueue(TEST_PREFIX + "dlqtest.default");
-		admin.deleteExchange(TEST_PREFIX + "DLX");
 	}
 
 	@Test
@@ -389,9 +376,6 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertTrue(n < 100);
 
 		binder.unbindConsumer("dlqpubtest", "default", moduleInputChannel);
-		admin.deleteQueue(TEST_PREFIX + "dlqpubtest.default.dlq");
-		admin.deleteQueue(TEST_PREFIX + "dlqpubtest.default");
-		admin.deleteExchange(TEST_PREFIX + "DLX");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -459,12 +443,10 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 	public void testLateBinding() throws Exception {
 		RabbitTestSupport.RabbitProxy proxy = new RabbitTestSupport.RabbitProxy();
 		CachingConnectionFactory cf = new CachingConnectionFactory("localhost", proxy.getPort());
-		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(cf);
-		AbstractApplicationContext applicationContext = mock(AbstractApplicationContext.class);
-		when(applicationContext.getBeanFactory()).thenReturn(mock(ConfigurableListableBeanFactory.class));
-		binder.setApplicationContext(applicationContext);
-		binder.setDefaultAutoBindDLQ(true);
-		binder.afterPropertiesSet();
+		RabbitMessageChannelBinder rabbitBinder = new RabbitMessageChannelBinder(cf);
+		rabbitBinder.setDefaultAutoBindDLQ(true);
+		AbstractTestBinder<RabbitMessageChannelBinder> binder = new RabbitTestBinder(cf, rabbitBinder);
+
 		Properties properties = new Properties();
 		properties.put("prefix", "latebinder.");
 
@@ -490,7 +472,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("partitionIndex", "1");
 		binder.bindConsumer("partlate.0", "test", partInputChannel1, properties);
 
-		binder.setDefaultAutoBindDLQ(false);
+		rabbitBinder.setDefaultAutoBindDLQ(false);
 		properties.clear();
 		properties.put("prefix", "latebinder.");
 		MessageChannel noDLQOutputChannel = new DirectChannel();
@@ -542,25 +524,11 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		binder.unbindConsumers("partlate.0", "test");
 		binder.unbindConsumers("partlate.0", "lateDurableGroup");
 
+		binder.cleanup();
+
 		proxy.stop();
 		cf.destroy();
 
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
-		admin.deleteQueue("latebinder.late.0.test");
-		admin.deleteQueue("latebinder.late.0.test.dlq");
-		admin.deleteQueue("latebinder.lateNoDLQ.0.test");
-		admin.deleteQueue("latebinder.partlate.0.test-0");
-		admin.deleteQueue("latebinder.partlate.0.test-1");
-		admin.deleteQueue("latebinder.late.0.test-0.dlq");
-		admin.deleteQueue("latebinder.late.0.test-1.dlq");
-		admin.deleteQueue("latebinder.partlate.0.test-0.dlq");
-		admin.deleteQueue("latebinder.partlate.0.test-1.dlq");
-		admin.deleteQueue("latebinder.lateDurableGroup.latePubSub");
-		admin.deleteExchange("latebinder.late.0");
-		admin.deleteExchange("latebinder.lateNoDLQ.0");
-		admin.deleteExchange("latebinder.partlate.0");
-		admin.deleteExchange("latebinder.latePubSub");
-		admin.deleteExchange("latebinder.DLX");
 		this.rabbitAvailableRule.getResource().destroy();
 	}
 
