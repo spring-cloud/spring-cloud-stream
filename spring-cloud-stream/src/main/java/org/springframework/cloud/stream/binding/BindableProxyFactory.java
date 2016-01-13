@@ -131,6 +131,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 						inputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
 					}
 					else {
+						inputHolders.put(name, new ChannelHolder(sharedChannel, false));
 						if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
 							bridgeSharedChannel(channelType, sharedChannel);
 						}
@@ -150,6 +151,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 						outputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
 					}
 					else {
+						outputHolders.put(name, new ChannelHolder(sharedChannel, false));
 						if (!channelType.isAssignableFrom(sharedChannel.getClass())) {
 							bridgeSharedChannel(channelType, sharedChannel);
 						}
