@@ -82,7 +82,15 @@ public abstract class MessageChannelBinderSupport
 
 	protected static final String PARTITION_HEADER = "partition";
 
-	private static final String DEFAULT_CONSUMER_GROUP = "default";
+	/**
+	 * Default group name (used if <code>null</code> or empty String is provided).
+	 */
+	protected static final String DEFAULT_CONSUMER_GROUP = "default";
+
+	/**
+	 * The delimiter between a group and index when constructing a binder consumer/producer.
+	 */
+	private static final String GROUP_INDEX_DELIMITER = ".";
 
 	protected final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -401,8 +409,12 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	@Override
-	public void unbindConsumers(String name, String group) {
-		deleteBindings("inbound." + BinderUtils.groupedName(name, group));
+	public final void unbindConsumers(String name, String group) {
+		deleteBindings("inbound." + groupedName(name, group));
+		afterUnbindConsumers(name, group == null ? DEFAULT_CONSUMER_GROUP : group);
+	}
+
+	protected void afterUnbindConsumers(String name, String group) {
 	}
 
 	@Override
@@ -412,7 +424,7 @@ public abstract class MessageChannelBinderSupport
 
 	@Override
 	public void unbindConsumer(String name, String group, MessageChannel channel) {
-		deleteBinding("inbound." + BinderUtils.groupedName(name, group), channel);
+		deleteBinding("inbound." + groupedName(name, group), channel);
 	}
 
 	@Override
@@ -478,6 +490,19 @@ public abstract class MessageChannelBinderSupport
 				}
 			}
 		}
+	}
+
+	/**
+	 * Construct a name comprised of the name and group.
+	 * @param name the name.
+	 * @param group the group.
+	 * @return the constructed name.
+	 */
+	protected final String groupedName(String name, String group) {
+		if (!StringUtils.hasText(group)) {
+			group = "default";
+		}
+		return name + GROUP_INDEX_DELIMITER + group;
 	}
 
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {

@@ -62,7 +62,6 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
-import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
@@ -389,7 +388,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 
 	@Override
 	public void doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
-		String baseQueueName = BinderUtils.groupedName(name, group);
+		String baseQueueName = groupedName(name, group);
 		if (this.logger.isInfoEnabled()) {
 			this.logger.info("declaring queue for inbound: " + baseQueueName + ", bound to: " + name);
 		}
@@ -689,13 +688,12 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	@Override
 	public void unbindConsumer(String name, String group, MessageChannel channel) {
 		super.unbindConsumer(name, group, channel);
-		cleanAutoDeclareContext(BinderUtils.groupedName(name, group));
+		cleanAutoDeclareContext(groupedName(name, group));
 	}
 
 	@Override
-	public void unbindConsumers(String name, String group) {
-		super.unbindConsumers(name, group);
-		cleanAutoDeclareContext(name + "." + group);
+	protected void afterUnbindConsumers(String name, String group) {
+		cleanAutoDeclareContext(groupedName(name, group));
 	}
 
 	private void addToAutoDeclareContext(String name, Object bean) {

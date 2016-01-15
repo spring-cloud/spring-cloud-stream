@@ -41,7 +41,6 @@ import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
-import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
@@ -562,7 +561,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private void createKafkaConsumer(String name, final MessageChannel moduleInputChannel, Properties properties,
 			String group, long referencePoint) {
 
-		validateConsumerProperties(BinderUtils.groupedName(name, group), properties, SUPPORTED_CONSUMER_PROPERTIES);
+		validateConsumerProperties(groupedName(name, group), properties, SUPPORTED_CONSUMER_PROPERTIES);
 		KafkaPropertiesAccessor accessor = new KafkaPropertiesAccessor(properties);
 
 		int maxConcurrency = accessor.getConcurrency(defaultConcurrency);
@@ -646,7 +645,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 				super.doStop();
 			}
 		};
-		String groupedName = BinderUtils.groupedName(name, group);
+		String groupedName = groupedName(name, group);
 		edc.setBeanName("inbound." + groupedName);
 
 		Binding consumerBinding = Binding.forConsumer(groupedName, edc, moduleInputChannel, accessor);

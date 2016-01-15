@@ -150,7 +150,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertEquals(1000L, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.initialInterval"));
 		assertEquals(10000L, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.maxInterval"));
 		assertEquals(2.0, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.multiplier"));
-		binder.unbindConsumers("props.0", "default");
+		binder.unbindConsumers("props.0", null);
 		assertEquals(0, bindings.size());
 
 		properties = new Properties();
@@ -328,7 +328,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		assertTrue(n < 100);
 
-		binder.unbindConsumer("dlqtest", "default", moduleInputChannel);
+		binder.unbindConsumer("dlqtest", null, moduleInputChannel);
 	}
 
 	@Test

@@ -39,7 +39,6 @@ import org.springframework.cloud.stream.binder.TestUtils;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.integration.channel.interceptor.WireTap;
 import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
@@ -213,16 +212,13 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Binder<MessageChannel> binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		// Test pub/sub by emulating how StreamPlugin handles taps
-		DirectChannel tapChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		QueueChannel module2InputChannel = new QueueChannel();
 		QueueChannel module3InputChannel = new QueueChannel();
 		binder.bindProducer("baz.0", moduleOutputChannel, null);
 		binder.bindConsumer("baz.0", "test", moduleInputChannel, null);
-		moduleOutputChannel.addInterceptor(new WireTap(tapChannel));
 		// A new module is using the tap as an input channel
 		String fooTapName = "baz.0";
-		binder.bindProducer(fooTapName, tapChannel, null);
 		binder.bindConsumer(fooTapName, "tap1", module2InputChannel, null);
 		// Another new module is using tap as an input channel
 		String barTapName = "baz.0";

@@ -28,7 +28,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
-import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
@@ -138,7 +137,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	@Override
 	protected void doBindConsumer(final String name, String group, MessageChannel moduleInputChannel, Properties properties) {
 		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
-		String queueName = BinderUtils.groupedName(name, group);
+		String queueName = groupedName(name, group);
 		validateConsumerProperties(queueName, properties, SUPPORTED_CONSUMER_PROPERTIES);
 		int partitionIndex = accessor.getPartitionIndex();
 		if (partitionIndex >= 0) {
@@ -243,8 +242,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	}
 
 	@Override
-	public void unbindConsumers(String name, String group) {
-		super.unbindConsumers(name, group);
+	protected void afterUnbindConsumers(String name, String group) {
 		this.redisOperations.boundSetOps(CONSUMER_GROUPS_KEY_PREFIX + name).remove(group);
 	}
 
