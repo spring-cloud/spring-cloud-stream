@@ -180,7 +180,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		convertingBridge.setBeanName(channelName + ".bridge.handler");
 		convertingBridge.afterPropertiesSet();
 		bridgeToModuleChannel.subscribe(convertingBridge);
-		this.redisOperations.boundSetOps(CONSUMER_GROUPS_KEY_PREFIX + bindingName).add(group);
+		this.redisOperations.boundZSetOps(CONSUMER_GROUPS_KEY_PREFIX + bindingName).incrementScore(group, 1);
 		consumerBinding.start();
 	}
 
@@ -243,7 +243,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	@Override
 	protected void afterUnbindConsumers(String name, String group) {
-		this.redisOperations.boundSetOps(CONSUMER_GROUPS_KEY_PREFIX + name).remove(group);
+		this.redisOperations.boundZSetOps(CONSUMER_GROUPS_KEY_PREFIX + name).incrementScore(group, -1);
 	}
 
 	@Override
@@ -324,7 +324,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		}
 
 		private void refreshChannelAdapters() {
-			Set<String> groups = redisOperations.boundSetOps(CONSUMER_GROUPS_KEY_PREFIX + bindingName).members();
+			Set<String> groups = redisOperations.boundZSetOps(CONSUMER_GROUPS_KEY_PREFIX + bindingName).rangeByScore(1, Double.MAX_VALUE);
 			for (String group : groups) {
 				if (!adapters.containsKey(group)) {
 					String channel = String.format("%s.%s", this.bindingName, group);
