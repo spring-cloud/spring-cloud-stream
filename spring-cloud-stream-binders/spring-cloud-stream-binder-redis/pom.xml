@@ -64,10 +64,5 @@
 			<artifactId>joda-time</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.xd</groupId>
-			<artifactId>spring-xd-tuple</artifactId>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 </project>

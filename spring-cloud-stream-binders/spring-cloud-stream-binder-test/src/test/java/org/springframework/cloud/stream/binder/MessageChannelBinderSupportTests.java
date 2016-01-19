@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport.JavaClassMimeTypeConversion;
+import org.springframework.cloud.stream.tuple.DefaultTuple;
+import org.springframework.cloud.stream.tuple.Tuple;
+import org.springframework.cloud.stream.tuple.TupleBuilder;
+import org.springframework.cloud.stream.tuple.integration.TupleKryoRegistrar;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
@@ -41,10 +43,9 @@ import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.xd.tuple.DefaultTuple;
-import org.springframework.xd.tuple.Tuple;
-import org.springframework.xd.tuple.TupleBuilder;
-import org.springframework.xd.tuple.serializer.kryo.TupleKryoRegistrar;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 
 /**
  * @author Gary Russell

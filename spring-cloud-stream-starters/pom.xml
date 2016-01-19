@@ -4,7 +4,6 @@
 	
 	<artifactId>spring-cloud-stream-starters</artifactId>
 	<packaging>pom</packaging>
-	<url>http://projects.spring.io/spring-xd/</url>
 	<organization>
 		<name>Pivotal Software, Inc.</name>
 		<url>http://www.spring.io</url>
