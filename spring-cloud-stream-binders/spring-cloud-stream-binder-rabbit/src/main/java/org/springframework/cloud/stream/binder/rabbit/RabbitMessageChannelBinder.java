@@ -179,6 +179,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			.addAll(SUPPORTED_BASIC_PRODUCER_PROPERTIES)
 			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
 			.addAll(PRODUCER_BATCHING_ADVANCED_PROPERTIES)
+			.add(RabbitPropertiesAccessor.AUTO_BIND_DLQ)
 			.build();
 
 	private static final MessagePropertiesConverter inboundMessagePropertiesConverter =
@@ -401,11 +402,9 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 
 		String queueName = applyPrefix(prefix, baseQueueName);
 		int partitionIndex = accessor.getPartitionIndex();
-		String dlqNameRoot = baseQueueName;
 		if (partitionIndex >= 0) {
 			String partitionSuffix = "-" + partitionIndex;
 			queueName += partitionSuffix;
-			dlqNameRoot += partitionSuffix;
 		}
 
 		Queue queue;
@@ -426,7 +425,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		}
 		doRegisterConsumer(baseQueueName, inputChannel, queue, accessor);
 		if (durable) {
-			autoBindDLQ(dlqNameRoot, accessor);
+			autoBindDLQ(applyPrefix(prefix, baseQueueName), queueName, accessor);
 		}
 	}
 
@@ -536,7 +535,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
 			Queue queue = new Queue(baseQueueName, true, false, false, queueArgs(properties, baseQueueName));
 			declareQueue(baseQueueName, queue);
-			autoBindDLQ(name + ".default", properties);
+			autoBindDLQ(baseQueueName, baseQueueName, properties);
 			endpoint.setRoutingKey(name);
 			org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(name);
 			declareBinding(baseQueueName, binding);
@@ -547,9 +546,10 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			for (int i = 0; i < properties.getNextModuleCount(); i++) {
 				String partitionSuffix = "-" + i;
 				String partitionQueueName = baseQueueName + partitionSuffix;
-				Queue queue = new Queue(partitionQueueName, true, false, false, queueArgs(properties, baseQueueName));
+				Queue queue = new Queue(partitionQueueName, true, false, false,
+						queueArgs(properties, partitionQueueName));
 				declareQueue(queue.getName(), queue);
-				autoBindDLQ(name + ".default" + partitionSuffix, properties);
+				autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, properties);
 				declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(name + partitionSuffix));
 			}
 		}
@@ -624,24 +624,24 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	/**
 	 * If so requested, declare the DLX/DLQ and bind it. The DLQ is bound to the DLX with a routing key of the original
 	 * queue name because we use default exchange routing by queue name for the original message.
-	 * @param name The name.
+	 * @param queueName The base name for the queue (including the binder prefix, if any).
+	 * @param routingKey The routing key for the queue.
 	 * @param properties The properties accessor.
 	 */
-	private void autoBindDLQ(final String name, RabbitPropertiesAccessor properties) {
+	private void autoBindDLQ(final String queueName, String routingKey, RabbitPropertiesAccessor properties) {
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("autoBindDLQ=" + properties.getAutoBindDLQ(this.defaultAutoBindDLQ)
-					+ " for: " + name);
+					+ " for: " + queueName);
 		}
 		if (properties.getAutoBindDLQ(this.defaultAutoBindDLQ)) {
 			String prefix = properties.getPrefix(this.defaultPrefix);
-			String queueName = applyPrefix(prefix, name);
 			String dlqName = constructDLQName(queueName);
 			Queue dlq = new Queue(dlqName);
 			declareQueue(dlqName, dlq);
 			final String dlxName = deadLetterExchangeName(prefix);
 			final DirectExchange dlx = new DirectExchange(dlxName);
 			declareExchange(dlxName, dlx);
-			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(queueName));
+			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(routingKey));
 		}
 	}
 
