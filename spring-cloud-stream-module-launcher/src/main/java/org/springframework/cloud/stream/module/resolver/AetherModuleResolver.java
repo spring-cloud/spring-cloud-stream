@@ -110,14 +110,14 @@ public class AetherModuleResolver implements ModuleResolver {
 			this.authentication = new Authentication() {
 				@Override
 				public void fill(AuthenticationContext context, String key, Map<String, String> data) {
-					context.put(context.USERNAME, proxyProperties.getUsername());
-					context.put(context.PASSWORD, proxyProperties.getPassword());
+					context.put(context.USERNAME, proxyProperties.getAuth().getUsername());
+					context.put(context.PASSWORD, proxyProperties.getAuth().getPassword());
 				}
 
 				@Override
 				public void digest(AuthenticationDigest digest) {
-					digest.update(AuthenticationContext.USERNAME, proxyProperties.getUsername(),
-							AuthenticationContext.PASSWORD, proxyProperties.getPassword());
+					digest.update(AuthenticationContext.USERNAME, proxyProperties.getAuth().getUsername(),
+							AuthenticationContext.PASSWORD, proxyProperties.getAuth().getPassword());
 				}
 			};
 		}
@@ -132,7 +132,9 @@ public class AetherModuleResolver implements ModuleResolver {
 				RemoteRepository.Builder remoteRepositoryBuilder = new RemoteRepository.Builder(remoteRepo.getKey(),
 						DEFAULT_CONTENT_TYPE, remoteRepo.getValue());
 				if (this.authentication != null) {
-					remoteRepositoryBuilder.setAuthentication(authentication);
+					//todo: Set direct authentication for the remote repositories
+					remoteRepositoryBuilder.setProxy(new Proxy(proxyProperties.getProtocol(), proxyProperties.getHost(),
+							proxyProperties.getPort(), authentication));
 				}
 				this.remoteRepositories.add(remoteRepositoryBuilder.build());
 			}
@@ -146,7 +148,7 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * @return boolean true if the proxy settings are provided.
 	 */
 	private boolean isProxyEnabled() {
-		return (this.proxyProperties != null && this.proxyProperties.getHost() != null && proxyProperties.getPort() != null);
+		return (this.proxyProperties != null && this.proxyProperties.getHost() != null && proxyProperties.getPort() > 0);
 	}
 
 	/**
@@ -155,7 +157,8 @@ public class AetherModuleResolver implements ModuleResolver {
 	 * @return boolean true if both the username/password are set
 	 */
 	private boolean proxyHasCredentials() {
-		return (this.proxyProperties != null && this.proxyProperties.getUsername() != null && this.proxyProperties.getPassword() != null);
+		return (this.proxyProperties != null && this.proxyProperties.getAuth() != null &&
+				this.proxyProperties.getAuth().getUsername() != null && this.proxyProperties.getAuth().getPassword() != null);
 	}
 
 	public void setOffline(boolean offline) {
@@ -184,8 +187,8 @@ public class AetherModuleResolver implements ModuleResolver {
 		session.setOffline(this.offline);
 		if (isProxyEnabled()) {
 			DefaultProxySelector proxySelector = new DefaultProxySelector();
-			Proxy proxy = new Proxy(proxyProperties.getProtocol(), proxyProperties.getHost(),
-					Integer.parseInt(proxyProperties.getPort()), authentication);
+			Proxy proxy = new Proxy(proxyProperties.getProtocol(), proxyProperties.getHost(), proxyProperties.getPort(),
+					authentication);
 			proxySelector.add(proxy, proxyProperties.getNonProxyHosts());
 			session.setProxySelector(proxySelector);
 		}

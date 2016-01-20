@@ -18,11 +18,11 @@ package org.springframework.cloud.stream.module.resolver;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Proxy properties for the Aether Module Resolver proxy properties.
+ * Proxy properties for the Aether Module Resolver.
  *
  * @author Ilayaperumal Gopinathan
  */
-@ConfigurationProperties(prefix = "maven.proxy")
+@ConfigurationProperties(prefix = "aether.proxy")
 public class AetherProxyProperties {
 	/**
 	 * Protocol to use for proxy settings.
@@ -37,22 +37,14 @@ public class AetherProxyProperties {
 	/**
 	 * Port for the proxy.
 	 */
-	private String port;
-
-	/**
-	 * Username for the proxy.
-	 */
-	private String username;
-
-	/**
-	 * Password for the proxy.
-	 */
-	private String password;
+	private int port;
 
 	/**
 	 * List of non proxy hosts.
 	 */
 	private String nonProxyHosts;
+
+	private Authentication auth;
 
 	public String getProtocol() {
 		return this.protocol;
@@ -70,28 +62,12 @@ public class AetherProxyProperties {
 		this.host = host;
 	}
 
-	public String getPort() {
+	public int getPort() {
 		return this.port;
 	}
 
-	public void setPort(String port) {
+	public void setPort(int port) {
 		this.port = port;
-	}
-
-	public String getUsername() {
-		return this.username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getPassword() {
-		return this.password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
 	}
 
 	public String getNonProxyHosts() {
@@ -100,5 +76,43 @@ public class AetherProxyProperties {
 
 	public void setNonProxyHosts(String nonProxyHosts) {
 		this.nonProxyHosts = nonProxyHosts;
+	}
+
+	public Authentication getAuth() {
+		return this.auth;
+	}
+
+	public void setAuth(Authentication auth) {
+		this.auth = auth;
+	}
+
+	public static class Authentication {
+
+		/**
+		 * Username for the proxy.
+		 */
+		private String username;
+
+		/**
+		 * Password for the proxy.
+		 */
+		private String password;
+
+		public String getUsername() {
+			return this.username;
+		}
+
+		public void setUsername(String username) {
+			this.username = username;
+		}
+
+		public String getPassword() {
+			return this.password;
+		}
+
+		public void setPassword(String password) {
+			this.password = password;
+		}
+
 	}
 }
