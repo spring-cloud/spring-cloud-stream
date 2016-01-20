@@ -51,6 +51,7 @@ public class ModuleResolverProperties {
 	public String[] getRemoteRepositories() {
 		return remoteRepositories;
 	}
+
 	public void setLocalRepository(File localRepository) {
 		this.localRepository = localRepository;
 	}

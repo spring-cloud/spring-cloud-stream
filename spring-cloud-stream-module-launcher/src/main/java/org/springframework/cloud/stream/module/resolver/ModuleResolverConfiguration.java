@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,22 +28,27 @@ import org.springframework.context.annotation.Bean;
  * Sets up the default Aether-based module resolver, unless overridden.
  *
  * @author Eric Bottard
+ * @author Ilayaperumal Gopinathan
  */
-@EnableConfigurationProperties(ModuleResolverProperties.class)
+@EnableConfigurationProperties({ModuleResolverProperties.class, AetherProxyProperties.class})
 public class ModuleResolverConfiguration {
 
 	@Autowired
 	private ModuleResolverProperties properties;
+
+	@Autowired
+	private AetherProxyProperties proxyProperties;
 
 	@Bean
 	@ConditionalOnMissingBean(ModuleResolver.class)
 	public ModuleResolver moduleResolver() {
 		int i = 1;
 		Map<String, String> repositoriesMap = new HashMap<>();
-		for (String repository: properties.getRemoteRepositories()) {
+		for (String repository : properties.getRemoteRepositories()) {
 			repositoriesMap.put("repository " + i++, repository);
 		}
-		AetherModuleResolver aetherModuleResolver = new AetherModuleResolver(properties.getLocalRepository(), repositoriesMap);
+		AetherModuleResolver aetherModuleResolver = new AetherModuleResolver(properties.getLocalRepository(),
+				repositoriesMap, proxyProperties);
 		aetherModuleResolver.setOffline(properties.isOffline());
 		return aetherModuleResolver;
 	}
