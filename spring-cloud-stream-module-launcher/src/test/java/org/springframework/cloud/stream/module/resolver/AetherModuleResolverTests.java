@@ -20,14 +20,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
 import static org.hamcrest.object.HasToString.hasToString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -65,7 +61,7 @@ public class AetherModuleResolverTests {
 	public void testResolveLocal() throws IOException {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
-		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null, null);
 		Resource resource = defaultModuleResolver.resolve(new Coordinates("foo.bar", "foo-bar", "jar", "", "1.0.0"));
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-bar-1.0.0.jar");
@@ -75,7 +71,7 @@ public class AetherModuleResolverTests {
 	public void testResolveLocalWithIncludes() throws IOException {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
-		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null, null);
 		Resource[] resources = defaultModuleResolver.resolve(
 				new Coordinates("foo.bar", "foo-bar", "jar", "", "1.0.0"),
 				new Coordinates[]{new Coordinates("qux.bar", "qux-bar", "jar", "", "1.0.0")},new String[]{});
@@ -92,7 +88,7 @@ public class AetherModuleResolverTests {
 	public void testResolveDoesNotExist() throws IOException {
 		ClassPathResource cpr = new ClassPathResource("local-repo");
 		File localRepository = cpr.getFile();
-		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, null, null);
 		defaultModuleResolver.resolve(new Coordinates("niente", "nada", "jar", "", "zilch"));
 	}
 
@@ -103,7 +99,7 @@ public class AetherModuleResolverTests {
 		localRepository.deleteOnExit();
 		Map<String, String> remoteRepos = new HashMap<>();
 		remoteRepos.put("modules", "http://repo.spring.io/libs-snapshot");
-		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos, null);
 		Resource resource = defaultModuleResolver.resolve(
 				new Coordinates("org.springframework.cloud.stream.module", "time-source", "jar", "exec", "1.0.0.BUILD-SNAPSHOT"));
 		assertTrue(resource.exists());
@@ -123,7 +119,7 @@ public class AetherModuleResolverTests {
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withBodyFile(stubFileName)));
-		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
+		AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos, null);
 		Resource resource = defaultModuleResolver.resolve(new Coordinates("org.bar", "foo", "jar", "", "1.0.0"));
 		assertTrue(resource.exists());
 		assertEquals(resource.getFile().getName(), "foo-1.0.0.jar");
@@ -143,7 +139,7 @@ public class AetherModuleResolverTests {
 					.willReturn(aResponse()
 							.withStatus(200)
 							.withBodyFile(stubFileName)));
-			AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos);
+			AetherModuleResolver defaultModuleResolver = new AetherModuleResolver(localRepository, remoteRepos, null);
 			defaultModuleResolver.setOffline(true);
 			defaultModuleResolver.resolve(new Coordinates("org.bar", "foo", "jar", "", "1.0.0"));
 		} catch (RuntimeException e) {

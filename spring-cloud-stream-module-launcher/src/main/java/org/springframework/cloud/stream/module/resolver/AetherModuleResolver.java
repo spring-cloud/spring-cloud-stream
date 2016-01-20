@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,11 @@ import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.repository.Authentication;
+import org.eclipse.aether.repository.AuthenticationContext;
+import org.eclipse.aether.repository.AuthenticationDigest;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.Proxy;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
@@ -47,6 +51,7 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.util.repository.DefaultProxySelector;
 
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -63,6 +68,7 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class AetherModuleResolver implements ModuleResolver {
 
@@ -78,13 +84,19 @@ public class AetherModuleResolver implements ModuleResolver {
 
 	private volatile boolean offline = false;
 
+	private final AetherProxyProperties proxyProperties;
+
+	private Authentication authentication;
+
 	/**
 	 * Create an instance specifying the locations of the local and remote repositories.
 	 * @param localRepository the root path of the local maven repository
 	 * @param remoteRepositories a Map containing pairs of (repository ID,repository URL). This
 	 * may be null or empty if the local repository is off line.
+	 * @param proxyProperties the proxy properties for the maven proxy settings.
 	 */
-	public AetherModuleResolver(File localRepository, Map<String, String> remoteRepositories) {
+	public AetherModuleResolver(File localRepository, Map<String, String> remoteRepositories,
+			final AetherProxyProperties proxyProperties) {
 		Assert.notNull(localRepository, "Local repository path cannot be null");
 		if (log.isDebugEnabled()) {
 			log.debug("Local repository: " + localRepository);
@@ -92,6 +104,22 @@ public class AetherModuleResolver implements ModuleResolver {
 				// just listing the values, ids are simply informative
 				log.debug("Remote repositories: " + StringUtils.collectionToCommaDelimitedString(remoteRepositories.values()));
 			}
+		}
+		this.proxyProperties = proxyProperties;
+		if (isProxyEnabled() && proxyHasCredentials()) {
+			this.authentication = new Authentication() {
+				@Override
+				public void fill(AuthenticationContext context, String key, Map<String, String> data) {
+					context.put(context.USERNAME, proxyProperties.getAuth().getUsername());
+					context.put(context.PASSWORD, proxyProperties.getAuth().getPassword());
+				}
+
+				@Override
+				public void digest(AuthenticationDigest digest) {
+					digest.update(AuthenticationContext.USERNAME, proxyProperties.getAuth().getUsername(),
+							AuthenticationContext.PASSWORD, proxyProperties.getAuth().getPassword());
+				}
+			};
 		}
 		if (!localRepository.exists()) {
 			Assert.isTrue(localRepository.mkdirs(),
@@ -101,12 +129,36 @@ public class AetherModuleResolver implements ModuleResolver {
 		this.remoteRepositories = new LinkedList<>();
 		if (!CollectionUtils.isEmpty(remoteRepositories)) {
 			for (Map.Entry<String, String> remoteRepo : remoteRepositories.entrySet()) {
-				RemoteRepository remoteRepository = new RemoteRepository.Builder(remoteRepo.getKey(),
-						DEFAULT_CONTENT_TYPE, remoteRepo.getValue()).build();
-				this.remoteRepositories.add(remoteRepository);
+				RemoteRepository.Builder remoteRepositoryBuilder = new RemoteRepository.Builder(remoteRepo.getKey(),
+						DEFAULT_CONTENT_TYPE, remoteRepo.getValue());
+				if (this.authentication != null) {
+					//todo: Set direct authentication for the remote repositories
+					remoteRepositoryBuilder.setProxy(new Proxy(proxyProperties.getProtocol(), proxyProperties.getHost(),
+							proxyProperties.getPort(), authentication));
+				}
+				this.remoteRepositories.add(remoteRepositoryBuilder.build());
 			}
 		}
 		repositorySystem = newRepositorySystem();
+	}
+
+	/**
+	 * Check if the proxy settings are provided.
+	 *
+	 * @return boolean true if the proxy settings are provided.
+	 */
+	private boolean isProxyEnabled() {
+		return (this.proxyProperties != null && this.proxyProperties.getHost() != null && proxyProperties.getPort() > 0);
+	}
+
+	/**
+	 * Check if the proxy setting has username/password set.
+	 *
+	 * @return boolean true if both the username/password are set
+	 */
+	private boolean proxyHasCredentials() {
+		return (this.proxyProperties != null && this.proxyProperties.getAuth() != null &&
+				this.proxyProperties.getAuth().getUsername() != null && this.proxyProperties.getAuth().getPassword() != null);
 	}
 
 	public void setOffline(boolean offline) {
@@ -133,6 +185,13 @@ public class AetherModuleResolver implements ModuleResolver {
 		LocalRepository localRepo = new LocalRepository(localRepoPath);
 		session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 		session.setOffline(this.offline);
+		if (isProxyEnabled()) {
+			DefaultProxySelector proxySelector = new DefaultProxySelector();
+			Proxy proxy = new Proxy(proxyProperties.getProtocol(), proxyProperties.getHost(), proxyProperties.getPort(),
+					authentication);
+			proxySelector.add(proxy, proxyProperties.getNonProxyHosts());
+			session.setProxySelector(proxySelector);
+		}
 		return session;
 	}
 
@@ -214,7 +273,8 @@ public class AetherModuleResolver implements ModuleResolver {
 						result.add(toResource(artifactResult));
 					}
 				}
-			} catch (DependencyResolutionException e) {
+			}
+			catch (DependencyResolutionException e) {
 				throw new RuntimeException(e);
 			}
 		}
