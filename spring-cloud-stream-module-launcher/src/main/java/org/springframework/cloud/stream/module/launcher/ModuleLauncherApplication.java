@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.stream.module.launcher;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -28,11 +32,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * format
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @SpringBootApplication
 public class ModuleLauncherApplication {
 
 	public static void main(String[] args) throws Exception {
-		SpringApplication.run(ModuleLauncherApplication.class, args);
+		List<String> argsList = new ArrayList<>(Arrays.asList(args));
+		if (!argsList.contains("spring.jmx.default-domain")) {
+			argsList.add("--spring.jmx.default-domain=module-launcher");
+		}
+		SpringApplication.run(ModuleLauncherApplication.class, argsList.toArray(new String[0]));
 	}
 }
