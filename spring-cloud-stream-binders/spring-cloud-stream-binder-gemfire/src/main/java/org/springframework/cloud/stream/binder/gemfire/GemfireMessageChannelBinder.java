@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.gemfire;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -25,13 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.gemstone.gemfire.cache.Cache;
 import com.gemstone.gemfire.cache.CacheFactory;
-import com.gemstone.gemfire.cache.Operation;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.RegionFactory;
 import com.gemstone.gemfire.cache.RegionShortcut;
-import com.gemstone.gemfire.cache.asyncqueue.AsyncEvent;
-import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
-import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +36,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -63,6 +59,11 @@ import org.springframework.util.StringUtils;
  */
 public class GemfireMessageChannelBinder implements Binder<MessageChannel>, ApplicationContextAware, InitializingBean {
 	private static final Logger logger = LoggerFactory.getLogger(GemfireMessageChannelBinder.class);
+
+	/**
+	 * SPeL parser.
+	 */
+	private static final SpelExpressionParser parser = new SpelExpressionParser();
 
 	/**
 	 * Postfix for message regions.
@@ -141,32 +142,13 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 
 	/**
 	 * Create a {@link Region} instance used for consuming {@link Message} objects.
-	 * This region registers a {@link AsyncMessageListener} as a cache listener which
-	 * triggers message consumption when a message is added to the region.
 	 *
 	 * @param name prefix of the message region name
 	 * @return region for consuming messages
 	 */
 	private Region<MessageKey, Message<?>> createConsumerMessageRegion(String name)  {
 		RegionFactory<MessageKey, Message<?>> regionFactory = this.cache.createRegionFactory(RegionShortcut.PARTITION);
-		return regionFactory.addAsyncEventQueueId(name + QUEUE_POSTFIX).create(name + MESSAGES_POSTFIX);
-	}
-
-	/**
-	 * Create a {@link AsyncEventQueue} for passing messages to the provided
-	 * {@link AsyncMessageListener}.
-	 *
-	 * @param name prefix of the event queue name
-	 * @param messageListener message listener invoked when an event is added to the queue
-	 * @return queue for processing region events
-	 */
-	private AsyncEventQueue createAsyncEventQueue(String name, AsyncMessageListener messageListener) {
-		AsyncEventQueueFactory queueFactory = this.cache.createAsyncEventQueueFactory();
-		queueFactory.setPersistent(false);
-		queueFactory.setParallel(false);
-		queueFactory.setBatchSize(this.batchSize);
-		String queueId = name + QUEUE_POSTFIX;
-		return queueFactory.create(queueId, messageListener);
+		return regionFactory.create(name + MESSAGES_POSTFIX);
 	}
 
 	/**
@@ -230,10 +212,24 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 			group = "default";
 		}
 		String messageRegionName = formatMessageRegionName(name, group);
-		AsyncMessageListener messageListener = new AsyncMessageListener(inboundBindTarget);
-		createAsyncEventQueue(messageRegionName, messageListener);
-		this.regionMap.put(name, createConsumerMessageRegion(messageRegionName));
+
+		Region<MessageKey, Message<?>> messageRegion = createConsumerMessageRegion(messageRegionName);
+		/* todo: make configurable */
+		AsyncEventQueueFactory queueFactory = this.cache.createAsyncEventQueueFactory();
+		queueFactory.setPersistent(false);
+		queueFactory.setParallel(false);
+		queueFactory.setBatchSize(this.batchSize);
+
+		AsyncEventListeningMessageProducer messageProducer =
+				new AsyncEventListeningMessageProducer(messageRegion, queueFactory);
+		messageProducer.setOutputChannel(inboundBindTarget);
+		messageProducer.setExpressionPayload(parser.parseExpression("deserializedValue"));
+		messageProducer.setBeanFactory(this.applicationContext);
+		messageProducer.afterPropertiesSet();
+
+		this.regionMap.put(name, messageRegion);
 		addConsumerGroup(name, group);
+		messageProducer.start();
 	}
 
 	@Override
@@ -306,47 +302,6 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
-	}
-
-
-	/**
-	 * Implementation of {@link AsyncEventListener} that passes {@link Message}s
-	 * to a {@link MessageChannel}.
-	 */
-	private static class AsyncMessageListener implements AsyncEventListener {
-
-		private final MessageChannel messageChannel;
-
-		public AsyncMessageListener(MessageChannel messageChannel) {
-			this.messageChannel = messageChannel;
-		}
-
-		@Override
-		public boolean processEvents(List<AsyncEvent> events) {
-			logger.trace("Received {} events", events.size());
-			logger.trace("Events: {}", events);
-			for (AsyncEvent event : events) {
-				if (event.getOperation() == Operation.CREATE
-						|| event.getOperation() == Operation.PUTALL_CREATE) {
-					MessageKey key = (MessageKey) event.getKey();
-					Message<?> message = (Message<?>) event.getDeserializedValue();
-					try {
-						this.messageChannel.send(message);
-						event.getRegion().remove(key);
-					}
-					catch (Exception e) {
-						logger.error("Exception processing message", e);
-						// todo: add retry logic
-						// todo: add un-delivered messages to a "dead letter" region
-					}
-				}
-			}
-			return true;
-		}
-
-		@Override
-		public void close() {
-		}
 	}
 
 }

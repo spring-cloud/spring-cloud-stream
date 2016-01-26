@@ -112,8 +112,9 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 	 */
 	private Region<MessageKey, Message<?>> createProducerMessageRegion(String name) {
 		RegionFactory<MessageKey, Message<?>> factory = this.cache.createRegionFactory(RegionShortcut.PARTITION_PROXY);
-		return factory.addAsyncEventQueueId(name + GemfireMessageChannelBinder.QUEUE_POSTFIX)
-				.create(name + GemfireMessageChannelBinder.MESSAGES_POSTFIX);
+		String regionName = name + GemfireMessageChannelBinder.MESSAGES_POSTFIX;
+		return factory.addAsyncEventQueueId(regionName + GemfireMessageChannelBinder.QUEUE_POSTFIX)
+				.create(regionName);
 	}
 
 	@Override
