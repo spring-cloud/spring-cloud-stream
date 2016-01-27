@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.tuple.spel;
 
+import org.springframework.cloud.stream.tuple.WritableTuple;
 import org.springframework.expression.AccessException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.PropertyAccessor;
@@ -24,15 +25,16 @@ import org.springframework.cloud.stream.tuple.Tuple;
 
 /**
  * A {@link PropertyAccessor} implementation that enables reading of {@link Tuple} values using dot notation within SpEL
- * expressions. Writing is not supported since {@link Tuple}s are immutable.
+ * expressions.
  * 
  * @author Mark Fisher
+ * @author Eric Bottard
  */
 public class TuplePropertyAccessor implements PropertyAccessor {
 
 	@Override
 	public Class<?>[] getSpecificTargetClasses() {
-		return new Class<?>[] { Tuple.class };
+		return new Class<?>[] { Tuple.class, WritableTuple.class};
 	}
 
 	@Override
@@ -85,12 +87,18 @@ public class TuplePropertyAccessor implements PropertyAccessor {
 
 	@Override
 	public boolean canWrite(EvaluationContext context, Object target, String name) throws AccessException {
-		return false;
+		return target instanceof WritableTuple;
 	}
 
 	@Override
 	public void write(EvaluationContext context, Object target, String name, Object newValue) throws AccessException {
-		throw new UnsupportedOperationException("Tuple is immutable");
+		WritableTuple tuple = (WritableTuple) target;
+		Integer index = maybeIndex(name, tuple);
+		if (index != null) {
+			tuple.setValue(index, newValue);
+		} else {
+			tuple.setValue(name, newValue);
+		}
 	}
 
 	/**

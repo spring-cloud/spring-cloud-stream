@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,12 @@ import org.springframework.core.convert.ConversionFailedException;
  * Data structure that stores a fixed number of ordered key-value pairs and adds convenience methods to access values in
  * a type-safe manner.
  * 
- * The structure is immutable once created and values to not need to be of the same type. When accessing values,
+ * Values do not need to be of the same type. When accessing values,
  * Spring's type conversion system is used to convert the value type to the requested type. The type conversion system
  * is extensible.
  * 
- * Tuples are created using the TupleBuilder class.
+ * This interface only allows querying properties. Concrete Tuples can also implement {@link WritableTuple} to allow
+ * mutation. Tuples are created using the TupleBuilder class.
  * 
  * @author Mark Pollack
  * 

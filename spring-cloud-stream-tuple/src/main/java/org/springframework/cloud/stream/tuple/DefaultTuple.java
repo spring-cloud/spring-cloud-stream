@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,13 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
- * Default implementation of Tuple interface
+ * Default implementation of Tuple interface.
+ *
  * @author Mark Pollack
  * @author David Turanski
  * @author Michael Minella
  */
-public class DefaultTuple implements Tuple {
+public class DefaultTuple implements WritableTuple {
 
 	private List<String> names;
 
@@ -601,6 +602,26 @@ public class DefaultTuple implements Tuple {
 	protected int indexOf(String name) {
 		return names.indexOf(name);
 	}
+
+	@Override
+	public synchronized void setValue(int index, Object value) {
+		if (index < 0 || index >= size()) {
+			throw new IndexOutOfBoundsException();
+		}
+		values.set(index, value);
+	}
+
+	@Override
+	public synchronized void setValue(String name, Object value) {
+		int index = indexOf(name);
+		if (index != -1) {
+			setValue(index, value);
+		} else {
+			names.add(name);
+			values.add(value);
+		}
+	}
+
 
 	/**
 	 * @param tupleToStringConverter used to convert a {@link Tuple} to a String
