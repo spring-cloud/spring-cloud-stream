@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import org.junit.Test;
+
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -186,8 +187,8 @@ public class BinderFactoryConfigurationTests {
 		Binder defaultBinder = binderFactory.getBinder(null);
 		assertThat(defaultBinder, is(binder2));
 	}
-
-	private static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
+	
+	public static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
 																		  String... properties)
 			throws IOException {
 		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ?

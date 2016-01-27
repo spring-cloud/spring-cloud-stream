@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package org.springframework.cloud.stream.binder.rabbit.config;
 
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.RabbitHealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.cloud.CloudAutoConfiguration;
@@ -66,5 +69,11 @@ public class RabbitServiceAutoConfiguration {
 	@Profile("!cloud")
 	@Import(RabbitAutoConfiguration.class)
 	protected static class NoCloudConfig {
+
+	}
+
+	@Bean
+	public HealthIndicator binderHealthIndicator(RabbitTemplate rabbitTemplate) {
+		return new RabbitHealthIndicator(rabbitTemplate);
 	}
 }

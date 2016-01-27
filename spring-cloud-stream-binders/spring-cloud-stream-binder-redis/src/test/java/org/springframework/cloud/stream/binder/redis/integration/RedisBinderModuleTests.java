@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,17 @@
 
 package org.springframework.cloud.stream.binder.redis.integration;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.collection.IsMapContaining.hasKey;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.ClassRule;
@@ -31,6 +35,9 @@ import org.mockito.Mockito;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.health.CompositeHealthIndicator;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
@@ -65,7 +72,7 @@ public class RedisBinderModuleTests {
 
 	@Test
 	public void testParentConnectionFactoryInheritedByDefault() {
-		context = SpringApplication.run(SimpleProcessor.class);
+		context = SpringApplication.run(SimpleProcessor.class, "--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RedisMessageChannelBinder.class));
@@ -75,6 +82,15 @@ public class RedisBinderModuleTests {
 		assertThat(binderConnectionFactory, instanceOf(RedisConnectionFactory.class));
 		RedisConnectionFactory connectionFactory = context.getBean(RedisConnectionFactory.class);
 		assertThat(binderConnectionFactory, is(connectionFactory));
+		CompositeHealthIndicator bindersHealthIndicator =
+				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		assertNotNull(bindersHealthIndicator);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		@SuppressWarnings("unchecked")
+		Map<String,HealthIndicator> healthIndicators =
+				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
+		assertThat(healthIndicators, hasKey("redis"));
+		assertThat(healthIndicators.get("redis").health().getStatus(), equalTo(Status.UP));
 	}
 
 	@Test
@@ -89,6 +105,15 @@ public class RedisBinderModuleTests {
 		assertThat(binderConnectionFactory, is(MOCK_CONNECTION_FACTORY));
 		RedisConnectionFactory connectionFactory = context.getBean(RedisConnectionFactory.class);
 		assertThat(binderConnectionFactory, is(connectionFactory));
+		CompositeHealthIndicator bindersHealthIndicator =
+				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		assertNotNull(bindersHealthIndicator);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		@SuppressWarnings("unchecked")
+		Map<String,HealthIndicator> healthIndicators =
+				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
+		assertThat(healthIndicators, hasKey("redis"));
+		assertThat(healthIndicators.get("redis").health().getStatus(), equalTo(Status.UP));
 	}
 
 	@Test
@@ -107,6 +132,15 @@ public class RedisBinderModuleTests {
 				(RedisConnectionFactory) binderFieldAccessor.getPropertyValue("connectionFactory");
 		RedisConnectionFactory connectionFactory = context.getBean(RedisConnectionFactory.class);
 		assertThat(binderConnectionFactory, not(is(connectionFactory)));
+		CompositeHealthIndicator bindersHealthIndicator =
+				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		assertNotNull(bindersHealthIndicator);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		@SuppressWarnings("unchecked")
+		Map<String,HealthIndicator> healthIndicators =
+				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
+		assertThat(healthIndicators, hasKey("custom"));
+		assertThat(healthIndicators.get("custom").health().getStatus(), equalTo(Status.UP));
 	}
 
 	@EnableBinding(Processor.class)

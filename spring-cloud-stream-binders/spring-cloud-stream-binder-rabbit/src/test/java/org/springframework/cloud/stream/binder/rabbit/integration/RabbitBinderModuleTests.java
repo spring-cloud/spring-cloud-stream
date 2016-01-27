@@ -16,13 +16,17 @@
 
 package org.springframework.cloud.stream.binder.rabbit.integration;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.collection.IsMapContaining.hasKey;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.ClassRule;
@@ -34,6 +38,9 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.health.CompositeHealthIndicator;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
@@ -73,7 +80,7 @@ public class RabbitBinderModuleTests {
 
 	@Test
 	public void testParentConnectionFactoryInheritedByDefault() {
-		context = SpringApplication.run(SimpleProcessor.class);
+		context = SpringApplication.run(SimpleProcessor.class, "--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
@@ -83,11 +90,20 @@ public class RabbitBinderModuleTests {
 		assertThat(binderConnectionFactory, instanceOf(CachingConnectionFactory.class));
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
 		assertThat(binderConnectionFactory, is(connectionFactory));
+		CompositeHealthIndicator bindersHealthIndicator =
+				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		assertNotNull(bindersHealthIndicator);
+		@SuppressWarnings("unchecked")
+		Map<String,HealthIndicator> healthIndicators =
+				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
+		assertThat(healthIndicators, hasKey("rabbit"));
+		assertThat(healthIndicators.get("rabbit").health().getStatus(), equalTo(Status.UP));
 	}
 
 	@Test
 	public void testParentConnectionFactoryInheritedIfOverridden() {
-		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run();
+		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run("--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder<?> binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
@@ -97,6 +113,16 @@ public class RabbitBinderModuleTests {
 		assertThat(binderConnectionFactory, is(MOCK_CONNECTION_FACTORY));
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
 		assertThat(binderConnectionFactory, is(connectionFactory));
+		CompositeHealthIndicator bindersHealthIndicator =
+				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		assertNotNull(bindersHealthIndicator);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		@SuppressWarnings("unchecked")
+		Map<String,HealthIndicator> healthIndicators =
+				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
+		assertThat(healthIndicators, hasKey("rabbit"));
+		// mock connection factory behaves as if down
+		assertThat(healthIndicators.get("rabbit").health().getStatus(), equalTo(Status.DOWN));
 	}
 
 	@Test
@@ -106,6 +132,7 @@ public class RabbitBinderModuleTests {
 		params.add("--spring.cloud.stream.output.binder=custom");
 		params.add("--spring.cloud.stream.binders.custom.type=rabbit");
 		params.add("--spring.cloud.stream.binders.custom.environment.foo=bar");
+		params.add("--server.port=0");
 		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[params.size()]));
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder<?> binder = binderFactory.getBinder(null);
@@ -115,6 +142,15 @@ public class RabbitBinderModuleTests {
 				(ConnectionFactory) binderFieldAccessor.getPropertyValue("connectionFactory");
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
 		assertThat(binderConnectionFactory, not(is(connectionFactory)));
+		CompositeHealthIndicator bindersHealthIndicator =
+				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		assertNotNull(bindersHealthIndicator);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		@SuppressWarnings("unchecked")
+		Map<String,HealthIndicator> healthIndicators =
+				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
+		assertThat(healthIndicators, hasKey("custom"));
+		assertThat(healthIndicators.get("custom").health().getStatus(), equalTo(Status.UP));
 	}
 
 	@EnableBinding(Processor.class)
