@@ -47,13 +47,15 @@ public class TupleBuilder {
 
 	private List<Object> values = new ArrayList<>();
 
-	private static final ConfigurableConversionService defaultConversionService;
+	private final boolean mutable;
 
 	private ConfigurableConversionService customConversionService = null;
 
 	private final static String DEFAULT_DATE_PATTERN = "yyyy-MM-dd";
 
 	private final static Locale DEFAULT_LOCALE = Locale.US;
+
+	private static final ConfigurableConversionService defaultConversionService;
 
 	private static Converter<Tuple, String> tupleToStringConverter = new TupleToJsonStringConverter();
 
@@ -68,8 +70,22 @@ public class TupleBuilder {
 		defaultConversionService.addConverter(new StringToDateConverter(dateFormat));
 	}
 
+	/**
+	 * Return a new builder that will create immutable Tuples.
+	 */
+	public static TupleBuilder mutableTuple() {
+		return new TupleBuilder(true);
+	}
+
+	/**
+	 * Return a new builder that will create {@link MutableTuple}.
+	 */
 	public static TupleBuilder tuple() {
-		return new TupleBuilder();
+		return new TupleBuilder(false);
+	}
+
+	private TupleBuilder(boolean mutable) {
+		this.mutable = mutable;
 	}
 
 	public Tuple of(String k1, Object v1) {
@@ -161,13 +177,10 @@ public class TupleBuilder {
 	protected Tuple newTuple(List<String> names, List<Object> values) {
 		DefaultTuple tuple;
 
-		if (customConversionService != null) {
-			tuple = new DefaultTuple(names, values, customConversionService);
-		}
-		else {
-			tuple = new DefaultTuple(names, values, defaultConversionService);
-		}
-
+		ConfigurableConversionService conversionService = customConversionService != null ? customConversionService : defaultConversionService;
+		tuple = mutable
+				? new DefaultMutableTuple(names, values, conversionService)
+				: new DefaultTuple(names, values, conversionService);
 		tuple.setTupleToStringConverter(tupleToStringConverter);
 		return tuple;
 	}
