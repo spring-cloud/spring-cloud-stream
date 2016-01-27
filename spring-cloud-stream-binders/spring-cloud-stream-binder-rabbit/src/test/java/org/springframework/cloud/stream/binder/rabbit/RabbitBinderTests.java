@@ -62,6 +62,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
+import org.springframework.context.ApplicationContext;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -330,6 +331,13 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertTrue(n < 100);
 
 		binder.unbind(consumerBinding);
+
+		ApplicationContext context = TestUtils.getPropertyValue(binder, "binder.autoDeclareContext",
+				ApplicationContext.class);
+		assertFalse(context.containsBean(TEST_PREFIX + "dlqtest.default.binding"));
+		assertFalse(context.containsBean(TEST_PREFIX + "dlqtest.default"));
+		assertFalse(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq.binding"));
+		assertFalse(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq"));
 	}
 
 	@Test
@@ -702,7 +710,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		binder.unbind(pubSubProducerBinding);
 		binder.unbind(nonDurableConsumerBinding);
 		binder.unbind(durableConsumerBinding);
-		
+
 		binder.cleanup();
 
 		proxy.stop();

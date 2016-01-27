@@ -26,9 +26,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Envelope;
 import org.aopalliance.aop.Advice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,6 +92,10 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Envelope;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
@@ -716,7 +717,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	@Override
 	protected void afterUnbind(Binding<MessageChannel> binding) {
 		if (Binding.Type.consumer.equals(binding.getType())) {
-			cleanAutoDeclareContext(binding.getName());
+			cleanAutoDeclareContext(binding);
 		}
 	}
 
@@ -728,13 +729,25 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		}
 	}
 
-	private void cleanAutoDeclareContext(String name) {
+	private void cleanAutoDeclareContext(Binding<MessageChannel> binding) {
+		Assert.isTrue(binding.getPropertiesAccessor() instanceof RabbitPropertiesAccessor,
+				"Binding was not created by this binder");
+		String prefix = ((RabbitPropertiesAccessor) binding.getPropertiesAccessor()).getPrefix(this.defaultPrefix);
+		String name = binding.getName();
 		synchronized(this.autoDeclareContext) {
-			if (this.autoDeclareContext.containsBean(name)) {
-				ConfigurableListableBeanFactory beanFactory = this.autoDeclareContext.getBeanFactory();
-				if (beanFactory instanceof DefaultListableBeanFactory) {
-					((DefaultListableBeanFactory) beanFactory).destroySingleton(name);
-				}
+			removeSingleton(applyPrefix(prefix,name) + ".binding");
+			removeSingleton(applyPrefix(prefix,name));
+			String dlq = applyPrefix(prefix,name) + ".dlq";
+			removeSingleton(dlq + ".binding");
+			removeSingleton(dlq);
+		}
+	}
+
+	private void removeSingleton(String name) {
+		if (this.autoDeclareContext.containsBean(name)) {
+			ConfigurableListableBeanFactory beanFactory = this.autoDeclareContext.getBeanFactory();
+			if (beanFactory instanceof DefaultListableBeanFactory) {
+				((DefaultListableBeanFactory) beanFactory).destroySingleton(name);
 			}
 		}
 	}
