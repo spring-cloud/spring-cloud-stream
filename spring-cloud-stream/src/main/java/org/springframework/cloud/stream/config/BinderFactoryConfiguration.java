@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator;
+import org.springframework.boot.actuate.health.CompositeHealthIndicator;
+import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -112,6 +115,13 @@ public class BinderFactoryConfiguration {
 			throw new BeanCreationException("Cannot create binder factory:", e);
 		}
 		return new DefaultBinderTypeRegistry(binderTypes);
+	}
+
+	@Bean
+	@ConditionalOnEnabledHealthIndicator("binders")
+	@ConditionalOnMissingBean(name = "bindersHealthIndicator")
+	public CompositeHealthIndicator bindersHealthIndicator() {
+		return new CompositeHealthIndicator(new OrderedHealthAggregator());
 	}
 
 

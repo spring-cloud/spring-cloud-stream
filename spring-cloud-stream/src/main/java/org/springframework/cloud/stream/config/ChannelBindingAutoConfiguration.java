@@ -19,6 +19,11 @@ package org.springframework.cloud.stream.config;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator;
+import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
+import org.springframework.boot.actuate.health.CompositeHealthIndicator;
+import org.springframework.boot.actuate.health.OrderedHealthAggregator;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -40,6 +45,7 @@ import org.springframework.messaging.MessageChannel;
 @Configuration
 @ConditionalOnBean(ChannelBindingService.class)
 @EnableConfigurationProperties(DefaultPollerProperties.class)
+@AutoConfigureBefore(EndpointAutoConfiguration.class)
 public class ChannelBindingAutoConfiguration {
 
 	@Autowired

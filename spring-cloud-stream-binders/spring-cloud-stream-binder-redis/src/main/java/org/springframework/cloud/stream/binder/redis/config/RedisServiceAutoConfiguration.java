@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.redis.config;
 
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.RedisHealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.cloud.CloudAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -66,4 +68,8 @@ public class RedisServiceAutoConfiguration {
 	protected static class NoCloudConfig {
 	}
 
+	@Bean
+	public HealthIndicator binderHealthIndicator(RedisConnectionFactory redisConnectionFactory) {
+		return new RedisHealthIndicator(redisConnectionFactory);
+	}
 }

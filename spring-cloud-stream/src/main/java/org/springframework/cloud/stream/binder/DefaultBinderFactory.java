@@ -17,12 +17,20 @@
 package org.springframework.cloud.stream.binder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner.Mode;
+import org.springframework.boot.actuate.health.AbstractHealthIndicator;
+import org.springframework.boot.actuate.health.CompositeHealthIndicator;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -47,6 +55,8 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 
 	private volatile String defaultBinder;
 
+	private volatile CompositeHealthIndicator bindersHealthIndicator;
+
 	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations) {
 		this.binderConfigurations = new HashMap<>(binderConfigurations);
 	}
@@ -55,6 +65,11 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		Assert.isInstanceOf(ConfigurableApplicationContext.class, applicationContext);
 		this.context = (ConfigurableApplicationContext) applicationContext;
+	}
+
+	@Autowired(required = false)
+	public void setBindersHealthIndicator(CompositeHealthIndicator bindersHealthIndicator) {
+		this.bindersHealthIndicator = bindersHealthIndicator;
 	}
 
 	public void setDefaultBinder(String defaultBinder) {
@@ -115,16 +130,19 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				defaultDomain += ".";
 			}
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
+			List<Class<?>> configurationClasses =
+					new ArrayList<>(Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
 			SpringApplicationBuilder springApplicationBuilder =
 					new SpringApplicationBuilder()
-							.sources(binderConfiguration.getBinderType().getConfigurationClasses())
+							.sources(configurationClasses.toArray(new Class<?>[]{}))
 							.bannerMode(Mode.OFF)
 							.web(false);
 			// If the environment is not customized and a main context is available, we will set the latter as parent.
 			// This ensures that the defaults and user-defined customizations (e.g. custom connection factory beans)
 			// are propagated to the binder context. If the environment is customized, then the binder context should
 			// not inherit any beans from the parent
-			if (binderProperties.isEmpty() && context != null) {
+			boolean useApplicationContextAsParent = binderProperties.isEmpty() && context != null;
+			if (useApplicationContextAsParent) {
 				springApplicationBuilder.parent(context);
 			}
 			else if (environment != null && binderConfiguration.isInheritEnvironment()) {
@@ -136,6 +154,15 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 					springApplicationBuilder.run(args.toArray(new String[args.size()]));
 			@SuppressWarnings("unchecked")
 			Binder<T> binder = binderProducingContext.getBean(Binder.class);
+			if (bindersHealthIndicator != null) {
+				OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
+				Map<String, HealthIndicator> indicators = binderProducingContext.getBeansOfType(HealthIndicator.class);
+				// if there are no health indicators in the child context, we just mark the binder's health as unknown
+				// this can happen due to the fact that configuration is inherited
+				HealthIndicator binderHealthIndicator =
+						indicators.isEmpty() ? new DefaultHealthIndicator() : new CompositeHealthIndicator(healthAggregator, indicators);
+				bindersHealthIndicator.addHealthIndicator(configurationName, binderHealthIndicator);
+			}
 			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder<>(binder, binderProducingContext));
 		}
 		return this.binderInstanceCache.get(configurationName).getBinderInstance();
@@ -163,6 +190,14 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 
 		public ConfigurableApplicationContext getBinderContext() {
 			return this.binderContext;
+		}
+	}
+
+	private static class DefaultHealthIndicator extends AbstractHealthIndicator {
+
+		@Override
+		protected void doHealthCheck(Health.Builder builder) throws Exception {
+			builder.unknown();
 		}
 	}
 }
