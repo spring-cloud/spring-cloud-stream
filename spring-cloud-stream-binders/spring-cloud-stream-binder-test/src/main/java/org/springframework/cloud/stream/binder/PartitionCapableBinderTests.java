@@ -21,6 +21,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -28,6 +30,7 @@ import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.hamcrest.CustomMatcher;
 import org.hamcrest.Matcher;
@@ -50,6 +53,56 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Mark Fisher
  */
 abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAnonymousGroup() throws Exception {
+		Binder<MessageChannel> binder = getBinder();
+		DirectChannel output = new DirectChannel();
+		Properties properties = new Properties();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("defaultGroup.0", output, properties);
+
+		QueueChannel input1 = new QueueChannel();
+		Binding<MessageChannel> binding1 = binder.bindConsumer("defaultGroup.0", null, input1, properties);
+
+		QueueChannel input2 = new QueueChannel();
+		Binding<MessageChannel> binding2 = binder.bindConsumer("defaultGroup.0", null, input2, properties);
+
+		String testPayload1 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload1.getBytes()));
+
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage1, not(nullValue()));
+		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload1));
+
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) input2.receive(1000);
+		assertThat(receivedMessage2, not(nullValue()));
+		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload1));
+
+		binder.unbind(binding2);
+
+		String testPayload2 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload2.getBytes()));
+
+		binding2 = binder.bindConsumer("defaultGroup.0", null, input2, properties);
+		String testPayload3 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload3.getBytes()));
+
+		receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage1, not(nullValue()));
+		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload2));
+		receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage1, not(nullValue()));
+		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload3));
+
+		receivedMessage2 = (Message<byte[]>) input2.receive(1000);
+		assertThat(receivedMessage2, not(nullValue()));
+		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload3));
+
+		binder.unbind(producerBinding);
+		binder.unbind(binding1);
+		binder.unbind(binding2);
+	}
 
 	@Test
 	public void testBadProperties() throws Exception {

@@ -28,14 +28,15 @@ import org.springframework.util.StringUtils;
  * are defined here.
  *
  * @author Gary Russell
+ * @author Marius Bogoevici
  */
-public abstract class AbstractBindingPropertiesAccessor {
+public class DefaultBindingPropertiesAccessor {
 
 	private static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
 	private final Properties properties;
 
-	public AbstractBindingPropertiesAccessor(Properties properties) {
+	public DefaultBindingPropertiesAccessor(Properties properties) {
 		if (properties == null) {
 			this.properties = new Properties();
 		}

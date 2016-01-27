@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binder.local;
 import java.util.Collection;
 import java.util.Properties;
 
-import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
+import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.integration.channel.DirectChannel;
@@ -248,7 +248,7 @@ public class LocalMessageChannelBinder extends MessageChannelBinderSupport {
 		return getApplicationContext().getBean(name, requiredType);
 	}
 
-	private static class LocalBindingPropertiesAccessor extends AbstractBindingPropertiesAccessor {
+	private static class LocalBindingPropertiesAccessor extends DefaultBindingPropertiesAccessor {
 
 		public LocalBindingPropertiesAccessor(Properties properties) {
 			super(properties);

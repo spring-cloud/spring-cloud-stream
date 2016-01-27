@@ -23,9 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
+import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
@@ -136,6 +137,9 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	@Override
 	protected Binding<MessageChannel> doBindConsumer(final String name, String group, MessageChannel moduleInputChannel, Properties properties) {
+		if (!StringUtils.hasText(group)) {
+			group = "anonymous." + UUID.randomUUID().toString();
+		}
 		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
 		String queueName = groupedName(name, group);
 		validateConsumerProperties(queueName, properties, SUPPORTED_CONSUMER_PROPERTIES);
@@ -368,7 +372,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 
 	}
 
-	private static class RedisPropertiesAccessor extends AbstractBindingPropertiesAccessor {
+	private static class RedisPropertiesAccessor extends DefaultBindingPropertiesAccessor {
 
 		public RedisPropertiesAccessor(Properties properties) {
 			super(properties);

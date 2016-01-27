@@ -83,11 +83,6 @@ public abstract class MessageChannelBinderSupport
 	protected static final String PARTITION_HEADER = "partition";
 
 	/**
-	 * Default group name (used if <code>null</code> or empty String is provided).
-	 */
-	protected static final String DEFAULT_CONSUMER_GROUP = "default";
-
-	/**
 	 * The delimiter between a group and index when constructing a binder consumer/producer.
 	 */
 	private static final String GROUP_INDEX_DELIMITER = ".";
@@ -206,7 +201,7 @@ public abstract class MessageChannelBinderSupport
 
 	protected volatile boolean defaultCompress = false;
 
-	protected volatile boolean defaultDurableSubscription = true;
+	protected volatile boolean defaultDurableSubscription = false;
 
 	// Payload type cache
 	private volatile Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
@@ -368,7 +363,13 @@ public abstract class MessageChannelBinderSupport
 
 	@Override
 	public final Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
-		group = (StringUtils.hasText(group)) ? group : DEFAULT_CONSUMER_GROUP;
+		DefaultBindingPropertiesAccessor accessor = new DefaultBindingPropertiesAccessor(properties);
+		if (StringUtils.isEmpty(group)) {
+			Assert.isTrue(!accessor.getProperty(BinderPropertyKeys.DURABLE, defaultDurableSubscription),
+					"A consumer group is required for a durable subscription");
+			Assert.isTrue(accessor.getPartitionIndex() < 0,
+					"A consumer group is required for a partitioned subscription");
+		}
 		return doBindConsumer(name, group, inputChannel, properties);
 	}
 
@@ -692,7 +693,7 @@ public abstract class MessageChannelBinderSupport
 	 * @param properties The properties.
 	 * @return The retry template, or null if retry is not enabled.
 	 */
-	protected RetryTemplate buildRetryTemplateIfRetryEnabled(AbstractBindingPropertiesAccessor properties) {
+	protected RetryTemplate buildRetryTemplateIfRetryEnabled(DefaultBindingPropertiesAccessor properties) {
 		int maxAttempts = properties.getMaxAttempts(this.defaultMaxAttempts);
 		if (maxAttempts > 1) {
 			RetryTemplate template = new RetryTemplate();
@@ -740,7 +741,7 @@ public abstract class MessageChannelBinderSupport
 
 		private final int partitionCount;
 
-		public PartitioningMetadata(AbstractBindingPropertiesAccessor properties, int partitionCount) {
+		public PartitioningMetadata(DefaultBindingPropertiesAccessor properties, int partitionCount) {
 			this.partitionCount = partitionCount;
 			this.partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
 			this.partitionKeyExpression = properties.getPartitionKeyExpression();

@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -39,9 +37,13 @@ public class BindingProperties {
 	private String destination;
 
 	/**
-	 * Unique name that the binding belongs to.
+	 * Unique name that the binding belongs to (applies to consumers only). Multiple consumers within the same group
+	 * share the subscription. A null or empty String value indicates an anonymous group that is not shared.
+	 *
+	 * @see org.springframework.cloud.stream.binder.Binder#bindConsumer(java.lang.String, java.lang.String,
+	 * java.lang.Object, java.util.Properties)
 	 */
-	private String group = UUID.randomUUID().toString();
+	private String group;
 
 	// Properties for both inbound/outbound
 

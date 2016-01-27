@@ -19,6 +19,9 @@ package org.springframework.cloud.stream.binding;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
@@ -37,6 +40,8 @@ import org.springframework.messaging.MessageChannel;
  * @author Gary Russell
  */
 public class ChannelBindingService {
+
+	private final Log log = LogFactory.getLog(ChannelBindingService.class);
 
 	private BinderFactory<MessageChannel> binderFactory;
 
@@ -72,12 +77,24 @@ public class ChannelBindingService {
 
 	public void unbindConsumers(String inputChannelName) {
 		Binder<MessageChannel> binder = getBinderForChannel(inputChannelName);
-		binder.unbind(this.consumerBindings.remove(inputChannelName));
+		Binding<MessageChannel> binding = this.consumerBindings.remove(inputChannelName);
+		if (binding != null) {
+			binder.unbind(binding);
+		}
+		else if (log.isWarnEnabled()) {
+			log.warn("Trying to unbind channel '" + inputChannelName + "', but no binding found.");
+		}
 	}
 
 	public void unbindProducers(String outputChannelName) {
 		Binder<MessageChannel> binder = getBinderForChannel(outputChannelName);
-		binder.unbind(this.producerBindings.remove(outputChannelName));
+		Binding<MessageChannel> binding = this.producerBindings.remove(outputChannelName);
+		if (binding != null) {
+			binder.unbind(binding);
+		}
+		else if (log.isWarnEnabled()) {
+			log.warn("Trying to unbind channel '" + outputChannelName + "', but no binding found.");
+		}
 	}
 
 	private Binder<MessageChannel> getBinderForChannel(String channelName) {

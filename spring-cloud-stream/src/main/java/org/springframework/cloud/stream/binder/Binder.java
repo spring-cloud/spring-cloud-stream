@@ -35,7 +35,8 @@ public interface Binder<T> {
 	 * Bind a message consumer on a channel
 	 * @param name the logical identity of the message source
 	 * @param group the consumer group to which this consumer belongs - subscriptions are shared among consumers
-	 * in the same group (if <code>null</code> or empty String, the "default" group will be used)
+	 * in the same group (a <code>null</code> or empty String, must be treated as an anonymous group that doesn't share
+	 * the subscription with any other consumer)
 	 * @param inboundBindTarget the module interface to be bound as a consumer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
 	 */

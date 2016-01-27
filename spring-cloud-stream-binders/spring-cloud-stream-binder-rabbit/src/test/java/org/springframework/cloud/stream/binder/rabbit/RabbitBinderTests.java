@@ -138,7 +138,8 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertEquals(AcknowledgeMode.AUTO, container.getAcknowledgeMode());
-		assertEquals(RabbitMessageChannelBinder.DEFAULT_RABBIT_PREFIX + "props.0.default", container.getQueueNames()[0]);
+		assertThat(container.getQueueNames()[0],
+				startsWith(RabbitMessageChannelBinder.DEFAULT_RABBIT_PREFIX));
 		assertTrue(TestUtils.getPropertyValue(container, "transactional", Boolean.class));
 		assertEquals(1, TestUtils.getPropertyValue(container, "concurrentConsumers"));
 		assertNull(TestUtils.getPropertyValue(container, "maxConcurrentConsumers"));
@@ -301,6 +302,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("autoBindDLQ", "true");
 		properties.put("maxAttempts", "1"); // disable retry
 		properties.put("requeue", "false");
+		properties.put("durableSubscription","true");
 		DirectChannel moduleInputChannel = new DirectChannel();
 		moduleInputChannel.setBeanName("dlqTest");
 		moduleInputChannel.subscribe(new MessageHandler() {
@@ -311,7 +313,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 			}
 
 		});
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("dlqtest", null, moduleInputChannel, properties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("dlqtest", "default", moduleInputChannel, properties);
 
 		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
 		template.convertAndSend("", TEST_PREFIX + "dlqtest.default", "foo");
@@ -339,15 +341,17 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("maxAttempts", "1"); // disable retry
 		properties.put("requeue", "false");
 		properties.put("partitionIndex", "0");
+		properties.put("durableSubscription","true");
 		DirectChannel input0 = new DirectChannel();
 		input0.setBeanName("test.input0DLQ");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.0", "dlqPartGrp", input0, properties);
-		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partDLQ.0", null, new QueueChannel(), properties);
+		Binding<MessageChannel> defaultConsumerBinding1 =
+				binder.bindConsumer("partDLQ.0", "default", new QueueChannel(), properties);
 		properties.put("partitionIndex", "1");
 		DirectChannel input1 = new DirectChannel();
 		input1.setBeanName("test.input1DLQ");
 		Binding<MessageChannel> input1Binding = binder.bindConsumer("partDLQ.0", "dlqPartGrp", input1, properties);
-		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partDLQ.0", null, new QueueChannel(), properties);
+		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partDLQ.0", "default", new QueueChannel(), properties);
 
 		properties.clear();
 		properties.put("prefix", "bindertest.");
@@ -434,15 +438,16 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("maxAttempts", "1"); // disable retry
 		properties.put("requeue", "false");
 		properties.put("partitionIndex", "0");
+		properties.put(BinderPropertyKeys.DURABLE,"true");
 		DirectChannel input0 = new DirectChannel();
 		input0.setBeanName("test.input0DLQ");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.1", "dlqPartGrp", input0, properties);
-		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partDLQ.1", null, new QueueChannel(), properties);
+		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partDLQ.1", "defaultConsumer", new QueueChannel(), properties);
 		properties.put("partitionIndex", "1");
 		DirectChannel input1 = new DirectChannel();
 		input1.setBeanName("test.input1DLQ");
 		Binding<MessageChannel> input1Binding = binder.bindConsumer("partDLQ.1", "dlqPartGrp", input1, properties);
-		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partDLQ.1", null, new QueueChannel(), properties);
+		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partDLQ.1", "defaultConsumer", new QueueChannel(), properties);
 
 		final CountDownLatch latch0 = new CountDownLatch(1);
 		input0.subscribe(new MessageHandler() {
@@ -516,6 +521,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("republishToDLQ", "true");
 		properties.put("maxAttempts", "1"); // disable retry
 		properties.put("requeue", "false");
+		properties.put("durableSubscription", "true");
 		DirectChannel moduleInputChannel = new DirectChannel();
 		moduleInputChannel.setBeanName("dlqPubTest");
 		moduleInputChannel.subscribe(new MessageHandler() {

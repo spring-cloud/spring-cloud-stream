@@ -69,10 +69,11 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel, Properties properties) {
-		this.queues.add(prefix(properties) + name + (group == null ? ".default" : "." + group));
+		if (group != null) {
+			this.queues.add(prefix(properties) + name + ("." + group));
+		}
 		this.exchanges.add(prefix(properties) + name);
 		return super.bindConsumer(name, group, moduleInputChannel, properties);
-
 	}
 
 	@Override

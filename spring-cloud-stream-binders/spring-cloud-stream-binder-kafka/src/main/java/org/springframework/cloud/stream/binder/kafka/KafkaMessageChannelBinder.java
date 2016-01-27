@@ -37,7 +37,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
+import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
@@ -448,7 +448,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		// but multiple instances of this binding will each get all messages
 		// PubSub consumers reset at the latest time, which allows them to receive only messages sent after
 		// they've been bound
-		String consumerGroup = group == null ? UUID.randomUUID().toString() : group;
+		String consumerGroup = group == null ? "anonymous." + UUID.randomUUID().toString() : group;
 		return createKafkaConsumer(name, inputChannel, properties, consumerGroup, OffsetRequest.LatestTime());
 	}
 
@@ -732,7 +732,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		}
 	}
 
-	private class KafkaPropertiesAccessor extends AbstractBindingPropertiesAccessor {
+	private class KafkaPropertiesAccessor extends DefaultBindingPropertiesAccessor {
 
 		public KafkaPropertiesAccessor(Properties properties) {
 			super(properties);

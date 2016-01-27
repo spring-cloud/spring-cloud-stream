@@ -21,17 +21,19 @@ import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.util.Assert;
 
 /**
- * Represents a binding between a channel and an adapter endpoint that connects via a Binder. The binding
+ * Represents a binding between an input or output and an adapter endpoint that connects via a Binder. The binding
  * could be for a consumer or a producer. A consumer binding represents a connection from an adapter to an
- * input channel. A producer binding represents a connection from an output channel to an adapter.
+ * input. A producer binding represents a connection from an output to an adapter.
  *
  * @author Jennifer Hickey
  * @author Mark Fisher
  * @author Gary Russell
+ * @author Marius Bogoevici
+ * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public class Binding<T> implements Lifecycle {
 
-	public static enum Type {
+	public enum Type {
 		producer, consumer
 	}
 
@@ -45,10 +47,10 @@ public class Binding<T> implements Lifecycle {
 
 	private final Type type;
 
-	private final AbstractBindingPropertiesAccessor properties;
+	private final DefaultBindingPropertiesAccessor properties;
 
 	private Binding(String name, String group, T target, AbstractEndpoint endpoint, Type type,
-			AbstractBindingPropertiesAccessor properties) {
+			DefaultBindingPropertiesAccessor properties) {
 		Assert.notNull(target, "target must not be null");
 		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
@@ -60,13 +62,13 @@ public class Binding<T> implements Lifecycle {
 	}
 
 	public static <T> Binding<T> forConsumer(String name, String group, AbstractEndpoint adapterFromBinder, T inputTarget,
-			AbstractBindingPropertiesAccessor properties) {
-		return new Binding<T>(name, group, inputTarget, adapterFromBinder, Type.consumer, properties);
+			DefaultBindingPropertiesAccessor properties) {
+		return new Binding<>(name, group, inputTarget, adapterFromBinder, Type.consumer, properties);
 	}
 
 	public static <T> Binding<T> forProducer(String name, T outputTarget, AbstractEndpoint adapterToBinder,
-			AbstractBindingPropertiesAccessor properties) {
-		return new Binding<T>(name, null, outputTarget, adapterToBinder, Type.producer, properties);
+			DefaultBindingPropertiesAccessor properties) {
+		return new Binding<>(name, null, outputTarget, adapterToBinder, Type.producer, properties);
 	}
 
 	public String getName() {
@@ -89,7 +91,7 @@ public class Binding<T> implements Lifecycle {
 		return type;
 	}
 
-	public AbstractBindingPropertiesAccessor getPropertiesAccessor() {
+	public DefaultBindingPropertiesAccessor getPropertiesAccessor() {
 		return properties;
 	}
 

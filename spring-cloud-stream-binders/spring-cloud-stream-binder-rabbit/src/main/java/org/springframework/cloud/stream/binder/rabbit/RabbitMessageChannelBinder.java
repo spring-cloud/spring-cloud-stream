@@ -26,12 +26,17 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Envelope;
 import org.aopalliance.aop.Advice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.amqp.AmqpConnectException;
+import org.springframework.amqp.UncategorizedAmqpException;
 import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
@@ -60,9 +65,9 @@ import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.context.Lifecycle;
@@ -91,10 +96,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Envelope;
-
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
  *
@@ -104,8 +105,12 @@ import com.rabbitmq.client.Envelope;
  * @author Gunnar Hillert
  * @author Ilayaperumal Gopinathan
  * @author David Turanski
+ * @author Marius Bogoevici
  */
 public class RabbitMessageChannelBinder extends MessageChannelBinderSupport implements DisposableBean {
+
+	public static final AnonymousQueue.Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR
+			= new AnonymousQueue.Base64UrlNamingStrategy("anonymous.");
 
 	private static final AcknowledgeMode DEFAULT_ACKNOWLEDGE_MODE = AcknowledgeMode.AUTO;
 
@@ -389,35 +394,44 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 
 	@Override
 	public Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
-		String baseQueueName = groupedName(name, group);
+		boolean anonymousConsumer = !StringUtils.hasText(group);
+		String baseQueueName = anonymousConsumer ? groupedName(name, ANONYMOUS_GROUP_NAME_GENERATOR.generateName())
+				: groupedName(name, group);
 		if (this.logger.isInfoEnabled()) {
 			this.logger.info("declaring queue for inbound: " + baseQueueName + ", bound to: " + name);
 		}
-		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
 		validateConsumerProperties(baseQueueName, properties, SUPPORTED_CONSUMER_PROPERTIES);
+		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
 		String prefix = accessor.getPrefix(this.defaultPrefix);
 		String exchangeName = applyPrefix(prefix, name);
 		TopicExchange exchange = new TopicExchange(exchangeName);
 		declareExchange(exchangeName, exchange);
 
 		String queueName = applyPrefix(prefix, baseQueueName);
-		int partitionIndex = accessor.getPartitionIndex();
-		if (partitionIndex >= 0) {
-			String partitionSuffix = "-" + partitionIndex;
-			queueName += partitionSuffix;
-		}
-
+		boolean partitioned = !anonymousConsumer && accessor.getPartitionIndex() >= 0;
+		boolean durable = !anonymousConsumer && accessor.isDurable(this.defaultDurableSubscription);
 		Queue queue;
-		boolean durable = accessor.isDurable(this.defaultDurableSubscription);
-		if (durable) {
-			queue = new Queue(queueName, true, false, false, queueArgs(accessor, queueName));
+
+		if (anonymousConsumer) {
+			queue = new Queue(queueName, false, true, true);
 		}
 		else {
-			queue = new Queue(queueName, false, false, true);
+			if (partitioned) {
+				String partitionSuffix = "-" + accessor.getPartitionIndex();
+				queueName += partitionSuffix;
+			}
+			if (durable) {
+				queue = new Queue(queueName, true, false, false, queueArgs(accessor, queueName));
+			}
+			else {
+				queue = new Queue(queueName, false, false, true);
+			}
 		}
+
 		declareQueue(queueName, queue);
-		if (partitionIndex >= 0) {
-			String bindingKey = String.format("%s-%d", name, partitionIndex);
+
+		if (partitioned) {
+			String bindingKey = String.format("%s-%d", name, accessor.getPartitionIndex());
 			declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(bindingKey));
 		}
 		else {
@@ -428,6 +442,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			autoBindDLQ(applyPrefix(prefix, baseQueueName), queueName, accessor);
 		}
 		return binding;
+
 	}
 
 	private Map<String, Object> queueArgs(RabbitPropertiesAccessor accessor, String queueName) {
@@ -658,6 +673,15 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 				logger.debug("Declaration of queue: " + queue.getName() + " deferred - connection not available");
 			}
 		}
+		catch (UncategorizedAmqpException e) {
+			if (e.getCause() instanceof NullPointerException) {
+				// Temporary fix for https://jira.spring.io/browse/AMQP-565
+				// TODO remove once Spring AMQP is upgraded beyond 1.5.4
+			}
+			else {
+				throw e;
+			}
+		}
 		addToAutoDeclareContext(beanName, queue);
 	}
 
@@ -692,7 +716,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	@Override
 	protected void afterUnbind(Binding<MessageChannel> binding) {
 		if (Binding.Type.consumer.equals(binding.getType())) {
-			cleanAutoDeclareContext(groupedName(binding.getName(), binding.getGroup()));
+			cleanAutoDeclareContext(binding.getName());
 		}
 	}
 
@@ -824,7 +848,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	 * Property accessor for the RabbitBinder. Refer to the Spring-AMQP documentation for information on the
 	 * specific properties.
 	 */
-	private static class RabbitPropertiesAccessor extends AbstractBindingPropertiesAccessor {
+	private static class RabbitPropertiesAccessor extends DefaultBindingPropertiesAccessor {
 
 		/**
 		 * The acknowledge mode (i.e. NONE, MANUAL, AUTO).
