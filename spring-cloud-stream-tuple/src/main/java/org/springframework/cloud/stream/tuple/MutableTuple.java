@@ -21,7 +21,7 @@ package org.springframework.cloud.stream.tuple;
  *
  * @author Eric Bottard
  */
-public interface WritableTuple extends Tuple {
+public interface MutableTuple extends Tuple {
 
 	/**
 	 * Sets the value of an already existing property, given its index.

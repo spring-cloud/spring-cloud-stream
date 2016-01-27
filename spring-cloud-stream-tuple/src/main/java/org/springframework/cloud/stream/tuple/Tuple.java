@@ -30,7 +30,7 @@ import org.springframework.core.convert.ConversionFailedException;
  * Spring's type conversion system is used to convert the value type to the requested type. The type conversion system
  * is extensible.
  * 
- * This interface only allows querying properties. Concrete Tuples can also implement {@link WritableTuple} to allow
+ * This interface only allows querying properties. Concrete Tuples can also implement {@link MutableTuple} to allow
  * mutation. Tuples are created using the TupleBuilder class.
  * 
  * @author Mark Pollack

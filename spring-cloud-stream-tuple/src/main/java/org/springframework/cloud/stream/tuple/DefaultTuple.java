@@ -42,15 +42,15 @@ import org.springframework.util.ClassUtils;
  * @author David Turanski
  * @author Michael Minella
  */
-public class DefaultTuple implements WritableTuple {
+public class DefaultTuple implements Tuple {
 
-	private List<String> names;
+	protected List<String> names;
 
-	private List<Object> values;
+	protected List<Object> values;
 
-	private transient ConfigurableConversionService configurableConversionService;
+	protected transient ConfigurableConversionService configurableConversionService;
 
-	private transient Converter<Tuple, String> tupleToStringConverter = new TupleToJsonStringConverter();
+	protected transient Converter<Tuple, String> tupleToStringConverter = new TupleToJsonStringConverter();
 
 	public DefaultTuple(List<String> names, List<Object> values, ConfigurableConversionService 
 			configurableConversionService) {
@@ -522,22 +522,12 @@ public class DefaultTuple implements WritableTuple {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.cloud.stream.tuple.Tuple#getValue(java.lang.String, java.lang.Class)
-	 */
 	@Override
 	public <T> T getValue(String name, Class<T> valueClass) {
 		Object value = values.get(indexOf(name));
 		return convert(value, valueClass);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.cloud.stream.tuple.Tuple#getValue(int, java.lang.Class)
-	 */
 	@Override
 	public <T> T getValue(int index, Class<T> valueClass) {
 		return convert(values.get(index), valueClass);
@@ -602,26 +592,6 @@ public class DefaultTuple implements WritableTuple {
 	protected int indexOf(String name) {
 		return names.indexOf(name);
 	}
-
-	@Override
-	public synchronized void setValue(int index, Object value) {
-		if (index < 0 || index >= size()) {
-			throw new IndexOutOfBoundsException();
-		}
-		values.set(index, value);
-	}
-
-	@Override
-	public synchronized void setValue(String name, Object value) {
-		int index = indexOf(name);
-		if (index != -1) {
-			setValue(index, value);
-		} else {
-			names.add(name);
-			values.add(value);
-		}
-	}
-
 
 	/**
 	 * @param tupleToStringConverter used to convert a {@link Tuple} to a String

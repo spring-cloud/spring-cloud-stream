@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.stream.tuple.spel;
 
-import org.springframework.cloud.stream.tuple.WritableTuple;
+import org.springframework.cloud.stream.tuple.MutableTuple;
 import org.springframework.expression.AccessException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.PropertyAccessor;
@@ -34,7 +34,7 @@ public class TuplePropertyAccessor implements PropertyAccessor {
 
 	@Override
 	public Class<?>[] getSpecificTargetClasses() {
-		return new Class<?>[] { Tuple.class, WritableTuple.class};
+		return new Class<?>[] { Tuple.class, MutableTuple.class};
 	}
 
 	@Override
@@ -87,12 +87,12 @@ public class TuplePropertyAccessor implements PropertyAccessor {
 
 	@Override
 	public boolean canWrite(EvaluationContext context, Object target, String name) throws AccessException {
-		return target instanceof WritableTuple;
+		return target instanceof MutableTuple;
 	}
 
 	@Override
 	public void write(EvaluationContext context, Object target, String name, Object newValue) throws AccessException {
-		WritableTuple tuple = (WritableTuple) target;
+		MutableTuple tuple = (MutableTuple) target;
 		Integer index = maybeIndex(name, tuple);
 		if (index != null) {
 			tuple.setValue(index, newValue);
