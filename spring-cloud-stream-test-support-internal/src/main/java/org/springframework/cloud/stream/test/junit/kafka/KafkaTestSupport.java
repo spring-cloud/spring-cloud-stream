@@ -76,6 +76,10 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 		super("KAFKA");
 	}
 
+	public KafkaServer getKafkaServer() {
+		return kafkaServer;
+	}
+
 	public String getZkConnectString() {
 		if (embedded) {
 			return zookeeper.getConnectString();
