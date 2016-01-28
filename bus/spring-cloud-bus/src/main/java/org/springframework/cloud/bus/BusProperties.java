@@ -47,19 +47,12 @@ public class BusProperties {
 	/**
 	 * Name of Spring Cloud Stream destination for messages.
 	 */
-	private String destination = "topic:springCloudBus";
+	private String destination = "springCloudBus";
 
 	/**
 	 * Flag to indicate that the bus is enabled.
 	 */
 	private boolean enabled = true;
-
-	public String getDestination() {
-		if (this.destination.startsWith("topic:")) {
-			return this.destination;
-		}
-		return "topic:" + this.destination;
-	}
 
 	@Data
 	public static class Env {
