@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,45 +32,22 @@ import java.util.Properties;
 public interface Binder<T> {
 
 	/**
-	 * Bind a message consumer on a p2p channel
+	 * Bind a message consumer on a channel
 	 * @param name the logical identity of the message source
-	 * @param inboundBindTarget the module interface to be bound as a point to point consumer
-	 * @param properties arbitrary String key/value pairs that will be used in the binding
-	 */
-	void bindConsumer(String name, T inboundBindTarget, Properties properties);
-
-	/**
-	 * Bind a message consumer on a pub/sub channel
-	 * @param name the logical identity of the message source
-	 * @param inboundBindTarget the module interface to be bound as a pub/sub consumer
 	 * @param group the consumer group to which this consumer belongs - subscriptions are shared among consumers
-	 * in the same group
+	 * in the same group (if <code>null</code> or empty String, the "default" group will be used)
+	 * @param inboundBindTarget the module interface to be bound as a consumer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
 	 */
-	void bindPubSubConsumer(final String name, T inboundBindTarget, String group, Properties properties);
+	void bindConsumer(String name, String group, T inboundBindTarget, Properties properties);
 
 	/**
-	 * Bind a message producer on a p2p channel.
+	 * Bind a message producer on a channel.
 	 * @param name the logical identity of the message target
 	 * @param outboundBindTarget the module interface bound as a producer
 	 * @param properties arbitrary String key/value pairs that will be used in the binding
 	 */
 	void bindProducer(String name, T outboundBindTarget, Properties properties);
-
-
-	/**
-	 * Bind a message producer on a pub/sub channel.
-	 * @param name the logical identity of the message target
-	 * @param outboundBindTarget the module interface bound as a producer
-	 * @param properties arbitrary String key/value pairs that will be used in the binding
-	 */
-	void bindPubSubProducer(final String name, T outboundBindTarget, Properties properties);
-
-	/**
-	 * Unbind inbound module components and stop any active components that use the channel.
-	 * @param name the channel name
-	 */
-	void unbindConsumers(String name);
 
 	/**
 	 * Unbind inbound module components and stop any active components that use the channel
@@ -78,7 +55,7 @@ public interface Binder<T> {
 	 * @param name the channel name
 	 * @param group the consumer group
 	 */
-	void unbindPubSubConsumers(String name, String group);
+	void unbindConsumers(String name, String group);
 
 	/**
 	 * Unbind outbound module components and stop any active components that use the channel.
@@ -87,54 +64,18 @@ public interface Binder<T> {
 	void unbindProducers(String name);
 
 	/**
-	 * Unbind a specific p2p or pub/sub message consumer
-	 * @param name The logical identify of a message source
+	 * Unbind a specific message consumer
+	 * @param name The logical identity of a message source
+	 * @param group The consumer group
 	 * @param inboundBindTarget The module interface bound as a consumer
 	 */
-	void unbindConsumer(String name, T inboundBindTarget);
+	void unbindConsumer(String name, String group, T inboundBindTarget);
 
 	/**
-	 * Unbind a specific p2p or pub/sub message producer
+	 * Unbind a specific message producer
 	 * @param name the logical identity of the message target
 	 * @param outboundBindTarget the channel bound as a producer
 	 */
 	void unbindProducer(String name, T outboundBindTarget);
-
-	/**
-	 * Bind a producer that expects async replies. To unbind, invoke unbindProducer() and unbindConsumer().
-	 * @param name The name of the requestor.
-	 * @param requests The interface used to send requests.
-	 * @param replies The interface used to receive replies.
-	 * @param properties arbitrary String key/value pairs that will be used in the binding.
-	 */
-	void bindRequestor(String name, T requests, T replies, Properties properties);
-
-	/**
-	 * Bind a consumer that handles requests from a requestor and asynchronously sends replies. To unbind, invoke
-	 * unbindProducer() and unbindConsumer().
-	 * @param name The name of the requestor for which this replier will handle requests.
-	 * @param requests The interface used to send requests.
-	 * @param replies The interface used to receive replies.
-	 * @param properties arbitrary String key/value pairs that will be used in the binding.
-	 */
-	void bindReplier(String name, T requests, T replies, Properties properties);
-
-	/**
-	 * Create an object and bind a producer dynamically, creating the infrastructure
-	 * required by the binder technology.
-	 * @param name The name of the "queue:" channel.
-	 * @param properties arbitrary String key/value pairs that will be used in the binding.
-	 * @return The bound object.
-	 */
-	T bindDynamicProducer(String name, Properties properties);
-
-	/**
-	 * Create an object and bind a producer dynamically, creating the infrastructure
-	 * required by the binder technology to broadcast messages to consumers.
-	 * @param name The name of the "topic:" channel.
-	 * @param properties arbitrary String key/value pairs that will be used in the binding.
-	 * @return The bound Object.
-	 */
-	T bindDynamicPubSubProducer(String name, Properties properties);
 
 }

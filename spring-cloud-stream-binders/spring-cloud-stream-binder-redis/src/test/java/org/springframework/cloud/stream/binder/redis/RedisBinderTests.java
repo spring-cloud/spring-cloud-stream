@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.redis;
 
-import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
@@ -24,17 +23,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -52,6 +49,7 @@ import org.springframework.expression.Expression;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.redis.inbound.RedisQueueMessageDrivenEndpoint;
+import org.springframework.integration.redis.outbound.RedisQueueOutboundChannelAdapter;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -60,6 +58,7 @@ import org.springframework.retry.support.RetryTemplate;
 /**
  * @author Gary Russell
  * @author David Turanski
+ * @author Mark Fisher
  */
 public class RedisBinderTests extends PartitionCapableBinderTests {
 
@@ -86,34 +85,19 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		return true;
 	}
 
-	@Override
-	@Test
-	@Ignore("https://github.com/spring-cloud/spring-cloud-stream/issues/247")
-	public void testSendAndReceivePubSub() throws Exception {
-
-		//TimeUnit.SECONDS.sleep(2);
-
-		super.testSendAndReceivePubSub();
-	}
-
-	@Before
-	public void setup() {
-		createTemplate().boundListOps("queue.direct.0").trim(1, 0);
-	}
-
 	@Test
 	public void testConsumerProperties() throws Exception {
 		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();
 		properties.put("maxAttempts", "1"); // disable retry
-		binder.bindConsumer("props.0", new DirectChannel(), properties);
+		binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
 		@SuppressWarnings("unchecked")
 		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
 		AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
 		assertThat(endpoint, instanceOf(RedisQueueMessageDrivenEndpoint.class));
 		assertSame(DirectChannel.class, TestUtils.getPropertyValue(endpoint, "outputChannel").getClass());
-		binder.unbindConsumers("props.0");
+		binder.unbindConsumers("props.0", "test");
 		assertEquals(0, bindings.size());
 
 		properties.put("backOffInitialInterval", "2000");
@@ -123,48 +107,32 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		properties.put("maxAttempts", "23");
 		properties.put("partitionIndex", 0);
 
-		binder.bindConsumer("props.0", new DirectChannel(), properties);
+		binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
 		assertEquals(1, bindings.size());
 		endpoint = bindings.get(0).getEndpoint();
 		verifyConsumer(endpoint);
 
-		try {
-			binder.bindPubSubConsumer("dummy", null, null, properties);
-			fail("Expected exception");
-		}
-		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), allOf(
-					containsString(getClassUnderTestName() + " does not support consumer properties: "),
-					containsString("partitionIndex"),
-					containsString("concurrency"),
-					containsString(" for dummy.")));
-		}
-		try {
-			binder.bindConsumer("queue:dummy", null, properties);
-			fail("Expected exception");
-		}
-		catch (IllegalArgumentException e) {
-			assertEquals(getClassUnderTestName() +  " does not support consumer property: partitionIndex for queue:dummy.",
-					e.getMessage());
-		}
-
-		binder.unbindConsumers("props.0");
+		binder.unbindConsumers("props.0", "test");
 		assertEquals(0, bindings.size());
 	}
 
 	@Test
 	public void testProducerProperties() throws Exception {
 		Binder<MessageChannel> binder = getBinder();
+		binder.bindConsumer("props.0", "test", new DirectChannel(), null);
 		binder.bindProducer("props.0", new DirectChannel(), null);
 		@SuppressWarnings("unchecked")
 		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(1, bindings.size());
-		AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
+		assertEquals(2, bindings.size());
+		AbstractEndpoint endpoint = bindings.get(1).getEndpoint();
+		@SuppressWarnings("unchecked")
+		Map<String, RedisQueueOutboundChannelAdapter> adapters = TestUtils.getPropertyValue(endpoint, "handler.adapters", Map.class);
+		RedisQueueOutboundChannelAdapter adapter = adapters.get("test");
 		assertEquals(
-				"queue.props.0",
-				TestUtils.getPropertyValue(endpoint, "handler.delegate.queueNameExpression", Expression.class).getExpressionString());
+				"props.0.test",
+				TestUtils.getPropertyValue(adapter, "queueNameExpression", Expression.class).getExpressionString());
 		binder.unbindProducers("props.0");
-		assertEquals(0, bindings.size());
+		assertEquals(1, bindings.size());
 
 		Properties properties = new Properties();
 		properties.put("partitionKeyExpression", "'foo'");
@@ -174,137 +142,15 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
 
 		binder.bindProducer("props.0", new DirectChannel(), properties);
-		assertEquals(1, bindings.size());
-		endpoint = bindings.get(0).getEndpoint();
-		assertEquals(
-				"'queue.props.0-' + headers['partition']",
-				TestUtils.getPropertyValue(endpoint, "handler.delegate.queueNameExpression", Expression.class).getExpressionString());
-
-		try {
-			binder.bindPubSubProducer("dummy", null, properties);
-			fail("Expected exception");
-		}
-		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), allOf(
-					containsString(getClassUnderTestName() + " does not support producer properties: "),
-					containsString("partitionSelectorExpression"),
-					containsString("partitionKeyExtractorClass"),
-					containsString("partitionKeyExpression"),
-					containsString("partitionSelectorClass")));
-			assertThat(e.getMessage(), containsString("for dummy."));
-		}
-		try {
-			binder.bindProducer("queue:dummy", new DirectChannel(), properties);
-			fail("Expected exception");
-		}
-		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), allOf(
-					containsString(getClassUnderTestName() + " does not support producer properties: "),
-					containsString("partitionSelectorExpression"),
-					containsString("partitionKeyExtractorClass"),
-					containsString("partitionKeyExpression"),
-					containsString("partitionSelectorClass")));
-			assertThat(e.getMessage(), containsString("for queue:dummy."));
-		}
-
-		binder.unbindProducers("props.0");
-		assertEquals(0, bindings.size());
-	}
-
-	@Test
-	public void testRequestReplyRequestorProperties() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-		Properties properties = new Properties();
-
-		properties.put("backOffInitialInterval", "2000");
-		properties.put("backOffMaxInterval", "20000");
-		properties.put("backOffMultiplier", "5.0");
-		properties.put("concurrency", "2");
-		properties.put("maxAttempts", "23");
-
-		binder.bindRequestor("props.0", new DirectChannel(), new DirectChannel(), properties);
-		@SuppressWarnings("unchecked")
-		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-
 		assertEquals(2, bindings.size());
-		AbstractEndpoint endpoint = bindings.get(0).getEndpoint(); // producer
+		endpoint = bindings.get(1).getEndpoint();
+		adapter = (RedisQueueOutboundChannelAdapter) TestUtils.getPropertyValue(endpoint, "handler.adapters", Map.class).get("test");
 		assertEquals(
-				"queue.props.0.requests",
-				TestUtils.getPropertyValue(endpoint, "handler.delegate.queueNameExpression", Expression.class).getExpressionString());
+				"'props.0.test-' + headers['partition']",
+				TestUtils.getPropertyValue(adapter, "queueNameExpression", Expression.class).getExpressionString());
 
-		endpoint = bindings.get(1).getEndpoint(); // consumer
-		verifyConsumer(endpoint);
-
-		properties.put("partitionKeyExpression", "'foo'");
-		properties.put("partitionKeyExtractorClass", "foo");
-		properties.put("partitionSelectorExpression", "0");
-		properties.put("partitionSelectorClass", "foo");
-		properties.put("partitionIndex", "0");
-		try {
-			binder.bindRequestor("dummy", new DirectChannel(), new DirectChannel(), properties);
-			fail("Expected exception");
-		}
-		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), allOf(
-					containsString(getClassUnderTestName() + " does not support producer properties: "),
-					containsString("partitionSelectorExpression"),
-					containsString("partitionKeyExtractorClass"),
-					containsString("partitionKeyExpression"),
-					containsString("partitionSelectorClass")));
-			assertThat(e.getMessage(), allOf(containsString("partitionIndex"), containsString("for dummy.")));
-		}
-
-		binder.unbindConsumers("props.0");
 		binder.unbindProducers("props.0");
-		assertEquals(0, bindings.size());
-	}
-
-	@Test
-	public void testRequestReplyReplierProperties() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-		Properties properties = new Properties();
-
-		properties.put("backOffInitialInterval", "2000");
-		properties.put("backOffMaxInterval", "20000");
-		properties.put("backOffMultiplier", "5.0");
-		properties.put("concurrency", "2");
-		properties.put("maxAttempts", "23");
-
-		binder.bindReplier("props.0", new DirectChannel(), new DirectChannel(), properties);
-		@SuppressWarnings("unchecked")
-		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-
-		assertEquals(2, bindings.size());
-		AbstractEndpoint endpoint = bindings.get(1).getEndpoint(); // producer
-		assertEquals(
-				"headers['replyTo']",
-				TestUtils.getPropertyValue(endpoint, "handler.delegate.queueNameExpression", Expression.class).getExpressionString());
-
-		endpoint = bindings.get(0).getEndpoint(); // consumer
-		verifyConsumer(endpoint);
-
-		properties.put("partitionKeyExpression", "'foo'");
-		properties.put("partitionKeyExtractorClass", "foo");
-		properties.put("partitionSelectorExpression", "0");
-		properties.put("partitionSelectorClass", "foo");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
-		properties.put("partitionIndex", "0");
-		try {
-			binder.bindReplier("dummy", new DirectChannel(), new DirectChannel(), properties);
-			fail("Expected exception");
-		}
-		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), allOf(
-					containsString(getClassUnderTestName()  + " does not support consumer properties: "),
-					containsString("partitionSelectorExpression"),
-					containsString("partitionKeyExtractorClass"),
-					containsString("partitionKeyExpression"),
-					containsString("partitionSelectorClass")));
-			assertThat(e.getMessage(), allOf(containsString("partitionIndex"), containsString("for dummy.")));
-		}
-
-		binder.unbindConsumers("props.0");
-		binder.unbindProducers("props.0");
+		binder.unbindConsumers("props.0", "test");
 		assertEquals(0, bindings.size());
 	}
 
@@ -335,12 +181,13 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		props.put("maxAttempts", 2);
 		props.put("backOffInitialInterval", 100);
 		props.put("backOffMultiplier", "1.0");
-		binder.bindConsumer("retry.0", new DirectChannel(), props); // no subscriber
+		binder.bindConsumer("retry.0", "test", new DirectChannel(), props); // no subscriber
 		channel.send(new GenericMessage<String>("foo"));
 		RedisTemplate<String, Object> template = createTemplate();
-		Object rightPop = template.boundListOps("ERRORS:retry.0").rightPop(5, TimeUnit.SECONDS);
+		Object rightPop = template.boundListOps("ERRORS:retry.0.test").rightPop(5, TimeUnit.SECONDS);
 		assertNotNull(rightPop);
 		assertThat(new String((byte[]) rightPop), containsString("foo"));
+		binder.unbindConsumers("retry.0", "test");
 	}
 
 	@Test
@@ -350,10 +197,6 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		assertEquals(10, headers.size());
 		assertTrue(headers.contains("foo"));
 		assertTrue(headers.contains("bar"));
-	}
-
-	@Override @Ignore("https://github.com/spring-cloud/spring-cloud-stream/issues/247")
-	public void createInboundPubSubBeforeOutboundPubSub() throws Exception {
 	}
 
 	private RedisTemplate<String, Object> createTemplate() {
@@ -370,13 +213,15 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	protected String getEndpointRouting(AbstractEndpoint endpoint) {
-		return TestUtils.getPropertyValue(endpoint, "handler.delegate.queueNameExpression", Expression.class).getExpressionString();
+		Map<String, RedisQueueOutboundChannelAdapter> adapters = TestUtils.getPropertyValue(endpoint, "handler.adapters", Map.class);
+		return TestUtils.getPropertyValue(adapters.values().iterator().next(), "queueNameExpression", Expression.class).getExpressionString();
 	}
 
 	@Override
-	protected String getPubSubEndpointRouting(AbstractEndpoint endpoint) {
-		return TestUtils.getPropertyValue(endpoint, "handler.delegate.topicExpression", Expression.class).getExpressionString();
+	protected String getExpectedRoutingBaseDestination(String name, String group) {
+		return name + "." + group;
 	}
 
 	@Override
@@ -391,7 +236,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 
 			@Override
 			public Object receive(boolean expectNull) throws Exception {
-				byte[] bytes = (byte[]) template.boundListOps("queue." + queue).rightPop(50, TimeUnit.MILLISECONDS);
+				byte[] bytes = (byte[]) template.boundListOps(queue).rightPop(50, TimeUnit.MILLISECONDS);
 				if (bytes == null) {
 					return null;
 				}

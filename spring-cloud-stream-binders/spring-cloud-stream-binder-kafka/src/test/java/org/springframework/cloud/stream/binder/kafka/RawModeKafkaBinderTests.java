@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,28 +33,24 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.TestUtils;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.integration.channel.interceptor.WireTap;
 import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
  * @author Marius Bogoevici
  * @author David Turanski
  * @author Gary Russell
+ * @author Mark Fisher
  */
-
-@Ignore
 public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Override
@@ -85,15 +81,15 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		properties.put("partitionIndex", "0");
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
-		binder.bindConsumer("partJ.0", input0, properties);
+		binder.bindConsumer("partJ.0", "test", input0, properties);
 		properties.put("partitionIndex", "1");
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1J");
-		binder.bindConsumer("partJ.0", input1, properties);
+		binder.bindConsumer("partJ.0", "test", input1, properties);
 		properties.put("partitionIndex", "2");
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2J");
-		binder.bindConsumer("partJ.0", input2, properties);
+		binder.bindConsumer("partJ.0", "test", input2, properties);
 
 		output.send(new GenericMessage<>(new byte[]{(byte)0}));
 		output.send(new GenericMessage<>(new byte[]{(byte)1}));
@@ -112,7 +108,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 						((byte[]) receive2.getPayload())[0]),
 				containsInAnyOrder((byte)0, (byte)1, (byte)2));
 
-		binder.unbindConsumers("partJ.0");
+		binder.unbindConsumers("partJ.0", "test");
 		binder.unbindProducers("partJ.0");
 	}
 
@@ -146,15 +142,15 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		properties.put("count","3");
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0S");
-		binder.bindConsumer("part.0", input0, properties);
+		binder.bindConsumer("part.0", "test", input0, properties);
 		properties.put("partitionIndex", "1");
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1S");
-		binder.bindConsumer("part.0", input1, properties);
+		binder.bindConsumer("part.0", "test", input1, properties);
 		properties.put("partitionIndex", "2");
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2S");
-		binder.bindConsumer("part.0", input2, properties);
+		binder.bindConsumer("part.0", "test", input2, properties);
 
 		Message<byte[]> message2 = MessageBuilder.withPayload(new byte[]{2})
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
@@ -180,74 +176,8 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 						((byte[]) receive2.getPayload())[0]),
 				containsInAnyOrder((byte)0, (byte)1, (byte)2));
 
-		binder.unbindConsumers("part.0");
+		binder.unbindConsumers("part.0", "test");
 		binder.unbindProducers("part.0");
-	}
-
-	@Test
-	@Override
-	@Ignore
-	public void createInboundPubSubBeforeOutboundPubSub() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-		DirectChannel moduleOutputChannel = new DirectChannel();
-		// Test pub/sub by emulating how StreamPlugin handles taps
-		DirectChannel tapChannel = new DirectChannel();
-		QueueChannel moduleInputChannel = new QueueChannel();
-		QueueChannel module2InputChannel = new QueueChannel();
-		QueueChannel module3InputChannel = new QueueChannel();
-		// Create the tap first
-		String fooTapName = "baz.0";
-		binder.bindPubSubConsumer(fooTapName, module2InputChannel, null, null);
-
-		// Then create the stream
-		binder.bindProducer("baz.0", moduleOutputChannel, null);
-		binder.bindConsumer("baz.0", moduleInputChannel, null);
-		moduleOutputChannel.addInterceptor(new WireTap(tapChannel));
-		binder.bindPubSubProducer(fooTapName, tapChannel, null);
-
-		// Another new module is using tap as an input channel
-		String barTapName = "baz.0";
-		binder.bindPubSubConsumer(barTapName, module3InputChannel, null, null);
-		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
-		boolean success = false;
-		boolean retried = false;
-		while (!success) {
-			moduleOutputChannel.send(message);
-			Message<?> inbound = moduleInputChannel.receive(5000);
-			assertNotNull(inbound);
-			assertEquals("foo", new String((byte[])inbound.getPayload()));
-			Message<?> tapped1 = module2InputChannel.receive(5000);
-			Message<?> tapped2 = module3InputChannel.receive(5000);
-			if (tapped1 == null || tapped2 == null) {
-				// listener may not have started
-				assertFalse("Failed to receive tap after retry", retried);
-				retried = true;
-				continue;
-			}
-			success = true;
-			assertEquals("foo", new String((byte[]) tapped1.getPayload()));
-			assertNull(tapped1.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-			assertEquals("foo", new String((byte[])tapped2.getPayload()));
-		}
-		// delete one tap stream is deleted
-		binder.unbindConsumer(barTapName, module3InputChannel);
-		Message<?> message2 = MessageBuilder.withPayload("bar".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
-		moduleOutputChannel.send(message2);
-
-		// other tap still receives messages
-		Message<?> tapped = module2InputChannel.receive(5000);
-		assertNotNull(tapped);
-
-		// Removed tap does not
-		assertNull(module3InputChannel.receive(1000));
-
-		// when other tap stream is deleted
-		binder.unbindConsumer(fooTapName, module2InputChannel);
-		// Clean up as StreamPlugin would
-		binder.unbindConsumer("baz.0", moduleInputChannel);
-		binder.unbindProducers("baz.0");
-		binder.unbindConsumers("baz.0");
-		assertTrue(getBindings(binder).isEmpty());
 	}
 
 	@Test
@@ -257,7 +187,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		binder.bindProducer("foo.0", moduleOutputChannel, null);
-		binder.bindConsumer("foo.0", moduleInputChannel, null);
+		binder.bindConsumer("foo.0", "test", moduleInputChannel, null);
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
@@ -266,7 +196,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		assertNotNull(inbound);
 		assertEquals("foo", new String((byte[])inbound.getPayload()));
 		binder.unbindProducers("foo.0");
-		binder.unbindConsumers("foo.0");
+		binder.unbindConsumers("foo.0", "test");
 	}
 
 	// Ignored, since raw mode does not support headers
@@ -277,26 +207,23 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	}
 
-	@Override
 	@Test
-	public void testSendAndReceivePubSub() throws Exception {
+	public void testSendAndReceiveWithExplicitConsumerGroup() {
 		Binder<MessageChannel> binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		// Test pub/sub by emulating how StreamPlugin handles taps
-		DirectChannel tapChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		QueueChannel module2InputChannel = new QueueChannel();
 		QueueChannel module3InputChannel = new QueueChannel();
 		binder.bindProducer("baz.0", moduleOutputChannel, null);
-		binder.bindConsumer("baz.0", moduleInputChannel, null);
-		moduleOutputChannel.addInterceptor(new WireTap(tapChannel));
+		binder.bindConsumer("baz.0", "test", moduleInputChannel, null);
 		// A new module is using the tap as an input channel
 		String fooTapName = "baz.0";
-		binder.bindPubSubProducer(fooTapName, tapChannel, null);
-		binder.bindPubSubConsumer(fooTapName, module2InputChannel, null, null);
+		binder.bindConsumer(fooTapName, "tap1", module2InputChannel, null);
 		// Another new module is using tap as an input channel
 		String barTapName = "baz.0";
-		binder.bindPubSubConsumer(barTapName, module3InputChannel, null, null);
+		binder.bindConsumer(barTapName, "tap2", module3InputChannel, null);
+
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		boolean success = false;
 		boolean retried = false;
@@ -319,7 +246,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 			assertEquals("foo", new String((byte[])tapped2.getPayload()));
 		}
 		// delete one tap stream is deleted
-		binder.unbindConsumer(barTapName, module3InputChannel);
+		binder.unbindConsumer(barTapName, "tap2", module3InputChannel);
 		Message<?> message2 = MessageBuilder.withPayload("bar".getBytes()).build();
 		moduleOutputChannel.send(message2);
 
@@ -327,15 +254,21 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Message<?> tapped = module2InputChannel.receive(5000);
 		assertNotNull(tapped);
 
-		// Removed tap does not
+		// removed tap does not
 		assertNull(module3InputChannel.receive(1000));
 
-		// when other tap stream is deleted
-		binder.unbindConsumer(fooTapName, module2InputChannel);
-		// Clean up as StreamPlugin would
-		binder.unbindConsumer("baz.0", moduleInputChannel);
+		// re-subscribed tap does receive the message
+		binder.bindConsumer(barTapName, "tap2", module3InputChannel, null);
+		assertNotNull(module3InputChannel.receive(1000));
+
+		// clean up
+		binder.unbindConsumer(fooTapName, "tap1", module2InputChannel);
+		binder.unbindConsumer(barTapName, "tap2", module3InputChannel);
+		binder.unbindConsumer("baz.0", "tap2", moduleInputChannel);
 		binder.unbindProducers("baz.0");
-		binder.unbindConsumers("baz.0");
+		binder.unbindConsumers("baz.0", "tap1");
+		binder.unbindConsumers("baz.0", "tap2");
+		binder.unbindConsumers("baz.0", "test");
 		assertTrue(getBindings(binder).isEmpty());
 	}
 

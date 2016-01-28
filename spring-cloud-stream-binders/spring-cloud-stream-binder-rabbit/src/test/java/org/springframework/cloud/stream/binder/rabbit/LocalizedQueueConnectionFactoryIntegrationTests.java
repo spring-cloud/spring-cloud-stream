@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class LocalizedQueueConnectionFactoryIntegrationTests {
 
 	@Before
 	public void setup() {
-		ConnectionFactory defaultConnectionFactory = new CachingConnectionFactory("localhost");
+		ConnectionFactory defaultConnectionFactory = rabbitAvailableRule.getResource();
 		String[] addresses = new String[] { "localhost:9999", "localhost:5672" };
 		String[] adminAddresses = new String[] { "http://localhost:15672", "http://localhost:15672" };
 		String[] nodes = new String[] { "foo@bar", "rabbit@localhost" };
@@ -66,6 +66,8 @@ public class LocalizedQueueConnectionFactoryIntegrationTests {
 		RabbitTemplate template = new RabbitTemplate(targetConnectionFactory);
 		template.convertAndSend("", queue.getName(), "foo");
 		assertEquals("foo", template.receiveAndConvert(queue.getName()));
+		((CachingConnectionFactory) targetConnectionFactory).destroy();
+		admin.deleteQueue(queue.getName());
 	}
 
 }

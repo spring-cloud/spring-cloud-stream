@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,21 +47,15 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 
 	@Override
-	public void bindConsumer(String name, MessageChannel inboundBindTarget, Properties properties) {
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inboundBindTarget, String group, Properties properties) {
-
+	public void bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
 	}
 
 	/**
 	 * Registers a single subscriber to the channel, that enqueues messages for later retrieval and assertion in tests.
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	public void bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
-		final BlockingQueue queue = messageCollector.register(outboundBindTarget);
+		final BlockingQueue<Message<?>> queue = messageCollector.register(outboundBindTarget);
 		((SubscribableChannel)outboundBindTarget).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
@@ -77,17 +71,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	}
 
 	@Override
-	public void bindPubSubProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
-
-	}
-
-	@Override
-	public void unbindConsumers(String name) {
-
-	}
-
-	@Override
-	public void unbindPubSubConsumers(String name, String group) {
+	public void unbindConsumers(String name, String group) {
 
 	}
 
@@ -97,28 +81,8 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	}
 
 	@Override
-	public void unbindConsumer(String name, MessageChannel inboundBindTarget) {
+	public void unbindConsumer(String name, String group, MessageChannel inboundBindTarget) {
 
-	}
-
-	@Override
-	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-
-	}
-
-	@Override
-	public void bindReplier(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-
-	}
-
-	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
-		return null;
-	}
-
-	@Override
-	public MessageChannel bindDynamicPubSubProducer(String name, Properties properties) {
-		return null;
 	}
 
 	public MessageCollector messageCollector() {
@@ -134,7 +98,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 		private final Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
 
-		private BlockingQueue register(MessageChannel channel) {
+		private BlockingQueue<Message<?>> register(MessageChannel channel) {
 			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
 			Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
 			results.put(channel, result);

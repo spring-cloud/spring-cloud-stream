@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,8 +65,8 @@ public class RabbitBinderModuleTests {
 			context = null;
 		}
 		RabbitAdmin admin = new RabbitAdmin(rabbitTestSupport.getResource());
-		admin.deleteQueue("binder.input");
-		admin.deleteQueue("binder.output");
+		admin.deleteQueue("binder.input.default");
+		admin.deleteQueue("binder.output.default");
 		admin.deleteExchange("binder.input");
 		admin.deleteExchange("binder.output");
 	}

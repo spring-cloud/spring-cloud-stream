@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.BindingCleaner;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.web.client.RestTemplate;
@@ -42,7 +41,9 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	private final static Logger logger = LoggerFactory.getLogger(RabbitBindingCleaner.class);
 
-	public static final String BINDER_PREFIX = "binder.";
+	private static final String PREFIX_DELIMITER = ".";
+
+	public static final String BINDER_PREFIX = "binder" + PREFIX_DELIMITER;
 
 	@Override
 	public Map<String, List<String>> clean(String entity, boolean isJob) {
@@ -128,7 +129,7 @@ public class RabbitBindingCleaner implements BindingCleaner {
 			return prefix.substring(0, prefix.length() - 1);
 		}
 		else {
-			return prefix + BinderUtils.GROUP_INDEX_DELIMITER;
+			return prefix + PREFIX_DELIMITER;
 		}
 	}
 

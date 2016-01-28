@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,11 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
-
 /**
  * Tests for binders that support partitioning.
  *
  * @author Gary Russell
+ * @author Mark Fisher
  */
 abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
@@ -67,57 +67,58 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 							+ " does not support producer "),
 					containsString("foo"),
 					containsString("baz"),
-					containsString(" for badprops.0.")));
+					containsString(" for badprops.0")));
 		}
 
 		properties.remove("baz");
 		try {
-			binder.bindConsumer("badprops.0", output, properties);
+			binder.bindConsumer("badprops.0", "test", output, properties);
 		}
 		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(), equalTo(getClassUnderTestName()
-					+ " does not support consumer property: foo for badprops.0."));
+					+ " does not support consumer property: foo for badprops.0.test."));
 		}
 	}
 
 	@Test
 	public void testPartitionedModuleSpEL() throws Exception {
 		Binder<MessageChannel> binder = getBinder();
-		Properties properties = new Properties();
-		properties.put("partitionKeyExpression", "payload");
-		properties.put("partitionSelectorExpression", "hashCode()");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
+
+		Properties consumerProperties = new Properties();
+		consumerProperties.put("concurrency", "2");
+		consumerProperties.put("partitionIndex", "0");
+		consumerProperties.put("count","3");
+		QueueChannel input0 = new QueueChannel();
+		input0.setBeanName("test.input0S");
+		binder.bindConsumer("part.0", "test", input0, consumerProperties);
+		consumerProperties.put("partitionIndex", "1");
+		QueueChannel input1 = new QueueChannel();
+		input1.setBeanName("test.input1S");
+		binder.bindConsumer("part.0", "test", input1, consumerProperties);
+		consumerProperties.put("partitionIndex", "2");
+		QueueChannel input2 = new QueueChannel();
+		input2.setBeanName("test.input2S");
+		binder.bindConsumer("part.0", "test", input2, consumerProperties);
+
+		Properties producerProperties = new Properties();
+		producerProperties.put("partitionKeyExpression", "payload");
+		producerProperties.put("partitionSelectorExpression", "hashCode()");
+		producerProperties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
+		producerProperties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
-		binder.bindProducer("part.0", output, properties);
+		binder.bindProducer("part.0", output, producerProperties);
 		@SuppressWarnings("unchecked")
 		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(1, bindings.size());
+		assertEquals(4, bindings.size());
 		try {
-			AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
-			assertThat(getEndpointRouting(endpoint), containsString("part.0-' + headers['partition']"));
+			AbstractEndpoint endpoint = bindings.get(3).getEndpoint();
+			assertThat(getEndpointRouting(endpoint), containsString(
+					getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']"));
 		}
 		catch (UnsupportedOperationException ignored) {
-
 		}
-
-		properties.clear();
-		properties.put("concurrency", "2");
-		properties.put("partitionIndex", "0");
-		properties.put("count","3");
-		QueueChannel input0 = new QueueChannel();
-		input0.setBeanName("test.input0S");
-		binder.bindConsumer("part.0", input0, properties);
-		properties.put("partitionIndex", "1");
-		QueueChannel input1 = new QueueChannel();
-		input1.setBeanName("test.input1S");
-		binder.bindConsumer("part.0", input1, properties);
-		properties.put("partitionIndex", "2");
-		QueueChannel input2 = new QueueChannel();
-		input2.setBeanName("test.input2S");
-		binder.bindConsumer("part.0", input2, properties);
 
 		Message<Integer> message2 = MessageBuilder.withPayload(2)
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
@@ -148,17 +149,13 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 				return result;
 			}
 		};
-
 		if (usesExplicitRouting()) {
 			assertEquals(0, receive0.getPayload());
 			assertEquals(1, receive1.getPayload());
 			assertEquals(2, receive2.getPayload());
-
 			assertThat(receive2, fooMatcher);
-
 		}
 		else {
-
 			assertThat(Arrays.asList(
 					(Integer) receive0.getPayload(),
 					(Integer) receive1.getPayload(),
@@ -176,46 +173,46 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 					containsOur3Messages);
 
 		}
-
-		binder.unbindConsumers("part.0");
+		binder.unbindConsumers("part.0", "test");
 		binder.unbindProducers("part.0");
 	}
 
 	@Test
 	public void testPartitionedModuleJava() throws Exception {
 		Binder<MessageChannel> binder = getBinder();
-		Properties properties = new Properties();
-		properties.put("partitionKeyExtractorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
-		properties.put("partitionSelectorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
 
-		DirectChannel output = new DirectChannel();
-		output.setBeanName("test.output");
-		binder.bindProducer("partJ.0", output, properties);
-		@SuppressWarnings("unchecked")
-		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(1, bindings.size());
-		if (usesExplicitRouting()) {
-			AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
-			assertThat(getEndpointRouting(endpoint), containsString("partJ.0-' + headers['partition']"));
-		}
-
-		properties.clear();
-		properties.put("concurrency", "2");
-		properties.put("count","3");
-		properties.put("partitionIndex", "0");
+		Properties consumerProperties = new Properties();
+		consumerProperties.put("concurrency", "2");
+		consumerProperties.put("count","3");
+		consumerProperties.put("partitionIndex", "0");
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
-		binder.bindConsumer("partJ.0", input0, properties);
-		properties.put("partitionIndex", "1");
+		binder.bindConsumer("partJ.0", "test", input0, consumerProperties);
+		consumerProperties.put("partitionIndex", "1");
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1J");
-		binder.bindConsumer("partJ.0", input1, properties);
-		properties.put("partitionIndex", "2");
+		binder.bindConsumer("partJ.0", "test", input1, consumerProperties);
+		consumerProperties.put("partitionIndex", "2");
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2J");
-		binder.bindConsumer("partJ.0", input2, properties);
+		binder.bindConsumer("partJ.0", "test", input2, consumerProperties);
+
+		Properties producerProperties = new Properties();
+		producerProperties.put("partitionKeyExtractorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
+		producerProperties.put("partitionSelectorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
+		producerProperties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
+		producerProperties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
+		DirectChannel output = new DirectChannel();
+		output.setBeanName("test.output");
+		binder.bindProducer("partJ.0", output, producerProperties);
+		@SuppressWarnings("unchecked")
+		List<Binding> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
+		assertEquals(4, bindings.size());
+		if (usesExplicitRouting()) {
+			AbstractEndpoint endpoint = bindings.get(3).getEndpoint();
+			assertThat(getEndpointRouting(endpoint), containsString(
+					getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']"));
+		}
 
 		output.send(new GenericMessage<Integer>(2));
 		output.send(new GenericMessage<Integer>(1));
@@ -242,7 +239,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 					containsInAnyOrder(0, 1, 2));
 		}
 
-		binder.unbindConsumers("partJ.0");
+		binder.unbindConsumers("partJ.0", "test");
 		binder.unbindProducers("partJ.0");
 	}
 
@@ -258,6 +255,14 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 	 * For implementations that rely on explicit routing, return the routing expression.
 	 */
 	protected String getEndpointRouting(AbstractEndpoint endpoint) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * For implementations that rely on explicit routing, return the expected base destination
+	 * (the part that precedes '-partition' within the expression).
+	 */
+	protected String getExpectedRoutingBaseDestination(String name, String group) {
 		throw new UnsupportedOperationException();
 	}
 

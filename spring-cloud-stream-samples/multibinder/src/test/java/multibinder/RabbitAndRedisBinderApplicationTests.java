@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,10 +60,13 @@ public class RabbitAndRedisBinderApplicationTests {
 	@Autowired
 	private BinderFactory<MessageChannel> binderFactory;
 
+	private final String randomGroup = UUID.randomUUID().toString();
+
 	@After
 	public void cleanUp() {
 		RabbitAdmin admin = new RabbitAdmin(rabbitTestSupport.getResource());
-		admin.deleteQueue("binder.dataOut");
+		admin.deleteQueue("binder.dataOut.default");
+		admin.deleteQueue("binder.dataOut." + this.randomGroup);
 		admin.deleteExchange("binder.dataOut");
 	}
 
@@ -77,10 +80,10 @@ public class RabbitAndRedisBinderApplicationTests {
 		binderFactory.getBinder("redis").bindProducer("dataIn", dataProducer, null);
 
 		QueueChannel dataConsumer = new QueueChannel();
-		binderFactory.getBinder("rabbit").bindPubSubConsumer("dataOut", dataConsumer,
-				UUID.randomUUID().toString(), null);
+		binderFactory.getBinder("rabbit").bindConsumer("dataOut", this.randomGroup,
+				dataConsumer, null);
 
-		String testPayload = "testFoo" + UUID.randomUUID().toString();
+		String testPayload = "testFoo" + this.randomGroup;
 		dataProducer.send(MessageBuilder.withPayload(testPayload).build());
 
 		Message<?> receive = dataConsumer.receive(2000);

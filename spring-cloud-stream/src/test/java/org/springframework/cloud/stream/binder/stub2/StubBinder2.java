@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,21 +23,17 @@ import org.springframework.cloud.stream.binder.Binder;
 /**
  * @author Marius Bogoevici
  */
-public class StubBinder2 implements Binder {
+public class StubBinder2 implements Binder<Object> {
 
-	private StubBinder2Dependency stubBinder2Dependency;
+	@SuppressWarnings("unused")
+	private final StubBinder2Dependency stubBinder2Dependency;
 
 	public StubBinder2(StubBinder2Dependency stubBinder2Dependency) {
 		this.stubBinder2Dependency = stubBinder2Dependency;
 	}
 
 	@Override
-	public void bindConsumer(String name, Object inboundBindTarget, Properties properties) {
-
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, Object inboundBindTarget, String group, Properties properties) {
+	public void bindConsumer(String name, String group, Object inboundBindTarget, Properties properties) {
 
 	}
 
@@ -47,17 +43,7 @@ public class StubBinder2 implements Binder {
 	}
 
 	@Override
-	public void bindPubSubProducer(String name, Object outboundBindTarget, Properties properties) {
-
-	}
-
-	@Override
-	public void unbindConsumers(String name) {
-
-	}
-
-	@Override
-	public void unbindPubSubConsumers(String name, String group) {
+	public void unbindConsumers(String name, String group) {
 
 	}
 
@@ -67,7 +53,7 @@ public class StubBinder2 implements Binder {
 	}
 
 	@Override
-	public void unbindConsumer(String name, Object inboundBindTarget) {
+	public void unbindConsumer(String name, String group, Object inboundBindTarget) {
 
 	}
 
@@ -76,23 +62,4 @@ public class StubBinder2 implements Binder {
 
 	}
 
-	@Override
-	public void bindRequestor(String name, Object requests, Object replies, Properties properties) {
-
-	}
-
-	@Override
-	public void bindReplier(String name, Object requests, Object replies, Properties properties) {
-
-	}
-
-	@Override
-	public Object bindDynamicProducer(String name, Properties properties) {
-		return null;
-	}
-
-	@Override
-	public Object bindDynamicPubSubProducer(String name, Properties properties) {
-		return null;
-	}
 }

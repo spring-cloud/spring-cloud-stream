@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,6 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binder.AbstractBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
-import org.springframework.cloud.stream.binder.BinderUtils;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
@@ -98,6 +97,7 @@ import com.rabbitmq.client.Envelope;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
+ *
  * @author Mark Fisher
  * @author Gary Russell
  * @author Jennifer Hickey
@@ -150,38 +150,14 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			.addAll(RABBIT_CONSUMER_PROPERTIES)
 			.build();
 
-	private static final Set<Object> SUPPORTED_PUBSUB_CONSUMER_PROPERTIES = new SetBuilder()
-			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderPropertyKeys.DURABLE)
-			.build();
-
 	/**
-	 * Basic + concurrency.
-	 */
-	private static final Set<Object> SUPPORTED_NAMED_CONSUMER_PROPERTIES = new SetBuilder()
-			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderPropertyKeys.CONCURRENCY)
-			.build();
-
-	/**
-	 * Basic + concurrency + partitioning.
+	 * Basic + durable + concurrency + partitioning.
 	 */
 	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
+			.add(BinderPropertyKeys.DURABLE)
 			.add(BinderPropertyKeys.CONCURRENCY)
 			.add(BinderPropertyKeys.PARTITION_INDEX)
-			.build();
-
-	/**
-	 * Basic + concurrency + reply headers + delivery mode (reply).
-	 */
-	private static final Set<Object> SUPPORTED_REPLYING_CONSUMER_PROPERTIES = new SetBuilder()
-			// request
-			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderPropertyKeys.CONCURRENCY)
-			// reply
-			.add(RabbitPropertiesAccessor.REPLY_HEADER_PATTERNS)
-			.add(RabbitPropertiesAccessor.DELIVERY_MODE)
 			.build();
 
 	/**
@@ -195,39 +171,15 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			.add(BinderPropertyKeys.COMPRESS)
 			.build();
 
-	private static final Set<Object> SUPPORTED_PUBSUB_PRODUCER_PROPERTIES = new SetBuilder()
-			.addAll(SUPPORTED_BASIC_PRODUCER_PROPERTIES)
-			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
-			.addAll(PRODUCER_BATCHING_ADVANCED_PROPERTIES)
-			.build();
-
-	private static final Set<Object> SUPPORTED_NAMED_PRODUCER_PROPERTIES = new SetBuilder()
-			.addAll(SUPPORTED_BASIC_PRODUCER_PROPERTIES)
-			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
-			.addAll(PRODUCER_BATCHING_ADVANCED_PROPERTIES)
-			.build();
-
 	/**
 	 * Partitioning + rabbit producer properties.
 	 */
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(SUPPORTED_BASIC_PRODUCER_PROPERTIES)
-			.add(BinderPropertyKeys.DIRECT_BINDING_ALLOWED)
 			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
 			.addAll(PRODUCER_BATCHING_ADVANCED_PROPERTIES)
-			.build();
-
-	/**
-	 * Basic producer + basic consumer + concurrency + reply headers.
-	 */
-	private static final Set<Object> SUPPORTED_REQUESTING_PRODUCER_PROPERTIES = new SetBuilder()
-			// request
-			.addAll(SUPPORTED_BASIC_PRODUCER_PROPERTIES)
-			// reply
-			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderPropertyKeys.CONCURRENCY)
-			.add(RabbitPropertiesAccessor.REPLY_HEADER_PATTERNS)
+			.add(RabbitPropertiesAccessor.AUTO_BIND_DLQ)
 			.build();
 
 	private static final MessagePropertiesConverter inboundMessagePropertiesConverter =
@@ -436,51 +388,27 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	}
 
 	@Override
-	public void bindConsumer(final String name, MessageChannel moduleInputChannel, Properties properties) {
+	public void doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
+		String baseQueueName = groupedName(name, group);
 		if (this.logger.isInfoEnabled()) {
-			this.logger.info("declaring queue for inbound: " + name);
-		}
-		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)) {
-			validateConsumerProperties(name, properties, SUPPORTED_NAMED_CONSUMER_PROPERTIES);
-		}
-		else {
-			validateConsumerProperties(name, properties, SUPPORTED_CONSUMER_PROPERTIES);
+			this.logger.info("declaring queue for inbound: " + baseQueueName + ", bound to: " + name);
 		}
 		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
-		String queueName = applyPrefix(accessor.getPrefix(this.defaultPrefix), name);
-		TopicExchange exchange = new TopicExchange(queueName);
-		declareExchange(queueName, exchange);
+		validateConsumerProperties(baseQueueName, properties, SUPPORTED_CONSUMER_PROPERTIES);
+		String prefix = accessor.getPrefix(this.defaultPrefix);
+		String exchangeName = applyPrefix(prefix, name);
+		TopicExchange exchange = new TopicExchange(exchangeName);
+		declareExchange(exchangeName, exchange);
+
+		String queueName = applyPrefix(prefix, baseQueueName);
 		int partitionIndex = accessor.getPartitionIndex();
-		String dlqNameRoot = name;
 		if (partitionIndex >= 0) {
 			String partitionSuffix = "-" + partitionIndex;
 			queueName += partitionSuffix;
-			dlqNameRoot += partitionSuffix;
 		}
-		Queue queue = new Queue(queueName, true, false, false, queueArgs(accessor, queueName));
-		declareQueue(queueName, queue);
-		autoBindDLQ(dlqNameRoot, accessor);
-		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(queueName);
-		declareBinding(queueName, binding);
-		doRegisterConsumer(name, moduleInputChannel, queue, accessor, false);
-		bindExistingProducerDirectlyIfPossible(name, moduleInputChannel);
-	}
 
-	@Override
-	public void bindPubSubConsumer(String exchangeName, MessageChannel moduleInputChannel, String group,
-			Properties properties) {
-		String name = BinderUtils.groupedName(exchangeName, group);
-		if (this.logger.isInfoEnabled()) {
-			this.logger.info("declaring pubsub for inbound: " + name + ", bound to: " + exchangeName);
-		}
-		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
-		validateConsumerProperties(name, properties, SUPPORTED_PUBSUB_CONSUMER_PROPERTIES);
-		String prefix = accessor.getPrefix(this.defaultPrefix);
-		TopicExchange exchange = new TopicExchange(applyPrefix(prefix, exchangeName));
-		declareExchange(exchange.getName(), exchange);
 		Queue queue;
 		boolean durable = accessor.isDurable(this.defaultDurableSubscription);
-		String queueName = applyPrefix(prefix, name);
 		if (durable) {
 			queue = new Queue(queueName, true, false, false, queueArgs(accessor, queueName));
 		}
@@ -488,10 +416,16 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			queue = new Queue(queueName, false, false, true);
 		}
 		declareQueue(queueName, queue);
-		declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with("#"));
-		doRegisterConsumer(name, moduleInputChannel, queue, accessor, true);
+		if (partitionIndex >= 0) {
+			String bindingKey = String.format("%s-%d", name, partitionIndex);
+			declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(bindingKey));
+		}
+		else {
+			declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with("#"));
+		}
+		doRegisterConsumer(baseQueueName, inputChannel, queue, accessor);
 		if (durable) {
-			autoBindDLQ(name, accessor);
+			autoBindDLQ(applyPrefix(prefix, baseQueueName), queueName, accessor);
 		}
 	}
 
@@ -505,7 +439,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	}
 
 	private void doRegisterConsumer(String name, MessageChannel moduleInputChannel, Queue queue,
-			RabbitPropertiesAccessor properties, boolean isPubSub) {
+			RabbitPropertiesAccessor properties) {
 		// Fix for XD-2503
 		// Temporarily overrides the thread context classloader with the one where the SimpleMessageListenerContainer
 		// is defined
@@ -520,15 +454,15 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			listenerContainer.setChannelTransacted(properties.getTransacted(this.defaultChannelTransacted));
 			listenerContainer.setDefaultRequeueRejected(properties.getRequeueRejected(this
 					.defaultDefaultRequeueRejected));
-			if (!isPubSub) {
-				int concurrency = properties.getConcurrency(this.defaultConcurrency);
-				concurrency = concurrency > 0 ? concurrency : 1;
-				listenerContainer.setConcurrentConsumers(concurrency);
-				int maxConcurrency = properties.getMaxConcurrency(this.defaultMaxConcurrency);
-				if (maxConcurrency > concurrency) {
-					listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
-				}
+
+			int concurrency = properties.getConcurrency(this.defaultConcurrency);
+			concurrency = concurrency > 0 ? concurrency : 1;
+			listenerContainer.setConcurrentConsumers(concurrency);
+			int maxConcurrency = properties.getMaxConcurrency(this.defaultMaxConcurrency);
+			if (maxConcurrency > concurrency) {
+				listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
 			}
+
 			listenerContainer.setPrefetchCount(properties.getPrefetchCount(this.defaultPrefetchCount));
 			listenerContainer.setTxSize(properties.getTxSize(this.defaultTxSize));
 			listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(queue.getName() + "-"));
@@ -587,54 +521,36 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		}
 	}
 
-	@Override
-	public void bindProducer(final String name, MessageChannel moduleOutputChannel,
-			Properties properties) {
-		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
-		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
-		if (name.startsWith(P2P_NAMED_CHANNEL_TYPE_PREFIX)) {
-			validateProducerProperties(name, properties, SUPPORTED_NAMED_PRODUCER_PROPERTIES);
-		}
-		else {
-			validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
-		}
-		if (!bindNewProducerDirectlyIfPossible(name, (SubscribableChannel) moduleOutputChannel, accessor)) {
-			if (this.logger.isInfoEnabled()) {
-				this.logger.info("declaring queue for outbound: " + name);
-			}
-			AmqpOutboundEndpoint queue = this.buildOutboundEndpoint(name, accessor, determineRabbitTemplate(accessor));
-			doRegisterProducer(name, moduleOutputChannel, queue, accessor);
-		}
-	}
-
 	private AmqpOutboundEndpoint buildOutboundEndpoint(final String name, RabbitPropertiesAccessor properties,
 			RabbitTemplate rabbitTemplate) {
 		String prefix = properties.getPrefix(this.defaultPrefix);
-		String queueName = applyPrefix(prefix, name);
+		String exchangeName = applyPrefix(prefix, name);
 		String partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
 		Expression partitionKeyExpression = properties.getPartitionKeyExpression();
-		TopicExchange exchange = new TopicExchange(queueName);
-		declareExchange(queueName, exchange);
+		TopicExchange exchange = new TopicExchange(exchangeName);
+		declareExchange(exchangeName, exchange);
 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(rabbitTemplate);
 		endpoint.setExchangeName(exchange.getName());
+		String baseQueueName = exchangeName + ".default";
 		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
-			Queue queue = new Queue(queueName, true, false, false, queueArgs(properties, queueName));
-			declareQueue(name, queue);
-			autoBindDLQ(name, properties);
-			endpoint.setRoutingKey(queueName);
-			org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(queueName);
-			declareBinding(queueName, binding);
+			Queue queue = new Queue(baseQueueName, true, false, false, queueArgs(properties, baseQueueName));
+			declareQueue(baseQueueName, queue);
+			autoBindDLQ(baseQueueName, baseQueueName, properties);
+			endpoint.setRoutingKey(name);
+			org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(name);
+			declareBinding(baseQueueName, binding);
 		}
 		else {
-			endpoint.setExpressionRoutingKey(EXPRESSION_PARSER.parseExpression(buildPartitionRoutingExpression
-					(queueName)));
-			// if the stream is partitioned, create one queue for each target partition
+			endpoint.setExpressionRoutingKey(EXPRESSION_PARSER.parseExpression(buildPartitionRoutingExpression(name)));
+			// if the stream is partitioned, create one queue for each target partition for the default group
 			for (int i = 0; i < properties.getNextModuleCount(); i++) {
 				String partitionSuffix = "-" + i;
-				Queue queue = new Queue(queueName + partitionSuffix, true, false, false, queueArgs(properties, queueName));
+				String partitionQueueName = baseQueueName + partitionSuffix;
+				Queue queue = new Queue(partitionQueueName, true, false, false,
+						queueArgs(properties, partitionQueueName));
 				declareQueue(queue.getName(), queue);
-				autoBindDLQ(name + partitionSuffix, properties);
-				declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(queue.getName()));
+				autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, properties);
+				declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(name + partitionSuffix));
 			}
 		}
 		configureOutboundHandler(endpoint, properties);
@@ -652,18 +568,14 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	}
 
 	@Override
-	public void bindPubSubProducer(String name, MessageChannel moduleOutputChannel,
-			Properties properties) {
-		validateProducerProperties(name, properties, SUPPORTED_PUBSUB_PRODUCER_PROPERTIES);
+	public void bindProducer(String name, MessageChannel outputChannel, Properties properties) {
+		validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
 		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
 		String exchangeName = applyPrefix(accessor.getPrefix(this.defaultPrefix), name);
 		TopicExchange exchange = new TopicExchange(exchangeName);
 		declareExchange(exchangeName, exchange);
-		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(determineRabbitTemplate(accessor));
-		endpoint.setExchangeName(exchangeName);
-		endpoint.setRoutingKey(name);
-		configureOutboundHandler(endpoint, accessor);
-		doRegisterProducer(name, moduleOutputChannel, endpoint, accessor);
+		AmqpOutboundEndpoint endpoint = this.buildOutboundEndpoint(name, accessor, determineRabbitTemplate(accessor));
+		doRegisterProducer(name, outputChannel, endpoint, accessor);
 	}
 
 	private RabbitTemplate determineRabbitTemplate(RabbitPropertiesAccessor properties) {
@@ -709,67 +621,27 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		producerBinding.start();
 	}
 
-	@Override
-	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies,
-			Properties properties) {
-		if (this.logger.isInfoEnabled()) {
-			this.logger.info("binding requestor: " + name);
-		}
-		validateProducerProperties(name, properties, SUPPORTED_REQUESTING_PRODUCER_PROPERTIES);
-		Assert.isInstanceOf(SubscribableChannel.class, requests);
-		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
-		String queueName = applyRequests(name);
-		AmqpOutboundEndpoint queue = this.buildOutboundEndpoint(queueName, accessor, this.rabbitTemplate);
-		queue.setBeanFactory(this.getBeanFactory());
-
-		String replyQueueName = accessor.getPrefix(this.defaultPrefix) + name + ".replies."
-				+ this.getIdGenerator().generateId();
-		this.doRegisterProducer(name, requests, queue, replyQueueName, accessor);
-		Queue replyQueue = new Queue(replyQueueName, false, false, true); // auto-delete
-		declareQueue(replyQueueName, replyQueue);
-		this.doRegisterConsumer(name, replies, replyQueue, accessor, false);
-	}
-
-	@Override
-	public void bindReplier(String name, MessageChannel requests, MessageChannel replies,
-			Properties properties) {
-		if (this.logger.isInfoEnabled()) {
-			this.logger.info("binding replier: " + name);
-		}
-		validateConsumerProperties(name, properties, SUPPORTED_REPLYING_CONSUMER_PROPERTIES);
-		RabbitPropertiesAccessor accessor = new RabbitPropertiesAccessor(properties);
-		Queue requestQueue = new Queue(applyPrefix(accessor.getPrefix(this.defaultPrefix), applyRequests(name)));
-		declareQueue(requestQueue.getName(), requestQueue);
-		this.doRegisterConsumer(name, requests, requestQueue, accessor, false);
-
-		AmqpOutboundEndpoint replyQueue = new AmqpOutboundEndpoint(this.rabbitTemplate);
-		replyQueue.setExpressionRoutingKey(EXPRESSION_PARSER.parseExpression("headers['" + AmqpHeaders.REPLY_TO +
-				"']"));
-		configureOutboundHandler(replyQueue, accessor);
-		doRegisterProducer(name, replies, replyQueue, accessor);
-	}
-
 	/**
 	 * If so requested, declare the DLX/DLQ and bind it. The DLQ is bound to the DLX with a routing key of the original
 	 * queue name because we use default exchange routing by queue name for the original message.
-	 * @param name The name.
+	 * @param queueName The base name for the queue (including the binder prefix, if any).
+	 * @param routingKey The routing key for the queue.
 	 * @param properties The properties accessor.
 	 */
-	private void autoBindDLQ(final String name, RabbitPropertiesAccessor properties) {
+	private void autoBindDLQ(final String queueName, String routingKey, RabbitPropertiesAccessor properties) {
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("autoBindDLQ=" + properties.getAutoBindDLQ(this.defaultAutoBindDLQ)
-					+ " for: " + name);
+					+ " for: " + queueName);
 		}
 		if (properties.getAutoBindDLQ(this.defaultAutoBindDLQ)) {
 			String prefix = properties.getPrefix(this.defaultPrefix);
-			String queueName = applyPrefix(prefix, name);
 			String dlqName = constructDLQName(queueName);
 			Queue dlq = new Queue(dlqName);
 			declareQueue(dlqName, dlq);
 			final String dlxName = deadLetterExchangeName(prefix);
 			final DirectExchange dlx = new DirectExchange(dlxName);
 			declareExchange(dlxName, dlx);
-			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(queueName));
+			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(routingKey));
 		}
 	}
 
@@ -814,21 +686,14 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 	}
 
 	@Override
-	public void unbindConsumer(String name, MessageChannel channel) {
-		super.unbindConsumer(name, channel);
-		cleanAutoDeclareContext(name);
+	public void unbindConsumer(String name, String group, MessageChannel channel) {
+		super.unbindConsumer(name, group, channel);
+		cleanAutoDeclareContext(groupedName(name, group));
 	}
 
 	@Override
-	public void unbindConsumers(String name) {
-		super.unbindConsumers(name);
-		cleanAutoDeclareContext(name);
-	}
-
-	@Override
-	public void unbindPubSubConsumers(String name, String group) {
-		super.unbindPubSubConsumers(name, group);
-		cleanAutoDeclareContext(BinderUtils.groupedName(name, group));
+	protected void afterUnbindConsumers(String name, String group) {
+		cleanAutoDeclareContext(groupedName(name, group));
 	}
 
 	private void addToAutoDeclareContext(String name, Object bean) {
