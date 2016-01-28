@@ -93,15 +93,16 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 								" [<transport>:]<name>");
 					}
 				}
-				String[] outboundChannelNames = null;
+				String[] dynamicDestinations = null;
 				Properties producerProperties = null;
 				if (this.channelBindingServiceProperties != null) {
-					outboundChannelNames = this.channelBindingServiceProperties.getOutboundChannelNames();
+					dynamicDestinations = this.channelBindingServiceProperties.getDynamicDestinations();
 					// TODO: need the props to return some defaults if not found
 					producerProperties = this.channelBindingServiceProperties.getProducerProperties(name);
 				}
-				boolean dynamicAllowed = outboundChannelNames == null || outboundChannelNames.length == 0
-						|| Arrays.asList(outboundChannelNames).contains(name);
+				boolean dynamicAllowed = dynamicDestinations == null
+						|| dynamicDestinations.length == 0
+						|| Arrays.asList(dynamicDestinations).contains(name);
 				if (dynamicAllowed) {
 					Binder<MessageChannel> binder = binderFactory.getBinder(transport);
 					binder.bindProducer(name, channel, producerProperties);

@@ -50,7 +50,7 @@ public class ChannelBindingServiceProperties {
 
 	private String defaultBinder;
 
-	private String[] outboundChannelNames = new String[0];
+	private String[] dynamicDestinations = new String[0];
 
 	public Map<String, BindingProperties> getBindings() {
 		return bindings;
@@ -90,6 +90,14 @@ public class ChannelBindingServiceProperties {
 
 	public void setInstanceCount(int instanceCount) {
 		this.instanceCount = instanceCount;
+	}
+
+	public String[] getDynamicDestinations() {
+		return dynamicDestinations;
+	}
+
+	public void setDynamicDestinations(String[] dynamicDestinations) {
+		this.dynamicDestinations = dynamicDestinations;
 	}
 
 	public String getBindingDestination(String channelName) {
@@ -211,14 +219,6 @@ public class ChannelBindingServiceProperties {
 						Integer.toString(getInstanceIndex()));
 			}
 		}
-	}
-
-	public String[] getOutboundChannelNames() {
-		return outboundChannelNames;
-	}
-
-	public void setOutboundChannelNames(String[] outboundChannelNames) {
-		this.outboundChannelNames = outboundChannelNames;
 	}
 
 	public String getBinder(String channelName) {

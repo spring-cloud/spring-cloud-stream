@@ -143,10 +143,10 @@ public class ChannelBindingServiceTests {
 		MessageChannel resolved = resolver.resolveDestination("mock:bar");
 		assertThat(resolved, sameInstance(dynamic.get()));
 		verify(binder).bindProducer(eq("mock:bar"), eq(dynamic.get()), any(Properties.class));
-		properties.setOutboundChannelNames(new String[] { "mock:bar" });
+		properties.setDynamicDestinations(new String[] { "mock:bar" });
 		resolved = resolver.resolveDestination("mock:bar");
 		assertThat(resolved, sameInstance(dynamic.get()));
-		properties.setOutboundChannelNames(new String[] { "foo:bar" });
+		properties.setDynamicDestinations(new String[] { "foo:bar" });
 		try {
 			resolved = resolver.resolveDestination("mock:bar");
 			fail();
