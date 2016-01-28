@@ -23,16 +23,18 @@ import org.springframework.core.convert.support.ConfigurableConversionService;
 /**
  * Extension of {@link DefaultTuple} that also allows tuple {@link MutableTuple mutation}.
  *
+ * <p>Note that this implementation is not threadsafe.</p>
+ *
  * @author Eric Bottard
  */
 public class DefaultMutableTuple extends DefaultTuple implements MutableTuple {
 
-	public DefaultMutableTuple(List<String> names, List<Object> values, ConfigurableConversionService configurableConversionService) {
+	/*package*/ DefaultMutableTuple(List<String> names, List<Object> values, ConfigurableConversionService configurableConversionService) {
 		super(names, values, configurableConversionService);
 	}
 
 	@Override
-	public synchronized void setValue(int index, Object value) {
+	public void setValue(int index, Object value) {
 		if (index < 0 || index >= size()) {
 			throw new IndexOutOfBoundsException();
 		}
@@ -40,7 +42,7 @@ public class DefaultMutableTuple extends DefaultTuple implements MutableTuple {
 	}
 
 	@Override
-	public synchronized void setValue(String name, Object value) {
+	public void setValue(String name, Object value) {
 		int index = indexOf(name);
 		if (index != -1) {
 			setValue(index, value);

@@ -52,7 +52,7 @@ public class DefaultTuple implements Tuple {
 
 	protected transient Converter<Tuple, String> tupleToStringConverter = new TupleToJsonStringConverter();
 
-	public DefaultTuple(List<String> names, List<Object> values, ConfigurableConversionService 
+	/*package*/ DefaultTuple(List<String> names, List<Object> values, ConfigurableConversionService
 			configurableConversionService) {
 		Assert.notNull(names);
 		Assert.notNull(values);
