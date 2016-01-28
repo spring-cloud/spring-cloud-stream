@@ -125,7 +125,7 @@ public class BindingProperties {
 		this.binder = binder;
 	}
 
-	public Boolean getTrackHistory() {
+	public Boolean isTrackHistory() {
 		return this.trackHistory;
 	}
 
@@ -181,7 +181,7 @@ public class BindingProperties {
 		this.nextModuleConcurrency = nextModuleConcurrency;
 	}
 
-	public Boolean getBatchingEnabled() {
+	public Boolean isBatchingEnabled() {
 		return this.batchingEnabled;
 	}
 
@@ -237,7 +237,7 @@ public class BindingProperties {
 		this.partitionIndex = partitionIndex;
 	}
 
-	public Boolean getPartitioned() {
+	public Boolean isPartitioned() {
 		return this.partitioned;
 	}
 
@@ -245,7 +245,7 @@ public class BindingProperties {
 		this.partitioned = partitioned;
 	}
 
-	public Boolean getDurableSubscription() {
+	public Boolean isDurableSubscription() {
 		return this.durableSubscription;
 	}
 

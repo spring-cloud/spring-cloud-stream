@@ -112,9 +112,9 @@ public class ChannelBindingServiceProperties {
 				channelConsumerProperties.setProperty(BinderPropertyKeys.CONCURRENCY,
 						Integer.toString(bindingProperties.getConcurrency()));
 			}
-			if (bindingProperties.getDurableSubscription() != null) {
+			if (bindingProperties.isDurableSubscription() != null) {
 				channelConsumerProperties.setProperty(BinderPropertyKeys.DURABLE,
-						Boolean.toString(bindingProperties.getDurableSubscription()));
+						Boolean.toString(bindingProperties.isDurableSubscription()));
 			}
 			updateConsumerPartitionProperties(inputChannelName, channelConsumerProperties);
 		}
@@ -136,7 +136,7 @@ public class ChannelBindingServiceProperties {
 
 	private boolean isPartitionedConsumer(String channelName) {
 		BindingProperties bindingProperties = bindings.get(channelName);
-		return bindingProperties != null && bindingProperties.getPartitioned();
+		return bindingProperties != null && bindingProperties.isPartitioned();
 	}
 
 	private boolean isPartitionedProducer(String channelName) {
@@ -148,9 +148,9 @@ public class ChannelBindingServiceProperties {
 	private void updateBatchProperties(String outputChannelName, Properties producerProperties) {
 		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
 		if (bindingProperties != null) {
-			if (bindingProperties.getBatchingEnabled() != null) {
+			if (bindingProperties.isBatchingEnabled() != null) {
 				producerProperties.setProperty(BinderPropertyKeys.BATCHING_ENABLED,
-						String.valueOf(bindingProperties.getBatchingEnabled()));
+						String.valueOf(bindingProperties.isBatchingEnabled()));
 			}
 			if (bindingProperties.getBatchSize() != null) {
 				producerProperties.setProperty(BinderPropertyKeys.BATCH_SIZE,

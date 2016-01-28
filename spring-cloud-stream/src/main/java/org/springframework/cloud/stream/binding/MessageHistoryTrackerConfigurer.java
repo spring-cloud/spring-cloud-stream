@@ -50,7 +50,7 @@ public class MessageHistoryTrackerConfigurer implements MessageChannelConfigurer
 	@Override
 	public void configureMessageChannel(MessageChannel messageChannel, String channelName) {
 		BindingProperties bindingProperties = channelBindingServiceProperties.getBindings().get(channelName);
-		if (bindingProperties != null && Boolean.TRUE.equals(bindingProperties.getTrackHistory())) {
+		if (bindingProperties != null && Boolean.TRUE.equals(bindingProperties.isTrackHistory())) {
 			if (messageChannel instanceof ChannelInterceptorAware) {
 				((ChannelInterceptorAware) messageChannel).addInterceptor(new ChannelInterceptorAdapter() {
 
