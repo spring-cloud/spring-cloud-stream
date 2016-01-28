@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,8 @@ public class BindingProperties {
 	// Inbound properties
 
 	private Integer concurrency;
+
+	private Boolean durableSubscription;
 
 	// Partition properties
 	private String partitionIndex;
@@ -243,6 +245,14 @@ public class BindingProperties {
 		this.partitioned = partitioned;
 	}
 
+	public Boolean getDurableSubscription() {
+		return this.durableSubscription;
+	}
+
+	public void setDurableSubscription(Boolean durableSubscription) {
+		this.durableSubscription = durableSubscription;
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("destination=" + this.destination);
@@ -313,6 +323,10 @@ public class BindingProperties {
 		}
 		if (this.concurrency != null) {
 			sb.append("concurrency=" + this.concurrency);
+			sb.append(COMMA);
+		}
+		if (this.durableSubscription != null) {
+			sb.append("durableSubscription=" + this.durableSubscription);
 			sb.append(COMMA);
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));
