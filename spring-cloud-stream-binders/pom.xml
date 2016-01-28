@@ -17,6 +17,7 @@
 	<properties>
 		<kafka.version>0.8.2.1</kafka.version>
 		<curator.version>2.6.0</curator.version>
+        <spring-amqp.version>1.5.4.BUILD-SNAPSHOT</spring-amqp.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream-binder-test</module>
