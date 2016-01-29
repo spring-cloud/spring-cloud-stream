@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -81,10 +80,10 @@ public class ChannelBindingServiceTests {
 		MessageChannel inputChannel = new DirectChannel();
 		Binding<MessageChannel> mockBinding = Binding.forConsumer("foo", null, Mockito.mock(AbstractEndpoint.class),
 				inputChannel, null);
-		Mockito.when(binder.bindConsumer("foo", null, inputChannel, new Properties()))
+		when(binder.bindConsumer("foo", null, inputChannel, new Properties()))
 				.thenReturn(mockBinding);
 		Binding<MessageChannel> binding = service.bindConsumer(inputChannel, name);
-		Assert.assertThat(binding, sameInstance(mockBinding));
+		assertThat(binding, sameInstance(mockBinding));
 		service.unbindConsumers(name);
 		verify(binder).bindConsumer(name, props.getGroup(), inputChannel, properties.getConsumerProperties(name));
 		verify(binder).unbind(binding);
@@ -115,13 +114,34 @@ public class ChannelBindingServiceTests {
 		Binding<MessageChannel> binding = service.bindConsumer(inputChannel, name);
 		assertThat(binding, sameInstance(mockBinding));
 
+		service.unbindConsumers(name);
+		verify(binder).bindConsumer(name, props.getGroup(), inputChannel, properties.getConsumerProperties(name));
+		verify(binder).unbind(binding);
+		binderFactory.destroy();
+	}
+
+	@Test
+	public void checkDynamicBinding () {
+
+		ChannelBindingServiceProperties properties = new ChannelBindingServiceProperties();
+		DefaultBinderFactory<MessageChannel> binderFactory =
+				new DefaultBinderFactory<>(Collections.singletonMap("mock",
+						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
+								new Properties(), true)));
+		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
+
+		MessageChannel inputChannel = new DirectChannel();
+		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
+		Binding<MessageChannel> mockBinding = Binding.forConsumer("bar", null, Mockito.mock(AbstractEndpoint.class),
+				inputChannel, null);
+
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
 		when(binder.bindProducer(
 				matches("mock:bar"), any(DirectChannel.class), any(Properties.class))).thenReturn(mockBinding);
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties);
 		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("mock:bar", MessageChannel.class))
-			.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
+				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
 		doAnswer(new Answer<Void>(){
 
 			@Override
@@ -154,11 +174,6 @@ public class ChannelBindingServiceTests {
 		catch (DestinationResolutionException e) {
 			assertThat(e.getMessage(), containsString("Failed to find MessageChannel bean with name 'mock:bar'"));
 		}
-
-		service.unbindConsumers(name);
-		verify(binder).bindConsumer(name, props.getGroup(), inputChannel, properties.getConsumerProperties(name));
-		verify(binder).unbind(binding);
-		binderFactory.destroy();
 	}
 
 }
