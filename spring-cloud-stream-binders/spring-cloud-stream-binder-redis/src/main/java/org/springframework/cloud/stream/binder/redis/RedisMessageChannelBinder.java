@@ -85,6 +85,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 			.addAll(CONSUMER_RETRY_PROPERTIES)
 			.add(BinderPropertyKeys.CONCURRENCY)
 			.add(BinderPropertyKeys.PARTITION_INDEX)
+			.add(BinderPropertyKeys.DURABLE)
 			.build();
 
 	/**
@@ -250,7 +251,10 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	protected void afterUnbind(Binding<MessageChannel> binding) {
 		if (Binding.Type.consumer.equals(binding.getType())) {
 			String key = CONSUMER_GROUPS_KEY_PREFIX + binding.getName();
-			this.redisOperations.boundZSetOps(key).incrementScore(binding.getGroup(), -1);
+			boolean durable = binding.getPropertiesAccessor().isDurable(defaultDurableSubscription);
+			if (!durable) {
+				this.redisOperations.boundZSetOps(key).incrementScore(binding.getGroup(), -1);
+			}
 		}
 	}
 
