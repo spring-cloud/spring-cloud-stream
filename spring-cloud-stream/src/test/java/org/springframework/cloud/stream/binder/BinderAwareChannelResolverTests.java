@@ -25,9 +25,12 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +43,8 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.scheduling.PollerMetadata;
@@ -128,21 +133,26 @@ public class BinderAwareChannelResolverTests {
 	@Test
 	@SuppressWarnings("rawtypes")
 	public void propertyPassthrough() {
-		Properties properties = new Properties();
+		ChannelBindingServiceProperties bindingServiceProperties = new ChannelBindingServiceProperties();
+		Map<String, BindingProperties> bindings = new HashMap<String, BindingProperties>();
+		BindingProperties bindingProperties = new BindingProperties();
+		bindingProperties.setContentType("text/plain");
+		bindings.put("foo", bindingProperties);
+		bindingServiceProperties.setBindings(bindings);
 		@SuppressWarnings("unchecked")
-		Binder<MessageChannel> binderFactory = mock(Binder.class);
+		Binder<MessageChannel> binder = mock(Binder.class);
 		BinderFactory mockBinderFactory = Mockito.mock(BinderFactory.class);
-		Mockito.when(mockBinderFactory.getBinder(anyString())).thenReturn(binderFactory);
+		when(mockBinderFactory.getBinder(anyString())).thenReturn(binder);
 		@SuppressWarnings("unchecked")
 		BinderAwareChannelResolver resolver =
-				new BinderAwareChannelResolver(mockBinderFactory, properties);
+				new BinderAwareChannelResolver(mockBinderFactory, bindingServiceProperties);
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
 		MessageChannel resolved = resolver.resolveDestination("foo");
-		verify(binderFactory).bindProducer(eq("foo"), any(MessageChannel.class), eq(properties));
+		verify(binder).bindProducer(eq("foo"), any(MessageChannel.class), any(Properties.class));
 		assertSame(resolved, beanFactory.getBean("foo"));
 		resolved = resolver.resolveDestination("someTransport:foo");
-		verify(binderFactory).bindProducer(eq("someTransport:foo"), any(MessageChannel.class), eq(properties));
+		verify(binder).bindProducer(eq("someTransport:foo"), any(MessageChannel.class), any(Properties.class));
 		assertSame(resolved, beanFactory.getBean("someTransport:foo"));
 	}
 
