@@ -10,9 +10,9 @@
 		<url>http://www.spring.io</url>
 	</organization>
 	<parent>
-	  <groupId>org.springframework.cloud</groupId>
-	  <artifactId>spring-cloud-stream-parent</artifactId>
-	  <version>1.0.0.BUILD-SNAPSHOT</version>
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-stream-parent</artifactId>
+		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -48,16 +48,16 @@
 		</dependencies>
 	</dependencyManagement>
 	<build>
-      <pluginManagement>
-		<plugins>
-			<plugin>
-				<!--skip deploy (this is just a test module) -->
-				<artifactId>maven-deploy-plugin</artifactId>
-				<configuration>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<!--skip deploy (this is just a test module) -->
+					<artifactId>maven-deploy-plugin</artifactId>
+					<configuration>
 					<skip>true</skip>
-				</configuration>
-			</plugin>
-        </plugins>
-      </pluginManagement>
-    </build>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 </project>

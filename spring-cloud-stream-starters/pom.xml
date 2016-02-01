@@ -9,9 +9,9 @@
 		<url>http://www.spring.io</url>
 	</organization>
 	<parent>
-	  <groupId>org.springframework.cloud</groupId>
-	  <artifactId>spring-cloud-stream-parent</artifactId>
-	  <version>1.0.0.BUILD-SNAPSHOT</version>
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-stream-parent</artifactId>
+		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 	<modules>
 		<module>spring-cloud-starter-stream-rabbit</module>
