@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,25 +26,16 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Map;
 
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.collection.IsMapContaining;
 import org.junit.Test;
 
-import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.boot.actuate.health.CompositeHealthIndicator;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -196,32 +187,8 @@ public class BinderFactoryConfigurationTests {
 		Binder defaultBinder = binderFactory.getBinder(null);
 		assertThat(defaultBinder, is(binder2));
 	}
-
-	@Test
-	public void healthIndicatorsCheck() throws Exception {
-		ConfigurableApplicationContext context =
-				createBinderTestContext(
-						new String[]{"binder1", "binder2"}, "spring.cloud.stream.defaultBinder:binder2");
-
-		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1");
-		assertThat(binder1, instanceOf(StubBinder1.class));
-		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2");
-		assertThat(binder2, instanceOf(StubBinder2.class));
-
-		CompositeHealthIndicator bindersHealthIndicator =
-				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
-		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
-		assertNotNull(bindersHealthIndicator);
-		@SuppressWarnings("unchecked")
-		Map<String,HealthIndicator> healthIndicators =
-				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
-		assertThat(healthIndicators, IsMapContaining.hasKey("binder1"));
-		assertThat(healthIndicators.get("binder1").health().getStatus(), CoreMatchers.equalTo(Status.UP));
-		assertThat(healthIndicators, IsMapContaining.hasKey("binder2"));
-		assertThat(healthIndicators.get("binder2").health().getStatus(), CoreMatchers.equalTo(Status.UNKNOWN));
-	}
-
-	private static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
+	
+	public static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
 																		  String... properties)
 			throws IOException {
 		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ?

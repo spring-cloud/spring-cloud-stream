@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.actuate.health.CompositeHealthIndicator;
-import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -116,14 +113,6 @@ public class BinderFactoryConfiguration {
 		}
 		return new DefaultBinderTypeRegistry(binderTypes);
 	}
-
-	@Bean
-	@ConditionalOnEnabledHealthIndicator("binders")
-	@ConditionalOnMissingBean(name = "bindersHealthIndicator")
-	public CompositeHealthIndicator bindersHealthIndicator() {
-		return new CompositeHealthIndicator(new OrderedHealthAggregator());
-	}
-
 
 	static Collection<BinderType> parseBinderConfigurations(ClassLoader classLoader, Resource resource)
 			throws IOException, ClassNotFoundException {

@@ -65,4 +65,10 @@ public class ChannelBindingAutoConfiguration {
 		return new ChannelsEndpoint(adapters, properties);
 	}
 
+	@Bean
+	@ConditionalOnEnabledHealthIndicator("binders")
+	@ConditionalOnMissingBean(name = "bindersHealthIndicator")
+	public CompositeHealthIndicator bindersHealthIndicator() {
+		return new CompositeHealthIndicator(new OrderedHealthAggregator());
+	}
 }
