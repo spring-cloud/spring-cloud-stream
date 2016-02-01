@@ -122,6 +122,9 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 		logger.trace("Publishing message {}", message);
 		handleRemovedConsumerGroups();
 		Set<String> groups = this.consumerGroupsRegion.get(this.name);
+		if (groups == null) {
+			groups = Collections.singleton(DEFAULT_CONSUMER_GROUP);
+		}
 		for (String group : groups) {
 			String regionName = formatMessageRegionName(this.name, group);
 			Region<MessageKey, Message<?>> region = this.regionMap.get(regionName);
@@ -129,6 +132,7 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 				region = createProducerMessageRegion(regionName);
 				this.regionMap.put(regionName, region);
 			}
+logger.warn("Writing message to region {}", region.getName());
 			region.putAll(Collections.singletonMap(nextMessageKey(), message));
 		}
 	}
@@ -139,11 +143,18 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 	 */
 	private void handleRemovedConsumerGroups() {
 		Set<String> registeredGroups = this.consumerGroupsRegion.get(this.name);
+		if (registeredGroups == null) {
+			return;
+		}
 		Set<String> knownGroups = this.regionMap.keySet();
 		Set<String> removedGroups = new HashSet<>(knownGroups);
 		removedGroups.removeAll(registeredGroups);
 		for (String group : removedGroups) {
-			this.regionMap.remove(formatMessageRegionName(this.name, group)).close();
+			Region<MessageKey, Message<?>> region =
+					this.regionMap.remove(formatMessageRegionName(this.name, group));
+			if (region != null) {
+				region.close();
+			}
 		}
 	}
 

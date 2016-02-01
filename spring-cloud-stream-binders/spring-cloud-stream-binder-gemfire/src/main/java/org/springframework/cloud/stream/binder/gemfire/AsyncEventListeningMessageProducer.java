@@ -28,8 +28,8 @@ import com.gemstone.gemfire.cache.asyncqueue.AsyncEvent;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.integration.endpoint.ExpressionMessageProducerSupport;
 import org.springframework.integration.gemfire.inbound.CacheListeningMessageProducer;
@@ -60,9 +60,9 @@ import org.springframework.util.Assert;
  */
 public class AsyncEventListeningMessageProducer extends ExpressionMessageProducerSupport {
 
-	public static final String QUEUE_POSTFIX = "-queue";
+	private static final Logger logger = LoggerFactory.getLogger(AsyncEventListeningMessageProducer.class);
 
-	private final Log logger = LogFactory.getLog(this.getClass());
+	public static final String QUEUE_POSTFIX = "-queue";
 
 	private final Region<?, ?> region;
 
@@ -113,21 +113,18 @@ public class AsyncEventListeningMessageProducer extends ExpressionMessageProduce
 
 	@Override
 	protected void doStart() {
-		if (logger.isInfoEnabled()) {
-			logger.info("adding MessageProducingAsyncEventListener to GemFire Region '" +
-					this.region.getName() + "'");
-		}
+		logger.info("adding MessageProducingAsyncEventListener to GemFire Region '{}'",
+				this.region.getName());
 
-		this.queueFactory.create(queueId, this.listener);
+		this.queueFactory.create(this.queueId, this.listener);
 		this.region.getAttributesMutator().addAsyncEventQueueId(this.queueId);
 	}
 
 	@Override
 	protected void doStop() {
-		if (logger.isInfoEnabled()) {
-			logger.info("removing MessageProducingAsyncEventListener from GemFire Region '" +
-					this.region.getName() + "'");
-		}
+		logger.info("removing MessageProducingAsyncEventListener from GemFire Region '{}'",
+				this.region.getName());
+
 		try {
 			this.region.getAttributesMutator().removeAsyncEventQueueId(this.queueId);
 		}

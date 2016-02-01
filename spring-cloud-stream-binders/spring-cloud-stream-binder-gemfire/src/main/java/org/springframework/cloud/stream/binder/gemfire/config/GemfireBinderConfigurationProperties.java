@@ -21,6 +21,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * @author Patrick Peralta
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.gemfire.executor")
-public class GemfireExecutorConfigurationProperties {
+@ConfigurationProperties(prefix = "spring.cloud.stream.binder.gemfire")
+public class GemfireBinderConfigurationProperties {
+
+	private int batchSize = 100;
+
+	public int getBatchSize() {
+		return batchSize;
+	}
+
+	public void setBatchSize(int batchSize) {
+		this.batchSize = batchSize;
+	}
 }

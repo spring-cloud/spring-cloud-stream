@@ -1,0 +1,2 @@
+gemfire:\
+org.springframework.cloud.stream.binder.gemfire.config.GemfireBinderAutoConfiguration

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import com.gemstone.gemfire.cache.Cache;
 import com.gemstone.gemfire.distributed.LocatorLauncher;
 import com.oracle.tools.runtime.LocalPlatform;
 import com.oracle.tools.runtime.PropertiesBuilder;
@@ -42,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.data.gemfire.CacheFactoryBean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
@@ -274,12 +276,30 @@ public class GemfireBinderTests {
 	}
 
 	/**
+	 * Create a {@link Cache} with hard coded properties for testing.
+	 *
+	 * @return Cache for testing
+	 *
+	 * @throws Exception
+	 */
+	private static Cache createCache() throws Exception {
+		CacheFactoryBean bean = new CacheFactoryBean();
+		Properties properties = new Properties();
+		properties.put("locators", "localhost[7777]");
+		properties.put("log-level", "warning");
+		properties.put("mcast-port", "0");
+		bean.setProperties(properties);
+
+		return bean.getObject();
+	}
+
+	/**
 	 * Producer application that binds a channel to a {@link GemfireMessageChannelBinder}
 	 * and sends a test message.
 	 */
 	public static class Producer {
 		public static void main(String[] args) throws Exception {
-			GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder();
+			GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(createCache());
 			binder.setApplicationContext(new GenericApplicationContext());
 			binder.afterPropertiesSet();
 
@@ -317,7 +337,7 @@ public class GemfireBinderTests {
 		 * @throws Exception
 		 */
 		public static void main(String[] args) throws Exception {
-			GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder();
+			GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(createCache());
 			binder.setApplicationContext(new GenericApplicationContext());
 			binder.afterPropertiesSet();
 
@@ -326,7 +346,6 @@ public class GemfireBinderTests {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {
 					String payload = (String) message.getPayload();
-					logger.debug("received message " + payload);
 					messagePayload = payload;
 				}
 			});

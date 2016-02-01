@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.gemstone.gemfire.cache.Cache;
-import com.gemstone.gemfire.cache.CacheFactory;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.RegionFactory;
 import com.gemstone.gemfire.cache.RegionShortcut;
@@ -81,6 +80,11 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	public static final String CONSUMER_GROUPS_REGION = "consumer-groups-region";
 
 	/**
+	 * Name of default consumer group.
+	 */
+	public static final String DEFAULT_CONSUMER_GROUP = "default";
+
+	/**
 	 * Application context that created this object.
 	 */
 	private volatile ApplicationContext applicationContext;
@@ -88,7 +92,7 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	/**
 	 * GemFire peer-to-peer cache.
 	 */
-	private volatile Cache cache;
+	private final Cache cache;
 
 	// todo: make the following fields configurable
 
@@ -96,7 +100,7 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	 * Maximum number of messages to be fetched from the region
 	 * for processing at a time.
 	 */
-	private volatile int batchSize = 1000;
+	private volatile int batchSize;
 
 	/**
 	 * Map of message regions used for consuming messages.
@@ -115,14 +119,25 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	private volatile Region<String, Set<String>> consumerGroupsRegion;
 
 
+	/**
+	 * Construct a GemfireMessageChannelBinder.
+	 *
+	 * @param cache a configured GemFire {@link Cache}.
+	 */
+	public GemfireMessageChannelBinder(Cache cache) {
+		this.cache = cache;
+	}
+
+	public int getBatchSize() {
+		return batchSize;
+	}
+
+	public void setBatchSize(int batchSize) {
+		this.batchSize = batchSize;
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		// todo: obtain properties from the config classes
-		Properties properties = new Properties();
-		properties.put("locators", "localhost[7777]");
-		properties.put("log-level", "warning");
-		properties.put("mcast-port", "0");
-		this.cache = new CacheFactory(properties).create();
 		RegionFactory<String, Set<String>> regionFactory = this.cache.createRegionFactory(RegionShortcut.REPLICATE);
 		this.consumerGroupsRegion = regionFactory.create(CONSUMER_GROUPS_REGION);
 	}
@@ -146,7 +161,7 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	 * @param name prefix of the message region name
 	 * @return region for consuming messages
 	 */
-	private Region<MessageKey, Message<?>> createConsumerMessageRegion(String name)  {
+	private Region<MessageKey, Message<?>> createConsumerMessageRegion(String name) {
 		RegionFactory<MessageKey, Message<?>> regionFactory = this.cache.createRegionFactory(RegionShortcut.PARTITION);
 		return regionFactory.create(name + MESSAGES_POSTFIX);
 	}
@@ -209,7 +224,7 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	@Override
 	public void bindPubSubConsumer(String name, MessageChannel inboundBindTarget, String group, Properties properties) {
 		if (StringUtils.isEmpty(group)) {
-			group = "default";
+			group = DEFAULT_CONSUMER_GROUP;
 		}
 		String messageRegionName = formatMessageRegionName(name, group);
 

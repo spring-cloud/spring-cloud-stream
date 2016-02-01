@@ -16,22 +16,35 @@
 
 package org.springframework.cloud.stream.binder.gemfire.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import com.gemstone.gemfire.cache.Cache;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.gemfire.GemfireMessageChannelBinder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportResource;
 
 /**
  * @author Patrick Peralta
  */
 @Configuration
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.gemfire")
-@EnableConfigurationProperties(GemfireExecutorConfigurationProperties.class)
+@ImportResource("classpath:/META-INF/spring-cloud-stream/gemfire-binder-cache.xml")
+@EnableConfigurationProperties(GemfireBinderConfigurationProperties.class)
 public class GemfireMessageChannelBinderConfiguration {
+
+	@Autowired
+	public Cache cache;
+
+	@Autowired
+	public GemfireBinderConfigurationProperties properties;
 
 	@Bean
 	public GemfireMessageChannelBinder messageChannelBinder() {
-		return new GemfireMessageChannelBinder();
+		GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(this.cache);
+		binder.setBatchSize(this.properties.getBatchSize());
+
+		return binder;
 	}
+
 }
