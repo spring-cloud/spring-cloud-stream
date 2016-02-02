@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,22 +36,23 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
- * Default implementation of Tuple interface
+ * Default implementation of Tuple interface.
+ *
  * @author Mark Pollack
  * @author David Turanski
  * @author Michael Minella
  */
 public class DefaultTuple implements Tuple {
 
-	private List<String> names;
+	protected List<String> names;
 
-	private List<Object> values;
+	protected List<Object> values;
 
-	private transient ConfigurableConversionService configurableConversionService;
+	protected transient ConfigurableConversionService configurableConversionService;
 
-	private transient Converter<Tuple, String> tupleToStringConverter = new TupleToJsonStringConverter();
+	protected transient Converter<Tuple, String> tupleToStringConverter = new TupleToJsonStringConverter();
 
-	public DefaultTuple(List<String> names, List<Object> values, ConfigurableConversionService 
+	/*package*/ DefaultTuple(List<String> names, List<Object> values, ConfigurableConversionService
 			configurableConversionService) {
 		Assert.notNull(names);
 		Assert.notNull(values);
@@ -521,22 +522,12 @@ public class DefaultTuple implements Tuple {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.cloud.stream.tuple.Tuple#getValue(java.lang.String, java.lang.Class)
-	 */
 	@Override
 	public <T> T getValue(String name, Class<T> valueClass) {
 		Object value = values.get(indexOf(name));
 		return convert(value, valueClass);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.springframework.cloud.stream.tuple.Tuple#getValue(int, java.lang.Class)
-	 */
 	@Override
 	public <T> T getValue(int index, Class<T> valueClass) {
 		return convert(values.get(index), valueClass);

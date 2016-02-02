@@ -18,12 +18,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.springframework.core.convert.converter.Converter;
-
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.core.convert.converter.Converter;
 
 /**
  * @author David Turanski
@@ -38,6 +38,7 @@ public class JsonStringToTupleConverter implements Converter<String, Tuple> {
 
 	@Override
 	public Tuple convert(String source) {
+		System.out.println("Converting " + source);
 		TupleBuilder builder = TupleBuilder.tuple();
 		try {
 
@@ -70,7 +71,9 @@ public class JsonStringToTupleConverter implements Converter<String, Tuple> {
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		return builder.build();
+		Tuple result = builder.build();
+		System.out.println("returning " + result.getClass() + " " + result);
+		return result;
 	}
 
 	private List<Object> nodeToList(JsonNode node) throws JsonProcessingException {

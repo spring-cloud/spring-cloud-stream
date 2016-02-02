@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,9 +45,6 @@ import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
 
 /**
  * @author Gary Russell
@@ -176,8 +175,8 @@ public class MessageChannelBinderSupportTests {
 
 	@Test
 	public void testTupleSerialization() {
-		Tuple payload = TupleBuilder.tuple().of("foo", "bar");
-		MessageValues convertedValues = binder.serializePayloadIfNecessary(new GenericMessage<Tuple>(payload));
+		Tuple payload = TupleBuilder.immutableTuple().of("foo", "bar");
+		MessageValues convertedValues = binder.serializePayloadIfNecessary(new GenericMessage<>(payload));
 		Message<?> converted = convertedValues.toMessage();
 		MimeType mimeType = contentTypeResolver.resolve(converted.getHeaders());
 		assertEquals("application", mimeType.getType());
