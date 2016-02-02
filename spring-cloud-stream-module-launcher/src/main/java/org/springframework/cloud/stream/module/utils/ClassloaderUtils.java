@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.module.utils;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,6 +29,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class ClassloaderUtils {
 
@@ -50,16 +53,23 @@ public class ClassloaderUtils {
 			// to compensate for LaunchedURLClassLoader not delegating to parent to retrieve resources
 			@SuppressWarnings("resource")
 			URLClassLoader systemUrlClassLoader = (URLClassLoader) systemClassLoader;
-			URL[] mergedUrls = new URL[urls.length + systemUrlClassLoader.getURLs().length];
+			List<URL> systemURLs = new ArrayList<>();
+			for (URL url: systemUrlClassLoader.getURLs()) {
+				// this will help avoiding any tests using the classes directory in the system class loader.
+				if (!url.getFile().endsWith("classes/")) {
+					systemURLs.add(url);
+				}
+			}
+			URL[] filteredSystemURLs = systemURLs.toArray(new URL[0]);
+			URL[] mergedUrls = new URL[urls.length + filteredSystemURLs.length];
 			if (log.isDebugEnabled()) {
 				log.debug("Original URLs: " +
 						StringUtils.arrayToCommaDelimitedString(urls));
 				log.debug("Java Classpath URLs: " +
-						StringUtils.arrayToCommaDelimitedString(systemUrlClassLoader.getURLs()));
+						StringUtils.arrayToCommaDelimitedString(filteredSystemURLs));
 			}
 			System.arraycopy(urls, 0, mergedUrls, 0, urls.length);
-			System.arraycopy(systemUrlClassLoader.getURLs(), 0, mergedUrls, urls.length,
-					systemUrlClassLoader.getURLs().length);
+			System.arraycopy(filteredSystemURLs, 0, mergedUrls, urls.length, filteredSystemURLs.length);
 			// add the extension classloader as parent to the created context, if accessible
 			if (log.isDebugEnabled()) {
 				log.debug("Classloader URLs: " + StringUtils.arrayToCommaDelimitedString(mergedUrls));
