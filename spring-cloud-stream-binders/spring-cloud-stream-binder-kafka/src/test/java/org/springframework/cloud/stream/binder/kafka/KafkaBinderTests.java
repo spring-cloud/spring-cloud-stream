@@ -362,7 +362,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
-		binder.setStartingOffset(KafkaMessageChannelBinder.StartingOffset.earliest);
+		binder.setStartOffset(KafkaMessageChannelBinder.StartOffset.earliest);
 		DirectChannel output = new DirectChannel();
 		Properties properties = new Properties();
 		QueueChannel input1 = new QueueChannel();
@@ -389,8 +389,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.refresh();
 		binder.setApplicationContext(context);
-		binder.setStartingOffset(KafkaMessageChannelBinder.StartingOffset.earliest);
-		binder.setResetOnStart(true);
+		binder.setStartOffset(KafkaMessageChannelBinder.StartOffset.earliest);
+		binder.setResetOffsets(true);
 		binder.afterPropertiesSet();
 		DirectChannel output = new DirectChannel();
 		Properties properties = new Properties();
@@ -443,7 +443,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
-		binder.setStartingOffset(KafkaMessageChannelBinder.StartingOffset.earliest);
+		binder.setStartOffset(KafkaMessageChannelBinder.StartOffset.earliest);
 		DirectChannel output = new DirectChannel();
 		Properties properties = new Properties();
 		QueueChannel input1 = new QueueChannel();

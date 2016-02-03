@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.kafka.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -72,9 +71,9 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	private int offsetUpdateShutdownTimeout;
 
-	private boolean resetOnStart = false;
+	private boolean resetOffsets = false;
 
-	private KafkaMessageChannelBinder.StartingOffset startingOffset;
+	private KafkaMessageChannelBinder.StartOffset startOffset;
 
 	@Autowired
 	private Codec codec;
@@ -122,8 +121,8 @@ public class KafkaMessageChannelBinderConfiguration {
 				.getReplicationFactor());
 		kafkaMessageChannelBinder.setDefaultRequiredAcks(kafkaBinderConfigurationProperties.getRequiredAcks());
 
-		kafkaMessageChannelBinder.setResetOnStart(resetOnStart);
-		kafkaMessageChannelBinder.setStartingOffset(startingOffset);
+		kafkaMessageChannelBinder.setResetOffsets(resetOffsets);
+		kafkaMessageChannelBinder.setStartOffset(startOffset);
 
 		return kafkaMessageChannelBinder;
 	}
@@ -208,20 +207,20 @@ public class KafkaMessageChannelBinderConfiguration {
 		return toConnectionString(this.brokers, this.defaultBrokerPort);
 	}
 
-	public KafkaMessageChannelBinder.StartingOffset getStartingOffset() {
-		return startingOffset;
+	public KafkaMessageChannelBinder.StartOffset getStartOffset() {
+		return startOffset;
 	}
 
-	public void setStartingOffset(KafkaMessageChannelBinder.StartingOffset startingOffset) {
-		this.startingOffset = startingOffset;
+	public void setStartOffset(KafkaMessageChannelBinder.StartOffset startOffset) {
+		this.startOffset = startOffset;
 	}
 
-	public boolean isResetOnStart() {
-		return resetOnStart;
+	public boolean isResetOffsets() {
+		return resetOffsets;
 	}
 
-	public void setResetOnStart(boolean resetOnStart) {
-		this.resetOnStart = resetOnStart;
+	public void setResetOffsets(boolean resetOffsets) {
+		this.resetOffsets = resetOffsets;
 	}
 
 	/**
