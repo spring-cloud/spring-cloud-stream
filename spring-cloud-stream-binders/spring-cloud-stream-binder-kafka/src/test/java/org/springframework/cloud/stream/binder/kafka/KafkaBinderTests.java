@@ -56,6 +56,7 @@ import kafka.api.OffsetRequest;
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author Mark Fisher
+ * @author Ilayaperumal Gopinathan
  */
 public class KafkaBinderTests extends PartitionCapableBinderTests {
 
@@ -95,13 +96,13 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 
 	@Override
 	public Spy spyOn(final String name) {
-		String topic = KafkaMessageChannelBinder.escapeTopicName(name);
+		KafkaMessageChannelBinder.validateTopicName(name);
 
 		KafkaTestBinder binderWrapper = (KafkaTestBinder) getBinder();
 		// Rewind offset, as tests will have typically already sent the messages we're trying to consume
 
 		KafkaMessageListenerContainer messageListenerContainer = binderWrapper.getCoreBinder().createMessageListenerContainer(
-				new Properties(), UUID.randomUUID().toString(), 1, topic, OffsetRequest.EarliestTime());
+				new Properties(), UUID.randomUUID().toString(), 1, name, OffsetRequest.EarliestTime());
 
 		final BlockingQueue<KafkaMessage> messages = new ArrayBlockingQueue<KafkaMessage>(10);
 
@@ -122,6 +123,11 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 			}
 		};
 
+	}
+
+	@Test(expected = RuntimeException.class)
+	public void testValidateKafkaTopicName() {
+		KafkaMessageChannelBinder.validateTopicName("foo:bar");
 	}
 
 	@Test
