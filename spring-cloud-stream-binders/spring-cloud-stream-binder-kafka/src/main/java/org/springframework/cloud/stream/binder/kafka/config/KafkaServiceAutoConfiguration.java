@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.test.ImportAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -30,6 +31,7 @@ import org.springframework.context.annotation.PropertySource;
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
+@EnableConfigurationProperties({KafkaBinderConfigurationProperties.class,KafkaMessageChannelBinderConfiguration.class})
 @ImportAutoConfiguration(KafkaMessageChannelBinderConfiguration.class)
 public class KafkaServiceAutoConfiguration {
 

@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.kafka.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -36,7 +35,6 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  */
 @Configuration
-@EnableConfigurationProperties(KafkaBinderConfigurationProperties.class)
 @Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka")
 public class KafkaMessageChannelBinderConfiguration {
@@ -72,6 +70,10 @@ public class KafkaMessageChannelBinderConfiguration {
 	private int offsetUpdateCount;
 
 	private int offsetUpdateShutdownTimeout;
+
+	private boolean resetOffsets = false;
+
+	private KafkaMessageChannelBinder.StartOffset startOffset;
 
 	@Autowired
 	private Codec codec;
@@ -118,6 +120,9 @@ public class KafkaMessageChannelBinderConfiguration {
 		kafkaMessageChannelBinder.setDefaultReplicationFactor(kafkaBinderConfigurationProperties
 				.getReplicationFactor());
 		kafkaMessageChannelBinder.setDefaultRequiredAcks(kafkaBinderConfigurationProperties.getRequiredAcks());
+
+		kafkaMessageChannelBinder.setResetOffsets(resetOffsets);
+		kafkaMessageChannelBinder.setStartOffset(startOffset);
 
 		return kafkaMessageChannelBinder;
 	}
@@ -200,6 +205,22 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	public String getKafkaConnectionString() {
 		return toConnectionString(this.brokers, this.defaultBrokerPort);
+	}
+
+	public KafkaMessageChannelBinder.StartOffset getStartOffset() {
+		return startOffset;
+	}
+
+	public void setStartOffset(KafkaMessageChannelBinder.StartOffset startOffset) {
+		this.startOffset = startOffset;
+	}
+
+	public boolean isResetOffsets() {
+		return resetOffsets;
+	}
+
+	public void setResetOffsets(boolean resetOffsets) {
+		this.resetOffsets = resetOffsets;
 	}
 
 	/**
