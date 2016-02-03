@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
@@ -29,6 +33,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import kafka.api.OffsetRequest;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -38,16 +43,17 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.kafka.core.KafkaMessage;
 import org.springframework.integration.kafka.core.Partition;
 import org.springframework.integration.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.integration.kafka.listener.MessageListener;
+import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-
-import kafka.api.OffsetRequest;
+import org.springframework.messaging.support.GenericMessage;
 
 
 /**
@@ -319,4 +325,152 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		binder.unbind(consumerBinding);
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testDefaultConsumerStartsAtLatest() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
+				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		DirectChannel output = new DirectChannel();
+		Properties properties = new Properties();
+		QueueChannel input1 = new QueueChannel();
+
+		String testTopicName = UUID.randomUUID().toString();
+		binder.bindProducer(testTopicName,output,properties);
+		String testPayload1 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload1.getBytes()));
+		binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage1, is(nullValue()));
+		String testPayload2 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload2.getBytes()));
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage2, not(nullValue()));
+		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
+	}
+
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testEarliest() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
+				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		binder.setStartingOffset(KafkaMessageChannelBinder.StartingOffset.earliest);
+		DirectChannel output = new DirectChannel();
+		Properties properties = new Properties();
+		QueueChannel input1 = new QueueChannel();
+
+		String testTopicName = UUID.randomUUID().toString();
+		binder.bindProducer(testTopicName,output,properties);
+		String testPayload1 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload1.getBytes()));
+		binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage1, not(nullValue()));
+		String testPayload2 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload2.getBytes()));
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage2, not(nullValue()));
+		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testReset() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
+				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.setStartingOffset(KafkaMessageChannelBinder.StartingOffset.earliest);
+		binder.setResetOnStart(true);
+		binder.afterPropertiesSet();
+		DirectChannel output = new DirectChannel();
+		Properties properties = new Properties();
+		QueueChannel input1 = new QueueChannel();
+
+		String testTopicName = UUID.randomUUID().toString();
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output, properties);
+		String testPayload1 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload1.getBytes()));
+		Binding<MessageChannel> consumerBinding =
+				binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage1, not(nullValue()));
+		String testPayload2 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload2.getBytes()));
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage2, not(nullValue()));
+		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
+		binder.unbind(consumerBinding);
+
+		String testPayload3 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload3.getBytes()));
+
+		consumerBinding =
+				binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
+		Message<byte[]> receivedMessage4 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage4, not(nullValue()));
+		assertThat(new String(receivedMessage4.getPayload()), equalTo(testPayload1));
+		Message<byte[]> receivedMessage5 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage5, not(nullValue()));
+		assertThat(new String(receivedMessage5.getPayload()), equalTo(testPayload2));
+		Message<byte[]> receivedMessage6 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage6, not(nullValue()));
+		assertThat(new String(receivedMessage6.getPayload()), equalTo(testPayload3));
+		binder.unbind(consumerBinding);
+
+
+		binder.unbind(producerBinding);
+	}
+
+
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testResume() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
+				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		binder.setStartingOffset(KafkaMessageChannelBinder.StartingOffset.earliest);
+		DirectChannel output = new DirectChannel();
+		Properties properties = new Properties();
+		QueueChannel input1 = new QueueChannel();
+
+		String testTopicName = UUID.randomUUID().toString();
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output, properties);
+		String testPayload1 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload1.getBytes()));
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage1, not(nullValue()));
+		String testPayload2 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload2.getBytes()));
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage2, not(nullValue()));
+		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
+		binder.unbind(consumerBinding);
+
+		String testPayload3 = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload3.getBytes()));
+
+		consumerBinding =
+				binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
+		Message<byte[]> receivedMessage3 = (Message<byte[]>) input1.receive(1000);
+		assertThat(receivedMessage3, not(nullValue()));
+		assertThat(new String(receivedMessage3.getPayload()), equalTo(testPayload3));
+		binder.unbind(consumerBinding);
+
+	}
 }

@@ -51,6 +51,7 @@ import org.springframework.messaging.support.GenericMessage;
  *
  * @author Gary Russell
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
 abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 

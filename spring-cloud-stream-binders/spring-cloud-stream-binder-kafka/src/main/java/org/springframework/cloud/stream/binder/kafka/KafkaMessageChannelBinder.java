@@ -153,6 +153,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private static final boolean DEFAULT_AUTO_COMMIT_ENABLED = true;
 
+	private static final boolean DEFAULT_RESET_ON_START = false;
+
+	private static final StartingOffset DEFAULT_START = StartingOffset.latest;
+
 	private RetryOperations retryOperations;
 
 	/**
@@ -273,6 +277,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private int offsetUpdateShutdownTimeout = 2000;
 
 	private Mode mode = Mode.embeddedHeaders;
+
+	private boolean resetOnStart = false;
+
+	private StartingOffset startingOffset = StartingOffset.latest;
 
 	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
 			 String... headersToMap) {
@@ -434,6 +442,22 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		this.mode = mode;
 	}
 
+	public boolean isResetOnStart() {
+		return resetOnStart;
+	}
+
+	public void setResetOnStart(boolean resetOnStart) {
+		this.resetOnStart = resetOnStart;
+	}
+
+	public StartingOffset getStartingOffset() {
+		return startingOffset;
+	}
+
+	public void setStartingOffset(StartingOffset startingOffset) {
+		this.startingOffset = startingOffset;
+	}
+
 	@Override
 	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
 		// If the caller provides a group, use it; otherwise
@@ -442,7 +466,9 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		// PubSub consumers reset at the latest time, which allows them to receive only messages sent after
 		// they've been bound
 		String consumerGroup = group == null ? "anonymous." + UUID.randomUUID().toString() : group;
-		return createKafkaConsumer(name, inputChannel, properties, consumerGroup, OffsetRequest.LatestTime());
+		long referencePoint = this.startingOffset != null ?
+				startingOffset.getReferencePoint() : OffsetRequest.LatestTime();
+		return createKafkaConsumer(name, inputChannel, properties, consumerGroup, referencePoint);
 	}
 
 	@Override
@@ -678,6 +704,9 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		// if we have less target partitions than target concurrency, adjust accordingly
 		messageListenerContainer.setConcurrency(Math.min(maxConcurrency, listenedPartitions.size()));
 		OffsetManager offsetManager = createOffsetManager(group, referencePoint);
+		if (resetOnStart) {
+			offsetManager.resetOffsets(listenedPartitions);
+		}
 		messageListenerContainer.setOffsetManager(offsetManager);
 		messageListenerContainer.setQueueSize(accessor.getProperty(QUEUE_SIZE, defaultQueueSize));
 		messageListenerContainer.setMaxFetch(accessor.getProperty(FETCH_SIZE, defaultFetchSize));
@@ -881,6 +910,21 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	public enum Mode {
 		raw,
 		embeddedHeaders
+	}
+
+	public enum StartingOffset {
+		earliest(OffsetRequest.EarliestTime()),
+		latest(OffsetRequest.LatestTime());
+
+		private final long referencePoint;
+
+		StartingOffset(long referencePoint) {
+			this.referencePoint = referencePoint;
+		}
+
+		public long getReferencePoint() {
+			return referencePoint;
+		}
 	}
 
 }

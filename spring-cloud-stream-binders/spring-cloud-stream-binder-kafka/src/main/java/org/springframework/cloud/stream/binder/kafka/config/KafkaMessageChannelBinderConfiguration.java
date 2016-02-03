@@ -73,6 +73,10 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	private int offsetUpdateShutdownTimeout;
 
+	private boolean resetOnStart = false;
+
+	private KafkaMessageChannelBinder.StartingOffset startingOffset;
+
 	@Autowired
 	private Codec codec;
 
@@ -118,6 +122,9 @@ public class KafkaMessageChannelBinderConfiguration {
 		kafkaMessageChannelBinder.setDefaultReplicationFactor(kafkaBinderConfigurationProperties
 				.getReplicationFactor());
 		kafkaMessageChannelBinder.setDefaultRequiredAcks(kafkaBinderConfigurationProperties.getRequiredAcks());
+
+		kafkaMessageChannelBinder.setResetOnStart(resetOnStart);
+		kafkaMessageChannelBinder.setStartingOffset(startingOffset);
 
 		return kafkaMessageChannelBinder;
 	}
@@ -200,6 +207,22 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	public String getKafkaConnectionString() {
 		return toConnectionString(this.brokers, this.defaultBrokerPort);
+	}
+
+	public KafkaMessageChannelBinder.StartingOffset getStartingOffset() {
+		return startingOffset;
+	}
+
+	public void setStartingOffset(KafkaMessageChannelBinder.StartingOffset startingOffset) {
+		this.startingOffset = startingOffset;
+	}
+
+	public boolean isResetOnStart() {
+		return resetOnStart;
+	}
+
+	public void setResetOnStart(boolean resetOnStart) {
+		this.resetOnStart = resetOnStart;
 	}
 
 	/**
