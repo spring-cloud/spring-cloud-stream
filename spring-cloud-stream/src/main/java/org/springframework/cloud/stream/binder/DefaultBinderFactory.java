@@ -145,7 +145,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 			if (useApplicationContextAsParent) {
 				springApplicationBuilder.parent(context);
 			}
-			else if (environment != null && binderConfiguration.isInheritEnvironment()) {
+			if (useApplicationContextAsParent || (environment != null && binderConfiguration.isInheritEnvironment())) {
 				StandardEnvironment binderEnvironment = new StandardEnvironment();
 				binderEnvironment.merge(environment);
 				springApplicationBuilder.environment(binderEnvironment);
