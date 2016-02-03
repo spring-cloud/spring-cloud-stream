@@ -36,7 +36,6 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  */
 @Configuration
-@EnableConfigurationProperties(KafkaBinderConfigurationProperties.class)
 @Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka")
 public class KafkaMessageChannelBinderConfiguration {
