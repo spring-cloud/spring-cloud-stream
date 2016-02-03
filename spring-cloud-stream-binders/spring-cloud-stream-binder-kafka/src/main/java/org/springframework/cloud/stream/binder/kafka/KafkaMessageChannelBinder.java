@@ -376,28 +376,21 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	}
 
 	/**
-	 * Allowed chars are ASCII alphanumerics, '.', '_' and '-'. '_' is used as escaped char in the form '_xx' where xx
-	 * is the hexadecimal value of the byte(s) needed to represent an illegal char in utf8.
+	 * Allowed chars are ASCII alphanumerics, '.', '_' and '-'.
 	 */
-	/*default*/
-	public static String escapeTopicName(String original) {
-		StringBuilder result = new StringBuilder(original.length());
+	public static void validateTopicName(String topicName) {
 		try {
-			byte[] utf8 = original.getBytes("UTF-8");
+			byte[] utf8 = topicName.getBytes("UTF-8");
 			for (byte b : utf8) {
-				if ((b >= 'a') && (b <= 'z') || (b >= 'A') && (b <= 'Z') || (b >= '0') && (b <= '9') || (b == '.')
-						|| (b == '-')) {
-					result.append((char) b);
-				}
-				else {
-					result.append(String.format("_%02X", b));
+				if (!((b >= 'a') && (b <= 'z') || (b >= 'A') && (b <= 'Z') || (b >= '0') && (b <= '9') || (b == '.')
+						|| (b == '-') || (b == '_'))) {
+					throw new RuntimeException("Topic name can only have ASCII alphanumerics, '.', '_' and '-'");
 				}
 			}
 		}
 		catch (UnsupportedEncodingException e) {
 			throw new AssertionError(e); // Can't happen
 		}
-		return result.toString();
 	}
 
 	public void setDefaultReplicationFactor(int defaultReplicationFactor) {
@@ -461,14 +454,14 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 			logger.info("Using kafka topic for outbound: " + name);
 		}
 
-		final String topicName = escapeTopicName(name);
+		validateTopicName(name);
 
 		int numPartitions = producerPropertiesAccessor.getNumberOfKafkaPartitionsForProducer();
 
-		Collection<Partition> partitions = ensureTopicCreated(topicName, numPartitions, defaultReplicationFactor);
+		Collection<Partition> partitions = ensureTopicCreated(name, numPartitions, defaultReplicationFactor);
 
 		ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(
-				topicName, byte[].class, byte[].class, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
+				name, byte[].class, byte[].class, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
 		producerMetadata.setCompressionType(ProducerMetadata.CompressionType.valueOf(
 				producerPropertiesAccessor.getCompressionCodec(this.defaultCompressionCodec)));
 		producerMetadata.setBatchBytes(producerPropertiesAccessor.getBatchSize(this.defaultBatchSize));
@@ -486,7 +479,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 			final ProducerConfiguration<byte[], byte[]> producerConfiguration = new ProducerConfiguration<>(
 					producerMetadata, producerFB.getObject());
 
-			MessageHandler handler = new SendingHandler(topicName, producerPropertiesAccessor,
+			MessageHandler handler = new SendingHandler(name, producerPropertiesAccessor,
 					partitions.size(), producerConfiguration);
 			EventDrivenConsumer consumer = new EventDrivenConsumer((SubscribableChannel) moduleOutputChannel,
 					handler);
@@ -567,10 +560,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 		int maxConcurrency = accessor.getConcurrency(defaultConcurrency);
 
-		String topic = escapeTopicName(name);
+		validateTopicName(name);
 
 		int numPartitions = accessor.getNumberOfKafkaPartitionsForConsumer();
-		Collection<Partition> allPartitions = ensureTopicCreated(topic, numPartitions, defaultReplicationFactor);
+		Collection<Partition> allPartitions = ensureTopicCreated(name, numPartitions, defaultReplicationFactor);
 
 		Decoder<byte[]> valueDecoder = new DefaultDecoder(null);
 		Decoder<byte[]> keyDecoder = new DefaultDecoder(null);
