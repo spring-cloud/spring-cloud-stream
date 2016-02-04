@@ -37,7 +37,7 @@ public class ModuleResolverProperties {
 	/**
 	 * Location of comma separated remote maven repositories from which modules will be downloaded, if not available locally.
 	 */
-	private String[] remoteRepositories = new String[] {"https://repo.spring.io/libs-snapshot"};
+	private String[] remoteRepositories = new String[]{"https://repo.spring.io/libs-milestone"};
 
 	/**
 	 * Whether the resolver should operate in offline mode.
