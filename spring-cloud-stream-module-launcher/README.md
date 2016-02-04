@@ -86,22 +86,3 @@ docker run -p 8082:8080 -e MODULES=org.springframework.cloud.stream.module:log-s
  -e spring.cloud.stream.bindings.input=topic:foo -e SPRING_REDIS_HOST=<Redis-Host-IP> springcloud/stream-module-launcher
 ````
 In the above scenario, both the sink modules receive the same messages from the time source.
-
-## Running on Lattice
-
-1: Launch lattice with vagrant as described [here](http://lattice.cf/docs/getting-started/).
-
-2: Create a Redis instance on Lattice (running as root):
-
-````
-$ ltc create redis redis -r
-````
-
-3: Run the modules as long-running processes (LRPs) on Lattice:
-
-````
-$ ltc create time springcloud/stream-module-launcher -m 512 \
- -e SPRING_CLOUD_STREAM_BINDINGS_OUTPUT=ticktock -e MODULES=org.springframework.cloud.stream.module:time-source:jar:exec:1.0.0.BUILD-SNAPSHOT
-$ ltc create log springcloud/stream-module-launcher -m 512 \
- -e SPRING_CLOUD_STREAM_BINDINGS_INPUT=ticktock -e MODULES=org.springframework.cloud.stream.module:log-sink:jar:exec:1.0.0.BUILD-SNAPSHOT
-````

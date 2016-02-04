@@ -21,7 +21,6 @@ import org.springframework.boot.autoconfigure.test.ImportAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 
 /**
@@ -36,15 +35,8 @@ import org.springframework.context.annotation.PropertySource;
 public class KafkaServiceAutoConfiguration {
 
 	@Configuration
-	@Profile("!lattice")
 	@PropertySource("classpath:/META-INF/spring-cloud-stream/kafka-binder.properties")
 	public static class DefaultProperties {
 
-	}
-
-	@Configuration
-	@Profile("lattice")
-	@PropertySource("classpath:/META-INF/spring-cloud-stream/kafka-binder-lattice.properties")
-	public static class LatticeDefaultProperties {
 	}
 }
