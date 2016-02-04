@@ -14,5 +14,10 @@ There are several samples, all running on the redis transport (so you need redis
 
 * `extended` is a multi-module mashup of `source | transform | transform | sink`, where the modules are defined in the other samples and referred to in this app just as dependencies.
 
+* `multibinder` is a sample application that exhibits how an application could use multiple binders. In this case, the processor's input/output channels connect to different brokers using their own binder configurations.
+
+* `multibinder-differentsystems` shows how an application could use same binder implementation but different configurations for its channel. In this case, a processor's input/output channels connect to same binder implementation but with two separate broker configurations.
+
+
 If you run the source and the sink and point them at the same redis instance (e.g. do nothing to get the one on localhost, or the one they are both bound to as a service on Cloud Foundry) then they will form a "stream" and start talking to each other. All the samples have friendly JMX and Actuator endpoints for inspecting what is going on in the system.
 
