@@ -159,6 +159,14 @@
 												<include name="**/*.jpg" />
 											</fileset>
 										</copy>
+										<copy todir="${basedir}/target/contents/reference/htmlsingle">
+											<fileset dir="${basedir}/src/main/asciidoc">
+												<include name="images/*.css" />
+												<include name="images/*.png" />
+												<include name="images/*.gif" />
+												<include name="images/*.jpg" />
+											</fileset>
+										</copy>
 									</postProcess>
 								</configuration>
 							</execution>
@@ -184,6 +192,14 @@
 												<include name="**/*.png" />
 												<include name="**/*.gif" />
 												<include name="**/*.jpg" />
+											</fileset>
+										</copy>
+										<copy todir="${basedir}/target/contents/reference/html">
+											<fileset dir="${basedir}/src/main/asciidoc">
+												<include name="images/*.css" />
+												<include name="images/*.png" />
+												<include name="images/*.gif" />
+												<include name="images/*.jpg" />
 											</fileset>
 										</copy>
 									</postProcess>
