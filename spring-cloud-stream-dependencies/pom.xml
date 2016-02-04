@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>spring-cloud-dependencies-parent</artifactId>
 		<groupId>org.springframework.cloud</groupId>
 		<version>1.1.0.M5</version>
-		<relativePath/>
+		<relativePath />
 	</parent>
 	<artifactId>spring-cloud-stream-dependencies</artifactId>
-	<version>1.0.0.BUILD-SNAPSHOT</version>
+	<version>1.0.0.M4</version>
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-dependencies</name>
 	<description>Spring Cloud Stream Dependencies</description>
@@ -22,12 +21,12 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-codec</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -37,7 +36,7 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-kafka</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -47,17 +46,17 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-redis</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-kafka</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -67,37 +66,37 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-redis</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-test</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-module-launcher</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-tuple</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support-internal</artifactId>
-				<version>${project.version}</version>
+				<version>1.0.0.M4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
