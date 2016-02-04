@@ -206,6 +206,10 @@ Code using the Spring Cloud Stream library can be deployed as a standalone appli
 
 You can run in standalone mode from your IDE for testing. To run in production you can create an executable (or "fat") JAR using the standard Spring Boot tooling provided by Maven or Gradle.
 
+==== Health endpoints
+
+Spring Cloud Stream provides a health indicator for the binders, registered under the name of `binders`. It can be enabled or disabled using the `management.health.binders.enabled` property. 
+
 === Binder SPI
 
 Spring Cloud Stream provides a binder abstraction for connecting to physical destinations. This section will describe the main concepts behind the Binder SPI, its main components, as well as details specific to different implementations.
