@@ -33,7 +33,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import kafka.api.OffsetRequest;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -54,6 +53,8 @@ import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
+
+import kafka.api.OffsetRequest;
 
 
 /**
@@ -131,7 +132,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 
 	}
 
-	@Test(expected = RuntimeException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testValidateKafkaTopicName() {
 		KafkaMessageChannelBinder.validateTopicName("foo:bar");
 	}
