@@ -172,7 +172,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Arrays.fill(ratherBigPayload, (byte) 65);
 		KafkaTestBinder binder = (KafkaTestBinder) getBinder();
 
-
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		Properties producerProperties = new Properties();
@@ -352,7 +351,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
 	}
 
-
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testEarliest() throws Exception {
@@ -427,12 +425,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		assertThat(receivedMessage6, not(nullValue()));
 		assertThat(new String(receivedMessage6.getPayload()), equalTo(testPayload3));
 		binder.unbind(consumerBinding);
-
-
 		binder.unbind(producerBinding);
 	}
-
-
 
 	@Test
 	@SuppressWarnings("unchecked")
@@ -471,6 +465,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		assertThat(receivedMessage3, not(nullValue()));
 		assertThat(new String(receivedMessage3.getPayload()), equalTo(testPayload3));
 		binder.unbind(consumerBinding);
-
+		binder.unbind(producerBinding);
 	}
 }

@@ -153,9 +153,9 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private static final boolean DEFAULT_AUTO_COMMIT_ENABLED = true;
 
-	private static final boolean DEFAULT_RESET_ON_START = false;
+	private static final boolean DEFAULT_RESET_OFFSETS = false;
 
-	private static final StartOffset DEFAULT_START = StartOffset.latest;
+	private static final StartOffset DEFAULT_START_OFFSET = StartOffset.latest;
 
 	private RetryOperations retryOperations;
 
@@ -278,9 +278,9 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private Mode mode = Mode.embeddedHeaders;
 
-	private boolean resetOffsets = false;
+	private boolean resetOffsets = DEFAULT_RESET_OFFSETS;
 
-	private StartOffset startOffset = StartOffset.latest;
+	private StartOffset startOffset = DEFAULT_START_OFFSET;
 
 	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
 			 String... headersToMap) {
@@ -460,11 +460,11 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	@Override
 	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
-		// If the caller provides a group, use it; otherwise
-		// usage of a different consumer group each time achieves pub-sub
-		// but multiple instances of this binding will each get all messages
-		// PubSub consumers resetOffsets at the latest time, which allows them to receive only messages sent after
-		// they've been bound
+		// If the caller provides a consumer group, use it; otherwise an anonymous consumer group
+		// is generated each time, such that each anonymous binding will receive all messages.
+		// Consumers reset offsets at the latest time by default, which allows them to receive only
+		// messages sent after they've been bound. That behavior can be changed with the
+		// "resetOffsets" and "startOffset" properties.
 		String consumerGroup = group == null ? "anonymous." + UUID.randomUUID().toString() : group;
 		long referencePoint = this.startOffset != null ?
 				startOffset.getReferencePoint() : OffsetRequest.LatestTime();
