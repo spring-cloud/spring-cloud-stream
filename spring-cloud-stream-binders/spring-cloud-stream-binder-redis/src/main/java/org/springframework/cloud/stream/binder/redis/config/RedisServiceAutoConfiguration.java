@@ -34,7 +34,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 /**
- * Bind to services, either locally or in a Lattice environment.
+ * Bind to services, either locally or in a cloud environment.
  *
  * @author Mark Fisher
  * @author Dave Syer
@@ -52,10 +52,12 @@ public class RedisServiceAutoConfiguration {
 	@ConditionalOnClass(Cloud.class)
 	@Profile("cloud")
 	protected static class CloudConfig {
+
 		@Bean
 		public Cloud cloud() {
 			return new CloudFactory().getCloud();
 		}
+
 		@Bean
 		@ConditionalOnMissingBean(RedisConnectionFactory.class)
 		RedisConnectionFactory redisConnectionFactory(Cloud cloud) {

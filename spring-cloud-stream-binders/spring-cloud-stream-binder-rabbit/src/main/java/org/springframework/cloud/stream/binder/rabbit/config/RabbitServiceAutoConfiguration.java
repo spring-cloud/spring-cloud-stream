@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 
 /**
- * Bind to services, either locally or in a Lattice environment.
+ * Bind to services, either locally or in a cloud environment.
  *
  * @author Mark Fisher
  * @author Dave Syer
@@ -49,10 +49,12 @@ import org.springframework.context.annotation.PropertySource;
 @AutoConfigureBefore({CloudAutoConfiguration.class, RabbitAutoConfiguration.class})
 @PropertySource("classpath:/META-INF/spring-cloud-stream/rabbit-binder.properties")
 public class RabbitServiceAutoConfiguration {
+
 	@Configuration
 	@Profile("cloud")
 	@ConditionalOnClass(Cloud.class)
 	protected static class CloudConfig {
+
 		@Bean
 		public Cloud cloud() {
 			return new CloudFactory().getCloud();
@@ -69,7 +71,6 @@ public class RabbitServiceAutoConfiguration {
 	@Profile("!cloud")
 	@Import(RabbitAutoConfiguration.class)
 	protected static class NoCloudConfig {
-
 	}
 
 	@Bean
