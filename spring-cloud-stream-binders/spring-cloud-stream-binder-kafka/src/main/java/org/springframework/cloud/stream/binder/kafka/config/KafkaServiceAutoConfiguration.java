@@ -20,13 +20,17 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.test.ImportAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.integration.kafka.support.LoggingProducerListener;
+import org.springframework.integration.kafka.support.ProducerListener;
 
 /**
  * Bind to Kafka services.
  *
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
@@ -38,5 +42,11 @@ public class KafkaServiceAutoConfiguration {
 	@PropertySource("classpath:/META-INF/spring-cloud-stream/kafka-binder.properties")
 	public static class DefaultProperties {
 
+	}
+
+	@Bean
+	@ConditionalOnMissingBean(ProducerListener.class)
+	ProducerListener producerListener() {
+		return new LoggingProducerListener();
 	}
 }

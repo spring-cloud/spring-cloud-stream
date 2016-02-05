@@ -26,6 +26,8 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
+import org.springframework.integration.kafka.support.LoggingProducerListener;
+import org.springframework.integration.kafka.support.ProducerListener;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -39,6 +41,7 @@ import com.esotericsoftware.kryo.Registration;
  * @author Marius Bogoevici
  * @author David Turanski
  * @author Gary Russell
+ * @author Soby Chacko
  */
 public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder> {
 
@@ -59,6 +62,8 @@ public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinde
 			binder.setCodec(getCodec());
 			binder.setDefaultBatchingEnabled(false);
 			binder.setMode(mode);
+			ProducerListener producerListener = new LoggingProducerListener();
+			binder.setProducerListener(producerListener);
 			GenericApplicationContext context = new GenericApplicationContext();
 			context.refresh();
 			binder.setApplicationContext(context);

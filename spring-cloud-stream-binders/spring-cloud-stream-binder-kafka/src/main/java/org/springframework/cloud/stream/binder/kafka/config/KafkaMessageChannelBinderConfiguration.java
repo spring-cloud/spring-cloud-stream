@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
@@ -25,6 +26,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.codec.Codec;
+import org.springframework.integration.kafka.support.LoggingProducerListener;
+import org.springframework.integration.kafka.support.ProducerListener;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -33,6 +36,7 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Marius Bogoevici
  * @author Mark Fisher
+ * @author Soby Chacko
  */
 @Configuration
 @Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
@@ -51,20 +55,6 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	private KafkaMessageChannelBinder.Mode mode;
 
-	private String offsetStoreTopic;
-
-	private int offsetStoreSegmentSize;
-
-	private int offsetStoreRetentionTime;
-
-	private int offsetStoreRequiredAcks;
-
-	private int offsetStoreMaxFetchSize;
-
-	private int offsetStoreBatchBytes;
-
-	private int offsetStoreBatchTime;
-
 	private int offsetUpdateTimeWindow;
 
 	private int offsetUpdateCount;
@@ -81,6 +71,9 @@ public class KafkaMessageChannelBinderConfiguration {
 	@Autowired
 	private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
 
+	@Autowired
+	private ProducerListener producerListener;
+
 	@Bean
 	ZookeeperConnect zookeeperConnect() {
 		ZookeeperConnect zookeeperConnect = new ZookeeperConnect();
@@ -96,13 +89,6 @@ public class KafkaMessageChannelBinderConfiguration {
 						headers);
 		kafkaMessageChannelBinder.setCodec(codec);
 		kafkaMessageChannelBinder.setMode(mode);
-		kafkaMessageChannelBinder.setOffsetStoreTopic(offsetStoreTopic);
-		kafkaMessageChannelBinder.setOffsetStoreSegmentSize(offsetStoreSegmentSize);
-		kafkaMessageChannelBinder.setOffsetStoreRetentionTime(offsetStoreRetentionTime);
-		kafkaMessageChannelBinder.setOffsetStoreRequiredAcks(offsetStoreRequiredAcks);
-		kafkaMessageChannelBinder.setOffsetStoreMaxFetchSize(offsetStoreMaxFetchSize);
-		kafkaMessageChannelBinder.setOffsetStoreBatchBytes(offsetStoreBatchBytes);
-		kafkaMessageChannelBinder.setOffsetStoreBatchTime(offsetStoreBatchTime);
 		kafkaMessageChannelBinder.setOffsetUpdateTimeWindow(offsetUpdateTimeWindow);
 		kafkaMessageChannelBinder.setOffsetUpdateCount(offsetUpdateCount);
 		kafkaMessageChannelBinder.setOffsetUpdateShutdownTimeout(offsetUpdateShutdownTimeout);
@@ -123,6 +109,8 @@ public class KafkaMessageChannelBinderConfiguration {
 
 		kafkaMessageChannelBinder.setResetOffsets(resetOffsets);
 		kafkaMessageChannelBinder.setStartOffset(startOffset);
+
+		kafkaMessageChannelBinder.setProducerListener(producerListener);
 
 		return kafkaMessageChannelBinder;
 	}
@@ -153,34 +141,6 @@ public class KafkaMessageChannelBinderConfiguration {
 
 	public void setMode(KafkaMessageChannelBinder.Mode mode) {
 		this.mode = mode;
-	}
-
-	public void setOffsetStoreTopic(String offsetStoreTopic) {
-		this.offsetStoreTopic = offsetStoreTopic;
-	}
-
-	public void setOffsetStoreSegmentSize(int offsetStoreSegmentSize) {
-		this.offsetStoreSegmentSize = offsetStoreSegmentSize;
-	}
-
-	public void setOffsetStoreRetentionTime(int offsetStoreRetentionTime) {
-		this.offsetStoreRetentionTime = offsetStoreRetentionTime;
-	}
-
-	public void setOffsetStoreRequiredAcks(int offsetStoreRequiredAcks) {
-		this.offsetStoreRequiredAcks = offsetStoreRequiredAcks;
-	}
-
-	public void setOffsetStoreMaxFetchSize(int offsetStoreMaxFetchSize) {
-		this.offsetStoreMaxFetchSize = offsetStoreMaxFetchSize;
-	}
-
-	public void setOffsetStoreBatchBytes(int offsetStoreBatchBytes) {
-		this.offsetStoreBatchBytes = offsetStoreBatchBytes;
-	}
-
-	public void setOffsetStoreBatchTime(int offsetStoreBatchTime) {
-		this.offsetStoreBatchTime = offsetStoreBatchTime;
 	}
 
 	public void setOffsetUpdateTimeWindow(int offsetUpdateTimeWindow) {
