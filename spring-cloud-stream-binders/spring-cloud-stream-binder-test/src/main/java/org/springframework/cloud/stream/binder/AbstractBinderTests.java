@@ -49,6 +49,13 @@ public abstract class AbstractBinderTests {
 
 	protected AbstractTestBinder<?> testBinder;
 
+	/**
+	 * Subclasses may override this default value to have tests wait longer for a message receive, for example if
+	 * running
+	 * in an environment that is known to be slow (e.g. travis).
+	 */
+	protected double timeoutMultiplier = 1.0D;
+
 	@Test
 	public void testClean() throws Exception {
 		Binder<MessageChannel> binder = getBinder();
@@ -81,7 +88,7 @@ public abstract class AbstractBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(5000);
+		Message<?> inbound = moduleInputChannel.receive((int) (5000 * timeoutMultiplier));
 		assertNotNull(inbound);
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
@@ -101,7 +108,7 @@ public abstract class AbstractBinderTests {
 
 		Message<?> message = MessageBuilder.withPayload("foo").build();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(5000);
+		Message<?> inbound = moduleInputChannel.receive((int) (5000 * timeoutMultiplier));
 		assertNotNull(inbound);
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
