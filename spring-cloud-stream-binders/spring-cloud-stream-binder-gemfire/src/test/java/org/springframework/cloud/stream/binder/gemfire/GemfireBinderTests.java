@@ -353,7 +353,7 @@ public class GemfireBinderTests {
 			if (args.length > 0) {
 				group = args[0];
 			}
-			binder.bindPubSubConsumer(BINDING_NAME, consumerChannel, group, new Properties());
+			binder.bindConsumer(BINDING_NAME, group, consumerChannel, new Properties());
 			isBound = true;
 
 			Thread.sleep(Long.MAX_VALUE);

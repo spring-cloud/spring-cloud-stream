@@ -35,9 +35,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -268,22 +271,13 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 		}
 	}
 
-	/**
-	 * Remove registration for all consumer groups for a binding.
-	 *
-	 * @param name binding name.
-	 */
-	private void removeConsumerGroups(String name) {
-		this.consumerGroupsRegion.remove(name);
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 
 	@Override
-	public void bindConsumer(String name, MessageChannel inboundBindTarget, Properties properties) {
-		bindPubSubConsumer(name, inboundBindTarget, null, properties);
-	}
-
-	@Override
-	public void bindPubSubConsumer(String name, MessageChannel inboundBindTarget, String group, Properties properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
 		if (StringUtils.isEmpty(group)) {
 			group = DEFAULT_CONSUMER_GROUP;
 		}
@@ -301,79 +295,32 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 		this.regionMap.put(name, messageRegion);
 		addConsumerGroup(name, group);
 		messageProducer.start();
+
+		return Binding.forConsumer(name, group, messageProducer, inboundBindTarget,
+				new DefaultBindingPropertiesAccessor(properties));
 	}
 
 	@Override
-	public void bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
-		bindPubSubProducer(name, outboundBindTarget, properties);
-	}
-
-	@Override
-	public void bindPubSubProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
+	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, outboundBindTarget);
 
 		SendingHandler handler = new SendingHandler(this.cache, this.consumerGroupsRegion,
 				name, this.producerRegionType);
 		handler.start();
 
-		((SubscribableChannel) outboundBindTarget).subscribe(handler);
+		SubscribableChannel subscribableChannel = (SubscribableChannel) outboundBindTarget;
+		subscribableChannel.subscribe(handler);
+
 		this.sendingHandlerMap.put(name, handler);
+
+		return Binding.forProducer(name, outboundBindTarget,
+				new EventDrivenConsumer(subscribableChannel, handler),
+				new DefaultBindingPropertiesAccessor(properties));
 	}
 
 	@Override
-	public void unbindConsumers(String name) {
-		for (String regionName : this.regionMap.keySet()) {
-			if (regionName.startsWith(name)) {
-				this.regionMap.remove(regionName).close();
-			}
-		}
-		removeConsumerGroups(name);
+	public void unbind(Binding<MessageChannel> binding) {
+		this.regionMap.get(createMessageRegionName(binding.getName(), binding.getGroup())).close();
+		removeConsumerGroup(binding.getName(), binding.getGroup());
 	}
-
-	@Override
-	public void unbindPubSubConsumers(String name, String group) {
-		this.regionMap.get(createMessageRegionName(name, group)).close();
-		removeConsumerGroup(name, group);
-	}
-
-	@Override
-	public void unbindProducers(String name) {
-		this.sendingHandlerMap.get(name).stop();
-	}
-
-	@Override
-	public void unbindConsumer(String name, MessageChannel channel) {
-		unbindConsumers(name);
-	}
-
-	@Override
-	public void unbindProducer(String name, MessageChannel outboundBindTarget) {
-		unbindProducers(name);
-	}
-
-	@Override
-	public void bindRequestor(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void bindReplier(String name, MessageChannel requests, MessageChannel replies, Properties properties) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public MessageChannel bindDynamicProducer(String name, Properties properties) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public MessageChannel bindDynamicPubSubProducer(String name, Properties properties) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
-	}
-
 }
