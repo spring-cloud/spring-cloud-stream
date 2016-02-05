@@ -55,15 +55,8 @@ import org.springframework.integration.kafka.core.DefaultConnectionFactory;
 import org.springframework.integration.kafka.core.Partition;
 import org.springframework.integration.kafka.core.ZookeeperConfiguration;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
-import org.springframework.integration.kafka.listener.Acknowledgment;
-import org.springframework.integration.kafka.listener.KafkaMessageListenerContainer;
-import org.springframework.integration.kafka.listener.KafkaTopicOffsetManager;
-import org.springframework.integration.kafka.listener.OffsetManager;
-import org.springframework.integration.kafka.support.KafkaHeaders;
-import org.springframework.integration.kafka.support.ProducerConfiguration;
-import org.springframework.integration.kafka.support.ProducerFactoryBean;
-import org.springframework.integration.kafka.support.ProducerMetadata;
-import org.springframework.integration.kafka.support.ZookeeperConnect;
+import org.springframework.integration.kafka.listener.*;
+import org.springframework.integration.kafka.support.*;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -124,6 +117,7 @@ import scala.collection.Seq;
  * @author David Turanski
  * @author Gary Russell
  * @author Mark Fisher
+ * @author Soby Chacko
  */
 public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
@@ -250,25 +244,11 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private ConnectionFactory connectionFactory;
 
-	private String offsetStoreTopic = "SpringXdOffsets";
-
 	// auto commit property
 
 	private boolean defaultAutoCommitEnabled = DEFAULT_AUTO_COMMIT_ENABLED;
 
 	private int socketBufferSize = 2097152;
-
-	private int offsetStoreSegmentSize = 250 * 1024 * 1024;
-
-	private int offsetStoreRetentionTime = 60000;
-
-	private int offsetStoreRequiredAcks = 1;
-
-	private int offsetStoreMaxFetchSize = 1048576;
-
-	private int offsetStoreBatchBytes = 200;
-
-	private int offsetStoreBatchTime = 1000;
 
 	private int offsetUpdateTimeWindow = 10000;
 
@@ -282,8 +262,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private StartOffset startOffset = DEFAULT_START_OFFSET;
 
+	private ProducerListener producerListener;
+
 	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
-			 String... headersToMap) {
+	                                 String... headersToMap) {
 		this.zookeeperConnect = zookeeperConnect;
 		this.brokers = brokers;
 		this.zkAddress = zkAddress;
@@ -300,28 +282,8 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		}
 	}
 
-	public void setOffsetStoreTopic(String offsetStoreTopic) {
-		this.offsetStoreTopic = offsetStoreTopic;
-	}
-
-	public void setOffsetStoreSegmentSize(int offsetStoreSegmentSize) {
-		this.offsetStoreSegmentSize = offsetStoreSegmentSize;
-	}
-
-	public void setOffsetStoreRetentionTime(int offsetStoreRetentionTime) {
-		this.offsetStoreRetentionTime = offsetStoreRetentionTime;
-	}
-
 	public void setSocketBufferSize(int socketBufferSize) {
 		this.socketBufferSize = socketBufferSize;
-	}
-
-	public void setOffsetStoreRequiredAcks(int offsetStoreRequiredAcks) {
-		this.offsetStoreRequiredAcks = offsetStoreRequiredAcks;
-	}
-
-	public void setOffsetStoreMaxFetchSize(int offsetStoreMaxFetchSize) {
-		this.offsetStoreMaxFetchSize = offsetStoreMaxFetchSize;
 	}
 
 	public void setOffsetUpdateTimeWindow(int offsetUpdateTimeWindow) {
@@ -336,16 +298,12 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
 	}
 
-	public void setOffsetStoreBatchBytes(int offsetStoreBatchBytes) {
-		this.offsetStoreBatchBytes = offsetStoreBatchBytes;
-	}
-
-	public void setOffsetStoreBatchTime(int offsetStoreBatchTime) {
-		this.offsetStoreBatchTime = offsetStoreBatchTime;
-	}
-
 	public ConnectionFactory getConnectionFactory() {
 		return connectionFactory;
+	}
+
+	public void setProducerListener(ProducerListener producerListener) {
+		this.producerListener = producerListener;
 	}
 
 	/**
@@ -504,6 +462,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		try {
 			final ProducerConfiguration<byte[], byte[]> producerConfiguration = new ProducerConfiguration<>(
 					producerMetadata, producerFB.getObject());
+			producerConfiguration.setProducerListener(producerListener);
 
 			MessageHandler handler = new SendingHandler(name, producerPropertiesAccessor,
 					partitions.size(), producerConfiguration);
@@ -715,18 +674,12 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private OffsetManager createOffsetManager(String group, long referencePoint) {
 		try {
-			KafkaTopicOffsetManager kafkaOffsetManager =
-					new KafkaTopicOffsetManager(zookeeperConnect, offsetStoreTopic, Collections.<Partition,
+
+			KafkaNativeOffsetManager kafkaOffsetManager =
+					new KafkaNativeOffsetManager(connectionFactory, zookeeperConnect,Collections.<Partition,
 							Long> emptyMap());
 			kafkaOffsetManager.setConsumerId(group);
 			kafkaOffsetManager.setReferenceTimestamp(referencePoint);
-			kafkaOffsetManager.setSegmentSize(offsetStoreSegmentSize);
-			kafkaOffsetManager.setRetentionTime(offsetStoreRetentionTime);
-			kafkaOffsetManager.setRequiredAcks(offsetStoreRequiredAcks);
-			kafkaOffsetManager.setMaxSize(offsetStoreMaxFetchSize);
-			kafkaOffsetManager.setBatchBytes(offsetStoreBatchBytes);
-			kafkaOffsetManager.setMaxQueueBufferingTime(offsetStoreBatchTime);
-
 			kafkaOffsetManager.afterPropertiesSet();
 
 			WindowingOffsetManager windowingOffsetManager = new WindowingOffsetManager(kafkaOffsetManager);
