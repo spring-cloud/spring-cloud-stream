@@ -17,6 +17,9 @@
 package org.springframework.cloud.stream.binder.gemfire.config;
 
 import com.gemstone.gemfire.cache.Cache;
+import com.gemstone.gemfire.cache.RegionShortcut;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -32,6 +35,7 @@ import org.springframework.context.annotation.ImportResource;
 @ImportResource("classpath:/META-INF/spring-cloud-stream/gemfire-binder-cache.xml")
 @EnableConfigurationProperties(GemfireBinderConfigurationProperties.class)
 public class GemfireMessageChannelBinderConfiguration {
+	private static final Logger logger = LoggerFactory.getLogger(GemfireMessageChannelBinderConfiguration.class);
 
 	@Autowired
 	public Cache cache;
@@ -43,6 +47,19 @@ public class GemfireMessageChannelBinderConfiguration {
 	public GemfireMessageChannelBinder messageChannelBinder() {
 		GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(this.cache);
 		binder.setBatchSize(this.properties.getBatchSize());
+		try {
+			binder.setConsumerRegionType(RegionShortcut.valueOf(this.properties.getConsumerRegionType()));
+		}
+		catch (IllegalArgumentException e) {
+			logger.warn("Unsupported region type: {}", this.properties.getConsumerRegionType());
+		}
+		try {
+			binder.setProducerRegionType(RegionShortcut.valueOf(this.properties.getProducerRegionType()));
+		}
+		catch (IllegalArgumentException e) {
+			logger.warn("Unsupported region type: {}", this.properties.getProducerRegionType());
+		}
+		binder.setPersistentQueue(this.properties.isPersistentQueue());
 
 		return binder;
 	}

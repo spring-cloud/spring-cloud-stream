@@ -26,11 +26,41 @@ public class GemfireBinderConfigurationProperties {
 
 	private int batchSize = 100;
 
+	private String consumerRegionType = "PARTITION";
+
+	private String producerRegionType = "PARTITION_PROXY";
+
+	private boolean persistentQueue = false;
+
 	public int getBatchSize() {
 		return batchSize;
 	}
 
 	public void setBatchSize(int batchSize) {
 		this.batchSize = batchSize;
+	}
+
+	public String getConsumerRegionType() {
+		return consumerRegionType;
+	}
+
+	public void setConsumerRegionType(String consumerRegionType) {
+		this.consumerRegionType = consumerRegionType;
+	}
+
+	public String getProducerRegionType() {
+		return producerRegionType;
+	}
+
+	public void setProducerRegionType(String producerRegionType) {
+		this.producerRegionType = producerRegionType;
+	}
+
+	public boolean isPersistentQueue() {
+		return persistentQueue;
+	}
+
+	public void setPersistentQueue(boolean persistentQueue) {
+		this.persistentQueue = persistentQueue;
 	}
 }

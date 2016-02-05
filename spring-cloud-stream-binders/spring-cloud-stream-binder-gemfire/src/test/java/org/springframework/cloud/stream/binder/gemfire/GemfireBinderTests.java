@@ -339,14 +339,14 @@ public class GemfireBinderTests {
 		public static void main(String[] args) throws Exception {
 			GemfireMessageChannelBinder binder = new GemfireMessageChannelBinder(createCache());
 			binder.setApplicationContext(new GenericApplicationContext());
+			binder.setBatchSize(1);
 			binder.afterPropertiesSet();
 
 			SubscribableChannel consumerChannel = new ExecutorSubscribableChannel();
 			consumerChannel.subscribe(new MessageHandler() {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {
-					String payload = (String) message.getPayload();
-					messagePayload = payload;
+					messagePayload = (String) message.getPayload();
 				}
 			});
 			String group = null;

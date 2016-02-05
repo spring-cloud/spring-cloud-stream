@@ -55,6 +55,11 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 	private final Cache cache;
 
 	/**
+	 * Type of region to create for sending messages.
+	 */
+	private final RegionShortcut producerRegionType;
+
+	/**
 	 * Sequence number for generating unique message IDs.
 	 */
 	private final AtomicLong sequence = new AtomicLong();
@@ -89,15 +94,15 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 	/**
 	 * Construct a {@link SendingHandler} for a binding.
 	 *
-	 * @param cache GemFire peer-to-peer cache; used to generate factories for
-	 *              message regions
-	 * @param consumerGroupsRegion replicated region used to hold consumer
-	 *                             group registrations
+	 * @param cache GemFire peer-to-peer cache; used to generate factories for message regions
+	 * @param consumerGroupsRegion replicated region used to hold consumer group registrations
 	 * @param name binding name
+	 * @param producerRegionType type of region to create for sending messages
 	 */
-	public SendingHandler(Cache cache, Region<String, Set<String>> consumerGroupsRegion, String name) {
+	public SendingHandler(Cache cache, Region<String, Set<String>> consumerGroupsRegion, String name, RegionShortcut producerRegionType) {
 		this.cache = cache;
 		this.name = name;
+		this.producerRegionType = producerRegionType;
 		this.consumerGroupsRegion = consumerGroupsRegion;
 		this.pid = cache.getDistributedSystem().getDistributedMember().getProcessId();
 	}
@@ -107,12 +112,11 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 	 * This region instance will not store buckets; it is assumed that the regions
 	 * created by consumers will host buckets.
 	 *
-	 * @param name name of the message region
+	 * @param regionName name of the message region
 	 * @return region for producing messages
 	 */
-	private Region<MessageKey, Message<?>> createProducerMessageRegion(String name) {
-		RegionFactory<MessageKey, Message<?>> factory = this.cache.createRegionFactory(RegionShortcut.PARTITION_PROXY);
-		String regionName = name + GemfireMessageChannelBinder.MESSAGES_POSTFIX;
+	private Region<MessageKey, Message<?>> createProducerMessageRegion(String regionName) {
+		RegionFactory<MessageKey, Message<?>> factory = this.cache.createRegionFactory(this.producerRegionType);
 		return factory.addAsyncEventQueueId(regionName + GemfireMessageChannelBinder.QUEUE_POSTFIX)
 				.create(regionName);
 	}
@@ -126,13 +130,12 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 			groups = Collections.singleton(DEFAULT_CONSUMER_GROUP);
 		}
 		for (String group : groups) {
-			String regionName = formatMessageRegionName(this.name, group);
+			String regionName = createMessageRegionName(this.name, group);
 			Region<MessageKey, Message<?>> region = this.regionMap.get(regionName);
 			if (region == null) {
 				region = createProducerMessageRegion(regionName);
 				this.regionMap.put(regionName, region);
 			}
-logger.warn("Writing message to region {}", region.getName());
 			region.putAll(Collections.singletonMap(nextMessageKey(), message));
 		}
 	}
@@ -151,7 +154,7 @@ logger.warn("Writing message to region {}", region.getName());
 		removedGroups.removeAll(registeredGroups);
 		for (String group : removedGroups) {
 			Region<MessageKey, Message<?>> region =
-					this.regionMap.remove(formatMessageRegionName(this.name, group));
+					this.regionMap.remove(createMessageRegionName(this.name, group));
 			if (region != null) {
 				region.close();
 			}

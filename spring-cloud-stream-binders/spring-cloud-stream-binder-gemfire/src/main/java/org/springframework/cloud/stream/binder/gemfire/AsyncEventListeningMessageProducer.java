@@ -21,13 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.gemstone.gemfire.cache.CacheClosedException;
 import com.gemstone.gemfire.cache.Operation;
-import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEvent;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
-import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +34,8 @@ import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 
 /**
- * An inbound endpoint that registers a GemFire {@link AsyncEventListener}
- * to a partitioned region and publishes messages based on data applied to
- * the region. This implementation differs from {@link CacheListeningMessageProducer}
+ * An inbound endpoint that implements GemFire's {@link AsyncEventListener}
+ * interface. This implementation differs from {@link CacheListeningMessageProducer}
  * because it uses an {@link AsyncEventQueue} to offload processing to a dedicated thread.
  * <p>
  * The default supported operations are
@@ -54,23 +50,12 @@ import org.springframework.util.Assert;
  * If no {@code payloadExpression} is provided, the {@code AsyncEvent} itself
  * will be the payload.
  * <p>
- * <b>Note: This will eventually be removed in favor of the class in Spring Integration.</b>
  *
  * @author Patrick Peralta
  */
-public class AsyncEventListeningMessageProducer extends ExpressionMessageProducerSupport {
+public class AsyncEventListeningMessageProducer extends ExpressionMessageProducerSupport implements AsyncEventListener {
 
 	private static final Logger logger = LoggerFactory.getLogger(AsyncEventListeningMessageProducer.class);
-
-	public static final String QUEUE_POSTFIX = "-queue";
-
-	private final Region<?, ?> region;
-
-	private final AsyncEventQueueFactory queueFactory;
-
-	private final AsyncEventListener listener;
-
-	private final String queueId;
 
 	private volatile Set<Operation> supportedOperations =
 			new HashSet<Operation>(Arrays.asList(
@@ -79,22 +64,6 @@ public class AsyncEventListeningMessageProducer extends ExpressionMessageProduce
 					Operation.PUTALL_CREATE,
 					Operation.PUTALL_UPDATE));
 
-
-	/**
-	 * Construct a {@code AsyncEventListeningMessageProducer}.
-	 *
-	 * @param region the region that contains messages
-	 * @param queueFactory queue factory used to create write-behind queue
-	 */
-	public AsyncEventListeningMessageProducer(Region<?, ?> region, AsyncEventQueueFactory queueFactory) {
-		Assert.notNull(region, "region must not be null");
-		Assert.notNull(queueFactory, "queueFactory must not be null");
-
-		this.region = region;
-		this.queueFactory = queueFactory;
-		this.listener = new MessageProducingAsyncEventListener();
-		this.queueId = region.getName() + QUEUE_POSTFIX;
-	}
 
 	/**
 	 * Set the list of operations that will cause a message to be published.
@@ -112,60 +81,28 @@ public class AsyncEventListeningMessageProducer extends ExpressionMessageProduce
 	}
 
 	@Override
-	protected void doStart() {
-		logger.info("adding MessageProducingAsyncEventListener to GemFire Region '{}'",
-				this.region.getName());
+	public boolean processEvents(List<AsyncEvent> events) {
+		for (AsyncEvent event : events) {
+			if (this.supportedOperations.contains(event.getOperation())) {
+				processEvent(event);
+			}
+		}
+		return true;
+	}
 
-		this.queueFactory.create(this.queueId, this.listener);
-		this.region.getAttributesMutator().addAsyncEventQueueId(this.queueId);
+	private void processEvent(AsyncEvent event) {
+		this.publish(evaluatePayloadExpression(event));
+	}
+
+	private void publish(Object object) {
+		Message<?> message = object instanceof Message
+				? (Message<?>) object
+				: getMessageBuilderFactory().withPayload(object).build();
+		sendMessage(message);
 	}
 
 	@Override
-	protected void doStop() {
-		logger.info("removing MessageProducingAsyncEventListener from GemFire Region '{}'",
-				this.region.getName());
-
-		try {
-			this.region.getAttributesMutator().removeAsyncEventQueueId(this.queueId);
-		}
-		catch (CacheClosedException e) {
-			if (logger.isDebugEnabled()){
-				logger.debug(e.getMessage(),e);
-			}
-		}
-	}
-
-
-	/**
-	 * Implementation of {@link AsyncEventListener} that publishes messages
-	 * to a channel.
-	 */
-	private class MessageProducingAsyncEventListener implements AsyncEventListener {
-
-		@Override
-		public boolean processEvents(List<AsyncEvent> events) {
-			for (AsyncEvent event : events) {
-				if (supportedOperations.contains(event.getOperation())) {
-					processEvent(event);
-				}
-			}
-			return true;
-		}
-
-		private void processEvent(AsyncEvent event) {
-			this.publish(evaluatePayloadExpression(event));
-		}
-
-		private void publish(Object object) {
-			Message<?> message = object instanceof Message
-					? (Message<?>) object
-					: getMessageBuilderFactory().withPayload(object).build();
-			sendMessage(message);
-		}
-
-		@Override
-		public void close() {
-		}
+	public void close() {
 	}
 
 }

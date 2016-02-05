@@ -26,6 +26,8 @@ import com.gemstone.gemfire.cache.Cache;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.RegionFactory;
 import com.gemstone.gemfire.cache.RegionShortcut;
+import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
+import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,17 +69,17 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	/**
 	 * Postfix for message regions.
 	 */
-	public static final String MESSAGES_POSTFIX = "-messages";
+	public static final String MESSAGES_POSTFIX = "_messages";
 
 	/**
 	 * Postfix for region event queues.
 	 */
-	public static final String QUEUE_POSTFIX = "-queue";
+	public static final String QUEUE_POSTFIX = "_queue";
 
 	/**
 	 * Name of replicated region used to register consumer groups.
 	 */
-	public static final String CONSUMER_GROUPS_REGION = "consumer-groups-region";
+	public static final String CONSUMER_GROUPS_REGION = "consumer_groups_region";
 
 	/**
 	 * Name of default consumer group.
@@ -94,13 +96,26 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	 */
 	private final Cache cache;
 
-	// todo: make the following fields configurable
-
 	/**
 	 * Maximum number of messages to be fetched from the region
 	 * for processing at a time.
 	 */
 	private volatile int batchSize;
+
+	/**
+	 * Type of region to use for consuming messages.
+	 */
+	private volatile RegionShortcut consumerRegionType = RegionShortcut.PARTITION;
+
+	/**
+	 * Type of region to use for producing messages.
+	 */
+	private volatile RegionShortcut producerRegionType = RegionShortcut.PARTITION_PROXY;
+
+	/**
+	 * If {@code true}, the event queue is persistent.
+	 */
+	private volatile boolean persistentQueue = false;
 
 	/**
 	 * Map of message regions used for consuming messages.
@@ -136,6 +151,30 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 		this.batchSize = batchSize;
 	}
 
+	public RegionShortcut getConsumerRegionType() {
+		return consumerRegionType;
+	}
+
+	public void setConsumerRegionType(RegionShortcut consumerRegionType) {
+		this.consumerRegionType = consumerRegionType;
+	}
+
+	public RegionShortcut getProducerRegionType() {
+		return producerRegionType;
+	}
+
+	public void setProducerRegionType(RegionShortcut producerRegionType) {
+		this.producerRegionType = producerRegionType;
+	}
+
+	public boolean isPersistentQueue() {
+		return persistentQueue;
+	}
+
+	public void setPersistentQueue(boolean persistentQueue) {
+		this.persistentQueue = persistentQueue;
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		RegionFactory<String, Set<String>> regionFactory = this.cache.createRegionFactory(RegionShortcut.REPLICATE);
@@ -151,19 +190,41 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	 * @param group consumer group name
 	 * @return name of region for messages for this binding and consumer group
 	 */
-	public static String formatMessageRegionName(String name, String group) {
-		return String.format("%s-%s", name, group);
+	public static String createMessageRegionName(String name, String group) {
+		return String.format("%s_%s%s", name, group, MESSAGES_POSTFIX);
 	}
 
 	/**
 	 * Create a {@link Region} instance used for consuming {@link Message} objects.
+	 * This region is created with an async event queue ID that will associate
+	 * it with an {@link AsyncEventListeningMessageProducer} as a cache
+	 * listener which triggers message consumption when a message is added to the region.
 	 *
-	 * @param name prefix of the message region name
+	 * @param regionName prefix of the message region name
+	 * @param queueId queue id to associate with region
+	 *
 	 * @return region for consuming messages
 	 */
-	private Region<MessageKey, Message<?>> createConsumerMessageRegion(String name) {
-		RegionFactory<MessageKey, Message<?>> regionFactory = this.cache.createRegionFactory(RegionShortcut.PARTITION);
-		return regionFactory.create(name + MESSAGES_POSTFIX);
+	private Region<MessageKey, Message<?>> createConsumerMessageRegion(String regionName, String queueId)  {
+		RegionFactory<MessageKey, Message<?>> regionFactory = this.cache.createRegionFactory(getConsumerRegionType());
+		return regionFactory.addAsyncEventQueueId(queueId).create(regionName);
+	}
+
+	/**
+	 * Create a {@link AsyncEventQueue} for passing messages to the provided
+	 * {@link AsyncEventListener}.
+	 *
+	 * @param name prefix of the event queue name
+	 * @param eventListener message listener invoked when an event is added to the queue
+	 * @return queue for processing region events
+	 */
+	protected AsyncEventQueue createAsyncEventQueue(String name, AsyncEventListener eventListener) {
+		AsyncEventQueueFactory queueFactory = this.cache.createAsyncEventQueueFactory();
+		queueFactory.setPersistent(this.persistentQueue);
+		queueFactory.setParallel(true);
+		queueFactory.setBatchSize(this.batchSize);
+		String queueId = name + QUEUE_POSTFIX;
+		return queueFactory.create(queueId, eventListener);
 	}
 
 	/**
@@ -226,21 +287,16 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 		if (StringUtils.isEmpty(group)) {
 			group = DEFAULT_CONSUMER_GROUP;
 		}
-		String messageRegionName = formatMessageRegionName(name, group);
+		String messageRegionName = createMessageRegionName(name, group);
 
-		Region<MessageKey, Message<?>> messageRegion = createConsumerMessageRegion(messageRegionName);
-		/* todo: make configurable */
-		AsyncEventQueueFactory queueFactory = this.cache.createAsyncEventQueueFactory();
-		queueFactory.setPersistent(false);
-		queueFactory.setParallel(false);
-		queueFactory.setBatchSize(this.batchSize);
-
-		AsyncEventListeningMessageProducer messageProducer =
-				new AsyncEventListeningMessageProducer(messageRegion, queueFactory);
+		AsyncEventListeningMessageProducer messageProducer = new AsyncEventListeningMessageProducer();
 		messageProducer.setOutputChannel(inboundBindTarget);
 		messageProducer.setExpressionPayload(parser.parseExpression("deserializedValue"));
 		messageProducer.setBeanFactory(this.applicationContext);
 		messageProducer.afterPropertiesSet();
+
+		AsyncEventQueue queue = createAsyncEventQueue(messageRegionName, messageProducer);
+		Region<MessageKey, Message<?>> messageRegion = createConsumerMessageRegion(messageRegionName, queue.getId());
 
 		this.regionMap.put(name, messageRegion);
 		addConsumerGroup(name, group);
@@ -256,7 +312,8 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	public void bindPubSubProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, outboundBindTarget);
 
-		SendingHandler handler = new SendingHandler(this.cache, this.consumerGroupsRegion, name);
+		SendingHandler handler = new SendingHandler(this.cache, this.consumerGroupsRegion,
+				name, this.producerRegionType);
 		handler.start();
 
 		((SubscribableChannel) outboundBindTarget).subscribe(handler);
@@ -275,7 +332,7 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 
 	@Override
 	public void unbindPubSubConsumers(String name, String group) {
-		this.regionMap.get(formatMessageRegionName(name, group)).close();
+		this.regionMap.get(createMessageRegionName(name, group)).close();
 		removeConsumerGroup(name, group);
 	}
 
