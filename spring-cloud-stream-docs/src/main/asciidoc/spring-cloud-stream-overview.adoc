@@ -284,13 +284,13 @@ spring:
           type: rabbit
           environment:
             spring:
-              rabbit:
+              rabbitmq:
                 host: <host1>
         rabbit2:
           type: rabbit
           environment:
             spring:
-              rabbit:
+              rabbitmq:
                 host: <host2>
 ----
 
