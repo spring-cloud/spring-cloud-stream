@@ -15,6 +15,9 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<spring.data.gemfire.version>1.7.0.RELEASE</spring.data.gemfire.version>
+		<gemfire.version>8.2.0</gemfire.version>
+		<oracle.tools.version>2.0.0-RC9</oracle.tools.version>
 	</properties>
 
 	<dependencies>
@@ -44,7 +47,7 @@
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-gemfire</artifactId>
-			<version>1.7.0.RELEASE</version>
+			<version>${spring.data.gemfire.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.integration</groupId>
@@ -53,7 +56,7 @@
 		<dependency>
 			<groupId>com.gemstone.gemfire</groupId>
 			<artifactId>gemfire</artifactId>
-			<version>8.2.0</version>
+			<version>${gemfire.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -68,19 +71,19 @@
 		<dependency>
 			<groupId>com.oracle.tools</groupId>
 			<artifactId>oracle-tools-runtime</artifactId>
-			<version>2.0.0-RC9</version>
+			<version>${oracle.tools.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.oracle.tools</groupId>
 			<artifactId>oracle-tools-core</artifactId>
-			<version>2.0.0-RC9</version>
+			<version>${oracle.tools.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.oracle.tools</groupId>
 			<artifactId>oracle-tools-testing-support</artifactId>
-			<version>2.0.0-RC9</version>
+			<version>${oracle.tools.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
