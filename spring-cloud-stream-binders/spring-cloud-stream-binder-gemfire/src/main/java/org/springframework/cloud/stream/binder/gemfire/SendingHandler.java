@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.gemfire;
 import static org.springframework.cloud.stream.binder.gemfire.GemfireMessageChannelBinder.*;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,9 +81,9 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 
 	/**
 	 * Replicated region for consumer group registration.
-	 * Key is the binding name, value is the group name.
+	 * Key is the binding name, value is {@link ConsumerGroupTracker}.
 	 */
-	private final Region<String, Set<String>> consumerGroupsRegion;
+	private final Region<String, ConsumerGroupTracker> consumerGroupsRegion;
 
 	/**
 	 * Map of message regions used for producing messages.
@@ -99,7 +98,8 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 	 * @param name binding name
 	 * @param producerRegionType type of region to create for sending messages
 	 */
-	public SendingHandler(Cache cache, Region<String, Set<String>> consumerGroupsRegion, String name, RegionShortcut producerRegionType) {
+	public SendingHandler(Cache cache, Region<String, ConsumerGroupTracker> consumerGroupsRegion,
+			String name, RegionShortcut producerRegionType) {
 		this.cache = cache;
 		this.name = name;
 		this.producerRegionType = producerRegionType;
@@ -124,11 +124,19 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 	@Override
 	public void handleMessage(Message<?> message) throws MessagingException {
 		logger.trace("Publishing message {}", message);
-		handleRemovedConsumerGroups();
-		Set<String> groups = this.consumerGroupsRegion.get(this.name);
-		if (groups == null) {
+
+		Set<String> groups;
+		ConsumerGroupTracker tracker = this.consumerGroupsRegion.get(this.name);
+		if (tracker == null) {
 			groups = Collections.singleton(DEFAULT_CONSUMER_GROUP);
 		}
+		else {
+			groups = tracker.groups();
+			if (groups.isEmpty()) {
+				groups = Collections.singleton(DEFAULT_CONSUMER_GROUP);
+			}
+		}
+
 		for (String group : groups) {
 			String regionName = createMessageRegionName(this.name, group);
 			Region<MessageKey, Message<?>> region = this.regionMap.get(regionName);
@@ -137,27 +145,6 @@ public class SendingHandler implements MessageHandler, Lifecycle {
 				this.regionMap.put(regionName, region);
 			}
 			region.putAll(Collections.singletonMap(nextMessageKey(), message));
-		}
-	}
-
-	/**
-	 * Remove regions from {@link #regionMap} for consumer groups
-	 * that have been removed from {@link #consumerGroupsRegion}.
-	 */
-	private void handleRemovedConsumerGroups() {
-		Set<String> registeredGroups = this.consumerGroupsRegion.get(this.name);
-		if (registeredGroups == null) {
-			return;
-		}
-		Set<String> knownGroups = this.regionMap.keySet();
-		Set<String> removedGroups = new HashSet<>(knownGroups);
-		removedGroups.removeAll(registeredGroups);
-		for (String group : removedGroups) {
-			Region<MessageKey, Message<?>> region =
-					this.regionMap.remove(createMessageRegionName(this.name, group));
-			if (region != null) {
-				region.close();
-			}
 		}
 	}
 

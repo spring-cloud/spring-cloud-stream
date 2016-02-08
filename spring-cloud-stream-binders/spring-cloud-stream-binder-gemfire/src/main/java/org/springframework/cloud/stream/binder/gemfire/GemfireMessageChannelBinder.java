@@ -16,16 +16,16 @@
 
 package org.springframework.cloud.stream.binder.gemfire;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
 
 import com.gemstone.gemfire.cache.Cache;
 import com.gemstone.gemfire.cache.Region;
 import com.gemstone.gemfire.cache.RegionFactory;
 import com.gemstone.gemfire.cache.RegionShortcut;
+import com.gemstone.gemfire.cache.Scope;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventListener;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueue;
 import com.gemstone.gemfire.cache.asyncqueue.AsyncEventQueueFactory;
@@ -132,9 +132,9 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 
 	/**
 	 * Replicated region for consumer group registration.
-	 * Key is the binding name, value is the group name.
+	 * Key is the binding name, value is {@link ConsumerGroupTracker}.
 	 */
-	private volatile Region<String, Set<String>> consumerGroupsRegion;
+	private volatile Region<String, ConsumerGroupTracker> consumerGroupsRegion;
 
 
 	/**
@@ -180,8 +180,8 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		RegionFactory<String, Set<String>> regionFactory = this.cache.createRegionFactory(RegionShortcut.REPLICATE);
-		this.consumerGroupsRegion = regionFactory.create(CONSUMER_GROUPS_REGION);
+		RegionFactory<String, ConsumerGroupTracker> regionFactory = this.cache.createRegionFactory(RegionShortcut.REPLICATE);
+		this.consumerGroupsRegion = regionFactory.setScope(Scope.GLOBAL).create(CONSUMER_GROUPS_REGION);
 	}
 
 	/**
@@ -237,17 +237,23 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	 * @param group consumer group name
 	 */
 	private void addConsumerGroup(String name, String group) {
-		boolean groupAdded = false;
-		while (!groupAdded) {
-			Set<String> oldGroupSet = this.consumerGroupsRegion.get(name);
-			Set<String> newGroupSet = new HashSet<>();
-			newGroupSet.add(group);
-			if (oldGroupSet == null) {
-				groupAdded = this.consumerGroupsRegion.putIfAbsent(name, newGroupSet) == null;
+		Lock lock = this.consumerGroupsRegion.getDistributedLock(name);
+		try {
+			lock.lockInterruptibly();
+			ConsumerGroupTracker tracker = this.consumerGroupsRegion.get(name);
+			if (tracker == null) {
+				tracker = new ConsumerGroupTracker();
 			}
-			else {
-				newGroupSet.addAll(oldGroupSet);
-				groupAdded = this.consumerGroupsRegion.replace(name, oldGroupSet, newGroupSet);
+			tracker.addGroup(group);
+			this.consumerGroupsRegion.put(name, tracker);
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException("Interrupted while waiting for lock '" + name + "'", e);
+		}
+		finally {
+			if (lock != null) {
+				lock.unlock();
 			}
 		}
 	}
@@ -259,15 +265,24 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	 * @param group consumer group name
 	 */
 	private void removeConsumerGroup(String name, String group) {
-		boolean groupRemoved = false;
-		while (!groupRemoved) {
-			Set<String> oldGroupSet = this.consumerGroupsRegion.get(name);
-			if (oldGroupSet == null) {
+		Lock lock = this.consumerGroupsRegion.getDistributedLock(name);
+		try {
+			lock.lockInterruptibly();
+			ConsumerGroupTracker tracker = this.consumerGroupsRegion.get(name);
+			if (tracker == null) {
 				return;
 			}
-			Set<String> newGroupSet = new HashSet<>(oldGroupSet);
-			newGroupSet.remove(group);
-			groupRemoved = this.consumerGroupsRegion.replace(name, oldGroupSet, newGroupSet);
+			tracker.removeGroup(group);
+			this.consumerGroupsRegion.put(name, tracker);
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException("Interrupted while waiting for lock '" + name + "'", e);
+		}
+		finally {
+			if (lock != null) {
+				lock.unlock();
+			}
 		}
 	}
 
@@ -277,7 +292,8 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 	}
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group,
+			MessageChannel inboundBindTarget, Properties properties) {
 		if (StringUtils.isEmpty(group)) {
 			group = DEFAULT_CONSUMER_GROUP;
 		}
@@ -320,7 +336,22 @@ public class GemfireMessageChannelBinder implements Binder<MessageChannel>, Appl
 
 	@Override
 	public void unbind(Binding<MessageChannel> binding) {
-		this.regionMap.get(createMessageRegionName(binding.getName(), binding.getGroup())).close();
-		removeConsumerGroup(binding.getName(), binding.getGroup());
+		switch (binding.getType()) {
+			case producer:
+				SendingHandler handler = this.sendingHandlerMap.remove(binding.getName());
+				if (handler != null) {
+					handler.stop();
+				}
+				break;
+			case consumer:
+				Region<MessageKey, Message<?>> region = this.regionMap.remove(
+						createMessageRegionName(binding.getName(), binding.getGroup()));
+				if (region != null) {
+					region.close();
+				}
+
+				removeConsumerGroup(binding.getName(), binding.getGroup());
+				break;
+		}
 	}
 }
