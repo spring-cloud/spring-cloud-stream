@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.Mode;
 import org.springframework.util.StringUtils;

@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfigurati
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -74,7 +75,7 @@ public class KafkaServiceAutoConfiguration {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = ObjectUtils.isEmpty(headers) ?
 				new KafkaMessageChannelBinder(zookeeperConnect(), kafkaConnectionString, zkConnectionString)
 				: new KafkaMessageChannelBinder(zookeeperConnect(), kafkaConnectionString, zkConnectionString,
-						headers);
+				headers);
 		kafkaMessageChannelBinder.setCodec(codec);
 		kafkaMessageChannelBinder.setMode(kafkaBinderConfigurationProperties.getMode());
 		kafkaMessageChannelBinder.setOffsetUpdateTimeWindow(kafkaBinderConfigurationProperties.getOffsetUpdateTimeWindow());
@@ -103,5 +104,10 @@ public class KafkaServiceAutoConfiguration {
 	@ConditionalOnMissingBean(ProducerListener.class)
 	ProducerListener producerListener() {
 		return new LoggingProducerListener();
+	}
+
+	@Bean
+	KafkaBinderHealthIndicator healthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+		return new KafkaBinderHealthIndicator(kafkaMessageChannelBinder);
 	}
 }

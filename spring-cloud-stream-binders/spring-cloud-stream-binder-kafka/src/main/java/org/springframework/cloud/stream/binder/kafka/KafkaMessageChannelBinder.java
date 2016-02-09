@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -31,8 +32,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.exception.ZkMarshallingError;
-import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
@@ -85,6 +84,7 @@ import kafka.admin.AdminUtils;
 import kafka.api.OffsetRequest;
 import kafka.serializer.Decoder;
 import kafka.serializer.DefaultDecoder;
+import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import scala.collection.Seq;
 
@@ -161,31 +161,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private RetryOperations retryOperations;
 
-	/**
-	 * Used when writing directly to ZK. This is what Kafka expects.
-	 */
-	public final static ZkSerializer utf8Serializer = new ZkSerializer() {
-
-		@Override
-		public byte[] serialize(Object data) throws ZkMarshallingError {
-			try {
-				return ((String) data).getBytes("UTF-8");
-			}
-			catch (UnsupportedEncodingException e) {
-				throw new ZkMarshallingError(e);
-			}
-		}
-
-		@Override
-		public Object deserialize(byte[] bytes) throws ZkMarshallingError {
-			try {
-				return new String(bytes, "UTF-8");
-			}
-			catch (UnsupportedEncodingException e) {
-				throw new ZkMarshallingError(e);
-			}
-		}
-	};
+	private Map<String, Collection<Partition>> topicsInUse = new HashMap<>();
 
 	protected static final Set<Object> PRODUCER_COMPRESSION_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
@@ -288,6 +264,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		else {
 			this.headersToMap = BinderHeaders.STANDARD_HEADERS;
 		}
+	}
+
+	String getZkAddress() {
+		return this.zkAddress;
 	}
 
 	public void setSocketBufferSize(int socketBufferSize) {
@@ -424,6 +404,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		this.startOffset = startOffset;
 	}
 
+	Map<String, Collection<Partition>> getTopicsInUse() {
+		return this.topicsInUse;
+	}
+
 	@Override
 	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
 		// If the caller provides a consumer group, use it; otherwise an anonymous consumer group
@@ -451,6 +435,8 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		int numPartitions = producerPropertiesAccessor.getNumberOfKafkaPartitionsForProducer();
 
 		Collection<Partition> partitions = ensureTopicCreated(name, numPartitions, defaultReplicationFactor);
+
+		topicsInUse.put(name, partitions);
 
 		ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(
 				name, byte[].class, byte[].class, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
@@ -498,7 +484,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 		final int sessionTimeoutMs = 10000;
 		final int connectionTimeoutMs = 10000;
-		final ZkClient zkClient = new ZkClient(zkAddress, sessionTimeoutMs, connectionTimeoutMs, utf8Serializer);
+		final ZkClient zkClient = new ZkClient(zkAddress, sessionTimeoutMs, connectionTimeoutMs, ZKStringSerializer$.MODULE$);
 		try {
 			// The following is basically copy/paste from AdminUtils.createTopic() with
 			// createOrUpdateTopicPartitionAssignmentPathInZK(..., update=true)
