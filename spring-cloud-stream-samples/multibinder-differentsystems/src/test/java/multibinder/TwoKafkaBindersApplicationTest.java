@@ -16,6 +16,10 @@
 
 package multibinder;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
+
+import java.util.List;
 import java.util.UUID;
 
 import org.hamcrest.CoreMatchers;
@@ -26,13 +30,17 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.cloud.stream.test.junit.redis.RedisTestSupport;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.kafka.core.BrokerAddress;
+import org.springframework.integration.kafka.core.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
@@ -47,10 +55,10 @@ import org.springframework.test.context.web.WebAppConfiguration;
 public class TwoKafkaBindersApplicationTest {
 
 	@ClassRule
-	public static KafkaTestSupport kafkaTestSupport1 = new KafkaTestSupport();
+	public static KafkaTestSupport kafkaTestSupport1 = new KafkaTestSupport(true);
 
 	@ClassRule
-	public static KafkaTestSupport kafkaTestSupport2 = new KafkaTestSupport();
+	public static KafkaTestSupport kafkaTestSupport2 = new KafkaTestSupport(true);
 
 	@ClassRule
 	public static RedisTestSupport redisTestSupport = new RedisTestSupport();
@@ -68,6 +76,18 @@ public class TwoKafkaBindersApplicationTest {
 
 	@Test
 	public void contextLoads() {
+		KafkaMessageChannelBinder kafka1 = (KafkaMessageChannelBinder) binderFactory.getBinder("kafka1");
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(kafka1.getConnectionFactory());
+		Configuration configuration = (Configuration) directFieldAccessor.getPropertyValue("configuration");
+		List<BrokerAddress> brokerAddresses = configuration.getBrokerAddresses();
+		Assert.assertThat(brokerAddresses, hasSize(1));
+		Assert.assertThat(brokerAddresses, contains(BrokerAddress.fromAddress(kafkaTestSupport1.getBrokerAddress())));
+		KafkaMessageChannelBinder kafka2 = (KafkaMessageChannelBinder) binderFactory.getBinder("kafka2");
+		DirectFieldAccessor directFieldAccessor2 = new DirectFieldAccessor(kafka2.getConnectionFactory());
+		Configuration configuration2 = (Configuration) directFieldAccessor2.getPropertyValue("configuration");
+		List<BrokerAddress> brokerAddresses2 = configuration2.getBrokerAddresses();
+		Assert.assertThat(brokerAddresses2, hasSize(1));
+		Assert.assertThat(brokerAddresses2, contains(BrokerAddress.fromAddress(kafkaTestSupport2.getBrokerAddress())));
 	}
 
 	@Test

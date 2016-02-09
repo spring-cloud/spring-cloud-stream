@@ -19,13 +19,6 @@ package org.springframework.cloud.stream.test.junit.kafka;
 
 import java.util.Properties;
 
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
-import kafka.utils.SystemTime$;
-import kafka.utils.TestUtils;
-import kafka.utils.Utils;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.junit.Rule;
@@ -34,6 +27,14 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
 import org.springframework.util.SocketUtils;
+
+import kafka.server.KafkaConfig;
+import kafka.server.KafkaServer;
+import kafka.utils.SystemTime$;
+import kafka.utils.TestUtils;
+import kafka.utils.Utils;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 
 
 /**
@@ -49,7 +50,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 
 	private static final String SCS_KAFKA_TEST_EMBEDDED = "SCS_KAFKA_TEST_EMBEDDED";
 
-	public static final boolean embedded;
+	public static final boolean defaultEmbedded;
 
 	private static final String DEFAULT_ZOOKEEPER_CONNECT = "localhost:2181";
 
@@ -61,6 +62,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 
 	private KafkaServer kafkaServer;
 
+	public final boolean embedded;
+
 	private final Properties brokerConfig = TestUtils.createBrokerConfig(0, TestUtils.choosePort(), false);
 
 	// caches previous failures to reach the external server - preventing repeated retries
@@ -68,12 +71,17 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 
 	static {
 		// check if either the environment or Java property is set to use embedded tests
-		embedded = "true".equals(System.getenv(SCS_KAFKA_TEST_EMBEDDED)) || "true".equals(System.getProperty(SCS_KAFKA_TEST_EMBEDDED));
-		log.info(String.format("Testing with %s Kafka broker", embedded ? "embedded" : "external"));
+		defaultEmbedded = "true".equals(System.getenv(SCS_KAFKA_TEST_EMBEDDED)) || "true".equals(System.getProperty(SCS_KAFKA_TEST_EMBEDDED));
 	}
 
 	public KafkaTestSupport() {
+		this(defaultEmbedded);
+	}
+
+	public KafkaTestSupport(boolean embedded) {
 		super("KAFKA");
+		this.embedded = embedded;
+		log.info(String.format("Testing with %s Kafka broker", embedded ? "embedded" : "external"));
 	}
 
 	public KafkaServer getKafkaServer() {
