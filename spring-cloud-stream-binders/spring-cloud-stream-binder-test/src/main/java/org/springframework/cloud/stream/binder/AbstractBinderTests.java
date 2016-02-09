@@ -20,23 +20,22 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.collection.IsArrayContainingInAnyOrder.arrayContainingInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Test;
 
-import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -78,16 +77,16 @@ public abstract class AbstractBinderTests {
 		Binding<MessageChannel> foo1ProducerBinding = binder.bindProducer("foo.1", new DirectChannel(), null);
 		Binding<MessageChannel> foo1ConsumerBinding = binder.bindConsumer("foo.1", "test", new DirectChannel(), null);
 		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer("foo.2", new DirectChannel(), null);
-		Collection<?> bindings = getBindings(binder);
-		assertEquals(5, bindings.size());
-		binder.unbind(foo0ProducerBinding);
-		assertEquals(4, bindings.size());
-		binder.unbind(foo0ConsumerBinding);
-		binder.unbind(foo1ProducerBinding);
-		assertEquals(2, bindings.size());
-		binder.unbind(foo1ConsumerBinding);
-		binder.unbind(foo2ProducerBinding);
-		assertTrue(bindings.isEmpty());
+		foo0ProducerBinding.unbind();
+		assertFalse(TestUtils.getPropertyValue(foo0ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning());
+		foo0ConsumerBinding.unbind();
+		foo1ProducerBinding.unbind();
+		assertFalse(TestUtils.getPropertyValue(foo0ConsumerBinding, "endpoint", AbstractEndpoint.class).isRunning());
+		assertFalse(TestUtils.getPropertyValue(foo1ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning());
+		foo1ConsumerBinding.unbind();
+		foo2ProducerBinding.unbind();
+		assertFalse(TestUtils.getPropertyValue(foo1ConsumerBinding, "endpoint", AbstractEndpoint.class).isRunning());
+		assertFalse(TestUtils.getPropertyValue(foo2ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning());
 	}
 
 	@Test
@@ -107,8 +106,8 @@ public abstract class AbstractBinderTests {
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
 		assertEquals("foo/bar", inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -148,11 +147,11 @@ public abstract class AbstractBinderTests {
 				hasProperty("payload", equalTo(testPayload2.getBytes()))));
 
 
-		binder.unbind(producerBinding1);
-		binder.unbind(consumerBinding1);
+		producerBinding1.unbind();
+		producerBinding2.unbind();
 
-		binder.unbind(producerBinding2);
-		binder.unbind(consumerBinding2);
+		consumerBinding1.unbind();
+		consumerBinding2.unbind();
 	}
 
 	@Test
@@ -171,21 +170,10 @@ public abstract class AbstractBinderTests {
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
 		assertNull(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
-	protected Collection<?> getBindings(Binder<MessageChannel> testBinder) {
-		if (testBinder instanceof AbstractTestBinder) {
-			return getBindingsFromBinder(((AbstractTestBinder<?>) testBinder).getCoreBinder());
-		}
-		return Collections.EMPTY_LIST;
-	}
-
-	protected Collection<?> getBindingsFromBinder(Binder<MessageChannel> binder) {
-		DirectFieldAccessor accessor = new DirectFieldAccessor(binder);
-		return (List<?>) accessor.getPropertyValue("bindings");
-	}
 
 	protected abstract Binder<MessageChannel> getBinder() throws Exception;
 

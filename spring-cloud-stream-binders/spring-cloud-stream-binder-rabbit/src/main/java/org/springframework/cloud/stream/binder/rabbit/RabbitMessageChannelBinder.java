@@ -59,13 +59,13 @@ import org.springframework.amqp.rabbit.support.MessagePropertiesConverter;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.GenericApplicationContext;
@@ -108,7 +108,7 @@ import com.rabbitmq.client.Envelope;
  * @author David Turanski
  * @author Marius Bogoevici
  */
-public class RabbitMessageChannelBinder extends MessageChannelBinderSupport implements DisposableBean {
+public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	public static final AnonymousQueue.Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR
 			= new AnonymousQueue.Base64UrlNamingStrategy("anonymous.");
@@ -455,9 +455,9 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		return args;
 	}
 
-	private Binding<MessageChannel> doRegisterConsumer(String name, String group, MessageChannel moduleInputChannel, Queue queue,
-			RabbitPropertiesAccessor properties) {
-		Binding<MessageChannel> consumerBinding = null;
+	private Binding<MessageChannel> doRegisterConsumer(final String name, String group, MessageChannel moduleInputChannel, Queue queue,
+													   final RabbitPropertiesAccessor properties) {
+		DefaultBinding<MessageChannel> consumerBinding = null;
 		// Fix for XD-2503
 		// Temporarily overrides the thread context classloader with the one where the SimpleMessageListenerContainer
 		// is defined
@@ -511,14 +511,19 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 			mapper.setReplyHeaderNames(properties.getReplyHeaderPattens(this.defaultReplyHeaderPatterns));
 			adapter.setHeaderMapper(mapper);
 			adapter.afterPropertiesSet();
-			consumerBinding = Binding.forConsumer(name, group, adapter, moduleInputChannel, properties);
-			addBinding(consumerBinding);
+			consumerBinding = new DefaultBinding<MessageChannel>(name, group, moduleInputChannel, adapter, properties) {
+
+				@Override
+				protected void afterUnbind() {
+					cleanAutoDeclareContext(properties.getPrefix(defaultPrefix), name);
+				}
+			};
 			ReceivingHandler convertingBridge = new ReceivingHandler();
 			convertingBridge.setOutputChannel(moduleInputChannel);
 			convertingBridge.setBeanName(name + ".convert.bridge");
 			convertingBridge.afterPropertiesSet();
 			bridgeToModuleChannel.subscribe(convertingBridge);
-			consumerBinding.start();
+			adapter.start();
 		}
 		finally {
 			Thread.currentThread().setContextClassLoader(originalClassloader);
@@ -635,9 +640,9 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		consumer.setBeanFactory(getBeanFactory());
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
-		Binding<MessageChannel> producerBinding = Binding.forProducer(name, moduleOutputChannel, consumer, properties);
-		addBinding(producerBinding);
-		producerBinding.start();
+		DefaultBinding<MessageChannel> producerBinding = new DefaultBinding<>(name, null, moduleOutputChannel, consumer, properties);
+
+		consumer.start();
 		return producerBinding;
 	}
 
@@ -714,13 +719,6 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		return prefix + DEAD_LETTER_EXCHANGE;
 	}
 
-	@Override
-	protected void afterUnbind(Binding<MessageChannel> binding) {
-		if (Binding.Type.consumer.equals(binding.getType())) {
-			cleanAutoDeclareContext(binding);
-		}
-	}
-
 	private void addToAutoDeclareContext(String name, Object bean) {
 		synchronized (this.autoDeclareContext) {
 			if (!this.autoDeclareContext.containsBean(name)) {
@@ -729,11 +727,7 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 		}
 	}
 
-	private void cleanAutoDeclareContext(Binding<MessageChannel> binding) {
-		Assert.isTrue(binding.getPropertiesAccessor() instanceof RabbitPropertiesAccessor,
-				"Binding was not created by this binder");
-		String prefix = ((RabbitPropertiesAccessor) binding.getPropertiesAccessor()).getPrefix(this.defaultPrefix);
-		String name = binding.getName();
+	public void cleanAutoDeclareContext(String prefix, String name) {
 		synchronized(this.autoDeclareContext) {
 			removeSingleton(applyPrefix(prefix,name) + ".binding");
 			removeSingleton(applyPrefix(prefix,name));
@@ -750,11 +744,6 @@ public class RabbitMessageChannelBinder extends MessageChannelBinderSupport impl
 				((DefaultListableBeanFactory) beanFactory).destroySingleton(name);
 			}
 		}
-	}
-
-	@Override
-	public void destroy() {
-		stopBindings();
 	}
 
 	@Override

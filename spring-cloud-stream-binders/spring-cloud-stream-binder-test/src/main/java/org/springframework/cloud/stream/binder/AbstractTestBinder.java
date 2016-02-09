@@ -29,7 +29,7 @@ import org.springframework.messaging.MessageChannel;
  * @author Gary Russell
  * @author Mark Fisher
  */
-public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> implements Binder<MessageChannel> {
+public abstract class AbstractTestBinder<C extends AbstractBinder> implements Binder<MessageChannel> {
 
 	protected Set<String> queues = new HashSet<String>();
 
@@ -62,11 +62,6 @@ public abstract class AbstractTestBinder<C extends MessageChannelBinderSupport> 
 	}
 
 	public abstract void cleanup();
-
-	@Override
-	public void unbind(Binding<MessageChannel> binding) {
-		binder.unbind(binding);
-	}
 
 	public C getBinder() {
 		return this.binder;

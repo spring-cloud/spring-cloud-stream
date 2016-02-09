@@ -174,8 +174,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 			Message<?> inbound = receive(moduleInputChannel);
 			assertNotNull(inbound);
 			assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
-			binder.unbind(producerBinding);
-			binder.unbind(consumerBinding);
+			producerBinding.unbind();
+			consumerBinding.unbind();
 		}
 	}
 
@@ -205,8 +205,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
 				"foo" + uniqueBindingId + ".0");
 		assertThat(partitions, hasSize(10));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -238,8 +238,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
 				"foo" + uniqueBindingId + ".0");
 		assertThat(partitions, hasSize(6));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -270,8 +270,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
 				"foo" + uniqueBindingId + ".0");
 		assertThat(partitions, hasSize(6));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -302,8 +302,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
 				"foo" + uniqueBindingId + ".0");
 		assertThat(partitions, hasSize(5));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -334,8 +334,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
 				"foo" + uniqueBindingId + ".0");
 		assertThat(partitions, hasSize(5));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -422,7 +422,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
-		binder.unbind(consumerBinding);
+		consumerBinding.unbind();
 
 		String testPayload3 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload3.getBytes()));
@@ -438,8 +438,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Message<byte[]> receivedMessage6 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage6, not(nullValue()));
 		assertThat(new String(receivedMessage6.getPayload()), equalTo(testPayload3));
-		binder.unbind(consumerBinding);
-		binder.unbind(producerBinding);
+		consumerBinding.unbind();
+		producerBinding.unbind();
 	}
 
 	@Test
@@ -468,7 +468,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
-		binder.unbind(consumerBinding);
+		consumerBinding.unbind();
 
 		String testPayload3 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload3.getBytes()));
@@ -478,7 +478,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		Message<byte[]> receivedMessage3 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage3, not(nullValue()));
 		assertThat(new String(receivedMessage3.getPayload()), equalTo(testPayload3));
-		binder.unbind(consumerBinding);
-		binder.unbind(producerBinding);
+		consumerBinding.unbind();
+		producerBinding.unbind();
 	}
 }

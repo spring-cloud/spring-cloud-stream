@@ -23,10 +23,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 import org.junit.Ignore;
@@ -36,7 +34,6 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.TestUtils;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -72,10 +69,6 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, properties);
-		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(1, bindings.size());
-
 		properties.clear();
 		properties.put("concurrency", "2");
 		properties.put("count","3");
@@ -109,10 +102,10 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 						((byte[]) receive2.getPayload())[0]),
 				containsInAnyOrder((byte)0, (byte)1, (byte)2));
 
-		binder.unbind(input0Binding);
-		binder.unbind(input1Binding);
-		binder.unbind(input2Binding);
-		binder.unbind(outputBinding);
+		input0Binding.unbind();
+		input1Binding.unbind();
+		input2Binding.unbind();
+		outputBinding.unbind();
 	}
 
 	@Test
@@ -128,11 +121,8 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, properties);
-		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(1, bindings.size());
 		try {
-			AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
+			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
 			assertThat(getEndpointRouting(endpoint), containsString("part.0-' + headers['partition']"));
 		}
 		catch (UnsupportedOperationException ignored) {
@@ -179,10 +169,10 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 						((byte[]) receive2.getPayload())[0]),
 				containsInAnyOrder((byte)0, (byte)1, (byte)2));
 
-		binder.unbind(input0Binding);
-		binder.unbind(input1Binding);
-		binder.unbind(input2Binding);
-		binder.unbind(outputBinding);
+		input0Binding.unbind();
+		input1Binding.unbind();
+		input2Binding.unbind();
+		outputBinding.unbind();
 	}
 
 	@Test
@@ -200,8 +190,8 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertEquals("foo", new String((byte[])inbound.getPayload()));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	// Ignored, since raw mode does not support headers
@@ -251,7 +241,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 			assertEquals("foo", new String((byte[]) tapped2.getPayload()));
 		}
 		// delete one tap stream is deleted
-		binder.unbind(input3Binding);
+		input3Binding.unbind();
 		Message<?> message2 = MessageBuilder.withPayload("bar".getBytes()).build();
 		moduleOutputChannel.send(message2);
 
@@ -267,11 +257,14 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		assertNotNull(receive(module3InputChannel));
 
 		// clean up
-		binder.unbind(input1Binding);
-		binder.unbind(input2Binding);
-		binder.unbind(input3Binding);
-		binder.unbind(producerBinding);
-		assertTrue(getBindings(binder).isEmpty());
+		input1Binding.unbind();
+		input2Binding.unbind();
+		input3Binding.unbind();
+		producerBinding.unbind();
+		assertFalse(extractEndpoint(input1Binding).isRunning());
+		assertFalse(extractEndpoint(input2Binding).isRunning());
+		assertFalse(extractEndpoint(input3Binding).isRunning());
+		assertFalse(extractEndpoint(producerBinding).isRunning());
 	}
 
 	private void assertMessageReceive(QueueChannel moduleInputChannel, String payload) {

@@ -39,7 +39,7 @@ import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.DirectHandler;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -180,7 +180,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		// handle the special case where the shared channel is of a different nature
 		// (i.e. pollable vs subscribable) than the target channel
 		if (isPollable(sharedChannel.getClass())) {
-			bridgePollableToSubscribableChannel(sharedChannel, new DirectChannel());
+			bridgePollableToSubscribableChannel((PollableChannel) sharedChannel, new DirectChannel());
 		}
 		else {
 			bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel, new QueueChannel());
@@ -191,19 +191,19 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		return PollableChannel.class.equals(channelType);
 	}
 
-	private void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel, MessageChannel inputChannel) {
-		sharedChannel.subscribe(new MessageChannelBinderSupport.DirectHandler(inputChannel));
+	private void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel, PollableChannel pollableChannel) {
+		sharedChannel.subscribe(new DirectHandler(pollableChannel));
 	}
 
-	private void bridgePollableToSubscribableChannel(MessageChannel pollableChannel,
-			MessageChannel subscribableChannel) {
+	private void bridgePollableToSubscribableChannel(PollableChannel pollableChannel,
+			SubscribableChannel subscribableChannel) {
 		ConsumerEndpointFactoryBean consumerEndpointFactoryBean = new ConsumerEndpointFactoryBean();
 		consumerEndpointFactoryBean.setInputChannel(pollableChannel);
 		PollerMetadata pollerMetadata = new PollerMetadata();
 		pollerMetadata.setTrigger(new PeriodicTrigger(this.pollableBridgeDefaultFrequency));
 		consumerEndpointFactoryBean.setPollerMetadata(pollerMetadata);
 		consumerEndpointFactoryBean
-				.setHandler(new MessageChannelBinderSupport.DirectHandler(
+				.setHandler(new DirectHandler(
 						subscribableChannel));
 		consumerEndpointFactoryBean.setBeanFactory(this.beanFactory);
 		try {

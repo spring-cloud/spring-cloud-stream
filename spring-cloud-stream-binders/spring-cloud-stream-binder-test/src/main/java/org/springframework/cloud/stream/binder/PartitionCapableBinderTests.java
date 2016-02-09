@@ -28,7 +28,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -37,6 +36,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -80,7 +80,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload1));
 
-		binder.unbind(binding2);
+		binding2.unbind();
 
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload2.getBytes()));
@@ -100,9 +100,9 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload3));
 
-		binder.unbind(producerBinding);
-		binder.unbind(binding1);
-		binder.unbind(binding2);
+		producerBinding.unbind();
+		binding1.unbind();
+		binding2.unbind();
 	}
 
 	@Test
@@ -163,11 +163,8 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
-		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(4, bindings.size());
 		try {
-			AbstractEndpoint endpoint = bindings.get(3).getEndpoint();
+			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
 			assertThat(getEndpointRouting(endpoint), containsString(
 					getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']"));
 		}
@@ -227,10 +224,10 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 					containsOur3Messages);
 
 		}
-		binder.unbind(input0Binding);
-		binder.unbind(input1Binding);
-		binder.unbind(input2Binding);
-		binder.unbind(outputBinding);
+		input0Binding.unbind();
+		input1Binding.unbind();
+		input2Binding.unbind();
+		outputBinding.unbind();
 	}
 
 	@Test
@@ -261,11 +258,8 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
-		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(4, bindings.size());
 		if (usesExplicitRouting()) {
-			AbstractEndpoint endpoint = bindings.get(3).getEndpoint();
+			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
 			assertThat(getEndpointRouting(endpoint), containsString(
 					getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']"));
 		}
@@ -295,10 +289,10 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 					containsInAnyOrder(0, 1, 2));
 		}
 
-		binder.unbind(input0Binding);
-		binder.unbind(input1Binding);
-		binder.unbind(input2Binding);
-		binder.unbind(outputBinding);
+		input0Binding.unbind();
+		input1Binding.unbind();
+		input2Binding.unbind();
+		outputBinding.unbind();
 	}
 
 	/**
@@ -333,4 +327,8 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	protected abstract String getClassUnderTestName();
 
+	protected AbstractEndpoint extractEndpoint(Binding<MessageChannel> binding) {
+		DirectFieldAccessor accessor = new DirectFieldAccessor(binding);
+		return (AbstractEndpoint) accessor.getPropertyValue("endpoint");
+	}
 }

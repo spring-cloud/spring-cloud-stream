@@ -53,7 +53,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
-		return null;
+		return new TestBinding(name, inboundBindTarget, messageCollector);
 	}
 
 	/**
@@ -69,14 +69,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 			}
 		});
 		this.messageChannels.put(name, outboundBindTarget);
-		return null;
-	}
-
-	@Override
-	public void unbind(Binding<MessageChannel> binding) {
-		if (Binding.Type.producer.equals(binding.getType())) {
-			messageCollector.unregister(binding.getTarget());
-		}
+		return new TestBinding(name, outboundBindTarget, messageCollector);
 	}
 
 	public MessageCollector messageCollector() {
@@ -112,6 +105,28 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 			BlockingQueue<Message<?>> queue = results.get(channel);
 			Assert.notNull(queue, "Channel [" + channel + "] was not bound by " + TestSupportBinder.class);
 			return queue;
+		}
+	}
+
+	/**
+	 * @author Marius Bogoevici
+	 */
+	public static class TestBinding implements Binding<MessageChannel> {
+
+		private final MessageChannel target;
+		private final MessageCollectorImpl messageCollector;
+
+		private String name;
+
+		public TestBinding(String name, MessageChannel target, MessageCollectorImpl messageCollector) {
+			this.name = name;
+			this.target = target;
+			this.messageCollector = messageCollector;
+		}
+
+		@Override
+		public void unbind() {
+			messageCollector.unregister(target);
 		}
 	}
 }
