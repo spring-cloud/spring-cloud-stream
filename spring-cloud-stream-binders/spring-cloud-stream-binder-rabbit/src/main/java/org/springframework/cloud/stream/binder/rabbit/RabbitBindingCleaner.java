@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.stream.binder.BindingCleaner;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -102,7 +102,7 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	private List<String> findStreamQueues(String adminUri, String vhost, String binderPrefix, String stream,
 			RestTemplate restTemplate) {
-		String queueNamePrefix = adjustPrefix(MessageChannelBinderSupport.applyPrefix(binderPrefix, stream));
+		String queueNamePrefix = adjustPrefix(AbstractBinder.applyPrefix(binderPrefix, stream));
 		List<Map<String, Object>> queues = listAllQueues(adminUri, vhost, restTemplate);
 		List<String> removedQueues = new ArrayList<>();
 		for (Map<String, Object> queue : queues) {
@@ -147,7 +147,7 @@ public class RabbitBindingCleaner implements BindingCleaner {
 				.pathSegment("exchanges", "{vhost}")
 				.buildAndExpand(vhost).encode().toUri();
 		List<Map<String, Object>> exchanges = restTemplate.getForObject(uri, List.class);
-		String exchangeNamePrefix = adjustPrefix(MessageChannelBinderSupport.applyPrefix(binderPrefix, entity));
+		String exchangeNamePrefix = adjustPrefix(AbstractBinder.applyPrefix(binderPrefix, entity));
 		for (Map<String, Object> exchange : exchanges) {
 			String exchangeName = (String) exchange.get("name");
 			if (exchangeName.startsWith(exchangeNamePrefix)) {

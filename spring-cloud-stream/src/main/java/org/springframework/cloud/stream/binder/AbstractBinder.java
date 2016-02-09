@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.springframework.util.MimeTypeUtils.ALL;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN;
@@ -42,25 +41,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.Lifecycle;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.core.serializer.support.SerializationFailedException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
-import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.MessagingException;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -76,9 +69,9 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
-public abstract class MessageChannelBinderSupport
-		implements Binder<MessageChannel>, ApplicationContextAware, InitializingBean {
+public abstract class AbstractBinder<T> implements ApplicationContextAware, InitializingBean, Binder<T>, DisposableBean {
 
 	protected static final String PARTITION_HEADER = "partition";
 
@@ -94,8 +87,6 @@ public abstract class MessageChannelBinderSupport
 	private volatile Codec codec;
 
 	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
-
-	protected static final List<MimeType> MEDIATYPES_MEDIATYPE_ALL = Collections.singletonList(ALL);
 
 	private static final int DEFAULT_BACKOFF_INITIAL_INTERVAL = 1000;
 
@@ -156,26 +147,14 @@ public abstract class MessageChannelBinderSupport
 					BinderPropertyKeys.BATCH_BUFFER_LIMIT,
 			}));
 
-	private final List<Binding<MessageChannel>> bindings = Collections.synchronizedList(new ArrayList<Binding<MessageChannel>>());
+	private final List<DefaultBinding<T>> bindings =
+			Collections.synchronizedList(new ArrayList<DefaultBinding<T>>());
 
 	private final IdGenerator idGenerator = new AlternativeJdkIdGenerator();
 
 	protected volatile EvaluationContext evaluationContext;
 
 	private volatile PartitionSelectorStrategy partitionSelector = new DefaultPartitionSelector();
-
-	/**
-	 * Used in the canonical case, when the binding does not involve an alias name.
-	 */
-	protected final SharedChannelProvider<DirectChannel> directChannelProvider = new
-			SharedChannelProvider<DirectChannel>(
-					DirectChannel.class) {
-
-				@Override
-				protected DirectChannel createSharedChannel(String name) {
-					return new DirectChannel();
-				}
-			};
 
 	protected volatile long defaultBackOffInitialInterval = DEFAULT_BACKOFF_INITIAL_INTERVAL;
 
@@ -209,7 +188,7 @@ public abstract class MessageChannelBinderSupport
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
 	 * @param prefix the prefix.
-	 * @param name the name.
+	 * @param name   the name.
 	 */
 	public static String applyPrefix(String prefix, String name) {
 		return prefix + name;
@@ -277,7 +256,8 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	/**
-	 * Set the default retry back off max interval for this binder; can be overridden with consumer 'backOffMaxInterval'
+	 * Set the default retry back off max interval for this binder; can be overridden with consumer
+	 * 'backOffMaxInterval'
 	 * property.
 	 * @param defaultBackOffMaxInterval
 	 */
@@ -362,7 +342,7 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	@Override
-	public final Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inputChannel, Properties properties) {
+	public final Binding<T> bindConsumer(String name, String group, T inputChannel, Properties properties) {
 		DefaultBindingPropertiesAccessor accessor = new DefaultBindingPropertiesAccessor(properties);
 		if (StringUtils.isEmpty(group)) {
 			Assert.isTrue(!accessor.getProperty(BinderPropertyKeys.DURABLE, defaultDurableSubscription),
@@ -373,60 +353,25 @@ public abstract class MessageChannelBinderSupport
 		return doBindConsumer(name, group, inputChannel, properties);
 	}
 
-	protected abstract Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, Properties properties);
+	protected abstract Binding<T> doBindConsumer(String name, String group, T inputChannel, Properties properties);
 
-	/**
-	 * Create a producer for the named channel and bind it to the binder. Synchronized to avoid creating multiple
-	 * instances.
-	 * @param name The name.
-	 * @param channelName The name of the channel to be created, and registered as bean.
-	 * @param properties The properties.
-	 * @return The channel.
-	 */
-	protected synchronized MessageChannel doBindDynamicProducer(String name, String channelName,
-			Properties properties) {
-		MessageChannel channel = this.directChannelProvider.lookupSharedChannel(channelName);
-		if (channel == null) {
-			try {
-				channel = this.directChannelProvider.createAndRegisterChannel(channelName);
-				bindProducer(name, channel, properties);
-			}
-			catch (RuntimeException e) {
-				destroyCreatedChannel(channelName, channel);
-				throw new BinderException(
-						"Failed to bind dynamic channel '" + name + "' with properties " + properties, e);
-			}
-		}
-		return channel;
-	}
-
-	private void destroyCreatedChannel(String name, MessageChannel channel) {
-		BeanFactory beanFactory = this.applicationContext.getBeanFactory();
-		if (beanFactory.containsBean(name)) {
-			if (beanFactory instanceof DefaultListableBeanFactory) {
-				((DefaultListableBeanFactory) beanFactory).destroySingleton(name);
-			}
-		}
-	}
-
-	@Override
-	public void unbind(Binding<MessageChannel> binding) {
-		binding.stop();
+	protected void notifyUnbind(DefaultBinding<T> binding) {
 		this.bindings.remove(binding);
 		afterUnbind(binding);
 	}
 
-	protected void afterUnbind(Binding<MessageChannel> binding) {
+	protected void afterUnbind(DefaultBinding<T> binding) {
 	}
 
-	protected void addBinding(Binding<MessageChannel> binding) {
+	protected void addBinding(DefaultBinding<T> binding) {
 		this.bindings.add(binding);
 	}
 
-	protected void stopBindings() {
-		for (Lifecycle bean : this.bindings) {
+	@Override
+	public void destroy() throws Exception {
+		for (Binding<?> binding : this.bindings) {
 			try {
-				bean.stop();
+				binding.unbind();
 			}
 			catch (Exception e) {
 				if (this.logger.isWarnEnabled()) {
@@ -438,7 +383,7 @@ public abstract class MessageChannelBinderSupport
 
 	/**
 	 * Construct a name comprised of the name and group.
-	 * @param name the name.
+	 * @param name  the name.
 	 * @param group the group.
 	 * @return the constructed name.
 	 */
@@ -552,10 +497,11 @@ public abstract class MessageChannelBinderSupport
 	 * partition selector class is provided, it will be invoked to determine the partition. Otherwise, if the partition
 	 * expression is not null, it is evaluated against the key and is expected to return an integer to which the modulo
 	 * function will be applied, using the partitionCount as the divisor. If no partition expression is provided, the
-	 * key will be passed to the binder partition strategy along with the partitionCount. The default partition strategy
+	 * key will be passed to the binder partition strategy along with the partitionCount. The default partition
+	 * strategy
 	 * uses {@code key.hashCode()}, and the result will be the mod of that value.
 	 * @param message the message.
-	 * @param meta the partitioning metadata.
+	 * @param meta    the partitioning metadata.
 	 * @return the partition.
 	 */
 	protected int determinePartition(Message<?> message, PartitioningMetadata meta) {
@@ -638,12 +584,14 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	/**
-	 * Validate the provided deployment properties for the consumer against those supported by this binder implementation.
-	 * The consumer is that part of the binder that consumes messages from the underlying infrastructure and sends them to
+	 * Validate the provided deployment properties for the consumer against those supported by this binder
+	 * implementation.
+	 * The consumer is that part of the binder that consumes messages from the underlying infrastructure and sends them
+	 * to
 	 * the next module. Consumer properties are used to configure the consumer.
-	 * @param name The name.
+	 * @param name       The name.
 	 * @param properties The properties.
-	 * @param supported The supported properties.
+	 * @param supported  The supported properties.
 	 */
 	protected void validateConsumerProperties(String name, Properties properties, Set<Object> supported) {
 		if (properties != null) {
@@ -652,12 +600,14 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	/**
-	 * Validate the provided deployment properties for the producer against those supported by this binder implementation.
-	 * When a module sends a message to the binder, the producer uses these properties while sending it to the underlying
+	 * Validate the provided deployment properties for the producer against those supported by this binder
+	 * implementation.
+	 * When a module sends a message to the binder, the producer uses these properties while sending it to the
+	 * underlying
 	 * infrastructure.
-	 * @param name The name.
+	 * @param name       The name.
 	 * @param properties The properties.
-	 * @param supported The supported properties.
+	 * @param supported  The supported properties.
 	 */
 	protected void validateProducerProperties(String name, Properties properties, Set<Object> supported) {
 		if (properties != null) {
@@ -760,56 +710,6 @@ public abstract class MessageChannelBinderSupport
 	}
 
 	/**
-	 * Looks up or optionally creates a new channel to use.
-	 * @author Eric Bottard
-	 */
-	protected abstract class SharedChannelProvider<T extends MessageChannel> {
-
-		private final Class<T> requiredType;
-
-		protected SharedChannelProvider(Class<T> clazz) {
-			this.requiredType = clazz;
-		}
-
-		public synchronized final T lookupOrCreateSharedChannel(String name) {
-			T channel = lookupSharedChannel(name);
-			if (channel == null) {
-				channel = createAndRegisterChannel(name);
-			}
-			return channel;
-		}
-
-		@SuppressWarnings("unchecked")
-		public T createAndRegisterChannel(String name) {
-			T channel = createSharedChannel(name);
-			ConfigurableListableBeanFactory beanFactory = MessageChannelBinderSupport.this.applicationContext.getBeanFactory();
-			beanFactory.registerSingleton(name, channel);
-			channel = (T) beanFactory.initializeBean(channel, name);
-			if (MessageChannelBinderSupport.this.logger.isDebugEnabled()) {
-				MessageChannelBinderSupport.this.logger.debug("Registered channel:" + name);
-			}
-			return channel;
-		}
-
-		protected abstract T createSharedChannel(String name);
-
-		public T lookupSharedChannel(String name) {
-			T channel = null;
-			if (MessageChannelBinderSupport.this.applicationContext.containsBean(name)) {
-				try {
-					channel = MessageChannelBinderSupport.this.applicationContext.getBean(name, this.requiredType);
-				}
-				catch (Exception e) {
-					throw new IllegalArgumentException("bean '" + name
-							+ "' is already registered but does not match the required type");
-				}
-			}
-			return channel;
-		}
-
-	}
-
-	/**
 	 * Handles representing any java class as a {@link MimeType}.
 	 * @author David Turanski
 	 * @see <a href="http://docs.oracle.com/javase/7/docs/api/java/lang/Class.html#getName"/>
@@ -884,21 +784,6 @@ public abstract class MessageChannelBinderSupport
 
 		public Set<Object> build() {
 			return this.set;
-		}
-
-	}
-
-	public static class DirectHandler implements MessageHandler {
-
-		private final MessageChannel outputChannel;
-
-		public DirectHandler(MessageChannel outputChannel) {
-			this.outputChannel = outputChannel;
-		}
-
-		@Override
-		public void handleMessage(Message<?> message) throws MessagingException {
-			this.outputChannel.send(message);
 		}
 
 	}

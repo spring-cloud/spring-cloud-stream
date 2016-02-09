@@ -36,13 +36,14 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.FixedSubscriberChannel;
@@ -127,7 +128,7 @@ import scala.collection.Seq;
  * @author Mark Fisher
  * @author Soby Chacko
  */
-public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
+public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	public static final ByteArraySerializer BYTE_ARRAY_SERIALIZER = new ByteArraySerializer();
 
@@ -489,10 +490,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 			consumer.setBeanFactory(this.getBeanFactory());
 			consumer.setBeanName("outbound." + name);
 			consumer.afterPropertiesSet();
-			Binding<MessageChannel> producerBinding = Binding.forProducer(name, moduleOutputChannel, consumer,
-					producerPropertiesAccessor);
+			DefaultBinding<MessageChannel> producerBinding = DefaultBinding.forProducer(name, moduleOutputChannel, consumer,
+					producerPropertiesAccessor, this);
 			addBinding(producerBinding);
-			producerBinding.start();
+			producerBinding.getEndpoint().start();
 			return producerBinding;
 		}
 		catch (Exception e) {
@@ -644,9 +645,9 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		String groupedName = groupedName(name, group);
 		edc.setBeanName("inbound." + groupedName);
 
-		Binding<MessageChannel> consumerBinding = Binding.forConsumer(name, group, edc, moduleInputChannel, accessor);
+		DefaultBinding<MessageChannel> consumerBinding = DefaultBinding.forConsumer(name, group, edc, moduleInputChannel, accessor, this);
 		addBinding(consumerBinding);
-		consumerBinding.start();
+		consumerBinding.getEndpoint().start();
 		return consumerBinding;
 	}
 

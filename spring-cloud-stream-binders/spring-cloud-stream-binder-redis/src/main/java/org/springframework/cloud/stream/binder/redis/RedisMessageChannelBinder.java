@@ -26,12 +26,13 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
@@ -65,7 +66,7 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Jennifer Hickey
  */
-public class RedisMessageChannelBinder extends MessageChannelBinderSupport implements DisposableBean {
+public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> implements DisposableBean {
 
 	private static final String ERROR_HEADER = "errorKey";
 
@@ -178,7 +179,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		adapter.setOutputChannel(bridgeInputChannel);
 		adapter.setBeanName("inbound." + channelName);
 		adapter.afterPropertiesSet();
-		Binding<MessageChannel> consumerBinding = Binding.forConsumer(channelName, group, adapter, moduleInputChannel, properties);
+		DefaultBinding<MessageChannel> consumerBinding = DefaultBinding.forConsumer(channelName, group, adapter, moduleInputChannel, properties, this);
 		addBinding(consumerBinding);
 		ReceivingHandler convertingBridge = new ReceivingHandler();
 		convertingBridge.setOutputChannel(moduleInputChannel);
@@ -186,7 +187,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		convertingBridge.afterPropertiesSet();
 		bridgeToModuleChannel.subscribe(convertingBridge);
 		this.redisOperations.boundZSetOps(CONSUMER_GROUPS_KEY_PREFIX + bindingName).incrementScore(group, 1);
-		consumerBinding.start();
+		consumerBinding.getEndpoint().start();
 		return consumerBinding;
 	}
 
@@ -248,7 +249,7 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 	}
 
 	@Override
-	protected void afterUnbind(Binding<MessageChannel> binding) {
+	protected void afterUnbind(DefaultBinding<MessageChannel> binding) {
 		if (Binding.Type.consumer.equals(binding.getType())) {
 			String key = CONSUMER_GROUPS_KEY_PREFIX + binding.getName();
 			boolean durable = binding.getPropertiesAccessor().isDurable(defaultDurableSubscription);
@@ -290,15 +291,10 @@ public class RedisMessageChannelBinder extends MessageChannelBinderSupport imple
 		consumer.setBeanFactory(this.getBeanFactory());
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
-		Binding<MessageChannel> producerBinding = Binding.forProducer(name, moduleOutputChannel, consumer, properties);
+		DefaultBinding<MessageChannel> producerBinding = DefaultBinding.forProducer(name, moduleOutputChannel, consumer, properties,this);
 		addBinding(producerBinding);
-		producerBinding.start();
+		producerBinding.getEndpoint().start();
 		return producerBinding;
-	}
-
-	@Override
-	public void destroy() {
-		stopBindings();
 	}
 
 	private class SendingHandler extends AbstractMessageHandler {

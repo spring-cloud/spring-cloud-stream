@@ -25,12 +25,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport.JavaClassMimeTypeConversion;
+import org.springframework.cloud.stream.binder.AbstractBinder.JavaClassMimeTypeConversion;
 import org.springframework.cloud.stream.tuple.DefaultTuple;
 import org.springframework.cloud.stream.tuple.Tuple;
 import org.springframework.cloud.stream.tuple.TupleBuilder;
@@ -45,6 +43,9 @@ import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 
 /**
  * @author Gary Russell
@@ -265,7 +266,7 @@ public class MessageChannelBinderSupportTests {
 
 	}
 
-	public class TestMessageChannelBinder extends MessageChannelBinderSupport {
+	public class TestMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 		@Override
 		protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel channel, Properties properties) {

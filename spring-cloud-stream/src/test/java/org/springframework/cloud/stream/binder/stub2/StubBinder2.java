@@ -44,8 +44,4 @@ public class StubBinder2 implements Binder<Object> {
 		return null;
 	}
 
-	@Override
-	public void unbind(Binding<Object> binding) {
-	}
-
 }

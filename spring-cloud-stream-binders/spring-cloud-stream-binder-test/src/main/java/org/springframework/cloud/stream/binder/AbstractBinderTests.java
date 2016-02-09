@@ -80,13 +80,13 @@ public abstract class AbstractBinderTests {
 		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer("foo.2", new DirectChannel(), null);
 		Collection<?> bindings = getBindings(binder);
 		assertEquals(5, bindings.size());
-		binder.unbind(foo0ProducerBinding);
+		foo0ProducerBinding.unbind();
 		assertEquals(4, bindings.size());
-		binder.unbind(foo0ConsumerBinding);
-		binder.unbind(foo1ProducerBinding);
+		foo0ConsumerBinding.unbind();
+		foo1ProducerBinding.unbind();
 		assertEquals(2, bindings.size());
-		binder.unbind(foo1ConsumerBinding);
-		binder.unbind(foo2ProducerBinding);
+		foo1ConsumerBinding.unbind();
+		foo2ProducerBinding.unbind();
 		assertTrue(bindings.isEmpty());
 	}
 
@@ -107,8 +107,8 @@ public abstract class AbstractBinderTests {
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
 		assertEquals("foo/bar", inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -171,8 +171,8 @@ public abstract class AbstractBinderTests {
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
 		assertNull(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	protected Collection<?> getBindings(Binder<MessageChannel> testBinder) {

@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.stub2;
 
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.stub2.StubBinder2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

@@ -22,6 +22,7 @@ import java.util.Properties;
  * A strategy interface used to bind an app interface to a logical name. The name is intended to identify a
  * logical consumer or producer of messages. This may be a queue, a channel adapter, another message channel, a Spring
  * bean, etc.
+ *
  * @author Mark Fisher
  * @author David Turanski
  * @author Gary Russell
@@ -49,11 +50,5 @@ public interface Binder<T> {
 	 * @param properties arbitrary String key/value pairs that will be used as producer properties in the binding
 	 */
 	Binding<T> bindProducer(String name, T outboundBindTarget, Properties properties);
-
-	/**
-	 * Unbind the target component represented by the provided Binding and stop any active components.
-	 * @param binding the Binding instance to unbind
-	 */
-	void unbind(Binding<T> binding);
 
 }

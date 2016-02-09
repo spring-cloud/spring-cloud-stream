@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -41,13 +42,11 @@ import org.mockito.Mockito;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.cloud.stream.binder.local.LocalMessageChannelBinder;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.support.utils.IntegrationUtils;
@@ -55,8 +54,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.scheduling.support.PeriodicTrigger;
+import org.springframework.messaging.SubscribableChannel;
 
 /**
  * @author Mark Fisher
@@ -68,13 +66,11 @@ public class BinderAwareChannelResolverTests {
 
 	private volatile BinderAwareChannelResolver resolver;
 
-	private volatile LocalMessageChannelBinder binder;
+	private volatile Binder<MessageChannel> binder;
 
 	@Before
 	public void setupContext() throws Exception {
-		this.binder = new LocalMessageChannelBinder();
-		this.binder.setApplicationContext(context);
-		this.binder.afterPropertiesSet();
+		this.binder = new TestBinder();
 		this.resolver = new BinderAwareChannelResolver(new BinderFactory<MessageChannel>() {
 			@Override
 			public Binder<MessageChannel> getBinder(String configurationName) {
@@ -85,14 +81,9 @@ public class BinderAwareChannelResolverTests {
 		context.getBeanFactory().registerSingleton("channelResolver",
 				this.resolver);
 		context.registerSingleton("other", DirectChannel.class);
-		context.registerSingleton("taskScheduler", ThreadPoolTaskScheduler.class);
 		context.registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				DefaultMessageBuilderFactory.class);
 		context.refresh();
-
-		PollerMetadata poller = new PollerMetadata();
-		poller.setTrigger(new PeriodicTrigger(1000));
-		binder.setPoller(poller);
 	}
 
 	@Test
@@ -156,4 +147,76 @@ public class BinderAwareChannelResolverTests {
 		assertSame(resolved, beanFactory.getBean("someTransport:foo"));
 	}
 
+	/**
+	 * A simple test binder that creates queues for the destinations. Ignores groups.
+	 */
+	private class TestBinder implements Binder<MessageChannel> {
+
+		private final Map<String, DirectChannel> destinations = new ConcurrentHashMap<>();
+
+		@Override
+		public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget,
+													Properties properties) {
+			synchronized (destinations) {
+				if (!destinations.containsKey(name)) {
+					destinations.put(name, new DirectChannel());
+				}
+			}
+			DirectHandler directHandler = new DirectHandler(inboundBindTarget);
+			destinations.get(name).subscribe(directHandler);
+			return new TestBinding(inboundBindTarget, name, directHandler, Binding.Type.producer);
+		}
+
+
+		@Override
+		public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
+			synchronized (destinations) {
+				if (!destinations.containsKey(name)) {
+					destinations.put(name, new DirectChannel());
+				}
+			}
+			DirectHandler directHandler = new DirectHandler(destinations.get(name));
+			// for test purposes we can assume it is a SubscribableChannel
+			((SubscribableChannel) outboundBindTarget).subscribe(directHandler);
+			return new TestBinding(outboundBindTarget, name, directHandler, Binding.Type.consumer);
+		}
+
+		private class TestBinding implements Binding<MessageChannel> {
+
+			private final MessageChannel target;
+
+			private final String name;
+
+			private final DirectHandler directHandler;
+
+			private Type type;
+
+			public TestBinding(MessageChannel outboundChannel, String name, DirectHandler directHandler, Type type) {
+				this.target = outboundChannel;
+				this.name = name;
+				this.directHandler = directHandler;
+				this.type = type;
+			}
+
+			@Override
+			public String getName() {
+				return name;
+			}
+
+			@Override
+			public MessageChannel getTarget() {
+				return target;
+			}
+
+			@Override
+			public Type getType() {
+				return type;
+			}
+
+			@Override
+			public void unbind() {
+				destinations.get(name).unsubscribe(directHandler);
+			}
+		}
+	}
 }

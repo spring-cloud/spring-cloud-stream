@@ -39,11 +39,12 @@ import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.DirectHandler;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.config.ConsumerEndpointFactoryBean;
+import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.PollableChannel;
@@ -192,7 +193,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel, MessageChannel inputChannel) {
-		sharedChannel.subscribe(new MessageChannelBinderSupport.DirectHandler(inputChannel));
+		BridgeHandler bridgeHandler = new BridgeHandler();
+		sharedChannel.subscribe(new DirectHandler(inputChannel));
 	}
 
 	private void bridgePollableToSubscribableChannel(MessageChannel pollableChannel,
@@ -203,7 +205,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		pollerMetadata.setTrigger(new PeriodicTrigger(this.pollableBridgeDefaultFrequency));
 		consumerEndpointFactoryBean.setPollerMetadata(pollerMetadata);
 		consumerEndpointFactoryBean
-				.setHandler(new MessageChannelBinderSupport.DirectHandler(
+				.setHandler(new DirectHandler(
 						subscribableChannel));
 		consumerEndpointFactoryBean.setBeanFactory(this.beanFactory);
 		try {

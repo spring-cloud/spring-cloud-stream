@@ -59,6 +59,7 @@ import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
@@ -122,8 +123,8 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		});
 		moduleOutputChannel.send(message);
 		assertTrue(latch.await(10, TimeUnit.SECONDS));
-		binder.unbind(consumerBinding);
-		binder.unbind(producerBinding);
+		consumerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -135,7 +136,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		@SuppressWarnings("unchecked")
 		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
-		AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
+		AbstractEndpoint endpoint = ((DefaultBinding)bindings.get(0)).getEndpoint();
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertEquals(AcknowledgeMode.AUTO, container.getAcknowledgeMode());
@@ -152,7 +153,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertEquals(1000L, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.initialInterval"));
 		assertEquals(10000L, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.maxInterval"));
 		assertEquals(2.0, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.multiplier"));
-		binder.unbind(consumerBinding);
+		consumerBinding.unbind();
 		assertEquals(0, bindings.size());
 
 		properties = new Properties();
@@ -172,14 +173,14 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		consumerBinding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
 
 		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindingsNow = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
+		List<DefaultBinding<MessageChannel>> bindingsNow = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindingsNow.size());
 		endpoint = bindingsNow.get(0).getEndpoint();
 		container = verifyContainer(endpoint);
 
 		assertEquals("foo.props.0.test", container.getQueueNames()[0]);
 
-		binder.unbind(consumerBinding);
+		consumerBinding.unbind();
 		assertEquals(0, bindingsNow.size());
 	}
 
@@ -188,7 +189,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		Binder<MessageChannel> binder = getBinder();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("props.0", new DirectChannel(), null);
 		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
+		List<DefaultBinding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
 		AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
 		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
@@ -197,7 +198,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		List<?> requestHeaders = TestUtils.getPropertyValue(endpoint,
 				"handler.delegate.headerMapper.requestHeaderMatcher.strategies", List.class);
 		assertEquals(2, requestHeaders.size());
-		binder.unbind(producerBinding);
+		producerBinding.unbind();
 		assertEquals(0, bindings.size());
 
 		Properties properties = new Properties();
@@ -222,7 +223,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertEquals(MessageDeliveryMode.NON_PERSISTENT, mode);
 		verifyFooRequestProducer(endpoint);
 
-		binder.unbind(producerBinding);
+		producerBinding.unbind();
 		assertEquals(0, bindings.size());
 	}
 
@@ -264,7 +265,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		assertTrue(n < 100);
 
-		binder.unbind(consumerBinding);
+		consumerBinding.unbind();
 		assertNotNull(admin.getQueueProperties(TEST_PREFIX + "durabletest.0.tgroup.dlq"));
 	}
 
@@ -291,7 +292,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		});
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("nondurabletest.0", "tgroup", moduleInputChannel, properties);
 
-		binder.unbind(consumerBinding);
+		consumerBinding.unbind();
 		assertNull(admin.getQueueProperties(TEST_PREFIX + "nondurabletest.0.dlq"));
 	}
 
@@ -330,7 +331,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		assertTrue(n < 100);
 
-		binder.unbind(consumerBinding);
+		consumerBinding.unbind();
 
 		ApplicationContext context = TestUtils.getPropertyValue(binder, "binder.autoDeclareContext",
 				ApplicationContext.class);
@@ -419,11 +420,11 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertNotNull(received);
 		assertEquals(0, received.getMessageProperties().getHeaders().get("partition"));
 
-		binder.unbind(input0Binding);
-		binder.unbind(input1Binding);
-		binder.unbind(defaultConsumerBinding1);
-		binder.unbind(defaultConsumerBinding2);
-		binder.unbind(outputBinding);
+		input0Binding.unbind();
+		input1Binding.unbind();
+		defaultConsumerBinding1.unbind();
+		defaultConsumerBinding2.unbind();
+		outputBinding.unbind();
 	}
 
 	@Test
@@ -505,11 +506,11 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertNotNull(received);
 		assertEquals(0, received.getMessageProperties().getHeaders().get("partition"));
 
-		binder.unbind(input0Binding);
-		binder.unbind(input1Binding);
-		binder.unbind(defaultConsumerBinding1);
-		binder.unbind(defaultConsumerBinding2);
-		binder.unbind(outputBinding);
+		input0Binding.unbind();
+		input1Binding.unbind();
+		defaultConsumerBinding1.unbind();
+		defaultConsumerBinding2.unbind();
+		outputBinding.unbind();
 	}
 
 	@Test
@@ -557,7 +558,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		}
 		assertTrue(n < 100);
 
-		binder.unbind(consumerBinding);
+		consumerBinding.unbind();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -613,8 +614,8 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertEquals("bar", new String(in.getPayload()));
 		assertNull(in.getHeaders().get(AmqpHeaders.DELIVERY_MODE));
 
-		binder.unbind(producerBinding);
-		binder.unbind(consumerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	/*
@@ -700,16 +701,16 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertNotNull(message);
 		assertEquals("1", message.getPayload());
 
-		binder.unbind(late0ProducerBinding);
-		binder.unbind(late0ConsumerBinding);
-		binder.unbind(partlate0ProducerBinding);
-		binder.unbind(partlate0Consumer0Binding);
-		binder.unbind(partlate0Consumer1Binding);
-		binder.unbind(noDlqProducerBinding);
-		binder.unbind(noDlqConsumerBinding);
-		binder.unbind(pubSubProducerBinding);
-		binder.unbind(nonDurableConsumerBinding);
-		binder.unbind(durableConsumerBinding);
+		late0ProducerBinding.unbind();
+		late0ConsumerBinding.unbind();
+		partlate0ProducerBinding.unbind();
+		partlate0Consumer0Binding.unbind();
+		partlate0Consumer1Binding.unbind();
+		noDlqProducerBinding.unbind();
+		noDlqConsumerBinding.unbind();
+		pubSubProducerBinding.unbind();
+		nonDurableConsumerBinding.unbind();
+		durableConsumerBinding.unbind();
 
 		binder.cleanup();
 

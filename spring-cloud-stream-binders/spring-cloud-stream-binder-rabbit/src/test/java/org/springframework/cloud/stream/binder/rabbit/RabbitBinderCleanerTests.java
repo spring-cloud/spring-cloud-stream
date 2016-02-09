@@ -38,7 +38,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.ChannelCallback;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.cloud.stream.binder.MessageChannelBinderSupport;
+import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -69,8 +69,8 @@ public class RabbitBinderCleanerTests {
 		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
 		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
 		for (int i = 0; i < 5; i++) {
-			String queue1Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + ".default." + i);
-			String queue2Name = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream2 + ".default." + i);
+			String queue1Name = AbstractBinder.applyPrefix(BINDER_PREFIX, stream1 + ".default." + i);
+			String queue2Name = AbstractBinder.applyPrefix(BINDER_PREFIX, stream2 + ".default." + i);
 			if (firstQueue == null) {
 				firstQueue = queue1Name;
 			}
@@ -86,7 +86,7 @@ public class RabbitBinderCleanerTests {
 			template.put(uri, new AmqpQueue(false, true));
 			uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues")
 					.pathSegment("{vhost}", "{queue}")
-					.buildAndExpand("/", MessageChannelBinderSupport.constructDLQName(queue1Name)).encode().toUri();
+					.buildAndExpand("/", AbstractBinder.constructDLQName(queue1Name)).encode().toUri();
 			template.put(uri, new AmqpQueue(false, true));
 			TopicExchange exchange = new TopicExchange(queue1Name);
 			rabbitAdmin.declareExchange(exchange);
@@ -96,21 +96,21 @@ public class RabbitBinderCleanerTests {
 			rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(queue2Name)).to(exchange).with(queue2Name));
 		}
 		final TopicExchange topic1 = new TopicExchange(
-				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + ".foo.bar"));
+				AbstractBinder.applyPrefix(BINDER_PREFIX, stream1 + ".foo.bar"));
 		rabbitAdmin.declareExchange(topic1);
 		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(topic1).with("#"));
 		String foreignQueue = UUID.randomUUID().toString();
 		rabbitAdmin.declareQueue(new Queue(foreignQueue));
 		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(foreignQueue)).to(topic1).with("#"));
 		final TopicExchange topic2 = new TopicExchange(
-				MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream2 + ".foo.bar"));
+				AbstractBinder.applyPrefix(BINDER_PREFIX, stream2 + ".foo.bar"));
 		rabbitAdmin.declareExchange(topic2);
 		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(topic2).with("#"));
 		new RabbitTemplate(connectionFactory).execute(new ChannelCallback<Void>() {
 
 			@Override
 			public Void doInRabbit(Channel channel) throws Exception {
-				String queueName = MessageChannelBinderSupport.applyPrefix(BINDER_PREFIX, stream1 + ".default." + 4);
+				String queueName = AbstractBinder.applyPrefix(BINDER_PREFIX, stream1 + ".default." + 4);
 				String consumerTag = channel.basicConsume(queueName, new DefaultConsumer(channel));
 				try {
 					waitForConsumerStateNot(queueName, 0);

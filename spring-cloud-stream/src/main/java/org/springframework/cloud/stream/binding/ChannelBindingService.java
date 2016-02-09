@@ -91,11 +91,10 @@ public class ChannelBindingService {
 	}
 
 	public void unbindConsumers(String inputChannelName) {
-		Binder<MessageChannel> binder = getBinderForChannel(inputChannelName);
 		List<Binding<MessageChannel>> bindings = this.consumerBindings.remove(inputChannelName);
 		if (bindings != null && !CollectionUtils.isEmpty(bindings)) {
 			for (Binding<MessageChannel> binding : bindings) {
-				binder.unbind(binding);
+				binding.unbind();
 			}
 		}
 		else if (log.isWarnEnabled()) {
@@ -104,10 +103,9 @@ public class ChannelBindingService {
 	}
 
 	public void unbindProducers(String outputChannelName) {
-		Binder<MessageChannel> binder = getBinderForChannel(outputChannelName);
 		Binding<MessageChannel> binding = this.producerBindings.remove(outputChannelName);
 		if (binding != null) {
-			binder.unbind(binding);
+			binding.unbind();
 		}
 		else if (log.isWarnEnabled()) {
 			log.warn("Trying to unbind channel '" + outputChannelName + "', but no binding found.");
