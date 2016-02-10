@@ -104,11 +104,11 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		output.send(new GenericMessage<>(new byte[]{(byte)1}));
 		output.send(new GenericMessage<>(new byte[]{(byte)2}));
 
-		Message<?> receive0 = input0.receive((int)(1000 * timeoutMultiplier));
+		Message<?> receive0 = receive(input0);
 		assertNotNull(receive0);
-		Message<?> receive1 = input1.receive((int)(1000 * timeoutMultiplier));
+		Message<?> receive1 = receive(input1);
 		assertNotNull(receive1);
-		Message<?> receive2 = input2.receive((int)(1000 * timeoutMultiplier));
+		Message<?> receive2 = receive(input2);
 		assertNotNull(receive2);
 
 		assertThat(Arrays.asList(
@@ -173,11 +173,11 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		output.send(new GenericMessage<>(new byte[]{1}));
 		output.send(new GenericMessage<>(new byte[]{0}));
 
-		Message<?> receive0 = input0.receive((int)(1000 * timeoutMultiplier));
+		Message<?> receive0 = receive(input0);
 		assertNotNull(receive0);
-		Message<?> receive1 = input1.receive((int)(1000 * timeoutMultiplier));
+		Message<?> receive1 = receive(input1);
 		assertNotNull(receive1);
-		Message<?> receive2 = input2.receive((int)(1000 * timeoutMultiplier));
+		Message<?> receive2 = receive(input2);
 		assertNotNull(receive2);
 
 
@@ -205,7 +205,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive((int)(5000 * timeoutMultiplier));
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertEquals("foo", new String((byte[])inbound.getPayload()));
 		binder.unbind(producerBinding);
@@ -242,12 +242,12 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		boolean retried = false;
 		while (!success) {
 			moduleOutputChannel.send(message);
-			Message<?> inbound = module1InputChannel.receive((int)(5000 * timeoutMultiplier));
+			Message<?> inbound = receive(module1InputChannel);
 			assertNotNull(inbound);
 			assertEquals("foo", new String((byte[])inbound.getPayload()));
 
-			Message<?> tapped1 = module2InputChannel.receive((int)(5000 * timeoutMultiplier));
-			Message<?> tapped2 = module3InputChannel.receive((int)(5000 * timeoutMultiplier));
+			Message<?> tapped1 = receive(module2InputChannel);
+			Message<?> tapped2 = receive(module3InputChannel);
 			if (tapped1 == null || tapped2 == null) {
 				// listener may not have started
 				assertFalse("Failed to receive tap after retry", retried);
@@ -264,15 +264,15 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		moduleOutputChannel.send(message2);
 
 		// other tap still receives messages
-		Message<?> tapped = module2InputChannel.receive((int)(5000 * timeoutMultiplier));
+		Message<?> tapped = receive(module2InputChannel);
 		assertNotNull(tapped);
 
 		// removed tap does not
-		assertNull(module3InputChannel.receive((int)(1000 * timeoutMultiplier)));
+		assertNull(receive(module3InputChannel));
 
 		// re-subscribed tap does receive the message
 		input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, null);
-		assertNotNull(module3InputChannel.receive((int)(1000 * timeoutMultiplier)));
+		assertNotNull(receive(module3InputChannel));
 
 		// clean up
 		binder.unbind(input1Binding);

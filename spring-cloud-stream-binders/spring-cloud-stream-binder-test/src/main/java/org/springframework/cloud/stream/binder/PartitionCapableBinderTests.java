@@ -72,11 +72,11 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
 
-		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive((int) (1000 * timeoutMultiplier));
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1, not(nullValue()));
 		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload1));
 
-		Message<byte[]> receivedMessage2 = (Message<byte[]>) input2.receive((int) (1000 * timeoutMultiplier));
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input2);
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload1));
 
@@ -89,14 +89,14 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		String testPayload3 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload3.getBytes()));
 
-		receivedMessage1 = (Message<byte[]>) input1.receive((int) (1000 * timeoutMultiplier));
+		receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1, not(nullValue()));
 		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload2));
-		receivedMessage1 = (Message<byte[]>) input1.receive((int) (1000 * timeoutMultiplier));
+		receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1, not(nullValue()));
 		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload3));
 
-		receivedMessage2 = (Message<byte[]>) input2.receive((int) (1000 * timeoutMultiplier));
+		receivedMessage2 = (Message<byte[]>) receive(input2);
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload3));
 
@@ -184,11 +184,11 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		output.send(new GenericMessage<>(1));
 		output.send(new GenericMessage<>(0));
 
-		Message<?> receive0 = input0.receive((int) (1000 * timeoutMultiplier));
+		Message<?> receive0 = receive(input0);
 		assertNotNull(receive0);
-		Message<?> receive1 = input1.receive((int) (1000 * timeoutMultiplier));
+		Message<?> receive1 = receive(input1);
 		assertNotNull(receive1);
-		Message<?> receive2 = input2.receive((int) (1000 * timeoutMultiplier));
+		Message<?> receive2 = receive(input2);
 		assertNotNull(receive2);
 
 		Matcher<Message<?>> fooMatcher = new CustomMatcher<Message<?>>("the message with 'foo' as its correlationId") {
@@ -274,11 +274,11 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		output.send(new GenericMessage<>(1));
 		output.send(new GenericMessage<>(0));
 
-		Message<?> receive0 = input0.receive((int) (1000 * timeoutMultiplier));
+		Message<?> receive0 = receive(input0);
 		assertNotNull(receive0);
-		Message<?> receive1 = input1.receive((int) (1000 * timeoutMultiplier));
+		Message<?> receive1 = receive(input1);
 		assertNotNull(receive1);
-		Message<?> receive2 = input2.receive((int) (1000 * timeoutMultiplier));
+		Message<?> receive2 = receive(input2);
 		assertNotNull(receive2);
 
 		if (usesExplicitRouting()) {
