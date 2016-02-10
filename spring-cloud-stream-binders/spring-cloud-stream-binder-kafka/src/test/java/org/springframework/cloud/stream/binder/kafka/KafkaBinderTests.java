@@ -33,6 +33,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -85,6 +86,15 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 			binder = createKafkaTestBinder();
 		}
 		return binder;
+	}
+
+
+	@Before
+	public void init() {
+		String multiplier = System.getenv("KAFKA_TIMEOUT_MULTIPLIER");
+		if (multiplier != null) {
+			timeoutMultiplier = Double.parseDouble(multiplier);
+		}
 	}
 
 	protected KafkaTestBinder createKafkaTestBinder() {
@@ -158,7 +168,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 			// Let the consumer actually bind to the producer before sending a msg
 			binderBindUnbindLatency();
 			moduleOutputChannel.send(message);
-			Message<?> inbound = moduleInputChannel.receive(2000);
+			Message<?> inbound = receive(moduleInputChannel);
 			assertNotNull(inbound);
 			assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
 			binder.unbind(producerBinding);
@@ -186,7 +196,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(2000);
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
@@ -219,7 +229,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(2000);
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
@@ -251,7 +261,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(2000);
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
@@ -283,7 +293,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(2000);
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
@@ -315,7 +325,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(2000);
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
@@ -343,11 +353,11 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
 		binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
-		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1, is(nullValue()));
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload2.getBytes()));
-		Message<byte[]> receivedMessage2 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
 	}
@@ -371,11 +381,11 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
 		binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
-		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1, not(nullValue()));
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload2.getBytes()));
-		Message<byte[]> receivedMessage2 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
 	}
@@ -402,11 +412,11 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
 		Binding<MessageChannel> consumerBinding =
 				binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
-		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1, not(nullValue()));
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload2.getBytes()));
-		Message<byte[]> receivedMessage2 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
 		binder.unbind(consumerBinding);
@@ -416,13 +426,13 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 
 		consumerBinding =
 				binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
-		Message<byte[]> receivedMessage4 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage4 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage4, not(nullValue()));
 		assertThat(new String(receivedMessage4.getPayload()), equalTo(testPayload1));
-		Message<byte[]> receivedMessage5 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage5 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage5, not(nullValue()));
 		assertThat(new String(receivedMessage5.getPayload()), equalTo(testPayload2));
-		Message<byte[]> receivedMessage6 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage6 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage6, not(nullValue()));
 		assertThat(new String(receivedMessage6.getPayload()), equalTo(testPayload3));
 		binder.unbind(consumerBinding);
@@ -448,11 +458,11 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
-		Message<byte[]> receivedMessage1 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1, not(nullValue()));
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload2.getBytes()));
-		Message<byte[]> receivedMessage2 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload2));
 		binder.unbind(consumerBinding);
@@ -462,7 +472,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 
 		consumerBinding =
 				binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
-		Message<byte[]> receivedMessage3 = (Message<byte[]>) input1.receive(1000);
+		Message<byte[]> receivedMessage3 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage3, not(nullValue()));
 		assertThat(new String(receivedMessage3.getPayload()), equalTo(testPayload3));
 		binder.unbind(consumerBinding);
