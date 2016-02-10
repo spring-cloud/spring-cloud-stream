@@ -55,8 +55,16 @@ import org.springframework.integration.kafka.core.DefaultConnectionFactory;
 import org.springframework.integration.kafka.core.Partition;
 import org.springframework.integration.kafka.core.ZookeeperConfiguration;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
-import org.springframework.integration.kafka.listener.*;
-import org.springframework.integration.kafka.support.*;
+import org.springframework.integration.kafka.listener.Acknowledgment;
+import org.springframework.integration.kafka.listener.KafkaMessageListenerContainer;
+import org.springframework.integration.kafka.listener.KafkaNativeOffsetManager;
+import org.springframework.integration.kafka.listener.OffsetManager;
+import org.springframework.integration.kafka.support.KafkaHeaders;
+import org.springframework.integration.kafka.support.ProducerConfiguration;
+import org.springframework.integration.kafka.support.ProducerFactoryBean;
+import org.springframework.integration.kafka.support.ProducerListener;
+import org.springframework.integration.kafka.support.ProducerMetadata;
+import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -676,8 +684,8 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		try {
 
 			KafkaNativeOffsetManager kafkaOffsetManager =
-					new KafkaNativeOffsetManager(connectionFactory, zookeeperConnect,Collections.<Partition,
-							Long> emptyMap());
+					new KafkaNativeOffsetManager(connectionFactory, zookeeperConnect,
+							Collections.<Partition, Long>emptyMap());
 			kafkaOffsetManager.setConsumerId(group);
 			kafkaOffsetManager.setReferenceTimestamp(referencePoint);
 			kafkaOffsetManager.afterPropertiesSet();
