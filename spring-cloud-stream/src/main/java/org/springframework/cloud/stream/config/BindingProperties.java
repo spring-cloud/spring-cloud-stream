@@ -53,7 +53,17 @@ public class BindingProperties {
 
 	private String binder;
 
+	/**
+	 * Flag to indicate if the message header needs to be updated with the trackedProperties.
+	 */
 	private Boolean trackHistory;
+
+	/**
+	 * Comma separated list of binding properties to track.
+	 * By default the properties such as the current thread name and 'timestamp' are added if the 'trackHistory` is
+	 * enabled.
+	 */
+	private String trackedProperties = "all";
 
 	// Outbound properties
 
@@ -251,6 +261,14 @@ public class BindingProperties {
 
 	public void setRequiredGroups(String requiredGroups) {
 		this.requiredGroups = requiredGroups;
+	}
+
+	public String getTrackedProperties() {
+		return this.trackedProperties;
+	}
+
+	public void setTrackedProperties(String trackedProperties) {
+		this.trackedProperties = trackedProperties;
 	}
 
 	public String toString() {
