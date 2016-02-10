@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -52,6 +53,14 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Mark Fisher
  */
 public class RawModeKafkaBinderTests extends KafkaBinderTests {
+
+	@Before
+	public void init() {
+		String multiplier = System.getenv("KAFKA_TIMEOUT_MULTIPLIER");
+		if (multiplier != null) {
+			timeoutMultiplier = Double.parseDouble(multiplier);
+		}
+	}
 
 	@Override
 	protected KafkaTestBinder createKafkaTestBinder() {
@@ -95,11 +104,11 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		output.send(new GenericMessage<>(new byte[]{(byte)1}));
 		output.send(new GenericMessage<>(new byte[]{(byte)2}));
 
-		Message<?> receive0 = input0.receive(1000);
+		Message<?> receive0 = receive(input0);
 		assertNotNull(receive0);
-		Message<?> receive1 = input1.receive(1000);
+		Message<?> receive1 = receive(input1);
 		assertNotNull(receive1);
-		Message<?> receive2 = input2.receive(1000);
+		Message<?> receive2 = receive(input2);
 		assertNotNull(receive2);
 
 		assertThat(Arrays.asList(
@@ -164,11 +173,11 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		output.send(new GenericMessage<>(new byte[]{1}));
 		output.send(new GenericMessage<>(new byte[]{0}));
 
-		Message<?> receive0 = input0.receive(1000);
+		Message<?> receive0 = receive(input0);
 		assertNotNull(receive0);
-		Message<?> receive1 = input1.receive(1000);
+		Message<?> receive1 = receive(input1);
 		assertNotNull(receive1);
-		Message<?> receive2 = input2.receive(1000);
+		Message<?> receive2 = receive(input2);
 		assertNotNull(receive2);
 
 
@@ -196,7 +205,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(5000);
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertEquals("foo", new String((byte[])inbound.getPayload()));
 		binder.unbind(producerBinding);
@@ -233,12 +242,12 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		boolean retried = false;
 		while (!success) {
 			moduleOutputChannel.send(message);
-			Message<?> inbound = module1InputChannel.receive(5000);
+			Message<?> inbound = receive(module1InputChannel);
 			assertNotNull(inbound);
 			assertEquals("foo", new String((byte[])inbound.getPayload()));
 
-			Message<?> tapped1 = module2InputChannel.receive(5000);
-			Message<?> tapped2 = module3InputChannel.receive(5000);
+			Message<?> tapped1 = receive(module2InputChannel);
+			Message<?> tapped2 = receive(module3InputChannel);
 			if (tapped1 == null || tapped2 == null) {
 				// listener may not have started
 				assertFalse("Failed to receive tap after retry", retried);
@@ -255,15 +264,15 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		moduleOutputChannel.send(message2);
 
 		// other tap still receives messages
-		Message<?> tapped = module2InputChannel.receive(5000);
+		Message<?> tapped = receive(module2InputChannel);
 		assertNotNull(tapped);
 
 		// removed tap does not
-		assertNull(module3InputChannel.receive(1000));
+		assertNull(receive(module3InputChannel));
 
 		// re-subscribed tap does receive the message
 		input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, null);
-		assertNotNull(module3InputChannel.receive(1000));
+		assertNotNull(receive(module3InputChannel));
 
 		// clean up
 		binder.unbind(input1Binding);

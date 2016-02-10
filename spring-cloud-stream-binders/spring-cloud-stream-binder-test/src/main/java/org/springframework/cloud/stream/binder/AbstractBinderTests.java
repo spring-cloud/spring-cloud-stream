@@ -36,6 +36,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.PollableChannel;
 
 /**
  * @author Gary Russell
@@ -48,6 +49,21 @@ public abstract class AbstractBinderTests {
 	protected static final Collection<MediaType> ALL = Collections.singletonList(MediaType.ALL);
 
 	protected AbstractTestBinder<?> testBinder;
+
+	/**
+	 * Subclasses may override this default value to have tests wait longer for a message receive, for example if
+	 * running
+	 * in an environment that is known to be slow (e.g. travis).
+	 */
+	protected double timeoutMultiplier = 1.0D;
+
+	/**
+	 * Attempt to receive a message on the given channel,
+	 * waiting up to 1s (times the {@link #timeoutMultiplier}).
+	 */
+	protected Message<?> receive(PollableChannel channel) {
+		return channel.receive((int)(1000 * timeoutMultiplier));
+	}
 
 	@Test
 	public void testClean() throws Exception {
@@ -81,7 +97,7 @@ public abstract class AbstractBinderTests {
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(5000);
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
@@ -101,7 +117,7 @@ public abstract class AbstractBinderTests {
 
 		Message<?> message = MessageBuilder.withPayload("foo").build();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = moduleInputChannel.receive(5000);
+		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));

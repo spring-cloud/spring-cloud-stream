@@ -57,9 +57,11 @@ public class RedisQueueInboundChannelAdapterTests {
 
 	private RedisConnectionFactory connectionFactory;
 
-	private final BlockingDeque<Object> messages = new LinkedBlockingDeque<Object>(99);
+	private final BlockingDeque<Object> messages = new LinkedBlockingDeque<>(99);
 
 	private RedisQueueMessageDrivenEndpoint adapter;
+
+	private double timeoutMultiplier = 1.0D;
 
 	@Rule
 	public RedisTestSupport redisAvailableRule = new RedisTestSupport();
@@ -79,6 +81,11 @@ public class RedisQueueInboundChannelAdapterTests {
 		adapter = new RedisQueueMessageDrivenEndpoint(currentQueueName, connectionFactory);
 		adapter.setBeanFactory(BinderTestUtils.MOCK_BF);
 		adapter.setOutputChannel(outputChannel);
+
+		String multiplier = System.getenv("REDIS_TIMEOUT_MULTIPLIER");
+		if (multiplier != null) {
+			timeoutMultiplier = Double.parseDouble(multiplier);
+		}
 	}
 
 	@After
@@ -89,7 +96,7 @@ public class RedisQueueInboundChannelAdapterTests {
 
 	@Test
 	public void testDefaultPayloadSerializer() throws Exception {
-		RedisTemplate<String, Object> template = new RedisTemplate<String, Object>();
+		RedisTemplate<String, Object> template = new RedisTemplate<>();
 		template.setConnectionFactory(connectionFactory);
 		template.setKeySerializer(new StringRedisSerializer());
 		template.afterPropertiesSet();
@@ -99,7 +106,7 @@ public class RedisQueueInboundChannelAdapterTests {
 
 		template.boundListOps(currentQueueName).rightPush("message1");
 		@SuppressWarnings("unchecked")
-		Message<String> message = (Message<String>) messages.poll(1, TimeUnit.SECONDS);
+		Message<String> message = (Message<String>) messages.poll((int)(1000 * timeoutMultiplier), TimeUnit.MILLISECONDS);
 		assertNotNull(message);
 		assertEquals("message1", message.getPayload());
 	}
@@ -116,11 +123,11 @@ public class RedisQueueInboundChannelAdapterTests {
 		adapter.afterPropertiesSet();
 		adapter.start();
 
-		Map<String, Object> headers = new HashMap<String, Object>();
+		Map<String, Object> headers = new HashMap<>();
 		headers.put("header1", "foo");
-		template.boundListOps(currentQueueName).rightPush(new GenericMessage<String>("message2", headers));
+		template.boundListOps(currentQueueName).rightPush(new GenericMessage<>("message2", headers));
 		@SuppressWarnings("unchecked")
-		Message<String> message = (Message<String>) messages.poll(1, TimeUnit.SECONDS);
+		Message<String> message = (Message<String>) messages.poll((int)(1000 * timeoutMultiplier), TimeUnit.MILLISECONDS);
 		assertEquals("message2", message.getPayload());
 		assertEquals("foo", message.getHeaders().get("header1"));
 	}
@@ -128,7 +135,7 @@ public class RedisQueueInboundChannelAdapterTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testNoSerializer() throws Exception {
-		RedisTemplate<String, byte[]> template = new RedisTemplate<String, byte[]>();
+		RedisTemplate<String, byte[]> template = new RedisTemplate<>();
 		template.setEnableDefaultSerializer(false);
 		template.setKeySerializer(new StringRedisSerializer());
 		template.setConnectionFactory(connectionFactory);
@@ -139,13 +146,13 @@ public class RedisQueueInboundChannelAdapterTests {
 		adapter.start();
 
 		template.boundListOps(currentQueueName).rightPush("message3".getBytes());
-		Message<byte[]> message = (Message<byte[]>) messages.poll(1, TimeUnit.SECONDS);
+		Message<byte[]> message = (Message<byte[]>) messages.poll((int)(1000 * timeoutMultiplier), TimeUnit.MILLISECONDS);
 		assertEquals("message3", new String(message.getPayload()));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testNoSerializerNoExtractPayload() throws Exception {
-		RedisTemplate<String, byte[]> template = new RedisTemplate<String, byte[]>();
+		RedisTemplate<String, byte[]> template = new RedisTemplate<>();
 		template.setEnableDefaultSerializer(false);
 		template.setKeySerializer(new StringRedisSerializer());
 		template.setConnectionFactory(connectionFactory);
@@ -159,9 +166,9 @@ public class RedisQueueInboundChannelAdapterTests {
 
 	@Test
 	public void testCustomPayloadSerializer() throws Exception {
-		RedisTemplate<String, Long> template = new RedisTemplate<String, Long>();
+		RedisTemplate<String, Long> template = new RedisTemplate<>();
 		template.setKeySerializer(new StringRedisSerializer());
-		template.setValueSerializer(new GenericToStringSerializer<Long>(Long.class));
+		template.setValueSerializer(new GenericToStringSerializer<>(Long.class));
 		template.setConnectionFactory(connectionFactory);
 		template.afterPropertiesSet();
 
@@ -171,13 +178,13 @@ public class RedisQueueInboundChannelAdapterTests {
 
 		template.boundListOps(currentQueueName).rightPush(5l);
 		@SuppressWarnings("unchecked")
-		Message<Long> message = (Message<Long>) messages.poll(1, TimeUnit.SECONDS);
+		Message<Long> message = (Message<Long>) messages.poll((int)(1000 * timeoutMultiplier), TimeUnit.MILLISECONDS);
 		assertEquals(5L, (long) message.getPayload());
 	}
 
 	@Test
 	public void testCustomMessageSerializer() throws Exception {
-		RedisTemplate<String, Message<?>> template = new RedisTemplate<String, Message<?>>();
+		RedisTemplate<String, Message<?>> template = new RedisTemplate<>();
 		template.setKeySerializer(new StringRedisSerializer());
 		template.setValueSerializer(new TestMessageSerializer());
 		template.setConnectionFactory(connectionFactory);
@@ -188,9 +195,9 @@ public class RedisQueueInboundChannelAdapterTests {
 		adapter.afterPropertiesSet();
 		adapter.start();
 
-		template.boundListOps(currentQueueName).rightPush(new GenericMessage<Long>(10l));
+		template.boundListOps(currentQueueName).rightPush(new GenericMessage<>(10l));
 		@SuppressWarnings("unchecked")
-		Message<Long> message = (Message<Long>) messages.poll(1, TimeUnit.SECONDS);
+		Message<Long> message = (Message<Long>) messages.poll((int)(1000 * timeoutMultiplier), TimeUnit.MILLISECONDS);
 		assertEquals(10L, (long) message.getPayload());
 	}
 
@@ -211,7 +218,7 @@ public class RedisQueueInboundChannelAdapterTests {
 
 		@Override
 		public Message<?> deserialize(byte[] bytes) throws SerializationException {
-			return new GenericMessage<Long>(10l);
+			return new GenericMessage<>(10l);
 		}
 	}
 }
