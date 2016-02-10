@@ -232,6 +232,8 @@ public class ChannelBindingServiceProperties {
 		Map<String, Object> properties = new HashMap<>();
 		properties.put("instanceIndex", String.valueOf(getInstanceIndex()));
 		properties.put("instanceCount", String.valueOf(getInstanceCount()));
+		properties.put("defaultBinder", getDefaultBinder());
+		properties.put("dynamicDestinations", getDynamicDestinations());
 		// Add Bindings properties
 		for (Map.Entry<String, BindingProperties> entry : getBindings().entrySet()) {
 			properties.put(entry.getKey(), entry.getValue().toString());

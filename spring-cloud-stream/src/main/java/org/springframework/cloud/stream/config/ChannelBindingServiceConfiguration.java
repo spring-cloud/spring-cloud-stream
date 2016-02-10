@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -50,6 +51,7 @@ import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.json.JsonPropertyAccessor;
+import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
@@ -66,6 +68,9 @@ import org.springframework.messaging.core.DestinationResolver;
 @Configuration
 @EnableConfigurationProperties(ChannelBindingServiceProperties.class)
 public class ChannelBindingServiceConfiguration {
+
+	@Autowired
+	MessageBuilderFactory messageBuilderFactory;
 
 	@Bean
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
@@ -92,7 +97,7 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public MessageHistoryTrackerConfigurer messageHistoryTrackerConfigurer
 			(ChannelBindingServiceProperties channelBindingServiceProperties) {
-		return new MessageHistoryTrackerConfigurer(channelBindingServiceProperties);
+		return new MessageHistoryTrackerConfigurer(channelBindingServiceProperties, messageBuilderFactory);
 	}
 
 	@Bean

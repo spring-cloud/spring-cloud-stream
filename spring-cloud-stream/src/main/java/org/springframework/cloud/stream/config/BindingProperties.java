@@ -55,6 +55,8 @@ public class BindingProperties {
 
 	private Boolean trackHistory;
 
+	private String trackHistoryProperties = "all";
+
 	// Outbound properties
 
 	private String requiredGroups;
@@ -252,6 +254,14 @@ public class BindingProperties {
 
 	public void setRequiredGroups(String requiredGroups) {
 		this.requiredGroups = requiredGroups;
+	}
+
+	public String getTrackHistoryProperties() {
+		return this.trackHistoryProperties;
+	}
+
+	public void setTrackHistoryProperties(String trackHistoryProperties) {
+		this.trackHistoryProperties = trackHistoryProperties;
 	}
 
 	public String toString() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.integration.channel.ChannelInterceptorAware;
@@ -28,6 +29,7 @@ import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.util.StringUtils;
 
 /**
  * Class that is responsible for configuring the message channel to enable message track history.
@@ -40,17 +42,31 @@ public class MessageHistoryTrackerConfigurer implements MessageChannelConfigurer
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	@Autowired
-	MessageBuilderFactory messageBuilderFactory;
+	private final MessageBuilderFactory messageBuilderFactory;
 
-	public MessageHistoryTrackerConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties) {
+	public MessageHistoryTrackerConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties,
+			MessageBuilderFactory messageBuilderFactory) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
+		this.messageBuilderFactory = messageBuilderFactory;
 	}
 
 	@Override
 	public void configureMessageChannel(MessageChannel messageChannel, String channelName) {
 		BindingProperties bindingProperties = channelBindingServiceProperties.getBindings().get(channelName);
 		if (bindingProperties != null && Boolean.TRUE.equals(bindingProperties.isTrackHistory())) {
+			final Set<String> trackHistoryProperties = StringUtils.commaDelimitedListToSet(bindingProperties.getTrackHistoryProperties());
+			Map<String, Object> channelBindingServicePropertiesMap = channelBindingServiceProperties.asMapProperties();
+			final Map<String, Object> historyMap = new HashMap<>();
+			if (bindingProperties.getTrackHistoryProperties().equalsIgnoreCase("all")) {
+				historyMap.putAll(channelBindingServicePropertiesMap);
+			}
+			else {
+				for (String property : trackHistoryProperties) {
+					if (channelBindingServicePropertiesMap.keySet().contains(property)) {
+						historyMap.put(property, channelBindingServicePropertiesMap.get(property));
+					}
+				}
+			}
 			if (messageChannel instanceof ChannelInterceptorAware) {
 				((ChannelInterceptorAware) messageChannel).addInterceptor(new ChannelInterceptorAdapter() {
 
@@ -67,7 +83,8 @@ public class MessageHistoryTrackerConfigurer implements MessageChannelConfigurer
 						}
 						Map<String, Object> map = new LinkedHashMap<String, Object>();
 						map.put("thread", Thread.currentThread().getName());
-						history.add(channelBindingServiceProperties.asMapProperties());
+						map.putAll(historyMap);
+						history.add(map);
 						Message<?> out = messageBuilderFactory
 								.fromMessage(message)
 								.setHeader(HISTORY_TRACKING_HEADER, history)
