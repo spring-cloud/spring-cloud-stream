@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,110 +17,136 @@
 package org.springframework.cloud.stream.binder.kafka.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
+import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.Mode;
+import org.springframework.util.StringUtils;
 
 /**
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka.default")
- class KafkaBinderConfigurationProperties {
-	
-	private int batchSize;
-	
-	private long batchTimeout;
-	
-	private int requiredAcks;
-	
-	private int replicationFactor;
-	
-	private int concurrency;
-	
-	private String compressionCodec;
-	
-	private boolean autoCommitEnabled;
-	
-	private int fetchSize;
-	
-	private int minPartitionCount;
-	
-	private int queueSize;
+@ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka",
+		locations = "classpath:/META-INF/spring-cloud-stream/kafka-binder.properties")
+class KafkaBinderConfigurationProperties {
 
-	public int getBatchSize() {
-		return batchSize;
+	private String[] zkNodes;
+
+	private String defaultZkPort;
+
+	private String[] brokers;
+
+	private String defaultBrokerPort;
+
+	private String[] headers;
+
+	private KafkaMessageChannelBinder.Mode mode;
+
+	private int offsetUpdateTimeWindow;
+
+	private int offsetUpdateCount;
+
+	private int offsetUpdateShutdownTimeout;
+
+	private boolean resetOffsets = false;
+
+	private KafkaMessageChannelBinder.StartOffset startOffset;
+
+	public String getZkConnectionString() {
+		return toConnectionString(this.zkNodes, this.defaultZkPort);
 	}
 
-	public void setBatchSize(int batchSize) {
-		this.batchSize = batchSize;
+	public String getKafkaConnectionString() {
+		return toConnectionString(this.brokers, this.defaultBrokerPort);
 	}
 
-	public long getBatchTimeout() {
-		return batchTimeout;
+	public String[] getHeaders() {
+		return headers;
 	}
 
-	public void setBatchTimeout(long batchTimeout) {
-		this.batchTimeout = batchTimeout;
+	public Mode getMode() {
+		return this.mode;
 	}
 
-	public int getRequiredAcks() {
-		return requiredAcks;
+	public int getOffsetUpdateTimeWindow() {
+		return this.offsetUpdateTimeWindow;
 	}
 
-	public void setRequiredAcks(int requiredAcks) {
-		this.requiredAcks = requiredAcks;
+	public int getOffsetUpdateCount() {
+		return this.offsetUpdateCount;
 	}
 
-	public int getReplicationFactor() {
-		return replicationFactor;
+	public int getOffsetUpdateShutdownTimeout() {
+		return this.offsetUpdateShutdownTimeout;
 	}
 
-	public void setReplicationFactor(int replicationFactor) {
-		this.replicationFactor = replicationFactor;
+	public void setZkNodes(String[] zkNodes) {
+		this.zkNodes = zkNodes;
 	}
 
-	public int getConcurrency() {
-		return concurrency;
+	public void setDefaultZkPort(String defaultZkPort) {
+		this.defaultZkPort = defaultZkPort;
 	}
 
-	public void setConcurrency(int concurrency) {
-		this.concurrency = concurrency;
+	public void setBrokers(String[] brokers) {
+		this.brokers = brokers;
 	}
 
-	public String getCompressionCodec() {
-		return compressionCodec;
+	public void setDefaultBrokerPort(String defaultBrokerPort) {
+		this.defaultBrokerPort = defaultBrokerPort;
 	}
 
-	public void setCompressionCodec(String compressionCodec) {
-		this.compressionCodec = compressionCodec;
+
+	public void setHeaders(String[] headers) {
+		this.headers = headers;
 	}
 
-	public boolean isAutoCommitEnabled() {
-		return autoCommitEnabled;
+	public void setMode(KafkaMessageChannelBinder.Mode mode) {
+		this.mode = mode;
 	}
 
-	public void setAutoCommitEnabled(boolean autoCommitEnabled) {
-		this.autoCommitEnabled = autoCommitEnabled;
+	public void setOffsetUpdateTimeWindow(int offsetUpdateTimeWindow) {
+		this.offsetUpdateTimeWindow = offsetUpdateTimeWindow;
 	}
 
-	public int getFetchSize() {
-		return fetchSize;
+	public void setOffsetUpdateCount(int offsetUpdateCount) {
+		this.offsetUpdateCount = offsetUpdateCount;
 	}
 
-	public void setFetchSize(int fetchSize) {
-		this.fetchSize = fetchSize;
+	public void setOffsetUpdateShutdownTimeout(int offsetUpdateShutdownTimeout) {
+		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
 	}
 
-	public int getMinPartitionCount() {
-		return minPartitionCount;
+	public KafkaMessageChannelBinder.StartOffset getStartOffset() {
+		return startOffset;
 	}
 
-	public void setMinPartitionCount(int minPartitionCount) {
-		this.minPartitionCount = minPartitionCount;
+	public void setStartOffset(KafkaMessageChannelBinder.StartOffset startOffset) {
+		this.startOffset = startOffset;
 	}
 
-	public int getQueueSize() {
-		return queueSize;
+	public boolean isResetOffsets() {
+		return resetOffsets;
 	}
 
-	public void setQueueSize(int queueSize) {
-		this.queueSize = queueSize;
+	public void setResetOffsets(boolean resetOffsets) {
+		this.resetOffsets = resetOffsets;
+	}
+
+	/**
+	 * Converts an array of host values to a comma-separated String.
+	 *
+	 * It will append the default port value, if not already specified.
+	 */
+	private String toConnectionString(String[] hosts, String defaultPort) {
+		String[] fullyFormattedHosts = new String[hosts.length];
+		for (int i = 0; i < hosts.length; i++) {
+			if (hosts[i].contains(":") || StringUtils.isEmpty(defaultPort)) {
+				fullyFormattedHosts[i] = hosts[i];
+			}
+			else {
+				fullyFormattedHosts[i] = hosts[i] + ":" + defaultPort;
+			}
+		}
+		return StringUtils.arrayToCommaDelimitedString(fullyFormattedHosts);
 	}
 }
