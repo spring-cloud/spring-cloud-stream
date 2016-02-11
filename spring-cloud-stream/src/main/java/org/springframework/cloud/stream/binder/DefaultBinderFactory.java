@@ -25,6 +25,7 @@ import java.util.Properties;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
@@ -68,6 +69,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	}
 
 	@Autowired(required = false)
+	@Qualifier("bindersHealthIndicator")
 	public void setBindersHealthIndicator(CompositeHealthIndicator bindersHealthIndicator) {
 		this.bindersHealthIndicator = bindersHealthIndicator;
 	}
