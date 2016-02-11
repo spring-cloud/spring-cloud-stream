@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URL;
@@ -30,8 +31,10 @@ import org.hamcrest.collection.IsMapContaining;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -39,12 +42,15 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.stub1.StubBinder1;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.util.ObjectUtils;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class HealthIndicatorsConfigurationTests {
 
@@ -62,8 +68,11 @@ public class HealthIndicatorsConfigurationTests {
 
 		CompositeHealthIndicator bindersHealthIndicator =
 				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
 		assertNotNull(bindersHealthIndicator);
+		assertNotNull(context.getBean("testHealthIndicator1", CompositeHealthIndicator.class));
+		assertNotNull(context.getBean("testHealthIndicator2", CompositeHealthIndicator.class));
 		@SuppressWarnings("unchecked")
 		Map<String,HealthIndicator> healthIndicators =
 				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
@@ -71,6 +80,28 @@ public class HealthIndicatorsConfigurationTests {
 		assertThat(healthIndicators.get("binder1").health().getStatus(), CoreMatchers.equalTo(Status.UP));
 		assertThat(healthIndicators, IsMapContaining.hasKey("binder2"));
 		assertThat(healthIndicators.get("binder2").health().getStatus(), CoreMatchers.equalTo(Status.UNKNOWN));
+	}
+
+	@Test
+	public void healthIndicatorsCheckWhenDisabled() throws Exception {
+		ConfigurableApplicationContext context =
+				createBinderTestContext(
+						new String[]{"binder1", "binder2"}, "spring.cloud.stream.defaultBinder:binder2",
+						"management.health.binders.enabled:false");
+
+		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1");
+		assertThat(binder1, instanceOf(StubBinder1.class));
+		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2");
+		assertThat(binder2, instanceOf(StubBinder2.class));
+		boolean exceptionThrown = false;
+		try {
+			context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+			fail("The 'bindersHealthIndicator' bean should have not been defined");
+		}
+		catch (NoSuchBeanDefinitionException e) {
+		}
+		assertNotNull(context.getBean("testHealthIndicator1", CompositeHealthIndicator.class));
+		assertNotNull(context.getBean("testHealthIndicator2", CompositeHealthIndicator.class));
 	}
 
 	public static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
@@ -94,5 +125,21 @@ public class HealthIndicatorsConfigurationTests {
 	@EnableAutoConfiguration
 	@EnableBinding
 	public static class SimpleSource {
+
+		@Configuration
+		static class TestConfig {
+
+			@Bean
+			public CompositeHealthIndicator testHealthIndicator1() {
+				return new CompositeHealthIndicator(new OrderedHealthAggregator());
+			}
+
+			@Bean
+			public CompositeHealthIndicator testHealthIndicator2() {
+				return new CompositeHealthIndicator(new OrderedHealthAggregator());
+			}
+		}
 	}
+
+
 }
