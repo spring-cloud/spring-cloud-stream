@@ -15,13 +15,17 @@ before_install:
   - gem install asciidoctor
 install:
 - ./mvnw install -P docs -q -U -DskipTests=true -Dmaven.test.redirectTestOutputToFile=true
-- ./docs/src/main/asciidoc/ghpages.sh
+- '[ "${MVN_GOAL}" == "deploy" ] && ./docs/src/main/asciidoc/ghpages.sh'
 script:
-- '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s .settings.xml deploy -P release -nsu -Dmaven.test.redirectTestOutputToFile=true'
-- '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || ./mvnw install -nsu -Dmaven.test.redirectTestOutputToFile=true'
+- './mvnw -s .settings.xml $MVN_GOAL $MVN_PROFILE -nsu -Dmaven.test.redirectTestOutputToFile=true'
 env:
   global:
   - GIT_NAME="Dave Syer"
   - GIT_EMAIL=dsyer@pivotal.io
   - CI_DEPLOY_USERNAME=buildmaster
+  - FEATURE_BRANCH=$(echo ${TRAVIS_BRANCH} | grep "^.*/.*$" && echo true || echo false)
+  - MVN_GOAL=$([ "${TRAVIS_PULL_REQUEST}" == "false" -a "${TRAVIS_TAG}" == "" -a "${FEATURE_BRANCH}" == "false" ] && echo deploy || echo install)
+  - VERSION=$(mvn validate | grep Building | head -1 | sed -e 's/.* //')
+  - MILESTONE=$(echo ${VERSION} | egrep 'M|RC' && echo true || echo false)
+  - MVN_PROFILE=$([ "${MILESTONE}" == "true" ] && echo -P milestone)
   - secure: eO6b1PT+fmGvNVVYa9WqMwr7d6RXOx/S0m51KfgpeflqMkMnhnAcC8hzPRA2vmQN1kqRdr3OjN6bazRYsRxlQOYsev4QzDv74E9CTXLXzVi+L98Oq7BqD6MpEAEfZVWz1lvGUiaGKTghS7Tseag3sK5CslPr2LA0UAZWd0v1GUo=
