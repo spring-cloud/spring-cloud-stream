@@ -15,10 +15,8 @@
  */
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -57,7 +55,7 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 		for (Broker broker: brokersInCluster) {
 			brokersInClusterSet.add(broker.connectionString());
 		}
-		List<String> downMessages = new ArrayList<>();
+		Set<String> downMessages = new HashSet<>();
 		for (Map.Entry<String, Collection<Partition>> entry : binder.getTopicsInUse().entrySet()) {
 			for (Partition partition : entry.getValue()) {
 					BrokerAddress address = binder.getConnectionFactory().getLeader(partition);
