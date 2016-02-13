@@ -70,6 +70,10 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
+	static {
+		System.setProperty("SCS_KAFKA_TEST_EMBEDDED", "true");
+	}
+
 	@ClassRule
 	public static KafkaTestSupport kafkaTestSupport = new KafkaTestSupport();
 
@@ -87,7 +91,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		}
 		return binder;
 	}
-
 
 	@Before
 	public void init() {
