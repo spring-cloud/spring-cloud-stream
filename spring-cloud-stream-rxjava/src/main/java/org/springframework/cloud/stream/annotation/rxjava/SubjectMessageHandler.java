@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import rx.subjects.Subject;
  *
  * @author Mark Pollack
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SubjectMessageHandler extends AbstractMessageProducingHandler implements SmartLifecycle {
@@ -107,7 +108,7 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 
 				@Override
 				public void call() {
-					logger.error("Subscription close for [" + subscription + "]");
+					logger.info("Subscription close for [" + subscription + "]");
 				}
 			});
 			running = true;
@@ -126,9 +127,11 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 
 	@Override
 	public void stop(Runnable callback) {
-		stop();
-		if (callback != null) {
-			callback.run();
+		if (running) {
+			stop();
+			if (callback != null) {
+				callback.run();
+			}
 		}
 	}
 
