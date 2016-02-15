@@ -49,19 +49,34 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 	@Override
 	public Health health() {
 		ZkClient zkClient = new ZkClient(binder.getZkAddress(), 10000, 10000, ZKStringSerializer$.MODULE$);
-		Seq<Broker> allBrokersInCluster = ZkUtils$.MODULE$.getAllBrokersInCluster(zkClient);
-		Collection<Broker> brokersInCluster = JavaConversions.asJavaCollection(allBrokersInCluster);
 		Set<String> brokersInClusterSet = new HashSet<>();
-		for (Broker broker: brokersInCluster) {
-			brokersInClusterSet.add(broker.connectionString());
+		try {
+			Seq<Broker> allBrokersInCluster = ZkUtils$.MODULE$.getAllBrokersInCluster(zkClient);
+			Collection<Broker> brokersInCluster = JavaConversions.asJavaCollection(allBrokersInCluster);
+			for (Broker broker : brokersInCluster) {
+				brokersInClusterSet.add(broker.connectionString());
+			}
+		}
+		catch (Exception e) {
+			return Health.down(e).build();
+		}
+		finally {
+			if (zkClient != null) {
+				try {
+					zkClient.close();
+				}
+				catch (Exception e) {
+					// ignore
+				}
+			}
 		}
 		Set<String> downMessages = new HashSet<>();
 		for (Map.Entry<String, Collection<Partition>> entry : binder.getTopicsInUse().entrySet()) {
 			for (Partition partition : entry.getValue()) {
-					BrokerAddress address = binder.getConnectionFactory().getLeader(partition);
-					if (!brokersInClusterSet.contains(address.toString())) {
-						downMessages.add(address.toString());
-					}
+				BrokerAddress address = binder.getConnectionFactory().getLeader(partition);
+				if (!brokersInClusterSet.contains(address.toString())) {
+					downMessages.add(address.toString());
+				}
 			}
 		}
 		if (downMessages.isEmpty()) {
