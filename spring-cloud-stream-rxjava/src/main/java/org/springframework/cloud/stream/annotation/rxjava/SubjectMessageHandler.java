@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.annotation.rxjava;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.integration.handler.AbstractMessageProducingHandler;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -62,46 +62,80 @@ import rx.subjects.Subject;
  * @author Ilayaperumal Gopinathan
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class SubjectMessageHandler extends AbstractMessageProducingHandler implements DisposableBean {
+public class SubjectMessageHandler extends AbstractMessageProducingHandler implements SmartLifecycle {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	@SuppressWarnings("rawtypes")
 	private final RxJavaProcessor processor;
 
-	private final Subject subject;
+	private volatile Subject subject;
 
-	private final Subscription subscription;
+	private volatile Subscription subscription;
+
+	private volatile boolean running = false;
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public SubjectMessageHandler(RxJavaProcessor processor) {
 		Assert.notNull(processor, "RxJava processor must not be null.");
 		this.processor = processor;
-		subject = new SerializedSubject(PublishSubject.create());
-		Observable<?> outputStream = processor.process(subject);
-		subscription = outputStream.subscribe(new Action1<Object>() {
-			@Override
-			public void call(Object outputObject) {
-				if (ClassUtils.isAssignable(Message.class, outputObject.getClass())) {
-					getOutputChannel().send((Message) outputObject);
-				}
-				else {
-					getOutputChannel().send(MessageBuilder.withPayload(outputObject).build());
-				}
-			}
-		}, new Action1<Throwable>() {
-			@Override
-			public void call(Throwable throwable) {
-				logger.error(throwable.getMessage(), throwable);
-			}
-		}, new Action0() {
-			@Override
-			public void call() {
-				logger.error("Subscription close for [" + subscription + "]");
-			}
-		});
 	}
 
+	@Override
+	public synchronized void start() {
+		if (!running) {
+			subject = new SerializedSubject(PublishSubject.create());
+			Observable<?> outputStream = processor.process(subject);
+			subscription = outputStream.subscribe(new Action1<Object>() {
+
+				@Override
+				public void call(Object outputObject) {
+					if (ClassUtils.isAssignable(Message.class, outputObject.getClass())) {
+						getOutputChannel().send((Message) outputObject);
+					}
+					else {
+						getOutputChannel().send(MessageBuilder.withPayload(outputObject).build());
+					}
+				}
+			}, new Action1<Throwable>() {
+
+				@Override
+				public void call(Throwable throwable) {
+					logger.error(throwable.getMessage(), throwable);
+				}
+			}, new Action0() {
+
+				@Override
+				public void call() {
+					logger.error("Subscription close for [" + subscription + "]");
+				}
+			});
+			running = true;
+		}
+	}
+
+	@Override
+	public synchronized boolean isRunning() {
+		return running;
+	}
+
+	@Override
+	public boolean isAutoStartup() {
+		return false;
+	}
+
+	@Override
+	public void stop(Runnable callback) {
+		stop();
+		if (callback != null) {
+			callback.run();
+		}
+	}
+
+	@Override
+	public int getPhase() {
+		return 0;
+	}
 
 	@Override
 	//todo: support module input type
@@ -110,7 +144,13 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 	}
 
 	@Override
-	public void destroy() throws Exception {
-		subscription.unsubscribe();
+	public synchronized void stop() {
+		if (running) {
+			subject.onCompleted();
+			subscription.unsubscribe();
+			subscription = null;
+			subject = null;
+			running = false;
+		}
 	}
 }
