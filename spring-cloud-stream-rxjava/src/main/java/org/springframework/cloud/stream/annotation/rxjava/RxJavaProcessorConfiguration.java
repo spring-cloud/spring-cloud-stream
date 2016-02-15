@@ -33,7 +33,7 @@ public class RxJavaProcessorConfiguration {
 	@Autowired
 	RxJavaProcessor processor;
 
-	@ServiceActivator(inputChannel = Processor.INPUT)
+	@ServiceActivator(inputChannel = Processor.INPUT, phase = "0")
 	@Bean
 	public MessageHandler subjectMessageHandler() {
 		SubjectMessageHandler messageHandler = new SubjectMessageHandler(processor);
