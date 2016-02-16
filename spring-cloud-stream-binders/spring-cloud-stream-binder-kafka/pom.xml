@@ -10,11 +10,12 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-binders-parent</artifactId>
-		<version>1.0.0.BUILD-SNAPSHOT</version>
+		<version>${project.version}</version>
 	</parent>
 
 	<properties>
 		<kafka.version>0.8.2.2</kafka.version>
+		<curator.version>2.6.0</curator.version>
 		<spring-integration-kafka.version>1.3.0.RELEASE</spring-integration-kafka.version>
 		<rxjava-math.version>1.0.0</rxjava-math.version>
 	</properties>
@@ -93,4 +94,46 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.apache.kafka</groupId>
+				<artifactId>kafka_2.10</artifactId>
+				<version>${kafka.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-log4j12</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.kafka</groupId>
+				<artifactId>kafka_2.10</artifactId>
+				<classifier>test</classifier>
+				<version>${kafka.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.kafka</groupId>
+				<artifactId>kafka-clients</artifactId>
+				<version>${kafka.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.curator</groupId>
+				<artifactId>curator-framework</artifactId>
+				<version>${curator.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.curator</groupId>
+				<artifactId>curator-recipes</artifactId>
+				<version>${curator.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.curator</groupId>
+				<artifactId>curator-test</artifactId>
+				<version>${curator.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>

@@ -4,7 +4,7 @@
 	
 	<artifactId>spring-cloud-stream-binders-parent</artifactId>
 	<packaging>pom</packaging>
-	<url>http://projects.spring.io/spring-xd/</url>
+	<url>https://github.com/spring-cloud/spring-cloud-stream</url>
 	<organization>
 		<name>Pivotal Software, Inc.</name>
 		<url>http://www.spring.io</url>
@@ -12,60 +12,15 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>1.0.0.BUILD-SNAPSHOT</version>
+		<version>${project.version}</version>
 	</parent>
-	<properties>
-		<kafka.version>0.8.2.1</kafka.version>
-		<curator.version>2.6.0</curator.version>
-	</properties>
+
 	<modules>
 		<module>spring-cloud-stream-binder-test</module>
 		<module>spring-cloud-stream-binder-rabbit</module>
 		<module>spring-cloud-stream-binder-redis</module>
 		<module>spring-cloud-stream-binder-kafka</module>
 	</modules>
-	
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.apache.kafka</groupId>
-				<artifactId>kafka_2.10</artifactId>
-				<version>${kafka.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.slf4j</groupId>
-						<artifactId>slf4j-log4j12</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.kafka</groupId>
-				<artifactId>kafka_2.10</artifactId>
-				<classifier>test</classifier>
-				<version>${kafka.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.kafka</groupId>
-				<artifactId>kafka-clients</artifactId>
-				<version>${kafka.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.curator</groupId>
-				<artifactId>curator-framework</artifactId>
-				<version>${curator.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.curator</groupId>
-				<artifactId>curator-recipes</artifactId>
-				<version>${curator.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.curator</groupId>
-				<artifactId>curator-test</artifactId>
-				<version>${curator.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 	
 	<dependencies>
 		<dependency>

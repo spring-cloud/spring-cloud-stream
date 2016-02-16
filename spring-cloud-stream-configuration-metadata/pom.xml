@@ -4,12 +4,9 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>1.0.0.BUILD-SNAPSHOT</version>
+		<version>${project.version}</version>
 	</parent>
 	<artifactId>spring-cloud-stream-configuration-metadata</artifactId>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 
 	<dependencies>
 		<dependency>
