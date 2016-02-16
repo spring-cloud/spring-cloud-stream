@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,10 +67,14 @@ public class ChannelBindingService {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
 		String[] channelBindingTargets = StringUtils.commaDelimitedListToStringArray(channelBindingTarget);
 		List<Binding<MessageChannel>> bindings = new ArrayList<>();
+
+		Binder<MessageChannel> binder = getBinderForChannel(inputChannelName);
+		String consumerGroup = consumerGroup(inputChannelName);
+		Properties consumerProperties = this.channelBindingServiceProperties.getConsumerProperties(inputChannelName);
+
 		for (String target : channelBindingTargets) {
-			Binder<MessageChannel> binder = getBinderForChannel(inputChannelName);
-			Binding<MessageChannel> binding = binder.bindConsumer(target, consumerGroup(inputChannelName), inputChannel,
-					this.channelBindingServiceProperties.getConsumerProperties(inputChannelName));
+			Binding<MessageChannel> binding = binder.bindConsumer(target, consumerGroup, inputChannel,
+					consumerProperties);
 			bindings.add(binding);
 		}
 		this.consumerBindings.put(inputChannelName, bindings);
