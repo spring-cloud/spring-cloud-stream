@@ -1,7 +1,0 @@
-fixedDelay: 5000
-spring:
-  cloud:
-    stream:
-      bindings:
-        output: testtock
-  
