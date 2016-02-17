@@ -88,6 +88,8 @@ public class KafkaServiceAutoConfiguration {
 		kafkaMessageChannelBinder.setZkSessionTimeout(kafkaBinderConfigurationProperties.getZkSessionTimeout());
 		kafkaMessageChannelBinder.setZkConnectionTimeout(kafkaBinderConfigurationProperties.getZkConnectionTimeout());
 
+		kafkaMessageChannelBinder.setSyncProducer(kafkaBinderConfigurationProperties.isSyncProducer());
+
 		kafkaMessageChannelBinder.setDefaultAutoCommitEnabled(kafkaBinderDefaultProperties.isAutoCommitEnabled());
 		kafkaMessageChannelBinder.setDefaultBatchSize(kafkaBinderDefaultProperties.getBatchSize());
 		kafkaMessageChannelBinder.setDefaultBatchTimeout(kafkaBinderDefaultProperties.getBatchTimeout());

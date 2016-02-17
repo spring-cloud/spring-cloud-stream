@@ -162,6 +162,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	private static final int DEFAULT_ZK_CONNECTION_TIMEOUT = 10000;
 
+	private static final boolean DEFAULT_SYNC_PRODUCER = false;
+
 	private static final StartOffset DEFAULT_START_OFFSET = StartOffset.latest;
 
 	private RetryOperations retryOperations;
@@ -256,6 +258,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	private int zkConnectionTimeout = DEFAULT_ZK_CONNECTION_TIMEOUT;
 
+	private boolean syncProducer = DEFAULT_SYNC_PRODUCER;
+
 	private ProducerListener producerListener;
 
 	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
@@ -294,6 +298,14 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	public void setOffsetUpdateShutdownTimeout(int offsetUpdateShutdownTimeout) {
 		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
+	}
+
+	public boolean isSyncProducer() {
+		return this.syncProducer;
+	}
+
+	public void setSyncProducer(boolean syncProducer) {
+		this.syncProducer = syncProducer;
 	}
 
 	public ConnectionFactory getConnectionFactory() {
@@ -470,6 +482,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 		ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(
 				name, byte[].class, byte[].class, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
+		producerMetadata.setSync(isSyncProducer());
 		producerMetadata.setCompressionType(ProducerMetadata.CompressionType.valueOf(
 				producerPropertiesAccessor.getCompressionCodec(this.defaultCompressionCodec)));
 		producerMetadata.setBatchBytes(producerPropertiesAccessor.getBatchSize(this.defaultBatchSize));

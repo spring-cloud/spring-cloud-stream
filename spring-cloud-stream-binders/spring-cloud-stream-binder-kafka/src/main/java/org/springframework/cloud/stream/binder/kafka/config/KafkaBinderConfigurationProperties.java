@@ -61,6 +61,11 @@ class KafkaBinderConfigurationProperties {
 	 */
 	private int zkConnectionTimeout;
 
+	/**
+	 * Flag to indicate if the Kafka Producer is synchronous or asynchronous.
+	 */
+	private boolean syncProducer = false;
+
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
 	}
@@ -142,6 +147,7 @@ class KafkaBinderConfigurationProperties {
 		this.resetOffsets = resetOffsets;
 	}
 
+
 	public int getZkSessionTimeout() {
 		return this.zkSessionTimeout;
 	}
@@ -156,6 +162,14 @@ class KafkaBinderConfigurationProperties {
 
 	public void setZkConnectionTimeout(int zkConnectionTimeout) {
 		this.zkConnectionTimeout = zkConnectionTimeout;
+	}
+
+	public boolean isSyncProducer() {
+		return this.syncProducer;
+	}
+
+	public void setSyncProducer(boolean syncProducer) {
+		this.syncProducer = syncProducer;
 	}
 
 	/**

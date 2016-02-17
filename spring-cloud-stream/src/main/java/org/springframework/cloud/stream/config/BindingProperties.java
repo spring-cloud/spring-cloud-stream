@@ -85,7 +85,6 @@ public class BindingProperties {
 	private Integer batchTimeout;
 
 	// Inbound properties
-
 	private Integer concurrency;
 
 	// Partition properties
@@ -284,11 +283,11 @@ public class BindingProperties {
 			sb.append("partitionSelectorClass=" + partitionSelectorClass);
 			sb.append(COMMA);
 		}
-		if (this.partitionSelectorClass != null && !this.partitionSelectorClass.isEmpty()) {
+		if (this.partitionSelectorExpression != null && !this.partitionSelectorExpression.isEmpty()) {
 			sb.append("partitionSelectorExpression=" + partitionSelectorExpression);
 			sb.append(COMMA);
 		}
-		if (this.partitioned) {
+		if (this.partitionCount != null) {
 			sb.append("partitionCount=" + this.partitionCount);
 			sb.append(COMMA);
 		}
@@ -316,8 +315,10 @@ public class BindingProperties {
 			sb.append("batchTimeout=" + this.batchTimeout);
 			sb.append(COMMA);
 		}
-		sb.append("partitioned=" + this.partitioned);
-		sb.append(COMMA);
+		if (this.partitioned != null) {
+			sb.append("partitioned=" + this.partitioned);
+			sb.append(COMMA);
+		}
 		if (this.partitionIndex != null) {
 			sb.append("partitionIndex=" + this.partitionIndex);
 			sb.append(COMMA);
