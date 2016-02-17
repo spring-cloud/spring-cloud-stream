@@ -132,8 +132,13 @@ public abstract class BinderPropertyKeys {
 	public static final String DURABLE = "durableSubscription";
 
 	/**
-	 * Minimum partition count, if the transport supports partitioning natively (e.g. Kafka)
+	 * Minimum partition count, if the transport supports partitioning natively (e.g. Kafka).
 	 */
 	public static final String MIN_PARTITION_COUNT = "minPartitionCount";
+
+	/**
+	 * Flag to indicate if the Kafka producer needs to be synchronous/asynchronous.
+	 */
+	public static final String SYNC_PRODUCER = "syncProducer";
 
 }

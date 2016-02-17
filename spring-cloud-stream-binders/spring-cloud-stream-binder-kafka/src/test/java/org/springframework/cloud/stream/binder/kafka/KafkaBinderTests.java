@@ -24,6 +24,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,6 +38,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
@@ -46,13 +48,16 @@ import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.kafka.core.KafkaMessage;
 import org.springframework.integration.kafka.core.Partition;
 import org.springframework.integration.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.integration.kafka.listener.MessageListener;
+import org.springframework.integration.kafka.support.ProducerConfiguration;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.support.GenericMessage;
 
 import kafka.api.OffsetRequest;
@@ -480,5 +485,27 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		assertThat(new String(receivedMessage3.getPayload()), equalTo(testPayload3));
 		binder.unbind(consumerBinding);
 		binder.unbind(producerBinding);
+	}
+
+	@Test
+	public void testSyncProducerMetadata() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
+				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+
+		DirectChannel output = new DirectChannel();
+		Properties properties = new Properties();
+		properties.setProperty("syncProducer", "true");
+
+		String testTopicName = UUID.randomUUID().toString();
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output, properties);
+		DirectFieldAccessor accessor = new DirectFieldAccessor(((EventDrivenConsumer)(producerBinding.getEndpoint())));
+		MessageHandler handler = (MessageHandler) accessor.getPropertyValue("handler");
+		DirectFieldAccessor accessor1 = new DirectFieldAccessor(handler);
+		ProducerConfiguration producerConfiguration = (ProducerConfiguration) accessor1.getPropertyValue("producerConfiguration");
+		assertTrue("Kafka Sync Producer should have been enabled.", producerConfiguration.getProducerMetadata().isSync());
 	}
 }

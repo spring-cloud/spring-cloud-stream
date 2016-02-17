@@ -82,15 +82,18 @@ public class BindingProperties {
 
 
 	// Inbound properties
-
 	private Integer concurrency;
-
-	private Boolean durableSubscription;
 
 	// Partition properties
 	private String partitionIndex;
 
 	private Boolean partitioned = false;
+
+	// Rabbit specific consumer properties
+	private Boolean durableSubscription;
+
+	// Kafka specific producer properties
+	private Boolean syncProducer = false;
 
 
 	public String getDestination() {
@@ -253,6 +256,14 @@ public class BindingProperties {
 		this.durableSubscription = durableSubscription;
 	}
 
+	public Boolean isSyncProducer() {
+		return this.syncProducer;
+	}
+
+	public void setSyncProducer(Boolean syncProducer) {
+		this.syncProducer = syncProducer;
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("destination=" + this.destination);
@@ -283,11 +294,11 @@ public class BindingProperties {
 			sb.append("partitionSelectorClass=" + partitionSelectorClass);
 			sb.append(COMMA);
 		}
-		if (this.partitionSelectorClass != null && !this.partitionSelectorClass.isEmpty()) {
+		if (this.partitionSelectorExpression != null && !this.partitionSelectorExpression.isEmpty()) {
 			sb.append("partitionSelectorExpression=" + partitionSelectorExpression);
 			sb.append(COMMA);
 		}
-		if (this.partitioned) {
+		if (this.partitionCount != null) {
 			sb.append("partitionCount=" + this.partitionCount);
 			sb.append(COMMA);
 		}
@@ -315,8 +326,10 @@ public class BindingProperties {
 			sb.append("batchTimeout=" + this.batchTimeout);
 			sb.append(COMMA);
 		}
-		sb.append("partitioned=" + this.partitioned);
-		sb.append(COMMA);
+		if (this.partitioned != null) {
+			sb.append("partitioned=" + this.partitioned);
+			sb.append(COMMA);
+		}
 		if (this.partitionIndex != null) {
 			sb.append("partitionIndex=" + this.partitionIndex);
 			sb.append(COMMA);
@@ -327,6 +340,10 @@ public class BindingProperties {
 		}
 		if (this.durableSubscription != null) {
 			sb.append("durableSubscription=" + this.durableSubscription);
+			sb.append(COMMA);
+		}
+		if (this.syncProducer != null) {
+			sb.append("syncProducer=" + this.syncProducer);
 			sb.append(COMMA);
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));

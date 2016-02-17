@@ -210,6 +210,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private static final Set<Object> KAFKA_PRODUCER_PROPERTIES = new SetBuilder()
 			.add(BinderPropertyKeys.MIN_PARTITION_COUNT)
+			.add(BinderPropertyKeys.SYNC_PRODUCER)
 			.build();
 
 	/**
@@ -249,6 +250,8 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private int defaultFetchSize = 1024 * 1024;
 
 	private int defaultMinPartitionCount = 1;
+
+	private boolean defaultSyncProducer = false;
 
 	private ConnectionFactory connectionFactory;
 
@@ -454,6 +457,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 		ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(
 				name, byte[].class, byte[].class, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
+		producerMetadata.setSync(producerPropertiesAccessor.getSyncProducer(this.defaultSyncProducer));
 		producerMetadata.setCompressionType(ProducerMetadata.CompressionType.valueOf(
 				producerPropertiesAccessor.getCompressionCodec(this.defaultCompressionCodec)));
 		producerMetadata.setBatchBytes(producerPropertiesAccessor.getBatchSize(this.defaultBatchSize));
@@ -755,6 +759,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 		public int getMinPartitionCount(int defaultPartitionCount) {
 			return getProperty(BinderPropertyKeys.MIN_PARTITION_COUNT, defaultPartitionCount);
+		}
+
+		public boolean getSyncProducer(boolean defaultSyncProducer) {
+			return getProperty(BinderPropertyKeys.SYNC_PRODUCER, defaultSyncProducer);
 		}
 
 	}

@@ -347,6 +347,10 @@ The Kafka Binder implementation maps the destination to a Kafka topic, and the c
 Kafka concept. Spring Cloud Stream does not use the high level consumer, but implements a similar concept for the
 simple consumer.
 
+When using Kafka binder for the outbound channel, the `asynchronous` Kafka producer is used by default.
+To use synchronous Kafka producer, the outbound channel requires to have the binding property
+`spring.cloud.stream.bindings.<channelName>.syncProducer=true`
+
 ==== RabbitMQ Binder
 
 .RabbitMQ Binder

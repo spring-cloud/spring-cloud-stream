@@ -122,7 +122,7 @@ public class ChannelBindingServiceProperties {
 				channelConsumerProperties.setProperty(BinderPropertyKeys.CONCURRENCY,
 						Integer.toString(bindingProperties.getConcurrency()));
 			}
-			if (bindingProperties.isDurableSubscription() != null) {
+			if (Boolean.TRUE.equals(bindingProperties.isDurableSubscription())) {
 				channelConsumerProperties.setProperty(BinderPropertyKeys.DURABLE,
 						Boolean.toString(bindingProperties.isDurableSubscription()));
 			}
@@ -139,6 +139,14 @@ public class ChannelBindingServiceProperties {
 	 */
 	public Properties getProducerProperties(String outputChannelName) {
 		Properties channelProducerProperties = new Properties();
+		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
+		if (bindingProperties != null) {
+			// Setting Kafka producer properties
+			if (Boolean.TRUE.equals(bindingProperties.isSyncProducer())) {
+				channelProducerProperties.setProperty(BinderPropertyKeys.SYNC_PRODUCER,
+						Boolean.toString(bindingProperties.isSyncProducer()));
+			}
+		}
 		updateBatchProperties(outputChannelName, channelProducerProperties);
 		updateProducerPartitionProperties(outputChannelName, channelProducerProperties);
 		return channelProducerProperties;
