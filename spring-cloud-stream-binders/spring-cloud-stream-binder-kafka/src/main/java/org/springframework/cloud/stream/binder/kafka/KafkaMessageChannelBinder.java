@@ -36,6 +36,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
@@ -45,6 +46,7 @@ import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageValues;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.FixedSubscriberChannel;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
@@ -164,12 +166,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	private static final boolean DEFAULT_SYNC_PRODUCER = false;
 
-	private static final StartOffset DEFAULT_START_OFFSET = StartOffset.latest;
-
-	private RetryOperations retryOperations;
-
-	private Map<String, Collection<Partition>> topicsInUse = new HashMap<>();
-
 	protected static final Set<Object> PRODUCER_COMPRESSION_PROPERTIES = new HashSet<Object>(
 			Arrays.asList(new String[] {
 				KafkaMessageChannelBinder.COMPRESSION_CODEC,
@@ -206,6 +202,10 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			.addAll(PRODUCER_BATCHING_BASIC_PROPERTIES)
 			.addAll(PRODUCER_COMPRESSION_PROPERTIES)
 			.build();
+
+	private RetryOperations retryOperations;
+
+	private final Map<String, Collection<Partition>> topicsInUse = new HashMap<>();
 
 	private final EmbeddedHeadersMessageConverter embeddedHeadersMessageConverter = new
 			EmbeddedHeadersMessageConverter();
@@ -830,8 +830,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	private class SendingHandler extends AbstractMessageHandler {
 
-		private final PartitioningMetadata partitioningMetadata;
-
 		private final AtomicInteger roundRobinCount = new AtomicInteger();
 
 		private final String topicName;
@@ -840,21 +838,24 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 		private final ProducerConfiguration<byte[], byte[]> producerConfiguration;
 
+		private final PartitionHandler partitionHandler;
 
 		private SendingHandler(String topicName, KafkaPropertiesAccessor properties, int numberOfPartitions,
 				ProducerConfiguration<byte[], byte[]> producerConfiguration) {
 			this.topicName = topicName;
 			this.numberOfKafkaPartitions = numberOfPartitions;
-			this.partitioningMetadata = new PartitioningMetadata(properties, numberOfPartitions);
-			this.setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
+			ConfigurableListableBeanFactory beanFactory = KafkaMessageChannelBinder.this.getBeanFactory();
+			this.setBeanFactory(beanFactory);
 			this.producerConfiguration = producerConfiguration;
+			this.partitionHandler = new PartitionHandler(beanFactory, evaluationContext, partitionSelector,
+					properties, numberOfPartitions);
 		}
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) throws Exception {
 			int targetPartition;
-			if (partitioningMetadata.isPartitionedModule()) {
-				targetPartition = determinePartition(message, partitioningMetadata);
+			if (this.partitionHandler.isPartitionedModule()) {
+				targetPartition = this.partitionHandler.determinePartition(message);
 			}
 			else {
 				targetPartition = roundRobin() % numberOfKafkaPartitions;
