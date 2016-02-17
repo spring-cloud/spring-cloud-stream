@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
@@ -33,6 +34,7 @@ import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageValues;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -294,17 +296,19 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 		private final String bindingName;
 
-		private final PartitioningMetadata partitioningMetadata;
-
 		private final RedisPropertiesAccessor accessor;
 
 		private final Map<String, RedisQueueOutboundChannelAdapter> adapters = new HashMap<>();
 
+		private final PartitionHandler partitionHandler;
+
 		private SendingHandler(String bindingName, RedisPropertiesAccessor properties) {
 			this.bindingName = bindingName;
 			this.accessor = properties;
-			this.partitioningMetadata = new PartitioningMetadata(properties, properties.getNextModuleCount());
 			this.setBeanFactory(RedisMessageChannelBinder.this.getBeanFactory());
+			this.partitionHandler = new PartitionHandler(
+					(ConfigurableListableBeanFactory) getBeanFactory(),
+					evaluationContext, partitionSelector, properties, properties.getNextModuleCount());
 			refreshChannelAdapters();
 		}
 
@@ -312,13 +316,13 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		protected void handleMessageInternal(Message<?> message) throws Exception {
 			MessageValues transformed = serializePayloadIfNecessary(message);
 
-			if (this.partitioningMetadata.isPartitionedModule()) {
-				transformed.put(PARTITION_HEADER, determinePartition(message, this.partitioningMetadata));
+			if (this.partitionHandler.isPartitionedModule()) {
+				transformed.put(PARTITION_HEADER, this.partitionHandler.determinePartition(message));
 			}
 
 			byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
 					RedisMessageChannelBinder.this.headersToMap);
-			
+
 			refreshChannelAdapters();
 			for (RedisQueueOutboundChannelAdapter adapter : adapters.values()) {
 				adapter.handleMessage((MessageBuilder.withPayload(messageToSend).copyHeaders(transformed).build()));

@@ -45,7 +45,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.core.serializer.support.SerializationFailedException;
 import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.Expression;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.messaging.Message;
@@ -147,7 +146,7 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 
 	protected volatile EvaluationContext evaluationContext;
 
-	private volatile PartitionSelectorStrategy partitionSelector = new DefaultPartitionSelector();
+	protected volatile PartitionSelectorStrategy partitionSelector;
 
 	protected volatile long defaultBackOffInitialInterval = DEFAULT_BACKOFF_INITIAL_INTERVAL;
 
@@ -459,98 +458,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 	}
 
 	/**
-	 * Determine the partition to which to send this message. If a partition key extractor class is provided, it is
-	 * invoked to determine the key. Otherwise, the partition key expression is evaluated to obtain the key value. If a
-	 * partition selector class is provided, it will be invoked to determine the partition. Otherwise, if the partition
-	 * expression is not null, it is evaluated against the key and is expected to return an integer to which the modulo
-	 * function will be applied, using the partitionCount as the divisor. If no partition expression is provided, the
-	 * key will be passed to the binder partition strategy along with the partitionCount. The default partition
-	 * strategy
-	 * uses {@code key.hashCode()}, and the result will be the mod of that value.
-	 * @param message the message.
-	 * @param meta    the partitioning metadata.
-	 * @return the partition.
-	 */
-	protected int determinePartition(Message<?> message, PartitioningMetadata meta) {
-		Object key = null;
-		if (StringUtils.hasText(meta.partitionKeyExtractorClass)) {
-			key = invokeExtractor(meta.partitionKeyExtractorClass, message);
-		}
-		else if (meta.partitionKeyExpression != null) {
-			key = meta.partitionKeyExpression.getValue(this.evaluationContext, message);
-		}
-		Assert.notNull(key, "Partition key cannot be null");
-		int partition;
-		if (StringUtils.hasText(meta.partitionSelectorClass)) {
-			partition = invokePartitionSelector(meta.partitionSelectorClass, key, meta.partitionCount);
-		}
-		else if (meta.partitionSelectorExpression != null) {
-			partition = meta.partitionSelectorExpression.getValue(this.evaluationContext, key, Integer.class);
-		}
-		else {
-			partition = this.partitionSelector.selectPartition(key, meta.partitionCount);
-		}
-		partition = partition % meta.partitionCount;
-		if (partition < 0) { // protection in case a user selector returns a negative.
-			partition = Math.abs(partition);
-		}
-		return partition;
-	}
-
-	private Object invokeExtractor(String partitionKeyExtractorClassName, Message<?> message) {
-		if (this.applicationContext.containsBean(partitionKeyExtractorClassName)) {
-			return this.applicationContext.getBean(partitionKeyExtractorClassName, PartitionKeyExtractorStrategy.class)
-					.extractKey(message);
-		}
-		Class<?> clazz;
-		try {
-			clazz = ClassUtils.forName(partitionKeyExtractorClassName, this.applicationContext.getClassLoader());
-		}
-		catch (Exception e) {
-			this.logger.error("Failed to load key extractor", e);
-			throw new BinderException("Failed to load key extractor: " + partitionKeyExtractorClassName, e);
-		}
-		try {
-			Object extractor = clazz.newInstance();
-			Assert.isInstanceOf(PartitionKeyExtractorStrategy.class, extractor);
-			this.applicationContext.getBeanFactory().registerSingleton(partitionKeyExtractorClassName, extractor);
-			this.applicationContext.getBeanFactory().initializeBean(extractor, partitionKeyExtractorClassName);
-			return ((PartitionKeyExtractorStrategy) extractor).extractKey(message);
-		}
-		catch (Exception e) {
-			this.logger.error("Failed to instantiate key extractor", e);
-			throw new BinderException("Failed to instantiate key extractor: " + partitionKeyExtractorClassName, e);
-		}
-	}
-
-	private int invokePartitionSelector(String partitionSelectorClassName, Object key, int partitionCount) {
-		if (this.applicationContext.containsBean(partitionSelectorClassName)) {
-			return this.applicationContext.getBean(partitionSelectorClassName, PartitionSelectorStrategy.class)
-					.selectPartition(key, partitionCount);
-		}
-		Class<?> clazz;
-		try {
-			clazz = ClassUtils.forName(partitionSelectorClassName, this.applicationContext.getClassLoader());
-		}
-		catch (Exception e) {
-			this.logger.error("Failed to load partition selector", e);
-			throw new BinderException("Failed to load partition selector: " + partitionSelectorClassName, e);
-		}
-		try {
-			Object extractor = clazz.newInstance();
-			Assert.isInstanceOf(PartitionKeyExtractorStrategy.class, extractor);
-			this.applicationContext.getBeanFactory().registerSingleton(partitionSelectorClassName, extractor);
-			this.applicationContext.getBeanFactory().initializeBean(extractor, partitionSelectorClassName);
-			return ((PartitionSelectorStrategy) extractor).selectPartition(key, partitionCount);
-		}
-		catch (Exception e) {
-			this.logger.error("Failed to instantiate partition selector", e);
-			throw new BinderException("Failed to instantiate partition selector: " + partitionSelectorClassName,
-					e);
-		}
-	}
-
-	/**
 	 * Validate the provided deployment properties for the consumer against those supported by this binder
 	 * implementation.
 	 * The consumer is that part of the binder that consumes messages from the underlying infrastructure and sends them
@@ -629,52 +536,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		}
 	}
 
-	/**
-	 * Default partition strategy; only works on keys with "real" hash codes, such as String. Caller now always applies
-	 * modulo so no need to do so here.
-	 */
-	private class DefaultPartitionSelector implements PartitionSelectorStrategy {
-
-		@Override
-		public int selectPartition(Object key, int partitionCount) {
-			int hashCode = key.hashCode();
-			if (hashCode == Integer.MIN_VALUE) {
-				hashCode = 0;
-			}
-			return Math.abs(hashCode);
-		}
-
-	}
-
-	protected static class PartitioningMetadata {
-
-		private final String partitionKeyExtractorClass;
-
-		private final Expression partitionKeyExpression;
-
-		private final String partitionSelectorClass;
-
-		private final Expression partitionSelectorExpression;
-
-		private final int partitionCount;
-
-		public PartitioningMetadata(DefaultBindingPropertiesAccessor properties, int partitionCount) {
-			this.partitionCount = partitionCount;
-			this.partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
-			this.partitionKeyExpression = properties.getPartitionKeyExpression();
-			this.partitionSelectorClass = properties.getPartitionSelectorClass();
-			this.partitionSelectorExpression = properties.getPartitionSelectorExpression();
-		}
-
-		public boolean isPartitionedModule() {
-			return StringUtils.hasText(this.partitionKeyExtractorClass) || this.partitionKeyExpression != null;
-		}
-
-		public int getPartitionCount() {
-			return this.partitionCount;
-		}
-
-	}
 
 	/**
 	 * Handles representing any java class as a {@link MimeType}.

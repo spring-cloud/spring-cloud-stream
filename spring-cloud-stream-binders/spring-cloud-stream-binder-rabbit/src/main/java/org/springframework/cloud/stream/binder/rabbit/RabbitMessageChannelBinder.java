@@ -67,6 +67,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.MessageValues;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.Resource;
@@ -774,12 +775,14 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 		private final String replyTo;
 
-		private final PartitioningMetadata partitioningMetadata;
+		private final PartitionHandler partitionHandler;
 
 		private SendingHandler(MessageHandler delegate, String replyTo, RabbitPropertiesAccessor properties) {
 			this.delegate = delegate;
 			this.replyTo = replyTo;
-			this.partitioningMetadata = new PartitioningMetadata(properties, properties.getNextModuleCount());
+			this.partitionHandler = new PartitionHandler(
+					(ConfigurableListableBeanFactory) getBeanFactory(),
+					evaluationContext, partitionSelector, properties, properties.getNextModuleCount());
 			this.setBeanFactory(RabbitMessageChannelBinder.this.getBeanFactory());
 		}
 
@@ -790,8 +793,9 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			if (this.replyTo != null) {
 				messageToSend.put(AmqpHeaders.REPLY_TO, this.replyTo);
 			}
-			if (this.partitioningMetadata.isPartitionedModule()) {
-				messageToSend.put(PARTITION_HEADER, determinePartition(message, this.partitioningMetadata));
+			if (this.partitionHandler.isPartitionedModule()) {
+				messageToSend.put(PARTITION_HEADER,
+						this.partitionHandler.determinePartition(message));
 			}
 
 			this.delegate.handleMessage(messageToSend.toMessage(getMessageBuilderFactory()));
