@@ -668,8 +668,9 @@ public abstract class MessageChannelBinderSupport
 	private void validateProperties(String name, Properties properties, Set<Object> supported, String type) {
 		StringBuilder builder = new StringBuilder();
 		int errors = 0;
+		List<String> ignorableKeys = Arrays.asList(BinderPropertyKeys.IGNORABLE_KEYS);
 		for (Entry<Object, Object> entry : properties.entrySet()) {
-			if (!supported.contains(entry.getKey())) {
+			if (!supported.contains(entry.getKey()) && !ignorableKeys.contains(entry.getKey())) {
 				builder.append(entry.getKey()).append(",");
 				errors++;
 			}
