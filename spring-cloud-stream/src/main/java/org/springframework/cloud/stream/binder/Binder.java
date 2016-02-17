@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.util.Properties;
 
 /**
- * A strategy interface used to bind a module interface to a logical name. The name is intended to identify a
+ * A strategy interface used to bind an app interface to a logical name. The name is intended to identify a
  * logical consumer or producer of messages. This may be a queue, a channel adapter, another message channel, a Spring
  * bean, etc.
  * @author Mark Fisher
@@ -32,21 +32,21 @@ import java.util.Properties;
 public interface Binder<T> {
 
 	/**
-	 * Bind a message consumer on a channel
+	 * Bind the target component as a message consumer to the logical entity identified by the name.
 	 * @param name the logical identity of the message source
 	 * @param group the consumer group to which this consumer belongs - subscriptions are shared among consumers
 	 * in the same group (a <code>null</code> or empty String, must be treated as an anonymous group that doesn't share
 	 * the subscription with any other consumer)
-	 * @param inboundBindTarget the module interface to be bound as a consumer
-	 * @param properties arbitrary String key/value pairs that will be used in the binding
+	 * @param inboundBindTarget the app interface to be bound as a consumer
+	 * @param properties arbitrary String key/value pairs that will be used as consumer properties in the binding
 	 */
 	Binding<T> bindConsumer(String name, String group, T inboundBindTarget, Properties properties);
 
 	/**
-	 * Bind a message producer on a channel.
+	 * Bind the target component as a message producer to the logical entity identified by the name.
 	 * @param name the logical identity of the message target
-	 * @param outboundBindTarget the module interface bound as a producer
-	 * @param properties arbitrary String key/value pairs that will be used in the binding
+	 * @param outboundBindTarget the app interface to be bound as a producer
+	 * @param properties arbitrary String key/value pairs that will be used as producer properties in the binding
 	 */
 	Binding<T> bindProducer(String name, T outboundBindTarget, Properties properties);
 
