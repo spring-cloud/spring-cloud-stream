@@ -48,7 +48,8 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 	@Override
 	public Health health() {
-		ZkClient zkClient = new ZkClient(binder.getZkAddress(), 10000, 10000, ZKStringSerializer$.MODULE$);
+		ZkClient zkClient = new ZkClient(binder.getZkAddress(), binder.getDefaultSessionTimeoutMs(),
+				binder.getDefaultConnectionTimeoutMs(), ZKStringSerializer$.MODULE$);
 		Set<String> brokersInClusterSet = new HashSet<>();
 		try {
 			Seq<Broker> allBrokersInCluster = ZkUtils$.MODULE$.getAllBrokersInCluster(zkClient);

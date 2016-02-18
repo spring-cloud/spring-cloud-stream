@@ -226,6 +226,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private int defaultMinPartitionCount = 1;
 
+	private int defaultSessionTimeoutMs = 10000;
+
+	private int defaultConnectionTimeoutMs = 10000;
+
 	private ConnectionFactory connectionFactory;
 
 	// auto commit property
@@ -372,6 +376,22 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		this.defaultQueueSize = defaultQueueSize;
 	}
 
+	public int getDefaultSessionTimeoutMs() {
+		return this.defaultSessionTimeoutMs;
+	}
+
+	public void setDefaultSessionTimeoutMs(int defaultSessionTimeoutMs) {
+		this.defaultSessionTimeoutMs = defaultSessionTimeoutMs;
+	}
+
+	public int getDefaultConnectionTimeoutMs() {
+		return this.defaultConnectionTimeoutMs;
+	}
+
+	public void setDefaultConnectionTimeoutMs(int defaultConnectionTimeoutMs) {
+		this.defaultConnectionTimeoutMs = defaultConnectionTimeoutMs;
+	}
+
 	public void setDefaultFetchSize(int defaultFetchSize) {
 		this.defaultFetchSize = defaultFetchSize;
 	}
@@ -482,9 +502,8 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private Collection<Partition> ensureTopicCreated(final String topicName, final int numPartitions,
 			int replicationFactor) {
 
-		final int sessionTimeoutMs = 10000;
-		final int connectionTimeoutMs = 10000;
-		final ZkClient zkClient = new ZkClient(zkAddress, sessionTimeoutMs, connectionTimeoutMs, ZKStringSerializer$.MODULE$);
+		final ZkClient zkClient = new ZkClient(zkAddress, getDefaultSessionTimeoutMs(), getDefaultConnectionTimeoutMs(),
+				ZKStringSerializer$.MODULE$);
 		try {
 			// The following is basically copy/paste from AdminUtils.createTopic() with
 			// createOrUpdateTopicPartitionAssignmentPathInZK(..., update=true)
