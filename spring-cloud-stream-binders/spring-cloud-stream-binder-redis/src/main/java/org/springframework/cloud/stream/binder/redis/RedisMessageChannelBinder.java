@@ -25,7 +25,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
@@ -66,7 +65,7 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Jennifer Hickey
  */
-public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> implements DisposableBean {
+public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	private static final String ERROR_HEADER = "errorKey";
 
@@ -171,7 +170,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> im
 	}
 
 	private Binding<MessageChannel> doRegisterConsumer(String bindingName, String group, String channelName, MessageChannel moduleInputChannel,
-			MessageProducerSupport adapter, RedisPropertiesAccessor properties) {
+													   MessageProducerSupport adapter, final RedisPropertiesAccessor properties) {
 		DirectChannel bridgeToModuleChannel = new DirectChannel();
 		bridgeToModuleChannel.setBeanFactory(this.getBeanFactory());
 		bridgeToModuleChannel.setBeanName(channelName + ".bridge");
@@ -179,8 +178,14 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> im
 		adapter.setOutputChannel(bridgeInputChannel);
 		adapter.setBeanName("inbound." + channelName);
 		adapter.afterPropertiesSet();
-		DefaultBinding<MessageChannel> consumerBinding = new RedisConsumerBinding(channelName, group, moduleInputChannel, adapter, properties, redisOperations, properties.isDurable(defaultDurableSubscription));
-		addBinding(consumerBinding);
+		DefaultBinding<MessageChannel> consumerBinding = new DefaultBinding<MessageChannel>(channelName, group, moduleInputChannel, adapter, properties) {
+
+			@Override
+			protected void afterUnbind() {
+				String key = RedisMessageChannelBinder.CONSUMER_GROUPS_KEY_PREFIX + getName();
+				RedisMessageChannelBinder.this.redisOperations.boundZSetOps(key).incrementScore(getGroup(), -1);
+			}
+		};
 		ReceivingHandler convertingBridge = new ReceivingHandler();
 		convertingBridge.setOutputChannel(moduleInputChannel);
 		convertingBridge.setBeanName(channelName + ".bridge.handler");
@@ -281,7 +286,6 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> im
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
 		DefaultBinding<MessageChannel> producerBinding = new DefaultBinding<>(name, null, moduleOutputChannel, consumer, properties);
-		addBinding(producerBinding);
 		consumer.start();
 		return producerBinding;
 	}

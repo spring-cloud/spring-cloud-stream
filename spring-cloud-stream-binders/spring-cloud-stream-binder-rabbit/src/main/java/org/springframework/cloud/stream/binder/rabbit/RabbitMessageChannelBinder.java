@@ -455,8 +455,8 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		return args;
 	}
 
-	private Binding<MessageChannel> doRegisterConsumer(String name, String group, MessageChannel moduleInputChannel, Queue queue,
-			RabbitPropertiesAccessor properties) {
+	private Binding<MessageChannel> doRegisterConsumer(final String name, String group, MessageChannel moduleInputChannel, Queue queue,
+													   final RabbitPropertiesAccessor properties) {
 		DefaultBinding<MessageChannel> consumerBinding = null;
 		// Fix for XD-2503
 		// Temporarily overrides the thread context classloader with the one where the SimpleMessageListenerContainer
@@ -511,8 +511,13 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			mapper.setReplyHeaderNames(properties.getReplyHeaderPattens(this.defaultReplyHeaderPatterns));
 			adapter.setHeaderMapper(mapper);
 			adapter.afterPropertiesSet();
-			consumerBinding = new RabbitConsumerBinding(name, group, moduleInputChannel, adapter, properties);
-			addBinding(consumerBinding);
+			consumerBinding = new DefaultBinding<MessageChannel>(name, group, moduleInputChannel, adapter, properties) {
+
+				@Override
+				protected void afterUnbind() {
+					cleanAutoDeclareContext(properties.getPrefix(defaultPrefix), name);
+				}
+			};
 			ReceivingHandler convertingBridge = new ReceivingHandler();
 			convertingBridge.setOutputChannel(moduleInputChannel);
 			convertingBridge.setBeanName(name + ".convert.bridge");
@@ -636,7 +641,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
 		DefaultBinding<MessageChannel> producerBinding = new DefaultBinding<>(name, null, moduleOutputChannel, consumer, properties);
-		addBinding(producerBinding);
+
 		consumer.start();
 		return producerBinding;
 	}
@@ -722,9 +727,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		}
 	}
 
-	private void cleanAutoDeclareContext(DefaultBinding<MessageChannel> binding) {
-		String prefix = ((RabbitPropertiesAccessor) binding.getPropertiesAccessor()).getPrefix(this.defaultPrefix);
-		String name = binding.getName();
+	public void cleanAutoDeclareContext(String prefix, String name) {
 		synchronized(this.autoDeclareContext) {
 			removeSingleton(applyPrefix(prefix,name) + ".binding");
 			removeSingleton(applyPrefix(prefix,name));

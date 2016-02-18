@@ -28,7 +28,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -165,11 +164,8 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
-		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(4, bindings.size());
 		try {
-			AbstractEndpoint endpoint = extractEndpoint(bindings.get(3));
+			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
 			assertThat(getEndpointRouting(endpoint), containsString(
 					getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']"));
 		}
@@ -233,6 +229,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		input1Binding.unbind();
 		input2Binding.unbind();
 		input2Binding.unbind();
+		outputBinding.unbind();
 	}
 
 	@Test
@@ -263,11 +260,8 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
-		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(4, bindings.size());
 		if (usesExplicitRouting()) {
-			AbstractEndpoint endpoint = extractEndpoint(bindings.get(3));
+			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
 			assertThat(getEndpointRouting(endpoint), containsString(
 					getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']"));
 		}

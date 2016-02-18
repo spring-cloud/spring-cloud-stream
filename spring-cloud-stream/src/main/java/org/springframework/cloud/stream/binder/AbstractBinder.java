@@ -24,12 +24,9 @@ import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -41,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -71,7 +67,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
-public abstract class AbstractBinder<T> implements ApplicationContextAware, InitializingBean, Binder<T>, DisposableBean {
+public abstract class AbstractBinder<T> implements ApplicationContextAware, InitializingBean, Binder<T> {
 
 	protected static final String PARTITION_HEADER = "partition";
 
@@ -146,9 +142,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 			Arrays.asList(new String[] {
 					BinderPropertyKeys.BATCH_BUFFER_LIMIT,
 			}));
-
-	private final List<DefaultBinding<T>> bindings =
-			Collections.synchronizedList(new ArrayList<DefaultBinding<T>>());
 
 	private final IdGenerator idGenerator = new AlternativeJdkIdGenerator();
 
@@ -354,28 +347,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 	}
 
 	protected abstract Binding<T> doBindConsumer(String name, String group, T inputChannel, Properties properties);
-
-	protected void notifyUnbind(DefaultBinding<T> binding) {
-		this.bindings.remove(binding);
-	}
-
-	protected void addBinding(DefaultBinding<T> binding) {
-		this.bindings.add(binding);
-	}
-
-	@Override
-	public void destroy() throws Exception {
-		for (Binding<?> binding : this.bindings) {
-			try {
-				binding.unbind();
-			}
-			catch (Exception e) {
-				if (this.logger.isWarnEnabled()) {
-					this.logger.warn("failed to stop adapter", e);
-				}
-			}
-		}
-	}
 
 	/**
 	 * Construct a name comprised of the name and group.

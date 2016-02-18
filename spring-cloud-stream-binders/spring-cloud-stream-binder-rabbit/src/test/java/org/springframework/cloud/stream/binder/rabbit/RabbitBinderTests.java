@@ -59,7 +59,6 @@ import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
@@ -133,10 +132,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		Properties properties = new Properties();
 		properties.put("transacted", "true"); // test transacted with defaults; not allowed with ackmode NONE
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("props.0", null, new DirectChannel(), properties);
-		@SuppressWarnings("unchecked")
-		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(1, bindings.size());
-		AbstractEndpoint endpoint = extractEndpoint(bindings.get(0));
+		AbstractEndpoint endpoint = extractEndpoint(consumerBinding);
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertEquals(AcknowledgeMode.AUTO, container.getAcknowledgeMode());
@@ -154,7 +150,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		assertEquals(10000L, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.maxInterval"));
 		assertEquals(2.0, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.multiplier"));
 		consumerBinding.unbind();
-		assertEquals(0, bindings.size());
+		assertFalse(endpoint.isRunning());
 
 		properties = new Properties();
 		properties.put("ackMode", "NONE");
@@ -172,16 +168,13 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("partitionIndex", 0);
 		consumerBinding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
 
-		@SuppressWarnings("unchecked")
-		List<DefaultBinding<MessageChannel>> bindingsNow = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(1, bindingsNow.size());
-		endpoint = extractEndpoint(bindingsNow.get(0));
+		endpoint = extractEndpoint(consumerBinding);
 		container = verifyContainer(endpoint);
 
 		assertEquals("foo.props.0.test", container.getQueueNames()[0]);
 
 		consumerBinding.unbind();
-		assertEquals(0, bindingsNow.size());
+		assertFalse(endpoint.isRunning());
 	}
 
 	@Test
@@ -189,9 +182,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		Binder<MessageChannel> binder = getBinder();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("props.0", new DirectChannel(), null);
 		@SuppressWarnings("unchecked")
-		List<DefaultBinding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
-		assertEquals(1, bindings.size());
-		AbstractEndpoint endpoint = extractEndpoint(bindings.get(0));
+		AbstractEndpoint endpoint = extractEndpoint(producerBinding);
 		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
 				MessageDeliveryMode.class);
 		assertEquals(MessageDeliveryMode.PERSISTENT, mode);
@@ -199,7 +190,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 				"handler.delegate.headerMapper.requestHeaderMatcher.strategies", List.class);
 		assertEquals(2, requestHeaders.size());
 		producerBinding.unbind();
-		assertEquals(0, bindings.size());
+		assertFalse(endpoint.isRunning());
 
 		Properties properties = new Properties();
 		properties.put("prefix", "foo.");
@@ -212,8 +203,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
 
 		producerBinding = binder.bindProducer("props.0", new DirectChannel(), properties);
-		assertEquals(1, bindings.size());
-		endpoint = extractEndpoint(bindings.get(0));
+		endpoint = extractEndpoint(producerBinding);
 		assertEquals(
 				"'props.0-' + headers['partition']",
 				TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKeyExpression",
@@ -224,7 +214,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		verifyFooRequestProducer(endpoint);
 
 		producerBinding.unbind();
-		assertEquals(0, bindings.size());
+		assertFalse(endpoint.isRunning());
 	}
 
 	@Test
