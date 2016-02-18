@@ -134,7 +134,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	private static final String DEAD_LETTER_EXCHANGE = "DLX";
 
 	private static final Set<Object> RABBIT_CONSUMER_PROPERTIES = new HashSet<Object>(Arrays.asList(new String[] {
-
 		BinderPropertyKeys.MAX_CONCURRENCY,
 		RabbitPropertiesAccessor.ACK_MODE,
 		RabbitPropertiesAccessor.PREFETCH,
@@ -144,7 +143,8 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		RabbitPropertiesAccessor.TRANSACTED,
 		RabbitPropertiesAccessor.TX_SIZE,
 		RabbitPropertiesAccessor.AUTO_BIND_DLQ,
-		RabbitPropertiesAccessor.REPUBLISH_TO_DLQ
+		RabbitPropertiesAccessor.REPUBLISH_TO_DLQ,
+		RabbitPropertiesAccessor.DURABLE
 	}));
 
 	/**
@@ -161,7 +161,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	 */
 	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
 			.addAll(SUPPORTED_BASIC_CONSUMER_PROPERTIES)
-			.add(BinderPropertyKeys.DURABLE)
 			.add(BinderPropertyKeys.CONCURRENCY)
 			.add(BinderPropertyKeys.PARTITION_INDEX)
 			.build();
@@ -175,6 +174,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			.add(RabbitPropertiesAccessor.PREFIX)
 			.add(RabbitPropertiesAccessor.REQUEST_HEADER_PATTERNS)
 			.add(BinderPropertyKeys.COMPRESS)
+			.add(BinderPropertyKeys.REQUIRED_GROUPS)
 			.build();
 
 	/**
@@ -231,6 +231,8 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	private volatile int defaultPrefetchCount = DEFAULT_PREFETCH_COUNT;
 
 	private volatile int defaultTxSize = DEFAULT_TX_SIZE;
+
+	protected volatile boolean defaultDurableSubscription = true;
 
 	private volatile String defaultPrefix = DEFAULT_RABBIT_PREFIX;
 
@@ -324,6 +326,15 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	public void setDefaultTxSize(int defaultTxSize) {
 		this.defaultTxSize = defaultTxSize;
 	}
+
+	/**
+	 * Set whether subscriptions are durable.
+	 * @param defaultDurableSubscription true for durable (default false).
+	 */
+	public void setDefaultDurableSubscription(boolean defaultDurableSubscription) {
+		this.defaultDurableSubscription = defaultDurableSubscription;
+	}
+
 
 	public void setDefaultPrefix(String defaultPrefix) {
 		Assert.notNull(defaultPrefix, "'defaultPrefix' cannot be null");
@@ -555,26 +566,32 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		declareExchange(exchangeName, exchange);
 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(rabbitTemplate);
 		endpoint.setExchangeName(exchange.getName());
-		String baseQueueName = exchangeName + ".default";
 		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
-			Queue queue = new Queue(baseQueueName, true, false, false, queueArgs(properties, baseQueueName));
-			declareQueue(baseQueueName, queue);
-			autoBindDLQ(baseQueueName, baseQueueName, properties);
 			endpoint.setRoutingKey(name);
-			org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(name);
-			declareBinding(baseQueueName, binding);
 		}
 		else {
 			endpoint.setExpressionRoutingKey(EXPRESSION_PARSER.parseExpression(buildPartitionRoutingExpression(name)));
-			// if the stream is partitioned, create one queue for each target partition for the default group
-			for (int i = 0; i < properties.getNextModuleCount(); i++) {
-				String partitionSuffix = "-" + i;
-				String partitionQueueName = baseQueueName + partitionSuffix;
-				Queue queue = new Queue(partitionQueueName, true, false, false,
-						queueArgs(properties, partitionQueueName));
-				declareQueue(queue.getName(), queue);
-				autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, properties);
-				declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(name + partitionSuffix));
+		}
+		for (String requiredGroupName : properties.getRequiredGroups(defaultRequiredGroups)) {
+			String baseQueueName = exchangeName + "." + requiredGroupName;
+			if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
+				Queue queue = new Queue(baseQueueName, true, false, false, queueArgs(properties, baseQueueName));
+				declareQueue(baseQueueName, queue);
+				autoBindDLQ(baseQueueName, baseQueueName, properties);
+				org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(name);
+				declareBinding(baseQueueName, binding);
+			}
+			else {
+				// if the stream is partitioned, create one queue for each target partition for the default group
+				for (int i = 0; i < properties.getNextModuleCount(); i++) {
+					String partitionSuffix = "-" + i;
+					String partitionQueueName = baseQueueName + partitionSuffix;
+					Queue queue = new Queue(partitionQueueName, true, false, false,
+							queueArgs(properties, partitionQueueName));
+					declareQueue(queue.getName(), queue);
+					autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, properties);
+					declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(name + partitionSuffix));
+				}
 			}
 		}
 		configureOutboundHandler(endpoint, properties);
@@ -907,6 +924,11 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		 */
 		private static final String REPUBLISH_TO_DLQ = "republishToDLQ";
 
+		/**
+		 * Durable pub/sub consumer.
+		 */
+		public static final String DURABLE = "durableSubscription";
+
 		public RabbitPropertiesAccessor(Properties properties) {
 			super(properties);
 		}
@@ -965,6 +987,10 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 		public boolean getRepublishToDLQ(boolean defaultValue) {
 			return getProperty(REPUBLISH_TO_DLQ, defaultValue);
+		}
+
+		public boolean isDurable(boolean defaultValue) {
+			return getProperty(DURABLE, defaultValue);
 		}
 
 	}

@@ -106,6 +106,64 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 	}
 
 	@Test
+	public void testOneRequiredGroup() throws Exception {
+		Binder<MessageChannel> binder = getBinder();
+		DirectChannel output = new DirectChannel();
+		Properties properties = new Properties();
+
+		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
+
+		properties.put("requiredGroups", "test1");
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, properties);
+
+		String testPayload = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload.getBytes()));
+
+		properties.clear();
+		QueueChannel inbound1 = new QueueChannel();
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testDestination, "test1", inbound1, properties);
+
+		Message<?> receivedMessage1 = receive(inbound1);
+		assertThat(receivedMessage1, not(nullValue()));
+		assertThat(new String((byte[]) receivedMessage1.getPayload()), equalTo(testPayload));
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@Test
+	public void testTwoRequiredGroups() throws Exception {
+		Binder<MessageChannel> binder = getBinder();
+		DirectChannel output = new DirectChannel();
+		Properties properties = new Properties();
+
+		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
+
+		properties.put("requiredGroups", "test1,test2");
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, properties);
+
+		String testPayload = "foo-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload.getBytes()));
+
+		properties.clear();
+		QueueChannel inbound1 = new QueueChannel();
+		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination, "test1", inbound1, properties);
+		QueueChannel inbound2 = new QueueChannel();
+		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer(testDestination, "test2", inbound2, properties);
+
+		Message<?> receivedMessage1 = receive(inbound1);
+		assertThat(receivedMessage1, not(nullValue()));
+		assertThat(new String((byte[]) receivedMessage1.getPayload()), equalTo(testPayload));
+		Message<?> receivedMessage2 = receive(inbound2);
+		assertThat(receivedMessage2, not(nullValue()));
+		assertThat(new String((byte[]) receivedMessage2.getPayload()), equalTo(testPayload));
+
+		consumerBinding1.unbind();
+		consumerBinding2.unbind();
+		producerBinding.unbind();
+	}
+
+	@Test
 	public void testBadProperties() throws Exception {
 		Binder<MessageChannel> binder = getBinder();
 		Properties properties = new Properties();

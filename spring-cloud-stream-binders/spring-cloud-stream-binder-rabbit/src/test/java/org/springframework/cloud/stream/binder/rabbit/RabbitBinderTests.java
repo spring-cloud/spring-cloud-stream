@@ -340,7 +340,6 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("maxAttempts", "1"); // disable retry
 		properties.put("requeue", "false");
 		properties.put("partitionIndex", "0");
-		properties.put("durableSubscription","true");
 		DirectChannel input0 = new DirectChannel();
 		input0.setBeanName("test.input0DLQ");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.0", "dlqPartGrp", input0, properties);
@@ -424,6 +423,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 		properties.put("prefix", "bindertest.");
 		properties.put("autoBindDLQ", "true");
+		properties.put("requiredGroups", "dlqPartGrp");
 		properties.put("partitionKeyExtractorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
 		properties.put("partitionSelectorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
 		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "2");
@@ -437,7 +437,6 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("maxAttempts", "1"); // disable retry
 		properties.put("requeue", "false");
 		properties.put("partitionIndex", "0");
-		properties.put(BinderPropertyKeys.DURABLE,"true");
 		DirectChannel input0 = new DirectChannel();
 		input0.setBeanName("test.input0DLQ");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.1", "dlqPartGrp", input0, properties);
@@ -563,6 +562,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		properties.put("batchBufferLimit", "100000");
 		properties.put("batchTimeout", "30000");
 		properties.put("compress", "true");
+		properties.put("requiredGroups", "default");
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("batchingProducer");
@@ -657,6 +657,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		MessageChannel outputChannel = new DirectChannel();
 		Binding<MessageChannel> pubSubProducerBinding = binder.bindProducer("latePubSub", outputChannel, properties);
 		QueueChannel pubSubInputChannel = new QueueChannel();
+		properties.setProperty("durableSubscription", "false");
 		Binding<MessageChannel> nonDurableConsumerBinding = binder.bindConsumer("latePubSub", "lategroup", pubSubInputChannel, properties);
 		QueueChannel durablePubSubInputChannel = new QueueChannel();
 		properties.setProperty("durableSubscription", "true");

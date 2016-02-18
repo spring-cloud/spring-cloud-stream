@@ -127,13 +127,14 @@ public abstract class BinderPropertyKeys {
 	public static final String COMPRESS = "compress";
 
 	/**
-	 * Durable pub/sub consumer.
-	 */
-	public static final String DURABLE = "durableSubscription";
-
-	/**
 	 * Minimum partition count, if the transport supports partitioning natively (e.g. Kafka)
 	 */
 	public static final String MIN_PARTITION_COUNT = "minPartitionCount";
+
+	/**
+	 * Required groups. The binder will ensure that consumers from these groups that bind after
+	 * the producer will be able to receive messages produced in the mean time.
+	 */
+	public static final String REQUIRED_GROUPS = "requiredGroups";
 
 }

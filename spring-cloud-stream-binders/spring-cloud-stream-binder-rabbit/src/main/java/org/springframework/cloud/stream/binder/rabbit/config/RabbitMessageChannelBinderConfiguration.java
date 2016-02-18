@@ -78,6 +78,7 @@ public class RabbitMessageChannelBinderConfiguration {
 		binder.setUsername(springRabbitMQProperties.getUsername());
 		binder.setUseSSL(springRabbitMQProperties.isUseSSL());
 		binder.setVhost(springRabbitMQProperties.getVhost());
+		binder.setDefaultDurableSubscription(rabbitBinderConfigurationProperties.isDurableSubscription());
 		return binder;
 	}
 	

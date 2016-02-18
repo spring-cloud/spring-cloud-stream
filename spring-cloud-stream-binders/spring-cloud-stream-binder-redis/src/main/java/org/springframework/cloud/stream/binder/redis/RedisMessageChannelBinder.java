@@ -55,6 +55,7 @@ import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -85,7 +86,6 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			.addAll(CONSUMER_RETRY_PROPERTIES)
 			.add(BinderPropertyKeys.CONCURRENCY)
 			.add(BinderPropertyKeys.PARTITION_INDEX)
-			.add(BinderPropertyKeys.DURABLE)
 			.build();
 
 	/**
@@ -94,6 +94,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
 			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
 			.addAll(PRODUCER_STANDARD_PROPERTIES)
+			.add(BinderPropertyKeys.REQUIRED_GROUPS)
 			.build();
 
 	private final RedisConnectionFactory connectionFactory;
@@ -286,6 +287,12 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
 		DefaultBinding<MessageChannel> producerBinding = new DefaultBinding<>(name, null, moduleOutputChannel, consumer, properties);
+		String[] requiredGroups = properties.getRequiredGroups(defaultRequiredGroups);
+		if (!ObjectUtils.isEmpty(requiredGroups)) {
+			for (String group : requiredGroups) {
+				this.redisOperations.boundZSetOps(CONSUMER_GROUPS_KEY_PREFIX + name).incrementScore(group, 1);
+			}
+		}
 		consumer.start();
 		return producerBinding;
 	}

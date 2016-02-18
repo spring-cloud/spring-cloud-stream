@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -340,7 +339,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testDefaultConsumerStartsAtLatest() throws Exception {
+	public void testDefaultConsumerStartsAtEarliest() throws Exception {
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
 				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
 		GenericApplicationContext context = new GenericApplicationContext();
@@ -357,7 +356,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
 		binder.bindConsumer(testTopicName, "startOffsets", input1, properties);
 		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
-		assertThat(receivedMessage1, is(nullValue()));
+		assertThat(receivedMessage1, not(nullValue()));
+		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload1));
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload2.getBytes()));
 		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input1);
