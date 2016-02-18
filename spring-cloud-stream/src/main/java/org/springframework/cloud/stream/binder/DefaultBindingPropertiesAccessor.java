@@ -337,13 +337,16 @@ public class DefaultBindingPropertiesAccessor {
 	}
 
 	/**
-	 * If true, subscriptions to taps/topics will be durable.
-	 * @param defaultValue the default value.
-	 * @return the property or default value.
+	 * A list of groups for which the binder will make ensure message delivery, even if their consumers bind
+	 * after the producer. This is a producer-property only.
+	 * @param defaultValue the default value
+	 * @return the property, parsed as a comma-separated list of values
 	 */
-	public boolean isDurable(boolean defaultValue) {
-		return getProperty(BinderPropertyKeys.DURABLE, defaultValue);
+	public String[] getRequiredGroups(String[] defaultValue) {
+		String requiredGroupsValue = getProperty(BinderPropertyKeys.REQUIRED_GROUPS, "");
+		return StringUtils.commaDelimitedListToStringArray(requiredGroupsValue);
 	}
+
 
 	// Utility methods
 

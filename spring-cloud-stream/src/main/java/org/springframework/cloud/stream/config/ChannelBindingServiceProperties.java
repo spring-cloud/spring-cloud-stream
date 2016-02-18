@@ -122,10 +122,6 @@ public class ChannelBindingServiceProperties {
 				channelConsumerProperties.setProperty(BinderPropertyKeys.CONCURRENCY,
 						Integer.toString(bindingProperties.getConcurrency()));
 			}
-			if (bindingProperties.isDurableSubscription() != null) {
-				channelConsumerProperties.setProperty(BinderPropertyKeys.DURABLE,
-						Boolean.toString(bindingProperties.isDurableSubscription()));
-			}
 			updateConsumerPartitionProperties(inputChannelName, channelConsumerProperties);
 		}
 		return channelConsumerProperties;
@@ -139,8 +135,15 @@ public class ChannelBindingServiceProperties {
 	 */
 	public Properties getProducerProperties(String outputChannelName) {
 		Properties channelProducerProperties = new Properties();
-		updateBatchProperties(outputChannelName, channelProducerProperties);
-		updateProducerPartitionProperties(outputChannelName, channelProducerProperties);
+		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
+		if (bindingProperties != null) {
+			updateBatchProperties(bindingProperties, channelProducerProperties);
+			updateProducerPartitionProperties(bindingProperties, channelProducerProperties);
+			if (StringUtils.hasText(bindingProperties.getRequiredGroups())) {
+				channelProducerProperties.setProperty(BinderPropertyKeys.REQUIRED_GROUPS,
+						bindingProperties.getRequiredGroups());
+			}
+		}
 		return channelProducerProperties;
 	}
 
@@ -149,62 +152,55 @@ public class ChannelBindingServiceProperties {
 		return bindingProperties != null && bindingProperties.isPartitioned();
 	}
 
-	private boolean isPartitionedProducer(String channelName) {
-		BindingProperties bindingProperties = bindings.get(channelName);
-		return (bindingProperties != null && (StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
-				|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass())));
+	private boolean isPartitionedProducer(BindingProperties bindingProperties) {
+		return (StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
+				|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass()));
 	}
 
-	private void updateBatchProperties(String outputChannelName, Properties producerProperties) {
-		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
-		if (bindingProperties != null) {
-			if (bindingProperties.isBatchingEnabled() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.BATCHING_ENABLED,
-						String.valueOf(bindingProperties.isBatchingEnabled()));
-			}
-			if (bindingProperties.getBatchSize() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.BATCH_SIZE,
-						String.valueOf(bindingProperties.getBatchSize()));
-			}
-			if (bindingProperties.getBatchBufferLimit() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.BATCH_BUFFER_LIMIT,
-						String.valueOf(bindingProperties.getBatchBufferLimit()));
-			}
-			if (bindingProperties.getBatchTimeout() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.BATCH_TIMEOUT,
-						String.valueOf(bindingProperties.getBatchTimeout()));
-			}
+	private void updateBatchProperties(BindingProperties bindingProperties, Properties producerProperties) {
+		if (bindingProperties.isBatchingEnabled() != null) {
+			producerProperties.setProperty(BinderPropertyKeys.BATCHING_ENABLED,
+					String.valueOf(bindingProperties.isBatchingEnabled()));
+		}
+		if (bindingProperties.getBatchSize() != null) {
+			producerProperties.setProperty(BinderPropertyKeys.BATCH_SIZE,
+					String.valueOf(bindingProperties.getBatchSize()));
+		}
+		if (bindingProperties.getBatchBufferLimit() != null) {
+			producerProperties.setProperty(BinderPropertyKeys.BATCH_BUFFER_LIMIT,
+					String.valueOf(bindingProperties.getBatchBufferLimit()));
+		}
+		if (bindingProperties.getBatchTimeout() != null) {
+			producerProperties.setProperty(BinderPropertyKeys.BATCH_TIMEOUT,
+					String.valueOf(bindingProperties.getBatchTimeout()));
 		}
 	}
 
-	private void updateProducerPartitionProperties(String outputChannelName, Properties producerProperties) {
-		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
-		if (bindingProperties != null) {
-			if (isPartitionedProducer(outputChannelName)) {
-				if (bindingProperties.getPartitionKeyExpression() != null) {
-					producerProperties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXPRESSION,
-							bindingProperties.getPartitionKeyExpression());
-				}
-				if (bindingProperties.getPartitionKeyExtractorClass() != null) {
-					producerProperties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXTRACTOR_CLASS,
-							bindingProperties.getPartitionKeyExtractorClass());
-				}
-				if (bindingProperties.getPartitionSelectorClass() != null) {
-					producerProperties.setProperty(BinderPropertyKeys.PARTITION_SELECTOR_CLASS,
-							bindingProperties.getPartitionSelectorClass());
-				}
-				if (bindingProperties.getPartitionSelectorExpression() != null) {
-					producerProperties.setProperty(BinderPropertyKeys.PARTITION_SELECTOR_EXPRESSION,
-							bindingProperties.getPartitionSelectorExpression());
-				}
-				if (bindingProperties.getPartitionCount() != null) {
-					producerProperties.setProperty(BinderPropertyKeys.NEXT_MODULE_COUNT,
-							Integer.toString(bindingProperties.getPartitionCount()));
-				}
-				if (bindingProperties.getNextModuleConcurrency() != null) {
-					producerProperties.setProperty(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY,
-							Integer.toString(bindingProperties.getNextModuleConcurrency()));
-				}
+	private void updateProducerPartitionProperties(BindingProperties bindingProperties, Properties producerProperties) {
+		if (isPartitionedProducer(bindingProperties)) {
+			if (bindingProperties.getPartitionKeyExpression() != null) {
+				producerProperties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXPRESSION,
+						bindingProperties.getPartitionKeyExpression());
+			}
+			if (bindingProperties.getPartitionKeyExtractorClass() != null) {
+				producerProperties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXTRACTOR_CLASS,
+						bindingProperties.getPartitionKeyExtractorClass());
+			}
+			if (bindingProperties.getPartitionSelectorClass() != null) {
+				producerProperties.setProperty(BinderPropertyKeys.PARTITION_SELECTOR_CLASS,
+						bindingProperties.getPartitionSelectorClass());
+			}
+			if (bindingProperties.getPartitionSelectorExpression() != null) {
+				producerProperties.setProperty(BinderPropertyKeys.PARTITION_SELECTOR_EXPRESSION,
+						bindingProperties.getPartitionSelectorExpression());
+			}
+			if (bindingProperties.getPartitionCount() != null) {
+				producerProperties.setProperty(BinderPropertyKeys.NEXT_MODULE_COUNT,
+						Integer.toString(bindingProperties.getPartitionCount()));
+			}
+			if (bindingProperties.getNextModuleConcurrency() != null) {
+				producerProperties.setProperty(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY,
+						Integer.toString(bindingProperties.getNextModuleConcurrency()));
 			}
 		}
 	}

@@ -72,7 +72,7 @@ class RabbitBinderConfigurationProperties {
 
 	private int compressionLevel;
 
-	private boolean durableSubscription;
+	private boolean durableSubscription = true;
 
 	public AcknowledgeMode getAcknowledgeMode() {
 		return acknowledgeMode;

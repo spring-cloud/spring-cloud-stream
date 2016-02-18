@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.config;
 
+import org.springframework.util.StringUtils;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -55,6 +57,8 @@ public class BindingProperties {
 
 	// Outbound properties
 
+	private String requiredGroups;
+
 	// Partition properties
 
 	private String partitionKeyExpression;
@@ -80,12 +84,9 @@ public class BindingProperties {
 
 	private Integer batchTimeout;
 
-
 	// Inbound properties
 
 	private Integer concurrency;
-
-	private Boolean durableSubscription;
 
 	// Partition properties
 	private String partitionIndex;
@@ -245,12 +246,12 @@ public class BindingProperties {
 		this.partitioned = partitioned;
 	}
 
-	public Boolean isDurableSubscription() {
-		return this.durableSubscription;
+	public String getRequiredGroups() {
+		return requiredGroups;
 	}
 
-	public void setDurableSubscription(Boolean durableSubscription) {
-		this.durableSubscription = durableSubscription;
+	public void setRequiredGroups(String requiredGroups) {
+		this.requiredGroups = requiredGroups;
 	}
 
 	public String toString() {
@@ -325,8 +326,8 @@ public class BindingProperties {
 			sb.append("concurrency=" + this.concurrency);
 			sb.append(COMMA);
 		}
-		if (this.durableSubscription != null) {
-			sb.append("durableSubscription=" + this.durableSubscription);
+		if (!StringUtils.isEmpty(requiredGroups)) {
+			sb.append("requiredGroups=" + requiredGroups);
 			sb.append(COMMA);
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));

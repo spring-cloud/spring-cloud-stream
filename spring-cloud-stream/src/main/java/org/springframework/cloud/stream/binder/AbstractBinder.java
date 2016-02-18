@@ -169,11 +169,11 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 
 	protected volatile long defaultBatchTimeout = DEFAULT_BATCH_TIMEOUT;
 
+	protected volatile String[] defaultRequiredGroups = new String[] {};
+
 	// compression
 
 	protected volatile boolean defaultCompress = false;
-
-	protected volatile boolean defaultDurableSubscription = false;
 
 	// Payload type cache
 	private volatile Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
@@ -318,13 +318,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		this.defaultCompress = defaultCompress;
 	}
 
-	/**
-	 * Set whether subscriptions to taps/topics are durable.
-	 * @param defaultDurableSubscription true for durable (default false).
-	 */
-	public void setDefaultDurableSubscription(boolean defaultDurableSubscription) {
-		this.defaultDurableSubscription = defaultDurableSubscription;
-	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -338,8 +331,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 	public final Binding<T> bindConsumer(String name, String group, T target, Properties properties) {
 		DefaultBindingPropertiesAccessor accessor = new DefaultBindingPropertiesAccessor(properties);
 		if (StringUtils.isEmpty(group)) {
-			Assert.isTrue(!accessor.getProperty(BinderPropertyKeys.DURABLE, defaultDurableSubscription),
-					"A consumer group is required for a durable subscription");
 			Assert.isTrue(accessor.getPartitionIndex() < 0,
 					"A consumer group is required for a partitioned subscription");
 		}

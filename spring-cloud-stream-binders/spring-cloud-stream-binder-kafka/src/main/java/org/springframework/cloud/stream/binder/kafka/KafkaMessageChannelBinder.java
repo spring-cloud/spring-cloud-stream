@@ -191,6 +191,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	private static final Set<Object> KAFKA_PRODUCER_PROPERTIES = new SetBuilder()
 			.add(BinderPropertyKeys.MIN_PARTITION_COUNT)
+			.add(BinderPropertyKeys.REQUIRED_GROUPS)
 			.build();
 
 	/**
@@ -249,7 +250,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	private boolean resetOffsets = DEFAULT_RESET_OFFSETS;
 
-	private StartOffset startOffset = DEFAULT_START_OFFSET;
+	private StartOffset startOffset = null;
 
 	private int zkSessionTimeout = DEFAULT_ZK_SESSION_TIMEOUT;
 
@@ -440,9 +441,12 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		// Consumers reset offsets at the latest time by default, which allows them to receive only
 		// messages sent after they've been bound. That behavior can be changed with the
 		// "resetOffsets" and "startOffset" properties.
-		String consumerGroup = group == null ? "anonymous." + UUID.randomUUID().toString() : group;
+		boolean anonymous = !StringUtils.hasText(group);
+		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
+		// The reference point, if not set explicitly is the latest time for anonymous subscriptions and the
+		// earliest time for group subscriptions. This allows subscriptions to receive er
 		long referencePoint = this.startOffset != null ?
-				startOffset.getReferencePoint() : OffsetRequest.LatestTime();
+				startOffset.getReferencePoint() : (anonymous ? OffsetRequest.LatestTime() : OffsetRequest.EarliestTime());
 		return createKafkaConsumer(name, inputChannel, properties, consumerGroup, referencePoint);
 	}
 
