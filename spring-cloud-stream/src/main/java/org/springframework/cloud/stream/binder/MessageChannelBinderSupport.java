@@ -668,7 +668,13 @@ public abstract class MessageChannelBinderSupport
 	private void validateProperties(String name, Properties properties, Set<Object> supported, String type) {
 		StringBuilder builder = new StringBuilder();
 		int errors = 0;
+		List<String> ignorableKeys = Arrays.asList(BinderPropertyKeys.IGNORABLE_KEYS);
 		for (Entry<Object, Object> entry : properties.entrySet()) {
+			if (ignorableKeys.contains(entry.getKey())) {
+				logger.warn("Property '" + entry.getKey() + "' is ignored as it is not supported by the binder:" +
+						this.toString());
+				break;
+			}
 			if (!supported.contains(entry.getKey())) {
 				builder.append(entry.getKey()).append(",");
 				errors++;

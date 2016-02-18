@@ -136,4 +136,11 @@ public abstract class BinderPropertyKeys {
 	 */
 	public static final String MIN_PARTITION_COUNT = "minPartitionCount";
 
+	/**
+	 * The property keys which can be ignored by the binder when they are not supported by the corresponding
+	 * implementation.
+	 */
+	public static final String[] IGNORABLE_KEYS = { DURABLE, MIN_PARTITION_COUNT, BATCHING_ENABLED, BATCH_SIZE,
+			BATCH_BUFFER_LIMIT, BATCH_TIMEOUT };
+
 }
