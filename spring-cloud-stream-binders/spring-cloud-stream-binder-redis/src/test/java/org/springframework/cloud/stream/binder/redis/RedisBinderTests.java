@@ -38,7 +38,6 @@ import org.junit.Test;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
@@ -96,7 +95,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
 		assertEquals(binding, bindings.get(0));
-		AbstractEndpoint endpoint = ((DefaultBinding<?>)binding).getEndpoint();
+		AbstractEndpoint endpoint = extractEndpoint(binding);
 		assertThat(endpoint, instanceOf(RedisQueueMessageDrivenEndpoint.class));
 		assertSame(DirectChannel.class, TestUtils.getPropertyValue(endpoint, "outputChannel").getClass());
 		binding.unbind();
@@ -112,7 +111,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		binding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
 		assertEquals(1, bindings.size());
 		assertEquals(binding, bindings.get(0));
-		endpoint = ((DefaultBinding<?>)binding).getEndpoint();
+		endpoint = extractEndpoint(binding);
 		verifyConsumer(endpoint);
 
 		binding.unbind();
@@ -128,7 +127,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(2, bindings.size());
 		assertEquals(producerBinding, bindings.get(1));
-		AbstractEndpoint endpoint = ((DefaultBinding<?>)producerBinding).getEndpoint();
+		AbstractEndpoint endpoint = extractEndpoint(producerBinding);
 		@SuppressWarnings("unchecked")
 		Map<String, RedisQueueOutboundChannelAdapter> adapters = TestUtils.getPropertyValue(endpoint, "handler.adapters", Map.class);
 		RedisQueueOutboundChannelAdapter adapter = adapters.get("test");
@@ -147,7 +146,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 
 		producerBinding = binder.bindProducer("props.0", new DirectChannel(), properties);
 		assertEquals(2, bindings.size());
-		endpoint = ((DefaultBinding<?>)bindings.get(1)).getEndpoint();
+		endpoint = extractEndpoint(bindings.get(1));
 		adapter = (RedisQueueOutboundChannelAdapter) TestUtils.getPropertyValue(endpoint, "handler.adapters", Map.class).get("test");
 		assertEquals(
 				"'props.0.test-' + headers['partition']",

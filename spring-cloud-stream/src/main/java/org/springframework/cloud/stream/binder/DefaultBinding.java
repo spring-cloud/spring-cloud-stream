@@ -21,9 +21,7 @@ import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.util.Assert;
 
 /**
- * Represents a binding between an input or output and an adapter endpoint that connects via a Binder. The binding
- * could be for a consumer or a producer. A consumer binding represents a connection from an adapter to an
- * input. A producer binding represents a connection from an output to an adapter.
+ * Default implementation for a {@link Binding}.
  *
  * @author Jennifer Hickey
  * @author Mark Fisher
@@ -41,34 +39,17 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	private final AbstractEndpoint endpoint;
 
-	private final Type type;
-
 	private final DefaultBindingPropertiesAccessor properties;
 
-	private final AbstractBinder<T> abstractBinder;
-
-	private DefaultBinding(String name, String group, T target, AbstractEndpoint endpoint, Type type,
-						   DefaultBindingPropertiesAccessor properties, AbstractBinder<T> abstractBinder) {
+	public DefaultBinding(String name, String group, T target, AbstractEndpoint endpoint,
+						   DefaultBindingPropertiesAccessor properties) {
 		Assert.notNull(target, "target must not be null");
 		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
 		this.group = group;
 		this.target = target;
 		this.endpoint = endpoint;
-		this.type = type;
 		this.properties = properties;
-		this.abstractBinder = abstractBinder;
-	}
-
-
-	public static <T> DefaultBinding<T> forConsumer(String name, String group, AbstractEndpoint adapterFromBinder, T inputTarget,
-												  DefaultBindingPropertiesAccessor properties, AbstractBinder<T> binder) {
-		return new DefaultBinding<>(name, group, inputTarget, adapterFromBinder, Binding.Type.consumer, properties, binder);
-	}
-
-	public static <T> DefaultBinding<T> forProducer(String name, T outputTarget, AbstractEndpoint adapterToBinder,
-													  DefaultBindingPropertiesAccessor properties,  AbstractBinder<T> binder) {
-		return new DefaultBinding<>(name, null, outputTarget, adapterToBinder, Binding.Type.producer, properties, binder);
 	}
 
 
@@ -80,24 +61,14 @@ public class DefaultBinding<T> implements Binding<T> {
 		return group;
 	}
 
-	@Override
-	public T getTarget() {
-		return target;
-	}
-
-	public AbstractEndpoint getEndpoint() {
-		return endpoint;
-	}
 
 	@Override
-	public Type getType() {
-		return type;
-	}
-
-	@Override
-	public void unbind() {
+	public final void unbind() {
 		endpoint.stop();
-		abstractBinder.notifyUnbind(this);
+		afterUnbind();
+	}
+
+	protected void afterUnbind() {
 	}
 
 	public DefaultBindingPropertiesAccessor getPropertiesAccessor() {
@@ -106,7 +77,7 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public String toString() {
-		return type + " Binding [name=" + name + ", target=" + target + ", endpoint=" + endpoint.getComponentName()
+		return " Binding [name=" + name + ", target=" + target + ", endpoint=" + endpoint.getComponentName()
 				+ "]";
 	}
 }

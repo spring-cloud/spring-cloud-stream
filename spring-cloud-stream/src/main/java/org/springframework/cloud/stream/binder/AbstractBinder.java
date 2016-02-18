@@ -357,10 +357,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 
 	protected void notifyUnbind(DefaultBinding<T> binding) {
 		this.bindings.remove(binding);
-		afterUnbind(binding);
-	}
-
-	protected void afterUnbind(DefaultBinding<T> binding) {
 	}
 
 	protected void addBinding(DefaultBinding<T> binding) {

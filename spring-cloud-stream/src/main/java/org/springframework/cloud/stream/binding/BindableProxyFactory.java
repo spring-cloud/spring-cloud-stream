@@ -44,7 +44,6 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.config.ConsumerEndpointFactoryBean;
-import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.PollableChannel;
@@ -193,7 +192,6 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel, MessageChannel inputChannel) {
-		BridgeHandler bridgeHandler = new BridgeHandler();
 		sharedChannel.subscribe(new DirectHandler(inputChannel));
 	}
 

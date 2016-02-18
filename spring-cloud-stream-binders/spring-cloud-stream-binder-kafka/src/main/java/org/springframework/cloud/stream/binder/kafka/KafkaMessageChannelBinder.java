@@ -490,10 +490,9 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			consumer.setBeanFactory(this.getBeanFactory());
 			consumer.setBeanName("outbound." + name);
 			consumer.afterPropertiesSet();
-			DefaultBinding<MessageChannel> producerBinding = DefaultBinding.forProducer(name, moduleOutputChannel, consumer,
-					producerPropertiesAccessor, this);
+			DefaultBinding<MessageChannel> producerBinding = new DefaultBinding<>(name, null, moduleOutputChannel, consumer, Binding.Type.producer, producerPropertiesAccessor);
 			addBinding(producerBinding);
-			producerBinding.getEndpoint().start();
+			consumer.start();
 			return producerBinding;
 		}
 		catch (Exception e) {
@@ -645,9 +644,9 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		String groupedName = groupedName(name, group);
 		edc.setBeanName("inbound." + groupedName);
 
-		DefaultBinding<MessageChannel> consumerBinding = DefaultBinding.forConsumer(name, group, edc, moduleInputChannel, accessor, this);
+		DefaultBinding<MessageChannel> consumerBinding = new DefaultBinding<>(name, group, moduleInputChannel, edc, Binding.Type.consumer, accessor);
 		addBinding(consumerBinding);
-		consumerBinding.getEndpoint().start();
+		edc.start();
 		return consumerBinding;
 	}
 

@@ -136,7 +136,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		@SuppressWarnings("unchecked")
 		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
-		AbstractEndpoint endpoint = ((DefaultBinding)bindings.get(0)).getEndpoint();
+		AbstractEndpoint endpoint = extractEndpoint(bindings.get(0));
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertEquals(AcknowledgeMode.AUTO, container.getAcknowledgeMode());
@@ -175,7 +175,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		@SuppressWarnings("unchecked")
 		List<DefaultBinding<MessageChannel>> bindingsNow = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindingsNow.size());
-		endpoint = bindingsNow.get(0).getEndpoint();
+		endpoint = extractEndpoint(bindingsNow.get(0));
 		container = verifyContainer(endpoint);
 
 		assertEquals("foo.props.0.test", container.getQueueNames()[0]);
@@ -191,7 +191,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		@SuppressWarnings("unchecked")
 		List<DefaultBinding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
-		AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
+		AbstractEndpoint endpoint = extractEndpoint(bindings.get(0));
 		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
 				MessageDeliveryMode.class);
 		assertEquals(MessageDeliveryMode.PERSISTENT, mode);
@@ -213,7 +213,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 
 		producerBinding = binder.bindProducer("props.0", new DirectChannel(), properties);
 		assertEquals(1, bindings.size());
-		endpoint = bindings.get(0).getEndpoint();
+		endpoint = extractEndpoint(bindings.get(0));
 		assertEquals(
 				"'props.0-' + headers['partition']",
 				TestUtils.getPropertyValue(endpoint, "handler.delegate.routingKeyExpression",

@@ -511,14 +511,14 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			mapper.setReplyHeaderNames(properties.getReplyHeaderPattens(this.defaultReplyHeaderPatterns));
 			adapter.setHeaderMapper(mapper);
 			adapter.afterPropertiesSet();
-			consumerBinding = DefaultBinding.forConsumer(name, group, adapter, moduleInputChannel, properties,this);
+			consumerBinding = new RabbitConsumerBinding(name, group, moduleInputChannel, adapter, properties);
 			addBinding(consumerBinding);
 			ReceivingHandler convertingBridge = new ReceivingHandler();
 			convertingBridge.setOutputChannel(moduleInputChannel);
 			convertingBridge.setBeanName(name + ".convert.bridge");
 			convertingBridge.afterPropertiesSet();
 			bridgeToModuleChannel.subscribe(convertingBridge);
-			consumerBinding.getEndpoint().start();
+			adapter.start();
 		}
 		finally {
 			Thread.currentThread().setContextClassLoader(originalClassloader);
@@ -635,9 +635,9 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		consumer.setBeanFactory(getBeanFactory());
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
-		DefaultBinding<MessageChannel> producerBinding = DefaultBinding.forProducer(name, moduleOutputChannel, consumer, properties, this);
+		DefaultBinding<MessageChannel> producerBinding = new DefaultBinding<>(name, null, moduleOutputChannel, consumer, properties);
 		addBinding(producerBinding);
-		producerBinding.getEndpoint().start();
+		consumer.start();
 		return producerBinding;
 	}
 
@@ -714,13 +714,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		return prefix + DEAD_LETTER_EXCHANGE;
 	}
 
-	@Override
-	protected void afterUnbind(DefaultBinding<MessageChannel> binding) {
-		if (Binding.Type.consumer.equals(binding.getType())) {
-			cleanAutoDeclareContext(binding);
-		}
-	}
-
 	private void addToAutoDeclareContext(String name, Object bean) {
 		synchronized (this.autoDeclareContext) {
 			if (!this.autoDeclareContext.containsBean(name)) {
@@ -730,8 +723,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	}
 
 	private void cleanAutoDeclareContext(DefaultBinding<MessageChannel> binding) {
-		Assert.isTrue(binding.getPropertiesAccessor() instanceof RabbitPropertiesAccessor,
-				"Binding was not created by this binder");
 		String prefix = ((RabbitPropertiesAccessor) binding.getPropertiesAccessor()).getPrefix(this.defaultPrefix);
 		String name = binding.getName();
 		synchronized(this.autoDeclareContext) {

@@ -28,32 +28,10 @@ package org.springframework.cloud.stream.binder;
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public interface Binding<T> {
-
-	enum Type {
-		producer, consumer
-	}
-
-	/**
-	 * The name of the destination bound by the current binding.
-	 */
-	String getName();
-
-	/**
-	 * Returns the target component wrapped by this instance.
-	 * @return the target component
-	 */
-	T getTarget();
-
-	/**
-	 * Returns the binding type.
-	 * @return the binding type
-	 */
-	Type getType();
-
 	/**
 	 * Unbinds the target component represented by this instance and stop any active components. Implementations must
 	 * be idempotent. After this method is invoked, the target is not expected to receive any message, this instance
-	 * should be discarded, and a new Binding should be created instead,
+	 * should be discarded, and a new Binding should be created instead.
 	 */
 	void unbind();
 }

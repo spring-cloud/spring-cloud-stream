@@ -37,6 +37,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -45,6 +46,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.util.Assert;
 
 /**
  * Tests for binders that support partitioning.
@@ -167,7 +169,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(4, bindings.size());
 		try {
-			AbstractEndpoint endpoint = ((DefaultBinding<?>)bindings.get(3)).getEndpoint();
+			AbstractEndpoint endpoint = extractEndpoint(bindings.get(3));
 			assertThat(getEndpointRouting(endpoint), containsString(
 					getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']"));
 		}
@@ -265,7 +267,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		List<Binding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(4, bindings.size());
 		if (usesExplicitRouting()) {
-			AbstractEndpoint endpoint = ((DefaultBinding<?>)bindings.get(3)).getEndpoint();
+			AbstractEndpoint endpoint = extractEndpoint(bindings.get(3));
 			assertThat(getEndpointRouting(endpoint), containsString(
 					getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']"));
 		}
@@ -333,4 +335,9 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	protected abstract String getClassUnderTestName();
 
+	protected AbstractEndpoint extractEndpoint(Binding<MessageChannel> binding) {
+		Assert.isInstanceOf(DefaultBinding.class, binding, "Binding not of expected type, found " + binding.getClass().getName() + " instead");
+		DirectFieldAccessor accessor = new DirectFieldAccessor(binding);
+		return (AbstractEndpoint) accessor.getPropertyValue("endpoint");
+	}
 }

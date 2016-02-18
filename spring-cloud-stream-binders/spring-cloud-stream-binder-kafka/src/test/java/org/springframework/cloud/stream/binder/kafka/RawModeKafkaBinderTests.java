@@ -133,7 +133,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		List<DefaultBinding<MessageChannel>> bindings = TestUtils.getPropertyValue(binder, "binder.bindings", List.class);
 		assertEquals(1, bindings.size());
 		try {
-			AbstractEndpoint endpoint = bindings.get(0).getEndpoint();
+			AbstractEndpoint endpoint = extractEndpoint(bindings.get(0));
 			assertThat(getEndpointRouting(endpoint), containsString("part.0-' + headers['partition']"));
 		}
 		catch (UnsupportedOperationException ignored) {
