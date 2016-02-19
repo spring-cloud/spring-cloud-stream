@@ -45,10 +45,6 @@ public class KafkaBinderDefaultProperties {
 
 	private int queueSize;
 
-	private int sessionTimeoutMs;
-
-	private int connectionTimeoutMs;
-
 	public int getBatchSize() {
 		return batchSize;
 	}
@@ -127,21 +123,5 @@ public class KafkaBinderDefaultProperties {
 
 	public void setQueueSize(int queueSize) {
 		this.queueSize = queueSize;
-	}
-
-	public int getSessionTimeoutMs() {
-		return this.sessionTimeoutMs;
-	}
-
-	public void setSessionTimeoutMs(int sessionTimeoutMs) {
-		this.sessionTimeoutMs = sessionTimeoutMs;
-	}
-
-	public int getConnectionTimeoutMs() {
-		return this.connectionTimeoutMs;
-	}
-
-	public void setConnectionTimeoutMs(int connectionTimeoutMs) {
-		this.connectionTimeoutMs = connectionTimeoutMs;
 	}
 }

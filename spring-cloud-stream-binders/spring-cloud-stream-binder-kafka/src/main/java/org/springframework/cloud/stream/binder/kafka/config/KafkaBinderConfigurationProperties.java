@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.Mode;
 import org.springframework.util.StringUtils;
@@ -51,6 +50,16 @@ class KafkaBinderConfigurationProperties {
 	private boolean resetOffsets = false;
 
 	private KafkaMessageChannelBinder.StartOffset startOffset;
+
+	/**
+	 * ZK session timeout in milliseconds.
+	 */
+	private int zkSessionTimeout;
+
+	/**
+	 * ZK Connection timeout in milliseconds.
+	 */
+	private int zkConnectionTimeout;
 
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
@@ -131,6 +140,22 @@ class KafkaBinderConfigurationProperties {
 
 	public void setResetOffsets(boolean resetOffsets) {
 		this.resetOffsets = resetOffsets;
+	}
+
+	public int getZkSessionTimeout() {
+		return this.zkSessionTimeout;
+	}
+
+	public void setZkSessionTimeout(int zkSessionTimeout) {
+		this.zkSessionTimeout = zkSessionTimeout;
+	}
+
+	public int getZkConnectionTimeout() {
+		return this.zkConnectionTimeout;
+	}
+
+	public void setZkConnectionTimeout(int zkConnectionTimeout) {
+		this.zkConnectionTimeout = zkConnectionTimeout;
 	}
 
 	/**

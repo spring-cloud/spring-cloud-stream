@@ -157,6 +157,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private static final boolean DEFAULT_RESET_OFFSETS = false;
 
+	private static final int DEFAULT_ZK_SESSION_TIMEOUT = 10000;
+
+	private static final int DEFAULT_ZK_CONNECTION_TIMEOUT = 10000;
+
 	private static final StartOffset DEFAULT_START_OFFSET = StartOffset.latest;
 
 	private RetryOperations retryOperations;
@@ -226,10 +230,6 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private int defaultMinPartitionCount = 1;
 
-	private int defaultSessionTimeoutMs = 10000;
-
-	private int defaultConnectionTimeoutMs = 10000;
-
 	private ConnectionFactory connectionFactory;
 
 	// auto commit property
@@ -249,6 +249,10 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private boolean resetOffsets = DEFAULT_RESET_OFFSETS;
 
 	private StartOffset startOffset = DEFAULT_START_OFFSET;
+
+	private int zkSessionTimeout = DEFAULT_ZK_SESSION_TIMEOUT;
+
+	private int zkConnectionTimeout = DEFAULT_ZK_CONNECTION_TIMEOUT;
 
 	private ProducerListener producerListener;
 
@@ -376,22 +380,6 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 		this.defaultQueueSize = defaultQueueSize;
 	}
 
-	public int getDefaultSessionTimeoutMs() {
-		return this.defaultSessionTimeoutMs;
-	}
-
-	public void setDefaultSessionTimeoutMs(int defaultSessionTimeoutMs) {
-		this.defaultSessionTimeoutMs = defaultSessionTimeoutMs;
-	}
-
-	public int getDefaultConnectionTimeoutMs() {
-		return this.defaultConnectionTimeoutMs;
-	}
-
-	public void setDefaultConnectionTimeoutMs(int defaultConnectionTimeoutMs) {
-		this.defaultConnectionTimeoutMs = defaultConnectionTimeoutMs;
-	}
-
 	public void setDefaultFetchSize(int defaultFetchSize) {
 		this.defaultFetchSize = defaultFetchSize;
 	}
@@ -422,6 +410,22 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	public void setStartOffset(StartOffset startOffset) {
 		this.startOffset = startOffset;
+	}
+
+	public int getZkSessionTimeout() {
+		return this.zkSessionTimeout;
+	}
+
+	public void setZkSessionTimeout(int zkSessionTimeout) {
+		this.zkSessionTimeout = zkSessionTimeout;
+	}
+
+	public int getZkConnectionTimeout() {
+		return this.zkConnectionTimeout;
+	}
+
+	public void setZkConnectionTimeout(int zkConnectionTimeout) {
+		this.zkConnectionTimeout = zkConnectionTimeout;
 	}
 
 	Map<String, Collection<Partition>> getTopicsInUse() {
@@ -502,7 +506,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private Collection<Partition> ensureTopicCreated(final String topicName, final int numPartitions,
 			int replicationFactor) {
 
-		final ZkClient zkClient = new ZkClient(zkAddress, getDefaultSessionTimeoutMs(), getDefaultConnectionTimeoutMs(),
+		final ZkClient zkClient = new ZkClient(zkAddress, getZkSessionTimeout(), getZkConnectionTimeout(),
 				ZKStringSerializer$.MODULE$);
 		try {
 			// The following is basically copy/paste from AdminUtils.createTopic() with
