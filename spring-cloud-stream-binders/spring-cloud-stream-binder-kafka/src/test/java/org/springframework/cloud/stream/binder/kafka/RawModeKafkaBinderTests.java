@@ -274,41 +274,6 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		assertTrue(getBindings(binder).isEmpty());
 	}
 
-	@Test
-	@Override
-	public void testSendAndReceiveMutipleTopics() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-
-		DirectChannel moduleOutputChannel1 = new DirectChannel();
-		DirectChannel moduleOutputChannel2 = new DirectChannel();
-
-		QueueChannel moduleInputChannel = new QueueChannel();
-
-		Binding<MessageChannel> producerBinding1 = binder.bindProducer("foo.x", moduleOutputChannel1, null);
-		Binding<MessageChannel> producerBinding2 = binder.bindProducer("foo.y", moduleOutputChannel2, null);
-
-		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer("foo.x", "test", moduleInputChannel, null);
-		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer("foo.y", "test", moduleInputChannel, null);
-
-		Message<?> message1 = MessageBuilder.withPayload("foo-x-payload".getBytes()).build();
-		Message<?> message2 = MessageBuilder.withPayload("foo-y-payload".getBytes()).build();
-
-		// Let the consumer actually bind to the producer before sending a msg
-		binderBindUnbindLatency();
-		moduleOutputChannel1.send(message1);
-		Thread.sleep(50);
-		moduleOutputChannel2.send(message2);
-
-		assertMessageReceive(moduleInputChannel, "foo-x-payload");
-		assertMessageReceive(moduleInputChannel, "foo-y-payload");
-
-		binder.unbind(producerBinding1);
-		binder.unbind(consumerBinding1);
-
-		binder.unbind(producerBinding2);
-		binder.unbind(consumerBinding2);
-	}
-
 	private void assertMessageReceive(QueueChannel moduleInputChannel, String payload) {
 		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);

@@ -16,14 +16,19 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.collection.IsArrayContainingInAnyOrder.arrayContainingInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Test;
@@ -107,7 +112,7 @@ public abstract class AbstractBinderTests {
 	}
 
 	@Test
-	public void testSendAndReceiveMutipleTopics() throws Exception {
+	public void testSendAndReceiveMultipleTopics() throws Exception {
 		Binder<MessageChannel> binder = getBinder();
 
 		DirectChannel moduleOutputChannel1 = new DirectChannel();
@@ -121,33 +126,33 @@ public abstract class AbstractBinderTests {
 		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer("foo.x", "test", moduleInputChannel, null);
 		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer("foo.y", "test", moduleInputChannel, null);
 
-		Message<?> message1 = MessageBuilder.withPayload("foo-x-payload").setHeader(MessageHeaders.CONTENT_TYPE,
-				"foo/bar").build();
-		Message<?> message2 = MessageBuilder.withPayload("foo-y-payload").setHeader(MessageHeaders.CONTENT_TYPE,
-				"foo/bar").build();
+		String testPayload1 = "foo" + UUID.randomUUID().toString();
+		Message<?> message1 = MessageBuilder.withPayload(testPayload1.getBytes()).build();
+		String testPayload2 = "foo" + UUID.randomUUID().toString();
+		Message<?> message2 = MessageBuilder.withPayload(testPayload2.getBytes()).build();
 
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel1.send(message1);
-		Thread.sleep(50);
 		moduleOutputChannel2.send(message2);
 
-		assertMessageReceive(moduleInputChannel, "foo-x-payload");
-		assertMessageReceive(moduleInputChannel, "foo-y-payload");
+
+		Message<?> messages[] = new Message[2];
+		messages[0] = receive(moduleInputChannel);
+		messages[1] = receive(moduleInputChannel);
+
+		assertNotNull(messages[0]);
+		assertNotNull(messages[1]);
+		assertThat(messages, arrayContainingInAnyOrder(
+				hasProperty("payload", equalTo(testPayload1.getBytes())),
+				hasProperty("payload", equalTo(testPayload2.getBytes()))));
+
 
 		binder.unbind(producerBinding1);
 		binder.unbind(consumerBinding1);
 
 		binder.unbind(producerBinding2);
 		binder.unbind(consumerBinding2);
-	}
-
-	private void assertMessageReceive(QueueChannel moduleInputChannel, String payload) {
-		Message<?> inbound = receive(moduleInputChannel);
-		assertNotNull(inbound);
-		assertEquals(payload, inbound.getPayload());
-		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertEquals("foo/bar", inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 	}
 
 	@Test
