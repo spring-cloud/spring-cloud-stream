@@ -600,7 +600,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 				}
 			}
 		}
-
+		topicsInUse.put(name, listenedPartitions);
 		ReceivingHandler rh = new ReceivingHandler();
 		rh.setOutputChannel(moduleInputChannel);
 

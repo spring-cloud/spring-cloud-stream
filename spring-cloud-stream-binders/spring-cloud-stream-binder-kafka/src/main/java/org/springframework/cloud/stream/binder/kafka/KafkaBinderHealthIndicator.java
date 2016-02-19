@@ -48,15 +48,29 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 	@Override
 	public Health health() {
-		ZkClient zkClient = new ZkClient(binder.getZkAddress(), binder.getZkSessionTimeout(),
-				binder.getZkConnectionTimeout(), ZKStringSerializer$.MODULE$);
-		Set<String> brokersInClusterSet = new HashSet<>();
+		ZkClient zkClient = null;
 		try {
+			zkClient = new ZkClient(binder.getZkAddress(), binder.getZkSessionTimeout(),
+					binder.getZkConnectionTimeout(), ZKStringSerializer$.MODULE$);
+			Set<String> brokersInClusterSet = new HashSet<>();
 			Seq<Broker> allBrokersInCluster = ZkUtils$.MODULE$.getAllBrokersInCluster(zkClient);
 			Collection<Broker> brokersInCluster = JavaConversions.asJavaCollection(allBrokersInCluster);
 			for (Broker broker : brokersInCluster) {
 				brokersInClusterSet.add(broker.connectionString());
 			}
+			Set<String> downMessages = new HashSet<>();
+			for (Map.Entry<String, Collection<Partition>> entry : binder.getTopicsInUse().entrySet()) {
+				for (Partition partition : entry.getValue()) {
+					BrokerAddress address = binder.getConnectionFactory().getLeader(partition);
+					if (!brokersInClusterSet.contains(address.toString())) {
+						downMessages.add(address.toString());
+					}
+				}
+			}
+			if (downMessages.isEmpty()) {
+				return Health.up().build();
+			}
+			return Health.down().withDetail("Following brokers are down: ", downMessages.toString()).build();
 		}
 		catch (Exception e) {
 			return Health.down(e).build();
@@ -71,18 +85,5 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 				}
 			}
 		}
-		Set<String> downMessages = new HashSet<>();
-		for (Map.Entry<String, Collection<Partition>> entry : binder.getTopicsInUse().entrySet()) {
-			for (Partition partition : entry.getValue()) {
-				BrokerAddress address = binder.getConnectionFactory().getLeader(partition);
-				if (!brokersInClusterSet.contains(address.toString())) {
-					downMessages.add(address.toString());
-				}
-			}
-		}
-		if (downMessages.isEmpty()) {
-			return Health.up().build();
-		}
-		return Health.down().withDetail("Following brokers are down: ", downMessages.toString()).build();
 	}
 }
