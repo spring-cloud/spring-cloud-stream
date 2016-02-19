@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
@@ -35,10 +36,13 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(SourceBindingTestsWithBindingTargets.TestSource.class)
@@ -51,10 +55,16 @@ public class SourceBindingTestsWithBindingTargets {
 	@Autowired @Bindings(TestSource.class)
 	private Source testSource;
 
+	@Autowired
+	@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)
+	private PublishSubscribeChannel errorChannel;
+
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
 		verify(binder).bindProducer(eq("testtock"), eq(testSource.output()), Mockito.<Properties>any());
+		//Check error channel binding
+		verify(binder).bindProducer(eq("error-test"), eq(errorChannel), Mockito.<Properties>any());
 		verifyNoMoreInteractions(binder);
 	}
 
