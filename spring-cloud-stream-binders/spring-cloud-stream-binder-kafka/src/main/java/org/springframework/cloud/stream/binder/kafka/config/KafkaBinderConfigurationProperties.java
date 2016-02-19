@@ -51,6 +51,11 @@ class KafkaBinderConfigurationProperties {
 
 	private KafkaMessageChannelBinder.StartOffset startOffset;
 
+	/**
+	 * Flag to indicate if the Kafka Producer is synchronous or asynchronous.
+	 */
+	private boolean syncProducer = false;
+
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
 	}
@@ -130,6 +135,14 @@ class KafkaBinderConfigurationProperties {
 
 	public void setResetOffsets(boolean resetOffsets) {
 		this.resetOffsets = resetOffsets;
+	}
+
+	public boolean isSyncProducer() {
+		return this.syncProducer;
+	}
+
+	public void setSyncProducer(boolean syncProducer) {
+		this.syncProducer = syncProducer;
 	}
 
 	/**

@@ -157,6 +157,8 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private static final boolean DEFAULT_RESET_OFFSETS = false;
 
+	private static final boolean DEFAULT_SYNC_PRODUCER = false;
+
 	private static final StartOffset DEFAULT_START_OFFSET = StartOffset.latest;
 
 	private RetryOperations retryOperations;
@@ -210,7 +212,6 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private static final Set<Object> KAFKA_PRODUCER_PROPERTIES = new SetBuilder()
 			.add(BinderPropertyKeys.MIN_PARTITION_COUNT)
-			.add(BinderPropertyKeys.SYNC_PRODUCER)
 			.build();
 
 	/**
@@ -251,8 +252,6 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	private int defaultMinPartitionCount = 1;
 
-	private boolean defaultSyncProducer = false;
-
 	private ConnectionFactory connectionFactory;
 
 	// auto commit property
@@ -272,6 +271,8 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 	private boolean resetOffsets = DEFAULT_RESET_OFFSETS;
 
 	private StartOffset startOffset = DEFAULT_START_OFFSET;
+
+	private boolean syncProducer = DEFAULT_SYNC_PRODUCER;
 
 	private ProducerListener producerListener;
 
@@ -307,6 +308,14 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 	public void setOffsetUpdateShutdownTimeout(int offsetUpdateShutdownTimeout) {
 		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
+	}
+
+	public boolean isSyncProducer() {
+		return this.syncProducer;
+	}
+
+	public void setSyncProducer(boolean syncProducer) {
+		this.syncProducer = syncProducer;
 	}
 
 	public ConnectionFactory getConnectionFactory() {
@@ -457,7 +466,7 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 		ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(
 				name, byte[].class, byte[].class, BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
-		producerMetadata.setSync(producerPropertiesAccessor.getSyncProducer(this.defaultSyncProducer));
+		producerMetadata.setSync(isSyncProducer());
 		producerMetadata.setCompressionType(ProducerMetadata.CompressionType.valueOf(
 				producerPropertiesAccessor.getCompressionCodec(this.defaultCompressionCodec)));
 		producerMetadata.setBatchBytes(producerPropertiesAccessor.getBatchSize(this.defaultBatchSize));
@@ -759,10 +768,6 @@ public class KafkaMessageChannelBinder extends MessageChannelBinderSupport {
 
 		public int getMinPartitionCount(int defaultPartitionCount) {
 			return getProperty(BinderPropertyKeys.MIN_PARTITION_COUNT, defaultPartitionCount);
-		}
-
-		public boolean getSyncProducer(boolean defaultSyncProducer) {
-			return getProperty(BinderPropertyKeys.SYNC_PRODUCER, defaultSyncProducer);
 		}
 
 	}

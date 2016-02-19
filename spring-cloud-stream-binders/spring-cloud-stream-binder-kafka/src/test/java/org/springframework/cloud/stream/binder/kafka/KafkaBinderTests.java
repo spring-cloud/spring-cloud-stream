@@ -491,17 +491,16 @@ public class KafkaBinderTests extends PartitionCapableBinderTests {
 	public void testSyncProducerMetadata() throws Exception {
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
 				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		binder.setSyncProducer(true);
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
 
 		DirectChannel output = new DirectChannel();
-		Properties properties = new Properties();
-		properties.setProperty("syncProducer", "true");
 
 		String testTopicName = UUID.randomUUID().toString();
-		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output, properties);
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output, null);
 		DirectFieldAccessor accessor = new DirectFieldAccessor(((EventDrivenConsumer)(producerBinding.getEndpoint())));
 		MessageHandler handler = (MessageHandler) accessor.getPropertyValue("handler");
 		DirectFieldAccessor accessor1 = new DirectFieldAccessor(handler);

@@ -92,10 +92,6 @@ public class BindingProperties {
 	// Rabbit specific consumer properties
 	private Boolean durableSubscription;
 
-	// Kafka specific producer properties
-	private Boolean syncProducer = false;
-
-
 	public String getDestination() {
 		return this.destination;
 	}
@@ -256,14 +252,6 @@ public class BindingProperties {
 		this.durableSubscription = durableSubscription;
 	}
 
-	public Boolean isSyncProducer() {
-		return this.syncProducer;
-	}
-
-	public void setSyncProducer(Boolean syncProducer) {
-		this.syncProducer = syncProducer;
-	}
-
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("destination=" + this.destination);
@@ -340,10 +328,6 @@ public class BindingProperties {
 		}
 		if (this.durableSubscription != null) {
 			sb.append("durableSubscription=" + this.durableSubscription);
-			sb.append(COMMA);
-		}
-		if (this.syncProducer != null) {
-			sb.append("syncProducer=" + this.syncProducer);
 			sb.append(COMMA);
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));

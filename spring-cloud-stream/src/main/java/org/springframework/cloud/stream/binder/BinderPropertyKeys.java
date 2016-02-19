@@ -136,9 +136,4 @@ public abstract class BinderPropertyKeys {
 	 */
 	public static final String MIN_PARTITION_COUNT = "minPartitionCount";
 
-	/**
-	 * Flag to indicate if the Kafka producer needs to be synchronous/asynchronous.
-	 */
-	public static final String SYNC_PRODUCER = "syncProducer";
-
 }
