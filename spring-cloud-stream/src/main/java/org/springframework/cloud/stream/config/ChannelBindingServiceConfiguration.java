@@ -24,13 +24,16 @@ import java.util.Map;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
+import org.springframework.cloud.stream.binding.BindableErrorChannel;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
@@ -48,6 +51,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.expression.PropertyAccessor;
+import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.json.JsonPropertyAccessor;
@@ -68,6 +72,12 @@ import org.springframework.messaging.core.DestinationResolver;
 @Configuration
 @EnableConfigurationProperties(ChannelBindingServiceProperties.class)
 public class ChannelBindingServiceConfiguration {
+
+	private static final String ERROR_CHANNEL_NAME = "error";
+
+	@Autowired
+	@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)
+	private PublishSubscribeChannel errorChannel;
 
 	@Autowired
 	MessageBuilderFactory messageBuilderFactory;
@@ -199,6 +209,12 @@ public class ChannelBindingServiceConfiguration {
 				}
 			};
 		}
+	}
+
+	@Bean
+	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
+	public BindableErrorChannel bindableErrorChannel() {
+		return new BindableErrorChannel(ERROR_CHANNEL_NAME, errorChannel);
 	}
 
 }

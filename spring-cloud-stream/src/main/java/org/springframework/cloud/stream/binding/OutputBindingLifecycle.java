@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binding;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;

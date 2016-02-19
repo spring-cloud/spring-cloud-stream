@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -75,16 +74,6 @@ public class PartitionedProducerTest {
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/partitioned-producer-test.properties")
 	public static class TestSource {
 
-	}
-
-	class PropertiesArgumentMatcher extends ArgumentMatcher<Properties> {
-		@Override
-		public boolean matches(Object argument) {
-			if (!(argument instanceof Properties)) {
-				return false;
-			}
-			return true;
-		}
 	}
 
 }

@@ -117,7 +117,7 @@ public class MessageChannelConfigurerTests {
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	@Import(RedisMessageChannelBinderConfiguration.class)
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/source-channel-configurers.properties")
+	@PropertySource("classpath:/org/springframework/cloud/stream/config/channel/source-channel-configurers.properties")
 	public static class TestSource {
 
 	}
@@ -125,7 +125,7 @@ public class MessageChannelConfigurerTests {
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	@Import(RedisMessageChannelBinderConfiguration.class)
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/sink-channel-configurers.properties")
+	@PropertySource("classpath:/org/springframework/cloud/stream/config/channel/sink-channel-configurers.properties")
 	public static class TestSink {
 
 	}

@@ -260,7 +260,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			String outputChannelName = channelHolderEntry.getKey();
 			if (channelHolderEntry.getValue().isBindable()) {
-				if (log.isDebugEnabled()) {
+			if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, outputChannelName));
 				}
 				channelBindingService.bindProducer(channelHolder.getMessageChannel(), outputChannelName);
