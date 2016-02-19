@@ -132,7 +132,7 @@ public abstract class BinderPropertyKeys {
 	public static final String DURABLE = "durableSubscription";
 
 	/**
-	 * Minimum partition count, if the transport supports partitioning natively (e.g. Kafka)
+	 * Minimum partition count, if the transport supports partitioning natively (e.g. Kafka).
 	 */
 	public static final String MIN_PARTITION_COUNT = "minPartitionCount";
 

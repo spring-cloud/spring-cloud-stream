@@ -84,6 +84,8 @@ public class KafkaServiceAutoConfiguration {
 		kafkaMessageChannelBinder.setResetOffsets(kafkaBinderConfigurationProperties.isResetOffsets());
 		kafkaMessageChannelBinder.setStartOffset(kafkaBinderConfigurationProperties.getStartOffset());
 
+		kafkaMessageChannelBinder.setSyncProducer(kafkaBinderConfigurationProperties.isSyncProducer());
+
 		kafkaMessageChannelBinder.setDefaultAutoCommitEnabled(kafkaBinderDefaultProperties.isAutoCommitEnabled());
 		kafkaMessageChannelBinder.setDefaultBatchSize(kafkaBinderDefaultProperties.getBatchSize());
 		kafkaMessageChannelBinder.setDefaultBatchTimeout(kafkaBinderDefaultProperties.getBatchTimeout());
