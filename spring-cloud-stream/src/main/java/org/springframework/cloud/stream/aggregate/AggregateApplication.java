@@ -17,20 +17,16 @@
 package org.springframework.cloud.stream.aggregate;
 
 import org.springframework.boot.Banner.Mode;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * Class that is responsible for embedding modules using shared channel registry.
+ * Class that is responsible for embedding apps using shared channel registry.
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -39,7 +35,7 @@ public class AggregateApplication {
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
-	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
+	public static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
 
 	public static final String INPUT_CHANNEL_NAME = "input";
 
@@ -47,41 +43,41 @@ public class AggregateApplication {
 
 	/**
 	 * Supports the aggregation of {@link Source}, {@link Sink} and {@link Processor}
-	 * modules by instantiating and binding them directly
+	 * apps by instantiating and binding them directly
 	 *
 	 * @param parentArgs arguments for the parent (prefixed with '--')
-	 * @param modules a list module classes to be aggregated
-	 * @param moduleArgs arguments for the modules (prefixed with '--")
+	 * @param apps a list app classes to be aggregated
+	 * @param appArgs arguments for the apps (prefixed with '--")
 	 *
 	 * @return the resulting parent context for the aggregate
 	 */
-	public static ConfigurableApplicationContext run(Class<?>[] modules, String[] parentArgs, String[][] moduleArgs) {
+	public static ConfigurableApplicationContext run(Class<?>[] apps, String[] parentArgs, String[][] appArgs) {
 		ConfigurableApplicationContext parentContext = createParentContext(parentArgs != null ? parentArgs
 				: new String[0]);
-		runEmbedded(parentContext, modules, moduleArgs);
+		runEmbedded(parentContext, apps, appArgs);
 		return parentContext;
 	}
 
-	public static ConfigurableApplicationContext run(Class<?>... modules) {
-		return run(modules, null, null);
+	public static ConfigurableApplicationContext run(Class<?>... apps) {
+		return run(apps, null, null);
 	}
 
 	/**
-	 * Embeds a group of modules into an existing parent context
+	 * Embeds a group of apps into an existing parent context
 	 *
 	 * @param parentContext the parent context
-	 * @param modules a list of classes, representing root context definitions for modules
-	 * @param args arguments for the modules
+	 * @param apps a list of classes, representing root context definitions for apps
+	 * @param args arguments for the apps
 	 */
 	public static void runEmbedded(ConfigurableApplicationContext parentContext,
-			Class<?>[] modules, String[][] args) {
+			Class<?>[] apps, String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
-		prepareSharedChannelRegistry(bean, modules);
+		prepareSharedChannelRegistry(bean, apps);
 		// create child contexts first
-		createChildContexts(parentContext, modules, args);
+		createChildContexts(parentContext, apps, args);
 	}
 
-	private static ConfigurableApplicationContext createParentContext(String[] args) {
+	protected static ConfigurableApplicationContext createParentContext(String[] args) {
 		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
 		aggregatorParentConfiguration
 				.sources(AggregatorParentConfiguration.class)
@@ -93,58 +89,44 @@ public class AggregateApplication {
 	}
 
 	private static void createChildContexts(ConfigurableApplicationContext parentContext,
-			Class<?>[] modules, String args[][]) {
-		for (int i = modules.length - 1; i >= 0; i--) {
-			String moduleClassName = modules[i].getName();
-			embedModule(parentContext, getNamespace(moduleClassName, i), modules[i])
+			Class<?>[] apps, String args[][]) {
+		for (int i = apps.length - 1; i >= 0; i--) {
+			String appClassName = apps[i].getName();
+			embedApp(parentContext, getNamespace(appClassName, i), apps[i])
 					.run(args != null ? args[i] : new String[0]);
 		}
 	}
 
-	private static String getNamespace(String moduleClassName, int index) {
-		return moduleClassName + "_" + index;
+	protected static String getNamespace(String appClassName, int index) {
+		return appClassName + "_" + index;
 	}
 
-	private static SpringApplicationBuilder embedModule(
+	protected static SpringApplicationBuilder embedApp(
 			ConfigurableApplicationContext applicationContext, String namespace,
-			Class<?> module) {
-		return new SpringApplicationBuilder(module)
+			Class<?> app) {
+		return new SpringApplicationBuilder(app)
 				.web(false)
 				.bannerMode(Mode.OFF)
-				.properties("spring.jmx.default-domain=" + module)
+				.properties("spring.jmx.default-domain=" + app)
 				.properties(CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
 				.registerShutdownHook(false)
 				.parent(applicationContext);
 	}
 
-	private static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] modules) {
+	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps) {
 		SubscribableChannel sharedChannel = null;
-		for (int i = 0; i < modules.length; i++) {
-			Class<?> module = modules[i];
-			String moduleClassName = module.getName();
+		for (int i = 0; i < apps.length; i++) {
+			Class<?> app = apps[i];
+			String appClassName = app.getName();
 			if (i > 0) {
-				sharedChannelRegistry.register(getNamespace(moduleClassName, i)
+				sharedChannelRegistry.register(getNamespace(appClassName, i)
 						+ "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
-			if (i < modules.length - 1) {
-				sharedChannelRegistry.register(getNamespace(moduleClassName, i)
+			if (i < apps.length - 1) {
+				sharedChannelRegistry.register(getNamespace(appClassName, i)
 						+ "." + OUTPUT_CHANNEL_NAME, sharedChannel);
 			}
-		}
-	}
-
-	/**
-	 * Basic configuration for a parent
-	 */
-	@EnableAutoConfiguration
-	@EnableBinding
-	public static class AggregatorParentConfiguration {
-
-		@Bean
-		@ConditionalOnMissingBean(SharedChannelRegistry.class)
-		public SharedChannelRegistry sharedChannelRegistry() {
-			return new SharedChannelRegistry();
 		}
 	}
 
