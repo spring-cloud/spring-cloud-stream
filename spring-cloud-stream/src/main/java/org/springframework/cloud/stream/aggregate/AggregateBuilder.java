@@ -82,7 +82,9 @@ public class AggregateBuilder implements ApplicationContextAware {
 	public class SourceConfigurer {
 
 		private Class<?> module;
+
 		private String[] names = null;
+
 		private String[] profiles = null;
 
 		public SourceConfigurer(Class<?> module) {
@@ -111,7 +113,7 @@ public class AggregateBuilder implements ApplicationContextAware {
 
 		private void build() {
 			childContext(this.module).config(this.names).profiles(this.profiles)
-			.output(channelName()).build();
+					.output(channelName()).build();
 		}
 
 	}
@@ -119,7 +121,9 @@ public class AggregateBuilder implements ApplicationContextAware {
 	public class SinkConfigurer {
 
 		private Class<?> module;
+
 		private String[] names = null;
+
 		private String[] profiles = null;
 
 		public SinkConfigurer profiles(String... profiles) {
@@ -139,7 +143,7 @@ public class AggregateBuilder implements ApplicationContextAware {
 
 		void build() {
 			childContext(this.module).config(this.names).profiles(this.profiles)
-			.input(channelName()).build();
+					.input(channelName()).build();
 		}
 
 	}
@@ -147,7 +151,9 @@ public class AggregateBuilder implements ApplicationContextAware {
 	public class ProcessorConfigurer {
 
 		private Class<?> module;
+
 		private String[] names = null;
+
 		private String[] profiles = null;
 
 		public ProcessorConfigurer(Class<?> module) {
@@ -176,7 +182,7 @@ public class AggregateBuilder implements ApplicationContextAware {
 
 		private void build() {
 			childContext(this.module).config(this.names).profiles(this.profiles)
-			.input(incrementChannelName()).output(channelName()).build();
+					.input(incrementChannelName()).output(channelName()).build();
 		}
 
 	}
@@ -191,8 +197,11 @@ public class AggregateBuilder implements ApplicationContextAware {
 	private class ChildContextBuilder {
 
 		private SpringApplicationBuilder builder;
+
 		private String configName;
+
 		private String input;
+
 		private String output;
 
 		public ChildContextBuilder(SpringApplicationBuilder builder) {
@@ -240,7 +249,7 @@ public class AggregateBuilder implements ApplicationContextAware {
 	}
 
 	private class BeanPostProcessorInitializer implements
-	ApplicationContextInitializer<ConfigurableApplicationContext> {
+			ApplicationContextInitializer<ConfigurableApplicationContext> {
 
 		@Override
 		public void initialize(ConfigurableApplicationContext applicationContext) {
