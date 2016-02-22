@@ -110,7 +110,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		verifyConsumer(endpoint);
 
 		binding.unbind();
-		assertFalse(extractEndpoint(binding).isRunning());
+		assertFalse(endpoint.isRunning());
 	}
 
 	@Test
