@@ -335,7 +335,7 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 	}
 
 	@Override
-	public final Binding<T> bindConsumer(String name, String group, T inputChannel, Properties properties) {
+	public final Binding<T> bindConsumer(String name, String group, T target, Properties properties) {
 		DefaultBindingPropertiesAccessor accessor = new DefaultBindingPropertiesAccessor(properties);
 		if (StringUtils.isEmpty(group)) {
 			Assert.isTrue(!accessor.getProperty(BinderPropertyKeys.DURABLE, defaultDurableSubscription),
@@ -343,10 +343,10 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 			Assert.isTrue(accessor.getPartitionIndex() < 0,
 					"A consumer group is required for a partitioned subscription");
 		}
-		return doBindConsumer(name, group, inputChannel, properties);
+		return doBindConsumer(name, group, target, properties);
 	}
 
-	protected abstract Binding<T> doBindConsumer(String name, String group, T inputChannel, Properties properties);
+	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget, Properties properties);
 
 	/**
 	 * Construct a name comprised of the name and group.

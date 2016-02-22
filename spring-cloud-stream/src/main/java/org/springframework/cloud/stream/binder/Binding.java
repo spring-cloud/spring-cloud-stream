@@ -29,7 +29,7 @@ package org.springframework.cloud.stream.binder;
  */
 public interface Binding<T> {
 	/**
-	 * Unbinds the target component represented by this instance and stop any active components. Implementations must
+	 * Unbinds the target component represented by this instance and stops any active components. Implementations must
 	 * be idempotent. After this method is invoked, the target is not expected to receive any message, this instance
 	 * should be discarded, and a new Binding should be created instead.
 	 */

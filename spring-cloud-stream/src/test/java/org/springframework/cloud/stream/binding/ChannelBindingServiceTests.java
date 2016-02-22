@@ -190,7 +190,6 @@ public class ChannelBindingServiceTests {
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
-		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		@SuppressWarnings("unchecked")
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
 		when(binder.bindProducer(

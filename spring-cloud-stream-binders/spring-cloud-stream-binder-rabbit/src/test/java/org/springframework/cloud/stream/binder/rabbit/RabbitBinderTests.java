@@ -122,7 +122,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests {
 		});
 		moduleOutputChannel.send(message);
 		assertTrue(latch.await(10, TimeUnit.SECONDS));
-		consumerBinding.unbind();
+		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
 

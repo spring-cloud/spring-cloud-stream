@@ -92,12 +92,11 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		Properties properties = new Properties();
 		properties.put("maxAttempts", "1"); // disable retry
 		Binding<MessageChannel> binding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
-		assertEquals(binding, binding);
 		AbstractEndpoint endpoint = extractEndpoint(binding);
 		assertThat(endpoint, instanceOf(RedisQueueMessageDrivenEndpoint.class));
 		assertSame(DirectChannel.class, TestUtils.getPropertyValue(endpoint, "outputChannel").getClass());
 		binding.unbind();
-		assertFalse(extractEndpoint(binding).isRunning());
+		assertFalse(endpoint.isRunning());
 
 		properties.put("backOffInitialInterval", "2000");
 		properties.put("backOffMaxInterval", "20000");
@@ -119,15 +118,15 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		Binder<MessageChannel> binder = getBinder();
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("props.0", "test", new DirectChannel(), null);
 		Binding<MessageChannel> producerBinding = binder.bindProducer("props.0", new DirectChannel(), null);
-		AbstractEndpoint endpoint = extractEndpoint(producerBinding);
+		AbstractEndpoint producerEndpoint = extractEndpoint(producerBinding);
 		@SuppressWarnings("unchecked")
-		Map<String, RedisQueueOutboundChannelAdapter> adapters = TestUtils.getPropertyValue(endpoint, "handler.adapters", Map.class);
+		Map<String, RedisQueueOutboundChannelAdapter> adapters = TestUtils.getPropertyValue(producerEndpoint, "handler.adapters", Map.class);
 		RedisQueueOutboundChannelAdapter adapter = adapters.get("test");
 		assertEquals(
 				"props.0.test",
 				TestUtils.getPropertyValue(adapter, "queueNameExpression", Expression.class).getExpressionString());
 		producerBinding.unbind();
-		assertFalse(endpoint.isRunning());
+		assertFalse(producerEndpoint.isRunning());
 
 		Properties properties = new Properties();
 		properties.put("partitionKeyExpression", "'foo'");
@@ -137,15 +136,15 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
 
 		producerBinding = binder.bindProducer("props.0", new DirectChannel(), properties);
-		endpoint = extractEndpoint(producerBinding);
-		adapter = (RedisQueueOutboundChannelAdapter) TestUtils.getPropertyValue(endpoint, "handler.adapters", Map.class).get("test");
+		producerEndpoint = extractEndpoint(producerBinding);
+		adapter = (RedisQueueOutboundChannelAdapter) TestUtils.getPropertyValue(producerEndpoint, "handler.adapters", Map.class).get("test");
 		assertEquals(
 				"'props.0.test-' + headers['partition']",
 				TestUtils.getPropertyValue(adapter, "queueNameExpression", Expression.class).getExpressionString());
 
 		producerBinding.unbind();
 		consumerBinding.unbind();
-		assertFalse(extractEndpoint(producerBinding).isRunning());
+		assertFalse(producerEndpoint.isRunning());
 		assertFalse(extractEndpoint(consumerBinding).isRunning());
 	}
 

@@ -45,7 +45,6 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.util.Assert;
 
 /**
  * Tests for binders that support partitioning.
@@ -228,7 +227,6 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		input0Binding.unbind();
 		input1Binding.unbind();
 		input2Binding.unbind();
-		input2Binding.unbind();
 		outputBinding.unbind();
 	}
 
@@ -330,7 +328,6 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 	protected abstract String getClassUnderTestName();
 
 	protected AbstractEndpoint extractEndpoint(Binding<MessageChannel> binding) {
-		Assert.isInstanceOf(DefaultBinding.class, binding, "Binding not of expected type, found " + binding.getClass().getName() + " instead");
 		DirectFieldAccessor accessor = new DirectFieldAccessor(binding);
 		return (AbstractEndpoint) accessor.getPropertyValue("endpoint");
 	}

@@ -171,6 +171,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 		input0Binding.unbind();
 		input1Binding.unbind();
+		input2Binding.unbind();
 		outputBinding.unbind();
 	}
 
