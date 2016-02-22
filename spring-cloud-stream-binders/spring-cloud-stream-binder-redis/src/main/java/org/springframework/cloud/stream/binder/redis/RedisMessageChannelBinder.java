@@ -178,7 +178,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		adapter.setOutputChannel(bridgeInputChannel);
 		adapter.setBeanName("inbound." + channelName);
 		adapter.afterPropertiesSet();
-		DefaultBinding<MessageChannel> consumerBinding = new DefaultBinding<MessageChannel>(channelName, group, moduleInputChannel, adapter, properties) {
+		DefaultBinding<MessageChannel> consumerBinding = new DefaultBinding<MessageChannel>(bindingName, group, moduleInputChannel, adapter, properties) {
 
 			@Override
 			protected void afterUnbind() {
