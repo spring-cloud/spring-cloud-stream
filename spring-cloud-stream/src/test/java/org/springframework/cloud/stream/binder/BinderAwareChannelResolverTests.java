@@ -164,7 +164,7 @@ public class BinderAwareChannelResolverTests {
 			}
 			DirectHandler directHandler = new DirectHandler(inboundBindTarget);
 			destinations.get(name).subscribe(directHandler);
-			return new TestBinding(inboundBindTarget, name, directHandler);
+			return new TestBinding(name, directHandler);
 		}
 
 
@@ -178,19 +178,16 @@ public class BinderAwareChannelResolverTests {
 			DirectHandler directHandler = new DirectHandler(destinations.get(name));
 			// for test purposes we can assume it is a SubscribableChannel
 			((SubscribableChannel) outboundBindTarget).subscribe(directHandler);
-			return new TestBinding(outboundBindTarget, name, directHandler);
+			return new TestBinding(name, directHandler);
 		}
 
 		private class TestBinding implements Binding<MessageChannel> {
-
-			private final MessageChannel target;
 
 			private final String name;
 
 			private final DirectHandler directHandler;
 
-			public TestBinding(MessageChannel outboundChannel, String name, DirectHandler directHandler) {
-				this.target = outboundChannel;
+			private TestBinding(String name, DirectHandler directHandler) {
 				this.name = name;
 				this.directHandler = directHandler;
 			}

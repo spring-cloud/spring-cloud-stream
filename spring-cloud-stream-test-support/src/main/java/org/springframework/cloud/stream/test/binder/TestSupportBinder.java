@@ -53,7 +53,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
-		return new TestBinding(name, inboundBindTarget, messageCollector);
+		return new TestBinding(inboundBindTarget, messageCollector);
 	}
 
 	/**
@@ -69,7 +69,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 			}
 		});
 		this.messageChannels.put(name, outboundBindTarget);
-		return new TestBinding(name, outboundBindTarget, messageCollector);
+		return new TestBinding(outboundBindTarget, messageCollector);
 	}
 
 	public MessageCollector messageCollector() {
@@ -85,7 +85,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	 *
 	 * @author Eric Bottard
 	 */
-	private static class MessageCollectorImpl implements MessageCollector{
+	private static class MessageCollectorImpl implements MessageCollector {
 
 		private final Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
 
@@ -111,15 +111,13 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	/**
 	 * @author Marius Bogoevici
 	 */
-	public static class TestBinding implements Binding<MessageChannel> {
+	private static class TestBinding implements Binding<MessageChannel> {
 
 		private final MessageChannel target;
+
 		private final MessageCollectorImpl messageCollector;
 
-		private String name;
-
-		public TestBinding(String name, MessageChannel target, MessageCollectorImpl messageCollector) {
-			this.name = name;
+		private TestBinding(MessageChannel target, MessageCollectorImpl messageCollector) {
 			this.target = target;
 			this.messageCollector = messageCollector;
 		}
