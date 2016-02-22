@@ -328,7 +328,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	}
 
 	/**
-	 * Set whether subscriptions to taps/topics are durable.
+	 * Set whether subscriptions are durable.
 	 * @param defaultDurableSubscription true for durable (default false).
 	 */
 	public void setDefaultDurableSubscription(boolean defaultDurableSubscription) {

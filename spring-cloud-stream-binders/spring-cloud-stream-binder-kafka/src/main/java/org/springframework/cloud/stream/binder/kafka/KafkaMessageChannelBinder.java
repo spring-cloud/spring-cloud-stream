@@ -444,7 +444,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		boolean anonymous = !StringUtils.hasText(group);
 		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
 		// The reference point, if not set explicitly is the latest time for anonymous subscriptions and the
-		// earliest time for group subscriptions. This allows subscriptions to receive er
+		// earliest time for group subscriptions. This allows the latter to receive messages published before the group
+		// has been created.
 		long referencePoint = this.startOffset != null ?
 				startOffset.getReferencePoint() : (anonymous ? OffsetRequest.LatestTime() : OffsetRequest.EarliestTime());
 		return createKafkaConsumer(name, inputChannel, properties, consumerGroup, referencePoint);

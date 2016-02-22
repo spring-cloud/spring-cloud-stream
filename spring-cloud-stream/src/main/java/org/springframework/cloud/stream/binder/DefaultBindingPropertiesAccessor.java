@@ -337,7 +337,7 @@ public class DefaultBindingPropertiesAccessor {
 	}
 
 	/**
-	 * A list of groups for which the binder will make ensure message delivery, even if their consumers bind
+	 * A list of groups for which the binder will ensure message delivery, even if their consumers bind
 	 * after the producer. This is a producer-property only.
 	 * @param defaultValue the default value
 	 * @return the property, parsed as a comma-separated list of values

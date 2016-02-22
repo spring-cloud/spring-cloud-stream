@@ -113,7 +113,6 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
 
-		// one group
 		properties.put("requiredGroups", "test1");
 		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, properties);
 
@@ -128,8 +127,8 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		assertThat(receivedMessage1, not(nullValue()));
 		assertThat(new String((byte[]) receivedMessage1.getPayload()), equalTo(testPayload));
 
-		binder.unbind(consumerBinding);
-		binder.unbind(producerBinding);
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test
@@ -140,7 +139,6 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
 
-		// one group
 		properties.put("requiredGroups", "test1,test2");
 		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, properties);
 
@@ -160,9 +158,9 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		assertThat(receivedMessage2, not(nullValue()));
 		assertThat(new String((byte[]) receivedMessage2.getPayload()), equalTo(testPayload));
 
-		binder.unbind(consumerBinding1);
-		binder.unbind(consumerBinding2);
-		binder.unbind(producerBinding);
+		consumerBinding1.unbind();
+		consumerBinding2.unbind();
+		producerBinding.unbind();
 	}
 
 	@Test
