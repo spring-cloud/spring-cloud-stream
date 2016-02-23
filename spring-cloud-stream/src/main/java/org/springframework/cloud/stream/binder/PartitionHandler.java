@@ -48,7 +48,7 @@ public class PartitionHandler {
 
 	private final PartitionSelectorStrategy partitionSelector;
 
-	private final PartitioningMetadata partitioningMetadata;
+	private final PartitioningMetadata metadata;
 
 
 	/**
@@ -69,7 +69,7 @@ public class PartitionHandler {
 		this.partitionSelector = partitionSelector == null
 				? new DefaultPartitionSelector()
 				: partitionSelector;
-		this.partitioningMetadata = new PartitioningMetadata(properties, partitionCount);
+		this.metadata = new PartitioningMetadata(properties, partitionCount);
 	}
 
 	/**
@@ -79,7 +79,7 @@ public class PartitionHandler {
 	 * @return true if partitioning is enabled
 	 */
 	public boolean isPartitionedModule() {
-		return this.partitioningMetadata.isPartitionedModule();
+		return this.metadata.isPartitionedModule();
 	}
 
 	/**
@@ -101,84 +101,78 @@ public class PartitionHandler {
 	 * @return the partition
 	 */
 	public int determinePartition(Message<?> message) {
-		Object key = null;
-		if (StringUtils.hasText(partitioningMetadata.partitionKeyExtractorClass)) {
-			key = invokeExtractor(partitioningMetadata.partitionKeyExtractorClass, message);
-		}
-		else if (partitioningMetadata.partitionKeyExpression != null) {
-			key = partitioningMetadata.partitionKeyExpression.getValue(this.evaluationContext, message);
-		}
-		Assert.notNull(key, "Partition key cannot be null");
+		Object key = extractKey(message);
+
 		int partition;
-		if (StringUtils.hasText(partitioningMetadata.partitionSelectorClass)) {
-			partition = invokePartitionSelector(partitioningMetadata.partitionSelectorClass,
-					key, partitioningMetadata.partitionCount);
+		if (this.metadata.hasSelectorClass()) {
+			partition = invokePartitionSelector(key);
 		}
-		else if (partitioningMetadata.partitionSelectorExpression != null) {
-			partition = partitioningMetadata.partitionSelectorExpression.getValue(this.evaluationContext, key, Integer.class);
+		else if (this.metadata.hasSelectorExpression()) {
+			partition = this.metadata.partitionSelectorExpression.getValue(
+					this.evaluationContext, key, Integer.class);
 		}
 		else {
-			partition = this.partitionSelector.selectPartition(key, partitioningMetadata.partitionCount);
+			partition = this.partitionSelector.selectPartition(key, metadata.partitionCount);
 		}
-		partition = partition % partitioningMetadata.partitionCount;
-		if (partition < 0) { // protection in case a user selector returns a negative.
-			partition = Math.abs(partition);
-		}
-		return partition;
+		// protection in case a user selector returns a negative.
+		return Math.abs(partition % metadata.partitionCount);
 	}
 
-	private Object invokeExtractor(String partitionKeyExtractorClassName, Message<?> message) {
-		if (this.beanFactory.containsBean(partitionKeyExtractorClassName)) {
-			return this.beanFactory.getBean(partitionKeyExtractorClassName,
-					PartitionKeyExtractorStrategy.class)
-					.extractKey(message);
+	private Object extractKey(Message<?> message) {
+		Object key = null;
+		if (this.metadata.hasKeyExtractorClass()) {
+			key = invokeKeyExtractor(message);
 		}
-		Class<?> clazz;
-		try {
-			clazz = ClassUtils.forName(partitionKeyExtractorClassName,
-					this.beanFactory.getBeanClassLoader());
+		else if (this.metadata.hasKeyExpression()) {
+			key = this.metadata.partitionKeyExpression.getValue(this.evaluationContext, message);
 		}
-		catch (Exception e) {
-			logger.error("Failed to load key extractor", e);
-			throw new BinderException("Failed to load key extractor: " + partitionKeyExtractorClassName, e);
-		}
-		try {
-			Object extractor = clazz.newInstance();
-			Assert.isInstanceOf(PartitionKeyExtractorStrategy.class, extractor);
-			this.beanFactory.registerSingleton(partitionKeyExtractorClassName, extractor);
-			this.beanFactory.initializeBean(extractor, partitionKeyExtractorClassName);
-			return ((PartitionKeyExtractorStrategy) extractor).extractKey(message);
-		}
-		catch (Exception e) {
-			logger.error("Failed to instantiate key extractor", e);
-			throw new BinderException("Failed to instantiate key extractor: " + partitionKeyExtractorClassName, e);
-		}
+		Assert.notNull(key, "Partition key cannot be null");
+
+		return key;
 	}
 
-	private int invokePartitionSelector(String partitionSelectorClassName, Object key, int partitionCount) {
-		if (this.beanFactory.containsBean(partitionSelectorClassName)) {
-			return this.beanFactory.getBean(partitionSelectorClassName, PartitionSelectorStrategy.class)
-					.selectPartition(key, partitionCount);
+	private Object invokeKeyExtractor(Message<?> message) {
+		PartitionKeyExtractorStrategy strategy = getBean(
+				metadata.partitionKeyExtractorClass,
+				PartitionKeyExtractorStrategy.class);
+		return strategy.extractKey(message);
+	}
+
+	private int invokePartitionSelector(Object key) {
+		PartitionSelectorStrategy strategy = getBean(
+				metadata.partitionSelectorClass,
+				PartitionSelectorStrategy.class);
+		return strategy.selectPartition(key, metadata.partitionCount);
+	}
+
+	private <T> T getBean(String className, Class<T> type) {
+		if (this.beanFactory.containsBean(className)) {
+			return this.beanFactory.getBean(className, type);
 		}
-		Class<?> clazz;
-		try {
-			clazz = ClassUtils.forName(partitionSelectorClassName, this.beanFactory.getBeanClassLoader());
-		}
-		catch (Exception e) {
-			logger.error("Failed to load partition selector", e);
-			throw new BinderException("Failed to load partition selector: " + partitionSelectorClassName, e);
-		}
-		try {
-			Object extractor = clazz.newInstance();
-			Assert.isInstanceOf(PartitionKeyExtractorStrategy.class, extractor);
-			this.beanFactory.registerSingleton(partitionSelectorClassName, extractor);
-			this.beanFactory.initializeBean(extractor, partitionSelectorClassName);
-			return ((PartitionSelectorStrategy) extractor).selectPartition(key, partitionCount);
-		}
-		catch (Exception e) {
-			logger.error("Failed to instantiate partition selector", e);
-			throw new BinderException("Failed to instantiate partition selector: " + partitionSelectorClassName,
-					e);
+		else {
+			synchronized (this) {
+				if (this.beanFactory.containsBean(className)) {
+					return this.beanFactory.getBean(className, type);
+				}
+				Class<?> clazz;
+				try {
+					clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
+				}
+				catch (Exception e) {
+					throw new BinderException("Failed to load class: " + className, e);
+				}
+				try {
+					@SuppressWarnings("unchecked")
+					T object = (T) clazz.newInstance();
+					Assert.isInstanceOf(type, object);
+					this.beanFactory.registerSingleton(className, object);
+					this.beanFactory.initializeBean(object, className);
+					return object;
+				}
+				catch (Exception e) {
+					throw new BinderException("Failed to instantiate class: " + className, e);
+				}
+			}
 		}
 	}
 
@@ -223,8 +217,20 @@ public class PartitionHandler {
 			return StringUtils.hasText(this.partitionKeyExtractorClass) || this.partitionKeyExpression != null;
 		}
 
-		public int getPartitionCount() {
-			return this.partitionCount;
+		public boolean hasSelectorClass() {
+			return StringUtils.hasText(this.partitionSelectorClass);
+		}
+
+		public boolean hasKeyExtractorClass() {
+			return StringUtils.hasText(this.partitionKeyExtractorClass);
+		}
+
+		public boolean hasSelectorExpression() {
+			return partitionSelectorExpression != null;
+		}
+
+		public boolean hasKeyExpression() {
+			return partitionKeyExpression != null;
 		}
 
 	}
