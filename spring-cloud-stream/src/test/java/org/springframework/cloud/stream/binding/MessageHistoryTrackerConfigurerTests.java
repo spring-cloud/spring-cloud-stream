@@ -74,7 +74,7 @@ public class MessageHistoryTrackerConfigurerTests {
 		Map<String, BindingProperties> bindingPropertiesMap = new HashMap<>();
 		BindingProperties bindingProperties = new BindingProperties();
 		bindingProperties.setTrackHistory(true);
-		bindingProperties.setTrackHistoryProperties("input,instanceIndex");
+		bindingProperties.setTrackedProperties("input,instanceIndex");
 		bindingPropertiesMap.put("input", bindingProperties);
 		bindingPropertiesMap.put("test1", new BindingProperties());
 		serviceProperties.setBindings(bindingPropertiesMap);
@@ -87,10 +87,41 @@ public class MessageHistoryTrackerConfigurerTests {
 				Assert.isTrue(message.getHeaders().containsKey(MessageHistoryTrackerConfigurer.HISTORY_TRACKING_HEADER));
 				List<Map<String, Object>> headerValues =  (List<Map<String, Object>>) message.getHeaders().get(MessageHistoryTrackerConfigurer.HISTORY_TRACKING_HEADER);
 				Map<String, Object> historyValues = headerValues.get(0);
+				Assert.isTrue(historyValues.containsKey("thread"), "Default property 'thread' should exist.");
+				Assert.isTrue(historyValues.containsKey("timestamp"), "Default property 'timestamp' should exist.");
 				Assert.isTrue(historyValues.containsKey("instanceIndex") && historyValues.get("instanceIndex").equals("0"), "Instance index must exist with value '0'");
 				Assert.isTrue(!historyValues.containsKey("instanceCount"), "Instance count should not be in the tracker header");
 				Assert.isTrue(historyValues.containsKey("input"), "Binding properties must exist for the channel 'input'");
 				Assert.isTrue(!historyValues.containsKey("test1"), "Binding properties for the channel 'test1' should not be in the tracker header");
+			}
+		});
+		historyTrackerConfigurer.configureMessageChannel(messageChannel, "input");
+		messageChannel.send(MessageBuilder.withPayload("test").build());
+	}
+
+	@Test
+	public void testHistoryTrackEmptyProperties() {
+		ChannelBindingServiceProperties serviceProperties = new ChannelBindingServiceProperties();
+		serviceProperties.setInstanceCount(2);
+		serviceProperties.setInstanceIndex(0);
+		Map<String, BindingProperties> bindingPropertiesMap = new HashMap<>();
+		BindingProperties bindingProperties = new BindingProperties();
+		bindingProperties.setTrackHistory(true);
+		bindingProperties.setTrackedProperties("");
+		bindingPropertiesMap.put("input", bindingProperties);
+		bindingPropertiesMap.put("test1", new BindingProperties());
+		serviceProperties.setBindings(bindingPropertiesMap);
+		MessageHistoryTrackerConfigurer historyTrackerConfigurer = new MessageHistoryTrackerConfigurer(serviceProperties,
+				new MutableMessageBuilderFactory());
+		DirectChannel messageChannel = new DirectChannel();
+		messageChannel.subscribe(new MessageHandler() {
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				Assert.isTrue(message.getHeaders().containsKey(MessageHistoryTrackerConfigurer.HISTORY_TRACKING_HEADER));
+				List<Map<String, Object>> headerValues =  (List<Map<String, Object>>) message.getHeaders().get(MessageHistoryTrackerConfigurer.HISTORY_TRACKING_HEADER);
+				Map<String, Object> historyValues = headerValues.get(0);
+				Assert.isTrue(historyValues.containsKey("thread"), "Default property 'thread' should exist.");
+				Assert.isTrue(historyValues.containsKey("timestamp"), "Default property 'timestamp' should exist.");
 			}
 		});
 		historyTrackerConfigurer.configureMessageChannel(messageChannel, "input");

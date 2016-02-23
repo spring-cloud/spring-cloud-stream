@@ -54,10 +54,10 @@ public class MessageHistoryTrackerConfigurer implements MessageChannelConfigurer
 	public void configureMessageChannel(MessageChannel messageChannel, String channelName) {
 		BindingProperties bindingProperties = channelBindingServiceProperties.getBindings().get(channelName);
 		if (bindingProperties != null && Boolean.TRUE.equals(bindingProperties.isTrackHistory())) {
-			final Set<String> trackHistoryProperties = StringUtils.commaDelimitedListToSet(bindingProperties.getTrackHistoryProperties());
+			final Set<String> trackHistoryProperties = StringUtils.commaDelimitedListToSet(bindingProperties.getTrackedProperties());
 			Map<String, Object> channelBindingServicePropertiesMap = channelBindingServiceProperties.asMapProperties();
 			final Map<String, Object> historyMap = new HashMap<>();
-			if (bindingProperties.getTrackHistoryProperties().equalsIgnoreCase("all")) {
+			if (bindingProperties.getTrackedProperties().equalsIgnoreCase("all")) {
 				historyMap.putAll(channelBindingServicePropertiesMap);
 			}
 			else {
