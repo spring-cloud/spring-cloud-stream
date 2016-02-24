@@ -41,6 +41,8 @@ public class AggregateApplicationBuilder {
 
 	private AggregateApplicationBuilder applicationBuilder = this;
 
+	ConfigurableApplicationContext parentContext;
+
 	public SourceConfigurer from(Class<?> app) {
 		SourceConfigurer sourceConfigurer = new SourceConfigurer(app);
 		this.sourceConfigurer = sourceConfigurer;
@@ -48,9 +50,12 @@ public class AggregateApplicationBuilder {
 	}
 
 	public void run(String[] parentArgs) {
-		ConfigurableApplicationContext parentContext = AggregateApplication.createParentContext(parentArgs);
-		SharedChannelRegistry sharedChannelRegistry = parentContext.getBean(SharedChannelRegistry.class);
-		List<AppConfigurer> apps = new ArrayList<AppConfigurer>();
+		ConfigurableApplicationContext parentContext = this.parentContext != null
+				? this.parentContext
+				: AggregateApplication.createParentContext(parentArgs);
+		SharedChannelRegistry sharedChannelRegistry = parentContext
+				.getBean(SharedChannelRegistry.class);
+		List<AppConfigurer<?>> apps = new ArrayList<AppConfigurer<?>>();
 		if (this.sourceConfigurer != null) {
 			apps.add(sourceConfigurer);
 		}
@@ -66,38 +71,24 @@ public class AggregateApplicationBuilder {
 		for (int i = 0; i < apps.size(); i++) {
 			appsToEmbed.add(apps.get(i).getApp());
 		}
-		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed.toArray(new Class<?>[0]));
+		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry,
+				appsToEmbed.toArray(new Class<?>[0]));
 		for (int i = apps.size() - 1; i >= 0; i--) {
-			AppConfigurer appConfigurer = apps.get(i);
-			appConfigurer.setParentContext(parentContext);
-			appConfigurer.setNamespace(AggregateApplication.getNamespace(appConfigurer.getApp().getName(), i));
+			AppConfigurer<?> appConfigurer = apps.get(i);
+			appConfigurer.parent(parentContext);
+			appConfigurer.namespace(AggregateApplication
+					.getNamespace(appConfigurer.getApp().getName(), i));
 			appConfigurer.embed();
 		}
 	}
 
-
-	public class SourceConfigurer extends AppConfigurer {
+	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
 
 		public SourceConfigurer(Class<?> app) {
 			this.app = app;
 			sourceConfigurer = this;
 		}
 
-		public SourceConfigurer as(String... names) {
-			this.names = names;
-			return this;
-		}
-
-		public SourceConfigurer args(String... args) {
-			this.args = args;
-			return this;
-		}
-
-		public SourceConfigurer profiles(String... profiles) {
-			this.profiles = profiles;
-			return this;
-		}
-
 		public SinkConfigurer to(Class<?> sink) {
 			return new SinkConfigurer(sink);
 		}
@@ -108,50 +99,20 @@ public class AggregateApplicationBuilder {
 
 	}
 
-	public class SinkConfigurer extends AppConfigurer {
+	public class SinkConfigurer extends AppConfigurer<SinkConfigurer> {
 
 		public SinkConfigurer(Class<?> app) {
 			this.app = app;
 			sinkConfigurer = this;
 		}
 
-		public SinkConfigurer as(String... names) {
-			this.names = names;
-			return this;
-		}
-
-		public SinkConfigurer args(String... args) {
-			this.args = args;
-			return this;
-		}
-
-		public SinkConfigurer profiles(String... profiles) {
-			this.profiles = profiles;
-			return this;
-		}
-
 	}
 
-	public class ProcessorConfigurer extends AppConfigurer {
+	public class ProcessorConfigurer extends AppConfigurer<ProcessorConfigurer> {
 
 		public ProcessorConfigurer(Class<?> app) {
 			this.app = app;
 			processorConfigurers.add(this);
-		}
-
-		public ProcessorConfigurer as(String... names) {
-			this.names = names;
-			return this;
-		}
-
-		public ProcessorConfigurer args(String... args) {
-			this.args = args;
-			return this;
-		}
-
-		public ProcessorConfigurer profiles(String... profiles) {
-			this.profiles = profiles;
-			return this;
 		}
 
 		public SinkConfigurer to(Class<?> sink) {
@@ -164,7 +125,7 @@ public class AggregateApplicationBuilder {
 
 	}
 
-	private abstract class AppConfigurer {
+	public abstract class AppConfigurer<T extends AppConfigurer<T>> {
 
 		Class<?> app;
 
@@ -174,20 +135,40 @@ public class AggregateApplicationBuilder {
 
 		String[] profiles = null;
 
-		ConfigurableApplicationContext parentContext;
-
 		String namespace;
 
 		Class<?> getApp() {
 			return this.app;
 		}
 
-		public void setParentContext(ConfigurableApplicationContext parentContext) {
-			this.parentContext = parentContext;
+		public T as(String... names) {
+			this.names = names;
+			return getConfigurer();
 		}
 
-		public void setNamespace(String namespace) {
+		public T args(String... args) {
+			this.args = args;
+			return getConfigurer();
+		}
+
+		public T profiles(String... profiles) {
+			this.profiles = profiles;
+			return getConfigurer();
+		}
+
+		public T parent(ConfigurableApplicationContext parentContext) {
+			AggregateApplicationBuilder.this.parentContext = parentContext;
+			return getConfigurer();
+		}
+
+		@SuppressWarnings("unchecked")
+		private T getConfigurer() {
+			return (T) this;
+		}
+
+		public T namespace(String namespace) {
 			this.namespace = namespace;
+			return getConfigurer();
 		}
 
 		public void run(String... args) {
@@ -195,12 +176,16 @@ public class AggregateApplicationBuilder {
 		}
 
 		void embed() {
-			childContext(this.app, this.parentContext, this.namespace).args(this.args).config(this.names).profiles(this.profiles).run();
+			childContext(this.app, AggregateApplicationBuilder.this.parentContext,
+					this.namespace).args(this.args).config(this.names)
+							.profiles(this.profiles).run();
 		}
 	}
 
-	private ChildContextBuilder childContext(Class<?> app, ConfigurableApplicationContext parentContext, String namespace) {
-		return new ChildContextBuilder(AggregateApplication.embedApp(parentContext, namespace, app));
+	private ChildContextBuilder childContext(Class<?> app,
+			ConfigurableApplicationContext parentContext, String namespace) {
+		return new ChildContextBuilder(
+				AggregateApplication.embedApp(parentContext, namespace, app));
 	}
 
 	private class ChildContextBuilder {
