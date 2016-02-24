@@ -60,6 +60,7 @@ public class PartitionHandler {
 			EvaluationContext evaluationContext,
 			PartitionSelectorStrategy partitionSelector,
 			DefaultBindingPropertiesAccessor properties, int partitionCount) {
+		Assert.notNull(beanFactory, "BeanFactory must not be null");
 		this.beanFactory = beanFactory;
 		this.evaluationContext = evaluationContext;
 		this.partitionSelector = partitionSelector == null
