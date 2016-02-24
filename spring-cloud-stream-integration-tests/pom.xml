@@ -20,7 +20,8 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-stream-redis</artifactId>
+			<artifactId>spring-cloud-stream-binder-redis</artifactId>
+			<version>1.0.0.BUILD-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
