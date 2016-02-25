@@ -29,18 +29,18 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.AbstractBinder.JavaClassMimeTypeConversion;
-import org.springframework.cloud.stream.tuple.DefaultTuple;
-import org.springframework.cloud.stream.tuple.Tuple;
-import org.springframework.cloud.stream.tuple.TupleBuilder;
-import org.springframework.cloud.stream.tuple.integration.TupleKryoRegistrar;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.integration.tuple.TupleKryoRegistrar;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.tuple.DefaultTuple;
+import org.springframework.tuple.Tuple;
+import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 

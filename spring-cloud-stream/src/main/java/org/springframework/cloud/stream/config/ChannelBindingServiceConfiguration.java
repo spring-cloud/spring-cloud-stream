@@ -42,7 +42,6 @@ import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageHistoryTrackerConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
-import org.springframework.cloud.stream.tuple.spel.TuplePropertyAccessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -55,6 +54,7 @@ import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
+import org.springframework.tuple.spel.TuplePropertyAccessor;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
