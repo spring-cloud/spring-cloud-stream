@@ -31,9 +31,9 @@ import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.springframework.cloud.stream.tuple.Tuple;
-import org.springframework.cloud.stream.tuple.TupleBuilder;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.tuple.Tuple;
+import org.springframework.tuple.TupleBuilder;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

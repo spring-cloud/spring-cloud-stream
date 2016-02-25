@@ -15,9 +15,9 @@
  */
 package org.springframework.cloud.stream.converter;
 
-import org.springframework.cloud.stream.tuple.Tuple;
-import org.springframework.cloud.stream.tuple.TupleBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.tuple.Tuple;
+import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeTypeUtils;
 
 

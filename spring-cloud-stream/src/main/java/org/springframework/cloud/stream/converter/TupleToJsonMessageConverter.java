@@ -20,8 +20,8 @@ import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
+import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.cloud.stream.tuple.Tuple;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

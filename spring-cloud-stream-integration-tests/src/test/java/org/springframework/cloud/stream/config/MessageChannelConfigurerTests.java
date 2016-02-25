@@ -37,7 +37,6 @@ import org.springframework.cloud.stream.binder.redis.config.RedisMessageChannelB
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.junit.redis.RedisTestSupport;
-import org.springframework.cloud.stream.tuple.Tuple;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.support.MessageBuilder;
@@ -45,6 +44,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.tuple.Tuple;
 
 /**
  * @author Ilayaperumal Gopinathan
