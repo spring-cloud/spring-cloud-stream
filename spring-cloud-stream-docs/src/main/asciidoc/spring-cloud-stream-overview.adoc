@@ -367,3 +367,7 @@ The Redis Binder creates a `LIST` (which performs the role of a queue) for each 
 trigger `BRPOP` operations on its group's `LIST`. A producer binding will consult a `ZSET` to determine what groups
 currently have active consumers, and then for each message being sent, an `LPUSH` operation will be executed on each of
 those group's `LISTs`.
+
+=== Samples
+
+For Spring Cloud Stream samples, please refer: https://github.com/spring-cloud/spring-cloud-stream-samples

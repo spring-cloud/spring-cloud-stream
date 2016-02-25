@@ -85,6 +85,10 @@ For an XD module the channel names are `<group>.<index>` and a source (output on
 
 > Note: since the same naming conventions are used in XD, you can steal messages from or send messages to an existing XD stream by copying the stream name (to `spring.cloud.stream.<channelName>.group`) and knowing the index of the XD module you want to interact with.
 
+=== Samples
+
+For Spring Cloud Stream samples, please refer: https://github.com/spring-cloud/spring-cloud-stream-samples
+
 === Contributing
 
 // TODO point to ref doc section

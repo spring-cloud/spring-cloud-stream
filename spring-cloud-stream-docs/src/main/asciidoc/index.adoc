@@ -7,12 +7,12 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 :numbered:
 :icons: font
 :hide-uri-scheme:
-:spring-cloud-dataflow-repo: snapshot
+:spring-cloud-stream-repo: snapshot
 :github-tag: master
-:spring-cloud-dataflow-docs-version: current
-:spring-cloud-dataflow-docs: http://docs.spring.io/spring-cloud-dataflow/docs/{spring-cloud-dataflow-docs-version}/reference
-:spring-cloud-dataflow-docs-current: http://docs.spring.io/spring-cloud-dataflow/docs/current-SNAPSHOT/reference/html/
-:github-repo: spring-projects/spring-cloud-dataflow
+:spring-cloud-stream-docs-version: current
+:spring-cloud-stream-docs: http://docs.spring.io/spring-cloud-stream/docs/{spring-cloud-stream-docs-version}/reference
+:spring-cloud-stream-docs-current: http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/html/
+:github-repo: spring-cloud/spring-cloud-stream
 :github-raw: http://raw.github.com/{github-repo}/{github-tag}
 :github-code: http://github.com/{github-repo}/tree/{github-tag}
 :github-wiki: http://github.com/{github-repo}/wiki
@@ -20,7 +20,7 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 :sc-ext: java
 :sc-spring-boot: {github-code}/spring-boot/src/main/java/org/springframework/boot
 :dc-ext: html
-:dc-root: http://docs.spring.io/spring-cloud-dataflow/docs/{spring-cloud-dataflow-docs-version}/api
+:dc-root: http://docs.spring.io/spring-cloud-stream/docs/{spring-cloud-stream-docs-version}/api
 :dc-spring-boot: {dc-root}/org/springframework/boot
 :dependency-management-plugin: https://github.com/spring-gradle-plugins/dependency-management-plugin
 :dependency-management-plugin-documentation: {dependency-management-plugin}/blob/master/README.md
@@ -41,8 +41,6 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 = Reference Guide
 include::spring-cloud-stream-overview.adoc[]
 
-= Samples
-include::spring-cloud-stream-samples.adoc[]
 
 = Appendices
 [appendix]
