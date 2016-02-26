@@ -15,6 +15,7 @@
  */
 package org.springframework.cloud.stream.binding;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -22,7 +23,7 @@ import java.util.Set;
  *
  * @author Ilayaperumal Gopinathan
  */
-public class NoopBindable implements Bindable {
+public class BindableAdapter implements Bindable {
 
 
 	@Override
@@ -43,11 +44,11 @@ public class NoopBindable implements Bindable {
 
 	@Override
 	public Set<String> getInputs() {
-		return null;
+		return new HashSet<String>();
 	}
 
 	@Override
 	public Set<String> getOutputs() {
-		return null;
+		return new HashSet<String>();
 	}
 }

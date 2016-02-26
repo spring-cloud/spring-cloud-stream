@@ -15,6 +15,10 @@
  */
 package org.springframework.cloud.stream.binding;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.integration.channel.PublishSubscribeChannel;
 
 /**
@@ -22,7 +26,7 @@ import org.springframework.integration.channel.PublishSubscribeChannel;
  *
  * @author Ilayaperumal Gopinathan
  */
-public class BindableErrorChannel extends NoopBindable {
+public class BindableErrorChannel extends BindableAdapter {
 
 	private final String name;
 
@@ -41,5 +45,10 @@ public class BindableErrorChannel extends NoopBindable {
 	@Override
 	public void unbindOutputs(ChannelBindingService adapter) {
 		adapter.unbindProducers(name);
+	}
+
+	@Override
+	public Set<String> getOutputs() {
+		return new HashSet<String>(Arrays.asList(name));
 	}
 }

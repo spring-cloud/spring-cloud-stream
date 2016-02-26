@@ -76,10 +76,6 @@ public class ChannelBindingServiceConfiguration {
 	private static final String ERROR_CHANNEL_NAME = "error";
 
 	@Autowired
-	@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)
-	private PublishSubscribeChannel errorChannel;
-
-	@Autowired
 	MessageBuilderFactory messageBuilderFactory;
 
 	@Bean
@@ -213,7 +209,8 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
-	public BindableErrorChannel bindableErrorChannel() {
+	public BindableErrorChannel bindableErrorChannel(
+			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
 		return new BindableErrorChannel(ERROR_CHANNEL_NAME, errorChannel);
 	}
 
