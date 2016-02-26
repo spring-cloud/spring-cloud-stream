@@ -20,10 +20,10 @@ import static org.springframework.util.MimeType.valueOf;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
 
+import org.springframework.tuple.DefaultTuple;
+import org.springframework.tuple.Tuple;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
-import org.springframework.cloud.stream.tuple.DefaultTuple;
-import org.springframework.cloud.stream.tuple.Tuple;
 import org.springframework.util.StringUtils;
 
 

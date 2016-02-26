@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.messaging.Message;
+import org.springframework.tuple.Tuple;
+import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.cloud.stream.tuple.Tuple;
-import org.springframework.cloud.stream.tuple.TupleBuilder;
 
 
 /**

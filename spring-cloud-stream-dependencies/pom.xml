@@ -15,6 +15,8 @@
 	<properties>
 		<rxjava.version>1.0.14</rxjava.version>
 		<spring-integration.version>4.2.4.RELEASE</spring-integration.version>
+		<spring.tuple.version>1.0.0.BUILD-SNAPSHOT</spring.tuple.version>
+		<spring.integration.tuple.version>1.0.0.BUILD-SNAPSHOT</spring.integration.tuple.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -74,9 +76,14 @@
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-tuple</artifactId>
-				<version>${project.version}</version>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-tuple</artifactId>
+				<version>${spring.tuple.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.integration</groupId>
+				<artifactId>spring-integration-tuple</artifactId>
+				<version>${spring.integration.tuple.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
