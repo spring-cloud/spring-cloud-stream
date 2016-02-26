@@ -20,8 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -29,7 +32,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Dave Syer
  * @author Ilayaperumal Gopinathan
- *
+ * @author Marius Bogoevici
  */
 public class AggregateApplicationBuilder {
 
@@ -43,13 +46,58 @@ public class AggregateApplicationBuilder {
 
 	ConfigurableApplicationContext parentContext;
 
+	public AggregateApplicationBuilder() {
+	}
+
+	public AggregateApplicationBuilder(Object source, String... args) {
+		this(new Object[]{source}, args);
+	}
+
+	public AggregateApplicationBuilder(Object[] sources, String[] args) {
+		this(SpringApplication.run(addAggregatorParentIfMissing(sources),args));
+	}
+
+	public AggregateApplicationBuilder(ConfigurableApplicationContext parentContext) {
+		this.parentContext = parentContext;
+	}
+
+	private static Object[] addAggregatorParentIfMissing(Object[] sources) {
+		Assert.notEmpty(sources, "At least one source must be provided");
+		Object[] aggregateParentSources;
+		if (!ObjectUtils.containsElement(sources, AggregatorParentConfiguration.class)) {
+			// add the AggregatorParentConfiguration first, so it can be overridden
+			List<Object> sourceList = new ArrayList<>(Arrays.asList(sources));
+			sourceList.add(0, AggregatorParentConfiguration.class);
+			aggregateParentSources = sourceList.toArray(new Object[sourceList.size()]);
+		}
+		else {
+			aggregateParentSources = sources;
+		}
+		return aggregateParentSources;
+	}
+
+
+	public AggregateApplicationBuilder parent(Object source, String... args) {
+		return parent(new Object[]{source}, args);
+	}
+
+	public AggregateApplicationBuilder parent(Object[] sources, String[] args) {
+		return parent(SpringApplication.run(addAggregatorParentIfMissing(sources), args));
+	}
+
+	public AggregateApplicationBuilder parent(ConfigurableApplicationContext parentContext) {
+		Assert.isNull(this.parentContext, "A parent context has already been set");
+		this.parentContext = parentContext;
+		return this;
+	}
+
 	public SourceConfigurer from(Class<?> app) {
 		SourceConfigurer sourceConfigurer = new SourceConfigurer(app);
 		this.sourceConfigurer = sourceConfigurer;
 		return sourceConfigurer;
 	}
 
-	public void run(String[] parentArgs) {
+	public ConfigurableApplicationContext run(String[] parentArgs) {
 		ConfigurableApplicationContext parentContext = this.parentContext != null
 				? this.parentContext
 				: AggregateApplication.createParentContext(parentArgs);
@@ -75,11 +123,11 @@ public class AggregateApplicationBuilder {
 				appsToEmbed.toArray(new Class<?>[0]));
 		for (int i = apps.size() - 1; i >= 0; i--) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
-			appConfigurer.parent(parentContext);
 			appConfigurer.namespace(AggregateApplication
 					.getNamespace(appConfigurer.getApp().getName(), i));
 			appConfigurer.embed();
 		}
+		return parentContext;
 	}
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
@@ -156,11 +204,6 @@ public class AggregateApplicationBuilder {
 			return getConfigurer();
 		}
 
-		public T parent(ConfigurableApplicationContext parentContext) {
-			AggregateApplicationBuilder.this.parentContext = parentContext;
-			return getConfigurer();
-		}
-
 		@SuppressWarnings("unchecked")
 		private T getConfigurer() {
 			return (T) this;
@@ -171,8 +214,8 @@ public class AggregateApplicationBuilder {
 			return getConfigurer();
 		}
 
-		public void run(String... args) {
-			applicationBuilder.run(args);
+		public ConfigurableApplicationContext run(String... args) {
+			return applicationBuilder.run(args);
 		}
 
 		void embed() {
