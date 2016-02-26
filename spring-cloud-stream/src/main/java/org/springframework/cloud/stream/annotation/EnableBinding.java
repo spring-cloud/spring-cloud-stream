@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.config.EnableIntegration;
 
 /**
- * Enables the binding of {@link Input} and {@link Output} message channels to a broker, according to the list
+ * Enables the binding of {@link Input} and {@link Output} - annotated components to a broker, according to the list
  * of interfaces passed as value to the annotation.
  *
  * @author Dave Syer

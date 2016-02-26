@@ -16,6 +16,7 @@
 package org.springframework.cloud.stream.binding;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,6 +50,6 @@ public class BindableErrorChannel extends BindableAdapter {
 
 	@Override
 	public Set<String> getOutputs() {
-		return new HashSet<String>(Arrays.asList(name));
+		return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(name)));
 	}
 }

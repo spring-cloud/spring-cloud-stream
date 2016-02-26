@@ -15,11 +15,11 @@
  */
 package org.springframework.cloud.stream.binding;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 
 /**
- * A No-op Bindable implementation.
+ * Default adapter implementation for {@Bindable}.
  *
  * @author Ilayaperumal Gopinathan
  */
@@ -44,11 +44,11 @@ public class BindableAdapter implements Bindable {
 
 	@Override
 	public Set<String> getInputs() {
-		return new HashSet<String>();
+		return Collections.unmodifiableSet(Collections.EMPTY_SET);
 	}
 
 	@Override
 	public Set<String> getOutputs() {
-		return new HashSet<String>();
+		return Collections.unmodifiableSet(Collections.EMPTY_SET);
 	}
 }

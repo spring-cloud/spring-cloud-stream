@@ -29,8 +29,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.binder.redis.config.RedisMessageChannelBinderConfiguration;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.junit.redis.RedisTestSupport;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +42,6 @@ import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
-import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.Assert;
@@ -51,20 +50,15 @@ import org.springframework.util.Assert;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration({ErrorChannelTests.TestSource.class, ErrorChannelTests.TestErrorSink1.class,
-		ErrorChannelTests.TestErrorSink2.class})
+@SpringApplicationConfiguration({ErrorChannelTests.TestSource.class, ErrorChannelTests.TestErrorSink.class})
 public class ErrorChannelTests {
 
 	@Rule
 	public RedisTestSupport redisTestSupport = new RedisTestSupport();
 
 	@Autowired
-	@Bindings(TestErrorSink1.class)
-	private ErrorSink1 testErrorSink1;
-
-	@Autowired
-	@Bindings(TestErrorSink2.class)
-	private ErrorSink2 testErrorSink2;
+	@Bindings(TestErrorSink.class)
+	private Sink testErrorSink;
 
 	@Test
 	public void testErrorChannelBinding() throws Exception {
@@ -80,8 +74,7 @@ public class ErrorChannelTests {
 				latch.countDown();
 			}
 		};
-		testErrorSink1.errorInput().subscribe(errorMessageHandler);
-		testErrorSink2.errorInput().subscribe(errorMessageHandler);
+		testErrorSink.input().subscribe(errorMessageHandler);
 		assertTrue(latch.await(10, TimeUnit.SECONDS));
 	}
 
@@ -103,37 +96,11 @@ public class ErrorChannelTests {
 		}
 	}
 
-	@EnableBinding(ErrorSink1.class)
+	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	@Import(RedisMessageChannelBinderConfiguration.class)
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/errorchannel/errorsink1-channel.properties")
-	public static class TestErrorSink1 {
-
-	}
-
-	public interface ErrorSink1 {
-
-		String INPUT = "errorInput1";
-
-		@Input(ErrorSink1.INPUT)
-		SubscribableChannel errorInput();
-
-	}
-
-	@EnableBinding(ErrorSink2.class)
-	@EnableAutoConfiguration
-	@Import(RedisMessageChannelBinderConfiguration.class)
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/errorchannel/errorsink2-channel.properties")
-	public static class TestErrorSink2 {
-
-	}
-
-	public interface ErrorSink2 {
-
-		String INPUT = "errorInput2";
-
-		@Input(ErrorSink1.INPUT)
-		SubscribableChannel errorInput();
+	@PropertySource("classpath:/org/springframework/cloud/stream/config/errorchannel/errorsink-channel.properties")
+	public static class TestErrorSink {
 
 	}
 }
