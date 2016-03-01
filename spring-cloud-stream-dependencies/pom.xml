@@ -15,7 +15,7 @@
 	<properties>
 		<rxjava.version>1.0.14</rxjava.version>
 		<spring-integration.version>4.2.4.RELEASE</spring-integration.version>
-		<spring.tuple.version>1.0.0.BUILD-SNAPSHOT</spring.tuple.version>
+		<spring.tuple.version>1.0.0.RC1</spring.tuple.version>
 		<spring.integration.tuple.version>1.0.0.RC1</spring.integration.tuple.version>
 	</properties>
 	<dependencyManagement>
