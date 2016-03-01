@@ -15,32 +15,25 @@
  */
 package org.springframework.cloud.stream.config;
 
-import static org.junit.Assert.assertTrue;
-
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binder.redis.config.RedisMessageChannelBinderConfiguration;
-import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.test.junit.redis.RedisTestSupport;
+import org.springframework.cloud.stream.test.binder.TestSupportBinder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
+import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -50,37 +43,27 @@ import org.springframework.util.Assert;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration({ErrorChannelTests.TestSource.class, ErrorChannelTests.TestErrorSink.class})
+@SpringApplicationConfiguration({ErrorChannelTests.TestSource.class})
 public class ErrorChannelTests {
 
-	@ClassRule
-	public static RedisTestSupport redisTestSupport = new RedisTestSupport();
+	@Autowired
+	private PublishSubscribeChannel errorChannel;
 
 	@Autowired
-	@Bindings(TestErrorSink.class)
-	private Sink testErrorSink;
+	private BinderFactory binderFactory;
 
 	@Test
 	public void testErrorChannelBinding() throws Exception {
-		final CountDownLatch latch = new CountDownLatch(1);
-		MessageHandler errorMessageHandler = new MessageHandler() {
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				Assert.isTrue(message instanceof ErrorMessage, "Message should be an instance of ErrorMessage");
-				Assert.isTrue(message.getPayload() instanceof MessagingException, "Message payload should be an instance" +
-						"of MessagingException");
-				Assert.isTrue(message.getPayload().toString()
-						.equals("org.springframework.messaging.MessagingException: test"));
-				latch.countDown();
-			}
-		};
-		testErrorSink.input().subscribe(errorMessageHandler);
-		assertTrue(latch.await(10, TimeUnit.SECONDS));
+		Message<?> message = (Message<?>) ((TestSupportBinder) binderFactory.getBinder(null)).messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
+		Assert.isTrue(message instanceof ErrorMessage, "Message should be an instance of ErrorMessage");
+		Assert.isTrue(message.getPayload() instanceof MessagingException, "Message payload should be an instance" +
+				"of MessagingException");
+		Assert.isTrue(message.getPayload().toString()
+				.equals("org.springframework.messaging.MessagingException: test"));
 	}
 
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
-	@Import(RedisMessageChannelBinderConfiguration.class)
 	@PropertySource("classpath:/org/springframework/cloud/stream/config/errorchannel/source-channel.properties")
 	public static class TestSource {
 
@@ -94,14 +77,6 @@ public class ErrorChannelTests {
 				}
 			};
 		}
-	}
-
-	@EnableBinding(Sink.class)
-	@EnableAutoConfiguration
-	@Import(RedisMessageChannelBinderConfiguration.class)
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/errorchannel/errorsink-channel.properties")
-	public static class TestErrorSink {
-
 	}
 }
 
