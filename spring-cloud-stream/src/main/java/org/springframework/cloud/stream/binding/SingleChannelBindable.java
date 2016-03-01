@@ -23,17 +23,19 @@ import java.util.Set;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 
 /**
- * A {@link Bindable} component that represents an error channel.
+ * A {@link Bindable} component that wraps a generic channel. Useful for binding channels outside the
+ * {@link org.springframework.cloud.stream.annotation.Input} and {@link org.springframework.cloud.stream.annotation.Output}
+ * annotated interfaces.
  *
  * @author Ilayaperumal Gopinathan
  */
-public class BindableErrorChannel extends BindableAdapter {
+public class SingleChannelBindable extends BindableAdapter {
 
 	private final String name;
 
 	private final PublishSubscribeChannel errorChannel;
 
-	public BindableErrorChannel(String name, PublishSubscribeChannel errorChannel) {
+	public SingleChannelBindable(String name, PublishSubscribeChannel errorChannel) {
 		this.name = name;
 		this.errorChannel = errorChannel;
 	}

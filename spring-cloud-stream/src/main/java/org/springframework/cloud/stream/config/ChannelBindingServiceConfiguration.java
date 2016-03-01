@@ -33,7 +33,6 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesBindin
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
-import org.springframework.cloud.stream.binding.BindableErrorChannel;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
@@ -45,6 +44,7 @@ import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageHistoryTrackerConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
+import org.springframework.cloud.stream.binding.SingleChannelBindable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -146,6 +146,13 @@ public class ChannelBindingServiceConfiguration {
 		return new BindingPropertiesConverter();
 	}
 
+	@Bean
+	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
+	public SingleChannelBindable errorChannelBindable(
+			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
+		return new SingleChannelBindable(ERROR_CHANNEL_NAME, errorChannel);
+	}
+
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
 	@Configuration
 	protected static class PostProcessorConfiguration {
@@ -206,12 +213,4 @@ public class ChannelBindingServiceConfiguration {
 			};
 		}
 	}
-
-	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
-	public BindableErrorChannel bindableErrorChannel(
-			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
-		return new BindableErrorChannel(ERROR_CHANNEL_NAME, errorChannel);
-	}
-
 }

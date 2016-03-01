@@ -64,7 +64,6 @@ public class SourceBindingTestsWithBindingTargets {
 	public void testSourceOutputChannelBound() {
 		verify(binder).bindProducer(eq("testtock"), eq(testSource.output()), Mockito.<Properties>any());
 		//Check error channel binding
-		verify(binder).bindProducer(eq("error-test"), eq(errorChannel), Mockito.<Properties>any());
 		verifyNoMoreInteractions(binder);
 	}
 

@@ -44,11 +44,11 @@ public class BindableAdapter implements Bindable {
 
 	@Override
 	public Set<String> getInputs() {
-		return Collections.unmodifiableSet(Collections.EMPTY_SET);
+		return Collections.emptySet();
 	}
 
 	@Override
 	public Set<String> getOutputs() {
-		return Collections.unmodifiableSet(Collections.EMPTY_SET);
+		return Collections.emptySet();
 	}
 }
