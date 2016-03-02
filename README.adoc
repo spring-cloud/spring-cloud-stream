@@ -4,11 +4,11 @@ This project allows a user to develop and run messaging microservices using Spri
 
 === Documentation
 
-The latest documentation for the project can be found here: http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/htmlsingle/
+The latest documentation for the project can be found http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/htmlsingle/[here].
 
 === Samples
 
-For Spring Cloud Stream samples, please refer to: https://github.com/spring-cloud/spring-cloud-stream-samples
+For Spring Cloud Stream samples, take a look to the https://github.com/spring-cloud/spring-cloud-stream-samples[samples repository].
 
 === Contributing
 
