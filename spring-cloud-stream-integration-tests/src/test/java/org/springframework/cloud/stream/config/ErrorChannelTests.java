@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -53,8 +53,8 @@ import org.springframework.util.Assert;
 @SpringApplicationConfiguration({ErrorChannelTests.TestSource.class, ErrorChannelTests.TestErrorSink.class})
 public class ErrorChannelTests {
 
-	@Rule
-	public RedisTestSupport redisTestSupport = new RedisTestSupport();
+	@ClassRule
+	public static RedisTestSupport redisTestSupport = new RedisTestSupport();
 
 	@Autowired
 	@Bindings(TestErrorSink.class)

@@ -53,7 +53,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
-		return new TestBinding(inboundBindTarget, messageCollector);
+		return new TestBinding(inboundBindTarget, null);
 	}
 
 	/**
@@ -124,7 +124,9 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 
 		@Override
 		public void unbind() {
-			messageCollector.unregister(target);
+			if (messageCollector != null) {
+				messageCollector.unregister(target);
+			}
 		}
 	}
 }
