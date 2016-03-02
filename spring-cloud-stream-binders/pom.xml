@@ -18,7 +18,6 @@
 	<modules>
 		<module>spring-cloud-stream-binder-test</module>
 		<module>spring-cloud-stream-binder-rabbit</module>
-		<module>spring-cloud-stream-binder-redis</module>
 		<module>spring-cloud-stream-binder-kafka</module>
 	</modules>
 	
