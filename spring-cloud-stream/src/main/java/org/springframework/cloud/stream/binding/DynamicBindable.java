@@ -16,39 +16,34 @@
 package org.springframework.cloud.stream.binding;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Default adapter implementation for {@Bindable}.
+ * A {@link BindableAdapter} that stores the dynamic destination names and handle their unbinding.
  *
  * @author Ilayaperumal Gopinathan
  */
-class BindableAdapter implements Bindable {
+public final class DynamicBindable extends BindableAdapter {
 
+	/**
+	 * Dynamic destination names.
+	 */
+	private Set<String> outputs = new HashSet<>();
 
-	@Override
-	public void bindInputs(ChannelBindingService adapter) {
-	}
-
-	@Override
-	public void bindOutputs(ChannelBindingService adapter) {
-	}
-
-	@Override
-	public void unbindInputs(ChannelBindingService adapter) {
-	}
-
-	@Override
-	public void unbindOutputs(ChannelBindingService adapter) {
-	}
-
-	@Override
-	public Set<String> getInputs() {
-		return Collections.emptySet();
+	void addDynamicOutputs(String name) {
+		this.outputs.add(name);
 	}
 
 	@Override
 	public Set<String> getOutputs() {
-		return Collections.emptySet();
+		return Collections.unmodifiableSet(this.outputs);
+	}
+
+	@Override
+	public void unbindOutputs(ChannelBindingService adapter) {
+		for (String outputChannelName: this.outputs) {
+			adapter.unbindProducers(outputChannelName);
+		}
 	}
 }

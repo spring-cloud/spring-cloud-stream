@@ -16,18 +16,13 @@
 
 package org.springframework.cloud.stream.binding;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
-import org.springframework.context.SmartLifecycle;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
@@ -45,23 +40,24 @@ import org.springframework.util.ObjectUtils;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  */
-public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver implements SmartLifecycle {
+public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
+
+	private final ChannelBindingService channelBindingService;
 
 	private final BinderFactory<MessageChannel> binderFactory;
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
+	private final DynamicBindable dynamicBindable;
+
 	private ConfigurableListableBeanFactory beanFactory;
 
-	private AtomicBoolean isRunning = new AtomicBoolean(false);
-
-	private List<Binding> resolvedDesinationsBindings = new ArrayList<>();
-
-	public BinderAwareChannelResolver(BinderFactory<MessageChannel> binderFactory,
-			ChannelBindingServiceProperties channelBindingServiceProperties) {
-		Assert.notNull(binderFactory, "'binderFactory' cannot be null");
-		this.binderFactory = binderFactory;
-		this.channelBindingServiceProperties = channelBindingServiceProperties;
+	public BinderAwareChannelResolver(ChannelBindingService channelBindingService, DynamicBindable dynamicBindable) {
+		Assert.notNull(channelBindingService.getBinderFactory(), "'binderFactory' cannot be null");
+		this.channelBindingService = channelBindingService;
+		this.binderFactory = channelBindingService.getBinderFactory();
+		this.channelBindingServiceProperties = channelBindingService.getChannelBindingServiceProperties();
+		this.dynamicBindable = dynamicBindable;
 	}
 
 	@Override
@@ -94,22 +90,24 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
 						|| ObjectUtils.containsElement(dynamicDestinations, name);
 				if (dynamicAllowed) {
-					channel = new DirectChannel();
-					this.beanFactory.registerSingleton(name, channel);
-					channel = (MessageChannel) this.beanFactory.initializeBean(channel, name);
 					String transport = null;
 					if (name.contains(":")) {
 						String[] tokens = name.split(":", 2);
 						if (tokens.length == 2) {
 							transport = tokens[0];
+							name = tokens[1];
 						}
 						else if (tokens.length != 1) {
 							throw new IllegalArgumentException("Unrecognized channel naming scheme: " + name + " , should be" +
 									" [<transport>:]<name>");
 						}
 					}
+					channel = new DirectChannel();
+					this.beanFactory.registerSingleton(name, channel);
+					channel = (MessageChannel) this.beanFactory.initializeBean(channel, name);
 					Binder<MessageChannel> binder = binderFactory.getBinder(transport);
-					resolvedDesinationsBindings.add(binder.bindProducer(name, channel, producerProperties));
+					this.channelBindingService.addProducerBinding(name, binder.bindProducer(name, channel, producerProperties));
+					this.dynamicBindable.addDynamicOutputs(name);
 				}
 				else {
 					throw destinationResolutionException;
@@ -117,45 +115,5 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			}
 			return channel;
 		}
-	}
-
-	@Override
-	public void start() {
-		this.isRunning.set(true);
-	}
-
-	@Override
-	public void stop() {
-		if (this.isRunning()) {
-			if (!resolvedDesinationsBindings.isEmpty()) {
-				for (Binding binding: resolvedDesinationsBindings) {
-					binding.unbind();
-				}
-			}
-		}
-		this.isRunning.set(false);
-	}
-
-	@Override
-	public boolean isRunning() {
-		return this.isRunning.get();
-	}
-
-	@Override
-	public boolean isAutoStartup() {
-		return false;
-	}
-
-	@Override
-	public void stop(Runnable callback) {
-		stop();
-		if (callback != null) {
-			callback.run();
-		}
-	}
-
-	@Override
-	public int getPhase() {
-		return Integer.MIN_VALUE + 1000;
 	}
 }
