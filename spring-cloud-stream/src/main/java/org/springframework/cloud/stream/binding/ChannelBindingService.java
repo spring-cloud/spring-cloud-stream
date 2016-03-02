@@ -63,18 +63,6 @@ public class ChannelBindingService {
 		this.binderFactory = binderFactory;
 	}
 
-	void addProducerBinding(String name, Binding<MessageChannel> messageChannelBinding) {
-		this.producerBindings.put(name, messageChannelBinding);
-	}
-
-	ChannelBindingServiceProperties getChannelBindingServiceProperties() {
-		return this.channelBindingServiceProperties;
-	}
-
-	BinderFactory<MessageChannel> getBinderFactory() {
-		return this.binderFactory;
-	}
-
 	public Collection<Binding<MessageChannel>> bindConsumer(MessageChannel inputChannel, String inputChannelName) {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
 		String[] channelBindingTargets = StringUtils.commaDelimitedListToStringArray(channelBindingTarget);

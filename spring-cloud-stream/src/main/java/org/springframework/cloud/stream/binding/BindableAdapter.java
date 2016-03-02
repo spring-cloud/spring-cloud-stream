@@ -23,7 +23,7 @@ import java.util.Set;
  *
  * @author Ilayaperumal Gopinathan
  */
-class BindableAdapter implements Bindable {
+public class BindableAdapter implements Bindable {
 
 
 	@Override

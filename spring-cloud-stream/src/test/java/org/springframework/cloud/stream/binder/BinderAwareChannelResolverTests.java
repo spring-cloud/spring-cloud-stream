@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -37,16 +36,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.DynamicBindable;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
@@ -83,7 +79,7 @@ public class BinderAwareChannelResolverTests {
 				return binder;
 			}
 		};
-		this.resolver = new BinderAwareChannelResolver(new ChannelBindingService(null, binderFactory), new DynamicBindable());
+		this.resolver = new BinderAwareChannelResolver(binderFactory, null, new DynamicBindable());
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver",
 				this.resolver);
@@ -150,10 +146,9 @@ public class BinderAwareChannelResolverTests {
 				matches("bar"), any(DirectChannel.class), any(Properties.class))).thenReturn(barBinding);
 		when(mockBinderFactory.getBinder(null)).thenReturn(binder);
 		when(mockBinderFactory.getBinder("someTransport")).thenReturn(binder2);
-		ChannelBindingService channelBindingService = new ChannelBindingService(bindingServiceProperties, mockBinderFactory);
 		@SuppressWarnings("unchecked")
 		BinderAwareChannelResolver resolver =
-				new BinderAwareChannelResolver(channelBindingService, dynamicBindable);
+				new BinderAwareChannelResolver(mockBinderFactory, bindingServiceProperties, dynamicBindable);
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
 		MessageChannel resolved = resolver.resolveDestination("foo");
@@ -161,15 +156,10 @@ public class BinderAwareChannelResolverTests {
 		assertSame(resolved, beanFactory.getBean("foo"));
 		resolved = resolver.resolveDestination("someTransport:bar");
 		verify(binder2).bindProducer(eq("bar"), any(MessageChannel.class), any(Properties.class));
-		assertSame(resolved, beanFactory.getBean("bar"));
-		DirectFieldAccessor fieldAccessor = new DirectFieldAccessor(channelBindingService);
-		Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>)
-				fieldAccessor.getPropertyValue("producerBindings");
-		assertThat(fooBinding, Matchers.sameInstance(producerBindings.get("foo")));
-		assertThat(barBinding, Matchers.sameInstance(producerBindings.get("bar")));
+		assertSame(resolved, beanFactory.getBean("someTransport:bar"));
 		assertTrue("Dynamic bindable should have two destination names", dynamicBindable.getOutputs().size() == 2);
 		assertTrue("Dynamic bindable should have the destination name 'foo'", dynamicBindable.getOutputs().contains("foo"));
-		assertTrue("Dynamic bindable should have the destination name 'bar'", dynamicBindable.getOutputs().contains("bar"));
+		assertTrue("Dynamic bindable should have the destination name 'bar'", dynamicBindable.getOutputs().contains("someTransport:bar"));
 	}
 
 	/**

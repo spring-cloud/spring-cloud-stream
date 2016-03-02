@@ -16,8 +16,11 @@
 package org.springframework.cloud.stream.binding;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+
+import org.springframework.cloud.stream.binder.Binding;
 
 /**
  * A {@link BindableAdapter} that stores the dynamic destination names and handle their unbinding.
@@ -27,23 +30,23 @@ import java.util.Set;
 public final class DynamicBindable extends BindableAdapter {
 
 	/**
-	 * Dynamic destination names.
+	 * Map containing dynamic destination names and their bindings.
 	 */
-	private Set<String> outputs = new HashSet<>();
+	private Map<String, Binding> outputBindings = new HashMap<>();
 
-	void addDynamicOutputs(String name) {
-		this.outputs.add(name);
+	void addDynamicOutputs(String name, Binding binding) {
+		this.outputBindings.put(name, binding);
 	}
 
 	@Override
 	public Set<String> getOutputs() {
-		return Collections.unmodifiableSet(this.outputs);
+		return Collections.unmodifiableSet(outputBindings.keySet());
 	}
 
 	@Override
 	public void unbindOutputs(ChannelBindingService adapter) {
-		for (String outputChannelName: this.outputs) {
-			adapter.unbindProducers(outputChannelName);
+		for (Map.Entry<String, Binding> entry: outputBindings.entrySet()) {
+			entry.getValue().unbind();
 		}
 	}
 }

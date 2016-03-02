@@ -135,8 +135,9 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver(ChannelBindingService channelBindingService) {
-		return new BinderAwareChannelResolver(channelBindingService, dynamicBindable());
+	public BinderAwareChannelResolver binderAwareChannelResolver(BinderFactory<MessageChannel> binderFactory,
+			ChannelBindingServiceProperties channelBindingServiceProperties) {
+		return new BinderAwareChannelResolver(binderFactory, channelBindingServiceProperties, dynamicBindable());
 	}
 
 	@Bean

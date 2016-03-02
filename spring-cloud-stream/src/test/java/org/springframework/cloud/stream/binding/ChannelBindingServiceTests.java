@@ -38,13 +38,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binder;
@@ -189,7 +187,6 @@ public class ChannelBindingServiceTests {
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true)));
-		ChannelBindingService channelBindingService = new ChannelBindingService(properties, binderFactory);
 		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
 
 		MessageChannel inputChannel = new DirectChannel();
@@ -199,7 +196,7 @@ public class ChannelBindingServiceTests {
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
 		when(binder.bindProducer(
 				matches("bar"), any(DirectChannel.class), any(Properties.class))).thenReturn(mockBinding);
-		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(channelBindingService, dynamicBindable);
+		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicBindable);
 		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("mock:bar", MessageChannel.class))
 				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
@@ -223,10 +220,6 @@ public class ChannelBindingServiceTests {
 		resolver.setBeanFactory(beanFactory);
 		MessageChannel resolved = resolver.resolveDestination("mock:bar");
 		assertThat(resolved, sameInstance(dynamic.get()));
-		DirectFieldAccessor fieldAccessor = new DirectFieldAccessor(channelBindingService);
-		Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>)
-				fieldAccessor.getPropertyValue("producerBindings");
-		assertThat(mockBinding, Matchers.sameInstance(producerBindings.get("bar")));
 		verify(binder).bindProducer(eq("bar"), eq(dynamic.get()), any(Properties.class));
 		properties.setDynamicDestinations(new String[] { "mock:bar" });
 		resolved = resolver.resolveDestination("mock:bar");
