@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>spring-cloud-dependencies-parent</artifactId>
 		<groupId>org.springframework.cloud</groupId>
-		<version>1.1.0.BUILD-SNAPSHOT</version>
+		<version>1.1.0.RC1</version>
 		<relativePath />
 	</parent>
 	<artifactId>spring-cloud-stream-dependencies</artifactId>
@@ -14,7 +14,6 @@
 	<description>Spring Cloud Stream Dependencies</description>
 	<properties>
 		<rxjava.version>1.0.14</rxjava.version>
-		<spring-integration.version>4.2.4.RELEASE</spring-integration.version>
 		<spring.tuple.version>1.0.0.RC1</spring.tuple.version>
 		<spring.integration.tuple.version>1.0.0.RC1</spring.integration.tuple.version>
 	</properties>
@@ -101,11 +100,6 @@
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.integration</groupId>
-				<artifactId>spring-integration-core</artifactId>
-				<version>${spring-integration.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>com.esotericsoftware</groupId>
 				<artifactId>kryo-shaded</artifactId>
 				<version>3.0.3</version>
@@ -119,13 +113,6 @@
 				<groupId>org.objenesis</groupId>
 				<artifactId>objenesis</artifactId>
 				<version>2.1</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.integration</groupId>
-				<artifactId>spring-integration-bom</artifactId>
-				<version>${spring-integration.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
