@@ -317,13 +317,21 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		this.defaultCompress = defaultCompress;
 	}
 
-
 	@Override
-	public void afterPropertiesSet() throws Exception {
-		Assert.notNull(this.applicationContext, "The 'applicationContext' property cannot be null");
+	public final void afterPropertiesSet() throws Exception {
+		Assert.notNull(this.applicationContext, "The 'applicationContext' property must not be null");
 		if (this.evaluationContext == null) {
 			this.evaluationContext = ExpressionUtils.createStandardEvaluationContext(getBeanFactory());
 		}
+		onInit();
+	}
+
+	/**
+	 * Subclasses may implement this method to perform any necessary initialization.
+	 * It will be invoked from {@link #afterPropertiesSet()} which is itself {@code final}.
+	 */
+	protected void onInit() throws Exception {
+		// no-op default
 	}
 
 	@Override

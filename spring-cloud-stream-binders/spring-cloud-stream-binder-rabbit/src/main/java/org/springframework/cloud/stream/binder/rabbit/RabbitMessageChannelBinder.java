@@ -393,8 +393,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
-		super.afterPropertiesSet();
+	public void onInit() {
 		if (this.clustered) {
 			Assert.state(this.addresses.length == this.adminAddresses.length
 					&& this.addresses.length == this.nodes.length,

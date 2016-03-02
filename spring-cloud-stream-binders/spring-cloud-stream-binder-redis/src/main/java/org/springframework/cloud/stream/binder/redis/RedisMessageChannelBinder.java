@@ -132,8 +132,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
-		super.afterPropertiesSet();
+	public void onInit() {
 		this.errorAdapter.setIntegrationEvaluationContext(this.evaluationContext);
 		this.errorAdapter.setBeanFactory(getBeanFactory());
 		this.errorAdapter.afterPropertiesSet();

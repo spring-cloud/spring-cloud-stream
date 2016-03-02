@@ -325,7 +325,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
+	public void onInit() throws Exception {
 		// we instantiate the connection factory here due to https://jira.spring.io/browse/XD-2647
 		ZookeeperConfiguration configuration = new ZookeeperConfiguration(this.zookeeperConnect);
 		configuration.setBufferSize(socketBufferSize);
@@ -348,7 +348,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			retryTemplate.setBackOffPolicy(backOffPolicy);
 			retryOperations = retryTemplate;
 		}
-		super.afterPropertiesSet();
 	}
 
 	/**
