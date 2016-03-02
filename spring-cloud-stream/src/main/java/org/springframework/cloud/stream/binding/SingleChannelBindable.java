@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.messaging.MessageChannel;
 
 /**
  * A {@link Bindable} component that wraps a generic channel. Useful for binding channels outside the
@@ -33,16 +33,16 @@ public class SingleChannelBindable extends BindableAdapter {
 
 	private final String name;
 
-	private final PublishSubscribeChannel errorChannel;
+	private final MessageChannel messageChannel;
 
-	public SingleChannelBindable(String name, PublishSubscribeChannel errorChannel) {
+	public SingleChannelBindable(String name, MessageChannel messageChannel) {
 		this.name = name;
-		this.errorChannel = errorChannel;
+		this.messageChannel = messageChannel;
 	}
 
 	@Override
 	public void bindOutputs(ChannelBindingService adapter) {
-		adapter.bindProducer(errorChannel, name);
+		adapter.bindProducer(messageChannel, name);
 	}
 
 	@Override
