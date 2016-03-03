@@ -46,16 +46,16 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	private final DynamicBindable dynamicBindable;
+	private final DynamicDestinationsBindable dynamicDestinationsBindable;
 
 	private ConfigurableListableBeanFactory beanFactory;
 
 	public BinderAwareChannelResolver(BinderFactory binderFactory,
-			ChannelBindingServiceProperties channelBindingServiceProperties, DynamicBindable dynamicBindable) {
+									  ChannelBindingServiceProperties channelBindingServiceProperties, DynamicDestinationsBindable dynamicDestinationsBindable) {
 		Assert.notNull(binderFactory, "'binderFactory' cannot be null");
 		this.binderFactory = binderFactory;
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
-		this.dynamicBindable = dynamicBindable;
+		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 	}
 
 	@Override
@@ -105,7 +105,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					this.beanFactory.registerSingleton(beanName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, beanName);
 					Binder<MessageChannel> binder = binderFactory.getBinder(transport);
-					this.dynamicBindable.addDynamicOutputs(beanName, binder.bindProducer(destinationName, channel, producerProperties));
+					this.dynamicDestinationsBindable.addOutputBinding(beanName, binder.bindProducer(destinationName, channel, producerProperties));
 				}
 				else {
 					throw destinationResolutionException;

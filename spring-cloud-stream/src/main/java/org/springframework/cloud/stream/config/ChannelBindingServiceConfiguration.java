@@ -39,7 +39,7 @@ import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
-import org.springframework.cloud.stream.binding.DynamicBindable;
+import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
@@ -154,8 +154,8 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public DynamicBindable dynamicBindable() {
-		return new DynamicBindable();
+	public DynamicDestinationsBindable dynamicBindable() {
+		return new DynamicDestinationsBindable();
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early

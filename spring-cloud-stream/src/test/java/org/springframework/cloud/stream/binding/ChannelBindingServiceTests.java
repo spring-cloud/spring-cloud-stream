@@ -182,7 +182,7 @@ public class ChannelBindingServiceTests {
 	public void checkDynamicBinding () {
 
 		ChannelBindingServiceProperties properties = new ChannelBindingServiceProperties();
-		DynamicBindable dynamicBindable = new DynamicBindable();
+		DynamicDestinationsBindable dynamicDestinationsBindable = new DynamicDestinationsBindable();
 		DefaultBinderFactory<MessageChannel> binderFactory =
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
@@ -196,7 +196,7 @@ public class ChannelBindingServiceTests {
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
 		when(binder.bindProducer(
 				matches("bar"), any(DirectChannel.class), any(Properties.class))).thenReturn(mockBinding);
-		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicBindable);
+		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicDestinationsBindable);
 		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("mock:bar", MessageChannel.class))
 				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
