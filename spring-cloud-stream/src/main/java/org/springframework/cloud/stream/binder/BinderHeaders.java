@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,25 +21,16 @@ import org.springframework.messaging.MessageHeaders;
 
 
 /**
- * Spring Integration message headers for XD.
+ * Spring Integration message headers for Spring Cloud Stream.
  * @author Gary Russell
  * @author David Turanski
  */
 public final class BinderHeaders {
 
-	public static final String BINDER_REPLY_CHANNEL = "binderReplyChannel";
-
-	public static final String BINDER_HISTORY = "binderHistory";
-
 	/*
 	 * no xd prefix for backwards compatibility
 	 */
 	public static final String BINDER_ORIGINAL_CONTENT_TYPE = "originalContentType";
-
-	/*
-	 * no xd prefix for backwards compatibility
-	 */
-	public static final String REPLY_TO = "replyTo";
 
 	/**
 	 * The headers that will be propagated, by default, by binder implementations
@@ -49,11 +40,8 @@ public final class BinderHeaders {
 			IntegrationMessageHeaderAccessor.CORRELATION_ID,
 			IntegrationMessageHeaderAccessor.SEQUENCE_SIZE,
 			IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER,
-			BINDER_REPLY_CHANNEL,
 			MessageHeaders.CONTENT_TYPE,
-			BINDER_ORIGINAL_CONTENT_TYPE,
-			REPLY_TO,
-			BINDER_HISTORY
+			BINDER_ORIGINAL_CONTENT_TYPE
 	};
 
 	private BinderHeaders() {

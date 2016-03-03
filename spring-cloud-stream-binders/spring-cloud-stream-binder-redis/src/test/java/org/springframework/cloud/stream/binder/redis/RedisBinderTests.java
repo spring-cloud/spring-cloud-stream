@@ -188,7 +188,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 	public void testMoreHeaders() {
 		RedisMessageChannelBinder binder = new RedisMessageChannelBinder(mock(RedisConnectionFactory.class), "foo", "bar");
 		Collection<String> headers = Arrays.asList(TestUtils.getPropertyValue(binder, "headersToMap", String[].class));
-		assertEquals(10, headers.size());
+		assertEquals(7, headers.size());
 		assertTrue(headers.contains("foo"));
 		assertTrue(headers.contains("bar"));
 	}

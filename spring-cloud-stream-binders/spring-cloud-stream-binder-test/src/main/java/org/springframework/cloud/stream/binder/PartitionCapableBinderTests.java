@@ -233,7 +233,6 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, 42)
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43)
-				.setHeader(BinderHeaders.BINDER_REPLY_CHANNEL, "bar")
 				.build();
 		output.send(message2);
 		output.send(new GenericMessage<>(1));
@@ -253,8 +252,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 				IntegrationMessageHeaderAccessor accessor = new IntegrationMessageHeaderAccessor((Message<?>) item);
 				boolean result = "foo".equals(accessor.getCorrelationId()) &&
 						42 == accessor.getSequenceNumber() &&
-						43 == accessor.getSequenceSize() &&
-						"bar".equals(accessor.getHeader(BinderHeaders.BINDER_REPLY_CHANNEL));
+						43 == accessor.getSequenceSize();
 				return result;
 			}
 		};
