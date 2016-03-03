@@ -26,10 +26,7 @@ import org.springframework.messaging.MessageHeaders;
  * @author David Turanski
  */
 public final class BinderHeaders {
-
-	/*
-	 * no xd prefix for backwards compatibility
-	 */
+	
 	public static final String BINDER_ORIGINAL_CONTENT_TYPE = "originalContentType";
 
 	/**

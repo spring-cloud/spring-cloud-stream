@@ -469,11 +469,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	private Binding<MessageChannel> doRegisterConsumer(final String name, String group, MessageChannel moduleInputChannel, Queue queue,
 													   final RabbitPropertiesAccessor properties) {
 		DefaultBinding<MessageChannel> consumerBinding = null;
-		// Fix for XD-2503
-		// Temporarily overrides the thread context classloader with the one where the SimpleMessageListenerContainer
-		// is defined
-		// This allows for the proxying that happens while initializing the SimpleMessageListenerContainer to work
-		// correctly
+		// TODO https://github.com/spring-cloud/spring-cloud-stream/issues/401
 		ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
 		try {
 			ClassUtils.overrideThreadContextClassLoader(SimpleMessageListenerContainer.class.getClassLoader());

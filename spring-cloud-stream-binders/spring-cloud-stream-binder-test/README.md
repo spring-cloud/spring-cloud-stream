@@ -1,2 +1,0 @@
-Spring XD Test Support
-======================

@@ -38,6 +38,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.AbstractBinder;
+import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderPropertyKeys;
@@ -92,35 +93,7 @@ import kafka.utils.ZkUtils;
 import scala.collection.Seq;
 
 /**
- * A binder that uses Kafka as the underlying middleware. The general implementation mapping between XD concepts
- * and Kafka concepts is as follows:
- * A binder that uses Kafka as the underlying middleware.
- * The general implementation mapping between XD concepts and Kafka concepts is as follows:
- * <table>
- * <tr>
- * <th>Stream definition</th><th>Kafka topic</th><th>Kafka partitions</th><th>Notes</th>
- * </tr>
- * <tr>
- * <td>foo = "http | log"</td><td>foo.0</td><td>1 partition</td><td>1 producer, 1 consumer</td>
- * </tr>
- * <tr>
- * <td>foo = "http | log", log.count=x</td><td>foo.0</td><td>x partitions</td><td>1 producer, x consumers with static
- * group 'springXD', achieves queue semantics</td>
- * </tr>
- * <tr>
- * <td>foo = "http | log", log.count=x + XD partitioning</td><td>still 1 topic 'foo.0'</td><td>x partitions + use key
- * computed by XD</td><td>1 producer, x consumers with static group 'springXD', achieves queue semantics</td>
- * </tr>
- * <tr>
- * <td>foo = "http | log", log.count=x, concurrency=y</td><td>foo.0</td><td>x*y partitions</td><td>1 producer, x XD
- * consumers, each with y threads</td>
- * </tr>
- * <tr>
- * <td>foo = "http | log", log.count=0, x actual log containers</td><td>foo.0</td><td>10(configurable)
- * partitions</td><td>1 producer, x XD consumers. Can't know the number of partitions beforehand, so decide a number
- * that better be greater than number of containers</td>
- * </tr>
- * </table>
+ * A {@link Binder} that uses Kafka as the underlying middleware.
  *
  * @author Eric Bottard
  * @author Marius Bogoevici
@@ -326,7 +299,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 	@Override
 	public void onInit() throws Exception {
-		// we instantiate the connection factory here due to https://jira.spring.io/browse/XD-2647
 		ZookeeperConfiguration configuration = new ZookeeperConfiguration(this.zookeeperConnect);
 		configuration.setBufferSize(socketBufferSize);
 		configuration.setMaxWait(defaultMaxWait);

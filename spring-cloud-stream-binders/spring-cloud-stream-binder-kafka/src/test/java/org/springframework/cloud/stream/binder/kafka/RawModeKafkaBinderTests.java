@@ -149,7 +149,6 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, 42)
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43)
-				.setHeader("xdReplyChannel", "bar")
 				.build();
 		output.send(message2);
 		output.send(new GenericMessage<>(new byte[]{1}));
