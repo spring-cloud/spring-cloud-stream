@@ -21,7 +21,7 @@ import org.springframework.messaging.MessageHeaders;
 
 
 /**
- * Spring Integration message headers for XD.
+ * Spring Integration message headers for Spring Cloud Stream.
  * @author Gary Russell
  * @author David Turanski
  */
