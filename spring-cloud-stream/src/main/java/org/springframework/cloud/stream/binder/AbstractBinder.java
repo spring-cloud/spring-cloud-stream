@@ -17,9 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
-import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN;
-import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN_VALUE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,6 +55,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.IdGenerator;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -370,7 +369,7 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		messageValues.setPayload(payload);
 		messageValues.put(MessageHeaders.CONTENT_TYPE, contentType);
 		if (originalContentType != null) {
-			messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType);
+			messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
 		}
 		return messageValues;
 	}
@@ -399,18 +398,18 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		return deserializePayloadIfNecessary(new MessageValues(message));
 	}
 
-	protected final MessageValues deserializePayloadIfNecessary(MessageValues message) {
-		Object originalPayload = message.getPayload();
-		MimeType contentType = this.contentTypeResolver.resolve(message);
+	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
+		Object originalPayload = messageValues.getPayload();
+		MimeType contentType = this.contentTypeResolver.resolve(messageValues);
 		Object payload = deserializePayload(originalPayload, contentType);
 		if (payload != null) {
-			message.setPayload(payload);
+			messageValues.setPayload(payload);
 
-			Object originalContentType = message.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			message.put(MessageHeaders.CONTENT_TYPE, originalContentType);
-			message.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, null);
+			Object originalContentType = messageValues.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			messageValues.put(MessageHeaders.CONTENT_TYPE, originalContentType);
+			messageValues.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
 		}
-		return message;
+		return messageValues;
 	}
 
 	private Object deserializePayload(Object payload, MimeType contentType) {
@@ -538,31 +537,27 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 
 	/**
 	 * Handles representing any java class as a {@link MimeType}.
+	 *
 	 * @author David Turanski
-	 * @see <a href="http://docs.oracle.com/javase/7/docs/api/java/lang/Class.html#getName"/>
+	 * @author Ilayaperumal Gopinathan
 	 */
 	abstract static class JavaClassMimeTypeConversion {
 
-		public static final MimeType APPLICATION_OCTET_STREAM_MIME_TYPE = MimeType.valueOf
-				(APPLICATION_OCTET_STREAM_VALUE);
-
-		public static final MimeType TEXT_PLAIN_MIME_TYPE = MimeType.valueOf(TEXT_PLAIN_VALUE);
-
 		private static ConcurrentMap<String, MimeType> mimeTypesCache = new ConcurrentHashMap<>();
 
-		static MimeType mimeTypeFromObject(Object obj) {
-			Assert.notNull(obj, "object cannot be null.");
-			if (obj instanceof byte[]) {
-				return APPLICATION_OCTET_STREAM_MIME_TYPE;
+		static MimeType mimeTypeFromObject(Object payload) {
+			Assert.notNull(payload, "payload object cannot be null.");
+			if (payload instanceof byte[]) {
+				return MimeTypeUtils.APPLICATION_OCTET_STREAM;
 			}
-			if (obj instanceof String) {
-				return TEXT_PLAIN_MIME_TYPE;
+			if (payload instanceof String) {
+				return MimeTypeUtils.TEXT_PLAIN;
 			}
-			String className = obj.getClass().getName();
+			String className = payload.getClass().getName();
 			MimeType mimeType = mimeTypesCache.get(className);
 			if (mimeType == null) {
 				String modifiedClassName = className;
-				if (obj.getClass().isArray()) {
+				if (payload.getClass().isArray()) {
 					// Need to remove trailing ';' for an object array, e.g. "[Ljava.lang.String;" or multi-dimensional
 					// "[[[Ljava.lang.String;"
 					if (modifiedClassName.endsWith(";")) {

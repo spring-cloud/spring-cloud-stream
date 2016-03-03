@@ -50,6 +50,7 @@ import com.esotericsoftware.kryo.Registration;
 /**
  * @author Gary Russell
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
 public class MessageChannelBinderSupportTests {
 
@@ -122,11 +123,11 @@ public class MessageChannelBinderSupportTests {
 
 		assertEquals(MimeTypeUtils.TEXT_PLAIN,
 				contentTypeResolver.resolve(converted.getHeaders()));
-		assertEquals(MimeTypeUtils.APPLICATION_JSON,
+		assertEquals(MimeTypeUtils.APPLICATION_JSON.toString(),
 				converted.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertEquals("{\"foo\":\"foo\"}", reconstructed.getPayload());
-		assertEquals(MimeTypeUtils.APPLICATION_JSON, reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertEquals(MimeTypeUtils.APPLICATION_JSON.toString(), reconstructed.get(MessageHeaders.CONTENT_TYPE));
 	}
 
 	@Test
