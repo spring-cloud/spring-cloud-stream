@@ -61,6 +61,7 @@ import org.springframework.messaging.core.DestinationResolutionException;
  * @author Gary Russell
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class ChannelBindingServiceTests {
 
@@ -181,6 +182,7 @@ public class ChannelBindingServiceTests {
 	public void checkDynamicBinding () {
 
 		ChannelBindingServiceProperties properties = new ChannelBindingServiceProperties();
+		DynamicBindable dynamicBindable = new DynamicBindable();
 		DefaultBinderFactory<MessageChannel> binderFactory =
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
@@ -193,8 +195,8 @@ public class ChannelBindingServiceTests {
 		@SuppressWarnings("unchecked")
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
 		when(binder.bindProducer(
-				matches("mock:bar"), any(DirectChannel.class), any(Properties.class))).thenReturn(mockBinding);
-		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties);
+				matches("bar"), any(DirectChannel.class), any(Properties.class))).thenReturn(mockBinding);
+		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicBindable);
 		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("mock:bar", MessageChannel.class))
 				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
@@ -206,7 +208,7 @@ public class ChannelBindingServiceTests {
 				return null;
 			}
 
-		}).when(beanFactory).registerSingleton(eq("mock:bar"), any(MessageChannel.class));
+		}).when(beanFactory).registerSingleton(eq("bar"), any(MessageChannel.class));
 		doAnswer(new Answer<Object>() {
 
 			@Override
@@ -214,11 +216,11 @@ public class ChannelBindingServiceTests {
 				return dynamic.get();
 			}
 
-		}).when(beanFactory).initializeBean(any(MessageChannel.class), eq("mock:bar"));
+		}).when(beanFactory).initializeBean(any(MessageChannel.class), eq("bar"));
 		resolver.setBeanFactory(beanFactory);
 		MessageChannel resolved = resolver.resolveDestination("mock:bar");
 		assertThat(resolved, sameInstance(dynamic.get()));
-		verify(binder).bindProducer(eq("mock:bar"), eq(dynamic.get()), any(Properties.class));
+		verify(binder).bindProducer(eq("bar"), eq(dynamic.get()), any(Properties.class));
 		properties.setDynamicDestinations(new String[] { "mock:bar" });
 		resolved = resolver.resolveDestination("mock:bar");
 		assertThat(resolved, sameInstance(dynamic.get()));

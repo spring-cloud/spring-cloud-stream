@@ -35,8 +35,10 @@ import org.springframework.util.ObjectUtils;
  * resolves the channel from the bean factory and, if not present, creates a new channel
  * and adds it to the factory after binding it to the binder. The binder is optionally
  * determined with a prefix preceding a colon.
+ *
  * @author Mark Fisher
  * @author Gary Russell
+ * @author Ilayaperumal Gopinathan
  */
 public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
 
@@ -44,13 +46,16 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
+	private final DynamicBindable dynamicBindable;
+
 	private ConfigurableListableBeanFactory beanFactory;
 
-	public BinderAwareChannelResolver(BinderFactory<MessageChannel> binderFactory,
-			ChannelBindingServiceProperties channelBindingServiceProperties) {
+	public BinderAwareChannelResolver(BinderFactory binderFactory,
+			ChannelBindingServiceProperties channelBindingServiceProperties, DynamicBindable dynamicBindable) {
 		Assert.notNull(binderFactory, "'binderFactory' cannot be null");
 		this.binderFactory = binderFactory;
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
+		this.dynamicBindable = dynamicBindable;
 	}
 
 	@Override
@@ -62,49 +67,45 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	}
 
 	@Override
-	public MessageChannel resolveDestination(String name) {
+	public MessageChannel resolveDestination(String destinationName) {
 		MessageChannel channel = null;
 		DestinationResolutionException destinationResolutionException;
 		try {
-			return super.resolveDestination(name);
+			return super.resolveDestination(destinationName);
 		}
 		catch (DestinationResolutionException e) {
 			destinationResolutionException = e;
 		}
 		synchronized (this) {
-			try {
-				return super.resolveDestination(name);
-			}
-			catch (DestinationResolutionException e) {
-				destinationResolutionException = e;
-			}
 			if (this.beanFactory != null && this.binderFactory != null) {
 				String[] dynamicDestinations = null;
 				Properties producerProperties = null;
 				if (this.channelBindingServiceProperties != null) {
 					dynamicDestinations = this.channelBindingServiceProperties.getDynamicDestinations();
 					// TODO: need the props to return some defaults if not found
-					producerProperties = this.channelBindingServiceProperties.getProducerProperties(name);
+					producerProperties = this.channelBindingServiceProperties.getProducerProperties(destinationName);
 				}
 				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
-						|| ObjectUtils.containsElement(dynamicDestinations, name);
+						|| ObjectUtils.containsElement(dynamicDestinations, destinationName);
 				if (dynamicAllowed) {
-					channel = new DirectChannel();
-					this.beanFactory.registerSingleton(name, channel);
-					channel = (MessageChannel) this.beanFactory.initializeBean(channel, name);
 					String transport = null;
-					if (name.contains(":")) {
-						String[] tokens = name.split(":", 2);
+					String beanName = destinationName;
+					if (destinationName.contains(":")) {
+						String[] tokens = destinationName.split(":", 2);
 						if (tokens.length == 2) {
 							transport = tokens[0];
+							destinationName = tokens[1];
 						}
 						else if (tokens.length != 1) {
-							throw new IllegalArgumentException("Unrecognized channel naming scheme: " + name + " , should be" +
-									" [<transport>:]<name>");
+							throw new IllegalArgumentException("Unrecognized channel naming scheme: " + destinationName + " , should be" +
+									" [<transport>:]<destinationName>");
 						}
 					}
+					channel = new DirectChannel();
+					this.beanFactory.registerSingleton(beanName, channel);
+					channel = (MessageChannel) this.beanFactory.initializeBean(channel, beanName);
 					Binder<MessageChannel> binder = binderFactory.getBinder(transport);
-					binder.bindProducer(name, channel, producerProperties);
+					this.dynamicBindable.addDynamicOutputs(beanName, binder.bindProducer(destinationName, channel, producerProperties));
 				}
 				else {
 					throw destinationResolutionException;
@@ -113,5 +114,4 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			return channel;
 		}
 	}
-
 }
