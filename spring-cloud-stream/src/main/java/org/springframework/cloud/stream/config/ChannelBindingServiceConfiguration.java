@@ -46,6 +46,7 @@ import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageHistoryTrackerConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.SingleChannelBindable;
+import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -79,6 +80,12 @@ public class ChannelBindingServiceConfiguration {
 	@Autowired
 	MessageBuilderFactory messageBuilderFactory;
 
+	/**
+	 * User defined custom message converters
+	 */
+	@Autowired(required = false)
+	private List<AbstractFromMessageConverter> customMessageConverters;
+
 	@Bean
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
 	// it is used to detect a ChannelBindingService in the parent context (which we know
@@ -93,7 +100,7 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public MessageConverterConfigurer messageConverterConfigurer
 			(ChannelBindingServiceProperties channelBindingServiceProperties) {
-		return new MessageConverterConfigurer(channelBindingServiceProperties);
+		return new MessageConverterConfigurer(channelBindingServiceProperties, customMessageConverters);
 	}
 
 	@Bean
