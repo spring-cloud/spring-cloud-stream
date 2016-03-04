@@ -353,7 +353,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	/**
 	 * Implementations should return whether the binder under test uses "explicit" routing (e.g. Rabbit)
-	 * whereby XD is responsible for assigning a partition and knows which exact consumer will receive the
+	 * whereby Spring Cloud Stream is responsible for assigning a partition and knows which exact consumer will receive the
 	 * message (i.e. honor "partitionIndex") or "implicit" routing (e.g. Kafka) whereby the only guarantee
 	 * is that messages will be spread, but we don't control exactly which consumer gets which message.
 	 */
