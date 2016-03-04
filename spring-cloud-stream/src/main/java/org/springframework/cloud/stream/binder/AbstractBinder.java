@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
 import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN;
 
@@ -425,7 +426,7 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 	}
 
 	private Object deserializePayload(byte[] bytes, MimeType contentType) {
-		if (TEXT_PLAIN.equals(contentType)) {
+		if (TEXT_PLAIN.equals(contentType) || APPLICATION_JSON.equals(contentType)) {
 			try {
 				return new String(bytes, "UTF-8");
 			}
