@@ -98,7 +98,8 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public MessageConverterConfigurer messageConverterConfigurer
 			(ChannelBindingServiceProperties channelBindingServiceProperties) {
-		return new MessageConverterConfigurer(channelBindingServiceProperties, customMessageConverters);
+		return new MessageConverterConfigurer(channelBindingServiceProperties, customMessageConverters,
+				messageBuilderFactory);
 	}
 
 	@Bean

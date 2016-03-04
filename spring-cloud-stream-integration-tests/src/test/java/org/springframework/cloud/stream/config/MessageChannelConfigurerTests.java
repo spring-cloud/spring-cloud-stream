@@ -52,7 +52,7 @@ public class MessageChannelConfigurerTests {
 	private Sink testSink;
 
 	@Test
-	public void testContentTypeConfigurer() throws Exception {
+	public void testMessageConverterConfigurer() throws Exception {
 		final CountDownLatch latch = new CountDownLatch(1);
 		MessageHandler messageHandler = new MessageHandler() {
 			@Override
