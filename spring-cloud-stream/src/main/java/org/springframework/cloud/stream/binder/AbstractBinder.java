@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
 import static org.springframework.util.MimeTypeUtils.TEXT_PLAIN;
 
@@ -364,7 +363,7 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 
 		//Pass content type as String since some transport adapters will exclude CONTENT_TYPE Header otherwise
-		Object contentType = JavaClassMimeTypeConversion.mimeTypeFromObject(originalPayload, originalContentType).toString();
+		Object contentType = JavaClassMimeTypeConversion.mimeTypeFromObject(originalPayload).toString();
 		Object payload = serializePayloadIfNecessary(originalPayload);
 		MessageValues messageValues = new MessageValues(message);
 		messageValues.setPayload(payload);
@@ -426,7 +425,7 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 	}
 
 	private Object deserializePayload(byte[] bytes, MimeType contentType) {
-		if (TEXT_PLAIN.equals(contentType) || APPLICATION_JSON.equals(contentType)) {
+		if (TEXT_PLAIN.equals(contentType)) {
 			try {
 				return new String(bytes, "UTF-8");
 			}
@@ -546,16 +545,12 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 
 		private static ConcurrentMap<String, MimeType> mimeTypesCache = new ConcurrentHashMap<>();
 
-		static MimeType mimeTypeFromObject(Object payload, Object originalContentType) {
+		static MimeType mimeTypeFromObject(Object payload) {
 			Assert.notNull(payload, "payload object cannot be null.");
 			if (payload instanceof byte[]) {
 				return MimeTypeUtils.APPLICATION_OCTET_STREAM;
 			}
 			if (payload instanceof String) {
-				if (originalContentType != null &&
-						originalContentType.toString().equals(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
-					return MimeTypeUtils.APPLICATION_JSON;
-				}
 				return MimeTypeUtils.TEXT_PLAIN;
 			}
 			String className = payload.getClass().getName();
