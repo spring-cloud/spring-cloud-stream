@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,14 @@
 package org.springframework.cloud.stream.binder.rabbit.config;
 
 /**
+ * Configuration class for RabbitMQ message channel binder.
+ *
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
 
 import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
@@ -45,15 +49,19 @@ public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
 	private ConnectionFactory rabbitConnectionFactory;
-	
+
 	@Autowired
 	private RabbitBinderConfigurationProperties rabbitBinderConfigurationProperties;
-	
+
 	@Autowired
 	private SpringRabbitMQProperties springRabbitMQProperties;
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() {
+		if (rabbitConnectionFactory instanceof CachingConnectionFactory) {
+			((CachingConnectionFactory) rabbitConnectionFactory).
+					setChannelCacheSize(springRabbitMQProperties.getChannelCacheSize());
+		}
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory);
 		binder.setCodec(codec);
 		binder.setAddresses(springRabbitMQProperties.getAddresses());
@@ -81,19 +89,18 @@ public class RabbitMessageChannelBinderConfiguration {
 		binder.setDefaultDurableSubscription(rabbitBinderConfigurationProperties.isDurableSubscription());
 		return binder;
 	}
-	
+
 	@Bean
 	MessagePostProcessor deCompressingPostProcessor() {
 		return new DelegatingDecompressingPostProcessor();
 	}
-	
+
 	@Bean
 	MessagePostProcessor gZipPostProcessor() {
 		GZipPostProcessor gZipPostProcessor = new GZipPostProcessor();
 		gZipPostProcessor.setLevel(rabbitBinderConfigurationProperties.getCompressionLevel());
-		return  gZipPostProcessor;
+		return gZipPostProcessor;
 	}
-	
 
 	@Bean
 	ConnectionFactorySettings rabbitConnectionFactorySettings() {
