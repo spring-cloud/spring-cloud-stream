@@ -108,7 +108,8 @@ public class MessageChannelBinderSupportTests {
 				contentTypeResolver.resolve(converted.getHeaders()));
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertEquals("foo", reconstructed.getPayload());
-		assertNull(reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
+		assertEquals(MimeTypeUtils.TEXT_PLAIN_VALUE, reconstructed.get(MessageHeaders.CONTENT_TYPE));
 	}
 
 	@Test
@@ -140,7 +141,17 @@ public class MessageChannelBinderSupportTests {
 				converted.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertEquals("{\"foo\":\"foo\"}", reconstructed.getPayload());
-		assertEquals(MimeTypeUtils.APPLICATION_JSON.toString(), reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertEquals(MimeTypeUtils.APPLICATION_JSON_VALUE, reconstructed.get(MessageHeaders.CONTENT_TYPE));
+	}
+
+	@Test
+	public void testContentTypePreservedForNonSCStApp() {
+		Message<String> inbound = MessageBuilder.withPayload("{\"foo\":\"bar\"}")
+				.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON))
+				.build();
+		MessageValues reconstructed = binder.deserializePayloadIfNecessary(inbound);
+		assertEquals("{\"foo\":\"bar\"}", reconstructed.getPayload());
+		assertEquals(MimeTypeUtils.APPLICATION_JSON, reconstructed.get(MessageHeaders.CONTENT_TYPE));
 	}
 
 	@Test
@@ -155,7 +166,9 @@ public class MessageChannelBinderSupportTests {
 
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertEquals("bar", ((Foo) reconstructed.getPayload()).getBar());
-		assertNull(reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
+		assertEquals("application/x-java-object;type=org.springframework.cloud.stream.binder.MessageChannelBinderSupportTests$Foo",
+				reconstructed.get(MessageHeaders.CONTENT_TYPE));
 	}
 
 	@Test
@@ -170,7 +183,9 @@ public class MessageChannelBinderSupportTests {
 
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertEquals("bar", ((Foo) reconstructed.getPayload()).getBar());
-		assertNull(reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
+		assertEquals("application/x-java-object;type=org.springframework.cloud.stream.binder.MessageChannelBinderSupportTests$Foo",
+				reconstructed.get(MessageHeaders.CONTENT_TYPE));
 	}
 
 	@Test
@@ -185,7 +200,9 @@ public class MessageChannelBinderSupportTests {
 
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertEquals("bar", ((Foo) reconstructed.getPayload()).getBar());
-		assertNull(reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
+		assertEquals("application/x-java-object;type=org.springframework.cloud.stream.binder.MessageChannelBinderSupportTests$Foo",
+				reconstructed.get(MessageHeaders.CONTENT_TYPE));
 	}
 
 	@Test
@@ -200,7 +217,9 @@ public class MessageChannelBinderSupportTests {
 
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertEquals("bar", ((Tuple) reconstructed.getPayload()).getString("foo"));
-		assertNull(reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
+		assertEquals("application/x-java-object;type=org.springframework.tuple.DefaultTuple",
+				reconstructed.get(MessageHeaders.CONTENT_TYPE));
 	}
 
 	@Test
