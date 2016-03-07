@@ -112,6 +112,19 @@ public class MessageChannelBinderSupportTests {
 	}
 
 	@Test
+	public void testStringXML() throws IOException {
+		Message<?> message = MessageBuilder
+				.withPayload("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><test></test>")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_XML)
+				.build();
+		Message<?> converted = binder.serializePayloadIfNecessary(message).toMessage();
+		assertEquals(MimeTypeUtils.TEXT_PLAIN, contentTypeResolver.resolve(converted.getHeaders()));
+		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
+		assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><test></test>", reconstructed.getPayload());
+		assertEquals(MimeTypeUtils.TEXT_XML.toString(), reconstructed.get(MessageHeaders.CONTENT_TYPE));
+	}
+
+	@Test
 	public void testContentTypePreserved() throws IOException {
 		Message<String> inbound = MessageBuilder.withPayload("{\"foo\":\"foo\"}")
 				.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON))
