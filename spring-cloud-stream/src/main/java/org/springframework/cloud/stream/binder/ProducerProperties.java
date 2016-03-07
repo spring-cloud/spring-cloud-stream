@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.binder;
 
 import org.springframework.expression.Expression;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 /**
  * Common producer properties.
  *
@@ -25,12 +27,14 @@ import org.springframework.expression.Expression;
  */
 public class ProducerProperties {
 
+	@JsonSerialize(using = ExpressionSerializer.class)
 	private Expression partitionKeyExpression = null;
 
 	private Class<?> partitionKeyExtractorClass = null;
 
 	private Class<?> partitionSelectorClass = null;
 
+	@JsonSerialize(using = ExpressionSerializer.class)
 	private Expression partitionSelectorExpression = null;
 
 	private int partitionCount = 1;
