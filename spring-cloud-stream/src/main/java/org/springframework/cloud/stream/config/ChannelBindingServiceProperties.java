@@ -21,9 +21,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +34,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * @author Dave Syer
@@ -189,7 +189,6 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		return consumerProperties;
 	}
 
-
 	public ProducerProperties getProducerProperties(String outputChannelName) {
 		Assert.notNull(outputChannelName, "The output channel name cannot be null");
 		ProducerProperties producerProperties = getBindingProperties(outputChannelName).getProducer();
@@ -200,8 +199,13 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public BindingProperties getBindingProperties(String channelName) {
-		BindingProperties bindingProperties = bindings.containsKey(channelName) ?
-				bindings.get(channelName) : new BindingProperties();
+		BindingProperties bindingProperties = new BindingProperties();
+		if (this.bindings.containsKey(channelName)) {
+			BeanUtils.copyProperties(this.bindings.get(channelName), bindingProperties);
+		}
+		if (bindingProperties.getDestination() == null) {
+			bindingProperties.setDestination(channelName);
+		}
 		return bindingProperties;
 	}
 
@@ -210,10 +214,6 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public String getBindingDestination(String channelName) {
-		BindingProperties bindingProperties = getBindingProperties(channelName);
-		if (bindingProperties != null && StringUtils.hasText(bindingProperties.getDestination())) {
-			return bindingProperties.getDestination();
-		}
-		return channelName;
+		return getBindingProperties(channelName).getDestination();
 	}
 }
