@@ -26,6 +26,7 @@ import java.lang.annotation.Target;
 import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.config.BindingBeansRegistrar;
 import org.springframework.cloud.stream.config.ChannelBindingServiceConfiguration;
+import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.config.EnableIntegration;
@@ -43,7 +44,8 @@ import org.springframework.integration.config.EnableIntegration;
 @Documented
 @Inherited
 @Configuration
-@Import({ChannelBindingServiceConfiguration.class, BindingBeansRegistrar.class, BinderFactoryConfiguration.class})
+@Import({ChannelBindingServiceConfiguration.class, BindingBeansRegistrar.class, BinderFactoryConfiguration.class,
+		SpelExpressionConverterConfiguration.class})
 @EnableIntegration
 public @interface EnableBinding {
 

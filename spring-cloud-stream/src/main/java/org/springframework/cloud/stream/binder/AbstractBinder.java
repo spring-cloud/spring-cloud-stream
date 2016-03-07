@@ -22,13 +22,8 @@ import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -50,10 +45,8 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
-import org.springframework.util.AlternativeJdkIdGenerator;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.IdGenerator;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
@@ -65,7 +58,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
-public abstract class AbstractBinder<T> implements ApplicationContextAware, InitializingBean, Binder<T> {
+public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties> implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
 
 	protected static final String PARTITION_HEADER = "partition";
 
@@ -82,96 +75,9 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 
 	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
-	private static final int DEFAULT_BACKOFF_INITIAL_INTERVAL = 1000;
-
-	private static final int DEFAULT_BACKOFF_MAX_INTERVAL = 10000;
-
-	private static final double DEFAULT_BACKOFF_MULTIPLIER = 2.0;
-
-	private static final int DEFAULT_CONCURRENCY = 1;
-
-	private static final int DEFAULT_MAX_ATTEMPTS = 3;
-
-	private static final int DEFAULT_BATCH_SIZE = 50;
-
-	private static final int DEFAULT_BATCH_BUFFER_LIMIT = 10000;
-
-	private static final int DEFAULT_BATCH_TIMEOUT = 0;
-
-	/**
-	 * The set of properties every binder implementation must support (or at least tolerate).
-	 */
-
-	protected static final Set<Object> CONSUMER_STANDARD_PROPERTIES = new SetBuilder()
-			.add(BinderPropertyKeys.COUNT)
-			.add(BinderPropertyKeys.SEQUENCE)
-			.build();
-
-	protected static final Set<Object> PRODUCER_STANDARD_PROPERTIES = new HashSet<Object>(Arrays.asList(
-			BinderPropertyKeys.NEXT_MODULE_COUNT,
-			BinderPropertyKeys.NEXT_MODULE_CONCURRENCY
-	));
-
-
-	protected static final Set<Object> CONSUMER_RETRY_PROPERTIES = new HashSet<Object>(Arrays.asList(new String[] {
-			BinderPropertyKeys.BACK_OFF_INITIAL_INTERVAL,
-			BinderPropertyKeys.BACK_OFF_MAX_INTERVAL,
-			BinderPropertyKeys.BACK_OFF_MULTIPLIER,
-			BinderPropertyKeys.MAX_ATTEMPTS
-	}));
-
-	protected static final Set<Object> PRODUCER_PARTITIONING_PROPERTIES = new HashSet<Object>(
-			Arrays.asList(new String[] {
-					BinderPropertyKeys.PARTITION_KEY_EXPRESSION,
-					BinderPropertyKeys.PARTITION_KEY_EXTRACTOR_CLASS,
-					BinderPropertyKeys.PARTITION_SELECTOR_CLASS,
-					BinderPropertyKeys.PARTITION_SELECTOR_EXPRESSION,
-					BinderPropertyKeys.MIN_PARTITION_COUNT
-			}));
-
-	protected static final Set<Object> PRODUCER_BATCHING_BASIC_PROPERTIES = new HashSet<Object>(
-			Arrays.asList(new String[] {
-					BinderPropertyKeys.BATCHING_ENABLED,
-					BinderPropertyKeys.BATCH_SIZE,
-					BinderPropertyKeys.BATCH_TIMEOUT,
-			}));
-
-	protected static final Set<Object> PRODUCER_BATCHING_ADVANCED_PROPERTIES = new HashSet<Object>(
-			Arrays.asList(new String[] {
-					BinderPropertyKeys.BATCH_BUFFER_LIMIT,
-			}));
-
-	private final IdGenerator idGenerator = new AlternativeJdkIdGenerator();
-
 	protected volatile EvaluationContext evaluationContext;
 
 	protected volatile PartitionSelectorStrategy partitionSelector;
-
-	protected volatile long defaultBackOffInitialInterval = DEFAULT_BACKOFF_INITIAL_INTERVAL;
-
-	protected volatile long defaultBackOffMaxInterval = DEFAULT_BACKOFF_MAX_INTERVAL;
-
-	protected volatile double defaultBackOffMultiplier = DEFAULT_BACKOFF_MULTIPLIER;
-
-	protected volatile int defaultConcurrency = DEFAULT_CONCURRENCY;
-
-	protected volatile int defaultMaxAttempts = DEFAULT_MAX_ATTEMPTS;
-
-	// properties for binder implementations that support batching
-
-	protected volatile boolean defaultBatchingEnabled = false;
-
-	protected volatile int defaultBatchSize = DEFAULT_BATCH_SIZE;
-
-	protected volatile int defaultBatchBufferLimit = DEFAULT_BATCH_BUFFER_LIMIT;
-
-	protected volatile long defaultBatchTimeout = DEFAULT_BATCH_TIMEOUT;
-
-	protected volatile String[] defaultRequiredGroups = new String[] {};
-
-	// compression
-
-	protected volatile boolean defaultCompress = false;
 
 	// Payload type cache
 	private volatile Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
@@ -212,108 +118,8 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		this.codec = codec;
 	}
 
-	protected IdGenerator getIdGenerator() {
-		return this.idGenerator;
-	}
-
 	public void setIntegrationEvaluationContext(EvaluationContext evaluationContext) {
 		this.evaluationContext = evaluationContext;
-	}
-
-	/**
-	 * Set the partition strategy to be used by this binder if no partitionExpression is provided for a module.
-	 * @param partitionSelector The selector.
-	 */
-	public void setPartitionSelector(PartitionSelectorStrategy partitionSelector) {
-		this.partitionSelector = partitionSelector;
-	}
-
-	/**
-	 * Set the default retry back off initial interval for this binder; can be overridden with consumer
-	 * 'backOffInitialInterval' property.
-	 * @param defaultBackOffInitialInterval
-	 */
-	public void setDefaultBackOffInitialInterval(long defaultBackOffInitialInterval) {
-		this.defaultBackOffInitialInterval = defaultBackOffInitialInterval;
-	}
-
-	/**
-	 * Set the default retry back off multiplier for this binder; can be overridden with consumer 'backOffMultiplier'
-	 * property.
-	 * @param defaultBackOffMultiplier
-	 */
-	public void setDefaultBackOffMultiplier(double defaultBackOffMultiplier) {
-		this.defaultBackOffMultiplier = defaultBackOffMultiplier;
-	}
-
-	/**
-	 * Set the default retry back off max interval for this binder; can be overridden with consumer
-	 * 'backOffMaxInterval'
-	 * property.
-	 * @param defaultBackOffMaxInterval
-	 */
-	public void setDefaultBackOffMaxInterval(long defaultBackOffMaxInterval) {
-		this.defaultBackOffMaxInterval = defaultBackOffMaxInterval;
-	}
-
-	/**
-	 * Set the default concurrency for this binder; can be overridden with consumer 'concurrency' property.
-	 * @param defaultConcurrency
-	 */
-	public void setDefaultConcurrency(int defaultConcurrency) {
-		this.defaultConcurrency = defaultConcurrency;
-	}
-
-	/**
-	 * The default maximum delivery attempts for this binder. Can be overridden by consumer property 'maxAttempts' if
-	 * supported. Values less than 2 disable retry and one delivery attempt is made.
-	 * @param defaultMaxAttempts The default maximum attempts.
-	 */
-	public void setDefaultMaxAttempts(int defaultMaxAttempts) {
-		this.defaultMaxAttempts = defaultMaxAttempts;
-	}
-
-	/**
-	 * Set whether this binder batches message sends by default. Only applies to binder implementations that support
-	 * batching.
-	 * @param defaultBatchingEnabled the defaultBatchingEnabled to set.
-	 */
-	public void setDefaultBatchingEnabled(boolean defaultBatchingEnabled) {
-		this.defaultBatchingEnabled = defaultBatchingEnabled;
-	}
-
-	/**
-	 * Set the default batch size; only applies when batching is enabled and the binder supports batching.
-	 * @param defaultBatchSize the defaultBatchSize to set.
-	 */
-	public void setDefaultBatchSize(int defaultBatchSize) {
-		this.defaultBatchSize = defaultBatchSize;
-	}
-
-	/**
-	 * Set the default batch buffer limit - used to send a batch early if its size exceeds this. Only applies if
-	 * batching is enabled and the binder supports this property.
-	 * @param defaultBatchBufferLimit the defaultBatchBufferLimit to set.
-	 */
-	public void setDefaultBatchBufferLimit(int defaultBatchBufferLimit) {
-		this.defaultBatchBufferLimit = defaultBatchBufferLimit;
-	}
-
-	/**
-	 * Set the default batch timeout - used to send a batch if no messages arrive during this time. Only applies if
-	 * batching is enabled and the binder supports this property.
-	 * @param defaultBatchTimeout the defaultBatchTimeout to set.
-	 */
-	public void setDefaultBatchTimeout(long defaultBatchTimeout) {
-		this.defaultBatchTimeout = defaultBatchTimeout;
-	}
-
-	/**
-	 * Set whether compression will be used by producers, by default.
-	 * @param defaultCompress 'true' to use compression.
-	 */
-	public void setDefaultCompress(boolean defaultCompress) {
-		this.defaultCompress = defaultCompress;
 	}
 
 	@Override
@@ -334,16 +140,22 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 	}
 
 	@Override
-	public final Binding<T> bindConsumer(String name, String group, T target, Properties properties) {
-		DefaultBindingPropertiesAccessor accessor = new DefaultBindingPropertiesAccessor(properties);
+	public final Binding<T> bindConsumer(String name, String group, T target, C properties) {
 		if (StringUtils.isEmpty(group)) {
-			Assert.isTrue(accessor.getPartitionIndex() < 0,
+			Assert.isTrue(!properties.isPartitioned(),
 					"A consumer group is required for a partitioned subscription");
 		}
 		return doBindConsumer(name, group, target, properties);
 	}
 
-	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget, Properties properties);
+	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget, C properties);
+
+	@Override
+	public final Binding<T> bindProducer(String name, T outboundBindTarget, P properties) {
+		return doBindProducer(name, outboundBindTarget, properties);
+	}
+
+	protected abstract Binding<T> doBindProducer(String name, T outboundBindTarget, P properties);
 
 	/**
 	 * Construct a name comprised of the name and group.
@@ -458,57 +270,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		}
 	}
 
-	/**
-	 * Validate the provided deployment properties for the consumer against those supported by this binder
-	 * implementation.
-	 * The consumer is that part of the binder that consumes messages from the underlying infrastructure and sends them
-	 * to
-	 * the next module. Consumer properties are used to configure the consumer.
-	 * @param name       The name.
-	 * @param properties The properties.
-	 * @param supported  The supported properties.
-	 */
-	protected void validateConsumerProperties(String name, Properties properties, Set<Object> supported) {
-		if (properties != null) {
-			validateProperties(name, properties, supported, "consumer");
-		}
-	}
-
-	/**
-	 * Validate the provided deployment properties for the producer against those supported by this binder
-	 * implementation.
-	 * When a module sends a message to the binder, the producer uses these properties while sending it to the
-	 * underlying
-	 * infrastructure.
-	 * @param name       The name.
-	 * @param properties The properties.
-	 * @param supported  The supported properties.
-	 */
-	protected void validateProducerProperties(String name, Properties properties, Set<Object> supported) {
-		if (properties != null) {
-			validateProperties(name, properties, supported, "producer");
-		}
-	}
-
-	private void validateProperties(String name, Properties properties, Set<Object> supported, String type) {
-		StringBuilder builder = new StringBuilder();
-		int errors = 0;
-		for (Entry<Object, Object> entry : properties.entrySet()) {
-			if (!supported.contains(entry.getKey())) {
-				builder.append(entry.getKey()).append(",");
-				errors++;
-			}
-		}
-		if (errors > 0) {
-			throw new IllegalArgumentException(getClass().getSimpleName() + " does not support "
-					+ type
-					+ " propert"
-					+ (errors == 1 ? "y: " : "ies: ")
-					+ builder.substring(0, builder.length() - 1)
-					+ " for " + name + ".");
-		}
-	}
-
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
 		return "'" + expressionRoot + "-' + headers['" + PARTITION_HEADER + "']";
 	}
@@ -518,16 +279,16 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 	 * @param properties The properties.
 	 * @return The retry template, or null if retry is not enabled.
 	 */
-	protected RetryTemplate buildRetryTemplateIfRetryEnabled(DefaultBindingPropertiesAccessor properties) {
-		int maxAttempts = properties.getMaxAttempts(this.defaultMaxAttempts);
+	protected RetryTemplate buildRetryTemplateIfRetryEnabled(ConsumerProperties properties) {
+		int maxAttempts = properties.getMaxAttempts();
 		if (maxAttempts > 1) {
 			RetryTemplate template = new RetryTemplate();
 			SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
 			retryPolicy.setMaxAttempts(maxAttempts);
 			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval(this.defaultBackOffInitialInterval));
-			backOffPolicy.setMultiplier(properties.getBackOffMultiplier(this.defaultBackOffMultiplier));
-			backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval(this.defaultBackOffMaxInterval));
+			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
+			backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
+			backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
 			template.setRetryPolicy(retryPolicy);
 			template.setBackOffPolicy(backOffPolicy);
 			return template;
@@ -589,26 +350,6 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 				className += ";";
 			}
 			return className;
-		}
-
-	}
-
-	public static class SetBuilder {
-
-		private final Set<Object> set = new HashSet<Object>();
-
-		public SetBuilder add(Object o) {
-			this.set.add(o);
-			return this;
-		}
-
-		public SetBuilder addAll(Set<Object> set) {
-			this.set.addAll(set);
-			return this;
-		}
-
-		public Set<Object> build() {
-			return this.set;
 		}
 
 	}

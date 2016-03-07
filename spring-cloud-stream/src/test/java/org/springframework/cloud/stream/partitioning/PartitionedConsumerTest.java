@@ -22,8 +22,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.Properties;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,7 +34,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderPropertyKeys;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
@@ -61,10 +59,10 @@ public class PartitionedConsumerTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedConsumer() {
-		ArgumentCaptor<Properties> argumentCaptor = ArgumentCaptor.forClass(Properties.class);
+		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor.forClass(ConsumerProperties.class);
 		verify(binder).bindConsumer(eq("partIn"), anyString(), eq(testSink.input()), argumentCaptor.capture());
-		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.PARTITION_INDEX), equalTo("0"));
-		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.COUNT), equalTo("2"));
+		Assert.assertThat(argumentCaptor.getValue().getInstanceIndex(), equalTo(0));
+		Assert.assertThat(argumentCaptor.getValue().getInstanceCount(), equalTo(2));
 		verifyNoMoreInteractions(binder);
 	}
 
@@ -77,13 +75,10 @@ public class PartitionedConsumerTest {
 
 	}
 
-	class PropertiesArgumentMatcher extends ArgumentMatcher<Properties> {
+	class PropertiesArgumentMatcher extends ArgumentMatcher<ConsumerProperties> {
 		@Override
 		public boolean matches(Object argument) {
-			if (!(argument instanceof Properties)) {
-				return false;
-			}
-			return true;
+			return argument instanceof ConsumerProperties;
 		}
 	}
 

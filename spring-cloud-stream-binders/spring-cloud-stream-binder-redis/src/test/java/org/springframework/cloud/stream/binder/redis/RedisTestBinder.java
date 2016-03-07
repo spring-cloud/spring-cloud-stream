@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.binder.redis;
 
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -34,7 +36,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
  * @author Gary Russell
  * @author David Turanski
  */
-public class RedisTestBinder extends AbstractTestBinder<RedisMessageChannelBinder> {
+public class RedisTestBinder extends AbstractTestBinder<RedisMessageChannelBinder, ConsumerProperties, ProducerProperties> {
 
 	private StringRedisTemplate template;
 

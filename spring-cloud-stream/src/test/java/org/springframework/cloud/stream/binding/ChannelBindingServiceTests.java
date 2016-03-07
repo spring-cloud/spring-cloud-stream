@@ -24,7 +24,9 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Matchers.matches;
+import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -49,7 +51,9 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
@@ -78,19 +82,19 @@ public class ChannelBindingServiceTests {
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true)));
-		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
+		Binder binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
-		when(binder.bindConsumer("foo", null, inputChannel, new Properties()))
+		when(binder.bindConsumer(eq("foo"), isNull(String.class), same(inputChannel), any(ConsumerProperties.class)))
 				.thenReturn(mockBinding);
 		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel, inputChannelName);
 		assertThat(bindings.size(), is(1));
 		Binding<MessageChannel> binding = bindings.iterator().next();
 		assertThat(binding, sameInstance(mockBinding));
 		service.unbindConsumers(inputChannelName);
-		verify(binder).bindConsumer("foo", props.getGroup(), inputChannel, properties.getConsumerProperties(inputChannelName));
+		verify(binder).bindConsumer(eq("foo"), isNull(String.class), same(inputChannel), any(ConsumerProperties.class));
 		verify(binding).unbind();
 		binderFactory.destroy();
 	}
@@ -112,7 +116,7 @@ public class ChannelBindingServiceTests {
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true)));
 
-		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
+		Binder binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
 
@@ -121,9 +125,9 @@ public class ChannelBindingServiceTests {
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding2 = Mockito.mock(Binding.class);
 
-		when(binder.bindConsumer("foo", null, inputChannel, new Properties()))
+		when(binder.bindConsumer(eq("foo"), isNull(String.class), same(inputChannel), any(ConsumerProperties.class)))
 				.thenReturn(mockBinding1);
-		when(binder.bindConsumer("bar", null, inputChannel, new Properties()))
+		when(binder.bindConsumer(eq("bar"), isNull(String.class), same(inputChannel), any(ConsumerProperties.class)))
 				.thenReturn(mockBinding2);
 
 		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel, "input");
@@ -138,8 +142,8 @@ public class ChannelBindingServiceTests {
 
 		service.unbindConsumers("input");
 
-		verify(binder).bindConsumer("foo", props.getGroup(), inputChannel, properties.getConsumerProperties(inputChannelName));
-		verify(binder).bindConsumer("bar", props.getGroup(), inputChannel, properties.getConsumerProperties(inputChannelName));
+		verify(binder).bindConsumer(eq("foo"), isNull(String.class), same(inputChannel), any(ConsumerProperties.class));
+		verify(binder).bindConsumer(eq("bar"), isNull(String.class), same(inputChannel), any(ConsumerProperties.class));
 		verify(binding1).unbind();
 		verify(binding2).unbind();
 
@@ -160,12 +164,12 @@ public class ChannelBindingServiceTests {
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true)));
-		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
+		Binder binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
-		when(binder.bindConsumer("foo", "fooGroup", inputChannel, new Properties()))
+		when(binder.bindConsumer(eq("foo"), eq("fooGroup"), same(inputChannel), any(ConsumerProperties.class)))
 				.thenReturn(mockBinding);
 		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel, inputChannelName);
 		assertThat(bindings.size(), is(1));
@@ -173,7 +177,7 @@ public class ChannelBindingServiceTests {
 		assertThat(binding, sameInstance(mockBinding));
 
 		service.unbindConsumers(inputChannelName);
-		verify(binder).bindConsumer("foo", props.getGroup(), inputChannel, properties.getConsumerProperties(inputChannelName));
+		verify(binder).bindConsumer(eq("foo"), eq(props.getGroup()), same(inputChannel), any(ConsumerProperties.class));
 		verify(binding).unbind();
 		binderFactory.destroy();
 	}
@@ -187,15 +191,14 @@ public class ChannelBindingServiceTests {
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true)));
-		Binder<MessageChannel> binder = binderFactory.getBinder("mock");
+		Binder binder = binderFactory.getBinder("mock");
 
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		@SuppressWarnings("unchecked")
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
-		when(binder.bindProducer(
-				matches("bar"), any(DirectChannel.class), any(Properties.class))).thenReturn(mockBinding);
+		when(binder.bindProducer(matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(mockBinding);
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicDestinationsBindable);
 		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("mock:bar", MessageChannel.class))
@@ -220,7 +223,7 @@ public class ChannelBindingServiceTests {
 		resolver.setBeanFactory(beanFactory);
 		MessageChannel resolved = resolver.resolveDestination("mock:bar");
 		assertThat(resolved, sameInstance(dynamic.get()));
-		verify(binder).bindProducer(eq("bar"), eq(dynamic.get()), any(Properties.class));
+		verify(binder).bindProducer(eq("bar"), eq(dynamic.get()), any(ProducerProperties.class));
 		properties.setDynamicDestinations(new String[] { "mock:bar" });
 		resolved = resolver.resolveDestination("mock:bar");
 		assertThat(resolved, sameInstance(dynamic.get()));

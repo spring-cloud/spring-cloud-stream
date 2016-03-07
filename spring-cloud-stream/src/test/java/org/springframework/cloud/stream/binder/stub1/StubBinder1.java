@@ -16,16 +16,16 @@
 
 package org.springframework.cloud.stream.binder.stub1;
 
-import java.util.Properties;
-
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 
 /**
  * @author Marius Bogoevici
  * @author Mark Fisher
  */
-public class StubBinder1 implements Binder<Object> {
+public class StubBinder1 implements Binder<Object, ConsumerProperties, ProducerProperties> {
 
 	private String name;
 
@@ -38,12 +38,12 @@ public class StubBinder1 implements Binder<Object> {
 	}
 
 	@Override
-	public Binding<Object> bindConsumer(String name, String group, Object inboundBindTarget, Properties properties) {
+	public Binding<Object> bindConsumer(String name, String group, Object inboundBindTarget, ConsumerProperties properties) {
 		return null;
 	}
 
 	@Override
-	public Binding<Object> bindProducer(String name, Object outboundBindTarget, Properties properties) {
+	public Binding<Object> bindProducer(String name, Object outboundBindTarget, ProducerProperties properties) {
 		return null;
 	}
 

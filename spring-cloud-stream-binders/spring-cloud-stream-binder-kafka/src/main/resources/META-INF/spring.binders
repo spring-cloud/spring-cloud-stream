@@ -1,2 +1,2 @@
 kafka:\
-org.springframework.cloud.stream.binder.kafka.config.KafkaServiceAutoConfiguration
+org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration

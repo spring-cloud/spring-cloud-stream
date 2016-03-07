@@ -21,8 +21,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.Properties;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,7 +32,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderPropertyKeys;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
@@ -59,10 +57,10 @@ public class PartitionedProducerTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedProducer() {
-		ArgumentCaptor<Properties> argumentCaptor = ArgumentCaptor.forClass(Properties.class);
+		ArgumentCaptor<ProducerProperties> argumentCaptor = ArgumentCaptor.forClass(ProducerProperties.class);
 		verify(binder).bindProducer(eq("partOut"), eq(testSource.output()), argumentCaptor.capture());
-		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.NEXT_MODULE_COUNT), equalTo("3"));
-		Assert.assertThat(argumentCaptor.getValue().getProperty(BinderPropertyKeys.PARTITION_KEY_EXPRESSION),
+		Assert.assertThat(argumentCaptor.getValue().getPartitionCount(), equalTo(3));
+		Assert.assertThat(argumentCaptor.getValue().getPartitionKeyExpression().getExpressionString(),
 				equalTo("payload"));
 		verifyNoMoreInteractions(binder);
 	}

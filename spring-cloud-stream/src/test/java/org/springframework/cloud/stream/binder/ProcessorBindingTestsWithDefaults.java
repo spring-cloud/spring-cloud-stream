@@ -53,8 +53,8 @@ public class ProcessorBindingTestsWithDefaults {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		Mockito.verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<Properties>any());
-		Mockito.verify(binder).bindProducer(eq("output"), eq(processor.output()), Mockito.<Properties>any());
+		Mockito.verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<ConsumerProperties>any());
+		Mockito.verify(binder).bindProducer(eq("output"), eq(processor.output()), Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}
 

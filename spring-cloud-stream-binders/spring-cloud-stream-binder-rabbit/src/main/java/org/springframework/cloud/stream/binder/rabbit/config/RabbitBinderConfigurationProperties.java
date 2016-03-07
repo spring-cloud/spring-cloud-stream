@@ -16,238 +16,95 @@
 
 package org.springframework.cloud.stream.binder.rabbit.config;
 
-import org.springframework.amqp.core.AcknowledgeMode;
-import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.io.Resource;
 
 /**
  * @author David Turanski
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.rabbit.default")
+@ConfigurationProperties(prefix = "spring.cloud.stream.binder.rabbit")
 class RabbitBinderConfigurationProperties {
 
-	private AcknowledgeMode acknowledgeMode;
+	private String[] addresses = new String[0];
 
-	private int backOffInitialInterval;
+	private String[] adminAdresses = new String[0];
 
-	private int backOffMaxInterval;
+	private String[] nodes = new String[0];
 
-	private double backOffMultiplier;
+	private String username;
 
-	private boolean transacted;
+	private String password;
 
-	private boolean concurrency;
+	private String vhost;
 
-	private MessageDeliveryMode defaultDeliveryMode;
+	private boolean useSSL;
 
-	private boolean defaultRequeueRejected;
-
-	private int maxAttempts;
-
-	private int maxConcurrency;
-
-	private int prefetchCount;
-
-	private String prefix;
-
-	private String[] replyHeaderPatterns;
-
-	private String[] requestHeaderPatterns;
-
-	private int txSize;
-
-	private boolean autoBindDLQ;
-
-	private boolean republishToDLQ;
-
-	private boolean batchingEnabled;
-
-	private int batchSize;
-
-	private int batchBufferLimit;
-
-	private int batchTimeout;
-
-	private boolean compress;
+	private Resource sslPropertiesLocation;
 
 	private int compressionLevel;
 
-	private boolean durableSubscription = true;
-
-	public AcknowledgeMode getAcknowledgeMode() {
-		return acknowledgeMode;
+	public String[] getAddresses() {
+		return addresses;
 	}
 
-	public void setAcknowledgeMode(AcknowledgeMode acknowledgeMode) {
-		this.acknowledgeMode = acknowledgeMode;
+	public void setAddresses(String[] addresses) {
+		this.addresses = addresses;
 	}
 
-	public int getBackOffInitialInterval() {
-		return backOffInitialInterval;
+	public String[] getAdminAdresses() {
+		return adminAdresses;
 	}
 
-	public void setBackOffInitialInterval(int backOffInitialInterval) {
-		this.backOffInitialInterval = backOffInitialInterval;
+	public void setAdminAdresses(String[] adminAdresses) {
+		this.adminAdresses = adminAdresses;
 	}
 
-	public int getBackOffMaxInterval() {
-		return backOffMaxInterval;
+	public String[] getNodes() {
+		return nodes;
 	}
 
-	public void setBackOffMaxInterval(int backOffMaxInterval) {
-		this.backOffMaxInterval = backOffMaxInterval;
+	public void setNodes(String[] nodes) {
+		this.nodes = nodes;
 	}
 
-	public double getBackOffMultiplier() {
-		return backOffMultiplier;
+	public String getUsername() {
+		return username;
 	}
 
-	public void setBackOffMultiplier(double backOffMultiplier) {
-		this.backOffMultiplier = backOffMultiplier;
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
-	public boolean isTransacted() {
-		return transacted;
+	public String getPassword() {
+		return password;
 	}
 
-	public void setTransacted(boolean transacted) {
-		this.transacted = transacted;
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
-	public boolean isConcurrency() {
-		return concurrency;
+	public String getVhost() {
+		return vhost;
 	}
 
-	public void setConcurrency(boolean concurrency) {
-		this.concurrency = concurrency;
+	public void setVhost(String vhost) {
+		this.vhost = vhost;
 	}
 
-	public MessageDeliveryMode getDefaultDeliveryMode() {
-		return defaultDeliveryMode;
+	public boolean isUseSSL() {
+		return useSSL;
 	}
 
-	public void setDefaultDeliveryMode(MessageDeliveryMode defaultDeliveryMode) {
-		this.defaultDeliveryMode = defaultDeliveryMode;
+	public void setUseSSL(boolean useSSL) {
+		this.useSSL = useSSL;
 	}
 
-	public boolean isDefaultRequeueRejected() {
-		return defaultRequeueRejected;
+	public Resource getSslPropertiesLocation() {
+		return sslPropertiesLocation;
 	}
 
-	public void setDefaultRequeueRejected(boolean defaultRequeueRejected) {
-		this.defaultRequeueRejected = defaultRequeueRejected;
-	}
-
-	public int getMaxAttempts() {
-		return maxAttempts;
-	}
-
-	public void setMaxAttempts(int maxAttempts) {
-		this.maxAttempts = maxAttempts;
-	}
-
-	public int getMaxConcurrency() {
-		return maxConcurrency;
-	}
-
-	public void setMaxConcurrency(int maxConcurrency) {
-		this.maxConcurrency = maxConcurrency;
-	}
-
-	public int getPrefetchCount() {
-		return prefetchCount;
-	}
-
-	public void setPrefetchCount(int prefetchCount) {
-		this.prefetchCount = prefetchCount;
-	}
-
-	public String getPrefix() {
-		return prefix;
-	}
-
-	public void setPrefix(String prefix) {
-		this.prefix = prefix;
-	}
-
-	public String[] getReplyHeaderPatterns() {
-		return replyHeaderPatterns;
-	}
-
-	public void setReplyHeaderPatterns(String[] replyHeaderPatterns) {
-		this.replyHeaderPatterns = replyHeaderPatterns;
-	}
-
-	public String[] getRequestHeaderPatterns() {
-		return requestHeaderPatterns;
-	}
-
-	public void setRequestHeaderPatterns(String[] requestHeaderPatterns) {
-		this.requestHeaderPatterns = requestHeaderPatterns;
-	}
-
-	public int getTxSize() {
-		return txSize;
-	}
-
-	public void setTxSize(int txSize) {
-		this.txSize = txSize;
-	}
-
-	public boolean isAutoBindDLQ() {
-		return autoBindDLQ;
-	}
-
-	public void setAutoBindDLQ(boolean autoBindDLQ) {
-		this.autoBindDLQ = autoBindDLQ;
-	}
-
-	public boolean isRepublishToDLQ() {
-		return republishToDLQ;
-	}
-
-	public void setRepublishToDLQ(boolean republishToDLQ) {
-		this.republishToDLQ = republishToDLQ;
-	}
-
-	public boolean isBatchingEnabled() {
-		return batchingEnabled;
-	}
-
-	public void setBatchingEnabled(boolean batchingEnabled) {
-		this.batchingEnabled = batchingEnabled;
-	}
-
-	public int getBatchSize() {
-		return batchSize;
-	}
-
-	public void setBatchSize(int batchSize) {
-		this.batchSize = batchSize;
-	}
-
-	public int getBatchBufferLimit() {
-		return batchBufferLimit;
-	}
-
-	public void setBatchBufferLimit(int batchBufferLimit) {
-		this.batchBufferLimit = batchBufferLimit;
-	}
-
-	public int getBatchTimeout() {
-		return batchTimeout;
-	}
-
-	public void setBatchTimeout(int batchTimeout) {
-		this.batchTimeout = batchTimeout;
-	}
-
-	public boolean isCompress() {
-		return compress;
-	}
-
-	public void setCompress(boolean compress) {
-		this.compress = compress;
+	public void setSslPropertiesLocation(Resource sslPropertiesLocation) {
+		this.sslPropertiesLocation = sslPropertiesLocation;
 	}
 
 	public int getCompressionLevel() {
@@ -256,13 +113,5 @@ class RabbitBinderConfigurationProperties {
 
 	public void setCompressionLevel(int compressionLevel) {
 		this.compressionLevel = compressionLevel;
-	}
-
-	public boolean isDurableSubscription() {
-		return durableSubscription;
-	}
-
-	public void setDurableSubscription(boolean durableSubscription) {
-		this.durableSubscription = durableSubscription;
 	}
 }

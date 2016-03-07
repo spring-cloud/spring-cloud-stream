@@ -21,24 +21,22 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultBinding;
-import org.springframework.cloud.stream.binder.DefaultBindingPropertiesAccessor;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
@@ -68,7 +66,7 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Jennifer Hickey
  */
-public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
+public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
 
 	private static final String ERROR_HEADER = "errorKey";
 
@@ -79,25 +77,6 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	private final String[] headersToMap;
 
 	private final RedisOperations<String, String> redisOperations;
-
-	/**
-	 * Retry + concurrency + partitioning.
-	 */
-	private static final Set<Object> SUPPORTED_CONSUMER_PROPERTIES = new SetBuilder()
-			.addAll(CONSUMER_STANDARD_PROPERTIES)
-			.addAll(CONSUMER_RETRY_PROPERTIES)
-			.add(BinderPropertyKeys.CONCURRENCY)
-			.add(BinderPropertyKeys.PARTITION_INDEX)
-			.build();
-
-	/**
-	 * Partitioning.
-	 */
-	private static final Set<Object> SUPPORTED_PRODUCER_PROPERTIES = new SetBuilder()
-			.addAll(PRODUCER_PARTITIONING_PROPERTIES)
-			.addAll(PRODUCER_STANDARD_PROPERTIES)
-			.add(BinderPropertyKeys.REQUIRED_GROUPS)
-			.build();
 
 	private final RedisConnectionFactory connectionFactory;
 
@@ -139,24 +118,21 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	}
 
 	@Override
-	protected Binding<MessageChannel> doBindConsumer(final String name, String group, MessageChannel moduleInputChannel, Properties properties) {
+	protected Binding<MessageChannel> doBindConsumer(final String name, String group, MessageChannel moduleInputChannel, ConsumerProperties properties) {
 		if (!StringUtils.hasText(group)) {
 			group = "anonymous." + UUID.randomUUID().toString();
 		}
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
 		String queueName = groupedName(name, group);
-		validateConsumerProperties(queueName, properties, SUPPORTED_CONSUMER_PROPERTIES);
-		int partitionIndex = accessor.getPartitionIndex();
-		if (partitionIndex >= 0) {
-			queueName += "-" + partitionIndex;
+		if (properties.isPartitioned()) {
+			queueName += "-" + properties.getInstanceIndex();
 		}
-		MessageProducerSupport adapter = createInboundAdapter(accessor, queueName);
-		return doRegisterConsumer(name, group, queueName, moduleInputChannel, adapter, accessor);
+		MessageProducerSupport adapter = createInboundAdapter(properties, queueName);
+		return doRegisterConsumer(name, group, queueName, moduleInputChannel, adapter, properties);
 	}
 
-	private MessageProducerSupport createInboundAdapter(RedisPropertiesAccessor accessor, String queueName) {
+	private MessageProducerSupport createInboundAdapter(ConsumerProperties accessor, String queueName) {
 		MessageProducerSupport adapter;
-		int concurrency = accessor.getConcurrency(this.defaultConcurrency);
+		int concurrency = accessor.getConcurrency();
 		concurrency = concurrency > 0 ? concurrency : 1;
 		if (concurrency == 1) {
 			RedisQueueMessageDrivenEndpoint single = new RedisQueueMessageDrivenEndpoint(queueName,
@@ -172,7 +148,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	}
 
 	private Binding<MessageChannel> doRegisterConsumer(String bindingName, String group, String channelName, MessageChannel moduleInputChannel,
-													   MessageProducerSupport adapter, final RedisPropertiesAccessor properties) {
+													   MessageProducerSupport adapter, final ConsumerProperties properties) {
 		DirectChannel bridgeToModuleChannel = new DirectChannel();
 		bridgeToModuleChannel.setBeanFactory(this.getBeanFactory());
 		bridgeToModuleChannel.setBeanName(channelName + ".bridge");
@@ -180,7 +156,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		adapter.setOutputChannel(bridgeInputChannel);
 		adapter.setBeanName("inbound." + channelName);
 		adapter.afterPropertiesSet();
-		DefaultBinding<MessageChannel> consumerBinding = new DefaultBinding<MessageChannel>(bindingName, group, moduleInputChannel, adapter, properties) {
+		DefaultBinding<MessageChannel> consumerBinding = new DefaultBinding<MessageChannel>(bindingName, group, moduleInputChannel, adapter) {
 
 			@Override
 			protected void afterUnbind() {
@@ -207,7 +183,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	 * @return The channel, or a wrapper.
 	 */
 	private MessageChannel addRetryIfNeeded(final String name, final DirectChannel bridgeToModuleChannel,
-			RedisPropertiesAccessor properties) {
+											ConsumerProperties properties) {
 		final RetryTemplate retryTemplate = buildRetryTemplateIfRetryEnabled(properties);
 		if (retryTemplate == null) {
 			return bridgeToModuleChannel;
@@ -256,18 +232,14 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 	}
 
 	@Override
-	public Binding<MessageChannel> bindProducer(final String name, MessageChannel moduleOutputChannel, Properties properties) {
+	protected Binding<MessageChannel> doBindProducer(final String name, MessageChannel moduleOutputChannel, ProducerProperties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
-		validateProducerProperties(name, properties, SUPPORTED_PRODUCER_PROPERTIES);
-		RedisPropertiesAccessor accessor = new RedisPropertiesAccessor(properties);
-		return doRegisterProducer(name, moduleOutputChannel, accessor);
+		return doRegisterProducer(name, moduleOutputChannel, properties);
 	}
 
-	private RedisQueueOutboundChannelAdapter createProducerEndpoint(String name, RedisPropertiesAccessor accessor) {
-		String partitionKeyExtractorClass = accessor.getPartitionKeyExtractorClass();
-		Expression partitionKeyExpression = accessor.getPartitionKeyExpression();
+	private RedisQueueOutboundChannelAdapter createProducerEndpoint(String name, ProducerProperties properties) {
 		RedisQueueOutboundChannelAdapter queue;
-		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
+		if (!properties.isPartitioned()) {
 			queue = new RedisQueueOutboundChannelAdapter(name, this.connectionFactory);
 		}
 		else {
@@ -280,15 +252,17 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		return queue;
 	}
 
-	private Binding<MessageChannel> doRegisterProducer(final String name, MessageChannel moduleOutputChannel, RedisPropertiesAccessor properties) {
+	private Binding<MessageChannel> doRegisterProducer(final String name, MessageChannel moduleOutputChannel,
+													   ProducerProperties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
 		MessageHandler handler = new SendingHandler(name, properties);
 		EventDrivenConsumer consumer = new EventDrivenConsumer((SubscribableChannel) moduleOutputChannel, handler);
 		consumer.setBeanFactory(this.getBeanFactory());
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
-		DefaultBinding<MessageChannel> producerBinding = new DefaultBinding<>(name, null, moduleOutputChannel, consumer, properties);
-		String[] requiredGroups = properties.getRequiredGroups(defaultRequiredGroups);
+		DefaultBinding<MessageChannel> producerBinding =
+				new DefaultBinding<>(name, null, moduleOutputChannel, consumer);
+		String[] requiredGroups = properties.getRequiredGroups();
 		if (!ObjectUtils.isEmpty(requiredGroups)) {
 			for (String group : requiredGroups) {
 				this.redisOperations.boundZSetOps(CONSUMER_GROUPS_KEY_PREFIX + name).incrementScore(group, 1);
@@ -302,19 +276,18 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 
 		private final String bindingName;
 
-		private final RedisPropertiesAccessor accessor;
+		private final ProducerProperties producerProperties;
 
 		private final Map<String, RedisQueueOutboundChannelAdapter> adapters = new HashMap<>();
 
 		private final PartitionHandler partitionHandler;
 
-		private SendingHandler(String bindingName, RedisPropertiesAccessor properties) {
+		private SendingHandler(String bindingName, ProducerProperties producerProperties) {
 			this.bindingName = bindingName;
-			this.accessor = properties;
+			this.producerProperties = producerProperties;
 			ConfigurableListableBeanFactory beanFactory = RedisMessageChannelBinder.this.getBeanFactory();
 			this.setBeanFactory(beanFactory);
-			this.partitionHandler = new PartitionHandler(beanFactory, evaluationContext, partitionSelector,
-					properties, properties.getNextModuleCount());
+			this.partitionHandler = new PartitionHandler(beanFactory, evaluationContext, partitionSelector, producerProperties);
 			refreshChannelAdapters();
 		}
 
@@ -322,7 +295,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		protected void handleMessageInternal(Message<?> message) throws Exception {
 			MessageValues transformed = serializePayloadIfNecessary(message);
 
-			if (this.partitionHandler.isPartitionedModule()) {
+			if (producerProperties.isPartitioned()) {
 				transformed.put(PARTITION_HEADER, this.partitionHandler.determinePartition(message));
 			}
 
@@ -340,7 +313,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 			for (String group : groups) {
 				if (!adapters.containsKey(group)) {
 					String channel = String.format("%s.%s", this.bindingName, group);
-					adapters.put(group, createProducerEndpoint(channel, accessor));
+					adapters.put(group, createProducerEndpoint(channel, producerProperties));
 				}
 			}
 		}
@@ -371,14 +344,6 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel> {
 		protected boolean shouldCopyRequestHeaders() {
 			// prevent returned message from being copied in superclass
 			return false;
-		}
-
-	}
-
-	private static class RedisPropertiesAccessor extends DefaultBindingPropertiesAccessor {
-
-		public RedisPropertiesAccessor(Properties properties) {
-			super(properties);
 		}
 
 	}

@@ -47,10 +47,7 @@ class KafkaBinderConfigurationProperties {
 
 	private int offsetUpdateShutdownTimeout;
 
-	private boolean resetOffsets = false;
-
-	private KafkaMessageChannelBinder.StartOffset startOffset;
-
+	private int maxWait = 100;
 	/**
 	 * ZK session timeout in milliseconds.
 	 */
@@ -61,10 +58,15 @@ class KafkaBinderConfigurationProperties {
 	 */
 	private int zkConnectionTimeout;
 
-	/**
-	 * Flag to indicate if the Kafka Producer is synchronous or asynchronous.
-	 */
-	private boolean syncProducer = false;
+	private int requiredAcks = 1;
+
+	private int replicationFactor = 1;
+
+	private int fetchSize = 1024 * 1024;
+
+	private int minPartitionCount = 1;
+
+	private int queueSize;
 
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
@@ -131,23 +133,6 @@ class KafkaBinderConfigurationProperties {
 		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
 	}
 
-	public KafkaMessageChannelBinder.StartOffset getStartOffset() {
-		return startOffset;
-	}
-
-	public void setStartOffset(KafkaMessageChannelBinder.StartOffset startOffset) {
-		this.startOffset = startOffset;
-	}
-
-	public boolean isResetOffsets() {
-		return resetOffsets;
-	}
-
-	public void setResetOffsets(boolean resetOffsets) {
-		this.resetOffsets = resetOffsets;
-	}
-
-
 	public int getZkSessionTimeout() {
 		return this.zkSessionTimeout;
 	}
@@ -162,14 +147,6 @@ class KafkaBinderConfigurationProperties {
 
 	public void setZkConnectionTimeout(int zkConnectionTimeout) {
 		this.zkConnectionTimeout = zkConnectionTimeout;
-	}
-
-	public boolean isSyncProducer() {
-		return this.syncProducer;
-	}
-
-	public void setSyncProducer(boolean syncProducer) {
-		this.syncProducer = syncProducer;
 	}
 
 	/**
@@ -189,4 +166,53 @@ class KafkaBinderConfigurationProperties {
 		}
 		return StringUtils.arrayToCommaDelimitedString(fullyFormattedHosts);
 	}
+
+	public int getMaxWait() {
+		return maxWait;
+	}
+
+	public void setMaxWait(int maxWait) {
+		this.maxWait = maxWait;
+	}
+
+	public int getRequiredAcks() {
+		return requiredAcks;
+	}
+
+	public void setRequiredAcks(int requiredAcks) {
+		this.requiredAcks = requiredAcks;
+	}
+
+	public int getReplicationFactor() {
+		return replicationFactor;
+	}
+
+	public void setReplicationFactor(int replicationFactor) {
+		this.replicationFactor = replicationFactor;
+	}
+
+	public int getFetchSize() {
+		return fetchSize;
+	}
+
+	public void setFetchSize(int fetchSize) {
+		this.fetchSize = fetchSize;
+	}
+
+	public int getMinPartitionCount() {
+		return minPartitionCount;
+	}
+
+	public void setMinPartitionCount(int minPartitionCount) {
+		this.minPartitionCount = minPartitionCount;
+	}
+
+	public int getQueueSize() {
+		return queueSize;
+	}
+
+	public void setQueueSize(int queueSize) {
+		this.queueSize = queueSize;
+	}
+
 }

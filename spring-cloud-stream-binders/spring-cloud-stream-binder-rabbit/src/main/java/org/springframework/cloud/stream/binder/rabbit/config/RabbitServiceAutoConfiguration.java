@@ -32,7 +32,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
-import org.springframework.context.annotation.PropertySource;
 
 /**
  * Bind to services, either locally or in a cloud environment.
@@ -47,7 +46,6 @@ import org.springframework.context.annotation.PropertySource;
 @ConditionalOnMissingBean(Binder.class)
 @Import(RabbitMessageChannelBinderConfiguration.class)
 @AutoConfigureBefore({CloudAutoConfiguration.class, RabbitAutoConfiguration.class})
-@PropertySource("classpath:/META-INF/spring-cloud-stream/rabbit-binder.properties")
 public class RabbitServiceAutoConfiguration {
 
 	@Configuration

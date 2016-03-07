@@ -33,7 +33,7 @@ public class StubBinder1Configuration {
 
 	@Bean
 	@ConfigurationProperties("binder1")
-	public Binder<?> binder() {
+	public Binder<?, ?, ?> binder() {
 		return new StubBinder1();
 	}
 

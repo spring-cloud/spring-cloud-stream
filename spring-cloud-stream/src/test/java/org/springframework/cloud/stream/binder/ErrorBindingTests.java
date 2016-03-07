@@ -48,10 +48,10 @@ public class ErrorBindingTests {
 		BinderFactory<?> binderFactory = applicationContext.getBean(BinderFactory.class);
 
 		@SuppressWarnings("unchecked")
-		Binder<MessageChannel> binder = (Binder<MessageChannel>) binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null);
 
-		Mockito.verify(binder).bindConsumer(eq("input"), isNull(String.class), any(MessageChannel.class), any(Properties.class));
-		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class), any(Properties.class));
+		Mockito.verify(binder).bindConsumer(eq("input"), isNull(String.class), any(MessageChannel.class), any(ConsumerProperties.class));
+		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class), any(ProducerProperties.class));
 		Mockito.verifyNoMoreInteractions(binder);
 		applicationContext.close();
 	}
@@ -64,14 +64,14 @@ public class ErrorBindingTests {
 		BinderFactory<?> binderFactory = applicationContext.getBean(BinderFactory.class);
 
 		@SuppressWarnings("unchecked")
-		Binder<MessageChannel> binder = (Binder<MessageChannel>) binderFactory.getBinder(null);
+		Binder binder =  binderFactory.getBinder(null);
 
 		MessageChannel errorChannel = applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
 				MessageChannel.class);
 
-		Mockito.verify(binder).bindConsumer(eq("input"), isNull(String.class), any(MessageChannel.class), any(Properties.class));
-		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class), any(Properties.class));
-		Mockito.verify(binder).bindProducer(eq("foo"), same(errorChannel), any(Properties.class));
+		Mockito.verify(binder).bindConsumer(eq("input"), isNull(String.class), any(MessageChannel.class), any(ConsumerProperties.class));
+		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class), any(ProducerProperties.class));
+		Mockito.verify(binder).bindProducer(eq("foo"), same(errorChannel), any(ProducerProperties.class));
 		Mockito.verifyNoMoreInteractions(binder);
 		applicationContext.close();
 	}

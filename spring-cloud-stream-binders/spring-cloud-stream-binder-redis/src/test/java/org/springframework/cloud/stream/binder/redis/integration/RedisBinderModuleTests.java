@@ -74,7 +74,7 @@ public class RedisBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefault() {
 		context = SpringApplication.run(SimpleProcessor.class, "--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
-		Binder<?> binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RedisMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		RedisConnectionFactory binderConnectionFactory =
@@ -97,7 +97,7 @@ public class RedisBinderModuleTests {
 	public void testParentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run();
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
-		Binder<?> binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RedisMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		RedisConnectionFactory binderConnectionFactory =
@@ -125,7 +125,7 @@ public class RedisBinderModuleTests {
 		params.add("--spring.cloud.stream.binders.custom.environment.foo=bar");
 		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[]{}));
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
-		Binder<?> binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RedisMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		RedisConnectionFactory binderConnectionFactory =

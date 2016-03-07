@@ -30,17 +30,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Rule;
 import org.junit.Test;
 
-import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.test.junit.redis.RedisTestSupport;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -61,7 +60,7 @@ import org.springframework.retry.support.RetryTemplate;
  * @author David Turanski
  * @author Mark Fisher
  */
-public class RedisBinderTests extends PartitionCapableBinderTests {
+public class RedisBinderTests extends PartitionCapableBinderTests<RedisTestBinder, ConsumerProperties, ProducerProperties> {
 
 	private final String CLASS_UNDER_TEST_NAME = RedisMessageChannelBinder.class.getSimpleName();
 
@@ -74,11 +73,21 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 			new EmbeddedHeadersMessageConverter();
 
 	@Override
-	protected Binder<MessageChannel> getBinder() {
+	protected RedisTestBinder getBinder() {
 		if (testBinder == null) {
 			testBinder = new RedisTestBinder(redisAvailableRule.getResource());
 		}
 		return testBinder;
+	}
+
+	@Override
+	protected ConsumerProperties createConsumerProperties() {
+		return new ConsumerProperties();
+	}
+
+	@Override
+	protected ProducerProperties createProducerProperties() {
+		return new ProducerProperties();
 	}
 
 	@Override
@@ -88,24 +97,25 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testConsumerProperties() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-		Properties properties = new Properties();
-		properties.put("maxAttempts", "1"); // disable retry
-		Binding<MessageChannel> binding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
+		RedisTestBinder binder = getBinder();
+		ConsumerProperties properties1 = new ConsumerProperties();
+		properties1.setMaxAttempts(1);
+		Binding<MessageChannel> binding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties1);
 		AbstractEndpoint endpoint = extractEndpoint(binding);
 		assertThat(endpoint, instanceOf(RedisQueueMessageDrivenEndpoint.class));
 		assertSame(DirectChannel.class, TestUtils.getPropertyValue(endpoint, "outputChannel").getClass());
 		binding.unbind();
 		assertFalse(endpoint.isRunning());
 
-		properties.put("backOffInitialInterval", "2000");
-		properties.put("backOffMaxInterval", "20000");
-		properties.put("backOffMultiplier", "5.0");
-		properties.put("concurrency", "2");
-		properties.put("maxAttempts", "23");
-		properties.put("partitionIndex", 0);
+		ConsumerProperties properties2 = new ConsumerProperties();
+		properties2.setBackOffInitialInterval(2000);
+		properties2.setBackOffMaxInterval(20000);
+		properties2.setBackOffMultiplier(5.0);
+		properties2.setConcurrency(2);
+		properties2.setMaxAttempts(23);
+		properties2.setInstanceIndex(0);
 
-		binding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
+		binding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties2);
 		endpoint = extractEndpoint(binding);
 		verifyConsumer(endpoint);
 
@@ -115,9 +125,9 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testProducerProperties() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("props.0", "test", new DirectChannel(), null);
-		Binding<MessageChannel> producerBinding = binder.bindProducer("props.0", new DirectChannel(), null);
+		RedisTestBinder binder = getBinder();
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("props.0", "test", new DirectChannel(), createConsumerProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer("props.0", new DirectChannel(), createProducerProperties());
 		AbstractEndpoint producerEndpoint = extractEndpoint(producerBinding);
 		@SuppressWarnings("unchecked")
 		Map<String, RedisQueueOutboundChannelAdapter> adapters = TestUtils.getPropertyValue(producerEndpoint, "handler.adapters", Map.class);
@@ -128,14 +138,14 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 		producerBinding.unbind();
 		assertFalse(producerEndpoint.isRunning());
 
-		Properties properties = new Properties();
-		properties.put("partitionKeyExpression", "'foo'");
-		properties.put("partitionKeyExtractorClass", "foo");
-		properties.put("partitionSelectorExpression", "0");
-		properties.put("partitionSelectorClass", "foo");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "1");
+		ProducerProperties producerProperties = new ProducerProperties();
+		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("'foo'"));
+		producerProperties.setPartitionKeyExtractorClass(AbstractRedisSerializerTests.Foo.class);
+		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("0"));
+		producerProperties.setPartitionSelectorClass(AbstractRedisSerializerTests.Foo.class);
+		producerProperties.setPartitionCount(1);
 
-		producerBinding = binder.bindProducer("props.0", new DirectChannel(), properties);
+		producerBinding = binder.bindProducer("props.0", new DirectChannel(), producerProperties);
 		producerEndpoint = extractEndpoint(producerBinding);
 		adapter = (RedisQueueOutboundChannelAdapter) TestUtils.getPropertyValue(producerEndpoint, "handler.adapters", Map.class).get("test");
 		assertEquals(
@@ -168,15 +178,15 @@ public class RedisBinderTests extends PartitionCapableBinderTests {
 
 	@Test
 	public void testRetryFail() {
-		Binder<MessageChannel> binder = getBinder();
+		RedisTestBinder binder = getBinder();
 		DirectChannel channel = new DirectChannel();
-		binder.bindProducer("retry.0", channel, null);
-		Properties props = new Properties();
-		props.put("maxAttempts", 2);
-		props.put("backOffInitialInterval", 100);
-		props.put("backOffMultiplier", "1.0");
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("retry.0", "test", new DirectChannel(), props); // no subscriber
-		channel.send(new GenericMessage<String>("foo"));
+		binder.bindProducer("retry.0", channel, createProducerProperties());
+		ConsumerProperties consumerProperties = new ConsumerProperties();
+		consumerProperties.setMaxAttempts(2);
+		consumerProperties.setBackOffInitialInterval(100);
+		consumerProperties.setBackOffMultiplier(1.0);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("retry.0", "test", new DirectChannel(), consumerProperties); // no subscriber
+		channel.send(new GenericMessage<>("foo"));
 		RedisTemplate<String, Object> template = createTemplate();
 		Object rightPop = template.boundListOps("ERRORS:retry.0.test").rightPop(5, TimeUnit.SECONDS);
 		assertNotNull(rightPop);

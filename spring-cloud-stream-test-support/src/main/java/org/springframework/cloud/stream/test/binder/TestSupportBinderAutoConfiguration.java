@@ -39,7 +39,7 @@ import org.springframework.messaging.MessageChannel;
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 public class TestSupportBinderAutoConfiguration {
 
-	private Binder<MessageChannel> messageChannelBinder = new TestSupportBinder();
+	private Binder<MessageChannel, ?, ?> messageChannelBinder = new TestSupportBinder();
 
 	@Bean
 	public BinderFactory binderFactory() {

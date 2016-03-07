@@ -54,8 +54,8 @@ public class ProcessorBindingTestsWithBindingTargets {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindConsumer(eq("testtock.0"), anyString(), eq(testProcessor.input()), Mockito.<Properties>any());
-		verify(binder).bindProducer(eq("testtock.1"), eq(testProcessor.output()), Mockito.<Properties>any());
+		verify(binder).bindConsumer(eq("testtock.0"), anyString(), eq(testProcessor.input()), Mockito.<ConsumerProperties>any());
+		verify(binder).bindProducer(eq("testtock.1"), eq(testProcessor.output()), Mockito.<ProducerProperties>any());
 	}
 
 	@EnableBinding(Processor.class)

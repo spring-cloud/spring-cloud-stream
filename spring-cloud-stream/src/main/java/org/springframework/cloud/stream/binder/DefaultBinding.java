@@ -39,17 +39,13 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	private final AbstractEndpoint endpoint;
 
-	private final DefaultBindingPropertiesAccessor properties;
-
-	public DefaultBinding(String name, String group, T target, AbstractEndpoint endpoint,
-						   DefaultBindingPropertiesAccessor properties) {
+	public DefaultBinding(String name, String group, T target, AbstractEndpoint endpoint) {
 		Assert.notNull(target, "target must not be null");
 		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
 		this.group = group;
 		this.target = target;
 		this.endpoint = endpoint;
-		this.properties = properties;
 	}
 
 
@@ -69,10 +65,6 @@ public class DefaultBinding<T> implements Binding<T> {
 	}
 
 	protected void afterUnbind() {
-	}
-
-	public DefaultBindingPropertiesAccessor getPropertiesAccessor() {
-		return properties;
 	}
 
 	@Override

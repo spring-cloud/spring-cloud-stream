@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.test.binder;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -26,6 +25,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.test.matcher.MessageQueueMatcher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -45,14 +46,14 @@ import org.springframework.util.Assert;
  * @author Mark Fisher
  * @see MessageQueueMatcher
  */
-public class TestSupportBinder implements Binder<MessageChannel> {
+public class TestSupportBinder implements Binder<MessageChannel, ConsumerProperties, ProducerProperties> {
 
 	private final MessageCollectorImpl messageCollector = new MessageCollectorImpl();
 
 	private final ConcurrentMap<String, MessageChannel> messageChannels = new ConcurrentHashMap<>();
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, Properties properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, ConsumerProperties properties) {
 		return new TestBinding(inboundBindTarget, null);
 	}
 
@@ -60,7 +61,7 @@ public class TestSupportBinder implements Binder<MessageChannel> {
 	 * Registers a single subscriber to the channel, that enqueues messages for later retrieval and assertion in tests.
 	 */
 	@Override
-	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
+	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, ProducerProperties properties) {
 		final BlockingQueue<Message<?>> queue = messageCollector.register(outboundBindTarget);
 		((SubscribableChannel)outboundBindTarget).subscribe(new MessageHandler() {
 			@Override

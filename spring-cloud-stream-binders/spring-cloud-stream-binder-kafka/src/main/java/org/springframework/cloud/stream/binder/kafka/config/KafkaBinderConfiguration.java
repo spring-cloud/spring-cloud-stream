@@ -44,15 +44,12 @@ import org.springframework.util.ObjectUtils;
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
 @Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
-@EnableConfigurationProperties({KafkaBinderConfigurationProperties.class, KafkaBinderDefaultProperties.class})
+@EnableConfigurationProperties({KafkaBinderConfigurationProperties.class})
 @PropertySource("classpath:/META-INF/spring-cloud-stream/kafka-binder.properties")
-public class KafkaServiceAutoConfiguration {
+public class KafkaBinderConfiguration {
 
 	@Autowired
 	private Codec codec;
-
-	@Autowired
-	private KafkaBinderDefaultProperties kafkaBinderDefaultProperties;
 
 	@Autowired
 	private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
@@ -77,29 +74,19 @@ public class KafkaServiceAutoConfiguration {
 				: new KafkaMessageChannelBinder(zookeeperConnect(), kafkaConnectionString, zkConnectionString,
 				headers);
 		kafkaMessageChannelBinder.setCodec(codec);
-		kafkaMessageChannelBinder.setMode(kafkaBinderConfigurationProperties.getMode());
 		kafkaMessageChannelBinder.setOffsetUpdateTimeWindow(kafkaBinderConfigurationProperties.getOffsetUpdateTimeWindow());
 		kafkaMessageChannelBinder.setOffsetUpdateCount(kafkaBinderConfigurationProperties.getOffsetUpdateCount());
 		kafkaMessageChannelBinder.setOffsetUpdateShutdownTimeout(kafkaBinderConfigurationProperties.getOffsetUpdateShutdownTimeout());
 
-		kafkaMessageChannelBinder.setResetOffsets(kafkaBinderConfigurationProperties.isResetOffsets());
-		kafkaMessageChannelBinder.setStartOffset(kafkaBinderConfigurationProperties.getStartOffset());
-
 		kafkaMessageChannelBinder.setZkSessionTimeout(kafkaBinderConfigurationProperties.getZkSessionTimeout());
 		kafkaMessageChannelBinder.setZkConnectionTimeout(kafkaBinderConfigurationProperties.getZkConnectionTimeout());
 
-		kafkaMessageChannelBinder.setSyncProducer(kafkaBinderConfigurationProperties.isSyncProducer());
-
-		kafkaMessageChannelBinder.setDefaultAutoCommitEnabled(kafkaBinderDefaultProperties.isAutoCommitEnabled());
-		kafkaMessageChannelBinder.setDefaultBatchSize(kafkaBinderDefaultProperties.getBatchSize());
-		kafkaMessageChannelBinder.setDefaultBatchTimeout(kafkaBinderDefaultProperties.getBatchTimeout());
-		kafkaMessageChannelBinder.setDefaultCompressionCodec(kafkaBinderDefaultProperties.getCompressionCodec());
-		kafkaMessageChannelBinder.setDefaultConcurrency(kafkaBinderDefaultProperties.getConcurrency());
-		kafkaMessageChannelBinder.setDefaultFetchSize(kafkaBinderDefaultProperties.getFetchSize());
-		kafkaMessageChannelBinder.setDefaultMinPartitionCount(kafkaBinderDefaultProperties.getMinPartitionCount());
-		kafkaMessageChannelBinder.setDefaultQueueSize(kafkaBinderDefaultProperties.getQueueSize());
-		kafkaMessageChannelBinder.setDefaultReplicationFactor(kafkaBinderDefaultProperties.getReplicationFactor());
-		kafkaMessageChannelBinder.setDefaultRequiredAcks(kafkaBinderDefaultProperties.getRequiredAcks());
+		kafkaMessageChannelBinder.setFetchSize(kafkaBinderConfigurationProperties.getFetchSize());
+		kafkaMessageChannelBinder.setDefaultMinPartitionCount(kafkaBinderConfigurationProperties.getMinPartitionCount());
+		kafkaMessageChannelBinder.setQueueSize(kafkaBinderConfigurationProperties.getQueueSize());
+		kafkaMessageChannelBinder.setReplicationFactor(kafkaBinderConfigurationProperties.getReplicationFactor());
+		kafkaMessageChannelBinder.setRequiredAcks(kafkaBinderConfigurationProperties.getRequiredAcks());
+		kafkaMessageChannelBinder.setMaxWait(kafkaBinderConfigurationProperties.getMaxWait());
 
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		return kafkaMessageChannelBinder;

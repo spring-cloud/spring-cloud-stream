@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.redis.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.redis.RedisMessageChannelBinder;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +31,6 @@ import org.springframework.integration.codec.Codec;
  * @author David Turanski
  */
 @Configuration
-@EnableConfigurationProperties(RedisBinderConfigurationProperties.class)
 @Import({PropertyPlaceholderAutoConfiguration.class, KryoCodecAutoConfiguration.class})
 @ConfigurationProperties(prefix = "spring.cloud.stream.binder.redis")
 public class RedisMessageChannelBinderConfiguration {
@@ -42,8 +40,6 @@ public class RedisMessageChannelBinderConfiguration {
 	@Autowired
 	private Codec codec;
 
-	@Autowired
-	private RedisBinderConfigurationProperties redisBinderConfigurationProperties;
 
 	@Autowired
 	private RedisConnectionFactory redisConnectionFactory;
@@ -54,11 +50,6 @@ public class RedisMessageChannelBinderConfiguration {
 		RedisMessageChannelBinder redisMessageChannelBinder = new RedisMessageChannelBinder(this.redisConnectionFactory,
 				this.headers);
 		redisMessageChannelBinder.setCodec(this.codec);
-		redisMessageChannelBinder.setDefaultBackOffInitialInterval(this.redisBinderConfigurationProperties.getBackOffInitialInterval());
-		redisMessageChannelBinder.setDefaultBackOffMaxInterval(this.redisBinderConfigurationProperties.getBackOffMaxInterval());
-		redisMessageChannelBinder.setDefaultBackOffMultiplier(this.redisBinderConfigurationProperties.getBackOffMultiplier());
-		redisMessageChannelBinder.setDefaultConcurrency(this.redisBinderConfigurationProperties.getConcurrency());
-		redisMessageChannelBinder.setDefaultMaxAttempts(this.redisBinderConfigurationProperties.getMaxAttempts());
 		return redisMessageChannelBinder;
 	}
 

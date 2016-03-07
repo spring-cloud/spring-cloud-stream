@@ -83,7 +83,6 @@ public class MessageChannelConfigurerTests {
 				String inputBindingProps = headerValue.get("input");
 				assertTrue(inputBindingProps.contains("destination=configure"));
 				assertTrue(inputBindingProps.contains("trackHistory=true"));
-				assertTrue(inputBindingProps.contains("concurrency=1"));
 				assertTrue(headerValue.get("instanceIndex").equals("0"));
 				assertTrue(headerValue.get("instanceCount").equals("1"));
 				latch.countDown();

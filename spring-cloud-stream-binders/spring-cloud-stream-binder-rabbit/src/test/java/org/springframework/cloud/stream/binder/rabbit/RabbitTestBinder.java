@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.rabbit;
 
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -38,9 +37,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
  * @author David Turanski
  * @author Mark Fisher
  */
-public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBinder> {
-
-	public static final String BINDER_PREFIX = "binder.";
+public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBinder, RabbitConsumerProperties, RabbitProducerProperties> {
 
 	private final RabbitAdmin rabbitAdmin;
 
@@ -68,30 +65,19 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 	}
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel, Properties properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel, RabbitConsumerProperties properties) {
 		if (group != null) {
-			this.queues.add(prefix(properties) + name + ("." + group));
+			this.queues.add(properties.getPrefix() + name + ("." + group));
 		}
-		this.exchanges.add(prefix(properties) + name);
+		this.exchanges.add(properties.getPrefix() + name);
 		return super.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
 	@Override
-	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties) {
-		this.queues.add(prefix(properties) + name + ".default");
-		this.exchanges.add(prefix(properties) + name);
+	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, RabbitProducerProperties properties) {
+		this.queues.add(properties.getPrefix() + name + ".default");
+		this.exchanges.add(properties.getPrefix() + name);
 		return super.bindProducer(name, moduleOutputChannel, properties);
-	}
-
-	public String prefix(Properties properties) {
-		if (properties != null) {
-			String prefix = properties.getProperty("prefix");
-			if (prefix != null) {
-				this.prefixes.add(prefix);
-				return prefix;
-			}
-		}
-		return BINDER_PREFIX;
 	}
 
 	@Override

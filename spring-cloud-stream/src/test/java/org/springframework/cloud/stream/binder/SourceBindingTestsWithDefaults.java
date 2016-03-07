@@ -20,8 +20,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.Properties;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -53,7 +51,7 @@ public class SourceBindingTestsWithDefaults {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindProducer(eq("output"), eq(testSource.output()), Mockito.<Properties>any());
+		verify(binder).bindProducer(eq("output"), eq(testSource.output()), Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}
 

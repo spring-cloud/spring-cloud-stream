@@ -52,7 +52,7 @@ public class MessageHistoryTrackerConfigurer implements MessageChannelConfigurer
 
 	@Override
 	public void configureMessageChannel(MessageChannel messageChannel, String channelName) {
-		BindingProperties bindingProperties = channelBindingServiceProperties.getBindings().get(channelName);
+		BindingProperties bindingProperties = channelBindingServiceProperties.getBindingProperties(channelName);
 		if (bindingProperties != null && Boolean.TRUE.equals(bindingProperties.isTrackHistory())) {
 			final Set<String> trackHistoryProperties = StringUtils.commaDelimitedListToSet(bindingProperties.getTrackedProperties());
 			Map<String, Object> channelBindingServicePropertiesMap = channelBindingServiceProperties.asMapProperties();

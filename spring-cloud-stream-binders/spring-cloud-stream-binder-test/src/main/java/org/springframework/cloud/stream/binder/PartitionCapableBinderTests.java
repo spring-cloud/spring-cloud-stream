@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -28,15 +27,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
-import java.util.Properties;
 import java.util.UUID;
 
 import org.hamcrest.CustomMatcher;
 import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -53,21 +51,22 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
-abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
+abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> extends BrokerBinderTests<B,CP,PP> {
+
+	protected static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testAnonymousGroup() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
+		B binder = getBinder();
 		DirectChannel output = new DirectChannel();
-		Properties properties = new Properties();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("defaultGroup.0", output, properties);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("defaultGroup.0", output, createProducerProperties());
 
 		QueueChannel input1 = new QueueChannel();
-		Binding<MessageChannel> binding1 = binder.bindConsumer("defaultGroup.0", null, input1, properties);
+		Binding<MessageChannel> binding1 = binder.bindConsumer("defaultGroup.0", null, input1, createConsumerProperties());
 
 		QueueChannel input2 = new QueueChannel();
-		Binding<MessageChannel> binding2 = binder.bindConsumer("defaultGroup.0", null, input2, properties);
+		Binding<MessageChannel> binding2 = binder.bindConsumer("defaultGroup.0", null, input2, createConsumerProperties());
 
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
@@ -85,7 +84,7 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload2.getBytes()));
 
-		binding2 = binder.bindConsumer("defaultGroup.0", null, input2, properties);
+		binding2 = binder.bindConsumer("defaultGroup.0", null, input2, createConsumerProperties());
 		String testPayload3 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload3.getBytes()));
 
@@ -107,21 +106,21 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	@Test
 	public void testOneRequiredGroup() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
+		B binder = getBinder();
 		DirectChannel output = new DirectChannel();
-		Properties properties = new Properties();
+
+		PP producerProperties = createProducerProperties();
 
 		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
 
-		properties.put("requiredGroups", "test1");
-		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, properties);
+		producerProperties.setRequiredGroups("test1");
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, producerProperties);
 
 		String testPayload = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload.getBytes()));
 
-		properties.clear();
 		QueueChannel inbound1 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testDestination, "test1", inbound1, properties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testDestination, "test1", inbound1, createConsumerProperties());
 
 		Message<?> receivedMessage1 = receive(inbound1);
 		assertThat(receivedMessage1, not(nullValue()));
@@ -133,23 +132,22 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	@Test
 	public void testTwoRequiredGroups() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
+		B binder = getBinder();
 		DirectChannel output = new DirectChannel();
-		Properties properties = new Properties();
 
 		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
 
-		properties.put("requiredGroups", "test1,test2");
-		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, properties);
+		PP producerProperties = createProducerProperties();
+		producerProperties.setRequiredGroups("test1","test2");
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, producerProperties);
 
 		String testPayload = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload.getBytes()));
 
-		properties.clear();
 		QueueChannel inbound1 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination, "test1", inbound1, properties);
+		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination, "test1", inbound1, createConsumerProperties());
 		QueueChannel inbound2 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer(testDestination, "test2", inbound2, properties);
+		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer(testDestination, "test2", inbound2, createConsumerProperties());
 
 		Message<?> receivedMessage1 = receive(inbound1);
 		assertThat(receivedMessage1, not(nullValue()));
@@ -164,59 +162,30 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 	}
 
 	@Test
-	public void testBadProperties() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-		Properties properties = new Properties();
-		properties.put("foo", "bar");
-		properties.put("baz", "qux");
-
-		DirectChannel output = new DirectChannel();
-		try {
-			binder.bindProducer("badprops.0", output, properties);
-		}
-		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), allOf(Matchers.containsString(getClassUnderTestName()
-							+ " does not support producer "),
-					containsString("foo"),
-					containsString("baz"),
-					containsString(" for badprops.0")));
-		}
-
-		properties.remove("baz");
-		try {
-			binder.bindConsumer("badprops.0", "test", output, properties);
-		}
-		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage(), equalTo(getClassUnderTestName()
-					+ " does not support consumer property: foo for badprops.0.test."));
-		}
-	}
-
-	@Test
 	public void testPartitionedModuleSpEL() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
+		B binder = getBinder();
 
-		Properties consumerProperties = new Properties();
-		consumerProperties.put("concurrency", "2");
-		consumerProperties.put("partitionIndex", "0");
-		consumerProperties.put("count","3");
+		CP consumerProperties = createConsumerProperties();
+		consumerProperties.setConcurrency(2);
+		consumerProperties.setInstanceIndex(0);
+		consumerProperties.setInstanceCount(3);
+		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0S");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("part.0", "test", input0, consumerProperties);
-		consumerProperties.put("partitionIndex", "1");
+		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1S");
 		Binding<MessageChannel> input1Binding = binder.bindConsumer("part.0", "test", input1, consumerProperties);
-		consumerProperties.put("partitionIndex", "2");
+		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2S");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("part.0", "test", input2, consumerProperties);
 
-		Properties producerProperties = new Properties();
-		producerProperties.put("partitionKeyExpression", "payload");
-		producerProperties.put("partitionSelectorExpression", "hashCode()");
-		producerProperties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
-		producerProperties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
+		PP producerProperties = createProducerProperties();
+		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
+		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
+		producerProperties.setPartitionCount(3);
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
@@ -288,29 +257,29 @@ abstract public class PartitionCapableBinderTests extends BrokerBinderTests {
 
 	@Test
 	public void testPartitionedModuleJava() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
+		B binder = getBinder();
 
-		Properties consumerProperties = new Properties();
-		consumerProperties.put("concurrency", "2");
-		consumerProperties.put("count","3");
-		consumerProperties.put("partitionIndex", "0");
+		CP consumerProperties = createConsumerProperties();
+		consumerProperties.setConcurrency(2);
+		consumerProperties.setInstanceCount(3);
+		consumerProperties.setInstanceIndex(0);
+		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("partJ.0", "test", input0, consumerProperties);
-		consumerProperties.put("partitionIndex", "1");
+		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1J");
 		Binding<MessageChannel> input1Binding = binder.bindConsumer("partJ.0", "test", input1, consumerProperties);
-		consumerProperties.put("partitionIndex", "2");
+		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2J");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("partJ.0", "test", input2, consumerProperties);
 
-		Properties producerProperties = new Properties();
-		producerProperties.put("partitionKeyExtractorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
-		producerProperties.put("partitionSelectorClass", "org.springframework.cloud.stream.binder.PartitionTestSupport");
-		producerProperties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
-		producerProperties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
+		PP producerProperties = createProducerProperties();
+		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
+		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
+		producerProperties.setPartitionCount(3);
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);

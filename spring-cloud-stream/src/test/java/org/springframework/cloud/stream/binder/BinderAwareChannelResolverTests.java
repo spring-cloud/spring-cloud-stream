@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -68,18 +67,19 @@ public class BinderAwareChannelResolverTests {
 
 	private volatile BinderAwareChannelResolver resolver;
 
-	private volatile Binder<MessageChannel> binder;
+	private volatile Binder<MessageChannel, ConsumerProperties, ProducerProperties> binder;
 
 	@Before
 	public void setupContext() throws Exception {
 		this.binder = new TestBinder();
 		BinderFactory binderFactory = new BinderFactory<MessageChannel>() {
+
 			@Override
-			public Binder<MessageChannel> getBinder(String configurationName) {
+			public Binder<MessageChannel, ConsumerProperties, ProducerProperties> getBinder(String configurationName) {
 				return binder;
 			}
 		};
-		this.resolver = new BinderAwareChannelResolver(binderFactory, null, new DynamicDestinationsBindable());
+		this.resolver = new BinderAwareChannelResolver(binderFactory, new ChannelBindingServiceProperties(), new DynamicDestinationsBindable());
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver",
 				this.resolver);
@@ -94,7 +94,7 @@ public class BinderAwareChannelResolverTests {
 		MessageChannel registered = resolver.resolveDestination("foo");
 		DirectChannel testChannel = new DirectChannel();
 		final CountDownLatch latch = new CountDownLatch(1);
-		final List<Message<?>> received = new ArrayList<Message<?>>();
+		final List<Message<?>> received = new ArrayList<>();
 		testChannel.subscribe(new MessageHandler() {
 
 			@Override
@@ -103,7 +103,7 @@ public class BinderAwareChannelResolverTests {
 				latch.countDown();
 			}
 		});
-		binder.bindConsumer("foo", null, testChannel, null);
+		binder.bindConsumer("foo", null, testChannel, new ConsumerProperties());
 		assertEquals(0, received.size());
 		registered.send(MessageBuilder.withPayload("hello").build());
 		try {
@@ -125,25 +125,24 @@ public class BinderAwareChannelResolverTests {
 	}
 
 	@Test
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void propertyPassthrough() {
 		ChannelBindingServiceProperties bindingServiceProperties = new ChannelBindingServiceProperties();
 		DynamicDestinationsBindable dynamicDestinationsBindable = new DynamicDestinationsBindable();
-		Map<String, BindingProperties> bindings = new HashMap<String, BindingProperties>();
-		BindingProperties bindingProperties = new BindingProperties();
-		bindingProperties.setContentType("text/plain");
-		bindings.put("foo", bindingProperties);
+		Map<String, BindingProperties> bindings = new HashMap<>();
+		BindingProperties genericProperties = new BindingProperties();
+		bindings.put("foo", genericProperties);
 		bindingServiceProperties.setBindings(bindings);
 		@SuppressWarnings("unchecked")
-		Binder<MessageChannel> binder = mock(Binder.class);
-		Binder<MessageChannel> binder2 = mock(Binder.class);
-		BinderFactory mockBinderFactory = Mockito.mock(BinderFactory.class);
+		Binder binder = mock(Binder.class);
+		Binder binder2 = mock(Binder.class);
+		BinderFactory<MessageChannel> mockBinderFactory = Mockito.mock(BinderFactory.class);
 		Binding<MessageChannel> fooBinding = Mockito.mock(Binding.class);
 		Binding<MessageChannel> barBinding = Mockito.mock(Binding.class);
 		when(binder.bindProducer(
-				matches("foo"), any(DirectChannel.class), any(Properties.class))).thenReturn(fooBinding);
+				matches("foo"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(fooBinding);
 		when(binder2.bindProducer(
-				matches("bar"), any(DirectChannel.class), any(Properties.class))).thenReturn(barBinding);
+				matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(barBinding);
 		when(mockBinderFactory.getBinder(null)).thenReturn(binder);
 		when(mockBinderFactory.getBinder("someTransport")).thenReturn(binder2);
 		@SuppressWarnings("unchecked")
@@ -152,10 +151,10 @@ public class BinderAwareChannelResolverTests {
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
 		MessageChannel resolved = resolver.resolveDestination("foo");
-		verify(binder).bindProducer(eq("foo"), any(MessageChannel.class), any(Properties.class));
+		verify(binder).bindProducer(eq("foo"), any(MessageChannel.class), any(ProducerProperties.class));
 		assertSame(resolved, beanFactory.getBean("foo"));
 		resolved = resolver.resolveDestination("someTransport:bar");
-		verify(binder2).bindProducer(eq("bar"), any(MessageChannel.class), any(Properties.class));
+		verify(binder2).bindProducer(eq("bar"), any(MessageChannel.class), any(ProducerProperties.class));
 		assertSame(resolved, beanFactory.getBean("someTransport:bar"));
 		assertTrue("Dynamic bindable should have two destination names", dynamicDestinationsBindable.getOutputs().size() == 2);
 		assertTrue("Dynamic bindable should have the destination name 'foo'", dynamicDestinationsBindable.getOutputs().contains("foo"));
@@ -165,13 +164,12 @@ public class BinderAwareChannelResolverTests {
 	/**
 	 * A simple test binder that creates queues for the destinations. Ignores groups.
 	 */
-	private class TestBinder implements Binder<MessageChannel> {
+	private class TestBinder implements Binder<MessageChannel, ConsumerProperties, ProducerProperties> {
 
 		private final Map<String, DirectChannel> destinations = new ConcurrentHashMap<>();
 
 		@Override
-		public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget,
-				Properties properties) {
+		public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, ConsumerProperties properties) {
 			synchronized (destinations) {
 				if (!destinations.containsKey(name)) {
 					destinations.put(name, new DirectChannel());
@@ -184,7 +182,7 @@ public class BinderAwareChannelResolverTests {
 
 
 		@Override
-		public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, Properties properties) {
+		public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, ProducerProperties properties) {
 			synchronized (destinations) {
 				if (!destinations.containsKey(name)) {
 					destinations.put(name, new DirectChannel());

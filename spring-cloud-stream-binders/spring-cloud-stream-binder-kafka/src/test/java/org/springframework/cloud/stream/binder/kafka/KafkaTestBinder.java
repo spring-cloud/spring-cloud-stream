@@ -43,15 +43,9 @@ import com.esotericsoftware.kryo.Registration;
  * @author Gary Russell
  * @author Soby Chacko
  */
-public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder> {
+public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder, KafkaConsumerProperties, KafkaProducerProperties> {
 
 	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport) {
-		this(kafkaTestSupport, KafkaMessageChannelBinder.Mode.embeddedHeaders);
-	}
-
-
-	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport,
-			KafkaMessageChannelBinder.Mode mode) {
 
 		try {
 			ZookeeperConnect zookeeperConnect = new ZookeeperConnect();
@@ -60,8 +54,6 @@ public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinde
 					kafkaTestSupport.getBrokerAddress(),
 					kafkaTestSupport.getZkConnectString());
 			binder.setCodec(getCodec());
-			binder.setDefaultBatchingEnabled(false);
-			binder.setMode(mode);
 			ProducerListener producerListener = new LoggingProducerListener();
 			binder.setProducerListener(producerListener);
 			GenericApplicationContext context = new GenericApplicationContext();

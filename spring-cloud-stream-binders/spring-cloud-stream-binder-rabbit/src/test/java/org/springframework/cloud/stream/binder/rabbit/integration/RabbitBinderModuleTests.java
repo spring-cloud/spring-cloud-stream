@@ -82,7 +82,7 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefault() {
 		context = SpringApplication.run(SimpleProcessor.class, "--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
-		Binder<?> binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory =
@@ -105,7 +105,7 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run("--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
-		Binder<?> binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory =
@@ -135,7 +135,7 @@ public class RabbitBinderModuleTests {
 		params.add("--server.port=0");
 		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[params.size()]));
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
-		Binder<?> binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory =

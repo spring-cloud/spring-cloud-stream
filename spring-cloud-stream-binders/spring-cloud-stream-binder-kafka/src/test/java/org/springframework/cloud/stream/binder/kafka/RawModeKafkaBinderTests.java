@@ -25,14 +25,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
-import java.util.Properties;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
-import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.BinderPropertyKeys;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
@@ -51,39 +48,35 @@ import org.springframework.messaging.support.GenericMessage;
  */
 public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
-	@Override
-	protected KafkaTestBinder createKafkaTestBinder() {
-		return new KafkaTestBinder(kafkaTestSupport, KafkaMessageChannelBinder.Mode.raw);
-	}
-
 	@Test
 	@Override
 	public void testPartitionedModuleJava() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-		Properties properties = new Properties();
-		properties.put("partitionKeyExtractorClass", "org.springframework.cloud.stream.binder.kafka.RawKafkaPartitionTestSupport");
-		properties.put("partitionSelectorClass", "org.springframework.cloud.stream.binder.kafka.RawKafkaPartitionTestSupport");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
+		KafkaTestBinder binder = getBinder();
+		KafkaProducerProperties properties = new KafkaProducerProperties();
+		properties.setPartitionKeyExtractorClass(RawKafkaPartitionTestSupport.class);
+		properties.setPartitionSelectorClass(RawKafkaPartitionTestSupport.class);
+		properties.setPartitionCount(3);
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, properties);
-		properties.clear();
-		properties.put("concurrency", "2");
-		properties.put("count","3");
-		properties.put("partitionIndex", "0");
+
+		KafkaConsumerProperties consumerProperties = new KafkaConsumerProperties();
+		consumerProperties.setConcurrency(2);
+		consumerProperties.setInstanceCount(3);
+		consumerProperties.setInstanceIndex(0);
+		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer("partJ.0", "test", input0, properties);
-		properties.put("partitionIndex", "1");
+		Binding<MessageChannel> input0Binding = binder.bindConsumer("partJ.0", "test", input0, consumerProperties);
+		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1J");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("partJ.0", "test", input1, properties);
-		properties.put("partitionIndex", "2");
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("partJ.0", "test", input1, consumerProperties);
+		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2J");
-		Binding<MessageChannel> input2Binding = binder.bindConsumer("partJ.0", "test", input2, properties);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer("partJ.0", "test", input2, consumerProperties);
 
 		output.send(new GenericMessage<>(new byte[]{(byte)0}));
 		output.send(new GenericMessage<>(new byte[]{(byte)1}));
@@ -111,12 +104,11 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	@Test
 	@Override
 	public void testPartitionedModuleSpEL() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
-		Properties properties = new Properties();
-		properties.put("partitionKeyExpression", "payload[0]");
-		properties.put("partitionSelectorExpression", "hashCode()");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_COUNT, "3");
-		properties.put(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY, "2");
+		KafkaTestBinder binder = getBinder();
+		KafkaProducerProperties properties = new KafkaProducerProperties();
+		properties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload[0]"));
+		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
+		properties.setPartitionCount(3);
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
@@ -129,21 +121,22 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 		}
 
-		properties.clear();
-		properties.put("concurrency", "2");
-		properties.put("partitionIndex", "0");
-		properties.put("count","3");
+		KafkaConsumerProperties consumerProperties = new KafkaConsumerProperties();
+		consumerProperties.setConcurrency(2);
+		consumerProperties.setInstanceIndex(0);
+		consumerProperties.setInstanceCount(3);
+		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0S");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer("part.0", "test", input0, properties);
-		properties.put("partitionIndex", "1");
+		Binding<MessageChannel> input0Binding = binder.bindConsumer("part.0", "test", input0, consumerProperties);
+		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1S");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("part.0", "test", input1, properties);
-		properties.put("partitionIndex", "2");
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("part.0", "test", input1, consumerProperties);
+		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2S");
-		Binding<MessageChannel> input2Binding = binder.bindConsumer("part.0", "test", input2, properties);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer("part.0", "test", input2, consumerProperties);
 
 		Message<byte[]> message2 = MessageBuilder.withPayload(new byte[]{2})
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
@@ -177,11 +170,11 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	@Test
 	@Override
 	public void testSendAndReceive() throws Exception {
-		Binder<MessageChannel> binder = getBinder();
+		KafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, null);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, null);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, new KafkaProducerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, new KafkaConsumerProperties());
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
@@ -203,20 +196,20 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Test
 	public void testSendAndReceiveWithExplicitConsumerGroup() {
-		Binder<MessageChannel> binder = getBinder();
+		KafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		// Test pub/sub by emulating how StreamPlugin handles taps
 		QueueChannel module1InputChannel = new QueueChannel();
 		QueueChannel module2InputChannel = new QueueChannel();
 		QueueChannel module3InputChannel = new QueueChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("baz.0", moduleOutputChannel, null);
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("baz.0", "test", module1InputChannel, null);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("baz.0", moduleOutputChannel, new KafkaProducerProperties());
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("baz.0", "test", module1InputChannel, new KafkaConsumerProperties());
 		// A new module is using the tap as an input channel
 		String fooTapName = "baz.0";
-		Binding<MessageChannel> input2Binding = binder.bindConsumer(fooTapName, "tap1", module2InputChannel, null);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(fooTapName, "tap1", module2InputChannel, new KafkaConsumerProperties());
 		// Another new module is using tap as an input channel
 		String barTapName = "baz.0";
-		Binding<MessageChannel> input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, null);
+		Binding<MessageChannel> input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, new KafkaConsumerProperties());
 
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		boolean success = false;
@@ -252,7 +245,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		assertNull(receive(module3InputChannel));
 
 		// re-subscribed tap does receive the message
-		input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, null);
+		input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, new KafkaConsumerProperties());
 		assertNotNull(receive(module3InputChannel));
 
 		// clean up

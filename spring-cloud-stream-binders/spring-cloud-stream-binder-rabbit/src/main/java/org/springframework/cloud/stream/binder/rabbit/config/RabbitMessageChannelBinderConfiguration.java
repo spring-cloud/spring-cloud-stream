@@ -45,63 +45,43 @@ public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
 	private ConnectionFactory rabbitConnectionFactory;
-	
+
 	@Autowired
 	private RabbitBinderConfigurationProperties rabbitBinderConfigurationProperties;
-	
-	@Autowired
-	private SpringRabbitMQProperties springRabbitMQProperties;
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() {
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory);
 		binder.setCodec(codec);
-		binder.setAddresses(springRabbitMQProperties.getAddresses());
-		binder.setAdminAddresses(springRabbitMQProperties.getAdminAdresses());
+		binder.setAddresses(rabbitBinderConfigurationProperties.getAddresses());
+		binder.setAdminAddresses(rabbitBinderConfigurationProperties.getAdminAdresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());
-		binder.setDefaultAcknowledgeMode(rabbitBinderConfigurationProperties.getAcknowledgeMode());
-		binder.setDefaultAutoBindDLQ(rabbitBinderConfigurationProperties.isAutoBindDLQ());
-		binder.setDefaultChannelTransacted(rabbitBinderConfigurationProperties.isTransacted());
-		binder.setDefaultDefaultDeliveryMode(rabbitBinderConfigurationProperties.getDefaultDeliveryMode());
-		binder.setDefaultDefaultRequeueRejected(rabbitBinderConfigurationProperties.isDefaultRequeueRejected());
-		binder.setDefaultMaxConcurrency(rabbitBinderConfigurationProperties.getMaxConcurrency());
-		binder.setDefaultPrefetchCount(rabbitBinderConfigurationProperties.getPrefetchCount());
-		binder.setDefaultPrefix(rabbitBinderConfigurationProperties.getPrefix());
-		binder.setDefaultReplyHeaderPatterns(rabbitBinderConfigurationProperties.getReplyHeaderPatterns());
-		binder.setDefaultRepublishToDLQ(rabbitBinderConfigurationProperties.isRepublishToDLQ());
-		binder.setDefaultRequestHeaderPatterns(rabbitBinderConfigurationProperties.getRequestHeaderPatterns());
-		binder.setDefaultTxSize(rabbitBinderConfigurationProperties.getTxSize());
-		binder.setNodes(springRabbitMQProperties.getNodes());
-		binder.setPassword(springRabbitMQProperties.getPassword());
-		binder.setSslPropertiesLocation(springRabbitMQProperties.getSslPropertiesLocation());
-		binder.setUsername(springRabbitMQProperties.getUsername());
-		binder.setUseSSL(springRabbitMQProperties.isUseSSL());
-		binder.setVhost(springRabbitMQProperties.getVhost());
-		binder.setDefaultDurableSubscription(rabbitBinderConfigurationProperties.isDurableSubscription());
+		binder.setNodes(rabbitBinderConfigurationProperties.getNodes());
+		binder.setPassword(rabbitBinderConfigurationProperties.getPassword());
+		binder.setSslPropertiesLocation(rabbitBinderConfigurationProperties.getSslPropertiesLocation());
+		binder.setUsername(rabbitBinderConfigurationProperties.getUsername());
+		binder.setUseSSL(rabbitBinderConfigurationProperties.isUseSSL());
+		binder.setVhost(rabbitBinderConfigurationProperties.getVhost());
 		return binder;
 	}
-	
+
 	@Bean
 	MessagePostProcessor deCompressingPostProcessor() {
 		return new DelegatingDecompressingPostProcessor();
 	}
-	
+
 	@Bean
 	MessagePostProcessor gZipPostProcessor() {
 		GZipPostProcessor gZipPostProcessor = new GZipPostProcessor();
 		gZipPostProcessor.setLevel(rabbitBinderConfigurationProperties.getCompressionLevel());
-		return  gZipPostProcessor;
+		return gZipPostProcessor;
 	}
-	
+
 
 	@Bean
 	ConnectionFactorySettings rabbitConnectionFactorySettings() {
 		return new ConnectionFactorySettings();
 	}
-
-	@Bean
-	SpringRabbitMQProperties springRabbitMQProperties() {
-		return new SpringRabbitMQProperties();
-	}
 }
+

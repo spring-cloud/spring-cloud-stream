@@ -62,8 +62,7 @@ public class SourceBindingTestsWithBindingTargets {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindProducer(eq("testtock"), eq(testSource.output()), Mockito.<Properties>any());
-		//Check error channel binding
+		verify(binder).bindProducer(eq("testtock"), eq(testSource.output()), Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}
 

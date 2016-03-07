@@ -23,7 +23,6 @@ import static org.junit.Assert.assertSame;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -299,15 +298,15 @@ public class MessageChannelBinderSupportTests {
 
 	}
 
-	public class TestMessageChannelBinder extends AbstractBinder<MessageChannel> {
+	public class TestMessageChannelBinder extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
 
 		@Override
-		protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel channel, Properties properties) {
+		protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel channel, ConsumerProperties properties) {
 			return null;
 		}
 
 		@Override
-		public Binding<MessageChannel> bindProducer(String name, MessageChannel channel, Properties properties) {
+		public Binding<MessageChannel> doBindProducer(String name, MessageChannel channel, ProducerProperties properties) {
 			return null;
 		}
 	}

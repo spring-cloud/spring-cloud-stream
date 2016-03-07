@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder;
 
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.messaging.MessageChannel;
@@ -29,7 +28,7 @@ import org.springframework.messaging.MessageChannel;
  * @author Gary Russell
  * @author Mark Fisher
  */
-public abstract class AbstractTestBinder<C extends AbstractBinder> implements Binder<MessageChannel> {
+public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> implements Binder<MessageChannel, CP, PP> {
 
 	protected Set<String> queues = new HashSet<String>();
 
@@ -46,13 +45,13 @@ public abstract class AbstractTestBinder<C extends AbstractBinder> implements Bi
 	}
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel, Properties properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel, CP properties) {
 		queues.add(name);
 		return binder.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
 	@Override
-	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, Properties properties) {
+	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, PP properties) {
 		queues.add(name);
 		return binder.bindProducer(name, moduleOutputChannel, properties); 
 	}
