@@ -87,7 +87,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	}
 
 	@Override
-	public synchronized Binder<T> getBinder(String name) {
+	public synchronized Binder<T,?,?> getBinder(String name) {
 		String configurationName;
 		// Fall back to a default if no argument is provided
 		if (StringUtils.isEmpty(name)) {
@@ -155,7 +155,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 			ConfigurableApplicationContext binderProducingContext =
 					springApplicationBuilder.run(args.toArray(new String[args.size()]));
 			@SuppressWarnings("unchecked")
-			Binder<T> binder = binderProducingContext.getBean(Binder.class);
+			Binder<T,?,?> binder = binderProducingContext.getBean(Binder.class);
 			if (bindersHealthIndicator != null) {
 				OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
 				Map<String, HealthIndicator> indicators = binderProducingContext.getBeansOfType(HealthIndicator.class);
@@ -177,16 +177,16 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	 */
 	private static class BinderInstanceHolder<T> {
 
-		private final Binder<T> binderInstance;
+		private final Binder<T,?,?> binderInstance;
 
 		private final ConfigurableApplicationContext binderContext;
 
-		public BinderInstanceHolder(Binder<T> binderInstance, ConfigurableApplicationContext binderContext) {
+		public BinderInstanceHolder(Binder<T,?,?> binderInstance, ConfigurableApplicationContext binderContext) {
 			this.binderInstance = binderInstance;
 			this.binderContext = binderContext;
 		}
 
-		public Binder<T> getBinderInstance() {
+		public Binder<T,?,?> getBinderInstance() {
 			return this.binderInstance;
 		}
 

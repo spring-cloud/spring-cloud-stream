@@ -28,7 +28,7 @@ import org.springframework.context.annotation.Configuration;
 public class MockBinderConfiguration {
 
 	@Bean
-	public Binder<?> binder() {
+	public Binder<?, ?, ?> binder() {
 		return Mockito.mock(Binder.class, Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS));
 	}
 }

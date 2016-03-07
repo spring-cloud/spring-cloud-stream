@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
 public class StubBinder2ConfigurationA {
 
 	@Bean
-	public Binder<?> binder(StubBinder2Dependency dependency) {
+	public Binder<?, ?, ?> binder(StubBinder2Dependency dependency) {
 		return new StubBinder2(dependency);
 	}
 }

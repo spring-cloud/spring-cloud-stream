@@ -16,18 +16,30 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.beans.PropertyDescriptor;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.stream.binder.BinderPropertyKeys;
-import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.bind.PropertySourcesPropertyValues;
+import org.springframework.boot.bind.RelaxedDataBinder;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
@@ -37,7 +49,18 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
-public class ChannelBindingServiceProperties {
+public class ChannelBindingServiceProperties implements ApplicationContextAware {
+
+	private final static String[] bindingPropertyFields;
+
+	static {
+		PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(BindingProperties.class);
+		List<String> propertyNames = new ArrayList<>();
+		for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
+			propertyNames.add(propertyDescriptor.getName());
+		}
+		bindingPropertyFields = propertyNames.toArray(new String[propertyNames.size()]);
+	}
 
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
 	private int instanceIndex = 0;
@@ -51,6 +74,8 @@ public class ChannelBindingServiceProperties {
 	private String defaultBinder;
 
 	private String[] dynamicDestinations = new String[0];
+
+	private ConfigurableApplicationContext applicationContext;
 
 	public Map<String, BindingProperties> getBindings() {
 		return bindings;
@@ -99,129 +124,13 @@ public class ChannelBindingServiceProperties {
 	public void setDynamicDestinations(String[] dynamicDestinations) {
 		this.dynamicDestinations = dynamicDestinations;
 	}
-
-	public String getBindingDestination(String channelName) {
-		BindingProperties bindingProperties = bindings.get(channelName);
-		// we may shortcut directly to the path
-		// just return the channel name if not found
-		return bindingProperties != null && StringUtils.hasText(bindingProperties.getDestination()) ?
-				bindingProperties.getDestination() : channelName;
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
-	/**
-	 * Get consumer properties for the given input channel name.
-	 *
-	 * @param inputChannelName the input channel name
-	 * @return merged consumer properties
-	 */
-	public Properties getConsumerProperties(String inputChannelName) {
-		Properties channelConsumerProperties = new Properties();
-		BindingProperties bindingProperties = this.bindings.get(inputChannelName);
-		if (bindingProperties != null) {
-			if (bindingProperties.getConcurrency() != null) {
-				channelConsumerProperties.setProperty(BinderPropertyKeys.CONCURRENCY,
-						Integer.toString(bindingProperties.getConcurrency()));
-			}
-			updateConsumerPartitionProperties(inputChannelName, channelConsumerProperties);
-		}
-		return channelConsumerProperties;
-	}
-
-	/**
-	 * Get producer properties for the given output channel name.
-	 *
-	 * @param outputChannelName the output channel name
-	 * @return merged producer properties
-	 */
-	public Properties getProducerProperties(String outputChannelName) {
-		Properties channelProducerProperties = new Properties();
-		BindingProperties bindingProperties = this.bindings.get(outputChannelName);
-		if (bindingProperties != null) {
-			updateBatchProperties(bindingProperties, channelProducerProperties);
-			updateProducerPartitionProperties(bindingProperties, channelProducerProperties);
-			if (StringUtils.hasText(bindingProperties.getRequiredGroups())) {
-				channelProducerProperties.setProperty(BinderPropertyKeys.REQUIRED_GROUPS,
-						bindingProperties.getRequiredGroups());
-			}
-		}
-		return channelProducerProperties;
-	}
-
-	private boolean isPartitionedConsumer(String channelName) {
-		BindingProperties bindingProperties = bindings.get(channelName);
-		return bindingProperties != null && bindingProperties.isPartitioned();
-	}
-
-	private boolean isPartitionedProducer(BindingProperties bindingProperties) {
-		return (StringUtils.hasText(bindingProperties.getPartitionKeyExpression())
-				|| StringUtils.hasText(bindingProperties.getPartitionKeyExtractorClass()));
-	}
-
-	private void updateBatchProperties(BindingProperties bindingProperties, Properties producerProperties) {
-		if (bindingProperties.isBatchingEnabled() != null) {
-			producerProperties.setProperty(BinderPropertyKeys.BATCHING_ENABLED,
-					String.valueOf(bindingProperties.isBatchingEnabled()));
-		}
-		if (bindingProperties.getBatchSize() != null) {
-			producerProperties.setProperty(BinderPropertyKeys.BATCH_SIZE,
-					String.valueOf(bindingProperties.getBatchSize()));
-		}
-		if (bindingProperties.getBatchBufferLimit() != null) {
-			producerProperties.setProperty(BinderPropertyKeys.BATCH_BUFFER_LIMIT,
-					String.valueOf(bindingProperties.getBatchBufferLimit()));
-		}
-		if (bindingProperties.getBatchTimeout() != null) {
-			producerProperties.setProperty(BinderPropertyKeys.BATCH_TIMEOUT,
-					String.valueOf(bindingProperties.getBatchTimeout()));
-		}
-	}
-
-	private void updateProducerPartitionProperties(BindingProperties bindingProperties, Properties producerProperties) {
-		if (isPartitionedProducer(bindingProperties)) {
-			if (bindingProperties.getPartitionKeyExpression() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXPRESSION,
-						bindingProperties.getPartitionKeyExpression());
-			}
-			if (bindingProperties.getPartitionKeyExtractorClass() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.PARTITION_KEY_EXTRACTOR_CLASS,
-						bindingProperties.getPartitionKeyExtractorClass());
-			}
-			if (bindingProperties.getPartitionSelectorClass() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.PARTITION_SELECTOR_CLASS,
-						bindingProperties.getPartitionSelectorClass());
-			}
-			if (bindingProperties.getPartitionSelectorExpression() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.PARTITION_SELECTOR_EXPRESSION,
-						bindingProperties.getPartitionSelectorExpression());
-			}
-			if (bindingProperties.getPartitionCount() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.NEXT_MODULE_COUNT,
-						Integer.toString(bindingProperties.getPartitionCount()));
-			}
-			if (bindingProperties.getNextModuleConcurrency() != null) {
-				producerProperties.setProperty(BinderPropertyKeys.NEXT_MODULE_CONCURRENCY,
-						Integer.toString(bindingProperties.getNextModuleConcurrency()));
-			}
-		}
-	}
-
-	private void updateConsumerPartitionProperties(String inputChannelName, Properties consumerProperties) {
-		BindingProperties bindingProperties = this.bindings.get(inputChannelName);
-		if (bindingProperties != null) {
-			if (isPartitionedConsumer(inputChannelName)) {
-				consumerProperties.setProperty(BinderPropertyKeys.COUNT,
-						Integer.toString(getInstanceCount()));
-				consumerProperties.setProperty(BinderPropertyKeys.PARTITION_INDEX,
-						Integer.toString(getInstanceIndex()));
-			}
-		}
-	}
-
-	public String getBinder(String channelName) {
-		if (!bindings.containsKey(channelName)) {
-			return null;
-		}
-		return bindings.get(channelName).getBinder();
+	public String getBinder(String channel) {
+		return getBindingProperties(channel).getBinder();
 	}
 
 	/**
@@ -234,15 +143,64 @@ public class ChannelBindingServiceProperties {
 		properties.put("instanceCount", String.valueOf(getInstanceCount()));
 		properties.put("defaultBinder", getDefaultBinder());
 		properties.put("dynamicDestinations", getDynamicDestinations());
-		// Add Bindings properties
-		for (Map.Entry<String, BindingProperties> entry : getBindings().entrySet()) {
+		for (Map.Entry<String, BindingProperties> entry : bindings.entrySet()) {
 			properties.put(entry.getKey(), entry.getValue().toString());
 		}
-		// Add Binder config properties
 		for (Map.Entry<String, BinderProperties> entry : binders.entrySet()) {
 			properties.put(entry.getKey(), entry.getValue());
 		}
 		return properties;
 	}
 
+	public <T extends ConsumerProperties> T getConsumerProperties(String inputChannelName, Class<T> beanClass) {
+		Assert.notNull(inputChannelName, "The input channel name cannot be null");
+		Assert.notNull(beanClass, "The bean class cannot be null");
+		T consumerProperties = populateProperties(inputChannelName, beanClass);
+		consumerProperties.setCount(this.instanceCount);
+		consumerProperties.setInstanceIndex(this.instanceIndex);
+		return consumerProperties;
+	}
+
+
+	public <T extends ProducerProperties> T getProducerProperties(String outputChannelName, Class<T> beanClass) {
+		Assert.notNull(outputChannelName, "The output channel name cannot be null");
+		Assert.notNull(beanClass, "The bean class cannot be null");
+		T producerProperties = populateProperties(outputChannelName, beanClass);
+		return producerProperties;
+	}
+
+
+	private <C> C populateProperties(String channelName, Class<C> propertiesClass) {
+		C beanInstance;
+		try {
+			beanInstance = propertiesClass.newInstance();
+		}
+		catch (InstantiationException | IllegalAccessException e) {
+			throw new BeanInitializationException(e.getMessage());
+		}
+		RelaxedDataBinder dataBinder = new RelaxedDataBinder(beanInstance, "spring.cloud.stream.bindings." + channelName);
+		dataBinder.setIgnoreUnknownFields(false);
+		dataBinder.setDisallowedFields(bindingPropertyFields);
+		if (applicationContext != null && applicationContext.getEnvironment() != null) {
+			dataBinder.bind(new PropertySourcesPropertyValues(applicationContext.getEnvironment().getPropertySources()));
+		}
+		return beanInstance;
+	}
+
+	public BindingProperties getBindingProperties(String channelName) {
+		BindingProperties bindingProperties = bindings.containsKey(channelName) ? bindings.get(channelName) : new BindingProperties();
+		return bindingProperties;
+	}
+
+	public String getGroup(String channelName) {
+		return getBindingProperties(channelName).getGroup();
+	}
+
+	public String getBindingDestination(String channel) {
+		BindingProperties bindingProperties = getBindingProperties(channel);
+		if (bindingProperties != null && StringUtils.hasText(bindingProperties.getDestination())) {
+			return bindingProperties.getDestination();
+		}
+		return channel;
+	}
 }

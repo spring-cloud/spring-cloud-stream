@@ -41,7 +41,7 @@ public class MockBinderRegistryConfiguration {
 	}
 
 	@Bean
-	public Binder<?> defaultBinder(BinderFactory<MessageChannel> binderFactory) {
+	public Binder<?,?,?> defaultBinder(BinderFactory<MessageChannel> binderFactory) {
 		return binderFactory.getBinder(null);
 	}
 }

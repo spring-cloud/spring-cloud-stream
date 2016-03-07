@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -37,6 +38,8 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  */
 public class PartitionHandler {
+
+	private static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
 	private final ConfigurableListableBeanFactory beanFactory;
 
@@ -57,9 +60,9 @@ public class PartitionHandler {
 	 * @param partitionCount number of partitions configured for binder
 	 */
 	public PartitionHandler(ConfigurableListableBeanFactory beanFactory,
-			EvaluationContext evaluationContext,
-			PartitionSelectorStrategy partitionSelector,
-			DefaultBindingPropertiesAccessor properties, int partitionCount) {
+							EvaluationContext evaluationContext,
+							PartitionSelectorStrategy partitionSelector,
+							ProducerProperties properties, int partitionCount) {
 		Assert.notNull(beanFactory, "BeanFactory must not be null");
 		this.beanFactory = beanFactory;
 		this.evaluationContext = evaluationContext;
@@ -202,12 +205,14 @@ public class PartitionHandler {
 
 		private final int partitionCount;
 
-		public PartitioningMetadata(DefaultBindingPropertiesAccessor properties, int partitionCount) {
+		public PartitioningMetadata(ProducerProperties properties, int partitionCount) {
 			this.partitionCount = partitionCount;
 			this.partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
-			this.partitionKeyExpression = properties.getPartitionKeyExpression();
+			this.partitionKeyExpression = properties.getPartitionKeyExpression() != null ?
+					spelExpressionParser.parseExpression(properties.getPartitionKeyExpression()) : null;
 			this.partitionSelectorClass = properties.getPartitionSelectorClass();
-			this.partitionSelectorExpression = properties.getPartitionSelectorExpression();
+			this.partitionSelectorExpression = properties.getPartitionSelectorExpression() != null ?
+					spelExpressionParser.parseExpression(properties.getPartitionSelectorExpression()) : null;
 		}
 
 		public boolean isPartitionedModule() {

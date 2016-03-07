@@ -16,12 +16,14 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.messaging.MessageChannel;
+
 /**
  * Tests for binders that use an external broker.
  *
  * @author Gary Russell
  */
-public abstract class BrokerBinderTests extends AbstractBinderTests {
+public abstract class BrokerBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> extends AbstractBinderTests<B,CP,PP> {
 
 	/**
 	 * Create a new spy on the given 'queue'. This allows de-correlating the creation of

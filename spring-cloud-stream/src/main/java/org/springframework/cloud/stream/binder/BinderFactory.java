@@ -28,5 +28,5 @@ public interface BinderFactory<T> {
 	 * @param configurationName the name of a binder configuration
 	 * @return the binder instance
 	 */
-	Binder<T> getBinder(String configurationName);
+	Binder<T, ?, ?> getBinder(String configurationName);
 }

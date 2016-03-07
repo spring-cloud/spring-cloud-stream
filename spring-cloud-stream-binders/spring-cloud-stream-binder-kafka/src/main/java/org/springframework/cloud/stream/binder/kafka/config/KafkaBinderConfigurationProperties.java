@@ -47,10 +47,7 @@ class KafkaBinderConfigurationProperties {
 
 	private int offsetUpdateShutdownTimeout;
 
-	private boolean resetOffsets = false;
-
-	private KafkaMessageChannelBinder.StartOffset startOffset;
-
+	private int maxWait = 100;
 	/**
 	 * ZK session timeout in milliseconds.
 	 */
@@ -131,23 +128,6 @@ class KafkaBinderConfigurationProperties {
 		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
 	}
 
-	public KafkaMessageChannelBinder.StartOffset getStartOffset() {
-		return startOffset;
-	}
-
-	public void setStartOffset(KafkaMessageChannelBinder.StartOffset startOffset) {
-		this.startOffset = startOffset;
-	}
-
-	public boolean isResetOffsets() {
-		return resetOffsets;
-	}
-
-	public void setResetOffsets(boolean resetOffsets) {
-		this.resetOffsets = resetOffsets;
-	}
-
-
 	public int getZkSessionTimeout() {
 		return this.zkSessionTimeout;
 	}
@@ -188,5 +168,13 @@ class KafkaBinderConfigurationProperties {
 			}
 		}
 		return StringUtils.arrayToCommaDelimitedString(fullyFormattedHosts);
+	}
+
+	public int getMaxWait() {
+		return maxWait;
+	}
+
+	public void setMaxWait(int maxWait) {
+		this.maxWait = maxWait;
 	}
 }

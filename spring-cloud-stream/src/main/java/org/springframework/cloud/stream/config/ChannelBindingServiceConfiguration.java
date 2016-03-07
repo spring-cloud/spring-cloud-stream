@@ -29,7 +29,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
@@ -49,7 +48,6 @@ import org.springframework.cloud.stream.binding.SingleChannelBindable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
@@ -140,11 +138,6 @@ public class ChannelBindingServiceConfiguration {
 		return new BinderAwareChannelResolver(binderFactory, channelBindingServiceProperties, dynamicBindable());
 	}
 
-	@Bean
-	@ConfigurationPropertiesBinding
-	public Converter<String, BindingProperties> bindingPropertiesConverter() {
-		return new BindingPropertiesConverter();
-	}
 
 	@Bean
 	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")

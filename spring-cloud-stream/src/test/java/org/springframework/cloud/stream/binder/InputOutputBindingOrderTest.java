@@ -23,8 +23,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.Properties;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -52,7 +50,7 @@ public class InputOutputBindingOrderTest {
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
-		verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<Properties>any());
+		verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<ConsumerProperties>any());
 		SomeLifecycle someLifecycle = applicationContext.getBean(SomeLifecycle.class);
 		assertTrue(someLifecycle.isRunning());
 		applicationContext.close();
@@ -84,7 +82,7 @@ public class InputOutputBindingOrderTest {
 		@Override
 		@SuppressWarnings("unchecked")
 		public synchronized void start() {
-			verify(this.binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<Properties>any());
+			verify(this.binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<ProducerProperties>any());
 			// input was not bound yet
 			verifyNoMoreInteractions(this.binder);
 			this.running = true;

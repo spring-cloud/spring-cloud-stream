@@ -25,17 +25,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(value = "spring.cloud.stream.binder.kafka.default")
 public class KafkaBinderDefaultProperties {
 
-	private int batchSize;
-
-	private long batchTimeout;
-
 	private int requiredAcks;
 
 	private int replicationFactor;
 
 	private int concurrency;
-
-	private String compressionCodec;
 
 	private boolean autoCommitEnabled;
 
@@ -45,21 +39,7 @@ public class KafkaBinderDefaultProperties {
 
 	private int queueSize;
 
-	public int getBatchSize() {
-		return batchSize;
-	}
-
-	public void setBatchSize(int batchSize) {
-		this.batchSize = batchSize;
-	}
-
-	public long getBatchTimeout() {
-		return batchTimeout;
-	}
-
-	public void setBatchTimeout(long batchTimeout) {
-		this.batchTimeout = batchTimeout;
-	}
+	private int maxWait;
 
 	public int getRequiredAcks() {
 		return requiredAcks;
@@ -83,14 +63,6 @@ public class KafkaBinderDefaultProperties {
 
 	public void setConcurrency(int concurrency) {
 		this.concurrency = concurrency;
-	}
-
-	public String getCompressionCodec() {
-		return compressionCodec;
-	}
-
-	public void setCompressionCodec(String compressionCodec) {
-		this.compressionCodec = compressionCodec;
 	}
 
 	public boolean isAutoCommitEnabled() {
@@ -123,5 +95,13 @@ public class KafkaBinderDefaultProperties {
 
 	public void setQueueSize(int queueSize) {
 		this.queueSize = queueSize;
+	}
+
+	public int getMaxWait() {
+		return maxWait;
+	}
+
+	public void setMaxWait(int maxWait) {
+		this.maxWait = maxWait;
 	}
 }

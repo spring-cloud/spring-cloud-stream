@@ -16,12 +16,11 @@
 
 package org.springframework.cloud.stream.binding;
 
-import java.util.Properties;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
@@ -35,7 +34,6 @@ import org.springframework.util.ObjectUtils;
  * resolves the channel from the bean factory and, if not present, creates a new channel
  * and adds it to the factory after binding it to the binder. The binder is optionally
  * determined with a prefix preceding a colon.
- *
  * @author Mark Fisher
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
@@ -50,9 +48,11 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private ConfigurableListableBeanFactory beanFactory;
 
-	public BinderAwareChannelResolver(BinderFactory binderFactory,
-									  ChannelBindingServiceProperties channelBindingServiceProperties, DynamicDestinationsBindable dynamicDestinationsBindable) {
+	public BinderAwareChannelResolver(BinderFactory binderFactory, ChannelBindingServiceProperties channelBindingServiceProperties,
+									  DynamicDestinationsBindable dynamicDestinationsBindable) {
 		Assert.notNull(binderFactory, "'binderFactory' cannot be null");
+		Assert.notNull(channelBindingServiceProperties, "'channelBindingServiceProperties' cannot be null");
+		Assert.notNull(dynamicDestinationsBindable, "'dynamicDestinationBindable' cannot be null");
 		this.binderFactory = binderFactory;
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
@@ -79,21 +79,18 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		synchronized (this) {
 			if (this.beanFactory != null && this.binderFactory != null) {
 				String[] dynamicDestinations = null;
-				Properties producerProperties = null;
 				if (this.channelBindingServiceProperties != null) {
 					dynamicDestinations = this.channelBindingServiceProperties.getDynamicDestinations();
-					// TODO: need the props to return some defaults if not found
-					producerProperties = this.channelBindingServiceProperties.getProducerProperties(destinationName);
 				}
 				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
 						|| ObjectUtils.containsElement(dynamicDestinations, destinationName);
 				if (dynamicAllowed) {
-					String transport = null;
+					String binderName = null;
 					String beanName = destinationName;
 					if (destinationName.contains(":")) {
 						String[] tokens = destinationName.split(":", 2);
 						if (tokens.length == 2) {
-							transport = tokens[0];
+							binderName = tokens[0];
 							destinationName = tokens[1];
 						}
 						else if (tokens.length != 1) {
@@ -104,8 +101,16 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					channel = new DirectChannel();
 					this.beanFactory.registerSingleton(beanName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, beanName);
-					Binder<MessageChannel> binder = binderFactory.getBinder(transport);
-					this.dynamicDestinationsBindable.addOutputBinding(beanName, binder.bindProducer(destinationName, channel, producerProperties));
+					@SuppressWarnings("unchecked")
+					Binder<MessageChannel, ?, ProducerProperties> binder =
+							(Binder<MessageChannel, ?, ProducerProperties>) binderFactory.getBinder(binderName);
+					// TODO: need the props to return some defaults if not found
+					Class<? extends ProducerProperties> producerPropertiesClass =
+							ChannelBindingService.resolveProducerPropertiesType(binder);
+					ProducerProperties producerProperties =
+							this.channelBindingServiceProperties.getProducerProperties(destinationName, producerPropertiesClass);
+					this.dynamicDestinationsBindable.addOutputBinding(beanName,
+							binder.bindProducer(destinationName, channel, producerProperties));
 				}
 				else {
 					throw destinationResolutionException;

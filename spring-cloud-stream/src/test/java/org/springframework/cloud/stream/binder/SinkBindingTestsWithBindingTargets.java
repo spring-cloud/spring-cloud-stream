@@ -55,7 +55,7 @@ public class SinkBindingTestsWithBindingTargets {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindConsumer(eq("testtock"), anyString(), eq(testSink.input()), Mockito.<Properties>any());
+		verify(binder).bindConsumer(eq("testtock"), anyString(), eq(testSink.input()), Mockito.<ConsumerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}
 

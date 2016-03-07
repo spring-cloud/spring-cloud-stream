@@ -54,10 +54,10 @@ public class ArbitraryInterfaceBindingTestsWithDefaults {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
-		verify(binder).bindConsumer(eq("foo"), anyString(), eq(fooChannels.foo()), Mockito.<Properties>any());
-		verify(binder).bindConsumer(eq("bar"), anyString(), eq(fooChannels.bar()), Mockito.<Properties>any());
-		verify(binder).bindProducer(eq("baz"), eq(fooChannels.baz()), Mockito.<Properties>any());
-		verify(binder).bindProducer(eq("qux"), eq(fooChannels.qux()), Mockito.<Properties>any());
+		verify(binder).bindConsumer(eq("foo"), anyString(), eq(fooChannels.foo()), Mockito.<ConsumerProperties>any());
+		verify(binder).bindConsumer(eq("bar"), anyString(), eq(fooChannels.bar()), Mockito.<ConsumerProperties>any());
+		verify(binder).bindProducer(eq("baz"), eq(fooChannels.baz()), Mockito.<ProducerProperties>any());
+		verify(binder).bindProducer(eq("qux"), eq(fooChannels.qux()), Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}
 

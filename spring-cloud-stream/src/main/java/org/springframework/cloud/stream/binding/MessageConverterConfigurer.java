@@ -91,7 +91,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	public void configureMessageChannel(MessageChannel channel, String channelName) {
 		Assert.isAssignable(AbstractMessageChannel.class, channel.getClass());
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
-		BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindings().get(channelName);
+		BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindingProperties(channelName);
 		if (bindingProperties != null) {
 			String contentType = bindingProperties.getContentType();
 			if (StringUtils.hasText(contentType)) {
