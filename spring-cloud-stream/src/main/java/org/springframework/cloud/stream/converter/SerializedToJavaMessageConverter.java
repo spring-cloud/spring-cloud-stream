@@ -57,7 +57,6 @@ public class SerializedToJavaMessageConverter extends AbstractFromMessageConvert
 			return null;
 		}
 
-		return buildConvertedMessage(result, message.getHeaders(),
-				MessageConverterUtils.javaObjectMimeType(targetClass));
+		return result;
 	}
 }

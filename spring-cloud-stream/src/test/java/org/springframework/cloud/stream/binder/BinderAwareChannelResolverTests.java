@@ -50,6 +50,7 @@ import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.support.DefaultMessageBuilderFactory;
@@ -96,7 +97,7 @@ public class BinderAwareChannelResolverTests {
 		bindings.put("foo", bindingProperties);
 		this.channelBindingServiceProperties.setBindings(bindings);
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
-																									  this.channelBindingServiceProperties, null, new DefaultMessageBuilderFactory());
+																									  this.channelBindingServiceProperties, new DefaultMessageBuilderFactory(), new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
 		this.bindableChannelFactory = new DefaultBindableChannelFactory(messageConverterConfigurer);

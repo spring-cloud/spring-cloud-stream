@@ -21,7 +21,6 @@ import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
-import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
 import org.springframework.context.annotation.Bean;
@@ -52,15 +51,15 @@ public class CustomMessageConverterTests {
 	@Test
 	public void testCustomMessageConverter() throws Exception {
 		assertTrue(customMessageConverters.size() == 2);
-		assertThat(customMessageConverters, hasItem(isA(FooConverter.class)));
-		assertThat(customMessageConverters, hasItem(isA(BarConverter.class)));
+		assertThat(customMessageConverters, hasItem(isA(FooToBarConverter.class)));
+		assertThat(customMessageConverters, hasItem(isA(BarToFooConverter.class)));
 		testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
 		@SuppressWarnings("unchecked")
 		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null))
 				.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
 		Assert.assertThat(received, notNullValue());
 		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString(),
-				equalTo("application/x-java-object;type=org.springframework.cloud.stream.config.CustomMessageConverterTests$Bar"));
+				equalTo("test/bar"));
 	}
 
 	@EnableBinding(Source.class)
@@ -71,19 +70,19 @@ public class CustomMessageConverterTests {
 
 		@Bean
 		public AbstractFromMessageConverter fooConverter() {
-			return new FooConverter();
+			return new FooToBarConverter();
 		}
 
 		@Bean
 		public AbstractFromMessageConverter barConverter() {
-			return new BarConverter();
+			return new BarToFooConverter();
 		}
 	}
 
-	public static class FooConverter extends AbstractFromMessageConverter {
+	public static class FooToBarConverter extends AbstractFromMessageConverter {
 
-		public FooConverter() {
-			super(MimeType.valueOf("foo/test"));
+		public FooToBarConverter() {
+			super(MimeType.valueOf("test/bar"));
 		}
 
 		@Override
@@ -109,15 +108,14 @@ public class CustomMessageConverterTests {
 				logger.error(e.getMessage(), e);
 				return null;
 			}
-			return buildConvertedMessage(result, message.getHeaders(),
-					MessageConverterUtils.javaObjectMimeType(targetClass));
+			return result;
 		}
 	}
 
-	public static class BarConverter extends AbstractFromMessageConverter {
+	public static class BarToFooConverter extends AbstractFromMessageConverter {
 
-		public BarConverter() {
-			super(MimeType.valueOf("bar/test"));
+		public BarToFooConverter() {
+			super(MimeType.valueOf("test/foo"));
 		}
 
 		@Override
@@ -143,8 +141,7 @@ public class CustomMessageConverterTests {
 				logger.error(e.getMessage(), e);
 				return null;
 			}
-			return buildConvertedMessage(result, message.getHeaders(),
-					MessageConverterUtils.javaObjectMimeType(targetClass));
+			return result;
 		}
 	}
 

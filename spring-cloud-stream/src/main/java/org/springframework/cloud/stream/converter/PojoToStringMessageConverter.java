@@ -55,7 +55,7 @@ public class PojoToStringMessageConverter extends AbstractFromMessageConverter {
 		else {
 			payloadString = message.getPayload().toString();
 		}
-		return buildConvertedMessage(payloadString, message.getHeaders(), MimeTypeUtils.TEXT_PLAIN);
+		return payloadString;
 	}
 
 }

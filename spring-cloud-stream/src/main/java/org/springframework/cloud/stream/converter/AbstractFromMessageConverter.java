@@ -24,7 +24,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
@@ -41,6 +40,7 @@ import org.springframework.util.MimeType;
  *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
  */
 public abstract class AbstractFromMessageConverter extends AbstractMessageConverter {
 
@@ -63,8 +63,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	/**
 	 * Creates a converter that handles one or more content-type message headers
-	 *
-	 * @param supportedSourceMimeTypes list of {@link MimeType} that may present in content-type header
+	 *  @param supportedSourceMimeTypes list of {@link MimeType} that may present in content-type header
 	 * @param targetMimeType the required target type
 	 */
 	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes, MimeType targetMimeType) {
@@ -75,21 +74,19 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	/**
 	 * Creates a converter that handles one or more content-type message headers and one or more target MIME types
-	 *
-	 * @param supportedSourceMimeTypes a list of supported content types
+	 *  @param supportedSourceMimeTypes a list of supported content types
 	 * @param targetMimeTypes a list of supported target types
 	 */
 	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes,
-			Collection<MimeType> targetMimeTypes) {
+										   Collection<MimeType> targetMimeTypes) {
 		super(supportedSourceMimeTypes);
 		Assert.notNull(targetMimeTypes, "'targetMimeTypes' cannot be null");
-		this.targetMimeTypes = new ArrayList<MimeType>(targetMimeTypes);
+		this.targetMimeTypes = new ArrayList<>(targetMimeTypes);
 	}
 
 	/**
 	 * Creates a converter that requires a specific content-type message header
-	 *
-	 * @param supportedSourceMimeType {@link MimeType} that must be present in content-type header
+	 *  @param supportedSourceMimeType {@link MimeType} that must be present in content-type header
 	 * @param targetMimeType the required target type
 	 */
 	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, MimeType targetMimeType) {
@@ -98,8 +95,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	/**
 	 * Creates a converter that requires a specific content-type message header and supports multiple target MIME types.
-	 *
-	 * @param supportedSourceMimeType {@link MimeType} that must be present in content-type header
+	 *  @param supportedSourceMimeType {@link MimeType} that must be present in content-type header
 	 * @param targetMimeTypes a list of supported target types
 	 */
 	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, Collection<MimeType> targetMimeTypes) {
@@ -148,8 +144,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	public boolean supportsTargetMimeType(MimeType mimeType) {
 		for (MimeType targetMimeType : targetMimeTypes) {
-			if (mimeType.getType().equals(targetMimeType.getType()) && mimeType.getSubtype().equals(
-					targetMimeType.getSubtype())) {
+			if (targetMimeType.includes(mimeType)) {
 				return true;
 			}
 		}
@@ -172,18 +167,4 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 		throw new UnsupportedOperationException("'convertTo' not supported");
 	}
 
-	/**
-	 * Convenience method to construct a converted message
-	 *
-	 * @param payload the converted payload
-	 * @param headers the existing message headers
-	 * @param contentType the value of the content-type header
-	 * @return the converted message
-	 */
-	protected final Message<?> buildConvertedMessage(Object payload, MessageHeaders headers, MimeType contentType) {
-		return MessageBuilder.withPayload(payload).copyHeaders(headers)
-				.copyHeaders(
-						Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
-								contentType)).build();
-	}
 }

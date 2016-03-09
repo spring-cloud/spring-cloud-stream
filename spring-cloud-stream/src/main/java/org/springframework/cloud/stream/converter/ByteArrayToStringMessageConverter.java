@@ -81,6 +81,5 @@ public class ByteArrayToStringMessageConverter extends AbstractFromMessageConver
 			}
 		}
 		return converted;
-
 	}
 }

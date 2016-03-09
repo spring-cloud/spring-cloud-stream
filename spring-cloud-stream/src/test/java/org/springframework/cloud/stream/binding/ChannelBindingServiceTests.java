@@ -56,6 +56,7 @@ import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.support.DefaultMessageBuilderFactory;
@@ -202,7 +203,7 @@ public class ChannelBindingServiceTests {
 		when(binder.bindProducer(
 				matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(mockBinding);
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicDestinationsBindable,
-																			 new DefaultBindableChannelFactory(new MessageConverterConfigurer(properties, null, new DefaultMessageBuilderFactory())));
+																			 new DefaultBindableChannelFactory(new MessageConverterConfigurer(properties, new DefaultMessageBuilderFactory(), new CompositeMessageConverterFactory())));
 		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("mock:bar", MessageChannel.class))
 				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
