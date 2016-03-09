@@ -41,6 +41,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.PollableChannel;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * @author Gary Russell
@@ -169,7 +170,7 @@ public abstract class AbstractBinderTests {
 		assertNotNull(inbound);
 		assertEquals("foo", inbound.getPayload());
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertNull(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+		assertEquals(MimeTypeUtils.TEXT_PLAIN_VALUE, inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}

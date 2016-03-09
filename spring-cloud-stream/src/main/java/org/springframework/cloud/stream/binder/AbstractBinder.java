@@ -404,10 +404,13 @@ public abstract class AbstractBinder<T> implements ApplicationContextAware, Init
 		Object payload = deserializePayload(originalPayload, contentType);
 		if (payload != null) {
 			messageValues.setPayload(payload);
-
 			Object originalContentType = messageValues.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			messageValues.put(MessageHeaders.CONTENT_TYPE, originalContentType);
-			messageValues.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			// Reset content-type only if the original content type is not null (when receiving messages from
+			// non-SCSt applications.
+			if (originalContentType != null) {
+				messageValues.put(MessageHeaders.CONTENT_TYPE, originalContentType);
+				messageValues.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			}
 		}
 		return messageValues;
 	}
