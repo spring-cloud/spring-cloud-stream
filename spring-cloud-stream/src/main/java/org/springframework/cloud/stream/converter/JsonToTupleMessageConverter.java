@@ -64,7 +64,6 @@ public class JsonToTupleMessageConverter extends AbstractFromMessageConverter {
 		else {
 			source = (String) message.getPayload();
 		}
-		Tuple t = TupleBuilder.fromString(source);
-		return buildConvertedMessage(t, message.getHeaders(), MessageConverterUtils.javaObjectMimeType(t.getClass()));
+		return TupleBuilder.fromString(source);
 	}
 }

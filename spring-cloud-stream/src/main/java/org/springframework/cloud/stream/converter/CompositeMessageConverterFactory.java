@@ -18,14 +18,13 @@ package org.springframework.cloud.stream.converter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
-import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ObjectUtils;
@@ -41,12 +40,35 @@ public class CompositeMessageConverterFactory {
 
 	private final List<AbstractFromMessageConverter> converters;
 
+	public CompositeMessageConverterFactory() {
+		this(Collections.<AbstractFromMessageConverter>emptyList());
+	}
+
 	/**
-	 * @param converters a list of {@link AbstractFromMessageConverter}
+	 * @param customConverters a list of {@link AbstractFromMessageConverter}
 	 */
-	public CompositeMessageConverterFactory(Collection<AbstractFromMessageConverter> converters) {
-		Assert.notNull(converters, "'converters' cannot be null");
-		this.converters = new ArrayList<>(converters);
+	public CompositeMessageConverterFactory(List<? extends AbstractFromMessageConverter> customConverters) {
+		if (!CollectionUtils.isEmpty(customConverters)) {
+			this.converters = new ArrayList<>(customConverters);
+		}
+		else {
+			this.converters = new ArrayList<>();
+		}
+		initDefaultConverters();
+	}
+
+
+
+	private void initDefaultConverters() {
+		this.converters.add(new JsonToTupleMessageConverter());
+		this.converters.add(new TupleToJsonMessageConverter());
+		this.converters.add(new JsonToPojoMessageConverter());
+		this.converters.add(new PojoToJsonMessageConverter());
+		this.converters.add(new ByteArrayToStringMessageConverter());
+		this.converters.add(new StringToByteArrayMessageConverter());
+		this.converters.add(new PojoToStringMessageConverter());
+		this.converters.add(new JavaToSerializedMessageConverter());
+		this.converters.add(new SerializedToJavaMessageConverter());
 	}
 
 	/**
@@ -54,7 +76,7 @@ public class CompositeMessageConverterFactory {
 	 * @param targetMimeType the target MIME type
 	 * @return a converter for the target MIME type
 	 */
-	public CompositeMessageConverter newInstance(MimeType targetMimeType) {
+	public CompositeMessageConverter getMessageConverterForType(MimeType targetMimeType) {
 		List<MessageConverter> targetMimeTypeConverters = new ArrayList<MessageConverter>();
 		for (AbstractFromMessageConverter converter : converters) {
 			if (converter.supportsTargetMimeType(targetMimeType)) {
@@ -66,6 +88,10 @@ public class CompositeMessageConverterFactory {
 					+ targetMimeType.toString());
 		}
 		return new CompositeMessageConverter(targetMimeTypeConverters);
+	}
+
+	public CompositeMessageConverter getMessageConverterForAllRegistered() {
+		return new CompositeMessageConverter(new ArrayList<MessageConverter>(converters));
 	}
 
 	public Class<?>[] supportedDataTypes(MimeType targetMimeType) {

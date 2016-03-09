@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
+import org.springframework.cloud.stream.binding.BindingListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
@@ -46,9 +48,11 @@ import org.springframework.cloud.stream.binding.MessageHistoryTrackerConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.SingleChannelBindable;
 import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
@@ -58,7 +62,9 @@ import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
+import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.tuple.spel.TuplePropertyAccessor;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
@@ -76,7 +82,7 @@ public class ChannelBindingServiceConfiguration {
 	private static final String ERROR_CHANNEL_NAME = "error";
 
 	@Autowired
-	MessageBuilderFactory messageBuilderFactory;
+	private MessageBuilderFactory messageBuilderFactory;
 
 	/**
 	 * User defined custom message converters
@@ -96,15 +102,15 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public MessageConverterConfigurer messageConverterConfigurer
-			(ChannelBindingServiceProperties channelBindingServiceProperties) {
-		return new MessageConverterConfigurer(channelBindingServiceProperties, customMessageConverters,
-				messageBuilderFactory);
+	public MessageConverterConfigurer messageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties,
+																 MessageBuilderFactory messageBuilderFactory,
+																 CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		return new MessageConverterConfigurer(channelBindingServiceProperties, messageBuilderFactory, compositeMessageConverterFactory);
 	}
 
 	@Bean
-	public BindableChannelFactory channelFactory(ChannelBindingServiceProperties channelBindingServiceProperties) {
-		return new DefaultBindableChannelFactory(compositeMessageChannelConfigurer(channelBindingServiceProperties));
+	public BindableChannelFactory channelFactory(CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new DefaultBindableChannelFactory(compositeMessageChannelConfigurer);
 	}
 
 	@Bean
@@ -115,10 +121,10 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer
-			(ChannelBindingServiceProperties channelBindingServiceProperties) {
+			(MessageConverterConfigurer messageConverterConfigurer, MessageHistoryTrackerConfigurer messageHistoryTrackerConfigurer) {
 		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
-		configurerList.add(messageConverterConfigurer(channelBindingServiceProperties));
-		configurerList.add((messageHistoryTrackerConfigurer(channelBindingServiceProperties)));
+		configurerList.add(messageConverterConfigurer);
+		configurerList.add((messageHistoryTrackerConfigurer));
 		return new CompositeMessageChannelConfigurer(configurerList);
 	}
 
@@ -159,6 +165,15 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public DynamicDestinationsBindable dynamicBindable() {
 		return new DynamicDestinationsBindable();
+	}
+
+	@Bean
+	public CompositeMessageConverterFactory compositeMessageConverterFactory() {
+		List<AbstractFromMessageConverter> messageConverters = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(customMessageConverters)) {
+			messageConverters.addAll(Collections.unmodifiableCollection(customMessageConverters));
+		}
+		return new CompositeMessageConverterFactory(messageConverters);
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
@@ -220,5 +235,14 @@ public class ChannelBindingServiceConfiguration {
 				}
 			};
 		}
+	}
+
+	@Bean
+	public static BindingListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(@Lazy BinderAwareChannelResolver binderAwareChannelResolver, @Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
+		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		messageHandlerMethodFactory.afterPropertiesSet();
+		BindingListenerAnnotationBeanPostProcessor bindingListenerAnnotationBeanPostProcessor = new BindingListenerAnnotationBeanPostProcessor(binderAwareChannelResolver, messageHandlerMethodFactory);
+		return bindingListenerAnnotationBeanPostProcessor;
 	}
 }

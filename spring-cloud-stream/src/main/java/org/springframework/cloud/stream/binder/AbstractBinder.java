@@ -305,7 +305,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * @author David Turanski
 	 * @author Ilayaperumal Gopinathan
 	 */
-	abstract static class JavaClassMimeTypeConversion {
+	public abstract static class JavaClassMimeTypeConversion {
 
 		private static ConcurrentMap<String, MimeType> mimeTypesCache = new ConcurrentHashMap<>();
 

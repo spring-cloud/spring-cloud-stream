@@ -55,9 +55,7 @@ public class JavaToSerializedMessageConverter extends AbstractFromMessageConvert
 			logger.error(e.getMessage(), e);
 			return null;
 		}
-
-		return buildConvertedMessage(bos.toByteArray(), message.getHeaders(),
-				MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT);
+		return bos.toByteArray();
 	}
 
 }

@@ -16,13 +16,13 @@
 
 package org.springframework.cloud.stream.converter;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.Message;
-import org.springframework.util.MimeTypeUtils;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.Message;
+import org.springframework.util.MimeTypeUtils;
 
 
 /**
@@ -74,6 +74,6 @@ public class PojoToJsonMessageConverter extends AbstractFromMessageConverter {
 			logger.error(e.getMessage(), e);
 			return null;
 		}
-		return buildConvertedMessage(result, message.getHeaders(), MimeTypeUtils.APPLICATION_JSON);
+		return result;
 	}
 }
