@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -28,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.bind.PropertySourcesPropertyValues;
@@ -70,6 +72,10 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	private Map<String, BinderProperties> binders = new HashMap<>();
+
+	private Properties consumerDefaults = new Properties();
+
+	private Properties producerDefaults = new Properties();
 
 	private String defaultBinder;
 
@@ -124,6 +130,23 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 	public void setDynamicDestinations(String[] dynamicDestinations) {
 		this.dynamicDestinations = dynamicDestinations;
 	}
+
+	public Properties getConsumerDefaults() {
+		return consumerDefaults;
+	}
+
+	public void setConsumerDefaults(Properties consumerDefaults) {
+		this.consumerDefaults = consumerDefaults;
+	}
+
+	public Properties getProducerDefaults() {
+		return producerDefaults;
+	}
+
+	public void setProducerDefaults(Properties producerDefaults) {
+		this.producerDefaults = producerDefaults;
+	}
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
@@ -155,7 +178,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 	public <T extends ConsumerProperties> T getConsumerProperties(String inputChannelName, Class<T> beanClass) {
 		Assert.notNull(inputChannelName, "The input channel name cannot be null");
 		Assert.notNull(beanClass, "The bean class cannot be null");
-		T consumerProperties = populateProperties(inputChannelName, beanClass);
+		T consumerProperties = populateProperties(inputChannelName, beanClass, consumerDefaults);
 		consumerProperties.setCount(this.instanceCount);
 		consumerProperties.setInstanceIndex(this.instanceIndex);
 		return consumerProperties;
@@ -165,12 +188,12 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 	public <T extends ProducerProperties> T getProducerProperties(String outputChannelName, Class<T> beanClass) {
 		Assert.notNull(outputChannelName, "The output channel name cannot be null");
 		Assert.notNull(beanClass, "The bean class cannot be null");
-		T producerProperties = populateProperties(outputChannelName, beanClass);
+		T producerProperties = populateProperties(outputChannelName, beanClass, producerDefaults);
 		return producerProperties;
 	}
 
 
-	private <C> C populateProperties(String channelName, Class<C> propertiesClass) {
+	private <C> C populateProperties(String channelName, Class<C> propertiesClass, Properties defaults) {
 		C beanInstance;
 		try {
 			beanInstance = propertiesClass.newInstance();
@@ -178,7 +201,13 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 		catch (InstantiationException | IllegalAccessException e) {
 			throw new BeanInitializationException(e.getMessage());
 		}
-		RelaxedDataBinder dataBinder = new RelaxedDataBinder(beanInstance, "spring.cloud.stream.bindings." + channelName);
+		// bind defaults first
+		RelaxedDataBinder dataBinder = new RelaxedDataBinder(beanInstance);
+		dataBinder.setIgnoreUnknownFields(false);
+		dataBinder.setDisallowedFields(bindingPropertyFields);
+		dataBinder.bind(new MutablePropertyValues(defaults));
+		// bind configured properties next, if available
+		dataBinder = new RelaxedDataBinder(beanInstance, "spring.cloud.stream.bindings." + channelName);
 		dataBinder.setIgnoreUnknownFields(false);
 		dataBinder.setDisallowedFields(bindingPropertyFields);
 		if (applicationContext != null && applicationContext.getEnvironment() != null) {
@@ -188,7 +217,8 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 	}
 
 	public BindingProperties getBindingProperties(String channelName) {
-		BindingProperties bindingProperties = bindings.containsKey(channelName) ? bindings.get(channelName) : new BindingProperties();
+		BindingProperties bindingProperties = bindings.containsKey(channelName) ?
+				bindings.get(channelName) : new BindingProperties();
 		return bindingProperties;
 	}
 
