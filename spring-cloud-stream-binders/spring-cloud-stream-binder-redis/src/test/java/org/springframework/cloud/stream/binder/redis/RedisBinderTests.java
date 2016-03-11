@@ -139,10 +139,10 @@ public class RedisBinderTests extends PartitionCapableBinderTests<RedisTestBinde
 		assertFalse(producerEndpoint.isRunning());
 
 		ProducerProperties producerProperties = new ProducerProperties();
-		producerProperties.setPartitionKeyExpression("'foo'");
-		producerProperties.setPartitionKeyExtractorClass("foo");
-		producerProperties.setPartitionSelectorExpression("0");
-		producerProperties.setPartitionSelectorClass("foo");
+		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("'foo'"));
+		producerProperties.setPartitionKeyExtractorClass(AbstractRedisSerializerTests.Foo.class);
+		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("0"));
+		producerProperties.setPartitionSelectorClass(AbstractRedisSerializerTests.Foo.class);
 		producerProperties.setPartitionCount(1);
 
 		producerBinding = binder.bindProducer("props.0", new DirectChannel(), producerProperties);

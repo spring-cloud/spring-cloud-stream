@@ -67,11 +67,11 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	}
 
 	@Override
-	public MessageChannel resolveDestination(String destinationName) {
+	public MessageChannel resolveDestination(String channelName) {
 		MessageChannel channel = null;
 		DestinationResolutionException destinationResolutionException;
 		try {
-			return super.resolveDestination(destinationName);
+			return super.resolveDestination(channelName);
 		}
 		catch (DestinationResolutionException e) {
 			destinationResolutionException = e;
@@ -83,19 +83,19 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					dynamicDestinations = this.channelBindingServiceProperties.getDynamicDestinations();
 				}
 				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
-						|| ObjectUtils.containsElement(dynamicDestinations, destinationName);
+						|| ObjectUtils.containsElement(dynamicDestinations, channelName);
 				if (dynamicAllowed) {
 					String binderName = null;
-					String beanName = destinationName;
-					if (destinationName.contains(":")) {
-						String[] tokens = destinationName.split(":", 2);
+					String beanName = channelName;
+					if (channelName.contains(":")) {
+						String[] tokens = channelName.split(":", 2);
 						if (tokens.length == 2) {
 							binderName = tokens[0];
-							destinationName = tokens[1];
+							channelName = tokens[1];
 						}
 						else if (tokens.length != 1) {
-							throw new IllegalArgumentException("Unrecognized channel naming scheme: " + destinationName + " , should be" +
-									" [<transport>:]<destinationName>");
+							throw new IllegalArgumentException("Unrecognized channel naming scheme: " + channelName + " , should be" +
+									" [<transport>:]<channelName>");
 						}
 					}
 					channel = new DirectChannel();
@@ -104,11 +104,11 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					@SuppressWarnings("unchecked")
 					Binder<MessageChannel, ?, ProducerProperties> binder =
 							(Binder<MessageChannel, ?, ProducerProperties>) binderFactory.getBinder(binderName);
-					// TODO: need the props to return some defaults if not found
 					Class<? extends ProducerProperties> producerPropertiesClass =
 							ChannelBindingService.resolveProducerPropertiesType(binder);
 					ProducerProperties producerProperties =
-							this.channelBindingServiceProperties.getProducerProperties(destinationName, producerPropertiesClass);
+							this.channelBindingServiceProperties.getProducerProperties(channelName, producerPropertiesClass);
+					String destinationName = this.channelBindingServiceProperties.getBindingDestination(channelName);
 					this.dynamicDestinationsBindable.addOutputBinding(beanName,
 							binder.bindProducer(destinationName, channel, producerProperties));
 				}

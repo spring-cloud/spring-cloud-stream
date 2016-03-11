@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -270,57 +267,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			catch (IOException e) {
 				throw new SerializationFailedException("unable to deserialize [" + className + "]", e);
 			}
-		}
-	}
-
-	/**
-	 * Validate the provided deployment properties for the consumer against those supported by this binder
-	 * implementation.
-	 * The consumer is that part of the binder that consumes messages from the underlying infrastructure and sends them
-	 * to
-	 * the next module. Consumer properties are used to configure the consumer.
-	 * @param name       The name.
-	 * @param properties The properties.
-	 * @param supported  The supported properties.
-	 */
-	protected void validateConsumerProperties(String name, Properties properties, Set<Object> supported) {
-		if (properties != null) {
-			validateProperties(name, properties, supported, "consumer");
-		}
-	}
-
-	/**
-	 * Validate the provided deployment properties for the producer against those supported by this binder
-	 * implementation.
-	 * When a module sends a message to the binder, the producer uses these properties while sending it to the
-	 * underlying
-	 * infrastructure.
-	 * @param name       The name.
-	 * @param properties The properties.
-	 * @param supported  The supported properties.
-	 */
-	protected void validateProducerProperties(String name, Properties properties, Set<Object> supported) {
-		if (properties != null) {
-			validateProperties(name, properties, supported, "producer");
-		}
-	}
-
-	private void validateProperties(String name, Properties properties, Set<Object> supported, String type) {
-		StringBuilder builder = new StringBuilder();
-		int errors = 0;
-		for (Entry<Object, Object> entry : properties.entrySet()) {
-			if (!supported.contains(entry.getKey())) {
-				builder.append(entry.getKey()).append(",");
-				errors++;
-			}
-		}
-		if (errors > 0) {
-			throw new IllegalArgumentException(getClass().getSimpleName() + " does not support "
-					+ type
-					+ " propert"
-					+ (errors == 1 ? "y: " : "ies: ")
-					+ builder.substring(0, builder.length() - 1)
-					+ " for " + name + ".");
 		}
 	}
 

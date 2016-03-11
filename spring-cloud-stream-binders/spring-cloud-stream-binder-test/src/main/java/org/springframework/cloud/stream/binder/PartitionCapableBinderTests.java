@@ -34,6 +34,7 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -51,6 +52,8 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Marius Bogoevici
  */
 abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> extends BrokerBinderTests<B,CP,PP> {
+
+	protected static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
 	@Test
 	@SuppressWarnings("unchecked")
@@ -180,8 +183,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("part.0", "test", input2, consumerProperties);
 
 		PP producerProperties = createProducerProperties();
-		producerProperties.setPartitionKeyExpression("payload");
-		producerProperties.setPartitionSelectorExpression("hashCode()");
+		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
+		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
 		producerProperties.setPartitionCount(3);
 
 		DirectChannel output = new DirectChannel();
@@ -274,8 +277,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("partJ.0", "test", input2, consumerProperties);
 
 		PP producerProperties = createProducerProperties();
-		producerProperties.setPartitionKeyExtractorClass("org.springframework.cloud.stream.binder.PartitionTestSupport");
-		producerProperties.setPartitionSelectorClass("org.springframework.cloud.stream.binder.PartitionTestSupport");
+		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
+		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionCount(3);
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");

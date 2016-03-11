@@ -31,6 +31,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.bind.PropertySourcesPropertyValues;
 import org.springframework.boot.bind.RelaxedDataBinder;
@@ -40,6 +41,8 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -51,7 +54,7 @@ import org.springframework.util.StringUtils;
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
-public class ChannelBindingServiceProperties implements ApplicationContextAware {
+public class ChannelBindingServiceProperties implements ApplicationContextAware, InitializingBean {
 
 	private final static String[] bindingPropertyFields;
 
@@ -63,6 +66,8 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 		}
 		bindingPropertyFields = propertyNames.toArray(new String[propertyNames.size()]);
 	}
+
+	private ConversionService conversionService;
 
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
 	private int instanceIndex = 0;
@@ -152,6 +157,13 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		DefaultConversionService conversionService = new DefaultConversionService();
+		conversionService.addConverter(new SpelExpressionConverterConfiguration.SpelConverter());
+		this.conversionService = conversionService;
+	}
+
 	public String getBinder(String channel) {
 		return getBindingProperties(channel).getBinder();
 	}
@@ -207,10 +219,11 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware 
 		dataBinder.setDisallowedFields(bindingPropertyFields);
 		dataBinder.bind(new MutablePropertyValues(defaults));
 		// bind configured properties next, if available
-		dataBinder = new RelaxedDataBinder(beanInstance, "spring.cloud.stream.bindings." + channelName);
-		dataBinder.setIgnoreUnknownFields(false);
-		dataBinder.setDisallowedFields(bindingPropertyFields);
 		if (applicationContext != null && applicationContext.getEnvironment() != null) {
+			dataBinder = new RelaxedDataBinder(beanInstance, "spring.cloud.stream.bindings." + channelName);
+			dataBinder.setConversionService(conversionService);
+			dataBinder.setIgnoreUnknownFields(false);
+			dataBinder.setDisallowedFields(bindingPropertyFields);
 			dataBinder.bind(new PropertySourcesPropertyValues(applicationContext.getEnvironment().getPropertySources()));
 		}
 		return beanInstance;

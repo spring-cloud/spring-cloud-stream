@@ -56,6 +56,9 @@ import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
+import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
+import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
+import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.context.ApplicationContext;
@@ -202,10 +205,10 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		properties.setPrefix("foo.");
 		properties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
 		properties.setRequestHeaderPatterns(new String[] {"foo"});
-		properties.setPartitionKeyExpression("'foo'");
-		properties.setPartitionKeyExtractorClass("foo");
-		properties.setPartitionSelectorExpression("0");
-		properties.setPartitionSelectorClass("foo");
+		properties.setPartitionKeyExpression(spelExpressionParser.parseExpression("'foo'"));
+		properties.setPartitionKeyExtractorClass(TestPartitionKeyExtractorClass.class);
+		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("0"));
+		properties.setPartitionSelectorClass(TestPartitionSelectorClass.class);
 		properties.setPartitionCount(1);
 
 		producerBinding = binder.bindProducer("props.0", new DirectChannel(), properties);
@@ -361,8 +364,8 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		RabbitProducerProperties producerProperties = new RabbitProducerProperties();
 		producerProperties.setPrefix("bindertest.");
 		producerProperties.setAutoBindDlq(true);
-		producerProperties.setPartitionKeyExtractorClass("org.springframework.cloud.stream.binder.PartitionTestSupport");
-		producerProperties.setPartitionSelectorClass("org.springframework.cloud.stream.binder.PartitionTestSupport");
+		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
+		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionCount(2);
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
@@ -431,8 +434,8 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		properties.setPrefix("bindertest.");
 		properties.setAutoBindDlq(true);
 		properties.setRequiredGroups("dlqPartGrp");
-		properties.setPartitionKeyExtractorClass("org.springframework.cloud.stream.binder.PartitionTestSupport");
-		properties.setPartitionSelectorClass("org.springframework.cloud.stream.binder.PartitionTestSupport");
+		properties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
+		properties.setPartitionSelectorClass(PartitionTestSupport.class);
 		properties.setPartitionCount(2);
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
@@ -639,8 +642,8 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		rabbitConsumerProperties.setPrefix("latebinder.");
 		Binding<MessageChannel> late0ConsumerBinding = binder.bindConsumer("late.0", "test", moduleInputChannel, rabbitConsumerProperties);
 
-		properties.setPartitionKeyExpression("payload.equals('0') ? 0 : 1");
-		properties.setPartitionSelectorExpression("hashCode()");
+		properties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload.equals('0') ? 0 : 1"));
+		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
 		properties.setPartitionCount(2);
 
 		MessageChannel partOutputChannel = new DirectChannel();
@@ -807,6 +810,22 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 			}
 
 		};
+	}
+
+	private static class TestPartitionKeyExtractorClass implements PartitionKeyExtractorStrategy {
+
+		@Override
+		public Object extractKey(Message<?> message) {
+			return null;
+		}
+	}
+
+	private static class TestPartitionSelectorClass implements PartitionSelectorStrategy {
+
+		@Override
+		public int selectPartition(Object key, int partitionCount) {
+			return 0;
+		}
 	}
 
 }

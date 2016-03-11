@@ -29,9 +29,16 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import kafka.admin.AdminUtils;
+import kafka.api.OffsetRequest;
+import kafka.serializer.Decoder;
+import kafka.serializer.DefaultDecoder;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import scala.collection.Seq;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -80,14 +87,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import kafka.admin.AdminUtils;
-import kafka.api.OffsetRequest;
-import kafka.serializer.Decoder;
-import kafka.serializer.DefaultDecoder;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
-import scala.collection.Seq;
-
 /**
  * A {@link Binder} that uses Kafka as the underlying middleware.
  *
@@ -134,15 +133,15 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 	// -------- Default values for properties -------
 
-	private int defaultReplicationFactor = 1;
+	private int replicationFactor = 1;
 
-	private int defaultRequiredAcks = DEFAULT_REQUIRED_ACKS;
+	private int requiredAcks = 1;
 
-	private int defaultQueueSize = 1024;
+	private int queueSize = 1024;
 
 	private int maxWait = 100;
 
-	private int defaultFetchSize = 1024 * 1024;
+	private int fetchSize = 1024 * 1024;
 
 	private int defaultMinPartitionCount = 1;
 
@@ -259,20 +258,20 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		}
 	}
 
-	public void setDefaultReplicationFactor(int defaultReplicationFactor) {
-		this.defaultReplicationFactor = defaultReplicationFactor;
+	public void setReplicationFactor(int replicationFactor) {
+		this.replicationFactor = replicationFactor;
 	}
 
-	public void setDefaultRequiredAcks(int defaultRequiredAcks) {
-		this.defaultRequiredAcks = defaultRequiredAcks;
+	public void setRequiredAcks(int requiredAcks) {
+		this.requiredAcks = requiredAcks;
 	}
 
-	public void setDefaultQueueSize(int defaultQueueSize) {
-		this.defaultQueueSize = defaultQueueSize;
+	public void setQueueSize(int queueSize) {
+		this.queueSize = queueSize;
 	}
 
-	public void setDefaultFetchSize(int defaultFetchSize) {
-		this.defaultFetchSize = defaultFetchSize;
+	public void setFetchSize(int fetchSize) {
+		this.fetchSize = fetchSize;
 	}
 
 	public void setDefaultMinPartitionCount(int defaultMinPartitionCount) {
@@ -322,7 +321,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 
 	@Override
-	public Binding<MessageChannel> doBindProducer(final String name, MessageChannel moduleOutputChannel, KafkaProducerProperties properties) {
+	public Binding<MessageChannel> doBindProducer(String name, MessageChannel moduleOutputChannel, KafkaProducerProperties properties) {
 
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
 		if (logger.isInfoEnabled()) {
@@ -331,14 +330,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 		validateTopicName(name);
 
-		int partitionCount = properties.getPartitionCount();
-		if (partitionCount == 0) {
-			throw new IllegalArgumentException("Module count cannot be zero");
-		}
-		int minKafkaPartitions = defaultMinPartitionCount;
-		int numPartitions = Math.max(minKafkaPartitions, partitionCount);
-
-		Collection<Partition> partitions = ensureTopicCreated(name, numPartitions, defaultReplicationFactor);
+		int numPartitions = Math.max(defaultMinPartitionCount, properties.getPartitionCount());
+		Collection<Partition> partitions = ensureTopicCreated(name, numPartitions, replicationFactor);
 
 		topicsInUse.put(name, partitions);
 
@@ -348,7 +341,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		producerMetadata.setCompressionType(properties.getCompressionCodec());
 		producerMetadata.setBatchBytes(properties.getBufferSize());
 		Properties additionalProps = new Properties();
-		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(defaultRequiredAcks));
+		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(requiredAcks));
 		additionalProps.put(ProducerConfig.LINGER_MS_CONFIG, String.valueOf(properties.getBatchTimeout()));
 		ProducerFactoryBean<byte[], byte[]> producerFB = new ProducerFactoryBean<>(producerMetadata, brokers, additionalProps);
 
@@ -426,39 +419,39 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		}
 	}
 
-	private Binding<MessageChannel> createKafkaConsumer(String name, final MessageChannel moduleInputChannel, KafkaConsumerProperties properties,
-			String group, long referencePoint) {
+	private Binding<MessageChannel> createKafkaConsumer(String name, final MessageChannel moduleInputChannel,
+														KafkaConsumerProperties properties, String group, long referencePoint) {
 
 		validateTopicName(name);
 		int minKafkaPartitions = properties.getMinPartitionCount();
-		int moduleCount = properties.getCount();
-		if (moduleCount == 0) {
-			throw new IllegalArgumentException("Module count cannot be zero");
+		int instance = properties.getCount();
+		if (instance == 0) {
+			throw new IllegalArgumentException("Instance count cannot be zero");
 		}
-		int numPartitions = Math.max(minKafkaPartitions, moduleCount * properties.getConcurrency());
-		Collection<Partition> allPartitions = ensureTopicCreated(name, numPartitions, defaultReplicationFactor);
+		int numPartitions = Math.max(minKafkaPartitions, instance * properties.getConcurrency());
+		Collection<Partition> allPartitions = ensureTopicCreated(name, numPartitions, replicationFactor);
 
 		Decoder<byte[]> valueDecoder = new DefaultDecoder(null);
 		Decoder<byte[]> keyDecoder = new DefaultDecoder(null);
 
 		Collection<Partition> listenedPartitions;
 
-		if (moduleCount == 1) {
+		if (instance == 1) {
 			listenedPartitions = allPartitions;
 		}
 		else {
-			listenedPartitions = new ArrayList<Partition>();
+			listenedPartitions = new ArrayList<>();
 			for (Partition partition : allPartitions) {
 				// divide partitions across modules
 				if (properties.isPartitioned()) {
-					if ((partition.getId() % moduleCount) == properties.getPartitionIndex()) {
+					if ((partition.getId() % instance) == properties.getPartitionIndex()) {
 						listenedPartitions.add(partition);
 					}
 				}
 				else {
 					int instanceIndex = properties.getInstanceIndex();
 					// sequence numbers are zero-based
-					if ((partition.getId() % moduleCount) == instanceIndex) {
+					if ((partition.getId() % instance) == instanceIndex) {
 						listenedPartitions.add(partition);
 					}
 				}
@@ -472,8 +465,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		bridge.setBeanName("bridge." + name);
 
 		final KafkaMessageListenerContainer messageListenerContainer =
-				createMessageListenerContainer(properties, group, properties.getConcurrency(), listenedPartitions,
-						referencePoint);
+				createMessageListenerContainer(properties, group, null, listenedPartitions, referencePoint);
 
 		final KafkaMessageDrivenChannelAdapter kafkaMessageDrivenChannelAdapter =
 				new KafkaMessageDrivenChannelAdapter(messageListenerContainer);
@@ -512,20 +504,9 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		return consumerBinding;
 	}
 
-	public KafkaMessageListenerContainer createMessageListenerContainer(KafkaConsumerProperties properties, String group,
-																		int maxConcurrency, String topic, long referencePoint) {
-		return createMessageListenerContainer(properties, group, maxConcurrency, topic,
-				null, referencePoint);
-	}
-
-	private KafkaMessageListenerContainer createMessageListenerContainer(KafkaConsumerProperties consumerProperties,
-																		 String group, int maxConcurrency, Collection<Partition> listenedPartitions, long referencePoint) {
-		return createMessageListenerContainer(consumerProperties, group, maxConcurrency, null, listenedPartitions, referencePoint);
-	}
-
-	private KafkaMessageListenerContainer createMessageListenerContainer(KafkaConsumerProperties consumerProperties,
-																		 String group, int maxConcurrency, String topic, Collection<Partition> listenedPartitions,
-																		 long referencePoint) {
+	KafkaMessageListenerContainer createMessageListenerContainer(KafkaConsumerProperties consumerProperties,
+																 String group, String topic, Collection<Partition> listenedPartitions,
+																 long referencePoint) {
 		Assert.isTrue(StringUtils.hasText(topic) ^ !CollectionUtils.isEmpty(listenedPartitions),
 				"Exactly one of topic or a list of listened partitions must be provided");
 		KafkaMessageListenerContainer messageListenerContainer;
@@ -546,8 +527,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 			offsetManager.resetOffsets(listenedPartitions);
 		}
 		messageListenerContainer.setOffsetManager(offsetManager);
-		messageListenerContainer.setQueueSize(defaultQueueSize);
-		messageListenerContainer.setMaxFetch(defaultFetchSize);
+		messageListenerContainer.setQueueSize(queueSize);
+		messageListenerContainer.setMaxFetch(fetchSize);
 		return messageListenerContainer;
 	}
 
@@ -587,10 +568,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 	}
 
 	private class ReceivingHandler extends AbstractReplyProducingMessageHandler {
-
-		public ReceivingHandler() {
-			this.setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
-		}
 
 		private KafkaConsumerProperties consumerProperties;
 
@@ -659,13 +636,13 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 			this.setBeanFactory(beanFactory);
 			this.producerConfiguration = producerConfiguration;
 			this.partitionHandler = new PartitionHandler(beanFactory, evaluationContext, partitionSelector,
-					properties, numberOfPartitions);
+					properties);
 		}
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) throws Exception {
 			int targetPartition;
-			if (this.partitionHandler.isPartitionedModule()) {
+			if (producerProperties.isPartitioned()) {
 				targetPartition = this.partitionHandler.determinePartition(message);
 			}
 			else {

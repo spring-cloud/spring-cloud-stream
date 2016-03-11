@@ -127,7 +127,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		// Rewind offset, as tests will have typically already sent the messages we're trying to consume
 
 		KafkaMessageListenerContainer messageListenerContainer = binderWrapper.getCoreBinder().createMessageListenerContainer(
-				createConsumerProperties(), UUID.randomUUID().toString(), 1, name, OffsetRequest.EarliestTime());
+				createConsumerProperties(), UUID.randomUUID().toString(), name, null, OffsetRequest.EarliestTime());
 
 		final BlockingQueue<KafkaMessage> messages = new ArrayBlockingQueue<KafkaMessage>(10);
 
@@ -226,7 +226,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		KafkaProducerProperties producerProps = new KafkaProducerProperties();
-		producerProps.setPartitionCount(5);
 		producerProps.setPartitionCount(6);
 		KafkaConsumerProperties consumerProps = new KafkaConsumerProperties();
 		consumerProps.setMinPartitionCount(5);
@@ -290,7 +289,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		QueueChannel moduleInputChannel = new QueueChannel();
 		KafkaProducerProperties producerProperties = new KafkaProducerProperties();
 		producerProperties.setPartitionCount(5);
-		producerProperties.setPartitionKeyExpression("payload");
+		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
 		KafkaConsumerProperties consumerProperties = new KafkaConsumerProperties();
 		consumerProperties.setMinPartitionCount(3);
 		long uniqueBindingId = System.currentTimeMillis();
@@ -321,7 +320,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		QueueChannel moduleInputChannel = new QueueChannel();
 		KafkaProducerProperties producerProperties = new KafkaProducerProperties();
 		producerProperties.setPartitionCount(5);
-		producerProperties.setPartitionKeyExpression("payload");
+		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
 		KafkaConsumerProperties consumerProperties = new KafkaConsumerProperties();
 		consumerProperties.setMinPartitionCount(5);
 		long uniqueBindingId = System.currentTimeMillis();

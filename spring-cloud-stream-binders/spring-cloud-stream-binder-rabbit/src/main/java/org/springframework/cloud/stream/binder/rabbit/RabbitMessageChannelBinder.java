@@ -23,6 +23,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Envelope;
 import org.aopalliance.aop.Advice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +64,6 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
-import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.Resource;
@@ -86,10 +88,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Envelope;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
@@ -301,7 +299,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 					this.connectionFactory);
 			listenerContainer.setAcknowledgeMode(properties.getAcknowledgeMode());
 			listenerContainer.setChannelTransacted(properties.isTransacted());
-			listenerContainer.setDefaultRequeueRejected(properties.getRequeueRejected());
+			listenerContainer.setDefaultRequeueRejected(properties.isRequeueRejected());
 
 			int concurrency = properties.getConcurrency();
 			concurrency = concurrency > 0 ? concurrency : 1;
@@ -377,13 +375,11 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 													   RabbitTemplate rabbitTemplate) {
 		String prefix = properties.getPrefix();
 		String exchangeName = applyPrefix(prefix, name);
-		String partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
-		String partitionKeyExpression = properties.getPartitionKeyExpression();
 		TopicExchange exchange = new TopicExchange(exchangeName);
 		declareExchange(exchangeName, exchange);
 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(rabbitTemplate);
 		endpoint.setExchangeName(exchange.getName());
-		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
+		if (!properties.isPartitioned()) {
 			endpoint.setRoutingKey(name);
 		}
 		else {
@@ -391,7 +387,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 		}
 		for (String requiredGroupName : properties.getRequiredGroups()) {
 			String baseQueueName = exchangeName + "." + requiredGroupName;
-			if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
+			if (!properties.isPartitioned()) {
 				Queue queue = new Queue(baseQueueName, true, false, false, queueArgs(baseQueueName, prefix, properties.isAutoBindDlq()));
 				declareQueue(baseQueueName, queue);
 				autoBindDLQ(baseQueueName, baseQueueName, properties.getPrefix(), properties.isAutoBindDlq());
@@ -460,12 +456,12 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 	}
 
 	private Binding<MessageChannel> doRegisterProducer(final String name, MessageChannel moduleOutputChannel,
-													   AmqpOutboundEndpoint delegate, ProducerProperties properties) {
+													   AmqpOutboundEndpoint delegate, RabbitProducerProperties properties) {
 		return this.doRegisterProducer(name, moduleOutputChannel, delegate, null, properties);
 	}
 
 	private Binding<MessageChannel> doRegisterProducer(final String name, MessageChannel moduleOutputChannel,
-													   AmqpOutboundEndpoint delegate, String replyTo, ProducerProperties properties) {
+													   AmqpOutboundEndpoint delegate, String replyTo, RabbitProducerProperties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
 		MessageHandler handler = new SendingHandler(delegate, replyTo, properties);
 		EventDrivenConsumer consumer = new EventDrivenConsumer((SubscribableChannel) moduleOutputChannel, handler);
@@ -473,7 +469,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 		consumer.setBeanName("outbound." + name);
 		consumer.afterPropertiesSet();
 		DefaultBinding<MessageChannel> producerBinding = new DefaultBinding<>(name, null, moduleOutputChannel, consumer);
-
 		consumer.start();
 		return producerBinding;
 	}
@@ -604,15 +599,18 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 
 		private final String replyTo;
 
+		private final RabbitProducerProperties producerProperties;
+
 		private final PartitionHandler partitionHandler;
 
-		private SendingHandler(MessageHandler delegate, String replyTo, ProducerProperties properties) {
+		private SendingHandler(MessageHandler delegate, String replyTo, RabbitProducerProperties properties) {
 			this.delegate = delegate;
 			this.replyTo = replyTo;
+			producerProperties = properties;
 			ConfigurableListableBeanFactory beanFactory = RabbitMessageChannelBinder.this.getBeanFactory();
 			this.setBeanFactory(beanFactory);
 			this.partitionHandler = new PartitionHandler(beanFactory, evaluationContext, partitionSelector,
-					properties, properties.getPartitionCount());
+					properties);
 		}
 
 		@Override
@@ -622,7 +620,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 			if (this.replyTo != null) {
 				messageToSend.put(AmqpHeaders.REPLY_TO, this.replyTo);
 			}
-			if (this.partitionHandler.isPartitionedModule()) {
+			if (producerProperties.isPartitioned()) {
 				messageToSend.put(PARTITION_HEADER,
 						this.partitionHandler.determinePartition(message));
 			}

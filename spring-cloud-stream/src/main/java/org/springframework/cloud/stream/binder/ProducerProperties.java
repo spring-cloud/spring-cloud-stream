@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.expression.Expression;
+
 /**
  * Common producer properties.
  *
@@ -23,13 +25,13 @@ package org.springframework.cloud.stream.binder;
  */
 public class ProducerProperties {
 
-	private String partitionKeyExpression = null;
+	private Expression partitionKeyExpression = null;
 
-	private String partitionKeyExtractorClass = null;
+	private Class<?> partitionKeyExtractorClass = null;
 
-	private String partitionSelectorClass = null;
+	private Class<?> partitionSelectorClass = null;
 
-	private String partitionSelectorExpression = null;
+	private Expression partitionSelectorExpression = null;
 
 	private boolean batchingEnabled = false;
 
@@ -43,35 +45,39 @@ public class ProducerProperties {
 
 	private String[] requiredGroups = new String[] {};
 
-	public String getPartitionKeyExpression() {
+	public Expression getPartitionKeyExpression() {
 		return partitionKeyExpression;
 	}
 
-	public void setPartitionKeyExpression(String partitionKeyExpression) {
+	public void setPartitionKeyExpression(Expression partitionKeyExpression) {
 		this.partitionKeyExpression = partitionKeyExpression;
 	}
 
-	public String getPartitionKeyExtractorClass() {
+	public Class<?> getPartitionKeyExtractorClass() {
 		return partitionKeyExtractorClass;
 	}
 
-	public void setPartitionKeyExtractorClass(String partitionKeyExtractorClass) {
+	public void setPartitionKeyExtractorClass(Class<?> partitionKeyExtractorClass) {
 		this.partitionKeyExtractorClass = partitionKeyExtractorClass;
 	}
 
-	public String getPartitionSelectorClass() {
+	public boolean isPartitioned() {
+		return this.partitionKeyExpression != null || partitionKeyExtractorClass != null;
+	}
+
+	public Class<?> getPartitionSelectorClass() {
 		return partitionSelectorClass;
 	}
 
-	public void setPartitionSelectorClass(String partitionSelectorClass) {
+	public void setPartitionSelectorClass(Class<?> partitionSelectorClass) {
 		this.partitionSelectorClass = partitionSelectorClass;
 	}
 
-	public String getPartitionSelectorExpression() {
+	public Expression getPartitionSelectorExpression() {
 		return partitionSelectorExpression;
 	}
 
-	public void setPartitionSelectorExpression(String partitionSelectorExpression) {
+	public void setPartitionSelectorExpression(Expression partitionSelectorExpression) {
 		this.partitionSelectorExpression = partitionSelectorExpression;
 	}
 

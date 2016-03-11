@@ -27,8 +27,8 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -39,11 +39,10 @@ import org.springframework.context.annotation.Import;
  */
 public class DefaultSettingsTests {
 
-
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testDefaultSettings() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestFooChannels.class,
+		ConfigurableApplicationContext applicationContext = createBuilder().run(
 				"--spring.cloud.stream.bindings.foo.destination=fooDest",
 				"--spring.cloud.stream.bindings.bar.destination=barDest",
 				"--spring.cloud.stream.bindings.baz.destination=bazDest",
@@ -80,7 +79,7 @@ public class DefaultSettingsTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testDefaultSettingsOverridden() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestFooChannels.class,
+		ConfigurableApplicationContext applicationContext = createBuilder().run(
 				"--spring.cloud.stream.bindings.foo.destination=fooDest",
 				"--spring.cloud.stream.bindings.bar.destination=barDest",
 				"--spring.cloud.stream.bindings.baz.destination=bazDest",
@@ -116,12 +115,16 @@ public class DefaultSettingsTests {
 		applicationContext.close();
 	}
 
+	private SpringApplicationBuilder createBuilder() {
+		return new SpringApplicationBuilder(TestFooChannels.class)
+				.web(false);
+	}
+
+
 	@EnableBinding(FooChannels.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestFooChannels {
 
 	}
-
-
 }

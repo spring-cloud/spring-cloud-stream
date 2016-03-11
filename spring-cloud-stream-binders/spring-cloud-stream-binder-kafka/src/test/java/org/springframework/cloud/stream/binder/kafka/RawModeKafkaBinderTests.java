@@ -46,7 +46,6 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Gary Russell
  * @author Mark Fisher
  */
-@Ignore
 public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Test
@@ -54,8 +53,8 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	public void testPartitionedModuleJava() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		KafkaProducerProperties properties = new KafkaProducerProperties();
-		properties.setPartitionKeyExtractorClass( "org.springframework.cloud.stream.binder.kafka.RawKafkaPartitionTestSupport");
-		properties.setPartitionSelectorClass("org.springframework.cloud.stream.binder.kafka.RawKafkaPartitionTestSupport");
+		properties.setPartitionKeyExtractorClass(RawKafkaPartitionTestSupport.class);
+		properties.setPartitionSelectorClass(RawKafkaPartitionTestSupport.class);
 		properties.setPartitionCount(3);
 
 		DirectChannel output = new DirectChannel();
@@ -107,8 +106,8 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	public void testPartitionedModuleSpEL() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		KafkaProducerProperties properties = new KafkaProducerProperties();
-		properties.setPartitionKeyExpression("payload[0]");
-		properties.setPartitionSelectorExpression("hashCode()");
+		properties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload[0]"));
+		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
 		properties.setPartitionCount(3);
 
 		DirectChannel output = new DirectChannel();
@@ -170,13 +169,12 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Test
 	@Override
-	@Ignore
 	public void testSendAndReceive() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, null);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, null);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, new KafkaProducerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, new KafkaConsumerProperties());
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
@@ -197,7 +195,6 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	}
 
 	@Test
-	@Ignore
 	public void testSendAndReceiveWithExplicitConsumerGroup() {
 		KafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
@@ -205,14 +202,14 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		QueueChannel module1InputChannel = new QueueChannel();
 		QueueChannel module2InputChannel = new QueueChannel();
 		QueueChannel module3InputChannel = new QueueChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("baz.0", moduleOutputChannel, null);
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("baz.0", "test", module1InputChannel, null);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("baz.0", moduleOutputChannel, new KafkaProducerProperties());
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("baz.0", "test", module1InputChannel, new KafkaConsumerProperties());
 		// A new module is using the tap as an input channel
 		String fooTapName = "baz.0";
-		Binding<MessageChannel> input2Binding = binder.bindConsumer(fooTapName, "tap1", module2InputChannel, null);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(fooTapName, "tap1", module2InputChannel, new KafkaConsumerProperties());
 		// Another new module is using tap as an input channel
 		String barTapName = "baz.0";
-		Binding<MessageChannel> input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, null);
+		Binding<MessageChannel> input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, new KafkaConsumerProperties());
 
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		boolean success = false;
@@ -248,7 +245,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		assertNull(receive(module3InputChannel));
 
 		// re-subscribed tap does receive the message
-		input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, null);
+		input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, new KafkaConsumerProperties());
 		assertNotNull(receive(module3InputChannel));
 
 		// clean up

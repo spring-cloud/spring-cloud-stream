@@ -60,7 +60,7 @@ public class PartitionedProducerTest {
 		ArgumentCaptor<ProducerProperties> argumentCaptor = ArgumentCaptor.forClass(ProducerProperties.class);
 		verify(binder).bindProducer(eq("partOut"), eq(testSource.output()), argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getPartitionCount(), equalTo(3));
-		Assert.assertThat(argumentCaptor.getValue().getPartitionKeyExpression(),
+		Assert.assertThat(argumentCaptor.getValue().getPartitionKeyExpression().getExpressionString(),
 				equalTo("payload"));
 		verifyNoMoreInteractions(binder);
 	}

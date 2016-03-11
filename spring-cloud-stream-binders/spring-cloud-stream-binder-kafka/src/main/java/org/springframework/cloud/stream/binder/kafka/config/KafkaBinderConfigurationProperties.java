@@ -63,6 +63,21 @@ class KafkaBinderConfigurationProperties {
 	 */
 	private boolean syncProducer = false;
 
+	private int requiredAcks;
+
+	private int replicationFactor;
+
+	private int concurrency;
+
+	private boolean autoCommitEnabled;
+
+	private int fetchSize;
+
+	private int minPartitionCount;
+
+	private int queueSize;
+
+
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
 	}
@@ -177,4 +192,61 @@ class KafkaBinderConfigurationProperties {
 	public void setMaxWait(int maxWait) {
 		this.maxWait = maxWait;
 	}
+
+	public int getRequiredAcks() {
+		return requiredAcks;
+	}
+
+	public void setRequiredAcks(int requiredAcks) {
+		this.requiredAcks = requiredAcks;
+	}
+
+	public int getReplicationFactor() {
+		return replicationFactor;
+	}
+
+	public void setReplicationFactor(int replicationFactor) {
+		this.replicationFactor = replicationFactor;
+	}
+
+	public int getConcurrency() {
+		return concurrency;
+	}
+
+	public void setConcurrency(int concurrency) {
+		this.concurrency = concurrency;
+	}
+
+	public boolean isAutoCommitEnabled() {
+		return autoCommitEnabled;
+	}
+
+	public void setAutoCommitEnabled(boolean autoCommitEnabled) {
+		this.autoCommitEnabled = autoCommitEnabled;
+	}
+
+	public int getFetchSize() {
+		return fetchSize;
+	}
+
+	public void setFetchSize(int fetchSize) {
+		this.fetchSize = fetchSize;
+	}
+
+	public int getMinPartitionCount() {
+		return minPartitionCount;
+	}
+
+	public void setMinPartitionCount(int minPartitionCount) {
+		this.minPartitionCount = minPartitionCount;
+	}
+
+	public int getQueueSize() {
+		return queueSize;
+	}
+
+	public void setQueueSize(int queueSize) {
+		this.queueSize = queueSize;
+	}
+
 }

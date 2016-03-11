@@ -130,10 +130,6 @@ public class RabbitConsumerProperties extends ConsumerProperties {
 		this.republishToDlq = republishToDlq;
 	}
 
-	public boolean getRequeueRejected() {
-		return requeueRejected;
-	}
-
 	public boolean isRequeueRejected() {
 		return requeueRejected;
 	}

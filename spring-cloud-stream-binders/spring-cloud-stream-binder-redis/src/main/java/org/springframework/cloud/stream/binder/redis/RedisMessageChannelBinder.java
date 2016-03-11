@@ -238,10 +238,8 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 	}
 
 	private RedisQueueOutboundChannelAdapter createProducerEndpoint(String name, ProducerProperties properties) {
-		String partitionKeyExtractorClass = properties.getPartitionKeyExtractorClass();
-		String partitionKeyExpression = properties.getPartitionKeyExpression();
 		RedisQueueOutboundChannelAdapter queue;
-		if (partitionKeyExpression == null && !StringUtils.hasText(partitionKeyExtractorClass)) {
+		if (!properties.isPartitioned()) {
 			queue = new RedisQueueOutboundChannelAdapter(name, this.connectionFactory);
 		}
 		else {
@@ -278,18 +276,18 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 
 		private final String bindingName;
 
-		private final ProducerProperties properties;
+		private final ProducerProperties producerProperties;
 
 		private final Map<String, RedisQueueOutboundChannelAdapter> adapters = new HashMap<>();
 
 		private final PartitionHandler partitionHandler;
 
-		private SendingHandler(String bindingName, ProducerProperties properties) {
+		private SendingHandler(String bindingName, ProducerProperties producerProperties) {
 			this.bindingName = bindingName;
-			this.properties = properties;
+			this.producerProperties = producerProperties;
 			ConfigurableListableBeanFactory beanFactory = RedisMessageChannelBinder.this.getBeanFactory();
 			this.setBeanFactory(beanFactory);
-			this.partitionHandler = new PartitionHandler(beanFactory, evaluationContext, partitionSelector, properties, properties.getPartitionCount());
+			this.partitionHandler = new PartitionHandler(beanFactory, evaluationContext, partitionSelector, producerProperties);
 			refreshChannelAdapters();
 		}
 
@@ -297,7 +295,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 		protected void handleMessageInternal(Message<?> message) throws Exception {
 			MessageValues transformed = serializePayloadIfNecessary(message);
 
-			if (this.partitionHandler.isPartitionedModule()) {
+			if (producerProperties.isPartitioned()) {
 				transformed.put(PARTITION_HEADER, this.partitionHandler.determinePartition(message));
 			}
 
@@ -315,7 +313,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 			for (String group : groups) {
 				if (!adapters.containsKey(group)) {
 					String channel = String.format("%s.%s", this.bindingName, group);
-					adapters.put(group, createProducerEndpoint(channel, properties));
+					adapters.put(group, createProducerEndpoint(channel, producerProperties));
 				}
 			}
 		}
