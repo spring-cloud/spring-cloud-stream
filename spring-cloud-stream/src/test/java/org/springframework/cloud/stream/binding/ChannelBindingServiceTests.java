@@ -58,6 +58,7 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 
@@ -198,8 +199,10 @@ public class ChannelBindingServiceTests {
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		@SuppressWarnings("unchecked")
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
-		when(binder.bindProducer(matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(mockBinding);
-		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicDestinationsBindable);
+		when(binder.bindProducer(
+				matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(mockBinding);
+		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicDestinationsBindable,
+																			 new DefaultBindableChannelFactory(new MessageConverterConfigurer(properties, null, new DefaultMessageBuilderFactory())));
 		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("mock:bar", MessageChannel.class))
 				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
