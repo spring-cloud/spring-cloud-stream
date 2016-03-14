@@ -48,4 +48,6 @@ public class DefaultBindableChannelFactory implements BindableChannelFactory {
 		messageChannelConfigurer.configureMessageChannel(subscribableChannel, name);
 		return subscribableChannel;
 	}
+
+
 }
