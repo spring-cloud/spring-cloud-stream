@@ -22,7 +22,6 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
-import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
 import org.springframework.messaging.core.DestinationResolutionException;
@@ -46,16 +45,22 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private final DynamicDestinationsBindable dynamicDestinationsBindable;
 
+	private final BindableChannelFactory bindableChannelFactory;
+
 	private ConfigurableListableBeanFactory beanFactory;
 
-	public BinderAwareChannelResolver(BinderFactory binderFactory, ChannelBindingServiceProperties channelBindingServiceProperties,
-									  DynamicDestinationsBindable dynamicDestinationsBindable) {
+	public BinderAwareChannelResolver(BinderFactory binderFactory,
+			ChannelBindingServiceProperties channelBindingServiceProperties,
+			DynamicDestinationsBindable dynamicDestinationsBindable,
+			BindableChannelFactory bindableChannelFactory) {
 		Assert.notNull(binderFactory, "'binderFactory' cannot be null");
 		Assert.notNull(channelBindingServiceProperties, "'channelBindingServiceProperties' cannot be null");
 		Assert.notNull(dynamicDestinationsBindable, "'dynamicDestinationBindable' cannot be null");
+		Assert.notNull(bindableChannelFactory, "'bindableChannelFactory' cannot be null");
 		this.binderFactory = binderFactory;
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
+		this.bindableChannelFactory = bindableChannelFactory;
 	}
 
 	@Override
@@ -98,7 +103,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 									" [<binder>:]<channelName>");
 						}
 					}
-					channel = new DirectChannel();
+					channel = this.bindableChannelFactory.createSubscribableChannel(channelName);
 					this.beanFactory.registerSingleton(beanName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, beanName);
 					@SuppressWarnings("unchecked")

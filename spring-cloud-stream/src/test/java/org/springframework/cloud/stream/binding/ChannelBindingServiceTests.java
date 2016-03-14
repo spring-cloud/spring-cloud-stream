@@ -198,8 +198,10 @@ public class ChannelBindingServiceTests {
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		@SuppressWarnings("unchecked")
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
-		when(binder.bindProducer(matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(mockBinding);
-		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicDestinationsBindable);
+		when(binder.bindProducer(
+				matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(mockBinding);
+		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(binderFactory, properties, dynamicDestinationsBindable,
+				new DefaultBindableChannelFactory(new MessageConverterConfigurer(properties, null)));
 		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("mock:bar", MessageChannel.class))
 				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
