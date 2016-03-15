@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package org.springframework.cloud.stream.binding;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -41,10 +43,12 @@ import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
+ * A {@link MessageChannelConfigurer} that sets the datatype and message converters for the message channel.
  *
  * @author Ilayaperumal Gopinathan
  */
@@ -56,8 +60,12 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	public MessageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties) {
+	private final Collection<AbstractFromMessageConverter> customMessageConverters;
+
+	public MessageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties,
+			Collection<AbstractFromMessageConverter> customMessageConverters) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
+		this.customMessageConverters = customMessageConverters;
 	}
 
 	@Override
@@ -69,6 +77,9 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	public void afterPropertiesSet() throws Exception {
 		Assert.notNull(this.beanFactory, "Bean factory cannot be empty");
 		Set<AbstractFromMessageConverter> messageConverters = new HashSet<>();
+		if (!CollectionUtils.isEmpty(customMessageConverters)) {
+			messageConverters.addAll(Collections.unmodifiableCollection(customMessageConverters));
+		}
 		messageConverters.add(new JsonToTupleMessageConverter());
 		messageConverters.add(new TupleToJsonMessageConverter());
 		messageConverters.add(new JsonToPojoMessageConverter());
@@ -97,9 +108,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			if (StringUtils.hasText(contentType)) {
 				MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
 				MessageConverter messageConverter = this.messageConverterFactory.newInstance(mimeType);
-				Class<?> dataType = MessageConverterUtils.getJavaTypeForContentType(mimeType,
-						Thread.currentThread().getContextClassLoader());
-				messageChannel.setDatatypes(dataType);
+				Class<?>[] supportedDataTypes = this.messageConverterFactory.supportedDataTypes(mimeType);
+				messageChannel.setDatatypes(supportedDataTypes);
 				messageChannel.setMessageConverter(messageConverter);
 			}
 		}

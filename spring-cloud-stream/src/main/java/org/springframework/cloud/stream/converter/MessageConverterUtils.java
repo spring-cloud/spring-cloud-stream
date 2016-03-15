@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.converter;
 
-import static org.springframework.util.MimeType.valueOf;
-import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON;
-import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
-
-import org.springframework.tuple.DefaultTuple;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
@@ -32,6 +27,7 @@ import org.springframework.util.StringUtils;
  *
  * @author David Turanski
  * @author Gary Russell
+ * @author Ilayaperumal Gopinathan
  */
 public class MessageConverterUtils {
 
@@ -51,42 +47,24 @@ public class MessageConverterUtils {
 	public static final MimeType X_JAVA_SERIALIZED_OBJECT = MimeType.valueOf("application/x-java-serialized-object");
 
 	/**
-	 * Map the contentType to a target class.
+	 * Get the java Object type for the MimeType X_JAVA_OBJECT
 	 *
-	 * @param contentType the content type
-	 * @param classLoader the class loader used to resolve the class
 	 * @return the class for the content type
 	 */
-	public static Class<?> getJavaTypeForContentType(MimeType contentType, ClassLoader classLoader) {
+	public static Class<?> getJavaTypeForContentType(MimeType contentType) {
+		Class<?> javaType = Object.class;
 		if (X_JAVA_OBJECT.includes(contentType)) {
 			if (contentType.getParameter("type") != null) {
 				try {
-					return ClassUtils.forName(contentType.getParameter("type"), classLoader);
+					javaType = ClassUtils.forName(contentType.getParameter("type"),
+							Thread.currentThread().getContextClassLoader());
 				}
 				catch (Exception e) {
 					throw new ConversionException(e.getMessage(), e);
 				}
 			}
-			else {
-				return Object.class;
-			}
 		}
-		else if (APPLICATION_JSON.equals(contentType)) {
-			return String.class;
-		}
-		else if (valueOf("text/*").includes(contentType)) {
-			return String.class;
-		}
-		else if (X_SPRING_TUPLE.includes(contentType)) {
-			return DefaultTuple.class;
-		}
-		else if (APPLICATION_OCTET_STREAM.includes(contentType)) {
-			return byte[].class;
-		}
-		else if (X_JAVA_SERIALIZED_OBJECT.includes(contentType)) {
-			return byte[].class;
-		}
-		return null;
+		return javaType;
 	}
 
 	/**
