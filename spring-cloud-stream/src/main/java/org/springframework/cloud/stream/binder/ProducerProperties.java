@@ -22,6 +22,7 @@ import org.springframework.expression.Expression;
  * Common producer properties.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class ProducerProperties {
 
@@ -36,6 +37,8 @@ public class ProducerProperties {
 	private int partitionCount = 1;
 
 	private String[] requiredGroups = new String[] {};
+
+	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
 
 	public Expression getPartitionKeyExpression() {
 		return partitionKeyExpression;
@@ -87,6 +90,14 @@ public class ProducerProperties {
 
 	public void setRequiredGroups(String... requiredGroups) {
 		this.requiredGroups = requiredGroups;
+	}
+
+	public HeaderMode getHeaderMode() {
+		return this.headerMode;
+	}
+
+	public void setHeaderMode(HeaderMode headerMode) {
+		this.headerMode = headerMode;
 	}
 
 }

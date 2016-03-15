@@ -17,8 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
-import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.Mode;
 import org.springframework.util.StringUtils;
 
 /**
@@ -38,8 +36,6 @@ class KafkaBinderConfigurationProperties {
 	private String defaultBrokerPort = "9092";
 
 	private String[] headers = new String[] {};
-
-	private KafkaMessageChannelBinder.Mode mode = Mode.embeddedHeaders;
 
 	private int offsetUpdateTimeWindow = 10000;
 
@@ -81,10 +77,6 @@ class KafkaBinderConfigurationProperties {
 		return headers;
 	}
 
-	public Mode getMode() {
-		return this.mode;
-	}
-
 	public int getOffsetUpdateTimeWindow() {
 		return this.offsetUpdateTimeWindow;
 	}
@@ -116,10 +108,6 @@ class KafkaBinderConfigurationProperties {
 
 	public void setHeaders(String[] headers) {
 		this.headers = headers;
-	}
-
-	public void setMode(KafkaMessageChannelBinder.Mode mode) {
-		this.mode = mode;
 	}
 
 	public void setOffsetUpdateTimeWindow(int offsetUpdateTimeWindow) {
