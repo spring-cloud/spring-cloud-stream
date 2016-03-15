@@ -18,12 +18,15 @@ package org.springframework.cloud.stream.binder;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_DEFAULT;
 
+import javax.validation.constraints.Min;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Common consumer properties.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @JsonInclude(NON_DEFAULT)
 public class ConsumerProperties {
@@ -44,6 +47,7 @@ public class ConsumerProperties {
 
 	private double backOffMultiplier = 2.0;
 
+	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
 		return concurrency;
 	}
@@ -60,6 +64,7 @@ public class ConsumerProperties {
 		this.partitioned = partitioned;
 	}
 
+	@Min(value = 1, message = "Instance count should be greater than zero.")
 	public int getInstanceCount() {
 		return instanceCount;
 	}
@@ -68,6 +73,7 @@ public class ConsumerProperties {
 		this.instanceCount = instanceCount;
 	}
 
+	@Min(value = 0, message = "Instance index should be greater than or equal to 0")
 	public int getInstanceIndex() {
 		return instanceIndex;
 	}
@@ -80,6 +86,7 @@ public class ConsumerProperties {
 		this.maxAttempts = maxAttempts;
 	}
 
+	@Min(value = 1, message = "Max attempts should be greater than zero.")
 	public int getMaxAttempts() {
 		return maxAttempts;
 	}
@@ -88,6 +95,7 @@ public class ConsumerProperties {
 		this.backOffInitialInterval = backOffInitialInterval;
 	}
 
+	@Min(value = 1, message = "Backoff initial interval should be greater than zero.")
 	public int getBackOffInitialInterval() {
 		return backOffInitialInterval;
 	}
@@ -96,6 +104,7 @@ public class ConsumerProperties {
 		this.backOffMaxInterval = backOffMaxInterval;
 	}
 
+	@Min(value = 1, message = "Backoff max interval should be greater than zero.")
 	public int getBackOffMaxInterval() {
 		return backOffMaxInterval;
 	}
@@ -104,6 +113,7 @@ public class ConsumerProperties {
 		this.backOffMultiplier = backOffMultiplier;
 	}
 
+	@Min(value = 1, message = "Backoff multiplier should be greater than zero.")
 	public double getBackOffMultiplier() {
 		return backOffMultiplier;
 	}
