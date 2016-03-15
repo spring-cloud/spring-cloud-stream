@@ -239,11 +239,11 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		return getBindingProperties(channelName).getGroup();
 	}
 
-	public String getBindingDestination(String channel) {
-		BindingProperties bindingProperties = getBindingProperties(channel);
+	public String getBindingDestination(String channelName) {
+		BindingProperties bindingProperties = getBindingProperties(channelName);
 		if (bindingProperties != null && StringUtils.hasText(bindingProperties.getDestination())) {
 			return bindingProperties.getDestination();
 		}
-		return channel;
+		return channelName;
 	}
 }
