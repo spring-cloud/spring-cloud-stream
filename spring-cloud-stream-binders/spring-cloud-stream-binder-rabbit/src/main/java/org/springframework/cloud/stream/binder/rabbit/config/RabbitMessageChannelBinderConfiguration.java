@@ -47,22 +47,22 @@ public class RabbitMessageChannelBinderConfiguration {
 	private ConnectionFactory rabbitConnectionFactory;
 
 	@Autowired
-	private RabbitBinderConfigurationProperties springRabbitMQProperties;
+	private RabbitBinderConfigurationProperties rabbitBinderConfigurationProperties;
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() {
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory);
 		binder.setCodec(codec);
-		binder.setAddresses(springRabbitMQProperties.getAddresses());
-		binder.setAdminAddresses(springRabbitMQProperties.getAdminAdresses());
+		binder.setAddresses(rabbitBinderConfigurationProperties.getAddresses());
+		binder.setAdminAddresses(rabbitBinderConfigurationProperties.getAdminAdresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());
-		binder.setNodes(springRabbitMQProperties.getNodes());
-		binder.setPassword(springRabbitMQProperties.getPassword());
-		binder.setSslPropertiesLocation(springRabbitMQProperties.getSslPropertiesLocation());
-		binder.setUsername(springRabbitMQProperties.getUsername());
-		binder.setUseSSL(springRabbitMQProperties.isUseSSL());
-		binder.setVhost(springRabbitMQProperties.getVhost());
+		binder.setNodes(rabbitBinderConfigurationProperties.getNodes());
+		binder.setPassword(rabbitBinderConfigurationProperties.getPassword());
+		binder.setSslPropertiesLocation(rabbitBinderConfigurationProperties.getSslPropertiesLocation());
+		binder.setUsername(rabbitBinderConfigurationProperties.getUsername());
+		binder.setUseSSL(rabbitBinderConfigurationProperties.isUseSSL());
+		binder.setVhost(rabbitBinderConfigurationProperties.getVhost());
 		return binder;
 	}
 
@@ -74,7 +74,7 @@ public class RabbitMessageChannelBinderConfiguration {
 	@Bean
 	MessagePostProcessor gZipPostProcessor() {
 		GZipPostProcessor gZipPostProcessor = new GZipPostProcessor();
-		gZipPostProcessor.setLevel(springRabbitMQProperties.getCompressionLevel());
+		gZipPostProcessor.setLevel(rabbitBinderConfigurationProperties.getCompressionLevel());
 		return gZipPostProcessor;
 	}
 

@@ -216,69 +216,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	}
 
 	@Test
-	public void testCustomPartitionCountDoesNotOverrideModuleCountAndConcurrencyIfSmaller() throws Exception {
-
-		byte[] ratherBigPayload = new byte[2048];
-		Arrays.fill(ratherBigPayload, (byte) 65);
-		KafkaTestBinder binder = getBinder();
-
-
-		DirectChannel moduleOutputChannel = new DirectChannel();
-		QueueChannel moduleInputChannel = new QueueChannel();
-		KafkaProducerProperties producerProps = new KafkaProducerProperties();
-		producerProps.setPartitionCount(6);
-		KafkaConsumerProperties consumerProps = new KafkaConsumerProperties();
-		consumerProps.setMinPartitionCount(5);
-		consumerProps.setConcurrency(6);
-		long uniqueBindingId = System.currentTimeMillis();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo" + uniqueBindingId + ".0", moduleOutputChannel, producerProps);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo" + uniqueBindingId + ".0", null, moduleInputChannel, consumerProps);
-		Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload(ratherBigPayload).build();
-		// Let the consumer actually bind to the producer before sending a msg
-		binderBindUnbindLatency();
-		moduleOutputChannel.send(message);
-		Message<?> inbound = receive(moduleInputChannel);
-		assertNotNull(inbound);
-		assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
-		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
-				"foo" + uniqueBindingId + ".0");
-		assertThat(partitions, hasSize(6));
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
-	@Test
-	public void testCustomPartitionCountOverridesModuleCountAndConcurrencyIfLarger() throws Exception {
-
-		byte[] ratherBigPayload = new byte[2048];
-		Arrays.fill(ratherBigPayload, (byte) 65);
-		KafkaTestBinder binder = getBinder();
-
-		DirectChannel moduleOutputChannel = new DirectChannel();
-		QueueChannel moduleInputChannel = new QueueChannel();
-		KafkaProducerProperties producerProps = new KafkaProducerProperties();
-		producerProps.setPartitionCount(6);
-		KafkaConsumerProperties consumerProps = new KafkaConsumerProperties();
-		consumerProps.setMinPartitionCount(6);
-		consumerProps.setConcurrency(5);
-		long uniqueBindingId = System.currentTimeMillis();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo" + uniqueBindingId + ".0", moduleOutputChannel, producerProps);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo" + uniqueBindingId + ".0", null, moduleInputChannel, consumerProps);
-		Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload(ratherBigPayload).build();
-		// Let the consumer actually bind to the producer before sending a msg
-		binderBindUnbindLatency();
-		moduleOutputChannel.send(message);
-		Message<?> inbound = receive(moduleInputChannel);
-		assertNotNull(inbound);
-		assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
-		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
-				"foo" + uniqueBindingId + ".0");
-		assertThat(partitions, hasSize(6));
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
-	@Test
 	public void testCustomPartitionCountDoesNotOverridePartitioningIfSmaller() throws Exception {
 
 		byte[] ratherBigPayload = new byte[2048];

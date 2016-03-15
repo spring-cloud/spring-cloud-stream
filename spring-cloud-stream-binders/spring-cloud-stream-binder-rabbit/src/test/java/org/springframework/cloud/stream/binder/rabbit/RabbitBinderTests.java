@@ -570,7 +570,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		properties.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
 		properties.setBatchingEnabled(true);
 		properties.setBatchSize(2);
-		properties.setBatchBufferLimit(10000);
+		properties.setBatchBufferLimit(100000);
 		properties.setBatchTimeout(30000);
 		properties.setCompress(true);
 		properties.setRequiredGroups("default");

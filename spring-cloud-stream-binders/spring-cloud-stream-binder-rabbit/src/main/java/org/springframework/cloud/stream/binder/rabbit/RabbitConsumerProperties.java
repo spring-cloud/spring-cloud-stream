@@ -25,7 +25,7 @@ import org.springframework.util.Assert;
  */
 public class RabbitConsumerProperties extends ConsumerProperties {
 
-	private String prefix = "binder.";
+	private String prefix = "";
 
 	private boolean transacted = false;
 

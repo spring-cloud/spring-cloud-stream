@@ -24,7 +24,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
  */
 public class RabbitProducerProperties extends ProducerProperties {
 
-	private String prefix = "binder.";
+	private String prefix = "";
 
 	private String[] requestHeaderPatterns = new String[] {"STANDARD_REQUEST_HEADERS", "*"};
 
