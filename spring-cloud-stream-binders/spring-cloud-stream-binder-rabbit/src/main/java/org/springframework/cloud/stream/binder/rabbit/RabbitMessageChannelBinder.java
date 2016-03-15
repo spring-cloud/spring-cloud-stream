@@ -478,6 +478,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 	 * queue name because we use default exchange routing by queue name for the original message.
 	 * @param queueName The base name for the queue (including the binder prefix, if any).
 	 * @param routingKey The routing key for the queue.
+	 * @param autoBindDlq true if the DLQ should be bound.
 	 */
 	private void autoBindDLQ(final String queueName, String routingKey, String prefix, boolean autoBindDlq) {
 		if (this.logger.isDebugEnabled()) {

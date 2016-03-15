@@ -38,14 +38,13 @@ import org.junit.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.stub1.StubBinder1;
 import org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationA;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationB;
 import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
@@ -207,7 +206,7 @@ public class BinderFactoryConfigurationTests {
 	}
 
 	@Import({BinderFactoryConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
-	@EnableConfigurationProperties(ChannelBindingServiceProperties.class)
+	@EnableBinding
 	public static class SimpleApplication {
 	}
 }

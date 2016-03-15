@@ -102,20 +102,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 	public static final ByteArraySerializer BYTE_ARRAY_SERIALIZER = new ByteArraySerializer();
 
-	public static final int METADATA_VERIFICATION_RETRY_ATTEMPTS = 10;
-
-	public static final double METADATA_VERIFICATION_RETRY_BACKOFF_MULTIPLIER = 2;
-
-	public static final int METADATA_VERIFICATION_RETRY_INITIAL_INTERVAL = 100;
-
-	public static final int METADATA_VERIFICATION_MAX_INTERVAL = 1000;
-
-	private static final int DEFAULT_REQUIRED_ACKS = 1;
-
-	private static final int DEFAULT_ZK_SESSION_TIMEOUT = 10000;
-
-	private static final int DEFAULT_ZK_CONNECTION_TIMEOUT = 10000;
-
 	private RetryOperations retryOperations;
 
 	private final Map<String, Collection<Partition>> topicsInUse = new HashMap<>();
@@ -155,9 +141,9 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 	private int offsetUpdateShutdownTimeout = 2000;
 
-	private int zkSessionTimeout = DEFAULT_ZK_SESSION_TIMEOUT;
+	private int zkSessionTimeout = 10000;
 
-	private int zkConnectionTimeout = DEFAULT_ZK_CONNECTION_TIMEOUT;
+	private int zkConnectionTimeout = 10000;
 
 	private ProducerListener producerListener;
 
@@ -228,13 +214,13 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 			RetryTemplate retryTemplate = new RetryTemplate();
 
 			SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy();
-			simpleRetryPolicy.setMaxAttempts(METADATA_VERIFICATION_RETRY_ATTEMPTS);
+			simpleRetryPolicy.setMaxAttempts(10);
 			retryTemplate.setRetryPolicy(simpleRetryPolicy);
 
 			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-			backOffPolicy.setInitialInterval(METADATA_VERIFICATION_RETRY_INITIAL_INTERVAL);
-			backOffPolicy.setMultiplier(METADATA_VERIFICATION_RETRY_BACKOFF_MULTIPLIER);
-			backOffPolicy.setMaxInterval(METADATA_VERIFICATION_MAX_INTERVAL);
+			backOffPolicy.setInitialInterval(100);
+			backOffPolicy.setMultiplier((double) 2);
+			backOffPolicy.setMaxInterval(1000);
 			retryTemplate.setBackOffPolicy(backOffPolicy);
 			retryOperations = retryTemplate;
 		}
@@ -338,7 +324,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(name, byte[].class, byte[].class,
 				BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
 		producerMetadata.setSync(properties.isSync());
-		producerMetadata.setCompressionType(properties.getCompressionCodec());
+		producerMetadata.setCompressionType(properties.getCompressionType());
 		producerMetadata.setBatchBytes(properties.getBufferSize());
 		Properties additionalProps = new Properties();
 		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(requiredAcks));
@@ -424,7 +410,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 		validateTopicName(name);
 		int minKafkaPartitions = properties.getMinPartitionCount();
-		int instance = properties.getCount();
+		int instance = properties.getInstanceCount();
 		if (instance == 0) {
 			throw new IllegalArgumentException("Instance count cannot be zero");
 		}

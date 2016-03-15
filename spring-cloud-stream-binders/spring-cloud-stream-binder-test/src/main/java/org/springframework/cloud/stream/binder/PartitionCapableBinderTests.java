@@ -168,7 +168,7 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		CP consumerProperties = createConsumerProperties();
 		consumerProperties.setConcurrency(2);
 		consumerProperties.setPartitionIndex(0);
-		consumerProperties.setCount(3);
+		consumerProperties.setInstanceCount(3);
 		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0S");
@@ -261,7 +261,7 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 		CP consumerProperties = createConsumerProperties();
 		consumerProperties.setConcurrency(2);
-		consumerProperties.setCount(3);
+		consumerProperties.setInstanceCount(3);
 		consumerProperties.setPartitionIndex(0);
 		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();

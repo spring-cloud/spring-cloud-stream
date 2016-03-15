@@ -95,7 +95,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 						}
 						else if (tokens.length != 1) {
 							throw new IllegalArgumentException("Unrecognized channel naming scheme: " + channelName + " , should be" +
-									" [<transport>:]<channelName>");
+									" [<binder>:]<channelName>");
 						}
 					}
 					channel = new DirectChannel();

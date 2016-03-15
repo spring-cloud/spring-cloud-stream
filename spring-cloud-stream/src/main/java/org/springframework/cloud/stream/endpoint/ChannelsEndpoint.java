@@ -56,12 +56,10 @@ public class ChannelsEndpoint extends AbstractEndpoint<Map<String,Object>> {
 			for (String name : factory.getInputs()) {
 				inputs.put(name, bindings.containsKey(name) ? bindings.get(name)
 						: new BindingProperties());
-				// TODO - add consumer properties
 			}
 			for (String name : factory.getOutputs()) {
 				outputs.put(name, bindings.containsKey(name) ? bindings.get(name)
 						: new BindingProperties());
-				// TODO - add producer properties
 			}
 		}
 		return new ObjectMapper().convertValue(map, new TypeReference<Map<String,Object>>() {

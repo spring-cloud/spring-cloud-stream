@@ -26,7 +26,7 @@ public class KafkaProducerProperties extends ProducerProperties {
 
 	private int bufferSize = 16384;
 
-	private ProducerMetadata.CompressionType compressionCodec = ProducerMetadata.CompressionType.none;
+	private ProducerMetadata.CompressionType compressionType = ProducerMetadata.CompressionType.none;
 
 	private boolean sync = false;
 
@@ -40,12 +40,12 @@ public class KafkaProducerProperties extends ProducerProperties {
 		this.bufferSize = bufferSize;
 	}
 
-	public ProducerMetadata.CompressionType getCompressionCodec() {
-		return compressionCodec;
+	public ProducerMetadata.CompressionType getCompressionType() {
+		return compressionType;
 	}
 
-	public void setCompressionCodec(ProducerMetadata.CompressionType compressionCodec) {
-		this.compressionCodec = compressionCodec;
+	public void setCompressionType(ProducerMetadata.CompressionType compressionType) {
+		this.compressionType = compressionType;
 	}
 
 	public boolean isSync() {

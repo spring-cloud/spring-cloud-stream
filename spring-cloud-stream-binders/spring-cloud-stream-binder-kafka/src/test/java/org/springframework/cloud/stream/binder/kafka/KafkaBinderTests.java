@@ -170,7 +170,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 			DirectChannel moduleOutputChannel = new DirectChannel();
 			QueueChannel moduleInputChannel = new QueueChannel();
 			KafkaProducerProperties producerProperties = new KafkaProducerProperties();
-			producerProperties.setCompressionCodec(codec);
+			producerProperties.setCompressionType(codec);
 			Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, producerProperties);
 			Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, new KafkaConsumerProperties());
 			Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload(ratherBigPayload).build();

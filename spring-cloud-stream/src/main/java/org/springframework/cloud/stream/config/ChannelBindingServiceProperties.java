@@ -42,7 +42,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -159,13 +159,13 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		DefaultConversionService conversionService = new DefaultConversionService();
-		conversionService.addConverter(new SpelExpressionConverterConfiguration.SpelConverter());
-		this.conversionService = conversionService;
+		if (conversionService == null) {
+			conversionService = applicationContext.getBean(IntegrationUtils.INTEGRATION_CONVERSION_SERVICE_BEAN_NAME, ConversionService.class);
+		}
 	}
 
-	public String getBinder(String channel) {
-		return getBindingProperties(channel).getBinder();
+	public String getBinder(String channelName) {
+		return getBindingProperties(channelName).getBinder();
 	}
 
 	/**
@@ -191,7 +191,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		Assert.notNull(inputChannelName, "The input channel name cannot be null");
 		Assert.notNull(beanClass, "The bean class cannot be null");
 		T consumerProperties = populateProperties(inputChannelName, beanClass, consumerDefaults);
-		consumerProperties.setCount(this.instanceCount);
+		consumerProperties.setInstanceCount(this.instanceCount);
 		consumerProperties.setInstanceIndex(this.instanceIndex);
 		return consumerProperties;
 	}

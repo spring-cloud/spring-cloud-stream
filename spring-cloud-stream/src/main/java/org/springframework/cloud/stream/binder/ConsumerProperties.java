@@ -29,7 +29,7 @@ public class ConsumerProperties {
 
 	private boolean partitioned = false;
 
-	private int count = 1;
+	private int instanceCount = 1;
 
 	private int instanceIndex = 0;
 
@@ -65,12 +65,12 @@ public class ConsumerProperties {
 		this.partitioned = partitioned;
 	}
 
-	public int getCount() {
-		return count;
+	public int getInstanceCount() {
+		return instanceCount;
 	}
 
-	public void setCount(int count) {
-		this.count = count;
+	public void setInstanceCount(int instanceCount) {
+		this.instanceCount = instanceCount;
 	}
 
 	public int getInstanceIndex() {

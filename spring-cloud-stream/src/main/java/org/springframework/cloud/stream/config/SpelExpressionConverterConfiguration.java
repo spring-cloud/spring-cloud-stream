@@ -27,6 +27,7 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.ParseException;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.integration.config.IntegrationConverter;
 import org.springframework.integration.context.IntegrationContextUtils;
 
 /**
@@ -38,7 +39,7 @@ import org.springframework.integration.context.IntegrationContextUtils;
 public class SpelExpressionConverterConfiguration {
 
 	@Bean
-	@ConfigurationPropertiesBinding
+	@ConfigurationPropertiesBinding @IntegrationConverter
 	public Converter<String, Expression> spelConverter() {
 		return new SpelConverter();
 	}
