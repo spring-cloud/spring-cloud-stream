@@ -32,6 +32,8 @@ public class KafkaProducerProperties extends ProducerProperties {
 
 	private KafkaMessageChannelBinder.Mode mode = KafkaMessageChannelBinder.Mode.embeddedHeaders;
 
+	private int batchTimeout = 0;
+
 	public int getBufferSize() {
 		return bufferSize;
 	}
@@ -64,4 +66,11 @@ public class KafkaProducerProperties extends ProducerProperties {
 		this.mode = mode;
 	}
 
+	public int getBatchTimeout() {
+		return batchTimeout;
+	}
+
+	public void setBatchTimeout(int batchTimeout) {
+		this.batchTimeout = batchTimeout;
+	}
 }

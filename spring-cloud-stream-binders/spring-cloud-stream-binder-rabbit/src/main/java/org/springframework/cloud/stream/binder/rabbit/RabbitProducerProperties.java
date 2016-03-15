@@ -28,9 +28,17 @@ public class RabbitProducerProperties extends ProducerProperties {
 
 	private String[] requestHeaderPatterns = new String[] {"STANDARD_REQUEST_HEADERS", "*"};
 
-	private boolean autoBindDlq;
+	private boolean autoBindDlq = false;
 
-	private boolean compress;
+	private boolean compress = false;
+
+	private boolean batchingEnabled = false;
+
+	private int batchSize = 100;
+
+	private int batchBufferLimit = 10000;
+
+	private int batchTimeout = 5000;
 
 	private MessageDeliveryMode deliveryMode = MessageDeliveryMode.PERSISTENT;
 
@@ -83,4 +91,37 @@ public class RabbitProducerProperties extends ProducerProperties {
 	public void setReplyHeaderPatterns(String[] replyHeaderPatterns) {
 		this.replyHeaderPatterns = replyHeaderPatterns;
 	}
+
+	public boolean isBatchingEnabled() {
+		return batchingEnabled;
+	}
+
+	public void setBatchingEnabled(boolean batchingEnabled) {
+		this.batchingEnabled = batchingEnabled;
+	}
+
+	public int getBatchSize() {
+		return batchSize;
+	}
+
+	public void setBatchSize(int batchSize) {
+		this.batchSize = batchSize;
+	}
+
+	public int getBatchBufferLimit() {
+		return batchBufferLimit;
+	}
+
+	public void setBatchBufferLimit(int batchBufferLimit) {
+		this.batchBufferLimit = batchBufferLimit;
+	}
+
+	public int getBatchTimeout() {
+		return batchTimeout;
+	}
+
+	public void setBatchTimeout(int batchTimeout) {
+		this.batchTimeout = batchTimeout;
+	}
+
 }

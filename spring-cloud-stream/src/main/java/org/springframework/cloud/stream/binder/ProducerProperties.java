@@ -33,14 +33,6 @@ public class ProducerProperties {
 
 	private Expression partitionSelectorExpression = null;
 
-	private boolean batchingEnabled = false;
-
-	private int batchSize;
-
-	private int batchBufferLimit;
-
-	private int batchTimeout;
-
 	private int partitionCount = 1;
 
 	private String[] requiredGroups = new String[] {};
@@ -79,38 +71,6 @@ public class ProducerProperties {
 
 	public void setPartitionSelectorExpression(Expression partitionSelectorExpression) {
 		this.partitionSelectorExpression = partitionSelectorExpression;
-	}
-
-	public boolean isBatchingEnabled() {
-		return batchingEnabled;
-	}
-
-	public void setBatchingEnabled(boolean batchingEnabled) {
-		this.batchingEnabled = batchingEnabled;
-	}
-
-	public int getBatchSize() {
-		return batchSize;
-	}
-
-	public void setBatchSize(int batchSize) {
-		this.batchSize = batchSize;
-	}
-
-	public int getBatchBufferLimit() {
-		return batchBufferLimit;
-	}
-
-	public void setBatchBufferLimit(int batchBufferLimit) {
-		this.batchBufferLimit = batchBufferLimit;
-	}
-
-	public int getBatchTimeout() {
-		return batchTimeout;
-	}
-
-	public void setBatchTimeout(int batchTimeout) {
-		this.batchTimeout = batchTimeout;
 	}
 
 	public int getPartitionCount() {
