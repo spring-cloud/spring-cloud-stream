@@ -47,6 +47,8 @@ public class ConsumerProperties {
 
 	private double backOffMultiplier = 2.0;
 
+	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
+
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
 		return concurrency;
@@ -118,5 +120,12 @@ public class ConsumerProperties {
 		return backOffMultiplier;
 	}
 
+	public HeaderMode getHeaderMode() {
+		return this.headerMode;
+	}
+
+	public void setHeaderMode(HeaderMode headerMode) {
+		this.headerMode = headerMode;
+	}
 }
 

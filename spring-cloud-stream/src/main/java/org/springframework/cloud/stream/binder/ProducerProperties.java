@@ -48,6 +48,8 @@ public class ProducerProperties {
 
 	private String[] requiredGroups = new String[] {};
 
+	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
+
 	public Expression getPartitionKeyExpression() {
 		return partitionKeyExpression;
 	}
@@ -109,6 +111,14 @@ public class ProducerProperties {
 	@AssertTrue(message = "Partition selector class and partition selector expression properties are mutually exclusive.")
 	public boolean isValidPartitionSelectorProperty() {
 		return (this.partitionSelectorClass == null) || (this.partitionSelectorExpression == null);
+	}
+
+	public HeaderMode getHeaderMode() {
+		return this.headerMode;
+	}
+
+	public void setHeaderMode(HeaderMode headerMode) {
+		this.headerMode = headerMode;
 	}
 
 }

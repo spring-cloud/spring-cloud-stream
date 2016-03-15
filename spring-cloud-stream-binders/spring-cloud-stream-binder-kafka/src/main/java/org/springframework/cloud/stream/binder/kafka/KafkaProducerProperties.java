@@ -31,8 +31,6 @@ public class KafkaProducerProperties {
 
 	private boolean sync = false;
 
-	private KafkaMessageChannelBinder.Mode mode = KafkaMessageChannelBinder.Mode.embeddedHeaders;
-
 	private int batchTimeout = 0;
 
 	public int getBufferSize() {
@@ -58,15 +56,6 @@ public class KafkaProducerProperties {
 
 	public void setSync(boolean sync) {
 		this.sync = sync;
-	}
-
-	@NotNull
-	public KafkaMessageChannelBinder.Mode getMode() {
-		return mode;
-	}
-
-	public void setMode(KafkaMessageChannelBinder.Mode mode) {
-		this.mode = mode;
 	}
 
 	public int getBatchTimeout() {

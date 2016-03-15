@@ -33,8 +33,6 @@ public class KafkaConsumerProperties {
 
 	private KafkaMessageChannelBinder.StartOffset startOffset = null;
 
-	private KafkaMessageChannelBinder.Mode mode = KafkaMessageChannelBinder.Mode.embeddedHeaders;
-
 	public void setMinPartitionCount(int minPartitionCount) {
 		this.minPartitionCount = minPartitionCount;
 	}
@@ -50,14 +48,6 @@ public class KafkaConsumerProperties {
 
 	public void setAutoCommitOffset(boolean autoCommitOffset) {
 		this.autoCommitOffset = autoCommitOffset;
-	}
-
-	public KafkaMessageChannelBinder.Mode getMode() {
-		return mode;
-	}
-
-	public void setMode(KafkaMessageChannelBinder.Mode mode) {
-		this.mode = mode;
 	}
 
 	public boolean isResetOffsets() {
