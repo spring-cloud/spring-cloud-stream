@@ -58,25 +58,15 @@ class KafkaBinderConfigurationProperties {
 	 */
 	private int zkConnectionTimeout;
 
-	/**
-	 * Flag to indicate if the Kafka Producer is synchronous or asynchronous.
-	 */
-	private boolean syncProducer = false;
+	private int requiredAcks = 1;
 
-	private int requiredAcks;
+	private int replicationFactor = 1;
 
-	private int replicationFactor;
+	private int fetchSize = 1024 * 1024;
 
-	private int concurrency;
-
-	private boolean autoCommitEnabled;
-
-	private int fetchSize;
-
-	private int minPartitionCount;
+	private int minPartitionCount = 1;
 
 	private int queueSize;
-
 
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
@@ -159,14 +149,6 @@ class KafkaBinderConfigurationProperties {
 		this.zkConnectionTimeout = zkConnectionTimeout;
 	}
 
-	public boolean isSyncProducer() {
-		return this.syncProducer;
-	}
-
-	public void setSyncProducer(boolean syncProducer) {
-		this.syncProducer = syncProducer;
-	}
-
 	/**
 	 * Converts an array of host values to a comma-separated String.
 	 *
@@ -207,22 +189,6 @@ class KafkaBinderConfigurationProperties {
 
 	public void setReplicationFactor(int replicationFactor) {
 		this.replicationFactor = replicationFactor;
-	}
-
-	public int getConcurrency() {
-		return concurrency;
-	}
-
-	public void setConcurrency(int concurrency) {
-		this.concurrency = concurrency;
-	}
-
-	public boolean isAutoCommitEnabled() {
-		return autoCommitEnabled;
-	}
-
-	public void setAutoCommitEnabled(boolean autoCommitEnabled) {
-		this.autoCommitEnabled = autoCommitEnabled;
 	}
 
 	public int getFetchSize() {
