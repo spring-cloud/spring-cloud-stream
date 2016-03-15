@@ -124,7 +124,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 		}
 		String queueName = groupedName(name, group);
 		if (properties.isPartitioned()) {
-			queueName += "-" + properties.getPartitionIndex();
+			queueName += "-" + properties.getInstanceIndex();
 		}
 		MessageProducerSupport adapter = createInboundAdapter(properties, queueName);
 		return doRegisterConsumer(name, group, queueName, moduleInputChannel, adapter, properties);

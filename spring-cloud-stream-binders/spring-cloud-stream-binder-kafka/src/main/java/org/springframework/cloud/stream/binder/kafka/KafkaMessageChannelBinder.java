@@ -429,17 +429,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 			listenedPartitions = new ArrayList<>();
 			for (Partition partition : allPartitions) {
 				// divide partitions across modules
-				if (properties.isPartitioned()) {
-					if ((partition.getId() % instance) == properties.getPartitionIndex()) {
-						listenedPartitions.add(partition);
-					}
-				}
-				else {
-					int instanceIndex = properties.getInstanceIndex();
-					// sequence numbers are zero-based
-					if ((partition.getId() % instance) == instanceIndex) {
-						listenedPartitions.add(partition);
-					}
+				if ((partition.getId() % instance) == properties.getInstanceIndex()) {
+					listenedPartitions.add(partition);
 				}
 			}
 		}

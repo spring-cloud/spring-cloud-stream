@@ -86,6 +86,8 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	private String[] dynamicDestinations = new String[0];
 
+	private boolean ignoreUnknownProperties = true;
+
 	private ConfigurableApplicationContext applicationContext;
 
 	public Map<String, BindingProperties> getBindings() {
@@ -152,6 +154,14 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		this.producerDefaults = producerDefaults;
 	}
 
+	public boolean isIgnoreUnknownProperties() {
+		return ignoreUnknownProperties;
+	}
+
+	public void setIgnoreUnknownProperties(boolean ignoreUnknownProperties) {
+		this.ignoreUnknownProperties = ignoreUnknownProperties;
+	}
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
@@ -215,14 +225,14 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		}
 		// bind defaults first
 		RelaxedDataBinder dataBinder = new RelaxedDataBinder(beanInstance);
-		dataBinder.setIgnoreUnknownFields(false);
+		dataBinder.setIgnoreUnknownFields(ignoreUnknownProperties);
 		dataBinder.setDisallowedFields(bindingPropertyFields);
 		dataBinder.bind(new MutablePropertyValues(defaults));
 		// bind configured properties next, if available
 		if (applicationContext != null && applicationContext.getEnvironment() != null) {
 			dataBinder = new RelaxedDataBinder(beanInstance, "spring.cloud.stream.bindings." + channelName);
 			dataBinder.setConversionService(conversionService);
-			dataBinder.setIgnoreUnknownFields(false);
+			dataBinder.setIgnoreUnknownFields(ignoreUnknownProperties);
 			dataBinder.setDisallowedFields(bindingPropertyFields);
 			dataBinder.bind(new PropertySourcesPropertyValues(applicationContext.getEnvironment().getPropertySources()));
 		}

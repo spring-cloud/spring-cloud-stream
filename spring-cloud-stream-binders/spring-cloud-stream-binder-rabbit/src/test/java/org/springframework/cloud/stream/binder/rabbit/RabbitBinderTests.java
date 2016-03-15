@@ -174,7 +174,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		properties.setRequestHeaderPatterns(new String[] {"foo"});
 		properties.setRequeueRejected(false);
 		properties.setTxSize(10);
-		properties.setPartitionIndex(0);
+		properties.setInstanceIndex(0);
 		consumerBinding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties);
 
 		endpoint = extractEndpoint(consumerBinding);
@@ -349,13 +349,13 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		properties.setMaxAttempts(1); // disable retry
 		properties.setRequeueRejected(false);
 		properties.setPartitioned(true);
-		properties.setPartitionIndex(0);
+		properties.setInstanceIndex(0);
 		DirectChannel input0 = new DirectChannel();
 		input0.setBeanName("test.input0DLQ");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.0", "dlqPartGrp", input0, properties);
 		Binding<MessageChannel> defaultConsumerBinding1 =
 				binder.bindConsumer("partDLQ.0", "default", new QueueChannel(), properties);
-		properties.setPartitionIndex(1);
+		properties.setInstanceIndex(1);
 		DirectChannel input1 = new DirectChannel();
 		input1.setBeanName("test.input1DLQ");
 		Binding<MessageChannel> input1Binding = binder.bindConsumer("partDLQ.0", "dlqPartGrp", input1, properties);
@@ -447,12 +447,12 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		consumerProperties.setMaxAttempts(1); // disable retry
 		consumerProperties.setRequeueRejected(false);
 		consumerProperties.setPartitioned(true);
-		consumerProperties.setPartitionIndex(0);
+		consumerProperties.setInstanceIndex(0);
 		DirectChannel input0 = new DirectChannel();
 		input0.setBeanName("test.input0DLQ");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.1", "dlqPartGrp", input0, consumerProperties);
 		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partDLQ.1", "defaultConsumer", new QueueChannel(), consumerProperties);
-		consumerProperties.setPartitionIndex(1);
+		consumerProperties.setInstanceIndex(1);
 		DirectChannel input1 = new DirectChannel();
 		input1.setBeanName("test.input1DLQ");
 		Binding<MessageChannel> input1Binding = binder.bindConsumer("partDLQ.1", "dlqPartGrp", input1, consumerProperties);
@@ -655,9 +655,9 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		RabbitConsumerProperties partLateConsumerProperties = new RabbitConsumerProperties();
 		partLateConsumerProperties.setPrefix("latebinder.");
 		partLateConsumerProperties.setPartitioned(true);
-		partLateConsumerProperties.setPartitionIndex(0);
+		partLateConsumerProperties.setInstanceIndex(0);
 		Binding<MessageChannel> partlate0Consumer0Binding = binder.bindConsumer("partlate.0", "test", partInputChannel0, partLateConsumerProperties);
-		partLateConsumerProperties.setPartitionIndex(1);
+		partLateConsumerProperties.setInstanceIndex(1);
 		Binding<MessageChannel> partlate0Consumer1Binding = binder.bindConsumer("partlate.0", "test", partInputChannel1, partLateConsumerProperties);
 
 		RabbitProducerProperties noDlqProducerProperties = new RabbitProducerProperties();

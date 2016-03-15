@@ -113,7 +113,7 @@ public class RedisBinderTests extends PartitionCapableBinderTests<RedisTestBinde
 		properties2.setBackOffMultiplier(5.0);
 		properties2.setConcurrency(2);
 		properties2.setMaxAttempts(23);
-		properties2.setPartitionIndex(0);
+		properties2.setInstanceIndex(0);
 
 		binding = binder.bindConsumer("props.0", "test", new DirectChannel(), properties2);
 		endpoint = extractEndpoint(binding);

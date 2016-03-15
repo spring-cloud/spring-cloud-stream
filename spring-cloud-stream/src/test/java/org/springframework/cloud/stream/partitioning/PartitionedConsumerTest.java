@@ -61,7 +61,7 @@ public class PartitionedConsumerTest {
 	public void testBindingPartitionedConsumer() {
 		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor.forClass(ConsumerProperties.class);
 		verify(binder).bindConsumer(eq("partIn"), anyString(), eq(testSink.input()), argumentCaptor.capture());
-		Assert.assertThat(argumentCaptor.getValue().getPartitionIndex(), equalTo(0));
+		Assert.assertThat(argumentCaptor.getValue().getInstanceIndex(), equalTo(0));
 		Assert.assertThat(argumentCaptor.getValue().getInstanceCount(), equalTo(2));
 		verifyNoMoreInteractions(binder);
 	}

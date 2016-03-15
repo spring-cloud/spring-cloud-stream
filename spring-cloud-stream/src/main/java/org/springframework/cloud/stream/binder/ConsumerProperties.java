@@ -25,8 +25,6 @@ public class ConsumerProperties {
 
 	private int concurrency = 1;
 
-	private int partitionIndex = 0;
-
 	private boolean partitioned = false;
 
 	private int instanceCount = 1;
@@ -47,14 +45,6 @@ public class ConsumerProperties {
 
 	public void setConcurrency(int concurrency) {
 		this.concurrency = concurrency;
-	}
-
-	public int getPartitionIndex() {
-		return partitionIndex;
-	}
-
-	public void setPartitionIndex(int partitionIndex) {
-		this.partitionIndex = partitionIndex;
 	}
 
 	public boolean isPartitioned() {

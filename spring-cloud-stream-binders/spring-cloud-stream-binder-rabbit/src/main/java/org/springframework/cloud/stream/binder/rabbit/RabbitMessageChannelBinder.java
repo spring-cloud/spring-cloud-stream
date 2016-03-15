@@ -252,7 +252,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 		}
 		else {
 			if (partitioned) {
-				String partitionSuffix = "-" + properties.getPartitionIndex();
+				String partitionSuffix = "-" + properties.getInstanceIndex();
 				queueName += partitionSuffix;
 			}
 			if (durable) {
@@ -266,7 +266,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 		declareQueue(queueName, queue);
 
 		if (partitioned) {
-			String bindingKey = String.format("%s-%d", name, properties.getPartitionIndex());
+			String bindingKey = String.format("%s-%d", name, properties.getInstanceIndex());
 			declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(bindingKey));
 		}
 		else {
