@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import javax.validation.constraints.Min;
+
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+
 /**
  * @author Marius Bogoevici
  */
@@ -35,6 +39,7 @@ public class KafkaConsumerProperties {
 		this.minPartitionCount = minPartitionCount;
 	}
 
+	@Min(value = 1, message = "Min Partition Count should be greater than or equal to 1")
 	public int getMinPartitionCount() {
 		return minPartitionCount;
 	}

@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import javax.validation.constraints.Min;
+
 import org.springframework.amqp.core.MessageDeliveryMode;
 
 /**
@@ -102,6 +104,7 @@ public class RabbitProducerProperties {
 		this.batchingEnabled = batchingEnabled;
 	}
 
+	@Min(value = 1, message = "Batch Size should be greater than or equal to 1")
 	public int getBatchSize() {
 		return batchSize;
 	}
@@ -110,6 +113,7 @@ public class RabbitProducerProperties {
 		this.batchSize = batchSize;
 	}
 
+	@Min(value = 1, message = "Batch Buffer Limit should be greater than or equal to 1")
 	public int getBatchBufferLimit() {
 		return batchBufferLimit;
 	}
@@ -118,6 +122,7 @@ public class RabbitProducerProperties {
 		this.batchBufferLimit = batchBufferLimit;
 	}
 
+	@Min(value = 1, message = "Batch Timeout should be greater than or equal to 1")
 	public int getBatchTimeout() {
 		return batchTimeout;
 	}

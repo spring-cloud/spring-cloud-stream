@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import javax.validation.constraints.Min;
+
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.util.Assert;
 
@@ -73,6 +75,7 @@ public class RabbitConsumerProperties {
 		this.acknowledgeMode = acknowledgeMode;
 	}
 
+	@Min(value = 1, message = "Max Concurrency should be greater than or equal to 1")
 	public int getMaxConcurrency() {
 		return maxConcurrency;
 	}
@@ -81,6 +84,7 @@ public class RabbitConsumerProperties {
 		this.maxConcurrency = maxConcurrency;
 	}
 
+	@Min(value = 1, message = "Prefetch should be greater than or equal to 1")
 	public int getPrefetch() {
 		return prefetch;
 	}
@@ -97,6 +101,7 @@ public class RabbitConsumerProperties {
 		this.requestHeaderPatterns = requestHeaderPatterns;
 	}
 
+	@Min(value = 1, message = "Tx Size should be greater than or equal to 1")
 	public int getTxSize() {
 		return txSize;
 	}
