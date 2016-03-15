@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.converter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -25,13 +26,14 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.ObjectUtils;
 
 
 /**
  * A factory for creating an instance of {@link CompositeMessageConverter} for a given target MIME type
- *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
  */
 public class CompositeMessageConverterFactory {
 
@@ -42,12 +44,11 @@ public class CompositeMessageConverterFactory {
 	 */
 	public CompositeMessageConverterFactory(Collection<AbstractFromMessageConverter> converters) {
 		Assert.notNull(converters, "'converters' cannot be null");
-		this.converters = new ArrayList<AbstractFromMessageConverter>(converters);
+		this.converters = new ArrayList<>(converters);
 	}
 
 	/**
 	 * Creation method.
-	 *
 	 * @param targetMimeType the target MIME type
 	 * @return a converter for the target MIME type
 	 */
@@ -69,23 +70,18 @@ public class CompositeMessageConverterFactory {
 		List<Class<?>> supportedDataTypes = new ArrayList<>();
 		// Make sure to check if the target type is of explicit java object type.
 		if (MessageConverterUtils.X_JAVA_OBJECT.includes(targetMimeType)) {
-			supportedDataTypes.add(MessageConverterUtils.getJavaTypeForContentType(targetMimeType));
+			supportedDataTypes.add(MessageConverterUtils.getJavaTypeForJavaObjectContentType(targetMimeType));
 		}
 		else {
 			for (AbstractFromMessageConverter converter : converters) {
 				if (converter.supportsTargetMimeType(targetMimeType)) {
 					Class<?>[] targetTypes = converter.supportedTargetTypes();
-					if (targetTypes != null) {
-						Class<?>[] dataTypes = converter.supportedTargetTypes();
-						for (Class<?> dataType : dataTypes) {
-							if (!supportedDataTypes.contains(dataType)) {
-								supportedDataTypes.add(dataType);
-							}
-						}
+					if (!ObjectUtils.isEmpty(targetTypes)) {
+						supportedDataTypes.addAll(Arrays.asList(targetTypes));
 					}
 				}
 			}
 		}
-		return supportedDataTypes.toArray(new Class<?>[0]);
+		return supportedDataTypes.toArray(new Class<?>[supportedDataTypes.size()]);
 	}
 }

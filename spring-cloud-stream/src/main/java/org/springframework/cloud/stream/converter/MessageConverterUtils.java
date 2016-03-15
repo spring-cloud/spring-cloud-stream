@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.converter;
 
 import org.springframework.tuple.Tuple;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
@@ -51,20 +52,18 @@ public class MessageConverterUtils {
 	 *
 	 * @return the class for the content type
 	 */
-	public static Class<?> getJavaTypeForContentType(MimeType contentType) {
-		Class<?> javaType = Object.class;
-		if (X_JAVA_OBJECT.includes(contentType)) {
-			if (contentType.getParameter("type") != null) {
-				try {
-					javaType = ClassUtils.forName(contentType.getParameter("type"),
-							Thread.currentThread().getContextClassLoader());
-				}
-				catch (Exception e) {
-					throw new ConversionException(e.getMessage(), e);
-				}
+	public static Class<?> getJavaTypeForJavaObjectContentType(MimeType contentType) {
+		Assert.isTrue(X_JAVA_OBJECT.includes(contentType), "Content type must be " + X_JAVA_OBJECT.toString() + ", or " +
+				"included in it");
+		if (contentType.getParameter("type") != null) {
+			try {
+				return ClassUtils.forName(contentType.getParameter("type"), null);
+			}
+			catch (Exception e) {
+				throw new ConversionException(e.getMessage(), e);
 			}
 		}
-		return javaType;
+		return Object.class;
 	}
 
 	/**
@@ -93,13 +92,13 @@ public class MessageConverterUtils {
 	public static MimeType resolveContentType(String type) throws ClassNotFoundException, LinkageError {
 		if (!type.contains("/")) {
 			Class<?> javaType = resolveJavaType(type);
-			return MessageConverterUtils.javaObjectMimeType(javaType);
+			return javaObjectMimeType(javaType);
 		}
 		return MimeType.valueOf(type);
 	}
 
 	public static Class<?> resolveJavaType(String type) throws ClassNotFoundException, LinkageError {
-		return ClassUtils.forName(type, Thread.currentThread().getContextClassLoader());
+		return ClassUtils.forName(type, null);
 	}
 
 }

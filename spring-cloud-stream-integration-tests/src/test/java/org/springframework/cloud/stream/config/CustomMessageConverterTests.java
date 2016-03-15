@@ -4,10 +4,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -52,8 +55,10 @@ public class CustomMessageConverterTests {
 		assertThat(customMessageConverters, hasItem(isA(FooConverter.class)));
 		assertThat(customMessageConverters, hasItem(isA(BarConverter.class)));
 		testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
+		@SuppressWarnings("unchecked")
 		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null))
-				.messageCollector().forChannel(testSource.output()).poll();
+				.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
+		Assert.assertThat(received, notNullValue());
 		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString(),
 				equalTo("application/x-java-object;type=org.springframework.cloud.stream.config.CustomMessageConverterTests$Bar"));
 	}
