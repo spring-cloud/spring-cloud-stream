@@ -152,6 +152,17 @@ Setting up the two properties correctly on scale up scenarios is important for a
 general (see below), and they are always required by certain types of binders (e.g. the Kafka binder) in order to
 ensure that data is split correctly across multiple consumer instances.
 
+==== Message history tracking
+
+It would be helpful to have some history information as part of the message header during the development/debugging of
+an app in the context of a stream where multiple applications are bound together. Spring Cloud Stream provides a binding
+property `spring.cloud.stream.bindings.<channelName>.trackHistory` to enable history tracking in the message header for
+the app . When set to `true`, all the properties (the channel binding service's properties) for this channel are updated
+(along with timestamp and the sending thread's name) at the message header with the key `SPRING_CLOUD_STREAM_HISTORY`.
+Specific properties can be tracked by specifying the binding property
+`spring.cloud.stream.bindings.<channelName>.trackedProperties` with the comma delimited string values of the
+property names.
+
 ==== Advanced Binding Properties
 
 The input and output destination names are the primary properties to set in order to have Spring Cloud Stream
