@@ -39,17 +39,14 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
-<<<<<<< HEAD
+
  * A {@link MessageChannelConfigurer} that sets data types and message converters based on {@link
- * BindingProperties#contentType}
- * {@link BindingProperties}. This also adds a {@link org.springframework.messaging.support.ChannelInterceptor} to
+ * BindingProperties#contentType}. Also adds a {@link org.springframework.messaging.support.ChannelInterceptor} to
  * the message channel to set the `ContentType` header for the message (if not already set) based on the `ContentType`
- * binding
- * property of the channel.
-=======
- * A {@link MessageChannelConfigurer} that sets the datatype and message converters for the message channel.
->>>>>>> Introduce BinderListener annotation
+ * binding property of the channel.
+ @
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
  */
 public class MessageConverterConfigurer implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
 
@@ -91,14 +88,13 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
 		BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindingProperties(channelName);
 		final String contentType = bindingProperties.getContentType();
-		if (bindingProperties != null && StringUtils.hasText(contentType)) {
+		if (StringUtils.hasText(contentType)) {
 			MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
 			SmartMessageConverter messageConverter = this.compositeMessageConverterFactory.getMessageConverterForType(mimeType);
 			Class<?>[] supportedDataTypes = this.compositeMessageConverterFactory.supportedDataTypes(mimeType);
 			messageChannel.setDatatypes(supportedDataTypes);
 			messageChannel.setMessageConverter(new MessageWrappingMessageConverter(messageConverter, mimeType));
 			messageChannel.addInterceptor(new ChannelInterceptorAdapter() {
-
 				@Override
 				public Message<?> preSend(Message<?> message, MessageChannel messageChannel) {
 					Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);

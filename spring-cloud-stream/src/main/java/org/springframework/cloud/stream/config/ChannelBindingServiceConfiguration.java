@@ -35,7 +35,7 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
-import org.springframework.cloud.stream.binding.BindingListenerAnnotationBeanPostProcessor;
+import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
@@ -238,11 +238,10 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public static BindingListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(@Lazy BinderAwareChannelResolver binderAwareChannelResolver, @Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(@Lazy BinderAwareChannelResolver binderAwareChannelResolver, @Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
 		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 		messageHandlerMethodFactory.afterPropertiesSet();
-		BindingListenerAnnotationBeanPostProcessor bindingListenerAnnotationBeanPostProcessor = new BindingListenerAnnotationBeanPostProcessor(binderAwareChannelResolver, messageHandlerMethodFactory);
-		return bindingListenerAnnotationBeanPostProcessor;
+		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver, messageHandlerMethodFactory);
 	}
 }
