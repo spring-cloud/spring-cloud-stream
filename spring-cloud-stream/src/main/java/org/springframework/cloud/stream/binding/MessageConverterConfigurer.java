@@ -40,7 +40,6 @@ import org.springframework.cloud.stream.converter.SerializedToJavaMessageConvert
 import org.springframework.cloud.stream.converter.StringToByteArrayMessageConverter;
 import org.springframework.cloud.stream.converter.TupleToJsonMessageConverter;
 import org.springframework.integration.channel.AbstractMessageChannel;
-import org.springframework.integration.channel.ChannelInterceptorAware;
 import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -53,11 +52,12 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
- * A {@link MessageChannelConfigurer} that sets the datatypes and message converters based on the ContentType set via
+ * A {@link MessageChannelConfigurer} that sets data types and message converters based on {@link
+ * BindingProperties#contentType}
  * {@link BindingProperties}. This also adds a {@link org.springframework.messaging.support.ChannelInterceptor} to
- * the message channel to set the `ContentType` header for the message (if not already set) based on the `ContentType` binding
+ * the message channel to set the `ContentType` header for the message (if not already set) based on the `ContentType`
+ * binding
  * property of the channel.
- *
  * @author Ilayaperumal Gopinathan
  */
 public class MessageConverterConfigurer implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
@@ -73,8 +73,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	private final MessageBuilderFactory messageBuilderFactory;
 
 	public MessageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties,
-			Collection<AbstractFromMessageConverter> customMessageConverters,
-			MessageBuilderFactory messageBuilderFactory) {
+									  Collection<AbstractFromMessageConverter> customMessageConverters,
+									  MessageBuilderFactory messageBuilderFactory) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.customMessageConverters = customMessageConverters;
 		this.messageBuilderFactory = messageBuilderFactory;
@@ -106,8 +106,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	/**
 	 * Setup data-type and message converters for the given message channel.
-	 *
-	 * @param channel message channel to set the data-type and message converters
+	 * @param channel     message channel to set the data-type and message converters
 	 * @param channelName the channel name
 	 */
 	@Override
@@ -117,26 +116,25 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindingProperties(channelName);
 		final String contentType = bindingProperties.getContentType();
 		if (bindingProperties != null && StringUtils.hasText(contentType)) {
-				MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
-				MessageConverter messageConverter = this.messageConverterFactory.newInstance(mimeType);
-				Class<?>[] supportedDataTypes = this.messageConverterFactory.supportedDataTypes(mimeType);
-				messageChannel.setDatatypes(supportedDataTypes);
-				messageChannel.setMessageConverter(messageConverter);
-			if (messageChannel instanceof ChannelInterceptorAware) {
-				((ChannelInterceptorAware) messageChannel).addInterceptor(new ChannelInterceptorAdapter() {
-					@Override
-					public Message<?> preSend(Message<?> message, MessageChannel messageChannel) {
-						Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-						if (contentTypeFromMessage == null) {
-							return messageBuilderFactory
-									.fromMessage(message)
-									.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-									.build();
-						}
-						return message;
+			MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
+			MessageConverter messageConverter = this.messageConverterFactory.newInstance(mimeType);
+			Class<?>[] supportedDataTypes = this.messageConverterFactory.supportedDataTypes(mimeType);
+			messageChannel.setDatatypes(supportedDataTypes);
+			messageChannel.setMessageConverter(messageConverter);
+			messageChannel.addInterceptor(new ChannelInterceptorAdapter() {
+
+				@Override
+				public Message<?> preSend(Message<?> message, MessageChannel messageChannel) {
+					Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+					if (contentTypeFromMessage == null) {
+						return messageBuilderFactory
+									   .fromMessage(message)
+									   .setHeader(MessageHeaders.CONTENT_TYPE, contentType)
+									   .build();
 					}
-				});
-			}
+					return message;
+				}
+			});
 		}
 	}
 }

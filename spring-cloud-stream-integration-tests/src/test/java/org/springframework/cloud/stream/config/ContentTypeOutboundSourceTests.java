@@ -39,8 +39,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration({ContentTypeConfigurerTests.TestSource.class})
-public class ContentTypeConfigurerTests {
+@SpringApplicationConfiguration({ContentTypeOutboundSourceTests.TestSource.class})
+public class ContentTypeOutboundSourceTests {
 
 	@Autowired @Bindings(TestSource.class)
 	private Source testSource;
@@ -49,7 +49,7 @@ public class ContentTypeConfigurerTests {
 	private BinderFactory binderFactory;
 
 	@Test
-	public void testMessageHeaderWhenNoExplicitContentType() throws Exception {
+	public void testMessageHeaderWhenNoExplicitContentTypeOnMessage() throws Exception {
 		testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
 		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null)).messageCollector().forChannel(testSource.output()).poll();
 		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString(), equalTo("application/json"));
