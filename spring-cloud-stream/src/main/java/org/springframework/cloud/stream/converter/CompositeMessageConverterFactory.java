@@ -19,7 +19,9 @@ package org.springframework.cloud.stream.converter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
@@ -67,7 +69,7 @@ public class CompositeMessageConverterFactory {
 	}
 
 	public Class<?>[] supportedDataTypes(MimeType targetMimeType) {
-		List<Class<?>> supportedDataTypes = new ArrayList<>();
+		Set<Class<?>> supportedDataTypes = new HashSet<>();
 		// Make sure to check if the target type is of explicit java object type.
 		if (MessageConverterUtils.X_JAVA_OBJECT.includes(targetMimeType)) {
 			supportedDataTypes.add(MessageConverterUtils.getJavaTypeForJavaObjectContentType(targetMimeType));
