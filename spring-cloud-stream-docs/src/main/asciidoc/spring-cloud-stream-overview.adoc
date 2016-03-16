@@ -152,18 +152,51 @@ Setting up the two properties correctly on scale up scenarios is important for a
 general (see below), and they are always required by certain types of binders (e.g. the Kafka binder) in order to
 ensure that data is split correctly across multiple consumer instances.
 
-==== Advanced Binding Properties
+==== Binding Properties
 
 The input and output destination names are the primary properties to set in order to have Spring Cloud Stream
 applications communicate with each other as their channels are bound to an external message broker automatically.
 However, there are a number of scenarios where it is required to configure other attributes besides the destination
 name. This is done using the following naming scheme:
 `spring.cloud.stream.bindings.<channelName>.<attributeName>=<attributeValue>`. The `destination` attribute is one such
-example: `spring.cloud.stream.bindings.input.destination=foo`. A shorthand equivalent can be used as follows:
-`spring.cloud.stream.bindings.input=foo`, but that shorthand can only be used only when there are no other attributes
-to set on the binding. In other words,
-`spring.cloud.stream.bindings.input.destination=foo`,`spring.cloud.stream.bindings.input.partitioned=true` is a valid
-setup, whereas `spring.cloud.stream.bindings.input=foo`,`spring.cloud.stream.bindings.input.partitioned=true` is not.
+example: `spring.cloud.stream.bindings.input.destination=foo`.
+
+The `group` property (spring.cloud.stream.bindings.<channelName>.group) is used to provide a unique name the binding
+belongs to. This property applies to consumers only. Multiple consumers within the same group `share` the subscription.
+When null or empty, an anonymous group name is used and this group is not shared.
+
+The `contentType` property (spring.cloud.stream.bindings.<channelName>.contentType) specifies the expected contentType
+of the messages that come out of the message channel identified by the channelName. Based on the `contentType` specified,
+the message channel is set to use appropriate message converters.
+
+The `binder` property (spring.cloud.stream.bindings.<channelName>.binder) specifies the name of the binder to use when
+binding the message channel to the broker that this binder corresponds to. This name corresponds to the binder configuration
+name. If no `binder` property is specified for this message channel binding, then the default binder configuration is used.
+If there are more than one binder configurations, then the default binder that is set via `spring.cloud.stream.defaultBinder` is used.
+When using the default binder, it is expected either to set the `spring.cloud.stream.defaultBinder` or
+to have a single binder configuration available.
+
+The `trackHistory` property (spring.cloud.stream.bindings.<channelName>.trackHistory) enables message history tracking
+capability by adding a message header with channel binding properties information. This is useful for
+development/debugging purposes. This feature is disabled by default.
+
+The `trackedProperties` property (spring.cloud.stream.bindings.<channelName>.trackedProperties) specifies comma
+delimited channel binding service property names that need to be included in the message history tracking header.
+By default it includes all the properties.
+
+==== Dynamic destinations
+
+When the application resolves the message channel dynamically (e.g: Router application resolves the message channel
+name after evaluating an expression on the incoming message), one can specify explicit destination names that the
+channel resolver needs to use when resolving the message channels. The explicit destination names can be specified via
+a property `spring.cloud.stream.dynamicDestinations` as a comma separated String values.
+If you are using multiple binder implementations, then the destination names can be prefixed with the binder configuration
+name. For example if you are using `rabbit1` and `rabbit2` as your binder configuration names, then you can specify the
+destination names based on where they belong. Like rabbit1:output1, rabbit2:output2 where `output1` belongs to the `rabbit1`
+binder and `output2` belongs to `rabbit2` binder.
+
+If the property `spring.cloud.stream.dynamicDestinations` is not set, then the destination name is obtained based on
+binding property (spring.cloud.stream.bindings.<channelName>.destination) of the channel name that is being resolved.
 
 ===== Partitioning
 
