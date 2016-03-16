@@ -22,7 +22,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.cloud.stream.annotation.BindingListener;
+import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -75,15 +75,15 @@ public class BindingListenerAnnotationBeanPostProcessor implements BeanPostProce
 
 			@Override
 			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
-				BindingListener bindingListener = AnnotationUtils.findAnnotation(method, BindingListener.class);
-				if (bindingListener != null) {
-					Assert.hasText(bindingListener.value(), "The binding name cannot be null");
+				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
+				if (streamListener != null) {
+					Assert.hasText(streamListener.value(), "The binding name cannot be null");
 					final InvocableHandlerMethod invocableHandlerMethod = messageHandlerMethodFactory.createInvocableHandlerMethod(bean, method);
-					if (!StringUtils.hasText(bindingListener.value())) {
+					if (!StringUtils.hasText(streamListener.value())) {
 						throw new BeanInitializationException("Only one of 'bindings' or 'value' can be specified");
 					}
-					SubscribableChannel channel = applicationContext.getBean(bindingListener.value(),
-							SubscribableChannel.class);
+					SubscribableChannel channel = applicationContext.getBean(streamListener.value(),
+																			 SubscribableChannel.class);
 					final String defaultOutputChannel = extractDefaultOutput(method);
 					if (invocableHandlerMethod.isVoid()) {
 						Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel), "An output channel cannot be specified for a method that " +

@@ -25,7 +25,8 @@ import java.lang.annotation.Target;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 
 /**
- * Annotation that marks a method to be a listener to an input channel declared through {@link EnableBinding}.
+ * Annotation that marks a method to be a listener to an input component declared through {@link EnableBinding}
+ * (e.g. a channel).
  *
  * Annotated methods are allowed to have flexible signatures, as described by {@link MessageMapping}.
  *
@@ -43,6 +44,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * </ul>
  *
  * @see {@link MessageMapping}
+ * @see {@link EnableBinding}
  * @see {@link org.springframework.messaging.handler.annotation.SendTo}
  * @author Marius Bogoevici
  */
@@ -50,10 +52,10 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 @Retention(RetentionPolicy.RUNTIME)
 @MessageMapping
 @Documented
-public @interface BindingListener {
+public @interface StreamListener {
 
 	/**
-	 * The name of the binding that the method subscribes to.
+	 * The name of the bound component (e.g. channel) that the method subscribes to.
 	 *
 	 */
 	String value() default "";

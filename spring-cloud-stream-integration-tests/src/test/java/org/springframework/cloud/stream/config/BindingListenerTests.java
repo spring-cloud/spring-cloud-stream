@@ -37,8 +37,8 @@ import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.stream.annotation.BindingListener;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
@@ -72,9 +72,10 @@ public class BindingListenerTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testAnnotatedArguments() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class);
-		@SuppressWarnings("unchecked")
+
 		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context.getBean(TestPojoWithAnnotatedArguments.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
@@ -91,6 +92,7 @@ public class BindingListenerTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testReturn() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestStringProcessor.class);
 		MessageCollector collector = context.getBean(MessageCollector.class);
@@ -98,7 +100,6 @@ public class BindingListenerTests {
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
 				.setHeader("contentType","application/json").build());
-		@SuppressWarnings("unchecked")
 		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		TestStringProcessor testStringProcessor = context.getBean(TestStringProcessor.class);
 		assertThat(testStringProcessor.receivedPojos, hasSize(1));
@@ -109,6 +110,7 @@ public class BindingListenerTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testReturnConversion() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithMimeType.class,
 				"--spring.cloud.stream.bindings.output.contentType=application/json");
@@ -117,7 +119,6 @@ public class BindingListenerTests {
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
 				.setHeader("contentType","application/json").build());
-		@SuppressWarnings("unchecked")
 		TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 		assertThat(testPojoWithMimeType.receivedPojos, hasSize(1));
 		assertThat(testPojoWithMimeType.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -129,6 +130,7 @@ public class BindingListenerTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testReturnNoConversion() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithMimeType.class);
 		MessageCollector collector = context.getBean(MessageCollector.class);
@@ -136,7 +138,6 @@ public class BindingListenerTests {
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
 				.setHeader("contentType","application/json").build());
-		@SuppressWarnings("unchecked")
 		TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 		assertThat(testPojoWithMimeType.receivedPojos, hasSize(1));
 		assertThat(testPojoWithMimeType.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -147,6 +148,7 @@ public class BindingListenerTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testReturnMessage() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithMessageReturn.class);
 		MessageCollector collector = context.getBean(MessageCollector.class);
@@ -154,7 +156,6 @@ public class BindingListenerTests {
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
 				.setHeader("contentType", "application/json").build());
-		@SuppressWarnings("unchecked")
 		TestPojoWithMessageReturn testPojoWithMessageReturn = context.getBean(TestPojoWithMessageReturn.class);
 		assertThat(testPojoWithMessageReturn.receivedPojos, hasSize(1));
 		assertThat(testPojoWithMessageReturn.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -165,6 +166,7 @@ public class BindingListenerTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testMessageArgument() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithMessageArgument.class);
 		MessageCollector collector = context.getBean(MessageCollector.class);
@@ -172,7 +174,6 @@ public class BindingListenerTests {
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("barbar" + id)
 									   .setHeader("contentType", "text/plain").build());
-		@SuppressWarnings("unchecked")
 		TestPojoWithMessageArgument testPojoWithMessageArgument = context.getBean(TestPojoWithMessageArgument.class);
 		assertThat(testPojoWithMessageArgument.receivedMessages, hasSize(1));
 		assertThat(testPojoWithMessageArgument.receivedMessages.get(0).getPayload(), equalTo("barbar" + id));
@@ -191,7 +192,7 @@ public class BindingListenerTests {
 		CountDownLatch latch = new CountDownLatch(1);
 
 
-		@BindingListener(Sink.INPUT)
+		@StreamListener(Sink.INPUT)
 		public void receive(FooPojo fooPojo) {
 			receivedArguments.add(fooPojo);
 			latch.countDown();
@@ -204,7 +205,8 @@ public class BindingListenerTests {
 
 		List<FooPojo> receivedPojos = new ArrayList<>();
 
-		@BindingListener(Processor.INPUT) @SendTo(Processor.OUTPUT)
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
 		public String receive(FooPojo fooPojo) {
 			receivedPojos.add(fooPojo);
 			return fooPojo.getBar();
@@ -217,7 +219,8 @@ public class BindingListenerTests {
 
 		List<FooPojo> receivedPojos = new ArrayList<>();
 
-		@BindingListener(Processor.INPUT) @SendTo(Processor.OUTPUT)
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
 		public BazPojo receive(FooPojo fooPojo) {
 			receivedPojos.add(fooPojo);
 			BazPojo bazPojo = new BazPojo();
@@ -232,7 +235,7 @@ public class BindingListenerTests {
 
 		List<Object> receivedArguments = new ArrayList<>();
 
-		@BindingListener(Processor.INPUT)
+		@StreamListener(Processor.INPUT)
 		public void receive(@Payload FooPojo fooPojo, @Headers Map<String, Object> headers, @Header(MessageHeaders.CONTENT_TYPE) String contentType) {
 			receivedArguments.add(fooPojo);
 			receivedArguments.add(headers);
@@ -246,7 +249,7 @@ public class BindingListenerTests {
 
 		List<FooPojo> receivedPojos = new ArrayList<>();
 
-		@BindingListener(Processor.INPUT)
+		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public Message<?> receive(FooPojo fooPojo) {
 			receivedPojos.add(fooPojo);
@@ -262,7 +265,7 @@ public class BindingListenerTests {
 
 		List<Message<String>> receivedMessages = new ArrayList<>();
 
-		@BindingListener(Processor.INPUT)
+		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public BazPojo receive(Message<String> fooMessage) {
 			receivedMessages.add(fooMessage);
@@ -278,7 +281,7 @@ public class BindingListenerTests {
 
 		List<Message<String>> receivedMessages = new ArrayList<>();
 
-		@BindingListener(Processor.INPUT)
+		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public BazPojo receive(Message<String> fooMessage) {
 			throw new IllegalStateException("Foo exception");
