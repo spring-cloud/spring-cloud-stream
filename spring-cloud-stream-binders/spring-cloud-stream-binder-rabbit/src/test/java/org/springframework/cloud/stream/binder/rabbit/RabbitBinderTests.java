@@ -200,6 +200,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		assertEquals(2, requestHeaders.size());
 		producerBinding.unbind();
 		assertFalse(endpoint.isRunning());
+		assertFalse(TestUtils.getPropertyValue(endpoint, "handler.delegate.amqpTemplate.transactional", Boolean.class));
 
 		RabbitProducerProperties properties = new RabbitProducerProperties();
 		properties.setPrefix("foo.");
@@ -210,6 +211,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("0"));
 		properties.setPartitionSelectorClass(TestPartitionSelectorClass.class);
 		properties.setPartitionCount(1);
+		properties.setTransacted(true);
 
 		producerBinding = binder.bindProducer("props.0", new DirectChannel(), properties);
 		endpoint = extractEndpoint(producerBinding);
@@ -220,6 +222,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		mode = TestUtils.getPropertyValue(endpoint, "handler.delegate.defaultDeliveryMode",
 				MessageDeliveryMode.class);
 		assertEquals(MessageDeliveryMode.NON_PERSISTENT, mode);
+		assertTrue(TestUtils.getPropertyValue(endpoint, "handler.delegate.amqpTemplate.transactional", Boolean.class));
 		verifyFooRequestProducer(endpoint);
 
 		producerBinding.unbind();

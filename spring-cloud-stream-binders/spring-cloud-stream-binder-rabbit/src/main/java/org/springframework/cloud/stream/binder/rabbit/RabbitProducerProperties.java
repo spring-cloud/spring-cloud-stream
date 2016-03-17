@@ -21,6 +21,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 
 /**
  * @author Marius Bogoevici
+ * @author Gary Russell
  */
 public class RabbitProducerProperties extends ProducerProperties {
 
@@ -39,6 +40,8 @@ public class RabbitProducerProperties extends ProducerProperties {
 	private int batchBufferLimit = 10000;
 
 	private int batchTimeout = 5000;
+
+	private boolean transacted;
 
 	private MessageDeliveryMode deliveryMode = MessageDeliveryMode.PERSISTENT;
 
@@ -122,6 +125,14 @@ public class RabbitProducerProperties extends ProducerProperties {
 
 	public void setBatchTimeout(int batchTimeout) {
 		this.batchTimeout = batchTimeout;
+	}
+
+	public boolean isTransacted() {
+		return this.transacted;
+	}
+
+	public void setTransacted(boolean transacted) {
+		this.transacted = transacted;
 	}
 
 }
