@@ -118,6 +118,14 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		this.codec = codec;
 	}
 
+	/**
+	 * Set the partition strategy to be used by this binder if no partitionExpression is provided for a module.
+	 * @param partitionSelector The selector.
+	 */
+	public void setPartitionSelector(PartitionSelectorStrategy partitionSelector) {
+		this.partitionSelector = partitionSelector;
+	}
+
 	public void setIntegrationEvaluationContext(EvaluationContext evaluationContext) {
 		this.evaluationContext = evaluationContext;
 	}
