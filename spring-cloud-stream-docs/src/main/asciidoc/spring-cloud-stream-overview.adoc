@@ -106,7 +106,7 @@ Data reported by sensors to an HTTP endpoint is sent to a common destination nam
 While the concept of publish-subscribe messaging is not new, Spring Cloud Stream takes the extra step of making it an opinionated choice for its application model, and makes it easy for users to work with it across different platform by using the native support of the middleware. To go with it, two other concepts are central to Spring Cloud Stream: consumer groups and durability.
 
 
-[[consumer groups]]
+[[consumer-groups]]
 ==== Consumer Groups
 While the publish subscribe model ensures that it is easy to connect multiple application by sharing a topic, it is equally important to be able to scale up by creating multiple instances of a given application, which would find themselves in a competing consumer relationship with each other. Spring Cloud Stream models this behavior through the concept of a consumer group, which is similar to (and inspired by) the notion of consumer groups in Kafka. Each consumer binding can specify a group name such as `spring.cloud.stream.bindings.input.group=hdfsWrite` or `spring.cloud.stream.bindings.input.group=average` as shown in the picture. All groups that subscribe to a given destination will receive a copy of the published data, but, within a group, only one application will receive a given message. By default, which is the case when a group is not specified, Spring Cloud Stream assigns the application to an anonymous, independent, single-member consumer group. Otherwise said, if no consumer group is specified for a binding, it will be in a publish-subscribe relationship with all the other consumer groups.
 
@@ -425,6 +425,12 @@ spring.cloud.stream.instanceIndex::
   The instance index of the application, a number from `0` to `instanceCount`-1.
   Used for partitioning and with Kafka. Automatically set in Cloud Foundry to
   match the instance index of the application.
+spring.cloud.stream.dynamicDestinations::
+  A list of destinations that can be bound dynamically, for example in a dynamic
+  routing scenario. Only listed destinations can be bound if set. Default empty,
+  allowing any destnation to be bound.
+spring.cloud.stream.defaultBinder::
+  The default binder to use, if there are multiple binders configured. See <<multiple-binders,multiple binders>>.
 
 ==== Properties for the use of Spring Cloud Stream
 
@@ -436,13 +442,13 @@ destination::
     Kafka topic. If not set, the channel name will be used instead.
 group::
     The consumer group of the channel. This property applies only to inbound bindings.
-    By default it is null, and indicates an anonymous consumer. See <<consumer groups>>.
+    By default it is null, and indicates an anonymous consumer. See <<consumer-groups,consumer groups>>.
 contentType::
     The content type of the channel. By default it is `null` and no type
     coercion is performed. See <<content type management>>.
 binder::
     The binder used by this binding. By default, it is set to `null` and will
-    use the default binder, if one exists. See <<multiple binders>> for details.
+    use the default binder, if one exists. See <<multiple-binders>> for details.
 
 ==== Consumer properties
 
@@ -499,7 +505,12 @@ requiredGroups::
 
 == Binder-specific configuration
 
-=== Rabbit Binder properties
+This captures the binder, consumer and producer properties that are specific for several binder
+implementations.
+
+=== Rabbit-specific settings
+
+==== Rabbit Binder properties
 
 The binder supports the all Spring Boot properties for Rabbit MQ configuration.
 
@@ -524,7 +535,7 @@ spring.cloud.stream.binder.rabbit.sslPropertiesLocation::
 spring.cloud.stream.binder.rabbit.compressionLevel::
   Compression level for compressed bindings. Defaults to `1` (BEST_LEVEL). See `java.util.zip.Deflater`.
 
-=== Rabbit Consumer Properties
+==== Rabbit Consumer Properties
 
 The following properties are available for Rabbit consumers only and
 must be prefixed with `spring.cloud.stream.bindings.<channelName>.`
@@ -554,7 +565,7 @@ transacted::
 txSize::
   The number of deliveries between acks. Default `1`.
 
-=== Rabbit Producer Properties
+==== Rabbit Producer Properties
 
 The following properties are available for Rabbit producers only and
 must be prefixed with `spring.cloud.stream.bindings.<channelName>.`
@@ -574,13 +585,64 @@ compress::
 deliveryMode::
   Delivery mode. Default `PERSISTENT`.
 prefix::
-  A prefix to be added to the name of the `destination` and queues. Default "".
+  A prefix to be added to the name of the `destination` exchange. Default "".
 requestHeaderPatterns::
   The request headers to be transported. Default `[STANDARD_REQUEST_HEADERS,'*']`.
 replyHeaderPatterns::
   The reply headers to be transported. Default `[STANDARD_REQUEST_HEADERS,'*']`
 
+=== Kafka-specific settings
 
+==== Kafka binder properties
+
+spring.cloud.stream.binder.kafka.brokers::
+  A list of brokers that the Kafka binder will connect to. Default `localhost`.
+spring.cloud.stream.binder.kafka.defaultBrokerPort::
+  The list of brokers allows to specify hosts with or without port information, i.e. `host1,host2:port2`. This configuration sets the default port when no port is configured in the broker list. Default `9092`.
+spring.cloud.stream.binder.kafka.zkNodes::
+  A list of Zookeeper nodes for the Kafka binder to connect to. Default `localhost`.
+spring.cloud.stream.binder.kafka.defaultZkPort::
+  The list of Zookeeper nodes allows to specify hosts with or without port information, i.e. `host1,host2:port2`. This configuration sets the default port when no port is configured in the node list. Default `2181`.
+spring.cloud.stream.binder.kafka.headers::
+  The list of custom that will be transported by the binder. Default empty.
+spring.cloud.stream.binder.kafka.offsetUpdateTimeWindow::
+  The frequency in milliseconds with which offsets are saved. Ignored if `0`. Default `10000`.
+spring.cloud.stream.binder.kafka.offsetUpdateCount::
+  The frequency in number of updates, which which consumed offsets are persisted. Ignored if `0`. Default `0`. Mutually exclusive with `offsetUpdateTimeWindow`.
+spring.cloud.stream.binder.kafka.requiredAcks::
+  The number of required acks on the broker.
+
+==== Kafka Consumer Properties
+
+The following properties are available for Kafka consumers only and
+must be prefixed with `spring.cloud.stream.bindings.<channelName>.`
+
+autoCommitOffset::
+  True to autocommit offsets when a message has been processed. If set to false, an `Acknowledgment` header will be available in the message headers for late acknowledgment. Default `true`.
+mode::
+    When set to `raw`, will disable header parsing on input. Useful when inbound data is coming from outside Spring Cloud Stream applications. Default `embeddedHeaders`.
+resetOffsets::
+  True to reset offsets on the consumer to the value provided by `startOffset`. Default `false`.
+startOffset::
+  The starting offset for new groups or when `resetOffsets` is `true`. Allowed values: `earliest`,`latest`. Defaults to null (equivalent to earliest).
+minPartitionCount::
+  The minimum number of partitions expected by the consumer if it creates the consumed topic automatically. Defaults to `1`.
+
+
+
+==== Kafka Producer Properties
+
+The following properties are available for Kafka producers only and
+must be prefixed with `spring.cloud.stream.bindings.<channelName>.`
+
+bufferSize::
+  This is an upper limit of how much data the Kafka Producer will attempt to batch before sending – specified in bytes. Default `16384`.
+sync::
+  Whether the producer is synchronous. Defaults to `false`.
+batchTimeout::
+  How long will the producer wait before sending in order to allow more messages to get accumulated in the same batch. Normally the producer will not wait at all, and simply send all the messages that accumulated while the previous send was in progress. A non-zero value may increase throughput at the expense of latency. Default `0`.
+mode::
+    When set to `raw`, disable header propagation on output. Useful when producing data for non-Spring Cloud Stream applications. Default `embeddedHeaders`.
 
 == Binder detection
 
@@ -602,7 +664,7 @@ a Spring Cloud Stream project that aims to bind only to RabbitMQ can simply add 
 </dependency>
 ----
 
-<<multiple binders>>
+[[multiple-binders]]
 === Multiple Binders on the Classpath
 
 When multiple binders are present on the classpath, the application must indicate which binder is to be used for each
@@ -667,9 +729,16 @@ spring:
 
 == Miscellaneous
 
-
 [[contenttypemanagement]]
-=== Content Type and Headers
+=== Content Type and Transformation
+
+Spring Cloud Stream allows to propagate information about the content type of the messages it produces by attaching by default a `contentType` header to outbound messages. On middlewares that do not support headers per se, Spring Cloud Stream provides its own mechanism of wrapping outbound messages in an envelope of its own, automatically. On middlewares that support headers, Spring Cloud Stream applications may receive messages with a given content type from non-Spring Cloud Stream applications.
+
+Spring Cloud Stream can handle messages based on this information in two ways:
+
+* through its `contentType` settings on inbound and outbound channels;
+* through its argument mapping done for `@StreamListener`-annotated methods.
+
 
 === Inter-app Communication
 
@@ -681,7 +750,6 @@ Supposing that the design calls for the `time-source` app to send data to the `l
 common destination named `ticktock` for bindings within both apps. `time-source` will set
 `spring.cloud.stream.bindings.output.destination=ticktock`, and `log-sink` will set
 `spring.cloud.stream.bindings.input.destination=ticktock`.
-
 
 === Instance Index and Instance Count
 
@@ -699,7 +767,6 @@ general (see below), and they are always required by certain types of binders (e
 ensure that data is split correctly across multiple consumer instances.
 
 ===== Partitioning
-
 
 ====== Configuring Output Bindings for Partitioning
 
@@ -800,18 +867,6 @@ image::rabbit-binder.png[width=300,scaledwidth="50%"]
 The RabbitMQ Binder implementation maps the destination to a `TopicExchange`, and for each consumer group, a `Queue`
 will be bound to that `TopicExchange`. Each consumer instance that binds will trigger creation of a corresponding
 RabbitMQ `Consumer` instance for its group’s `Queue`.
-
-==== Redis Binder
-
-.Redis Binder
-image::redis-binder.png[width=300,scaledwidth="50%"]
-
-NOTE: we recommend only using the Redis Binder for development
-
-The Redis Binder creates a `LIST` (which performs the role of a queue) for each consumer group. A consumer binding will
-trigger `BRPOP` operations on its group's `LIST`. A producer binding will consult a `ZSET` to determine what groups
-currently have active consumers, and then for each message being sent, an `LPUSH` operation will be executed on each of
-those group's `LISTs`.
 
 === Samples
 
