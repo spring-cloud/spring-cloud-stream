@@ -47,7 +47,7 @@ public class RabbitConsumerProperties extends ConsumerProperties {
 
 	private boolean requeueRejected = true;
 
-	private String replyHeaderPatterns;
+	private String[] replyHeaderPatterns = new String[] {"STANDARD_REPLY_HEADERS", "*"};
 
 	public String getPrefix() {
 		return prefix;
@@ -138,11 +138,11 @@ public class RabbitConsumerProperties extends ConsumerProperties {
 		this.requeueRejected = requeueRejected;
 	}
 
-	public String getReplyHeaderPatterns() {
+	public String[] getReplyHeaderPatterns() {
 		return replyHeaderPatterns;
 	}
 
-	public void setReplyHeaderPatterns(String replyHeaderPatterns) {
+	public void setReplyHeaderPatterns(String[] replyHeaderPatterns) {
 		this.replyHeaderPatterns = replyHeaderPatterns;
 	}
 }

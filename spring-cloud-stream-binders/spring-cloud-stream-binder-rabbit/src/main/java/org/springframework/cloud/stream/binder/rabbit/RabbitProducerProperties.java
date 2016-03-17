@@ -42,7 +42,7 @@ public class RabbitProducerProperties extends ProducerProperties {
 
 	private MessageDeliveryMode deliveryMode = MessageDeliveryMode.PERSISTENT;
 
-	private String[] replyHeaderPatterns = new String[] {"STANDARD_REQUEST_HEADERS", "*"};
+	private String[] replyHeaderPatterns = new String[] {"STANDARD_REPLY_HEADERS", "*"};
 
 	public String getPrefix() {
 		return prefix;
