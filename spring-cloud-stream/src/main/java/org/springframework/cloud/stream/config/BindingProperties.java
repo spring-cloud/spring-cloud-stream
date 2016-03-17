@@ -49,18 +49,6 @@ public class BindingProperties {
 
 	private String binder;
 
-	/**
-	 * Flag to indicate if the message header needs to be updated with the trackedProperties.
-	 */
-	private Boolean trackHistory;
-
-	/**
-	 * Comma separated list of binding properties to track.
-	 * By default the properties such as the current thread name and 'timestamp' are added if the 'trackHistory` is
-	 * enabled.
-	 */
-	private String trackedProperties = "all";
-
 	public String getDestination() {
 		return this.destination;
 	}
@@ -93,22 +81,6 @@ public class BindingProperties {
 		this.binder = binder;
 	}
 
-	public Boolean isTrackHistory() {
-		return this.trackHistory;
-	}
-
-	public void setTrackHistory(Boolean trackHistory) {
-		this.trackHistory = trackHistory;
-	}
-
-	public String getTrackedProperties() {
-		return this.trackedProperties;
-	}
-
-	public void setTrackedProperties(String trackedProperties) {
-		this.trackedProperties = trackedProperties;
-	}
-
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("destination=" + this.destination);
@@ -121,10 +93,6 @@ public class BindingProperties {
 		}
 		if (this.binder != null) {
 			sb.append("binder=" + this.binder);
-			sb.append(COMMA);
-		}
-		if (this.trackHistory != null) {
-			sb.append("trackHistory=" + this.trackHistory);
 			sb.append(COMMA);
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));

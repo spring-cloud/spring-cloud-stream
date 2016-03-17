@@ -19,8 +19,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -68,32 +66,7 @@ public class MessageChannelConfigurerTests {
 		assertTrue(latch.await(10, TimeUnit.SECONDS));
 		testSink.input().unsubscribe(messageHandler);
 	}
-
-	@Test
-	public void testHistoryTrackerConfigurer() throws Exception {
-		final CountDownLatch latch = new CountDownLatch(1);
-		MessageHandler messageHandler = new MessageHandler() {
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				assertTrue("Message header should have tracking history info",
-						message.getHeaders().containsKey("SPRING_CLOUD_STREAM_HISTORY"));
-				@SuppressWarnings("unchecked")
-				Map<String, String> headerValue = ((Map<String, String>) ((List<?>) message.getHeaders()
-						.get("SPRING_CLOUD_STREAM_HISTORY")).get(0));
-				String inputBindingProps = headerValue.get("input");
-				assertTrue(inputBindingProps.contains("destination=configure"));
-				assertTrue(inputBindingProps.contains("trackHistory=true"));
-				assertTrue(headerValue.get("instanceIndex").equals("0"));
-				assertTrue(headerValue.get("instanceCount").equals("1"));
-				latch.countDown();
-			}
-		};
-		testSink.input().subscribe(messageHandler);
-		testSink.input().send(MessageBuilder.withPayload("{\"test\":\"value\"}").build());
-		assertTrue(latch.await(10, TimeUnit.SECONDS));
-		testSink.input().unsubscribe(messageHandler);
-	}
-
+	
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	@PropertySource("classpath:/org/springframework/cloud/stream/config/channel/sink-channel-configurers.properties")
