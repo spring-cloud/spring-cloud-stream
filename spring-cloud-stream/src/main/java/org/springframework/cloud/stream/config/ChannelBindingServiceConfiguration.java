@@ -35,7 +35,6 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
-import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
@@ -44,9 +43,9 @@ import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
-import org.springframework.cloud.stream.binding.MessageHistoryTrackerConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.SingleChannelBindable;
+import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
@@ -114,17 +113,10 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public MessageHistoryTrackerConfigurer messageHistoryTrackerConfigurer
-			(ChannelBindingServiceProperties channelBindingServiceProperties) {
-		return new MessageHistoryTrackerConfigurer(channelBindingServiceProperties, messageBuilderFactory);
-	}
-
-	@Bean
 	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer
-			(MessageConverterConfigurer messageConverterConfigurer, MessageHistoryTrackerConfigurer messageHistoryTrackerConfigurer) {
+			(MessageConverterConfigurer messageConverterConfigurer) {
 		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
 		configurerList.add(messageConverterConfigurer);
-		configurerList.add((messageHistoryTrackerConfigurer));
 		return new CompositeMessageChannelConfigurer(configurerList);
 	}
 
