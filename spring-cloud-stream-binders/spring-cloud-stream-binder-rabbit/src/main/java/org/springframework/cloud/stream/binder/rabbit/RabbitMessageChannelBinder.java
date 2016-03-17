@@ -86,7 +86,6 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -100,7 +99,8 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Marius Bogoevici
  */
-public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, RabbitConsumerProperties, RabbitProducerProperties> {
+public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, RabbitConsumerProperties,
+			RabbitProducerProperties> {
 
 	public static final AnonymousQueue.Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR
 			= new AnonymousQueue.Base64UrlNamingStrategy("anonymous.");
@@ -124,8 +124,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	private final RabbitAdmin rabbitAdmin;
-
-	private final RabbitTemplate rabbitTemplate = new RabbitTemplate();
 
 	private final GenericApplicationContext autoDeclareContext = new GenericApplicationContext();
 
@@ -156,8 +154,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		this.connectionFactory = connectionFactory;
-		this.rabbitTemplate.setConnectionFactory(connectionFactory);
-		this.rabbitTemplate.afterPropertiesSet();
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 		this.autoDeclareContext.refresh();
 		this.rabbitAdmin.setApplicationContext(this.autoDeclareContext);
@@ -230,7 +226,8 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 	}
 
 	@Override
-	public Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, RabbitConsumerProperties properties) {
+	public Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel,
+			RabbitConsumerProperties properties) {
 		boolean anonymousConsumer = !StringUtils.hasText(group);
 		String baseQueueName = anonymousConsumer ? groupedName(name, ANONYMOUS_GROUP_NAME_GENERATOR.generateName())
 				: groupedName(name, group);
@@ -256,7 +253,8 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 				queueName += partitionSuffix;
 			}
 			if (durable) {
-				queue = new Queue(queueName, true, false, false, queueArgs(queueName, properties.getPrefix(), properties.isAutoBindDlq()));
+				queue = new Queue(queueName, true, false, false,
+						queueArgs(queueName, properties.getPrefix(), properties.isAutoBindDlq()));
 			}
 			else {
 				queue = new Queue(queueName, false, false, true);
@@ -290,71 +288,63 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 
 	private Binding<MessageChannel> doRegisterConsumer(final String name, String group, MessageChannel moduleInputChannel, Queue queue,
 													   final RabbitConsumerProperties properties) {
-		DefaultBinding<MessageChannel> consumerBinding = null;
-		// TODO https://github.com/spring-cloud/spring-cloud-stream/issues/401
-		ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
-		try {
-			ClassUtils.overrideThreadContextClassLoader(SimpleMessageListenerContainer.class.getClassLoader());
-			SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(
-					this.connectionFactory);
-			listenerContainer.setAcknowledgeMode(properties.getAcknowledgeMode());
-			listenerContainer.setChannelTransacted(properties.isTransacted());
-			listenerContainer.setDefaultRequeueRejected(properties.isRequeueRejected());
+		DefaultBinding<MessageChannel> consumerBinding;
+		SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(
+				this.connectionFactory);
+		listenerContainer.setAcknowledgeMode(properties.getAcknowledgeMode());
+		listenerContainer.setChannelTransacted(properties.isTransacted());
+		listenerContainer.setDefaultRequeueRejected(properties.isRequeueRejected());
 
-			int concurrency = properties.getConcurrency();
-			concurrency = concurrency > 0 ? concurrency : 1;
-			listenerContainer.setConcurrentConsumers(concurrency);
-			int maxConcurrency = properties.getMaxConcurrency();
-			if (maxConcurrency > concurrency) {
-				listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
-			}
+		int concurrency = properties.getConcurrency();
+		concurrency = concurrency > 0 ? concurrency : 1;
+		listenerContainer.setConcurrentConsumers(concurrency);
+		int maxConcurrency = properties.getMaxConcurrency();
+		if (maxConcurrency > concurrency) {
+			listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
+		}
 
-			listenerContainer.setPrefetchCount(properties.getPrefetch());
-			listenerContainer.setTxSize(properties.getTxSize());
-			listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(queue.getName() + "-"));
-			listenerContainer.setQueues(queue);
-			int maxAttempts = properties.getMaxAttempts();
-			if (maxAttempts > 1 || properties.isRepublishToDlq()) {
-				RetryOperationsInterceptor retryInterceptor = RetryInterceptorBuilder.stateless()
-						.maxAttempts(maxAttempts)
-						.backOffOptions(properties.getBackOffInitialInterval(),
-								properties.getBackOffMultiplier(),
-								properties.getBackOffMaxInterval())
-						.recoverer(determineRecoverer(name, properties.getPrefix(), properties.isRepublishToDlq()))
-						.build();
-				listenerContainer.setAdviceChain(new Advice[] { retryInterceptor });
+		listenerContainer.setPrefetchCount(properties.getPrefetch());
+		listenerContainer.setTxSize(properties.getTxSize());
+		listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(queue.getName() + "-"));
+		listenerContainer.setQueues(queue);
+		int maxAttempts = properties.getMaxAttempts();
+		if (maxAttempts > 1 || properties.isRepublishToDlq()) {
+			RetryOperationsInterceptor retryInterceptor = RetryInterceptorBuilder.stateless()
+					.maxAttempts(maxAttempts)
+					.backOffOptions(properties.getBackOffInitialInterval(),
+							properties.getBackOffMultiplier(),
+							properties.getBackOffMaxInterval())
+					.recoverer(determineRecoverer(name, properties.getPrefix(), properties.isRepublishToDlq()))
+					.build();
+			listenerContainer.setAdviceChain(new Advice[] { retryInterceptor });
+		}
+		listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
+		listenerContainer.setMessagePropertiesConverter(RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
+		listenerContainer.afterPropertiesSet();
+		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);
+		adapter.setBeanFactory(this.getBeanFactory());
+		DirectChannel bridgeToModuleChannel = new DirectChannel();
+		bridgeToModuleChannel.setBeanFactory(this.getBeanFactory());
+		bridgeToModuleChannel.setBeanName(name + ".bridge");
+		adapter.setOutputChannel(bridgeToModuleChannel);
+		adapter.setBeanName("inbound." + name);
+		DefaultAmqpHeaderMapper mapper = new DefaultAmqpHeaderMapper();
+		mapper.setRequestHeaderNames(properties.getRequestHeaderPatterns());
+		mapper.setReplyHeaderNames(properties.getReplyHeaderPatterns());
+		adapter.setHeaderMapper(mapper);
+		adapter.afterPropertiesSet();
+		consumerBinding = new DefaultBinding<MessageChannel>(name, group, moduleInputChannel, adapter) {
+			@Override
+			protected void afterUnbind() {
+				cleanAutoDeclareContext(properties.getPrefix(), name);
 			}
-			listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
-			listenerContainer.setMessagePropertiesConverter(RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
-			listenerContainer.afterPropertiesSet();
-			AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);
-			adapter.setBeanFactory(this.getBeanFactory());
-			DirectChannel bridgeToModuleChannel = new DirectChannel();
-			bridgeToModuleChannel.setBeanFactory(this.getBeanFactory());
-			bridgeToModuleChannel.setBeanName(name + ".bridge");
-			adapter.setOutputChannel(bridgeToModuleChannel);
-			adapter.setBeanName("inbound." + name);
-			DefaultAmqpHeaderMapper mapper = new DefaultAmqpHeaderMapper();
-			mapper.setRequestHeaderNames(properties.getRequestHeaderPatterns());
-			mapper.setReplyHeaderNames(properties.getReplyHeaderPatterns());
-			adapter.setHeaderMapper(mapper);
-			adapter.afterPropertiesSet();
-			consumerBinding = new DefaultBinding<MessageChannel>(name, group, moduleInputChannel, adapter) {
-				@Override
-				protected void afterUnbind() {
-					cleanAutoDeclareContext(properties.getPrefix(), name);
-				}
-			};
-			ReceivingHandler convertingBridge = new ReceivingHandler();
-			convertingBridge.setOutputChannel(moduleInputChannel);
-			convertingBridge.setBeanName(name + ".convert.bridge");
-			convertingBridge.afterPropertiesSet();
-			bridgeToModuleChannel.subscribe(convertingBridge);
-			adapter.start();
-		}
-		finally {
-			Thread.currentThread().setContextClassLoader(originalClassloader);
-		}
+		};
+		ReceivingHandler convertingBridge = new ReceivingHandler();
+		convertingBridge.setOutputChannel(moduleInputChannel);
+		convertingBridge.setBeanName(name + ".convert.bridge");
+		convertingBridge.afterPropertiesSet();
+		bridgeToModuleChannel.subscribe(convertingBridge);
+		adapter.start();
 		return consumerBinding;
 	}
 
@@ -426,11 +416,12 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 		String exchangeName = applyPrefix(producerProperties.getPrefix(), name);
 		TopicExchange exchange = new TopicExchange(exchangeName);
 		declareExchange(exchangeName, exchange);
-		AmqpOutboundEndpoint endpoint = this.buildOutboundEndpoint(name, producerProperties, determineRabbitTemplate(producerProperties));
+		AmqpOutboundEndpoint endpoint = this.buildOutboundEndpoint(name, producerProperties,
+				buildRabbitTemplate(producerProperties));
 		return doRegisterProducer(name, outputChannel, endpoint, producerProperties);
 	}
 
-	private RabbitTemplate determineRabbitTemplate(RabbitProducerProperties properties) {
+	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties) {
 		RabbitTemplate rabbitTemplate = null;
 		if (properties.isBatchingEnabled()) {
 			BatchingStrategy batchingStrategy = new SimpleBatchingStrategy(
@@ -440,18 +431,16 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, R
 			rabbitTemplate = new BatchingRabbitTemplate(batchingStrategy,
 					getApplicationContext().getBean(IntegrationContextUtils.TASK_SCHEDULER_BEAN_NAME,
 							TaskScheduler.class));
-			rabbitTemplate.setConnectionFactory(this.connectionFactory);
 		}
+		else {
+			rabbitTemplate = new RabbitTemplate();
+		}
+		rabbitTemplate.setConnectionFactory(this.connectionFactory);
 		if (properties.isCompress()) {
-			if (rabbitTemplate == null) {
-				rabbitTemplate = new RabbitTemplate(this.connectionFactory);
-			}
 			rabbitTemplate.setBeforePublishPostProcessors(this.compressingPostProcessor);
-			rabbitTemplate.afterPropertiesSet();
 		}
-		if (rabbitTemplate == null) {
-			rabbitTemplate = this.rabbitTemplate;
-		}
+		rabbitTemplate.setChannelTransacted(properties.isTransacted());
+		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
 	}
 
