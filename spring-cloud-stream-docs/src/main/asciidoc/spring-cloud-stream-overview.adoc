@@ -327,8 +327,8 @@ image::producers-consumers.png[width=300,scaledwidth="75%"]
 A producer is any component that sends messages to a channel. That channel can be bound to an external message broker
 via a `Binder` implementation for that broker. When invoking the `bindProducer` method, the first parameter is the name
 of the destination within that broker. The second parameter is the local channel instance to which the producer will be
-sending messages, and the third parameter contains properties to be used within the adapter that is created for that
-channel, such as a partition key expression.
+sending messages, and the third parameter contains producer properties to be used within the adapter that is created for
+that channel, such as a partition key expression.
 
 A consumer is any component that receives messages from a channel. As with the producer, the consumer’s channel can be
 bound to an external message broker, and the first parameter for the `bindConsumer` method is the destination name.
@@ -336,7 +336,120 @@ However, on the consumer side, a second parameter provides the name of a logical
 represented by consumer bindings for a given destination will receive a copy of each message that a producer sends to
 that destination (i.e. pub/sub semantics). If there are multiple consumer instances bound using the same group name,
 then messages will be load balanced across those consumer instances so that each message sent by a producer would only
-be consumed by a single consumer instance within each group (i.e. queue semantics).
+be consumed by a single consumer instance within each group (i.e. queue semantics). The third parameter contains the
+consumer properties to be used within the adapter that is created for that channel, such as concurrency.
+
+==== Producer and Consumer Properties
+
+The producer and the consumer properties can be specified as the binding properties for the channel.
+For instance, if the producer has an output channel `foo` then the producer properties for this channel can be specified
+as, `spring.clouds.stream.bindings.foo.partitionKeyExpression=payload`.
+Same way consumer properties can be specified as well.
+For instance, if the consumer has an input channel `bar` then the consumer properties for this channel can be specified
+as, `spring.cloud.stream.bindings.bar.concurrency=5`
+
+Spring Cloud Stream supports some common producer and consumer properties that is applicable across binder implementations.
+
+===== Common producer properties
+
+partitionKeyExpression: The SpEL expression to evaluate against the message to determine the partition key
+
+partitionKeyExtractorClass: The key extractor class that implements `org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy`
+to extract the partition key from the message.
+Both the PartitionKeyExpression and PartitionKeyExtractorClass are mutually exclusive.
+
+partitionSelectorExpression: The SpEL expression to evaluate against the partition key to determine the partition index.
+
+partitionSelectorClass: The partition selector class that implements `org.springframework.cloud.stream.binder.PartitionSelectorStrategy`
+to extract the partition index from the key.
+
+partitionCount: The number of partitions
+
+requiredGroups: The required consumer groups that need to be created and subscribed to the producer.
+
+====== Common consumer properties
+
+concurrency: Number of concurrent consumers (possibly multiple completing consumer threads) for this consumer application
+
+partitioned: boolean value to specify if the consumer subscription is partitioned.
+
+instanceCount: Number of app instances of this consumer
+
+instanceIndex: Index value for the current app instance
+
+maxAttempts: Number of attempts for the inbound channel's retry template before a retry becomes impossible
+
+backOffInitialInterval: Initial interval for the backoff period for each retry attempt (in milliseconds)
+
+backOffMaxInterval: Maximum value of the backoff period for each retry attempt (in milliseconds)
+
+backOffMultiplier: The value to increment the exp seed with for each retry attempt
+
+There are some binder specific producer and consumer properties.
+
+====== Kafka Producer properties
+
+spring:
+  cloud:
+    stream:
+      bindings:
+        <channelName>:
+          bufferSize:
+          compressionType:
+          sync:
+          mode:
+          batchTimeout:
+
+====== Kafka Consumer properties
+
+spring:
+  cloud:
+    stream:
+      bindings:
+        <channelName>:
+          minPartitionCount:
+          autoCommitOffset:
+          resetOffsets:
+          startOffset:
+          mode:
+
+====== Rabbit Producer properties
+
+spring:
+  cloud:
+    stream:
+      bindings:
+        <channelName>:
+          prefix:
+          requestHeaderPatterns:
+          autoBindDlq:
+          compress:
+          batchingEnabled:
+          batchSize:
+          batchBufferLimit:
+          batchTimeout:
+          deliveryMode:
+          replyHeaderPatterns:
+
+====== Rabbit Consumer properties
+
+spring:
+  cloud:
+    stream:
+      bindings:
+        <channelName>:
+        prefix:
+        transacted:
+        acknowledgeMode:
+        maxConcurrency:
+        prefetch:
+        requestHeaderPatterns:
+        txSize:
+        autoBindDlq:
+        durableSubscription:
+        republishToDlq:
+        requeueRejected:
+        replyHeaderPatterns:
 
 ==== Kafka Binder
 
