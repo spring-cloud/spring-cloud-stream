@@ -91,7 +91,7 @@ This trace shows that a `RefreshRemoteApplicationEvent` was sent from
 (acked) by `customers:9000` and `stores:8081`.
 
 To handle the ack signals yourself you could add an `@EventListener`
-for the `AckRemoteAppplicationEvent` and `SentApplicationEvent` types
+for the `AckRemoteApplicationEvent` and `SentApplicationEvent` types
 to your app (and enable tracing). Or you could tap into the
 `TraceRepository` and mine the data from there.
 
