@@ -19,10 +19,9 @@ public class SubtypeModuleTests {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.registerModule(new SubtypeModule(MyRemoteApplicationEvent.class));
 
-		RemoteApplicationEvent event = mapper
-				.readValue(
-						"{\"type\":\"my\", \"destinationService\":\"myservice\", \"originService\":\"myorigin\"}",
-						RemoteApplicationEvent.class);
+		RemoteApplicationEvent event = mapper.readValue(
+				"{\"type\":\"my\", \"destinationService\":\"myservice\", \"originService\":\"myorigin\"}",
+				RemoteApplicationEvent.class);
 		assertTrue("event is wrong type", event instanceof MyRemoteApplicationEvent);
 		MyRemoteApplicationEvent myEvent = MyRemoteApplicationEvent.class.cast(event);
 		assertEquals("originService was wrong", "myorigin", myEvent.getOriginService());
@@ -34,6 +33,7 @@ public class SubtypeModuleTests {
 		assertTrue("event is wrong type", event instanceof AnotherRemoteApplicationEvent);
 	}
 
+	@SuppressWarnings("serial")
 	@JsonTypeName("my")
 	public static class MyRemoteApplicationEvent extends RemoteApplicationEvent {
 		@SuppressWarnings("unused")
@@ -50,6 +50,7 @@ public class SubtypeModuleTests {
 		}
 	}
 
+	@SuppressWarnings("serial")
 	@JsonTypeName("another")
 	public static class AnotherRemoteApplicationEvent extends RemoteApplicationEvent {
 		@SuppressWarnings("unused")

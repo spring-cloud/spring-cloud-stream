@@ -18,13 +18,10 @@ package org.springframework.cloud.bus;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import lombok.Data;
-
 /**
  * @author Dave Syer
  *
  */
-@Data
 @ConfigurationProperties("spring.cloud.bus")
 public class BusProperties {
 
@@ -54,23 +51,68 @@ public class BusProperties {
 	 */
 	private boolean enabled = true;
 
-	@Data
+	public Env getEnv() {
+		return env;
+	}
+
+	public Refresh getRefresh() {
+		return refresh;
+	}
+
+	public Ack getAck() {
+		return ack;
+	}
+
+	public Trace getTrace() {
+		return trace;
+	}
+
+	public String getDestination() {
+		return destination;
+	}
+
+	public void setDestination(String destination) {
+		this.destination = destination;
+	}
+
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+
 	public static class Env {
 		/**
 		 * Flag to switch off environment change events (default on).
 		 */
 		private boolean enabled = true;
+
+		public boolean isEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
 	}
 
-	@Data
 	public static class Refresh {
 		/**
 		 * Flag to switch off refresh events (default on).
 		 */
 		private boolean enabled = true;
+
+		public boolean isEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
 	}
 
-	@Data
 	public static class Ack {
 		/**
 		 * Flag to switch off acks (default on).
@@ -80,14 +122,37 @@ public class BusProperties {
 		 * Service that wants to listen to acks. By default null (meaning all services).
 		 */
 		private String destinationService;
+
+		public boolean isEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
+
+		public String getDestinationService() {
+			return destinationService;
+		}
+
+		public void setDestinationService(String destinationService) {
+			this.destinationService = destinationService;
+		}
 	}
 
-	@Data
 	public static class Trace {
 		/**
 		 * Flag to switch on tracing of acks (default off).
 		 */
 		private boolean enabled = false;
+
+		public boolean isEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
 	}
 
 }

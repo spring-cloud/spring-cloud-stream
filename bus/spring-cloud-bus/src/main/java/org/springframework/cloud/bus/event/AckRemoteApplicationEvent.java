@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.bus.event;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 /**
  * An event that signals an ack of a specific {@link RemoteApplicationEvent}. These events
  * can be monitored by any applications that want to audit the responses to bus events.
@@ -29,8 +26,6 @@ import lombok.EqualsAndHashCode;
  *
  */
 @SuppressWarnings("serial")
-@Data
-@EqualsAndHashCode(callSuper = false)
 public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 
 	private final String ackId;
@@ -52,5 +47,58 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 		this.ackDestinationService = ackDestinationService;
 		this.ackId = ackId;
 		this.event = type;
+	}
+
+	public String getAckId() {
+		return ackId;
+	}
+
+	public String getAckDestinationService() {
+		return ackDestinationService;
+	}
+
+	public Class<? extends RemoteApplicationEvent> getEvent() {
+		return event;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((ackDestinationService == null) ? 0
+				: ackDestinationService.hashCode());
+		result = prime * result + ((ackId == null) ? 0 : ackId.hashCode());
+		result = prime * result + ((event == null) ? 0 : event.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		AckRemoteApplicationEvent other = (AckRemoteApplicationEvent) obj;
+		if (ackDestinationService == null) {
+			if (other.ackDestinationService != null)
+				return false;
+		}
+		else if (!ackDestinationService.equals(other.ackDestinationService))
+			return false;
+		if (ackId == null) {
+			if (other.ackId != null)
+				return false;
+		}
+		else if (!ackId.equals(other.ackId))
+			return false;
+		if (event == null) {
+			if (other.event != null)
+				return false;
+		}
+		else if (!event.equals(other.event))
+			return false;
+		return true;
 	}
 }

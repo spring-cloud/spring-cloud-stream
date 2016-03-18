@@ -2,8 +2,8 @@ package org.springframework.cloud.bus.event;
 
 import java.util.Map;
 
-import lombok.extern.apachecommons.CommonsLog;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.environment.EnvironmentManager;
 import org.springframework.context.ApplicationListener;
@@ -11,9 +11,11 @@ import org.springframework.context.ApplicationListener;
 /**
  * @author Spencer Gibb
  */
-@CommonsLog
-public class EnvironmentChangeListener implements
-		ApplicationListener<EnvironmentChangeRemoteApplicationEvent> {
+public class EnvironmentChangeListener
+		implements ApplicationListener<EnvironmentChangeRemoteApplicationEvent> {
+
+	private static Log log = LogFactory.getLog(EnvironmentChangeListener.class);
+
 	@Autowired
 	private EnvironmentManager env;
 

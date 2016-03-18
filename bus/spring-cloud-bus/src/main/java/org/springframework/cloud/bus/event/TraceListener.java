@@ -3,10 +3,10 @@ package org.springframework.cloud.bus.event;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.boot.actuate.trace.TraceRepository;
 import org.springframework.context.event.EventListener;
-
-import lombok.extern.apachecommons.CommonsLog;
 
 /**
  * A listener for sends and acks of remote application events. Inserts a record for each
@@ -14,8 +14,9 @@ import lombok.extern.apachecommons.CommonsLog;
  *
  * @author Dave Syer
  */
-@CommonsLog
 public class TraceListener {
+
+	private static Log log = LogFactory.getLog(TraceListener.class);
 
 	private TraceRepository repository;
 

@@ -5,9 +5,6 @@ import org.springframework.context.ApplicationEvent;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 /**
  * An event signalling that a remote event was sent somewhere in the system. This is not
  * itself a {@link RemoteApplicationEvent}, so it isn't sent over the bus, instead it is
@@ -19,8 +16,6 @@ import lombok.EqualsAndHashCode;
  * @author Dave Syer
  */
 @SuppressWarnings("serial")
-@Data
-@EqualsAndHashCode(callSuper = false)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonIgnoreProperties("source")
 public class SentApplicationEvent extends ApplicationEvent {
@@ -51,5 +46,74 @@ public class SentApplicationEvent extends ApplicationEvent {
 		}
 		this.destinationService = destinationService;
 		this.id = id;
+	}
+
+	public Class<? extends RemoteApplicationEvent> getType() {
+		return type;
+	}
+
+	public void setType(Class<? extends RemoteApplicationEvent> type) {
+		this.type = type;
+	}
+
+	public String getOriginService() {
+		return originService;
+	}
+
+	public String getDestinationService() {
+		return destinationService;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((destinationService == null) ? 0 : destinationService.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result
+				+ ((originService == null) ? 0 : originService.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SentApplicationEvent other = (SentApplicationEvent) obj;
+		if (destinationService == null) {
+			if (other.destinationService != null)
+				return false;
+		}
+		else if (!destinationService.equals(other.destinationService))
+			return false;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		}
+		else if (!id.equals(other.id))
+			return false;
+		if (originService == null) {
+			if (other.originService != null)
+				return false;
+		}
+		else if (!originService.equals(other.originService))
+			return false;
+		if (type == null) {
+			if (other.type != null)
+				return false;
+		}
+		else if (!type.equals(other.type))
+			return false;
+		return true;
 	}
 }
