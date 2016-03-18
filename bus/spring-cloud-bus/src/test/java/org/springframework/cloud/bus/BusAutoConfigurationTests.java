@@ -3,6 +3,7 @@ package org.springframework.cloud.bus;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -92,9 +93,9 @@ public class BusAutoConfigurationTests {
 		OutboundMessageHandlerConfiguration outbound = this.context
 				.getBean(OutboundMessageHandlerConfiguration.class);
 		outbound.latch.await(2000L, TimeUnit.MILLISECONDS);
-		AckRemoteApplicationEvent message = (AckRemoteApplicationEvent) outbound.message
-				.getPayload();
-		assertEquals(refresh.getId(), message.getAckId());
+		String message = (String) outbound.message.getPayload();
+		assertTrue("Wrong ackId: " + message,
+				message.contains("\"ackId\":\"" + refresh.getId()));
 	}
 
 	@Test
@@ -189,7 +190,8 @@ public class BusAutoConfigurationTests {
 	}
 
 	@Configuration
-	@Import({ MessageConsumer.class, BusAutoConfiguration.class, TestSupportBinderAutoConfiguration.class,
+	@Import({ MessageConsumer.class, BusAutoConfiguration.class,
+			TestSupportBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
 	protected static class OutboundMessageHandlerConfiguration {
 
@@ -218,18 +220,20 @@ public class BusAutoConfigurationTests {
 		}
 
 	}
-	
+
 	@Configuration
 	@MessageEndpoint
 	protected static class MessageConsumer {
-		
-		@ServiceActivator(inputChannel=SpringCloudBusClient.OUTPUT)
-		public void handle(Message<?> msg) {}
-		
+
+		@ServiceActivator(inputChannel = SpringCloudBusClient.OUTPUT)
+		public void handle(Message<?> msg) {
+		}
+
 	}
 
 	@Configuration
-	@Import({ MessageConsumer.class, BusAutoConfiguration.class, TestSupportBinderAutoConfiguration.class,
+	@Import({ MessageConsumer.class, BusAutoConfiguration.class,
+			TestSupportBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
 	protected static class InboundMessageHandlerConfiguration {
 

@@ -35,14 +35,14 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 
 	private final String ackId;
 	private final String ackDestinationService;
-	private final Class<? extends RemoteApplicationEvent> type;
+	private final Class<? extends RemoteApplicationEvent> event;
 
 	@SuppressWarnings("unused")
 	private AckRemoteApplicationEvent() {
 		super();
 		this.ackDestinationService = null;
 		this.ackId = null;
-		this.type = null;
+		this.event = null;
 	}
 
 	public AckRemoteApplicationEvent(Object source, String originService,
@@ -51,6 +51,6 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 		super(source, originService, destinationService);
 		this.ackDestinationService = ackDestinationService;
 		this.ackId = ackId;
-		this.type = type;
+		this.event = type;
 	}
 }

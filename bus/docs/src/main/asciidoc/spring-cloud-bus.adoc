@@ -98,3 +98,10 @@ to your app (and enable tracing). Or you could tap into the
 NOTE: Any Bus application can trace acks, but sometimes it will be
 useful to do this in a central service that can do more complex
 queries on the data. Or forward it to a specialized tracing service.
+
+== Broadcasting Your Own Events
+
+The Bus can carry any event of type `RemoteApplicationEvent`, but the
+default transport is JSON and the deserializer needs to know which
+types are going to be used ahead of time. To register a new type you
+can use `@JsonTypeName` on your custom class.

@@ -49,7 +49,7 @@ public class TraceListener {
 	protected Map<String, Object> getReceivedTrace(AckRemoteApplicationEvent event) {
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 		map.put("signal", "spring.cloud.bus.ack");
-		map.put("type", event.getType().getSimpleName());
+		map.put("event", event.getEvent().getSimpleName());
 		map.put("id", event.getAckId());
 		map.put("origin", event.getOriginService());
 		map.put("destination", event.getAckDestinationService());
