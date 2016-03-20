@@ -111,8 +111,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 							(Binder<MessageChannel, ?, ProducerProperties>) binderFactory.getBinder(binderName);
 					Class<? extends ProducerProperties> producerPropertiesClass =
 							ChannelBindingService.resolveProducerPropertiesType(binder);
-					ProducerProperties producerProperties =
-							this.channelBindingServiceProperties.getProducerProperties(channelName, producerPropertiesClass);
+					ProducerProperties producerProperties = this.channelBindingServiceProperties.getProducerProperties(channelName);
 					String destinationName = this.channelBindingServiceProperties.getBindingDestination(channelName);
 					this.dynamicDestinationsBindable.addOutputBinding(beanName,
 							binder.bindProducer(destinationName, channel, producerProperties));

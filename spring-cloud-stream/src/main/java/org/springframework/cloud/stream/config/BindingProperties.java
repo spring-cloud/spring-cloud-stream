@@ -16,8 +16,14 @@
 
 package org.springframework.cloud.stream.config;
 
+import javax.validation.constraints.AssertTrue;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * Contains the properties of a binding.
@@ -26,6 +32,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Gary Russell
  */
 @JsonInclude(value = Include.NON_DEFAULT)
+@Validated
 public class BindingProperties {
 
 	private static final String COMMA = ",";
@@ -48,6 +55,11 @@ public class BindingProperties {
 	private String contentType;
 
 	private String binder;
+
+
+	private ConsumerProperties consumer = null;
+
+	private ProducerProperties producer = null;
 
 	public String getDestination() {
 		return this.destination;
@@ -79,6 +91,27 @@ public class BindingProperties {
 
 	public void setBinder(String binder) {
 		this.binder = binder;
+	}
+
+	public ConsumerProperties getConsumer() {
+		return consumer;
+	}
+
+	public void setConsumer(ConsumerProperties consumer) {
+		this.consumer = consumer;
+	}
+
+	public ProducerProperties getProducer() {
+		return producer;
+	}
+
+	public void setProducer(ProducerProperties producer) {
+		this.producer = producer;
+	}
+
+	@AssertTrue(message = "A binding must not set both producer and consumer properties.")
+	public boolean onlyOneOfProducerOrConsumerSet() {
+		return consumer == null || producer == null;
 	}
 
 	public String toString() {

@@ -102,6 +102,32 @@ public class RabbitBinderModuleTests {
 	}
 
 	@Test
+	public void testParentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
+		context = SpringApplication.run(SimpleProcessor.class,
+				"--server.port=0",
+				"--spring.cloud.stream.rabbit.consumer.input.transacted=true",
+				"--spring.cloud.stream.rabbit.producer.output.compress=true");
+		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
+		Binder binder = binderFactory.getBinder(null);
+		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
+		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
+		ConnectionFactory binderConnectionFactory =
+				(ConnectionFactory) binderFieldAccessor.getPropertyValue("connectionFactory");
+		assertThat(binderConnectionFactory, instanceOf(CachingConnectionFactory.class));
+		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
+		assertThat(binderConnectionFactory, is(connectionFactory));
+		CompositeHealthIndicator bindersHealthIndicator =
+				context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		assertNotNull(bindersHealthIndicator);
+		@SuppressWarnings("unchecked")
+		Map<String, HealthIndicator> healthIndicators =
+				(Map<String, HealthIndicator>) directFieldAccessor.getPropertyValue("indicators");
+		assertThat(healthIndicators, hasKey("rabbit"));
+		assertThat(healthIndicators.get("rabbit").health().getStatus(), equalTo(Status.UP));
+	}
+
+	@Test
 	public void testParentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run("--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);

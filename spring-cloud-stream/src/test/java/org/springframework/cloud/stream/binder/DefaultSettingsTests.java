@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.hamcrest.CoreMatchers;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -37,6 +38,7 @@ import org.springframework.context.annotation.Import;
 /**
  * @author Marius Bogoevici
  */
+@Ignore
 public class DefaultSettingsTests {
 
 	@SuppressWarnings("unchecked")

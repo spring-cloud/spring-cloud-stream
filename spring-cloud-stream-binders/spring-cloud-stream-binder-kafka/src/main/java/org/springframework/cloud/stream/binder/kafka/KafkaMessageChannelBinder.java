@@ -49,6 +49,9 @@ import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
+import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.http.MediaType;
@@ -98,7 +101,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Soby Chacko
  */
-public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
+public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
 	public static final ByteArraySerializer BYTE_ARRAY_SERIALIZER = new ByteArraySerializer();
 
@@ -146,6 +149,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 	private int zkConnectionTimeout = 10000;
 
 	private ProducerListener producerListener;
+
+	private KafkaExtendedPropertiesRegistry kafkaExtendedPropertiesRegistry = new KafkaExtendedPropertiesRegistry();
 
 	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
 									 String... headersToMap) {
@@ -284,12 +289,23 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		this.zkConnectionTimeout = zkConnectionTimeout;
 	}
 
+	@Override
+	public KafkaConsumerProperties getExtendedConsumerProperties(String channelName) {
+		return kafkaExtendedPropertiesRegistry.getExtendedConsumerProperties(channelName);
+	}
+
+	@Override
+	public KafkaProducerProperties getExtendedProducerProperties(String channelName) {
+		return kafkaExtendedPropertiesRegistry.getExtendedProducerProperties(channelName);
+	}
+
 	Map<String, Collection<Partition>> getTopicsInUse() {
 		return this.topicsInUse;
 	}
 
 	@Override
-	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel, KafkaConsumerProperties properties) {
+	protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel inputChannel,
+			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		// If the caller provides a consumer group, use it; otherwise an anonymous consumer group
 		// is generated each time, such that each anonymous binding will receive all messages.
 		// Consumers reset offsets at the latest time by default, which allows them to receive only
@@ -300,14 +316,15 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		// The reference point, if not set explicitly is the latest time for anonymous subscriptions and the
 		// earliest time for group subscriptions. This allows the latter to receive messages published before the group
 		// has been created.
-		long referencePoint = properties.getStartOffset() != null ?
-				properties.getStartOffset().getReferencePoint() : (anonymous ? OffsetRequest.LatestTime() : OffsetRequest.EarliestTime());
+		long referencePoint = properties.getExtension().getStartOffset() != null ?
+				properties.getExtension().getStartOffset().getReferencePoint() : (anonymous ? OffsetRequest.LatestTime() : OffsetRequest.EarliestTime());
 		return createKafkaConsumer(name, inputChannel, properties, consumerGroup, referencePoint);
 	}
 
 
 	@Override
-	public Binding<MessageChannel> doBindProducer(String name, MessageChannel moduleOutputChannel, KafkaProducerProperties properties) {
+	public Binding<MessageChannel> doBindProducer(String name, MessageChannel moduleOutputChannel,
+			ExtendedProducerProperties<KafkaProducerProperties> properties) {
 
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
 		if (logger.isInfoEnabled()) {
@@ -323,12 +340,12 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 		ProducerMetadata<byte[], byte[]> producerMetadata = new ProducerMetadata<>(name, byte[].class, byte[].class,
 				BYTE_ARRAY_SERIALIZER, BYTE_ARRAY_SERIALIZER);
-		producerMetadata.setSync(properties.isSync());
-		producerMetadata.setCompressionType(properties.getCompressionType());
-		producerMetadata.setBatchBytes(properties.getBufferSize());
+		producerMetadata.setSync(properties.getExtension().isSync());
+		producerMetadata.setCompressionType(properties.getExtension().getCompressionType());
+		producerMetadata.setBatchBytes(properties.getExtension().getBufferSize());
 		Properties additionalProps = new Properties();
 		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(requiredAcks));
-		additionalProps.put(ProducerConfig.LINGER_MS_CONFIG, String.valueOf(properties.getBatchTimeout()));
+		additionalProps.put(ProducerConfig.LINGER_MS_CONFIG, String.valueOf(properties.getExtension().getBatchTimeout()));
 		ProducerFactoryBean<byte[], byte[]> producerFB = new ProducerFactoryBean<>(producerMetadata, brokers, additionalProps);
 
 		try {
@@ -406,10 +423,10 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 	}
 
 	private Binding<MessageChannel> createKafkaConsumer(String name, final MessageChannel moduleInputChannel,
-														KafkaConsumerProperties properties, String group, long referencePoint) {
+			ExtendedConsumerProperties<KafkaConsumerProperties> properties, String group, long referencePoint) {
 
 		validateTopicName(name);
-		int minKafkaPartitions = properties.getMinPartitionCount();
+		int minKafkaPartitions = properties.getExtension().getMinPartitionCount();
 		int instance = properties.getInstanceCount();
 		if (instance == 0) {
 			throw new IllegalArgumentException("Instance count cannot be zero");
@@ -450,7 +467,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		kafkaMessageDrivenChannelAdapter.setKeyDecoder(keyDecoder);
 		kafkaMessageDrivenChannelAdapter.setPayloadDecoder(valueDecoder);
 		kafkaMessageDrivenChannelAdapter.setOutputChannel(bridge);
-		kafkaMessageDrivenChannelAdapter.setAutoCommitOffset(properties.isAutoCommitOffset());
+		kafkaMessageDrivenChannelAdapter.setAutoCommitOffset(properties.getExtension().isAutoCommitOffset());
 		kafkaMessageDrivenChannelAdapter.afterPropertiesSet();
 		kafkaMessageDrivenChannelAdapter.start();
 
@@ -481,7 +498,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		return consumerBinding;
 	}
 
-	KafkaMessageListenerContainer createMessageListenerContainer(KafkaConsumerProperties consumerProperties,
+	KafkaMessageListenerContainer createMessageListenerContainer(
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties,
 																 String group, String topic, Collection<Partition> listenedPartitions,
 																 long referencePoint) {
 		Assert.isTrue(StringUtils.hasText(topic) ^ !CollectionUtils.isEmpty(listenedPartitions),
@@ -500,7 +518,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 		// if we have fewer target partitions than target concurrency, adjust accordingly
 		messageListenerContainer.setConcurrency(Math.min(consumerProperties.getConcurrency(), listenedPartitions.size()));
 		OffsetManager offsetManager = createOffsetManager(group, referencePoint);
-		if (consumerProperties.isResetOffsets()) {
+		if (consumerProperties.getExtension().isResetOffsets()) {
 			offsetManager.resetOffsets(listenedPartitions);
 		}
 		messageListenerContainer.setOffsetManager(offsetManager);
@@ -546,16 +564,16 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 	private class ReceivingHandler extends AbstractReplyProducingMessageHandler {
 
-		private KafkaConsumerProperties consumerProperties;
+		private ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties;
 
-		public ReceivingHandler(KafkaConsumerProperties consumerProperties) {
+		public ReceivingHandler(ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
 			this.consumerProperties = consumerProperties;
 		}
 
 		@Override
 		@SuppressWarnings("unchecked")
 		protected Object handleRequestMessage(Message<?> requestMessage) {
-			if (Mode.embeddedHeaders.equals(consumerProperties.getMode())) {
+			if (Mode.embeddedHeaders.equals(consumerProperties.getExtension().getMode())) {
 				MessageValues messageValues;
 				try {
 					messageValues = embeddedHeadersMessageConverter.extractHeaders((Message<byte[]>) requestMessage,
@@ -596,7 +614,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 		private final String topicName;
 
-		private final KafkaProducerProperties producerProperties;
+		private final ExtendedProducerProperties<KafkaProducerProperties> producerProperties;
 
 		private final int numberOfKafkaPartitions;
 
@@ -604,7 +622,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 
 		private final PartitionHandler partitionHandler;
 
-		private SendingHandler(String topicName, KafkaProducerProperties properties, int numberOfPartitions,
+		private SendingHandler(String topicName, ExtendedProducerProperties<KafkaProducerProperties> properties,
+				int numberOfPartitions,
 							   ProducerConfiguration<byte[], byte[]> producerConfiguration) {
 			this.topicName = topicName;
 			producerProperties = properties;
@@ -626,13 +645,13 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ka
 				targetPartition = roundRobin() % numberOfKafkaPartitions;
 			}
 
-			if (Mode.embeddedHeaders.equals(producerProperties.getMode())) {
+			if (Mode.embeddedHeaders.equals(producerProperties.getExtension().getMode())) {
 				MessageValues transformed = serializePayloadIfNecessary(message);
 				byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
 						KafkaMessageChannelBinder.this.headersToMap);
 				producerConfiguration.send(topicName, targetPartition, null, messageToSend);
 			}
-			else if (Mode.raw.equals(producerProperties.getMode())) {
+			else if (Mode.raw.equals(producerProperties.getExtension().getMode())) {
 				Object contentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 				if (contentType != null
 						&& !contentType.equals(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {

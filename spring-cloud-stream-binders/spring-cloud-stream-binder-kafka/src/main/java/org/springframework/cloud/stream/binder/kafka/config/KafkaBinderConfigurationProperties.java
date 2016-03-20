@@ -26,7 +26,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka")
+@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 class KafkaBinderConfigurationProperties {
 
 	private String[] zkNodes;

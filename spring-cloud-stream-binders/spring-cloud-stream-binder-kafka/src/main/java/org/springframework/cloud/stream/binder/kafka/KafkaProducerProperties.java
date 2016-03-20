@@ -16,13 +16,12 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.integration.kafka.support.ProducerMetadata;
 
 /**
  * @author Marius Bogoevici
  */
-public class KafkaProducerProperties extends ProducerProperties {
+public class KafkaProducerProperties {
 
 	private int bufferSize = 16384;
 
