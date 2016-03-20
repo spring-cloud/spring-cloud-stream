@@ -22,12 +22,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
+import org.springframework.cloud.stream.binder.kafka.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.kafka.support.LoggingProducerListener;
 import org.springframework.integration.kafka.support.ProducerListener;
@@ -44,8 +44,7 @@ import org.springframework.util.ObjectUtils;
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
 @Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
-@EnableConfigurationProperties({KafkaBinderConfigurationProperties.class})
-@PropertySource("classpath:/META-INF/spring-cloud-stream/kafka-binder.properties")
+@EnableConfigurationProperties({KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class})
 public class KafkaBinderConfiguration {
 
 	@Autowired
@@ -53,6 +52,9 @@ public class KafkaBinderConfiguration {
 
 	@Autowired
 	private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
+
+	@Autowired
+	private KafkaExtendedBindingProperties kafkaExtendedBindingProperties;
 
 	@Autowired
 	private ProducerListener producerListener;
@@ -89,6 +91,7 @@ public class KafkaBinderConfiguration {
 		kafkaMessageChannelBinder.setMaxWait(kafkaBinderConfigurationProperties.getMaxWait());
 
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
+		kafkaMessageChannelBinder.setExtendedBindingProperties(kafkaExtendedBindingProperties);
 		return kafkaMessageChannelBinder;
 	}
 

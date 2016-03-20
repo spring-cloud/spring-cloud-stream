@@ -26,37 +26,38 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.kafka")
+@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 class KafkaBinderConfigurationProperties {
 
-	private String[] zkNodes;
+	private String[] zkNodes = new String[] {"localhost"};
 
-	private String defaultZkPort;
+	private String defaultZkPort = "2181";
 
-	private String[] brokers;
+	private String[] brokers = new String[] {"localhost"};
 
-	private String defaultBrokerPort;
+	private String defaultBrokerPort = "9092";
 
-	private String[] headers;
+	private String[] headers = new String[] {};
 
-	private KafkaMessageChannelBinder.Mode mode;
+	private KafkaMessageChannelBinder.Mode mode = Mode.embeddedHeaders;
 
-	private int offsetUpdateTimeWindow;
+	private int offsetUpdateTimeWindow = 10000;
 
-	private int offsetUpdateCount;
+	private int offsetUpdateCount = 0;
 
-	private int offsetUpdateShutdownTimeout;
+	private int offsetUpdateShutdownTimeout = 2000;
 
 	private int maxWait = 100;
+
 	/**
 	 * ZK session timeout in milliseconds.
 	 */
-	private int zkSessionTimeout;
+	private int zkSessionTimeout = 10000;
 
 	/**
 	 * ZK Connection timeout in milliseconds.
 	 */
-	private int zkConnectionTimeout;
+	private int zkConnectionTimeout = 10000;
 
 	private int requiredAcks = 1;
 
@@ -66,7 +67,7 @@ class KafkaBinderConfigurationProperties {
 
 	private int minPartitionCount = 1;
 
-	private int queueSize;
+	private int queueSize = 8192;
 
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);

@@ -22,7 +22,7 @@ import org.springframework.core.io.Resource;
 /**
  * @author David Turanski
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.rabbit")
+@ConfigurationProperties(prefix = "spring.cloud.stream.rabbit.binder")
 class RabbitBinderConfigurationProperties {
 
 	private String[] addresses = new String[0];

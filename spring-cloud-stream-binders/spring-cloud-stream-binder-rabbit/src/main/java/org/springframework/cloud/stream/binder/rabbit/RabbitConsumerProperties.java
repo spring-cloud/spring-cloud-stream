@@ -17,13 +17,12 @@
 package org.springframework.cloud.stream.binder.rabbit;
 
 import org.springframework.amqp.core.AcknowledgeMode;
-import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.util.Assert;
 
 /**
  * @author Marius Bogoevici
  */
-public class RabbitConsumerProperties extends ConsumerProperties {
+public class RabbitConsumerProperties {
 
 	private String prefix = "";
 

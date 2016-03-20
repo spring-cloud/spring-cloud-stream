@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.rabbit.ConnectionFactorySettings;
+import org.springframework.cloud.stream.binder.rabbit.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -37,7 +38,7 @@ import org.springframework.integration.codec.Codec;
 
 @Configuration
 @Import({PropertyPlaceholderAutoConfiguration.class, KryoCodecAutoConfiguration.class})
-@EnableConfigurationProperties({RabbitBinderConfigurationProperties.class})
+@EnableConfigurationProperties({RabbitBinderConfigurationProperties.class, RabbitExtendedBindingProperties.class})
 public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
@@ -48,6 +49,9 @@ public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
 	private RabbitBinderConfigurationProperties rabbitBinderConfigurationProperties;
+
+	@Autowired
+	private RabbitExtendedBindingProperties rabbitExtendedBindingProperties;
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() {
@@ -63,6 +67,7 @@ public class RabbitMessageChannelBinderConfiguration {
 		binder.setUsername(rabbitBinderConfigurationProperties.getUsername());
 		binder.setUseSSL(rabbitBinderConfigurationProperties.isUseSSL());
 		binder.setVhost(rabbitBinderConfigurationProperties.getVhost());
+		binder.setExtendedBindingProperties(rabbitExtendedBindingProperties);
 		return binder;
 	}
 
