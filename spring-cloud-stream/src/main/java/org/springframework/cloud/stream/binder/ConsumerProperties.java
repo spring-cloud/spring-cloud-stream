@@ -42,7 +42,7 @@ public class ConsumerProperties {
 
 	private double backOffMultiplier = 2.0;
 
-	@Min(value = 1, message = "Concurrency should be greater than or equal to 1")
+	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
 		return concurrency;
 	}
@@ -59,7 +59,7 @@ public class ConsumerProperties {
 		this.partitioned = partitioned;
 	}
 
-	@Min(value = 1, message = "Instance Count should be greater than or equal to 1")
+	@Min(value = 1, message = "Instance Count should be greater than zero.")
 	public int getInstanceCount() {
 		return instanceCount;
 	}
@@ -81,7 +81,7 @@ public class ConsumerProperties {
 		this.maxAttempts = maxAttempts;
 	}
 
-	@Min(value = 1, message = "Max attempts should be greater than or equal to 1")
+	@Min(value = 1, message = "Max attempts should be greater than zero.")
 	public int getMaxAttempts() {
 		return maxAttempts;
 	}
@@ -90,7 +90,7 @@ public class ConsumerProperties {
 		this.backOffInitialInterval = backOffInitialInterval;
 	}
 
-	@Min(value = 1, message = "BackOff initial interval should be greater than or equal to 1")
+	@Min(value = 1, message = "BackOff initial interval should be greater than zero.")
 	public int getBackOffInitialInterval() {
 		return backOffInitialInterval;
 	}
@@ -99,7 +99,7 @@ public class ConsumerProperties {
 		this.backOffMaxInterval = backOffMaxInterval;
 	}
 
-	@Min(value = 1, message = "Backoff max interval should be greater than or equal to 1")
+	@Min(value = 1, message = "Backoff max interval should be greater than zero.")
 	public int getBackOffMaxInterval() {
 		return backOffMaxInterval;
 	}
@@ -108,7 +108,7 @@ public class ConsumerProperties {
 		this.backOffMultiplier = backOffMultiplier;
 	}
 
-	@Min(value = 1, message = "Backoff multiplier should be greater than or equal to 1")
+	@Min(value = 1, message = "Backoff multiplier should be greater than zero.")
 	public double getBackOffMultiplier() {
 		return backOffMultiplier;
 	}

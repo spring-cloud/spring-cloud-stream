@@ -39,7 +39,7 @@ public class KafkaConsumerProperties {
 		this.minPartitionCount = minPartitionCount;
 	}
 
-	@Min(value = 1, message = "Min Partition Count should be greater than or equal to 1")
+	@Min(value = 1, message = "Min Partition Count should be greater than zero.")
 	public int getMinPartitionCount() {
 		return minPartitionCount;
 	}

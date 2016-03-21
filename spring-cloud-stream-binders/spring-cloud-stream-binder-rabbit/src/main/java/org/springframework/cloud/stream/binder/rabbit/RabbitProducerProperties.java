@@ -104,7 +104,7 @@ public class RabbitProducerProperties {
 		this.batchingEnabled = batchingEnabled;
 	}
 
-	@Min(value = 1, message = "Batch Size should be greater than or equal to 1")
+	@Min(value = 1, message = "Batch Size should be greater than zero.")
 	public int getBatchSize() {
 		return batchSize;
 	}
@@ -113,7 +113,7 @@ public class RabbitProducerProperties {
 		this.batchSize = batchSize;
 	}
 
-	@Min(value = 1, message = "Batch Buffer Limit should be greater than or equal to 1")
+	@Min(value = 1, message = "Batch Buffer Limit should be greater than zero.")
 	public int getBatchBufferLimit() {
 		return batchBufferLimit;
 	}
@@ -122,7 +122,7 @@ public class RabbitProducerProperties {
 		this.batchBufferLimit = batchBufferLimit;
 	}
 
-	@Min(value = 1, message = "Batch Timeout should be greater than or equal to 1")
+	@Min(value = 1, message = "Batch Timeout should be greater than zero.")
 	public int getBatchTimeout() {
 		return batchTimeout;
 	}

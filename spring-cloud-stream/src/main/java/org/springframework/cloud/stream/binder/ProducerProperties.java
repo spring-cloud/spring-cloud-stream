@@ -77,7 +77,7 @@ public class ProducerProperties {
 		this.partitionSelectorExpression = partitionSelectorExpression;
 	}
 
-	@Min(value = 1, message = "Partition Count should be greater than or equal to 1")
+	@Min(value = 1, message = "Partition Count should be greater than zero.")
 	public int getPartitionCount() {
 		return partitionCount;
 	}
@@ -94,14 +94,14 @@ public class ProducerProperties {
 		this.requiredGroups = requiredGroups;
 	}
 
-	@AssertTrue(message = "ParitionKeyExpression and PartitionKeyExtractorClass properties are mutually exclusive.")
+	@AssertTrue(message = "PartitionKeyExpression and PartitionKeyExtractorClass properties are mutually exclusive.")
 	public boolean isValidPartitionKeyProperty() {
-		return !((this.partitionKeyExpression != null) && (this.partitionKeyExtractorClass != null));
+		return (this.partitionKeyExpression == null) || (this.partitionKeyExtractorClass == null);
 	}
 
 	@AssertTrue(message = "PartitionSelectorClass and PartitionSelectorExpression properties are mutually exclusive.")
 	public boolean isValidPartitionSelectorProperty() {
-		return !((this.partitionSelectorClass != null) && (this.partitionSelectorExpression != null));
+		return (this.partitionSelectorClass == null) || (this.partitionSelectorExpression == null);
 	}
 
 }
