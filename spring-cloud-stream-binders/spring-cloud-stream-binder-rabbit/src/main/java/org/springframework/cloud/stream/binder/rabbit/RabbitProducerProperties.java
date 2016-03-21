@@ -17,13 +17,12 @@
 package org.springframework.cloud.stream.binder.rabbit;
 
 import org.springframework.amqp.core.MessageDeliveryMode;
-import org.springframework.cloud.stream.binder.ProducerProperties;
 
 /**
  * @author Marius Bogoevici
  * @author Gary Russell
  */
-public class RabbitProducerProperties extends ProducerProperties {
+public class RabbitProducerProperties {
 
 	private String prefix = "";
 

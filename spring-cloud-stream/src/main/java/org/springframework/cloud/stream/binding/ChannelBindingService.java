@@ -25,13 +25,16 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
-import org.springframework.core.ResolvableType;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -71,12 +74,17 @@ public class ChannelBindingService {
 		List<Binding<MessageChannel>> bindings = new ArrayList<>();
 		Binder<MessageChannel, ConsumerProperties, ?> binder =
 				(Binder<MessageChannel, ConsumerProperties, ?>) getBinderForChannel(inputChannelName);
-		Class<? extends ConsumerProperties> propertiesClass = resolveConsumerPropertiesType(binder);
 		ConsumerProperties consumerProperties =
-				this.channelBindingServiceProperties.getConsumerProperties(inputChannelName, propertiesClass);
+				this.channelBindingServiceProperties.getConsumerProperties(inputChannelName);
+		if (binder instanceof ExtendedPropertiesBinder) {
+			ExtendedPropertiesBinder extendedPropertiesBinder = (ExtendedPropertiesBinder) binder;
+			Object extension = extendedPropertiesBinder.getExtendedConsumerProperties(inputChannelName);
+			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(extension);
+			BeanUtils.copyProperties(consumerProperties, extendedConsumerProperties);
+			consumerProperties = extendedConsumerProperties;
+		}
 		for (String target : channelBindingTargets) {
-			Binding<MessageChannel> binding = binder.bindConsumer(target, channelBindingServiceProperties.getGroup(inputChannelName),
-					inputChannel, consumerProperties);
+			Binding<MessageChannel> binding = binder.bindConsumer(target, channelBindingServiceProperties.getGroup(inputChannelName), inputChannel, consumerProperties);
 			bindings.add(binding);
 		}
 		this.consumerBindings.put(inputChannelName, bindings);
@@ -88,9 +96,14 @@ public class ChannelBindingService {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(outputChannelName);
 		Binder<MessageChannel, ?, ProducerProperties> binder =
 				(Binder<MessageChannel, ?, ProducerProperties>) getBinderForChannel(outputChannelName);
-		Class<? extends ProducerProperties> propertiesClass = resolveProducerPropertiesType(binder);
-		ProducerProperties producerProperties =
-				this.channelBindingServiceProperties.getProducerProperties(outputChannelName, propertiesClass);
+		ProducerProperties producerProperties = this.channelBindingServiceProperties.getProducerProperties(outputChannelName);
+		if (binder instanceof ExtendedPropertiesBinder) {
+			ExtendedPropertiesBinder extendedPropertiesBinder = (ExtendedPropertiesBinder) binder;
+			Object extension = extendedPropertiesBinder.getExtendedProducerProperties(outputChannelName);
+			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(extension);
+			BeanUtils.copyProperties(producerProperties, extendedProducerProperties);
+			producerProperties = extendedProducerProperties;
+		}
 		Binding<MessageChannel> binding = binder.bindProducer(channelBindingTarget, outputChannel, producerProperties);
 		this.producerBindings.put(outputChannelName, binding);
 		return binding;
@@ -121,46 +134,5 @@ public class ChannelBindingService {
 	private Binder<MessageChannel, ?, ?> getBinderForChannel(String channelName) {
 		String transport = this.channelBindingServiceProperties.getBinder(channelName);
 		return binderFactory.getBinder(transport);
-	}
-
-
-	static Class<? extends ConsumerProperties> resolveConsumerPropertiesType(Binder<?, ?, ?> binder) {
-		return resolveTypeForBinder(binder, ConsumerProperties.class);
-	}
-
-	static Class<? extends ProducerProperties> resolveProducerPropertiesType(Binder<?, ?, ?> binder) {
-		return resolveTypeForBinder(binder, ProducerProperties.class);
-	}
-
-	@SuppressWarnings("unchecked")
-	static <T> Class<? extends T> resolveTypeForBinder(Binder<?, ?, ?> binder, Class<? extends T> upperBound) {
-		Class<? extends T> propertiesClass = null;
-		ResolvableType currentType = ResolvableType.forType(binder.getClass());
-		while (!Object.class.equals(currentType.getRawClass()) && propertiesClass == null) {
-			ResolvableType[] interfaces = currentType.getInterfaces();
-			ResolvableType binderResolvableType = null;
-			for (ResolvableType interfaceType : interfaces) {
-				if (Binder.class.equals(interfaceType.getRawClass())) {
-					binderResolvableType = interfaceType;
-					break;
-				}
-			}
-			if (binderResolvableType == null) {
-				currentType = currentType.getSuperType();
-			}
-			else {
-				ResolvableType[] generics = binderResolvableType.getGenerics();
-				for (ResolvableType generic : generics) {
-					Class<?> resolvedParameter = generic.resolve();
-					if (resolvedParameter != null && upperBound.isAssignableFrom(resolvedParameter)) {
-						propertiesClass = (Class<? extends T>) resolvedParameter;
-					}
-				}
-			}
-		}
-		if (propertiesClass == null) {
-			propertiesClass = upperBound;
-		}
-		return propertiesClass;
 	}
 }

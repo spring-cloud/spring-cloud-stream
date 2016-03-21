@@ -16,12 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-
 /**
  * @author Marius Bogoevici
  */
-public class KafkaConsumerProperties extends ConsumerProperties {
+public class KafkaConsumerProperties {
 
 	private int minPartitionCount = 1;
 

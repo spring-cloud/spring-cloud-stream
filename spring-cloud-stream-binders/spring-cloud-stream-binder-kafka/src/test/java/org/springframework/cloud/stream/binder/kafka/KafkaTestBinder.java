@@ -18,7 +18,12 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.List;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
+
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
+import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.cloud.stream.test.junit.kafka.TestKafkaCluster;
 import org.springframework.context.support.GenericApplicationContext;
@@ -30,9 +35,6 @@ import org.springframework.integration.kafka.support.ProducerListener;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
-
 
 /**
  * Test support class for {@link KafkaMessageChannelBinder}.
@@ -43,7 +45,7 @@ import com.esotericsoftware.kryo.Registration;
  * @author Gary Russell
  * @author Soby Chacko
  */
-public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder, KafkaConsumerProperties, KafkaProducerProperties> {
+public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
 
 	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport) {
 

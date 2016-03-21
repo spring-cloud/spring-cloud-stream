@@ -23,6 +23,8 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.context.IntegrationContextUtils;
@@ -37,7 +39,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
  * @author David Turanski
  * @author Mark Fisher
  */
-public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBinder, RabbitConsumerProperties, RabbitProducerProperties> {
+public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
 	private final RabbitAdmin rabbitAdmin;
 
@@ -65,18 +67,20 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 	}
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel, RabbitConsumerProperties properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel,
+			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
 		if (group != null) {
-			this.queues.add(properties.getPrefix() + name + ("." + group));
+			this.queues.add(properties.getExtension().getPrefix() + name + ("." + group));
 		}
-		this.exchanges.add(properties.getPrefix() + name);
+		this.exchanges.add(properties.getExtension().getPrefix() + name);
 		return super.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
 	@Override
-	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, RabbitProducerProperties properties) {
-		this.queues.add(properties.getPrefix() + name + ".default");
-		this.exchanges.add(properties.getPrefix() + name);
+	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel,
+			ExtendedProducerProperties<RabbitProducerProperties> properties) {
+		this.queues.add(properties.getExtension().getPrefix() + name + ".default");
+		this.exchanges.add(properties.getExtension().getPrefix() + name);
 		return super.bindProducer(name, moduleOutputChannel, properties);
 	}
 
