@@ -885,3 +885,100 @@ enabled or disabled using the `management.health.binders.enabled` property.
 == Samples
 
 For Spring Cloud Stream samples, please refer: https://github.com/spring-cloud/spring-cloud-stream-samples
+
+== Getting Started
+
+To get started creating Spring Cloud Stream applications, head over to https://start.spring.io and create a new project named `GreetingSource`.
+Select the Spring Boot Version to be 1.3.4 (SNAPSHOT as of the time of this release) and tick the checkbox for `Stream Kafka` as we will be using Kafka for messaging.
+Next create a new class `GreetingSource` in the same package as the class `GreetingSourceApplication` with the following code:
+
+[source,java]
+----
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.integration.annotation.InboundChannelAdapter;
+
+@EnableBinding(Source.class)
+public class GreetingSource {
+
+    @InboundChannelAdapter(Source.OUTPUT)
+    public String greet() {
+        return "hello world " + System.currentTimeMillis();
+    }
+}
+----
+
+The annotation `@EnableBinding` is what triggers the creation of Spring Integration infrastructure components.
+Specifically, it will create a Kafka Connection Factory, Kafka Outbound Channel Adapter, and the Message Channel defined inside the Source interface.
+
+[source,java]
+----
+public interface Source {
+
+  String OUTPUT = "output";
+
+  @Output(Source.OUTPUT)
+  MessageChannel output();
+
+}
+----
+
+Furthermore, the auto configuration creates a default poller so that the greet method will be invoked once a second.
+The standard Spring Integration InboundChannelAdapter annotation sends a message to the source’s output channel using the return value as the payload of the message.
+
+To test drive this setup run a Kafka Message Broker.  An easy way to do this is using a docker image.
+[source]
+----
+# on mac
+docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=`docker-machine ip \`docker-machine active\`` --env ADVERTISED_PORT=9092 spotify/kafka
+
+# on linux
+docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=localhost --env ADVERTISED_PORT=9092 spotify/kafka
+----
+
+Build the application using `./mvnw clean package`
+
+The consumer application is coded in a similar manner, go back to https://start.spring.io and create a new project named `LoggerSink`.  Then create a new class `LoggingSink` in the same package as the class `LoggingSinkApplication` with the following code
+
+[source,java]
+----
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.messaging.Sink;
+
+@EnableBinding(Sink.class)
+public class LoggingSink {
+
+    @StreamListener(Sink.INPUT)
+    public void log(String message) {
+        System.out.println(message);
+    }
+}
+----
+
+Build the application using `./mvnw clean package`
+
+To connect the Source application to the Sink application, each application needs to share the same destination name.  Starting up both applications as shown below you will see the consumer application printing ‘hello world’ and the timestamp to the console.
+
+[source]
+----
+cd GreetingSource
+java -jar target/GreetingSource-0.0.1-SNAPSHOT.jar --spring.cloud.stream.bindings.output.destination=mydest
+
+cd LoggingSink
+java -jar target/LoggingSink-0.0.1-SNAPSHOT.jar --server.port=8090 --spring.cloud.stream.bindings.input.destination=mydest
+----
+
+The different server port is avoid collisions of the http port used to service the boot actuator endpoints.
+
+The output of the logging sink will look something like
+
+[source]
+----
+[           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8090 (http)
+[           main] com.example.LoggingSinkApplication       : Started LoggingSinkApplication in 6.828 seconds (JVM running for 7.371)
+hello world 1458595076731
+hello world 1458595077732
+hello world 1458595078733
+hello world 1458595079734
+hello world 1458595080735
