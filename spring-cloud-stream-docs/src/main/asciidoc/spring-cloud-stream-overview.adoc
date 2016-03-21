@@ -9,9 +9,12 @@ such as creating and running stream applications.
 
 == Introducing Spring Cloud Stream
 
-Spring Cloud Stream allows developing and running messaging microservices easily using Spring Integration, by just adding `@EnableBinding` and running your app as a Spring Boot application. Spring Cloud Stream applications connect to the physical broker through bindings, which link Spring Integration channels to physical broker destinations, or either input (consumer bindings) or output (producer bindings). The creation of the bindings, and therefore their broker-specific implementation is handled by a binder, which isanother important abstraction of Spring Cloud Stream. Binders abstract out the broker-specific implementation details. In order to connect to a specific type of broker (e.g. Rabbit or Kafka) you just need to have the relevant binder implementation on the classpath.
+Spring Cloud Stream is a framework for building message-driven microservices, and more specifically stream processing applications.
+Spring Cloud Stream builds upon Spring Boot to create DevOps friendly microservice applications and Spring Integration to provide connectivity to message brokers.
 
-Here's a sample source application, with an output channel only:
+By adding `@EnableBinding` to your main application, you get immediate connectivity to a message broker and by adding `@StreamListener` to a method, you will receive events for stream processing.
+Spring Cloud stream provides an opinionated configuration of message brokers, introducing the concepts of persisten pub/sub semantics, consumer groups and partitions across several middleware vendors.
+Here's a sample sink application for receiving external messages:
 
 [source,java]
 ----
@@ -23,35 +26,35 @@ public class StreamApplication {
   }
 }
 
-@EnableBinding(Source.class)
+@EnableBinding(Sink.class)
 public class TimerSource {
 
-  @Value("${format}")
-  private String format;
+  ...
 
-  @Bean
-  @InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "${fixedDelay}", maxMessagesPerPoll = "1"))
-  public MessageSource<String> timerMessageSource() {
-    return () -> new GenericMessage<>(new SimpleDateFormat(format).format(new Date()));
+  @StreamListener(Sink.INPUT)
+  public void processVote(Vote vote) {
+      votingService.recordVote(vote);
   }
 }
 ----
 
-`@EnableBinding` is parameterized by one or more interfaces (in this case a single `Source` interface), which declares
-input and/or output channels. The interfaces `Source`, `Sink` and `Processor` are provided off the shelf, but you can
-define others. Here's the definition of `Source`:
+`@EnableBinding` is parameterized by one or more interfaces (in this case a single `Sink` interface), which declares input and/or output channels.
+The interfaces `Source`, `Sink` and `Processor` are provided off the shelf, but you can define others.
+Here's the definition of `Source`:
 
 [source,java]
 ----
-public interface Source {
-  String OUTPUT = "output";
+public interface Sink {
+  String INPUT = "input";
 
-  @Output(Source.OUTPUT)
-  MessageChannel output();
+  @Input(Sink.INPUT)
+  SubscribableChannel input();
 }
 ----
 
-The `@Output` annotation is used to identify output channels (messages leaving the app), and `@Input` is used to identify input channels (messages entering the app). It is optionally parameterized by a channel name - if the name is not provided the method name is used instead. An implementation of the interface is created for you and can be used in the application context by autowiring it, e.g. into a test case:
+The `@Input` annotation is used to identify input channels (messages entering the app), and `@Output` is used to identify output channels (messages leaving the app).
+It is optionally parameterized by a channel name - if the name is not provided the method name is used instead.
+An implementation of the interface is created for you and can be used in the application context by autowiring it, e.g. into a test case:
 
 [source,java]
 ----
@@ -62,18 +65,19 @@ The `@Output` annotation is used to identify output channels (messages leaving t
 public class StreamApplicationTests {
 
   @Autowired
-  private Source source
+  private Sink sink;
 
   @Test
   public void contextLoads() {
-    assertNotNull(this.source.output());
+    assertNotNull(this.sink.input());
   }
 }
 ----
 
 == Spring Cloud Stream Main Concepts
 
-Spring Cloud Stream provides a number of abstractions and primitives that simplify writing message-driven microservices. In this section we will provide an overview of:
+Spring Cloud Stream provides a number of abstractions and primitives that simplify writing message-driven microservices.
+In this section we will provide an overview of:
 
 * Spring Cloud Stream application model together with the Binder abstraction;
 * Persistent publish-subscribe and consumer group support;
@@ -83,51 +87,79 @@ Spring Cloud Stream provides a number of abstractions and primitives that simpli
 
 === Application structure
 
-A Spring Cloud Stream application consists of a middleware-neutral core that uses a Spring Messaging-based API and Spring Integration components, and communicates with the outside world through input and output channels that are managed and injected into it by the framework. A Spring Cloud Stream abstraction named a binder provides the bridging between the channels and the external brokers. Different binder implementations exist for different types of middleware, such as Kafka, Rabbit MQ, Redis or Gemfire, and an extensible API allows you to write your own binder.
+A Spring Cloud Stream application consists of a middleware-neutral core that communicates with the outside world through input and output channels.
+The channels are managed and injected into it by the framework, and a `Binder` connects them to the external brokers.
+Different `Binder` implementations exist for different types of middleware, such as Kafka, Rabbit MQ, Redis or Gemfire, and an extensible API allows you to write your own `Binder`.
 
 .Spring Cloud Stream Application
 image::SCSt-with-binder.png[width=300,scaledwidth="50%"]
 
-Spring Cloud Stream uses Spring Boot for configuration, and the binder abstraction makes it possible for Spring Cloud Stream applications to be flexible in terms of how it connects to the middleware.
+Spring Cloud Stream uses Spring Boot for configuration, and the `Binder` makes it possible for Spring Cloud Stream applications to be flexible in terms of how it connects to the middleware.
+For example, deployers can dynamically choose the destinations that these channels connect to at runtime (e.g. Kafka topics or Rabbit MQ exchanges).
+This can be done through external configuration properties in any form that is supported by Spring Boot (application arguments, environment variables, `application.yml` files, etc).
+Taking the sink example from the previous section, providing the `spring.cloud.stream.bindings.input.destination=raw-sensor-data` property to the application will cause it to read from the `raw-sensor-data` Kafka topic, or from a queue bound to the `raw-sensor-data` exchange in Rabbit MQ.
 
-This can mean, for example, dynamically choosing the destinations that these channels connect to at runtime (e.g. Kafka topics or Rabbit MQ exchanges), via external configuration properties in any form that is supported by Spring Boot (application arguments, environment variables, `application.yml` files, etc). Taking the source example from the previous section, providing the `spring.cloud.stream.bindings.output.destination=raw-sensor-data` property to the application will cause it to write to the `raw-sensor-data` Kafka topic, or the `orders` exchange in Rabbit.
+Spring Cloud Stream will automatically detect and use a binder that is found on the classpath, so you can easily use different types of middleware with the same code, just by including a different binder at build time.
+For more complex use cases, Spring Cloud Stream also provides the ability of packaging multiple binders within the same application and choosing what type of binder should be used at runtime, and even if multiple binders should be used at runtime for different channels.
 
-On the other hand, since the application is not middleware-specific, Spring Cloud Stream will automatically detect and use a binder that is found on the classpath, so you can easily use different types of middleware with the same code, just by including a different binder at build time. For more complex use cases, Spring Cloud Stream also provides the ability of packaging multiple binders within the same application and choosing what type of binder should be used at runtime, and even if multiple binders should be used at runtime for different channels.
+==== Fat JAR
+
+Spring Cloud Stream applications can be run in standalone mode from your IDE for testing. To run in production you can create an executable (or "fat") JAR using the standard Spring Boot tooling provided for Maven or Gradle.
 
 === Persistent publish subscribe and consumer groups
 
-Spring Cloud Stream is a library focusing on building message-driven microservices, and more specifically stream processing applications. In such scenarios, communication between different logical applications follows a publish-subscribe pattern, with data being broadcast through shared topics. This can be seen in the following picture, which shows a typical deployment for a set of interacting Spring Cloud Stream applications.
+For message-driven microservices and stream processing scenarios, communication between different applications typically follows a publish-subscribe pattern, with data being broadcast through shared topics.
+This can be seen in the following picture, which shows a typical deployment for a set of interacting Spring Cloud Stream applications.
 
 .Spring Cloud Stream Application topologies
 image::SCSt-with-binder.png[width=300,scaledwidth="50%"]
 
-Data reported by sensors to an HTTP endpoint is sent to a common destination named `raw-sensor-data`, from where it is independently processed by a microservice that computes time windowed averages, as well as by a microservice that ingests the raw data into HDFS. In order to do so, both applications will declared the topic as their input at runtime. The fact that the communication is publish subscribe reduces the complexity of both the producer and the consumer, and allows adding new applications to the topology without disrupting the existing flow. For example, downstream from the average calculator we can have a component that calculates the highest temperature values in order to display and monitor them. Later on, we can add an application that interprets the very same flow of averages for fault detection. The fact that all the communication is done through shared topics rather than point to point queues reduces the coupling between microservices.
+Data reported by sensors to an HTTP endpoint is sent to a common destination named `raw-sensor-data`, from where it is independently processed by a microservice that computes time windowed averages, as well as by a microservice that ingests the raw data into HDFS.
+In order to do so, both applications will declare the topic as their input at runtime.
+The publish-subscribe communication model reduces the complexity of both the producer and the consumer, and allows adding new applications to the topology without disrupting the existing flow.
+For example, downstream from the average calculator we can have a component that calculates the highest temperature values in order to display and monitor them.
+Later on, we can add an application that interprets the very same flow of averages for fault detection.
+The fact that all the communication is done through shared topics rather than point to point queues reduces the coupling between microservices.
 
-While the concept of publish-subscribe messaging is not new, Spring Cloud Stream takes the extra step of making it an opinionated choice for its application model, and makes it easy for users to work with it across different platform by using the native support of the middleware. To go with it, two other concepts are central to Spring Cloud Stream: consumer groups and durability.
-
+While the concept of publish-subscribe messaging is not new, Spring Cloud Stream takes the extra step of making it an opinionated choice for its application model.
+It also makes it easy for users to work with it across different platform by using the native support of the middleware.
+To go with it, two other concepts are central to Spring Cloud Stream: consumer groups and durability.
 
 [[consumer-groups]]
 ==== Consumer Groups
-While the publish subscribe model ensures that it is easy to connect multiple application by sharing a topic, it is equally important to be able to scale up by creating multiple instances of a given application, which would find themselves in a competing consumer relationship with each other. Spring Cloud Stream models this behavior through the concept of a consumer group, which is similar to (and inspired by) the notion of consumer groups in Kafka. Each consumer binding can specify a group name such as `spring.cloud.stream.bindings.input.group=hdfsWrite` or `spring.cloud.stream.bindings.input.group=average` as shown in the picture. All groups that subscribe to a given destination will receive a copy of the published data, but, within a group, only one application will receive a given message. By default, which is the case when a group is not specified, Spring Cloud Stream assigns the application to an anonymous, independent, single-member consumer group. Otherwise said, if no consumer group is specified for a binding, it will be in a publish-subscribe relationship with all the other consumer groups.
+While the publish subscribe model ensures that it is easy to connect multiple application by sharing a topic, it is equally important to be able to scale up by creating multiple instances of a given application.
+When doing so, the different instances would find themselves in a competing consumer relationship with each other: only one of the instances is expected to handle the message.
+Spring Cloud Stream models this behavior through the concept of a consumer group, which is similar to (and inspired by) the notion of consumer groups in Kafka.
+Each consumer binding can specify a group name such as `spring.cloud.stream.bindings.input.group=hdfsWrite` or `spring.cloud.stream.bindings.input.group=average`, as shown in the picture.
+All groups that subscribe to a given destination will receive a copy of the published data, but only one member of the group will receive a given message from that destination.
+By default, when a group is not specified, Spring Cloud Stream assigns the application to an anonymous, independent, single-member consumer group that will be in a publish-subscribe relationship with all the other consumer groups.
 
 .Spring Cloud Stream Consumer Groups
 image::SCSt-groups.png[width=300,scaledwidth="50%"]
 
 [[durability]]
 ==== Durability
-The other concept that is related to the publish subscribe model of Spring Cloud Stream is durability. Again, part of the opinionated application model of Spring Cloud Stream, consumer group subscriptions are durable. This is to say that the binder implementation will ensure that group subscriptions are persistent and, once at least one subscription for a group has been created, that group will receive messages, even if they are sent while all the applications of the group were stopped. Anonymous subscriptions are non-durable by nature. For some binder implementations (e.g. Rabbit) it is possible to have non-durable group subscriptions.
 
-In general, it is preferable to always specify a consumer group when binding an application to a given destination. When scaling up a Spring Cloud Stream application, a consumer group must be specified for each of its input bindings, in order to prevent its instances from receiving duplicate messages (unless that behavior is desired, which is a less common use case).
+Consistent with the opinionated application model of Spring Cloud Stream, consumer group subscriptions are durable.
+This is to say that the binder implementation will ensure that group subscriptions are persistent and, once at least one subscription for a group has been created, that group will receive messages, even if they are sent while all the applications of the group were stopped.
+Anonymous subscriptions are non-durable by nature. For some binder implementations (e.g. Rabbit) it is possible to have non-durable group subscriptions.
+
+In general, it is preferable to always specify a consumer group when binding an application to a given destination.
+When scaling up a Spring Cloud Stream application, a consumer group must be specified for each of its input bindings, in order to prevent its instances from receiving duplicate messages (unless that behavior is desired, which is a less common use case).
 
 [[partitioning]]
 === Partitioning
 
-Another native concept of Spring Cloud Stream is partitioning. Spring Cloud Stream provides support for partitioning data between multiple instances of a given application. In a partitioned scenario, one or more producer application instances will send data multiple consumer application instances, ensuring that data with common characteristics is processed by the same consumer instance. The physical communication medium (e.g. the broker topic) is viewed as structured into multiple partitions. This happens regardless of whether the broker type is naturally partitioned (e.g. Kafka) or not (e.g. Rabbit), Spring Cloud Stream provides a common abstraction for implementing partitioned processing use cases in a uniform fashion.
+Spring Cloud Stream provides support for partitioning data between multiple instances of a given application.
+In a partitioned scenario, one or more producer application instances will send data to multiple consumer application instances, ensuring that data with common characteristics is processed by the same consumer instance.
+The physical communication medium (e.g. the broker topic) is viewed as structured into multiple partitions.
+This happens regardless of whether the broker type is naturally partitioned (e.g. Kafka) or not (e.g. Rabbit), Spring Cloud Stream provides a common abstraction for implementing partitioned processing use cases in a uniform fashion.
 
 .Spring Cloud Stream Partitioning
 image::SCSt-partitioning.png[width=300,scaledwidth="50%"]
 
-Partitioning is a critical concept in stateful processing, where ensuring that all the related data is processed together is critical for either performance or consistency. For example, in the time-windowed average calculation example, it is important that measurements from the same sensor land in the same application instance.
+Partitioning is a critical concept in stateful processing, where ensuring that all the related data is processed together is critical for either performance or consistency.
+For example, in the time-windowed average calculation example, it is important that measurements from the same sensor land in the same application instance.
 
 Setting up a partitioned processing scenario requires configuring both the data producing and the data consuming end.
 
@@ -155,7 +187,8 @@ public @interface EnableBinding {
 
 `@EnableBinding` can be parameterized with one or more interface classes, containing methods that represent bindable components (typically message channels).
 
-NOTE: As of version 1.0, the only supported bindable component is Spring Messaging `MessageChannel` and its extensions `SubscribableChannel` and `PollableChannel`. It is intended for future versions to extend support to other types of components, using the same mechanism. In this documentation, we will continue to refer to channels.
+NOTE: As of version 1.0, the only supported bindable component is the Spring Messaging `MessageChannel` and its extensions `SubscribableChannel` and `PollableChannel`.
+It is intended for future versions to extend support to other types of components, using the same mechanism. In this documentation, we will continue to refer to channels.
 
 ==== `@Input` and `@Output`
 
@@ -246,16 +279,20 @@ There is no special handling for either of these interfaces in Spring Cloud Stre
 
 ===== Injecting the bound interfaces
 
-For each of the bound interfaces, Spring Cloud Stream will generate a bean that implements it, and for which invoking an `@Input` or `@Output` annotated method will return the bound channel. For example, the bean in the following example will send a message on the output channel every time
-its `hello` method is invoked, using the injected `Source` bean, and invoking `output()` to retrieve the target channel.
+For each of the bound interfaces, Spring Cloud Stream will generate a bean that implements it, and for which invoking an `@Input` or `@Output` annotated method will return the bound channel.
+For example, the bean in the following example will send a message on the output channel every time its `hello` method is invoked, using the injected `Source` bean, and invoking `output()` to retrieve the target channel.
 
 [source,java]
 ----
 @Component
 public class SendingBean {
 
-    @Autowire
     private Source source;
+
+    @Autowired
+    public SendingBean(Source source) {
+        this.source = source;
+    }
 
     public void sayHello(String name) {
 		     source.output().send(MessageBuilder.withPayload(body).build());
@@ -272,8 +309,12 @@ Bound channels can be also injected directly. For example:
 @Component
 public class SendingBean {
 
-    @Autowire
     private MessageChannel output;
+
+    @Autowired
+    public SendingBean(MessageChannel output) {
+        this.output = output;
+    }
 
     public void sayHello(String name) {
 		     output.send(MessageBuilder.withPayload(body).build());
@@ -281,8 +322,7 @@ public class SendingBean {
 }
 ----
 
-Note that if the name of the channel is customized on the declaring annotation,
-that name should be used instead of the method name. Considering this declaration:
+Note that if the name of the channel is customized on the declaring annotation, that name should be used instead of the method name. Considering this declaration:
 
 [source,java]
 ----
@@ -299,8 +339,14 @@ The channel will be injected as follows:
 ----
 @Component
 public class SendingBean {
-    @Autowire
-    private MessageChannel customOutput;
+
+    @Autowired
+    private MessageChannel output;
+
+    @Autowired @Qualifier("customOutput")
+    public SendingBean(MessageChannel output) {
+        this.output = output;
+    }
 
     public void sayHello(String name) {
 		     customOutput.send(MessageBuilder.withPayload(body).build());
@@ -310,19 +356,11 @@ public class SendingBean {
 
 ==== Programming model
 
-While accessing bound channels directly can be useful in certain circumstances,
-Spring Cloud Stream provides two main ways of developing applications. On one hand,
-its programming model is based on Spring Integration, as that is the foundation of
-the framework. In addition to that, it provides a `@StreamListener` annotation of its own modeled by the other
-similar Spring Messaging annotations (e.g. `@MessageMapping`, `@JmsListener`, `@RabbitListener`, etc.)
-especially for dealing with use cases that involve transparent content type management
-and type coercion.
+Spring Cloud Stream allows you to write applications by either using the Spring Integration directly, and it provides a `@StreamListener` annotation of its own modeled by the other similar Spring Messaging annotations (e.g. `@MessageMapping`, `@JmsListener`, `@RabbitListener`, etc.).
 
 ===== Native Spring Integration support
 
-Due to the fact that Spring Cloud Stream is Spring Integration based, it completely inherits
-its foundation and infrastructure, as well as the component. For example, the output channel of
-a `Source` can be attached to a `MessageSource`, as follows:
+Due to the fact that Spring Cloud Stream is Spring Integration based, it completely inherits its foundation and infrastructure, as well as the component. For example, the output channel of a `Source` can be attached to a `MessageSource`, as follows:
 
 [source, java]
 ----
@@ -355,13 +393,9 @@ public class TransformProcessor {
 
 ===== @StreamListener for automatic content type handling
 
-Complementary to the Spring Integration support, Spring Cloud Stream provides a
-`@StreamListener` annotation of its own modeled by the other similar Spring Messaging
-annotations (e.g. `@MessageMapping`, `@JmsListener`, `@RabbitListener`, etc.)
-especially for dealing with use cases that involve content type management
-and type coercion.
-
-This approach is suited for applications that process inbound data that specifies content types, as Spring Cloud Stream provides an extensible `MessageConverter` registration mechanism for handling data conversion by the bound channels and for dispatching to `@StreamListener` annotated methods.
+Complementary to the Spring Integration support, Spring Cloud Stream provides a `@StreamListener` annotation of its own modeled by the other similar Spring Messaging annotations (e.g. `@MessageMapping`, `@JmsListener`, `@RabbitListener`, etc.).
+It provides a simpler model for handling inbound messages, especially for dealing with use cases that involve content type management and type coercion.
+Spring Cloud Stream provides an extensible `MessageConverter` mechanism for handling data conversion by bound channels and, in this case, for dispatching to `@StreamListener` annotated methods.
 
 For example, an application that processes external `Vote` events can be declared as follows:
 
@@ -380,9 +414,11 @@ public class VoteHandler {
 }
 ----
 
-The fundamental distinction between this approach and a Spring Integration `@ServiceActivator` becomes relevant if one considers an inbound `Message` with a `String` payload and a `contentType` header of `application/json`. For `@StreamListener`, the `MessageConverter` mechanism will use the `contentType` header to parse the `String` into a `Vote` object.
+The distinction between this approach and a Spring Integration `@ServiceActivator` becomes relevant if one considers an inbound `Message` with a `String` payload and a `contentType` header of `application/json`.
+For `@StreamListener`, the `MessageConverter` mechanism will use the `contentType` header to parse the `String` into a `Vote` object.
 
-Just as with the other Spring Messaging methods, method arguments can be annotated with `@Payload`, `@Headers` and `@Header`. For methods that return data, `@SendTo` must be used for specifying the output binding destination for data returned by the methods as follows.
+Just as with the other Spring Messaging methods, method arguments can be annotated with `@Payload`, `@Headers` and `@Header`.
+For methods that return data, `@SendTo` must be used for specifying the output binding destination for data returned by the methods as follows:
 
 [source,java]
 ----
@@ -402,35 +438,70 @@ public class TransformProcessor {
 
 NOTE: Content type headers can be either set by external applications in the case of Rabbit MQ, and they are supported as part of an extended internal protocol by Spring Cloud Stream for any type of transport (even the ones that do not support headers normally, like Kafka).
 
-== Configuration options reference
+=== Binder SPI
 
-The way Spring Cloud Stream behaves can be configured in two main ways:
+As described above, Spring Cloud Stream provides a binder abstraction for connecting to physical destinations. This
+section will provide more information about the main concepts behind the Binder SPI, its main components, as well as
+details specific to different implementations.
 
-Configuration options can be provided per-binding. They include: Spring Cloud Stream-specific properties that control the general behavior of the binding, as well as consumer and producer properties for connecting to the middleware. A number of common consumer and producer properties are available to all binders, and some binders can specify additional properties that they support.
+==== Producers and Consumers
 
-In addition, each binder allows some binder-specific properties that configure the general behavior of the binder (e.g. hosts to connect to, connectivity parameters, etc). These properties are distinct from the binding properties.
+.Producers and Consumers
+image::producers-consumers.png[width=300,scaledwidth="75%"]
 
-In both cases, properties are provided to Spring Cloud Stream through all the mechanisms supported by Spring Boot: application arguments, environment variables, YML files etc.
+A producer is any component that sends messages to a channel. That channel can be bound to an external message broker
+via a `Binder` implementation for that broker. When invoking the `bindProducer` method, the first parameter is the name
+of the destination within that broker. The second parameter is the local channel instance to which the producer will be
+sending messages, and the third parameter contains properties to be used within the adapter that is created for that
+channel, such as a partition key expression.
 
-=== Binding properties
+A consumer is any component that receives messages from a channel. As with the producer, the consumer’s channel can be
+bound to an external message broker, and the first parameter for the `bindConsumer` method is the destination name.
+However, on the consumer side, a second parameter provides the name of a logical group of consumers. Each group
+represented by consumer bindings for a given destination will receive a copy of each message that a producer sends to
+that destination (i.e. pub/sub semantics). If there are multiple consumer instances bound using the same group name,
+then messages will be load balanced across those consumer instances so that each message sent by a producer would only
+be consumed by a single consumer instance within each group (i.e. queue semantics).
 
-Binding properties are supplied using the format `spring.cloud.stream.bindings.<channelName>.<property>=<value>`. `<channelName>` represents the name of the channel being configured, e.g. `output` for a `Source`. In what follows, we will indicate where the `spring.cloud.stream.bindings.<channelName>.` prefix is omitted and focus just on the property name, with the understanding that the prefix will be included at runtime.
+==== Kafka Binder
+
+.Kafka Binder
+image::kafka-binder.png[width=300,scaledwidth="50%"]
+
+The Kafka Binder implementation maps the destination to a Kafka topic, and the consumer group maps directly to the same
+Kafka concept. Spring Cloud Stream does not use the high level consumer, but implements a similar concept for the
+simple consumer.
+
+==== RabbitMQ Binder
+
+.RabbitMQ Binder
+image::rabbit-binder.png[width=300,scaledwidth="50%"]
+
+The RabbitMQ Binder implementation maps the destination to a `TopicExchange`, and for each consumer group, a `Queue`
+will be bound to that `TopicExchange`. Each consumer instance that binds will trigger creation of a corresponding
+RabbitMQ `Consumer` instance for its group’s `Queue`.
+
+== Configuration options
+
+Spring Cloud Stream supports general configuration options, as well as configuration for bindings and binders. Some binders allow additional properties for the bindings, supporting middleware-specific features.
+
+All configuration options can be provided to Spring Cloud Stream applications via all the mechanisms supported by Spring Boot: application arguments, environment variables, YML files etc.
 
 ==== Spring Cloud Stream Properties
 
 spring.cloud.stream.instanceCount::
-  The number of deployed instances of the same application. Must be set
-  for partitioning and with Kafka. Default value is `1`.
+  The number of deployed instances of the same application. Must be set for partitioning and with Kafka. Default value is `1`.
 spring.cloud.stream.instanceIndex::
-  The instance index of the application, a number from `0` to `instanceCount`-1.
-  Used for partitioning and with Kafka. Automatically set in Cloud Foundry to
-  match the instance index of the application.
+  The instance index of the application, a number from `0` to `instanceCount`-1. Used for partitioning and with Kafka. Automatically set in Cloud Foundry to match the instance index of the application.
 spring.cloud.stream.dynamicDestinations::
-  A list of destinations that can be bound dynamically, for example in a dynamic
-  routing scenario. Only listed destinations can be bound if set. Default empty,
-  allowing any destnation to be bound.
+  A list of destinations that can be bound dynamically, for example in a dynamic routing scenario. Only listed destinations can be bound if set. Default empty, allowing any destination to be bound.
 spring.cloud.stream.defaultBinder::
   The default binder to use, if there are multiple binders configured. See <<multiple-binders,multiple binders>>.
+
+=== Binding properties
+
+Binding properties are supplied using the format `spring.cloud.stream.bindings.<channelName>.<property>=<value>`.`<channelName>` represents the name of the channel being configured, e.g. `output` for a `Source`.
+In what follows, we will indicate where the `spring.cloud.stream.bindings.<channelName>.` prefix is omitted and focus just on the property name, with the understanding that the prefix will be included at runtime.
 
 ==== Properties for the use of Spring Cloud Stream
 
@@ -438,7 +509,7 @@ The following binding properties are available for both input and output binding
 must be prefixed with `spring.cloud.stream.bindings.<channelName>.` .
 
 destination::
-    The target destination of channel on the bound middleware, e.g. Rabbit exchange or
+    The target destination of channel on the bound middleware, e.g. Rabbit MQ exchange or
     Kafka topic. If not set, the channel name will be used instead.
 group::
     The consumer group of the channel. This property applies only to inbound bindings.
@@ -452,8 +523,7 @@ binder::
 
 ==== Consumer properties
 
-The following binding properties are available for input bindings only and
-must be prefixed with `spring.cloud.stream.bindings.<channelName>.`:
+The following binding properties are available for input bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.consumer`:
 
 concurrency::
   The concurrency of the inbound consumer. By default, set to `1`.
@@ -471,16 +541,15 @@ backOffMultiplier::
 
 ==== Producer properties
 
-The following binding properties are available for output bindings only and
-must be prefixed with `spring.cloud.stream.bindings.<channelName>.`:
+The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.producer`:
 
 partitionKeyExpression::
-  A SpEL expression for partitioning outbound data. Default: `null`. If either this is set or
+  A SpEL expression for partitioning outbound data. Default: `null`. If either this property is set or
   `partitionKeyExtractorClass` is present, outbound data on this channel will be partitioned,
   and `partitionCount` must be set to a value larger than 1 to be effective.
   The two options are mutually exclusive. See <<partitioning>>.
 partitionKeyExtractorClass::
-  A `PartitionKeyExtractorStrategy` implementation. Default: `null`. If either this is set or
+  A `PartitionKeyExtractorStrategy` implementation. Default: `null`. If either this property is set or
   `partitionKeyExpression` is present, outbound data on this channel will be partitioned,
   and `partitionCount` must be set to a value larger than 1 to be effective.
   The two options are mutually exclusive. See <<partitioning>>.
@@ -510,7 +579,7 @@ implementations.
 
 === Rabbit-specific settings
 
-==== Rabbit Binder properties
+==== Rabbit MQ Binder properties
 
 The binder supports the all Spring Boot properties for Rabbit MQ configuration.
 
@@ -529,13 +598,13 @@ spring.cloud.stream.binder.rabbit.password::
 spring.cloud.stream.binder.rabbit.vhost::
   The virtual host. Default `null`.
 spring.cloud.stream.binder.rabbit.useSSL::
-  True if rabbit should use SSL.
+  True if Rabbit MQ should use SSL.
 spring.cloud.stream.binder.rabbit.sslPropertiesLocation::
   The location of the SSL properties file, when certificate exchange is used.
 spring.cloud.stream.binder.rabbit.compressionLevel::
   Compression level for compressed bindings. Defaults to `1` (BEST_LEVEL). See `java.util.zip.Deflater`.
 
-==== Rabbit Consumer Properties
+==== Rabbit MQ Consumer Properties
 
 The following properties are available for Rabbit consumers only and
 must be prefixed with `spring.cloud.stream.bindings.<channelName>.`
@@ -628,8 +697,6 @@ startOffset::
 minPartitionCount::
   The minimum number of partitions expected by the consumer if it creates the consumed topic automatically. Defaults to `1`.
 
-
-
 ==== Kafka Producer Properties
 
 The following properties are available for Kafka producers only and
@@ -667,8 +734,7 @@ a Spring Cloud Stream project that aims to bind only to RabbitMQ can simply add 
 [[multiple-binders]]
 === Multiple Binders on the Classpath
 
-When multiple binders are present on the classpath, the application must indicate which binder is to be used for each
-channel binding. Each binder configuration contains a `META-INF/spring.binders`, which is a simple properties file:
+When multiple binders are present on the classpath, the application must indicate which binder is to be used for each channel binding. Each binder configuration contains a `META-INF/spring.binders`, which is a simple properties file:
 
 [source]
 ----
@@ -724,26 +790,27 @@ spring:
                 host: <host2>
 ----
 
-
-== Binder SPI
-
-== Miscellaneous
-
 [[contenttypemanagement]]
-=== Content Type and Transformation
+== Content Type and Transformation
 
-Spring Cloud Stream allows to propagate information about the content type of the messages it produces by attaching by default a `contentType` header to outbound messages. On middlewares that do not support headers per se, Spring Cloud Stream provides its own mechanism of wrapping outbound messages in an envelope of its own, automatically. On middlewares that support headers, Spring Cloud Stream applications may receive messages with a given content type from non-Spring Cloud Stream applications.
+Spring Cloud Stream allows to propagate information about the content type of the messages it produces by attaching by default a `contentType` header to outbound messages.
+On middlewares that do not support headers per se, Spring Cloud Stream provides its own mechanism of wrapping outbound messages in an envelope of its own, automatically.
+On middlewares that support headers, Spring Cloud Stream applications may receive messages with a given content type from non-Spring Cloud Stream applications.
 
 Spring Cloud Stream can handle messages based on this information in two ways:
 
 * through its `contentType` settings on inbound and outbound channels;
 * through its argument mapping done for `@StreamListener`-annotated methods.
 
+=== Type converting message channels
 
-=== Inter-app Communication
+=== @StreamListener and conversion
 
-While Spring Cloud Stream makes it easy for individual boot apps to connect to messaging systems, the typical scenario
-for Spring Cloud Stream is the creation of multi-app pipelines, where microservice apps are sending data to each other.
+== Inter-app Communication
+
+=== Connecting multiple application instances
+
+While Spring Cloud Stream makes it easy for individual boot apps to connect to messaging systems, the typical scenario for Spring Cloud Stream is the creation of multi-app pipelines, where microservice apps are sending data to each other.
 This can be achieved by correlating the input and output destinations of adjacent apps, as in the following example.
 
 Supposing that the design calls for the `time-source` app to send data to the `log-sink` app, we will use a
@@ -766,9 +833,9 @@ Setting up the two properties correctly on scale up scenarios is important for a
 general (see below), and they are always required by certain types of binders (e.g. the Kafka binder) in order to
 ensure that data is split correctly across multiple consumer instances.
 
-===== Partitioning
+=== Partitioning
 
-====== Configuring Output Bindings for Partitioning
+==== Configuring Output Bindings for Partitioning
 
 An output binding is configured to send partitioned data, by setting one and only one of its `partitionKeyExpression`
 or `partitionKeyExtractorClass` properties, as well as its `partitionCount` property. For example, setting
@@ -792,7 +859,7 @@ property.
 
 Additional properties can be configured for more advanced scenarios, as described in the following section.
 
-====== Configuring Input Bindings for Partitioning
+===== Configuring Input Bindings for Partitioning
 
 An input binding is configured to receive partitioned data by setting its `partitioned` property, as well as the
 instance index and instance count properties on the app itself, as follows:
@@ -807,67 +874,11 @@ While setting up multiple instances for partitioned data processing may be compl
 Data Flow can simplify the process significantly, by populating both the input and output values correctly, as well as
 relying on the runtime infrastructure to provide information about the instance index and instance count.
 
-
-=== Managed vs Standalone
-
-Code using the Spring Cloud Stream library can be deployed as a standalone application or be used as a Spring Cloud
-Data Flow module. In standalone mode, your application will run happily as a service or in any PaaS (Cloud Foundry,
-Heroku, Azure, etc.). Spring Cloud Data Flow helps orchestrate the communication between instances, so the aspects of
-configuration that deal with application interconnection will be configured transparently.
-
-==== Fat JAR
-
-You can run in standalone mode from your IDE for testing. To run in production you can create an executable (or "fat")
-JAR using the standard Spring Boot tooling provided for Maven or Gradle.
-
-==== Health Indicator
+== Health Indicator
 
 Spring Cloud Stream provides a health indicator for the binders, registered under the name of `binders`. It can be
 enabled or disabled using the `management.health.binders.enabled` property.
 
-=== Binder SPI
-
-As described above, Spring Cloud Stream provides a binder abstraction for connecting to physical destinations. This
-section will provide more information about the main concepts behind the Binder SPI, its main components, as well as
-details specific to different implementations.
-
-==== Producers and Consumers
-
-.Producers and Consumers
-image::producers-consumers.png[width=300,scaledwidth="75%"]
-
-A producer is any component that sends messages to a channel. That channel can be bound to an external message broker
-via a `Binder` implementation for that broker. When invoking the `bindProducer` method, the first parameter is the name
-of the destination within that broker. The second parameter is the local channel instance to which the producer will be
-sending messages, and the third parameter contains properties to be used within the adapter that is created for that
-channel, such as a partition key expression.
-
-A consumer is any component that receives messages from a channel. As with the producer, the consumer’s channel can be
-bound to an external message broker, and the first parameter for the `bindConsumer` method is the destination name.
-However, on the consumer side, a second parameter provides the name of a logical group of consumers. Each group
-represented by consumer bindings for a given destination will receive a copy of each message that a producer sends to
-that destination (i.e. pub/sub semantics). If there are multiple consumer instances bound using the same group name,
-then messages will be load balanced across those consumer instances so that each message sent by a producer would only
-be consumed by a single consumer instance within each group (i.e. queue semantics).
-
-==== Kafka Binder
-
-.Kafka Binder
-image::kafka-binder.png[width=300,scaledwidth="50%"]
-
-The Kafka Binder implementation maps the destination to a Kafka topic, and the consumer group maps directly to the same
-Kafka concept. Spring Cloud Stream does not use the high level consumer, but implements a similar concept for the
-simple consumer.
-
-==== RabbitMQ Binder
-
-.RabbitMQ Binder
-image::rabbit-binder.png[width=300,scaledwidth="50%"]
-
-The RabbitMQ Binder implementation maps the destination to a `TopicExchange`, and for each consumer group, a `Queue`
-will be bound to that `TopicExchange`. Each consumer instance that binds will trigger creation of a corresponding
-RabbitMQ `Consumer` instance for its group’s `Queue`.
-
-=== Samples
+== Samples
 
 For Spring Cloud Stream samples, please refer: https://github.com/spring-cloud/spring-cloud-stream-samples
