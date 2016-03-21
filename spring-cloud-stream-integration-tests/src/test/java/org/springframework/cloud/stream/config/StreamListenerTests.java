@@ -58,7 +58,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 /**
  * @author Marius Bogoevici
  */
-public class BindingListenerTests {
+public class StreamListenerTests {
 
 	@Test
 	public void testContentTypeConversion() throws Exception {
