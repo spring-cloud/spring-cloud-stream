@@ -23,6 +23,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,8 @@ import org.mockito.Mockito;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
@@ -45,11 +48,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
+import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.messaging.MessageChannel;
 
 /**
  * @author Marius Bogoevici
@@ -105,11 +111,24 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
 		context = SpringApplication.run(SimpleProcessor.class,
 				"--server.port=0",
-				"--spring.cloud.stream.rabbit.consumer.input.transacted=true",
-				"--spring.cloud.stream.rabbit.producer.output.compress=true");
+				"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
+				"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
+		ChannelBindingService channelBindingService = context.getBean(ChannelBindingService.class);
+		DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(channelBindingService);
+		Map<String, List<Binding<MessageChannel>>> consumerBindings = (Map<String, List<Binding<MessageChannel>>>)
+				channelBindingServiceAccessor.getPropertyValue("consumerBindings");
+		Binding<MessageChannel> inputBinding = consumerBindings.get("input").get(0);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(inputBinding,
+				"endpoint.messageListenerContainer",
+				SimpleMessageListenerContainer.class);
+		assertTrue(TestUtils.getPropertyValue(container, "transactional", Boolean.class));
+		Map<String, Binding<MessageChannel>> producerBindings =
+				(Map<String, Binding<MessageChannel>>) TestUtils.getPropertyValue(channelBindingService, "producerBindings");
+		Binding<MessageChannel> outputBinding = producerBindings.get("output");
+		assertTrue(TestUtils.getPropertyValue(outputBinding, "endpoint.handler.delegate.amqpTemplate.transactional", Boolean.class));
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory =
 				(ConnectionFactory) binderFieldAccessor.getPropertyValue("connectionFactory");

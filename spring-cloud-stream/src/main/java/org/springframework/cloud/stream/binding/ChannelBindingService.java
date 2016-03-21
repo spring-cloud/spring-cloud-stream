@@ -35,7 +35,6 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
-import org.springframework.core.ResolvableType;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -135,46 +134,5 @@ public class ChannelBindingService {
 	private Binder<MessageChannel, ?, ?> getBinderForChannel(String channelName) {
 		String transport = this.channelBindingServiceProperties.getBinder(channelName);
 		return binderFactory.getBinder(transport);
-	}
-
-
-	static Class<? extends ConsumerProperties> resolveConsumerPropertiesType(Binder<?, ?, ?> binder) {
-		return resolveTypeForBinder(binder, ConsumerProperties.class);
-	}
-
-	static Class<? extends ProducerProperties> resolveProducerPropertiesType(Binder<?, ?, ?> binder) {
-		return resolveTypeForBinder(binder, ProducerProperties.class);
-	}
-
-	@SuppressWarnings("unchecked")
-	static <T> Class<? extends T> resolveTypeForBinder(Binder<?, ?, ?> binder, Class<? extends T> upperBound) {
-		Class<? extends T> propertiesClass = null;
-		ResolvableType currentType = ResolvableType.forType(binder.getClass());
-		while (!Object.class.equals(currentType.getRawClass()) && propertiesClass == null) {
-			ResolvableType[] interfaces = currentType.getInterfaces();
-			ResolvableType binderResolvableType = null;
-			for (ResolvableType interfaceType : interfaces) {
-				if (Binder.class.equals(interfaceType.getRawClass())) {
-					binderResolvableType = interfaceType;
-					break;
-				}
-			}
-			if (binderResolvableType == null) {
-				currentType = currentType.getSuperType();
-			}
-			else {
-				ResolvableType[] generics = binderResolvableType.getGenerics();
-				for (ResolvableType generic : generics) {
-					Class<?> resolvedParameter = generic.resolve();
-					if (resolvedParameter != null && upperBound.isAssignableFrom(resolvedParameter)) {
-						propertiesClass = (Class<? extends T>) resolvedParameter;
-					}
-				}
-			}
-		}
-		if (propertiesClass == null) {
-			propertiesClass = upperBound;
-		}
-		return propertiesClass;
 	}
 }

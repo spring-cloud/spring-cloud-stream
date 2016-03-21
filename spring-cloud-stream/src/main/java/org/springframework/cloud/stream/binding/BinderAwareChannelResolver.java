@@ -109,8 +109,6 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					@SuppressWarnings("unchecked")
 					Binder<MessageChannel, ?, ProducerProperties> binder =
 							(Binder<MessageChannel, ?, ProducerProperties>) binderFactory.getBinder(binderName);
-					Class<? extends ProducerProperties> producerPropertiesClass =
-							ChannelBindingService.resolveProducerPropertiesType(binder);
 					ProducerProperties producerProperties = this.channelBindingServiceProperties.getProducerProperties(channelName);
 					String destinationName = this.channelBindingServiceProperties.getBindingDestination(channelName);
 					this.dynamicDestinationsBindable.addOutputBinding(beanName,

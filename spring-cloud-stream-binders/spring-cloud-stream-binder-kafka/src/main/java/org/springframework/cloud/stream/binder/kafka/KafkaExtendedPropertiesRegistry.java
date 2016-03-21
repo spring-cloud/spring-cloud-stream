@@ -16,16 +16,45 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.stream.binder.SimpleExtendedPropertiesRegistry;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesRegistry;
 
 /**
  * @author Marius Bogoevici
  */
 @ConfigurationProperties("spring.cloud.stream.kafka")
-public class KafkaExtendedPropertiesRegistry extends SimpleExtendedPropertiesRegistry<KafkaConsumerProperties, KafkaProducerProperties> {
+public class KafkaExtendedPropertiesRegistry implements ExtendedPropertiesRegistry<KafkaConsumerProperties, KafkaProducerProperties> {
 
-	public KafkaExtendedPropertiesRegistry() {
-		super(KafkaConsumerProperties.class, KafkaProducerProperties.class);
+	private Map<String, KafkaBindingProperties> bindings = new HashMap<>();
+
+	public Map<String, KafkaBindingProperties> getBindings() {
+		return bindings;
+	}
+
+	public void setBindings(Map<String, KafkaBindingProperties> bindings) {
+		this.bindings = bindings;
+	}
+
+	@Override
+	public KafkaConsumerProperties getExtendedConsumerProperties(String channelName) {
+		if (bindings.containsKey(channelName) && bindings.get(channelName).getConsumer() != null) {
+			return bindings.get(channelName).getConsumer();
+		}
+		else {
+			return new KafkaConsumerProperties();
+		}
+	}
+
+	@Override
+	public KafkaProducerProperties getExtendedProducerProperties(String channelName) {
+		if (bindings.containsKey(channelName) && bindings.get(channelName).getProducer() != null) {
+			return bindings.get(channelName).getProducer();
+		}
+		else {
+			return new KafkaProducerProperties();
+		}
 	}
 }

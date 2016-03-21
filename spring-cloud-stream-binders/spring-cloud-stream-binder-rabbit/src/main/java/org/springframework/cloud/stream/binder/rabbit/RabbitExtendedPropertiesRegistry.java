@@ -16,16 +16,45 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.stream.binder.SimpleExtendedPropertiesRegistry;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesRegistry;
 
 /**
  * @author Marius Bogoevici
  */
 @ConfigurationProperties("spring.cloud.stream.rabbit")
-public class RabbitExtendedPropertiesRegistry extends SimpleExtendedPropertiesRegistry<RabbitConsumerProperties, RabbitProducerProperties> {
+public class RabbitExtendedPropertiesRegistry implements ExtendedPropertiesRegistry<RabbitConsumerProperties, RabbitProducerProperties> {
 
-	public RabbitExtendedPropertiesRegistry() {
-		super(RabbitConsumerProperties.class, RabbitProducerProperties.class);
+	private Map<String, RabbitBindingProperties> bindings = new HashMap<>();
+
+	public Map<String, RabbitBindingProperties> getBindings() {
+		return bindings;
+	}
+
+	public void setBindings(Map<String, RabbitBindingProperties> bindings) {
+		this.bindings = bindings;
+	}
+
+	@Override
+	public RabbitConsumerProperties getExtendedConsumerProperties(String channelName) {
+		if (bindings.containsKey(channelName) && bindings.get(channelName).getConsumer() != null) {
+			return bindings.get(channelName).getConsumer();
+		}
+		else {
+			return new RabbitConsumerProperties();
+		}
+	}
+
+	@Override
+	public RabbitProducerProperties getExtendedProducerProperties(String channelName) {
+		if (bindings.containsKey(channelName) && bindings.get(channelName).getProducer() != null) {
+			return bindings.get(channelName).getProducer();
+		}
+		else {
+			return new RabbitProducerProperties();
+		}
 	}
 }
