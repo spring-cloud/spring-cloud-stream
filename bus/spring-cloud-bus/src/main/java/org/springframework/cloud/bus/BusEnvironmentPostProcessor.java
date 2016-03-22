@@ -42,9 +42,6 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 	public void postProcessEnvironment(ConfigurableEnvironment environment,
 			SpringApplication application) {
 		Map<String, Object> map = new HashMap<String, Object>();
-		// Technically this is only needed on the consumer, but it's fine to be explicit
-		// on producers as well. It puts all consumers in the same "group", meaning they
-		// compete with each other and only one gets each message.
 		map.put("spring.cloud.stream.bindings." + SpringCloudBusClient.OUTPUT
 				+ ".content-type",
 				environment.getProperty("spring.cloud.bus.content-type",
