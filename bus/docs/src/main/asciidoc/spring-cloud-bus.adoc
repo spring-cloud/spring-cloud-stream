@@ -31,8 +31,8 @@ https://cloud.spring.io/spring-cloud-stream[Spring Cloud Stream] to
 broadcast the messages so to get messages to flow you only need to
 include the binder implementation of your choice in the
 classpath. There are convenient starters specifically for the bus with
-AMQP, Kafka and Redis
-(`spring-cloud-starter-bus-[amqp,kafka,redis]`). Generally speaking
+AMQP (RabbitMQ) and Kafka 
+(`spring-cloud-starter-bus-[amqp,kafka]`). Generally speaking
 Spring Cloud Stream relies on Spring Boot autoconfiguration
 conventions for configuring middleware, so for instance the AMQP
 broker address can be changed with `spring.rabbitmq.{asterisk}`

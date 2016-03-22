@@ -21,7 +21,6 @@
         <module>spring-cloud-bus</module>
 		<module>spring-cloud-starter-bus-amqp</module>
 		<module>spring-cloud-starter-bus-kafka</module>
-		<module>spring-cloud-starter-bus-redis</module>
         <module>docs</module>
     </modules>
 
