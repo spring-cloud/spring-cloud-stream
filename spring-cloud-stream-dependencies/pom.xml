@@ -8,7 +8,7 @@
 		<relativePath />
 	</parent>
 	<artifactId>spring-cloud-stream-dependencies</artifactId>
-	<version>1.0.0.RC1</version>
+	<version>1.0.0.BUILD</version>
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-dependencies</name>
 	<description>Spring Cloud Stream Dependencies</description>
@@ -22,12 +22,12 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-codec</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -37,17 +37,17 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-kafka</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-kafka</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -62,12 +62,12 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-test</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>
@@ -82,12 +82,12 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support-internal</artifactId>
-				<version>1.0.0.RC1</version>
+				<version>1.0.0.BUILD</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
