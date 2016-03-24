@@ -54,7 +54,7 @@ public class LocalizedQueueConnectionFactoryIntegrationTests {
 		String username = "guest";
 		String password = "guest";
 		this.lqcf = new LocalizedQueueConnectionFactory(defaultConnectionFactory, addresses,
-				adminAddresses, nodes, vhost, username, password, false, null);
+				adminAddresses, nodes, vhost, username, password, false, null, null, null, null);
 	}
 
 	@Test
