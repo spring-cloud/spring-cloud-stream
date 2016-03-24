@@ -22,6 +22,7 @@ import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPos
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
@@ -50,6 +51,9 @@ public class RabbitMessageChannelBinderConfiguration {
 	private ConnectionFactory rabbitConnectionFactory;
 
 	@Autowired
+	private RabbitProperties rabbitProperties;
+
+	@Autowired
 	private RabbitBinderConfigurationProperties rabbitBinderConfigurationProperties;
 
 	@Autowired
@@ -57,18 +61,12 @@ public class RabbitMessageChannelBinderConfiguration {
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() {
-		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory);
+		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory, rabbitProperties);
 		binder.setCodec(codec);
-		binder.setAddresses(rabbitBinderConfigurationProperties.getAddresses());
 		binder.setAdminAddresses(rabbitBinderConfigurationProperties.getAdminAdresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());
 		binder.setNodes(rabbitBinderConfigurationProperties.getNodes());
-		binder.setPassword(rabbitBinderConfigurationProperties.getPassword());
-		binder.setSslPropertiesLocation(rabbitBinderConfigurationProperties.getSslPropertiesLocation());
-		binder.setUsername(rabbitBinderConfigurationProperties.getUsername());
-		binder.setUseSSL(rabbitBinderConfigurationProperties.isUseSSL());
-		binder.setVhost(rabbitBinderConfigurationProperties.getVhost());
 		binder.setExtendedBindingProperties(rabbitExtendedBindingProperties);
 		return binder;
 	}

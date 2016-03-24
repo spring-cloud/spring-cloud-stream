@@ -43,14 +43,6 @@ class RabbitBinderConfigurationProperties {
 
 	private int compressionLevel;
 
-	public String[] getAddresses() {
-		return addresses;
-	}
-
-	public void setAddresses(String[] addresses) {
-		this.addresses = addresses;
-	}
-
 	public String[] getAdminAdresses() {
 		return adminAdresses;
 	}
@@ -65,46 +57,6 @@ class RabbitBinderConfigurationProperties {
 
 	public void setNodes(String[] nodes) {
 		this.nodes = nodes;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public String getVhost() {
-		return vhost;
-	}
-
-	public void setVhost(String vhost) {
-		this.vhost = vhost;
-	}
-
-	public boolean isUseSSL() {
-		return useSSL;
-	}
-
-	public void setUseSSL(boolean useSSL) {
-		this.useSSL = useSSL;
-	}
-
-	public Resource getSslPropertiesLocation() {
-		return sslPropertiesLocation;
-	}
-
-	public void setSslPropertiesLocation(Resource sslPropertiesLocation) {
-		this.sslPropertiesLocation = sslPropertiesLocation;
 	}
 
 	public int getCompressionLevel() {

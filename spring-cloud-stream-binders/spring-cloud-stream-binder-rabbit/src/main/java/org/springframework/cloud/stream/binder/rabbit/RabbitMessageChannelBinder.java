@@ -59,6 +59,7 @@ import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPos
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
@@ -69,7 +70,6 @@ import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.io.Resource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -130,35 +130,27 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 
 	private final GenericApplicationContext autoDeclareContext = new GenericApplicationContext();
 
+	private final RabbitProperties rabbitProperties;
+
 	private ConnectionFactory connectionFactory;
 
 	private MessagePostProcessor decompressingPostProcessor = new DelegatingDecompressingPostProcessor();
 
 	private MessagePostProcessor compressingPostProcessor = new GZipPostProcessor();
 
-	private volatile String[] addresses;
-
 	private volatile String[] adminAddresses;
 
 	private volatile String[] nodes;
-
-	private String username;
-
-	private String password;
-
-	private String vhost;
-
-	private boolean useSSL;
-
-	private Resource sslPropertiesLocation;
 
 	private volatile boolean clustered;
 
 	private RabbitExtendedBindingProperties extendedBindingProperties = new RabbitExtendedBindingProperties();
 
-	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory) {
+	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory, RabbitProperties rabbitProperties) {
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
+		Assert.notNull(rabbitProperties, "rabbitProperties must not be null");
 		this.connectionFactory = connectionFactory;
+		this.rabbitProperties = rabbitProperties;
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 		this.autoDeclareContext.refresh();
 		this.rabbitAdmin.setApplicationContext(this.autoDeclareContext);
@@ -184,11 +176,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 		this.compressingPostProcessor = compressingPostProcessor;
 	}
 
-
-	public void setAddresses(String[] addresses) {
-		this.addresses = Arrays.copyOf(addresses, addresses.length);
-	}
-
 	public void setAdminAddresses(String[] adminAddresses) {
 		this.adminAddresses = Arrays.copyOf(adminAddresses, adminAddresses.length);
 	}
@@ -198,39 +185,23 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 		this.clustered = nodes.length > 1;
 	}
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
 	public void setExtendedBindingProperties(RabbitExtendedBindingProperties extendedBindingProperties) {
 		this.extendedBindingProperties = extendedBindingProperties;
-	}
-
-	public void setVhost(String vhost) {
-		this.vhost = vhost;
-	}
-
-	public void setUseSSL(boolean useSSL) {
-		this.useSSL = useSSL;
-	}
-
-	public void setSslPropertiesLocation(Resource sslPropertiesLocation) {
-		this.sslPropertiesLocation = sslPropertiesLocation;
 	}
 
 	@Override
 	public void onInit() {
 		if (this.clustered) {
-			Assert.state(this.addresses.length == this.adminAddresses.length
-					&& this.addresses.length == this.nodes.length,
+			String[] addresses = StringUtils.commaDelimitedListToStringArray(this.rabbitProperties.getAddresses());
+			Assert.state(addresses.length == this.adminAddresses.length
+							&& addresses.length == this.nodes.length,
 					"'addresses', 'adminAddresses', and 'nodes' properties must have equal length");
-			this.connectionFactory = new LocalizedQueueConnectionFactory(this.connectionFactory, this.addresses,
-					this.adminAddresses, this.nodes, this.vhost, this.username, this.password, this.useSSL,
-					this.sslPropertiesLocation);
+			this.connectionFactory = new LocalizedQueueConnectionFactory(this.connectionFactory, addresses,
+					this.adminAddresses, this.nodes, rabbitProperties.getVirtualHost(),
+					this.rabbitProperties.getUsername(), this.rabbitProperties.getPassword(),
+					this.rabbitProperties.getSsl().isEnabled(), this.rabbitProperties.getSsl().getKeyStore(),
+					this.rabbitProperties.getSsl().getTrustStore(), this.rabbitProperties.getSsl().getKeyStorePassword(),
+					this.rabbitProperties.getSsl().getTrustStorePassword());
 		}
 	}
 
