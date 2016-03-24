@@ -489,7 +489,7 @@ Spring Cloud Stream supports general configuration options, as well as configura
 
 All configuration options can be provided to Spring Cloud Stream applications via all the mechanisms supported by Spring Boot: application arguments, environment variables, YML files etc.
 
-==== Spring Cloud Stream Properties
+=== Spring Cloud Stream Properties
 
 spring.cloud.stream.instanceCount::
   The number of deployed instances of the same application. Must be set for partitioning and with Kafka. Default value is `1`.
@@ -982,3 +982,4 @@ hello world 1458595077732
 hello world 1458595078733
 hello world 1458595079734
 hello world 1458595080735
+----
