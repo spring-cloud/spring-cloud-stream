@@ -54,6 +54,7 @@ import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
@@ -93,7 +94,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 	@Override
 	protected RabbitTestBinder getBinder() {
 		if (testBinder == null) {
-			testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource());
+			testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource(), new RabbitProperties());
 		}
 		return testBinder;
 	}
@@ -632,7 +633,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 	public void testLateBinding() throws Exception {
 		RabbitTestSupport.RabbitProxy proxy = new RabbitTestSupport.RabbitProxy();
 		CachingConnectionFactory cf = new CachingConnectionFactory("localhost", proxy.getPort());
-		RabbitMessageChannelBinder rabbitBinder = new RabbitMessageChannelBinder(cf);
+		RabbitMessageChannelBinder rabbitBinder = new RabbitMessageChannelBinder(cf, new RabbitProperties());
 		RabbitTestBinder binder = new RabbitTestBinder(cf, rabbitBinder);
 
 		ExtendedProducerProperties<RabbitProducerProperties> properties = createProducerProperties();
