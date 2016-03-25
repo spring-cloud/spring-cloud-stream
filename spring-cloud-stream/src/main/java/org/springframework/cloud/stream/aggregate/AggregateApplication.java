@@ -30,6 +30,7 @@ import org.springframework.messaging.SubscribableChannel;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Venil Noronha
  */
 public class AggregateApplication {
 
@@ -72,7 +73,7 @@ public class AggregateApplication {
 	public static void runEmbedded(ConfigurableApplicationContext parentContext,
 			Class<?>[] apps, String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
-		prepareSharedChannelRegistry(bean, apps);
+		prepareSharedChannelRegistry(bean, apps, null);
 		// create child contexts first
 		createChildContexts(parentContext, apps, args);
 	}
@@ -92,12 +93,15 @@ public class AggregateApplication {
 			Class<?>[] apps, String args[][]) {
 		for (int i = apps.length - 1; i >= 0; i--) {
 			String appClassName = apps[i].getName();
-			embedApp(parentContext, getNamespace(appClassName, i), apps[i])
+			embedApp(parentContext, getNamespace(null, appClassName, i), apps[i])
 					.run(args != null ? args[i] : new String[0]);
 		}
 	}
 
-	protected static String getNamespace(String appClassName, int index) {
+	protected static String getNamespace(String namespace, String appClassName, int index) {
+		if (namespace != null) {
+			return namespace;
+		}
 		return appClassName + "_" + index;
 	}
 
@@ -113,18 +117,19 @@ public class AggregateApplication {
 				.parent(applicationContext);
 	}
 
-	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps) {
+	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps,
+			String namespace) {
 		SubscribableChannel sharedChannel = null;
 		for (int i = 0; i < apps.length; i++) {
 			Class<?> app = apps[i];
 			String appClassName = app.getName();
 			if (i > 0) {
-				sharedChannelRegistry.register(getNamespace(appClassName, i)
+				sharedChannelRegistry.register(getNamespace(namespace, appClassName, i)
 						+ "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
 			if (i < apps.length - 1) {
-				sharedChannelRegistry.register(getNamespace(appClassName, i)
+				sharedChannelRegistry.register(getNamespace(namespace, appClassName, i)
 						+ "." + OUTPUT_CHANNEL_NAME, sharedChannel);
 			}
 		}

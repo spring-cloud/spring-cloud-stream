@@ -33,6 +33,7 @@ import org.springframework.util.StringUtils;
  * @author Dave Syer
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Venil Noronha
  */
 public class AggregateApplicationBuilder {
 
@@ -116,15 +117,20 @@ public class AggregateApplicationBuilder {
 			apps.add(sinkConfigurer);
 		}
 		List<Class<?>> appsToEmbed = new ArrayList<>();
+		String namespace = null;
 		for (int i = 0; i < apps.size(); i++) {
-			appsToEmbed.add(apps.get(i).getApp());
+			AppConfigurer<?> appConfigurer = apps.get(i);
+			appsToEmbed.add(appConfigurer.getApp());
+			if (namespace == null) {
+				namespace = appConfigurer.namespace;
+			}
 		}
 		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry,
-				appsToEmbed.toArray(new Class<?>[0]));
+				appsToEmbed.toArray(new Class<?>[0]), namespace);
 		for (int i = apps.size() - 1; i >= 0; i--) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			appConfigurer.namespace(AggregateApplication
-					.getNamespace(appConfigurer.getApp().getName(), i));
+					.getNamespace(namespace, appConfigurer.getApp().getName(), i));
 			appConfigurer.embed();
 		}
 		return parentContext;
