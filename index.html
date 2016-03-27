@@ -54,7 +54,7 @@ By adding @EnableBinding to your main application, you get immediate connectivit
 As long as Spring Cloud Stream and a Spring Cloud Stream binder are on the
 classpath any Spring Boot application with `@EnableBinding` will bind to an external broker provided by the bus (e.g. Rabbit MQ or Kafka, depending on the implementation you choose). Sample application:
 
-Head over to http://start.spring.io and create a project with the 'Stream Redis' dependency.  Modify the main class as shown below:
+Head over to http://start.spring.io and create a project with the 'Stream Kafka' dependency.  Modify the main class as shown below:
 
 ```java
 @SpringBootApplication
@@ -74,7 +74,7 @@ public class StreamdemoApplication {
 }
 ```
 
-Make sure Kafka is running when you run the application.  You can use the `kafka-console-consumer.sh` utility provided by Kafka to monitor messages sent on the `output` topic.:
+Make sure Kafka is running when you run the application.  You can use the `kafka-console-consumer.sh` utility provided by Kafka to monitor messages sent on the `output` topic.
 
 {% endcapture %}
 
