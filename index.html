@@ -37,7 +37,9 @@ badges:
 
 {% capture billboard_description %}
 
-Spring Cloud Stream allows a user to develop and run messaging microservices using Spring Integration and run them locally, or in the cloud, or even on Spring XD. Just add `@EnableBinding` and run your app as a Spring Boot app (single application context).  You just need to connect to the physical broker for the bus, which is automatic if the relevant bus implementation is available on the classpath. 
+Spring Cloud Stream is a framework for building message-driven microservices. Spring Cloud Stream builds upon Spring Boot to create DevOps friendly microservice applications and Spring Integration to provide connectivity to message brokers. Spring Cloud Stream provides an opinionated configuration of message brokers, introducing the concepts of persistent pub/sub semantics, consumer groups and partitions across several middleware vendors. This opinionated configuration provides the basis to create stream processing applications.
+
+By adding @EnableBinding to your main application, you get immediate connectivity to a message broker and by adding @StreamListener to a method, you will receive events for stream processing.
 
 {% endcapture %}
 
@@ -49,8 +51,8 @@ Spring Cloud Stream allows a user to develop and run messaging microservices usi
 <script type="text/javascript">{% include custom.js %}</script>
 {% include download_widget.md %}
 
-As long as Spring Cloud Stream and a Spring XD Message Bus is on the
-classpath any Spring Boot application with `@EnableBinding` will bind to an external broker provided by the bus (e.g. redis, rabbit, kafka, depending on the implementation you choose). Sample application:
+As long as Spring Cloud Stream and a Spring Cloud Stream binder are on the
+classpath any Spring Boot application with `@EnableBinding` will bind to an external broker provided by the bus (e.g. Rabbit MQ or Kafka, depending on the implementation you choose). Sample application:
 
 Head over to http://start.spring.io and create a project with the 'Stream Redis' dependency.  Modify the main class as shown below:
 
@@ -72,7 +74,7 @@ public class StreamdemoApplication {
 }
 ```
 
-Make sure Redis is running when you run the application.  In the redis-cli console execute the monitor command and you will see a timestamp string being LPUSH'ed into a queue named 'queue.output'.
+Make sure Kafka is running when you run the application.  You can use the `kafka-console-consumer.sh` utility provided by Kafka to monitor messages sent on the `output` topic.:
 
 {% endcapture %}
 
