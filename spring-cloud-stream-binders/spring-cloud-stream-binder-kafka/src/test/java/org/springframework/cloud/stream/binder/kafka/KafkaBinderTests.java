@@ -36,8 +36,6 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.UUID;
 
-import kafka.admin.AdminUtils;
-import kafka.api.TopicMetadata;
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -70,6 +68,9 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+
+import kafka.admin.AdminUtils;
+import kafka.api.TopicMetadata;
 
 
 /**
@@ -140,7 +141,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		DirectChannel moduleInputChannel = new DirectChannel();
-		QueueChannel  dlqChannel = new QueueChannel();
+		QueueChannel dlqChannel = new QueueChannel();
 		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
 		moduleInputChannel.subscribe(handler);
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -185,7 +186,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		final ProducerMetadata.CompressionType[] codecs = new ProducerMetadata.CompressionType[] {
 				ProducerMetadata.CompressionType.none,
 				ProducerMetadata.CompressionType.gzip,
-				ProducerMetadata.CompressionType.snappy };
+				ProducerMetadata.CompressionType.snappy};
 
 		byte[] ratherBigPayload = new byte[2048];
 		Arrays.fill(ratherBigPayload, (byte) 65);
@@ -308,12 +309,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testDefaultConsumerStartsAtEarliest() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
-				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
+		KafkaTestBinder binder = getBinder();
 		DirectChannel output = new DirectChannel();
 		QueueChannel input1 = new QueueChannel();
 
@@ -405,12 +401,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testResume() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
-				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
+		KafkaTestBinder binder = getBinder();
 		DirectChannel output = new DirectChannel();
 		QueueChannel input1 = new QueueChannel();
 
@@ -443,15 +434,8 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 
 	@Test
 	public void testSyncProducerMetadata() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
-				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
-
+		KafkaTestBinder binder = getBinder();
 		DirectChannel output = new DirectChannel();
-
 		String testTopicName = UUID.randomUUID().toString();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.getExtension().setSync(true);
@@ -483,14 +467,14 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
 		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		String testTopicName = "nonexisting"  + System.currentTimeMillis();
+		String testTopicName = "nonexisting" + System.currentTimeMillis();
 		try {
 			binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
 			fail();
 		}
 		catch (Exception e) {
 			assertTrue(e instanceof BinderException);
-			assertThat(e.getMessage(), containsString("Topic " + testTopicName  + " does not exist"));
+			assertThat(e.getMessage(), containsString("Topic " + testTopicName + " does not exist"));
 		}
 
 		try {
@@ -505,7 +489,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	@Test
 	public void testAutoConfigureTopicsDisabledSucceedsIfTopicExisting() throws Exception {
 
-		String testTopicName = "existing"  + System.currentTimeMillis();
+		String testTopicName = "existing" + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 5, 1, new Properties());
 
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
@@ -525,7 +509,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	@Test
 	public void testAutoAddPartitionsDisabledFailsIfTopicUnderpartitioned() throws Exception {
 
-		String testTopicName = "existing"  + System.currentTimeMillis();
+		String testTopicName = "existing" + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 1, 1, new Properties());
 
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
@@ -555,7 +539,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	@Test
 	public void testAutoAddPartitionsDisabledSucceedsIfTopicPartitionedCorrectly() throws Exception {
 
-		String testTopicName = "existing"  + System.currentTimeMillis();
+		String testTopicName = "existing" + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 6, 1, new Properties());
 
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
@@ -609,7 +593,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
 		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		String testTopicName = "nonexisting"  + System.currentTimeMillis();
+		String testTopicName = "nonexisting" + System.currentTimeMillis();
 		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
 		binding.unbind();
 	}
@@ -634,7 +618,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 
 	@Test
 	public void testPartitionCountNotReduced() throws Exception {
-		String testTopicName = "existing"  + System.currentTimeMillis();
+		String testTopicName = "existing" + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 6, 1, new Properties());
 
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
@@ -662,7 +646,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 
 	@Test
 	public void testPartitionCountIncreasedIfAutoAddPartitionsSet() throws Exception {
-		String testTopicName = "existing"  + System.currentTimeMillis();
+		String testTopicName = "existing" + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 1, 1, new Properties());
 
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(

@@ -41,15 +41,13 @@ import org.springframework.util.SocketUtils;
  *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
- * @since 1.1
+ * @since 1.0
  */
 public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String> {
 
 	private static final Log log = LogFactory.getLog(KafkaTestSupport.class);
 
-	private static final String SCS_KAFKA_TEST_EMBEDDED = "SCS_KAFKA_TEST_EMBEDDED";
-
-	public static final boolean defaultEmbedded;
+	public static boolean defaultEmbedded = true;
 
 	private static final String DEFAULT_ZOOKEEPER_CONNECT = "localhost:2181";
 
@@ -64,6 +62,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	public final boolean embedded;
 
 	private final Properties brokerConfig = TestUtils.createBrokerConfig(0, TestUtils.choosePort(), false);
+
+	private static final String SCS_KAFKA_TEST_EMBEDDED = "SCS_KAFKA_TEST_EMBEDDED";
 
 	// caches previous failures to reach the external server - preventing repeated retries
 	private static boolean hasFailedAlready = false;
@@ -142,7 +142,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 						zkClient.close();
 						throw e;
 					}
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					hasFailedAlready = true;
 					throw e;
 				}
@@ -154,7 +155,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 					throw new RuntimeException("Kafka server not available");
 				}
 			}
-		} else {
+		}
+		else {
 			throw new RuntimeException("Kafka server not available");
 		}
 	}
