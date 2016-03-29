@@ -36,7 +36,7 @@ import org.springframework.cloud.stream.binding.BindableChannelFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
-import org.springframework.cloud.stream.binding.ChannelBindingUtils;
+import org.springframework.cloud.stream.binding.PollableToSubscribableBridge;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
@@ -76,7 +76,7 @@ import org.springframework.util.CollectionUtils;
  * @author Gary Russell
  */
 @Configuration
-@EnableConfigurationProperties(ChannelBindingServiceProperties.class)
+@EnableConfigurationProperties({ChannelBindingServiceProperties.class, DefaultPollerProperties.class})
 public class ChannelBindingServiceConfiguration {
 
 	private static final String ERROR_CHANNEL_NAME = "error";
@@ -98,7 +98,8 @@ public class ChannelBindingServiceConfiguration {
 	public ChannelBindingService bindingService(
 			ChannelBindingServiceProperties channelBindingServiceProperties,
 			BinderFactory<MessageChannel> binderFactory) {
-		return new ChannelBindingService(channelBindingServiceProperties, binderFactory, channelBindingUtils());
+		return new ChannelBindingService(channelBindingServiceProperties, binderFactory,
+				pollableToSubscribableChannelBridge());
 	}
 
 	@Bean
@@ -169,8 +170,10 @@ public class ChannelBindingServiceConfiguration {
 		return new CompositeMessageConverterFactory(messageConverters);
 	}
 
-	public ChannelBindingUtils channelBindingUtils() {
-		return new ChannelBindingUtils();
+	@Bean
+	public PollableToSubscribableBridge pollableToSubscribableChannelBridge() {
+		return new PollableToSubscribableBridge();
+
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early

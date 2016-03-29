@@ -85,8 +85,8 @@ public class ChannelBindingServiceTests {
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true)));
 		Binder binder = binderFactory.getBinder("mock");
-		ChannelBindingUtils utils = new ChannelBindingUtils();
-		ChannelBindingService service = new ChannelBindingService(properties, binderFactory, utils);
+		PollableToSubscribableBridge bridge = new PollableToSubscribableBridge();
+		ChannelBindingService service = new ChannelBindingService(properties, binderFactory, bridge);
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
@@ -119,8 +119,8 @@ public class ChannelBindingServiceTests {
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true)));
 		Binder binder = binderFactory.getBinder("mock");
-		ChannelBindingUtils utils = new ChannelBindingUtils();
-		ChannelBindingService service = new ChannelBindingService(properties, binderFactory, utils);
+		PollableToSubscribableBridge bridge = new PollableToSubscribableBridge();
+		ChannelBindingService service = new ChannelBindingService(properties, binderFactory, bridge);
 		MessageChannel inputChannel = new DirectChannel();
 
 		@SuppressWarnings("unchecked")
@@ -167,9 +167,9 @@ public class ChannelBindingServiceTests {
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true)));
-		ChannelBindingUtils utils = new ChannelBindingUtils();
+		PollableToSubscribableBridge bridge = new PollableToSubscribableBridge();
 		Binder binder = binderFactory.getBinder("mock");
-		ChannelBindingService service = new ChannelBindingService(properties, binderFactory, utils);
+		ChannelBindingService service = new ChannelBindingService(properties, binderFactory, bridge);
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);

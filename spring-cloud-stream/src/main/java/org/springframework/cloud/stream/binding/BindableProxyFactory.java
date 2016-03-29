@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.binder.DirectHandler;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -57,8 +58,9 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
-	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME = ChannelBindingUtils.SPRING_CLOUD_STREAM_INTERNAL_PREFIX
-			+ ".channelNamespace";
+	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
+
+	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
 
 	@Value("${" + CHANNEL_NAMESPACE_PROPERTY_NAME + ":}")
 	private String channelNamespace;
@@ -67,7 +69,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	private BindableChannelFactory channelFactory;
 
 	@Autowired
-	private ChannelBindingUtils channelBindingUtils;
+	private PollableToSubscribableBridge pollableToSubscribableBridge;
 
 	@Autowired(required = false)
 	private SharedChannelRegistry sharedChannelRegistry;
@@ -149,7 +151,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private MessageChannel createBindableChannel(String name, Class<? extends MessageChannel> channelType) {
-		return this.channelBindingUtils.isPollable(channelType) ? this.channelFactory.createPollableChannel(name) :
+		return this.pollableToSubscribableBridge.isPollable(channelType) ? this.channelFactory.createPollableChannel(name) :
 				this.channelFactory.createSubscribableChannel(name);
 	}
 
@@ -165,11 +167,11 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	private void bridgeSharedChannel(String name, MessageChannel sharedChannel) {
 		// handle the special case where the shared channel is of a different nature
 		// (i.e. pollable vs subscribable) than the target channel
-		if (this.channelBindingUtils.isPollable(sharedChannel.getClass())) {
-			this.channelBindingUtils.bridgePollableToSubscribableChannel(name, (PollableChannel) sharedChannel, new DirectChannel());
+		if (this.pollableToSubscribableBridge.isPollable(sharedChannel.getClass())) {
+			this.pollableToSubscribableBridge.bridge(name, (PollableChannel) sharedChannel, new DirectChannel());
 		}
 		else {
-			this.channelBindingUtils.bridgeSubscribableToPollableChannel((SubscribableChannel) sharedChannel, new QueueChannel());
+			((SubscribableChannel) sharedChannel).subscribe(new DirectHandler(new QueueChannel()));
 		}
 	}
 

@@ -3,31 +3,29 @@ package org.springframework.cloud.stream.binding;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.DirectHandler;
+import org.springframework.cloud.stream.config.DefaultPollerProperties;
 import org.springframework.integration.config.ConsumerEndpointFactoryBean;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.scheduling.support.PeriodicTrigger;
 
 /**
- * An utility class that provides helper methods for channel binding.
+ * A class that supports bridging Pollable channel to Subscribable channel.
  * This class needs to be instantiated as a bean so that the configuration properties are available runtime.
  *
  * @author Marius Bogoevici
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  */
-public class ChannelBindingUtils implements BeanFactoryAware {
+@EnableConfigurationProperties(DefaultPollerProperties.class)
+public class PollableToSubscribableBridge implements BeanFactoryAware {
 
-	public static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
-
-	public static final String POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".pollableBridge.interval";
-
-	@Value("${" + POLLABLE_BRIDGE_INTERVAL_PROPERTY_NAME + ":1000}")
-	private int pollableBridgeDefaultFrequency;
+	@Autowired
+	private DefaultPollerProperties defaultPollerProperties;
 
 	private ConfigurableListableBeanFactory beanFactory;
 
@@ -35,16 +33,10 @@ public class ChannelBindingUtils implements BeanFactoryAware {
 		return PollableChannel.class.isAssignableFrom(channelType);
 	}
 
-	void bridgeSubscribableToPollableChannel(SubscribableChannel sharedChannel, PollableChannel pollableChannel) {
-		sharedChannel.subscribe(new DirectHandler(pollableChannel));
-	}
-
-	void bridgePollableToSubscribableChannel(String name, PollableChannel pollableChannel,
-			SubscribableChannel subscribableChannel) {
+	void bridge(String name, PollableChannel pollableChannel, SubscribableChannel subscribableChannel) {
 		ConsumerEndpointFactoryBean consumerEndpointFactoryBean = new ConsumerEndpointFactoryBean();
 		consumerEndpointFactoryBean.setInputChannel(pollableChannel);
-		PollerMetadata pollerMetadata = new PollerMetadata();
-		pollerMetadata.setTrigger(new PeriodicTrigger(this.pollableBridgeDefaultFrequency));
+		PollerMetadata pollerMetadata = this.defaultPollerProperties.getPollerMetadata();
 		consumerEndpointFactoryBean.setPollerMetadata(pollerMetadata);
 		consumerEndpointFactoryBean
 				.setHandler(new DirectHandler(

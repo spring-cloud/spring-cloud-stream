@@ -60,7 +60,7 @@ public class ChannelBindingService {
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	private final ChannelBindingUtils channelBindingUtils;
+	private final PollableToSubscribableBridge pollableToSubscribableBridge;
 
 	private final Map<String, Binding<MessageChannel>> producerBindings = new HashMap<>();
 
@@ -68,10 +68,10 @@ public class ChannelBindingService {
 
 	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
 			BinderFactory<MessageChannel> binderFactory,
-			ChannelBindingUtils channelBindingUtils) {
+			PollableToSubscribableBridge pollableToSubscribableBridge) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.binderFactory = binderFactory;
-		this.channelBindingUtils = channelBindingUtils;
+		this.pollableToSubscribableBridge = pollableToSubscribableBridge;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -103,12 +103,12 @@ public class ChannelBindingService {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(outputChannelName);
 		Binder<MessageChannel, ?, ProducerProperties> binder =
 				(Binder<MessageChannel, ?, ProducerProperties>) getBinderForChannel(outputChannelName);
-		if (this.channelBindingUtils.isPollable(outputChannel.getClass())) {
+		if (this.pollableToSubscribableBridge.isPollable(outputChannel.getClass())) {
 			if (log.isDebugEnabled()) {
 				log.debug("Bridge the pollable output channel to a subscribable channel");
 			}
 			SubscribableChannel newOutputChannel = new DirectChannel();
-			this.channelBindingUtils.bridgePollableToSubscribableChannel(outputChannelName, (PollableChannel) outputChannel, newOutputChannel);
+			this.pollableToSubscribableBridge.bridge(outputChannelName, (PollableChannel) outputChannel, newOutputChannel);
 			outputChannel = newOutputChannel;
 		}
 		ProducerProperties producerProperties = this.channelBindingServiceProperties.getProducerProperties(outputChannelName);
