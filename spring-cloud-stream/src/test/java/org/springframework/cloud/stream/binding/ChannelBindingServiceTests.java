@@ -21,6 +21,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -105,7 +106,6 @@ public class ChannelBindingServiceTests {
 	public void testMultipleConsumerBindings() throws Exception {
 		ChannelBindingServiceProperties properties = new ChannelBindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
-
 		BindingProperties props = new BindingProperties();
 		props.setDestination("foo,bar");
 		final String inputChannelName = "input";
@@ -241,4 +241,57 @@ public class ChannelBindingServiceTests {
 		}
 	}
 
+	@Test
+	public void testProducerPropertiesValidation() {
+		ChannelBindingServiceProperties serviceProperties = new ChannelBindingServiceProperties();
+		Map<String, BindingProperties> bindingProperties = new HashMap<>();
+		BindingProperties props = new BindingProperties();
+		ProducerProperties producerProperties = new ProducerProperties();
+		producerProperties.setPartitionCount(0);
+		props.setDestination("foo");
+		props.setProducer(producerProperties);
+		final String outputChannelName = "output";
+		bindingProperties.put(outputChannelName, props);
+		serviceProperties.setBindings(bindingProperties);
+		DefaultBinderFactory<MessageChannel> binderFactory =
+				new DefaultBinderFactory<>(Collections.singletonMap("mock",
+						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
+								new Properties(), true)));
+		ChannelBindingService service = new ChannelBindingService(serviceProperties, binderFactory);
+		MessageChannel outputChannel = new DirectChannel();
+		try {
+			service.bindProducer(outputChannel, outputChannelName);
+			fail("Producer properties should be validated.");
+		}
+		catch (IllegalStateException e) {
+			assertTrue(e.getMessage().contains("Partition Count should be greater than zero."));
+		}
+	}
+
+	@Test
+	public void testConsumerPropertiesValidation() {
+		ChannelBindingServiceProperties serviceProperties = new ChannelBindingServiceProperties();
+		Map<String, BindingProperties> bindingProperties = new HashMap<>();
+		BindingProperties props = new BindingProperties();
+		ConsumerProperties consumerProperties = new ConsumerProperties();
+		consumerProperties.setConcurrency(0);
+		props.setDestination("foo");
+		props.setConsumer(consumerProperties);
+		final String inputChannelName = "input";
+		bindingProperties.put(inputChannelName, props);
+		serviceProperties.setBindings(bindingProperties);
+		DefaultBinderFactory<MessageChannel> binderFactory =
+				new DefaultBinderFactory<>(Collections.singletonMap("mock",
+						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
+								new Properties(), true)));
+		ChannelBindingService service = new ChannelBindingService(serviceProperties, binderFactory);
+		MessageChannel inputChannel = new DirectChannel();
+		try {
+			service.bindConsumer(inputChannel, inputChannelName);
+			fail("Consumer properties should be validated.");
+		}
+		catch (IllegalStateException e) {
+			assertTrue(e.getMessage().contains("Concurrency should be greater than zero."));
+		}
+	}
 }

@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
@@ -38,6 +39,7 @@ import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.beanvalidation.CustomValidatorBean;
 
 /**
  * Handles the operations related to channel binding including binding of input/output channels by delegating
@@ -83,6 +85,7 @@ public class ChannelBindingService {
 			BeanUtils.copyProperties(consumerProperties, extendedConsumerProperties);
 			consumerProperties = extendedConsumerProperties;
 		}
+		ProducerConsumerPropertiesValidator.validate(consumerProperties);
 		for (String target : channelBindingTargets) {
 			Binding<MessageChannel> binding = binder.bindConsumer(target, channelBindingServiceProperties.getGroup(inputChannelName), inputChannel, consumerProperties);
 			bindings.add(binding);
@@ -104,6 +107,7 @@ public class ChannelBindingService {
 			BeanUtils.copyProperties(producerProperties, extendedProducerProperties);
 			producerProperties = extendedProducerProperties;
 		}
+		ProducerConsumerPropertiesValidator.validate(producerProperties);
 		Binding<MessageChannel> binding = binder.bindProducer(channelBindingTarget, outputChannel, producerProperties);
 		this.producerBindings.put(outputChannelName, binding);
 		return binding;
@@ -134,5 +138,24 @@ public class ChannelBindingService {
 	private Binder<MessageChannel, ?, ?> getBinderForChannel(String channelName) {
 		String transport = this.channelBindingServiceProperties.getBinder(channelName);
 		return binderFactory.getBinder(transport);
+	}
+
+	private static class ProducerConsumerPropertiesValidator {
+
+		private static CustomValidatorBean validator;
+
+		static {
+			validator = new CustomValidatorBean();
+			validator.afterPropertiesSet();
+		}
+
+		static void validate(Object properties) {
+			RelaxedDataBinder dataBinder = new RelaxedDataBinder(properties);
+			dataBinder.setValidator(validator);
+			dataBinder.validate();
+			if (dataBinder.getBindingResult().hasErrors()) {
+				throw new IllegalStateException(dataBinder.getBindingResult().toString());
+			}
+		}
 	}
 }

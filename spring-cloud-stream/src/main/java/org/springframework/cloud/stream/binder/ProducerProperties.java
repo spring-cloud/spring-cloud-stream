@@ -16,12 +16,16 @@
 
 package org.springframework.cloud.stream.binder;
 
+import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.Min;
+
 import org.springframework.expression.Expression;
 
 /**
  * Common producer properties.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class ProducerProperties {
 
@@ -73,6 +77,7 @@ public class ProducerProperties {
 		this.partitionSelectorExpression = partitionSelectorExpression;
 	}
 
+	@Min(value = 1, message = "Partition Count should be greater than zero.")
 	public int getPartitionCount() {
 		return partitionCount;
 	}
@@ -87,6 +92,16 @@ public class ProducerProperties {
 
 	public void setRequiredGroups(String... requiredGroups) {
 		this.requiredGroups = requiredGroups;
+	}
+
+	@AssertTrue(message = "PartitionKeyExpression and PartitionKeyExtractorClass properties are mutually exclusive.")
+	public boolean isValidPartitionKeyProperty() {
+		return (this.partitionKeyExpression == null) || (this.partitionKeyExtractorClass == null);
+	}
+
+	@AssertTrue(message = "PartitionSelectorClass and PartitionSelectorExpression properties are mutually exclusive.")
+	public boolean isValidPartitionSelectorProperty() {
+		return (this.partitionSelectorClass == null) || (this.partitionSelectorExpression == null);
 	}
 
 }

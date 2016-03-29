@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.integration.kafka.support.ProducerMetadata;
 
 /**
@@ -41,6 +43,7 @@ public class KafkaProducerProperties {
 		this.bufferSize = bufferSize;
 	}
 
+	@NotNull
 	public ProducerMetadata.CompressionType getCompressionType() {
 		return compressionType;
 	}
@@ -57,6 +60,7 @@ public class KafkaProducerProperties {
 		this.sync = sync;
 	}
 
+	@NotNull
 	public KafkaMessageChannelBinder.Mode getMode() {
 		return mode;
 	}
