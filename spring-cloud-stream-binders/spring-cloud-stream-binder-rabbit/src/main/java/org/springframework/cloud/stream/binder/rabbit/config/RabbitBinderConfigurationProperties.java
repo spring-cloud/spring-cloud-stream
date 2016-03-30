@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.rabbit.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.core.io.Resource;
 
 /**
  * @author David Turanski
@@ -25,21 +24,9 @@ import org.springframework.core.io.Resource;
 @ConfigurationProperties(prefix = "spring.cloud.stream.rabbit.binder")
 class RabbitBinderConfigurationProperties {
 
-	private String[] addresses = new String[0];
-
 	private String[] adminAdresses = new String[0];
 
 	private String[] nodes = new String[0];
-
-	private String username;
-
-	private String password;
-
-	private String vhost;
-
-	private boolean useSSL;
-
-	private Resource sslPropertiesLocation;
 
 	private int compressionLevel;
 
