@@ -1062,6 +1062,67 @@ It is important to set both values correctly in order to ensure that all of the 
 
 While a scenario which using multiple instances for partitioned data processing may be complex to set up in a standalone case, Spring Cloud Dataflow can simplify the process significantly by populating both the input and output values correctly as well as relying on the runtime infrastructure to provide information about the instance index and instance count.
 
+== Testing
+
+Spring Cloud Stream provides support for testing your microservice applications without connecting to a messaging system.
+You can do that by using the `TestSupportBinder`.
+This is useful especially for unit testing your microservices.
+
+The `TestSupportBinder` allows users to interact with the bound channels and inspect what messages are sent and received by the application
+
+For outbound message channels, the `TestSupportBinder` registers a single subscriber and retains the messages emitted by the application in a `MessageCollector`.
+They can be retrieved during tests and have assertions made against them.
+
+The user can also send messages to inbound message channels, so that the consumer application can consume the messages.
+The following example shows how to test both input and output channels on a processor.
+
+[source]
+----
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = ExampleTest.MyProcessor.class)
+@IntegrationTest({"server.port=-1"})
+@DirtiesContext
+public class ExampleTest {
+
+  @Autowired
+  private Processor processor;
+
+  @Autowired
+  private BinderFactory<MessageChannel> binderFactory;
+
+  @Autowired
+  private MessageCollector messageCollector;
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testWiring() {
+    Message<String> message = new GenericMessage<>("hello");
+    processor.input().send(message);
+    Message<String> received = (Message<String>) messageCollector.forChannel(processor.output()).poll();
+    assertThat(received.getPayload(), equalTo("hello world"));
+  }
+
+
+  @SpringBootApplication
+  @EnableBinding(Processor.class)
+  public static class MyProcessor {
+
+    @Autowired
+    private Processor channels;
+
+    @Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
+    public String transform(String in) {
+      return in + " world";
+    }
+  }
+}
+----
+
+In the example above, we are creating an application that has an input and an output channel, bound through the `Processor` interface.
+The bound interface is injected into the test so we can have access to both channels.
+We are sending a message on the input channel and we are using the `MessageCollector` provided by Spring Cloud Stream's test support to capture the message has been sent to the output channel as a result.
+Once we have received the message, we can validate that the component functions correctly.
+
 == Health Indicator
 
 Spring Cloud Stream provides a health indicator for binders.
@@ -1182,5 +1243,3 @@ hello world 1458595077732
 hello world 1458595078733
 hello world 1458595079734
 hello world 1458595080735
-----
-
