@@ -1,10 +1,10 @@
 package org.springframework.cloud.bus.event;
 
-import java.util.Arrays;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.cloud.endpoint.RefreshEndpoint;
+import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.context.ApplicationListener;
 
 /**
@@ -15,16 +15,15 @@ public class RefreshListener
 
 	private static Log log = LogFactory.getLog(RefreshListener.class);
 
-	private RefreshEndpoint endpoint;
+	private ContextRefresher contextRefresher;
 
-	public RefreshListener(RefreshEndpoint endpoint) {
-		this.endpoint = endpoint;
+	public RefreshListener(ContextRefresher contextRefresher) {
+		this.contextRefresher = contextRefresher;
 	}
 
 	@Override
 	public void onApplicationEvent(RefreshRemoteApplicationEvent event) {
-		String[] keys = endpoint.refresh();
-		log.info(
-				"Received remote refresh request. Keys refreshed " + Arrays.asList(keys));
+		Set<String> keys = contextRefresher.refresh();
+		log.info("Received remote refresh request. Keys refreshed " + keys);
 	}
 }

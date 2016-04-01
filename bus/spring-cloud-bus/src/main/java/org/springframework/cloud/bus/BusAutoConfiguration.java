@@ -20,8 +20,8 @@ import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.cloud.bus.event.TraceListener;
 import org.springframework.cloud.context.environment.EnvironmentManager;
+import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.cloud.context.scope.refresh.RefreshScope;
-import org.springframework.cloud.endpoint.RefreshEndpoint;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -170,13 +170,13 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	@Configuration
 	@ConditionalOnClass({ Endpoint.class, RefreshScope.class })
-	@ConditionalOnBean(RefreshEndpoint.class)
+	@ConditionalOnBean(ContextRefresher.class)
 	protected static class BusRefreshConfiguration {
 
 		@Bean
 		@ConditionalOnProperty(value = "spring.cloud.bus.refresh.enabled", matchIfMissing = true)
-		public RefreshListener refreshListener(RefreshEndpoint refreshEndpoint) {
-			return new RefreshListener(refreshEndpoint);
+		public RefreshListener refreshListener(ContextRefresher contextRefresher) {
+			return new RefreshListener(contextRefresher);
 		}
 
 		@Configuration
