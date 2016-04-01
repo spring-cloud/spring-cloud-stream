@@ -41,7 +41,6 @@ import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
-import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
@@ -110,9 +109,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 	private RetryOperations retryOperations;
 
 	private final Map<String, Collection<Partition>> topicsInUse = new HashMap<>();
-
-	private final EmbeddedHeadersMessageConverter embeddedHeadersMessageConverter = new
-			EmbeddedHeadersMessageConverter();
 
 	private final ZookeeperConnect zookeeperConnect;
 
@@ -580,16 +576,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 		@SuppressWarnings("unchecked")
 		protected Object handleRequestMessage(Message<?> requestMessage) {
 			if (HeaderMode.embeddedHeaders.equals(consumerProperties.getHeaderMode())) {
-				MessageValues messageValues;
-				try {
-					messageValues = embeddedHeadersMessageConverter.extractHeaders((Message<byte[]>) requestMessage,
-							true);
-				}
-				catch (Exception e) {
-					logger.error(EmbeddedHeadersMessageConverter.decodeExceptionMessage(requestMessage), e);
-					messageValues = new MessageValues(requestMessage);
-				}
-				messageValues = deserializePayloadIfNecessary(messageValues);
+				MessageValues messageValues = extractMessageValues(requestMessage);
 				return MessageBuilder.createMessage(messageValues.getPayload(), new KafkaBinderHeaders(
 						messageValues));
 			}
