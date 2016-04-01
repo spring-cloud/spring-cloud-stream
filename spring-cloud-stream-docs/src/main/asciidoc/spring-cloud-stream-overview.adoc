@@ -974,3 +974,45 @@ hello world 1458595078733
 hello world 1458595079734
 hello world 1458595080735
 ----
+== Unit testing
+
+When unit testing a Spring Cloud Stream application, one can use `TestSupportBinder` that mimics the Binder implementation.
+TestSupportBinder provides an ability to test the application in a standalone manner without relying on any specific middleware.
+
+The `TestSupportBinder` doesn't perform real binding of producer/consumer message channels. Instead it allows users to
+interact with the message channels based on what to expect in/out of the message channels that are connected to the consumer/producer
+applications respectively.
+
+For the outbound message channel, the TestSupportBinder registers a single subscriber to he message channel and
+holds producer's messages in a message collector for later retrieval and assertion in tests.
+
+[source]
+----
+  @Autowired
+  private BinderFactory binderFactory;
+
+  @Autowired @Bindings(SourceApplication.class)
+  private Source testSource;
+
+  // Verify the producer application's message received in the message collector
+  Message<?> received = (Message<?>) ((TestSupportBinder) binderFactory.getBinder(null))
+   .messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
+----
+
+For the inbound message channel, it is the responsibility of the user to send messages to the inbound message
+channel itself so that the consumer application can consume the messages.
+
+[source]
+----
+  @Autowired
+  @Bindings(SinkApplication.class)
+  private Sink sink;
+
+  @Autowired
+  private BinderFactory<MessageChannel> binderFactory;
+
+  // Simulate the inbound channel receiving messages from external source
+  Message<String> message = new GenericMessage<>("hello");
+  sink.input().send(message);
+  // Verify the consumer application receives the messages from this inbound channel.
+----
