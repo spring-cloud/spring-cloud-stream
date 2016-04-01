@@ -47,6 +47,7 @@ public class AggregateApplicationBuilder {
 	ConfigurableApplicationContext parentContext;
 
 	public AggregateApplicationBuilder() {
+		this(SpringApplication.run(addAggregatorParentIfMissing(new Object[]{}), new String[]{}));
 	}
 
 	public AggregateApplicationBuilder(Object source, String... args) {
@@ -62,7 +63,6 @@ public class AggregateApplicationBuilder {
 	}
 
 	private static Object[] addAggregatorParentIfMissing(Object[] sources) {
-		Assert.notEmpty(sources, "At least one source must be provided");
 		Object[] aggregateParentSources;
 		if (!ObjectUtils.containsElement(sources, AggregatorParentConfiguration.class)) {
 			// add the AggregatorParentConfiguration first, so it can be overridden
