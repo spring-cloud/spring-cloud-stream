@@ -41,6 +41,7 @@ import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
@@ -50,6 +51,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -57,6 +59,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class StreamListenerTests {
 
@@ -68,7 +71,22 @@ public class StreamListenerTests {
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-								  .setHeader("contentType", "application/json").build());
+				.setHeader("contentType", "application/json").build());
+		assertTrue(testSink.latch.await(10, TimeUnit.SECONDS));
+		assertThat(testSink.receivedArguments, hasSize(1));
+		assertThat(testSink.receivedArguments.get(0), hasProperty("bar", equalTo("barbar" + id)));
+		context.close();
+	}
+
+	@Test
+	public void testContentTypeConversionPollableChannel() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestSink1.class);
+		@SuppressWarnings("unchecked")
+		TestSink1 testSink = context.getBean(TestSink1.class);
+		Sink1 sink = context.getBean(Sink1.class);
+		String id = UUID.randomUUID().toString();
+		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+				.setHeader("contentType", "application/json").build());
 		assertTrue(testSink.latch.await(10, TimeUnit.SECONDS));
 		assertThat(testSink.receivedArguments, hasSize(1));
 		assertThat(testSink.receivedArguments.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -84,7 +102,7 @@ public class StreamListenerTests {
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-								  .setHeader("contentType", "application/json").setHeader("testHeader", "testValue").build());
+				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments, hasSize(3));
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0), instanceOf(FooPojo.class));
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -105,7 +123,7 @@ public class StreamListenerTests {
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
+				.setHeader("contentType", "application/json").build());
 		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		TestStringProcessor testStringProcessor = context.getBean(TestStringProcessor.class);
 		assertThat(testStringProcessor.receivedPojos, hasSize(1));
@@ -124,7 +142,7 @@ public class StreamListenerTests {
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
+				.setHeader("contentType", "application/json").build());
 		TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 		assertThat(testPojoWithMimeType.receivedPojos, hasSize(1));
 		assertThat(testPojoWithMimeType.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -143,7 +161,7 @@ public class StreamListenerTests {
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
+				.setHeader("contentType", "application/json").build());
 		TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 		assertThat(testPojoWithMimeType.receivedPojos, hasSize(1));
 		assertThat(testPojoWithMimeType.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -161,7 +179,7 @@ public class StreamListenerTests {
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
+				.setHeader("contentType", "application/json").build());
 		TestPojoWithMessageReturn testPojoWithMessageReturn = context.getBean(TestPojoWithMessageReturn.class);
 		assertThat(testPojoWithMessageReturn.receivedPojos, hasSize(1));
 		assertThat(testPojoWithMessageReturn.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -179,7 +197,7 @@ public class StreamListenerTests {
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("barbar" + id)
-									   .setHeader("contentType", "text/plain").build());
+				.setHeader("contentType", "text/plain").build());
 		TestPojoWithMessageArgument testPojoWithMessageArgument = context.getBean(TestPojoWithMessageArgument.class);
 		assertThat(testPojoWithMessageArgument.receivedMessages, hasSize(1));
 		assertThat(testPojoWithMessageArgument.receivedMessages.get(0).getPayload(), equalTo("barbar" + id));
@@ -211,7 +229,7 @@ public class StreamListenerTests {
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
+				.setHeader("contentType", "application/json").build());
 		HandlerBean handlerBean = context.getBean(HandlerBean.class);
 		assertThat(handlerBean.receivedPojos, hasSize(1));
 		assertThat(handlerBean.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
@@ -236,6 +254,30 @@ public class StreamListenerTests {
 			receivedArguments.add(fooPojo);
 			latch.countDown();
 		}
+	}
+
+	@EnableBinding(Sink1.class)
+	@EnableAutoConfiguration
+	public static class TestSink1 {
+
+		List<FooPojo> receivedArguments = new ArrayList<>();
+
+		CountDownLatch latch = new CountDownLatch(1);
+
+
+		@StreamListener(Sink.INPUT)
+		public void receive(FooPojo fooPojo) {
+			receivedArguments.add(fooPojo);
+			latch.countDown();
+		}
+	}
+
+	public interface Sink1 {
+
+		String INPUT = "input";
+
+		@Input(Sink.INPUT)
+		PollableChannel input();
 	}
 
 	@EnableBinding(Processor.class)
@@ -276,7 +318,7 @@ public class StreamListenerTests {
 
 		@StreamListener(Processor.INPUT)
 		public void receive(@Payload FooPojo fooPojo, @Headers Map<String, Object> headers,
-								   @Header(MessageHeaders.CONTENT_TYPE) String contentType) {
+				@Header(MessageHeaders.CONTENT_TYPE) String contentType) {
 			receivedArguments.add(fooPojo);
 			receivedArguments.add(headers);
 			receivedArguments.add(contentType);

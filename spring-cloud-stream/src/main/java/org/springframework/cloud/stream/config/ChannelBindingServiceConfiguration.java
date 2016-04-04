@@ -75,7 +75,7 @@ import org.springframework.util.CollectionUtils;
  * @author Gary Russell
  */
 @Configuration
-@EnableConfigurationProperties(ChannelBindingServiceProperties.class)
+@EnableConfigurationProperties({ChannelBindingServiceProperties.class, DefaultPollerProperties.class})
 public class ChannelBindingServiceConfiguration {
 
 	private static final String ERROR_CHANNEL_NAME = "error";
@@ -230,10 +230,12 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(@Lazy BinderAwareChannelResolver binderAwareChannelResolver, @Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
+			@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory, @Lazy DefaultPollerProperties pollerProperties) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
 		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 		messageHandlerMethodFactory.afterPropertiesSet();
-		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver, messageHandlerMethodFactory);
+		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver, messageHandlerMethodFactory,
+				pollerProperties);
 	}
 }

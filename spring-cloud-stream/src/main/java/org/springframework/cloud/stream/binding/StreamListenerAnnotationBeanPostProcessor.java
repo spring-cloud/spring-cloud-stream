@@ -27,19 +27,23 @@ import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.config.DefaultPollerProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.integration.endpoint.PollingConsumer;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
@@ -60,11 +64,17 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 
 	private ConfigurableApplicationContext applicationContext;
 
-	public StreamListenerAnnotationBeanPostProcessor(DestinationResolver<MessageChannel> binderAwareChannelResolver, MessageHandlerMethodFactory messageHandlerMethodFactory) {
+	private final DefaultPollerProperties pollerProperties;
+
+	public StreamListenerAnnotationBeanPostProcessor(DestinationResolver<MessageChannel> binderAwareChannelResolver,
+			MessageHandlerMethodFactory messageHandlerMethodFactory,
+			DefaultPollerProperties pollerProperties) {
 		Assert.notNull(binderAwareChannelResolver, "Destination resolver cannot be null");
 		Assert.notNull(messageHandlerMethodFactory, "Message handler method factory cannot be null");
+		Assert.notNull(messageHandlerMethodFactory, "Poller properties cannot be null");
 		this.binderAwareChannelResolver = binderAwareChannelResolver;
 		this.messageHandlerMethodFactory = messageHandlerMethodFactory;
+		this.pollerProperties = pollerProperties;
 	}
 
 	@Override
@@ -97,9 +107,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 								" already existing for " + mappedBindings.get(streamListener.value()).getShortLogMessage());
 					}
 					mappedBindings.put(streamListener.value(), invocableHandlerMethod);
-					// TODO: support pollable channels https://github.com/spring-cloud/spring-cloud-stream/issues/436
-					SubscribableChannel channel = applicationContext.getBean(streamListener.value(),
-							SubscribableChannel.class);
+					MessageChannel messageChannel = applicationContext.getBean(streamListener.value(), MessageChannel.class);
 					final String defaultOutputChannel = extractDefaultOutput(method);
 					if (invocableHandlerMethod.isVoid()) {
 						Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel), "An output channel cannot be specified for a method that " +
@@ -116,7 +124,18 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 						handler.setOutputChannelName(defaultOutputChannel);
 					}
 					handler.afterPropertiesSet();
-					channel.subscribe(handler);
+					if (messageChannel instanceof SubscribableChannel) {
+						((SubscribableChannel) messageChannel).subscribe(handler);
+					}
+					else if (messageChannel instanceof PollableChannel) {
+						PollingConsumer consumer = new PollingConsumer(((PollableChannel) messageChannel), handler);
+						consumer.setMaxMessagesPerPoll(pollerProperties.getMaxMessagesPerPoll());
+						consumer.setReceiveTimeout(pollerProperties.getPollerMetadata().getReceiveTimeout());
+						consumer.setTrigger(new PeriodicTrigger(pollerProperties.getFixedDelay()));
+						consumer.setBeanFactory(applicationContext.getBeanFactory());
+						consumer.afterPropertiesSet();
+						consumer.start();
+					}
 				}
 			}
 		});
