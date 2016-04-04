@@ -16,11 +16,16 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_DEFAULT;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * Common consumer properties.
  *
  * @author Marius Bogoevici
  */
+@JsonInclude(NON_DEFAULT)
 public class ConsumerProperties {
 
 	private int concurrency = 1;

@@ -16,15 +16,20 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.springframework.expression.Expression;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import org.springframework.expression.Expression;
 
 /**
  * Common producer properties.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
+@JsonInclude(Include.NON_DEFAULT)
 public class ProducerProperties {
 
 	@JsonSerialize(using = ExpressionSerializer.class)
