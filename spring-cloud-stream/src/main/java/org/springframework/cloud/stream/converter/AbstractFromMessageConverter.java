@@ -163,7 +163,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * Not supported by default
 	 */
 	@Override
-	public Object convertToInternal(Object payload, MessageHeaders headers) {
+	public Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
 		throw new UnsupportedOperationException("'convertTo' not supported");
 	}
 
