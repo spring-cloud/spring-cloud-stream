@@ -46,6 +46,7 @@ import org.springframework.util.MimeTypeUtils;
  * @author David Turanski
  * @author Mark Fisher
  */
+@SuppressWarnings("unchecked")
 public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> {
 
 	protected B testBinder;

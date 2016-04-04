@@ -125,6 +125,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
 					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+					@SuppressWarnings("unchecked")
 					Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
@@ -145,6 +146,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
 					String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+					@SuppressWarnings("unchecked")
 					Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {

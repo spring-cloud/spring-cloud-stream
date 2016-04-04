@@ -49,6 +49,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private ConfigurableListableBeanFactory beanFactory;
 
+	@SuppressWarnings("unchecked")
 	public BinderAwareChannelResolver(BinderFactory binderFactory,
 			ChannelBindingServiceProperties channelBindingServiceProperties,
 			DynamicDestinationsBindable dynamicDestinationsBindable,
