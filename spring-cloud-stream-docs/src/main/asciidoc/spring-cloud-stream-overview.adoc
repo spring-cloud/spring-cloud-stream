@@ -436,8 +436,7 @@ public class TransformProcessor {
 
 ===== Using @StreamListener for Automatic Content Type Handling
 
-Complementary to its Spring Integration support, Spring Cloud Stream provides its own `@StreamListener` annotation, modeled after other Spring Messaging annotations (e.g.
-`@MessageMapping`, `@JmsListener`, `@RabbitListener`, etc.).
+Complementary to its Spring Integration support, Spring Cloud Stream provides its own `@StreamListener` annotation, modeled after other Spring Messaging annotations (e.g. `@MessageMapping`, `@JmsListener`, `@RabbitListener`, etc.).
 The `@StreamListener` annotation provides a simpler model for handling inbound messages, especially when dealing with use cases that involve content type management and type coercion.
 
 Spring Cloud Stream provides an extensible `MessageConverter` mechanism for handling data conversion by bound channels and for, in this case, dispatching to methods annotated with `@StreamListener`.
@@ -573,9 +572,8 @@ The following binding properties are available for both input and output binding
 must be prefixed with `spring.cloud.stream.bindings.<channelName>.`.
 
 destination::
-    The target destination of a channel on the bound middleware (e.g., the RabbitMQ exchange or
-    Kafka topic).
-If not set, the channel name is used instead.
+    The target destination of a channel on the bound middleware (e.g., the RabbitMQ exchange or Kafka topic).
+    If not set, the channel name is used instead.
 group::
     The consumer group of the channel.
 Applies only to inbound bindings.
