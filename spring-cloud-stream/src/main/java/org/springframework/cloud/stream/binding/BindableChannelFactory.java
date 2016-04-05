@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
@@ -35,14 +34,5 @@ public interface BindableChannelFactory {
 	 * @return subscribable message channel
 	 */
 	SubscribableChannel createSubscribableChannel(String name);
-
-	/**
-	 * Create a {@link PollableChannel} that will be bound via the message channel
-	 * {@link org.springframework.cloud.stream.binder.Binder}.
-	 *
-	 * @param name name of the message channel
-	 * @return pollable message channel
-	 */
-	PollableChannel createPollableChannel(String name);
 
 }

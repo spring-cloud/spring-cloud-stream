@@ -49,6 +49,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.scheduling.support.PeriodicTrigger;
+import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -122,14 +123,17 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
+				Assert.notNull(channelFactory, "Channel Factory cannot be null");
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
 					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+					Assert.isTrue(MessageChannel.class.isAssignableFrom(method.getReturnType()),
+							"Input channel should be of type 'MessageChannel'");
 					@SuppressWarnings("unchecked")
 					Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
-						inputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
+						inputHolders.put(name, new ChannelHolder(channelFactory.createSubscribableChannel(name), true));
 					}
 					else {
 						inputHolders.put(name, new ChannelHolder(sharedChannel, false));
@@ -146,11 +150,20 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
 					String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+					if (method.getReturnType().equals(MessageChannel.class)) {
+						log.debug("Output channel is a MessageChannel. Creating a Subscribable Channel for binding.");
+					}
+					// Make sure any type other than `MessageChannel` should be of type `SubscribableChannel`
+					else {
+						Assert.isTrue(SubscribableChannel.class.isAssignableFrom(method.getReturnType()),
+								"Output channel should be of type 'SubscribableChannel'");
+					}
+
 					@SuppressWarnings("unchecked")
 					Class<? extends MessageChannel> channelType = (Class<? extends MessageChannel>) method.getReturnType();
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
-						outputHolders.put(name, new ChannelHolder(createBindableChannel(name, channelType), true));
+						outputHolders.put(name, new ChannelHolder(channelFactory.createSubscribableChannel(name), true));
 					}
 					else {
 						outputHolders.put(name, new ChannelHolder(sharedChannel, false));
@@ -162,11 +175,6 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			}
 
 		});
-	}
-
-	private MessageChannel createBindableChannel(String name, Class<? extends MessageChannel> channelType) {
-		return isPollable(channelType) ? this.channelFactory.createPollableChannel(name) :
-				this.channelFactory.createSubscribableChannel(name);
 	}
 
 	private MessageChannel locateSharedChannel(String name) {

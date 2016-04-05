@@ -16,8 +16,6 @@
 package org.springframework.cloud.stream.binding;
 
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.QueueChannel;
-import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
@@ -33,13 +31,6 @@ public class DefaultBindableChannelFactory implements BindableChannelFactory {
 
 	public DefaultBindableChannelFactory(MessageChannelConfigurer messageChannelConfigurer) {
 		this.messageChannelConfigurer = messageChannelConfigurer;
-	}
-
-	@Override
-	public PollableChannel createPollableChannel(String name) {
-		PollableChannel pollableChannel = new QueueChannel();
-		messageChannelConfigurer.configureMessageChannel(pollableChannel, name);
-		return pollableChannel;
 	}
 
 	@Override
