@@ -35,7 +35,10 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.PollableChannel;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -53,18 +56,22 @@ public class ChannelBindingService {
 
 	private final Log log = LogFactory.getLog(ChannelBindingService.class);
 
-	private BinderFactory<MessageChannel> binderFactory;
+	private final BinderFactory<MessageChannel> binderFactory;
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
+
+	private final PollableToSubscribableBridge pollableToSubscribableBridge;
 
 	private final Map<String, Binding<MessageChannel>> producerBindings = new HashMap<>();
 
 	private final Map<String, List<Binding<MessageChannel>>> consumerBindings = new HashMap<>();
 
 	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
-								 BinderFactory<MessageChannel> binderFactory) {
+			BinderFactory<MessageChannel> binderFactory,
+			PollableToSubscribableBridge pollableToSubscribableBridge) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.binderFactory = binderFactory;
+		this.pollableToSubscribableBridge = pollableToSubscribableBridge;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -96,6 +103,14 @@ public class ChannelBindingService {
 		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(outputChannelName);
 		Binder<MessageChannel, ?, ProducerProperties> binder =
 				(Binder<MessageChannel, ?, ProducerProperties>) getBinderForChannel(outputChannelName);
+		if (this.pollableToSubscribableBridge.isPollable(outputChannel.getClass())) {
+			if (log.isDebugEnabled()) {
+				log.debug("Bridge the pollable output channel to a subscribable channel");
+			}
+			SubscribableChannel newOutputChannel = new DirectChannel();
+			this.pollableToSubscribableBridge.bridge(outputChannelName, (PollableChannel) outputChannel, newOutputChannel);
+			outputChannel = newOutputChannel;
+		}
 		ProducerProperties producerProperties = this.channelBindingServiceProperties.getProducerProperties(outputChannelName);
 		if (binder instanceof ExtendedPropertiesBinder) {
 			ExtendedPropertiesBinder extendedPropertiesBinder = (ExtendedPropertiesBinder) binder;
