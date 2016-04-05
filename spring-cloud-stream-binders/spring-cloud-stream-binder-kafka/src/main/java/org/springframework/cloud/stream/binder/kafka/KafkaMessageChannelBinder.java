@@ -29,16 +29,9 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import kafka.admin.AdminUtils;
-import kafka.api.OffsetRequest;
-import kafka.serializer.Decoder;
-import kafka.serializer.DefaultDecoder;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import scala.collection.Seq;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -48,10 +41,10 @@ import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
-import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.http.MediaType;
@@ -90,6 +83,14 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import kafka.admin.AdminUtils;
+import kafka.api.OffsetRequest;
+import kafka.serializer.Decoder;
+import kafka.serializer.DefaultDecoder;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
+import scala.collection.Seq;
+
 /**
  * A {@link Binder} that uses Kafka as the underlying middleware.
  *
@@ -108,9 +109,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 	private RetryOperations retryOperations;
 
 	private final Map<String, Collection<Partition>> topicsInUse = new HashMap<>();
-
-	private final EmbeddedHeadersMessageConverter embeddedHeadersMessageConverter = new
-			EmbeddedHeadersMessageConverter();
 
 	private final ZookeeperConnect zookeeperConnect;
 
@@ -577,17 +575,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 		@Override
 		@SuppressWarnings("unchecked")
 		protected Object handleRequestMessage(Message<?> requestMessage) {
-			if (Mode.embeddedHeaders.equals(consumerProperties.getExtension().getMode())) {
-				MessageValues messageValues;
-				try {
-					messageValues = embeddedHeadersMessageConverter.extractHeaders((Message<byte[]>) requestMessage,
-							true);
-				}
-				catch (Exception e) {
-					logger.error(EmbeddedHeadersMessageConverter.decodeExceptionMessage(requestMessage), e);
-					messageValues = new MessageValues(requestMessage);
-				}
-				messageValues = deserializePayloadIfNecessary(messageValues);
+			if (HeaderMode.embeddedHeaders.equals(consumerProperties.getHeaderMode())) {
+				MessageValues messageValues = extractMessageValues(requestMessage);
 				return MessageBuilder.createMessage(messageValues.getPayload(), new KafkaBinderHeaders(
 						messageValues));
 			}
@@ -648,14 +637,13 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 			else {
 				targetPartition = roundRobin() % numberOfKafkaPartitions;
 			}
-
-			if (Mode.embeddedHeaders.equals(producerProperties.getExtension().getMode())) {
+			if (HeaderMode.embeddedHeaders.equals(producerProperties.getHeaderMode())) {
 				MessageValues transformed = serializePayloadIfNecessary(message);
 				byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
 						KafkaMessageChannelBinder.this.headersToMap);
 				producerConfiguration.send(topicName, targetPartition, null, messageToSend);
 			}
-			else if (Mode.raw.equals(producerProperties.getExtension().getMode())) {
+			else if (HeaderMode.raw.equals(producerProperties.getHeaderMode())) {
 				Object contentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 				if (contentType != null
 						&& !contentType.equals(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {
@@ -680,11 +668,6 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 			return result;
 		}
 
-	}
-
-	public enum Mode {
-		raw,
-		embeddedHeaders
 	}
 
 	public enum StartOffset {

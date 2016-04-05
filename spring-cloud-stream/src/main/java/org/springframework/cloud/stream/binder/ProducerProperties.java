@@ -46,6 +46,8 @@ public class ProducerProperties {
 
 	private String[] requiredGroups = new String[] {};
 
+	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
+
 	public Expression getPartitionKeyExpression() {
 		return partitionKeyExpression;
 	}
@@ -96,6 +98,14 @@ public class ProducerProperties {
 
 	public void setRequiredGroups(String... requiredGroups) {
 		this.requiredGroups = requiredGroups;
+	}
+
+	public HeaderMode getHeaderMode() {
+		return this.headerMode;
+	}
+
+	public void setHeaderMode(HeaderMode headerMode) {
+		this.headerMode = headerMode;
 	}
 
 }

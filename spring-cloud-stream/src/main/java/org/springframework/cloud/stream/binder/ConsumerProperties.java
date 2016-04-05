@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * Common consumer properties.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @JsonInclude(NON_DEFAULT)
 public class ConsumerProperties {
@@ -43,6 +44,8 @@ public class ConsumerProperties {
 	private int backOffMaxInterval = 10000;
 
 	private double backOffMultiplier = 2.0;
+
+	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
 
 	public int getConcurrency() {
 		return concurrency;
@@ -108,5 +111,12 @@ public class ConsumerProperties {
 		return backOffMultiplier;
 	}
 
+	public HeaderMode getHeaderMode() {
+		return this.headerMode;
+	}
+
+	public void setHeaderMode(HeaderMode headerMode) {
+		this.headerMode = headerMode;
+	}
 }
 
