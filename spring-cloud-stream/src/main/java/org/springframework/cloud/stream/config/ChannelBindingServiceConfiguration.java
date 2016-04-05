@@ -65,6 +65,8 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
 import org.springframework.tuple.spel.TuplePropertyAccessor;
 import org.springframework.util.CollectionUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
  *
@@ -82,6 +84,9 @@ public class ChannelBindingServiceConfiguration {
 
 	@Autowired
 	private MessageBuilderFactory messageBuilderFactory;
+
+	@Lazy @Autowired(required = false)
+	private ObjectMapper objectMapper;
 
 	/**
 	 * User defined custom message converters
@@ -165,7 +170,7 @@ public class ChannelBindingServiceConfiguration {
 		if (!CollectionUtils.isEmpty(customMessageConverters)) {
 			messageConverters.addAll(Collections.unmodifiableCollection(customMessageConverters));
 		}
-		return new CompositeMessageConverterFactory(messageConverters);
+		return new CompositeMessageConverterFactory(messageConverters, objectMapper);
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
@@ -230,7 +235,8 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(@Lazy BinderAwareChannelResolver binderAwareChannelResolver, @Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
+			@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
 		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 		messageHandlerMethodFactory.afterPropertiesSet();

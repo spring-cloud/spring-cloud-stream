@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,23 @@
 
 package org.springframework.cloud.stream.converter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeTypeUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  *
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
 public class JsonToPojoMessageConverter extends AbstractFromMessageConverter {
 
-	private final ObjectMapper mapper = new ObjectMapper();
+	private final ObjectMapper objectMapper;
 
-	public JsonToPojoMessageConverter() {
+	public JsonToPojoMessageConverter(ObjectMapper objectMapper) {
 		super(MimeTypeUtils.APPLICATION_JSON, MessageConverterUtils.X_JAVA_OBJECT);
-		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
 	}
 
 	@Override
@@ -52,10 +52,10 @@ public class JsonToPojoMessageConverter extends AbstractFromMessageConverter {
 			Object payload = message.getPayload();
 
 			if (payload instanceof byte[]) {
-				result = mapper.readValue((byte[]) payload, targetClass);
+				result = objectMapper.readValue((byte[]) payload, targetClass);
 			}
 			else if (payload instanceof String) {
-				result = mapper.readValue((String) payload, targetClass);
+				result = objectMapper.readValue((String) payload, targetClass);
 			}
 		}
 		catch (Exception e) {
