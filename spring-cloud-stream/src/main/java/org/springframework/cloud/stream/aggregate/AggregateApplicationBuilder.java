@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.aggregate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.springframework.boot.SpringApplication;
@@ -116,21 +117,17 @@ public class AggregateApplicationBuilder {
 		if (this.sinkConfigurer != null) {
 			apps.add(sinkConfigurer);
 		}
-		List<Class<?>> appsToEmbed = new ArrayList<>();
-		String namespace = null;
+		LinkedHashMap<Class<?>, String> appsToEmbed = new LinkedHashMap<>();
 		for (int i = 0; i < apps.size(); i++) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
-			appsToEmbed.add(appConfigurer.getApp());
-			if (namespace == null) {
-				namespace = appConfigurer.namespace;
-			}
+			Class<?> appToEmbed = appConfigurer.getApp();
+			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 		}
-		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry,
-				appsToEmbed.toArray(new Class<?>[0]), namespace);
+		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);
 		for (int i = apps.size() - 1; i >= 0; i--) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			appConfigurer.namespace(AggregateApplication
-					.getNamespace(namespace, appConfigurer.getApp().getName(), i));
+					.getNamespace(appConfigurer.namespace, appConfigurer.getApp().getName(), i));
 			appConfigurer.embed();
 		}
 		return parentContext;

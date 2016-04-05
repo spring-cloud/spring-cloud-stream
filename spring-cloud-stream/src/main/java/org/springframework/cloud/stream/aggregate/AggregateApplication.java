@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.aggregate;
 
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -73,7 +76,7 @@ public class AggregateApplication {
 	public static void runEmbedded(ConfigurableApplicationContext parentContext,
 			Class<?>[] apps, String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
-		prepareSharedChannelRegistry(bean, apps, null);
+		prepareSharedChannelRegistry(bean, apps);
 		// create child contexts first
 		createChildContexts(parentContext, apps, args);
 	}
@@ -117,21 +120,32 @@ public class AggregateApplication {
 				.parent(applicationContext);
 	}
 
-	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps,
-			String namespace) {
+	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps) {
+		LinkedHashMap<Class<?>, String> appsToRegister = new LinkedHashMap<>();
+		for (Class<?> app : apps) {
+			appsToRegister.put(app, null);
+		}
+		prepareSharedChannelRegistry(sharedChannelRegistry, appsToRegister);
+	}
+
+	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry,
+			LinkedHashMap<Class<?>, String> appsWithNamespace) {
+		int i = 0;
 		SubscribableChannel sharedChannel = null;
-		for (int i = 0; i < apps.length; i++) {
-			Class<?> app = apps[i];
+		for (Entry<Class<?>, String> appEntry : appsWithNamespace.entrySet()) {
+			Class<?> app = appEntry.getKey();
+			String namespace = appEntry.getValue();
 			String appClassName = app.getName();
 			if (i > 0) {
 				sharedChannelRegistry.register(getNamespace(namespace, appClassName, i)
 						+ "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
-			if (i < apps.length - 1) {
+			if (i < appsWithNamespace.size() - 1) {
 				sharedChannelRegistry.register(getNamespace(namespace, appClassName, i)
 						+ "." + OUTPUT_CHANNEL_NAME, sharedChannel);
 			}
+			i ++;
 		}
 	}
 
