@@ -9,7 +9,7 @@ It covers topics such as creating and running stream applications.
 
 == Introducing Spring Cloud Stream
 Spring Cloud Stream is a framework for building message-driven microservice applications.
-Spring Cloud Stream builds upon Spring Boot and uses Spring Integration to provide connectivity to message brokers.
+Spring Cloud Stream builds upon Spring Boot to create standalone, production-grade Spring applications, and uses Spring Integration to provide connectivity to message brokers.
 It provides opinionated configuration of middleware from several vendors, introducing the concepts of persistent publish-subscribe semantics, consumer groups, and partitions.
 
 You can add the `@EnableBinding` annotation to your application to get immediate connectivity to a message broker, and you can add `@StreamListener` to a method to cause it to receive events for stream processing.
@@ -37,7 +37,7 @@ public class TimerSource {
 }
 ----
 
-The `@EnableBinding` takes one or more interfaces as parameters (in this case, the parameter is a single `Sink` interface).
+The `@EnableBinding` annotation takes one or more interfaces as parameters (in this case, the parameter is a single `Sink` interface).
 An interface declares input and/or output channels.
 Spring Cloud Stream provides the interfaces `Source`, `Sink`, and `Processor`; you can also define your own interfaces.
 
@@ -82,7 +82,7 @@ public class StreamApplicationTests {
 Spring Cloud Stream provides a number of abstractions and primitives that simplify the writing of message-driven microservice applications.
 This section gives an overview of the following:
 
-* A standard application model
+* Spring Cloud Stream's application model
 * The Binder abstraction
 * Persistent publish-subscribe support
 * Consumer group support
