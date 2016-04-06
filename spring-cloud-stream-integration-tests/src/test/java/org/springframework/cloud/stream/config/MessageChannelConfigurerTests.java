@@ -16,15 +16,11 @@
 package org.springframework.cloud.stream.config;
 
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -42,6 +38,8 @@ import org.springframework.tuple.Tuple;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -76,7 +74,6 @@ public class MessageChannelConfigurerTests {
 
 	@Test
 	public void testObjectMapperConfig() {
-		assertNotNull( "ObjectMapper should exist", objectMapper);
 		assertTrue("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled", !objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
 	}
 	

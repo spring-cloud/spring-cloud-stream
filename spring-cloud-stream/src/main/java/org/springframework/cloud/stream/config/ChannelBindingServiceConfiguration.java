@@ -99,16 +99,16 @@ public class ChannelBindingServiceConfiguration {
 	// it is used to detect a ChannelBindingService in the parent context (which we know
 	// already exists).
 	@ConditionalOnMissingBean(ChannelBindingService.class)
-	public ChannelBindingService bindingService(
-			ChannelBindingServiceProperties channelBindingServiceProperties,
+	public ChannelBindingService bindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
 			BinderFactory<MessageChannel> binderFactory) {
 		return new ChannelBindingService(channelBindingServiceProperties, binderFactory);
 	}
 
 	@Bean
-	public MessageConverterConfigurer messageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties,
-																 MessageBuilderFactory messageBuilderFactory,
-																 CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public MessageConverterConfigurer messageConverterConfigurer(
+			ChannelBindingServiceProperties channelBindingServiceProperties,
+			MessageBuilderFactory messageBuilderFactory,
+			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		return new MessageConverterConfigurer(channelBindingServiceProperties, messageBuilderFactory, compositeMessageConverterFactory);
 	}
 
@@ -235,7 +235,8 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
+	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(
+			@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
 			@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
 		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
