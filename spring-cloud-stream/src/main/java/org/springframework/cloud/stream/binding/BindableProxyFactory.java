@@ -21,11 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -40,6 +35,11 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
+
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
@@ -108,8 +108,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
 					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
-					Assert.isTrue(MessageChannel.class.isAssignableFrom(method.getReturnType()),
-							"Input channel should be of type 'MessageChannel'");
+					validateChannelType(method.getReturnType());
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
 						inputHolders.put(name, new ChannelHolder(channelFactory.createSubscribableChannel(name), true));
@@ -126,14 +125,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
 					String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
-					if (method.getReturnType().equals(MessageChannel.class)) {
-						log.debug("Output channel is a MessageChannel. Creating a Subscribable Channel for binding.");
-					}
-					// Make sure any type other than `MessageChannel` should be of type `SubscribableChannel`
-					else {
-						Assert.isTrue(SubscribableChannel.class.isAssignableFrom(method.getReturnType()),
-								"Output channel should be of type 'SubscribableChannel'");
-					}
+					validateChannelType(method.getReturnType());
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
 						outputHolders.put(name, new ChannelHolder(channelFactory.createSubscribableChannel(name), true));
@@ -145,6 +137,12 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			}
 
 		});
+	}
+
+	private void validateChannelType(Class<?> channelType) {
+		Assert.isTrue(SubscribableChannel.class.equals(channelType) || MessageChannel.class.equals(channelType),
+				"A bound channel should be either a '" + MessageChannel.class.getName() + "', " +
+						" or a '" + SubscribableChannel.class.getName() + "'");
 	}
 
 	private MessageChannel locateSharedChannel(String name) {
