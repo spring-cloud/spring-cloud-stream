@@ -119,8 +119,9 @@ public class AggregateApplication {
 
 	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps) {
 		LinkedHashMap<Class<?>, String> appsToRegister = new LinkedHashMap<>();
-		for (Class<?> app : apps) {
-			appsToRegister.put(app, null);
+		for (int i = apps.length - 1; i >= 0; i--) {
+			String appClassName = apps[i].getName();
+			appsToRegister.put(apps[i], getNamespace(appClassName, i));
 		}
 		prepareSharedChannelRegistry(sharedChannelRegistry, appsToRegister);
 	}
