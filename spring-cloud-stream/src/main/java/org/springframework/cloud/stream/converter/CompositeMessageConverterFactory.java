@@ -29,6 +29,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ObjectUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 /**
  * A factory for creating an instance of {@link CompositeMessageConverter} for a given target MIME type
@@ -38,16 +40,20 @@ import org.springframework.util.ObjectUtils;
  */
 public class CompositeMessageConverterFactory {
 
+	private final ObjectMapper objectMapper;
+
 	private final List<AbstractFromMessageConverter> converters;
 
 	public CompositeMessageConverterFactory() {
-		this(Collections.<AbstractFromMessageConverter>emptyList());
+		this(Collections.<AbstractFromMessageConverter>emptyList(), new ObjectMapper());
 	}
 
 	/**
 	 * @param customConverters a list of {@link AbstractFromMessageConverter}
 	 */
-	public CompositeMessageConverterFactory(List<? extends AbstractFromMessageConverter> customConverters) {
+	public CompositeMessageConverterFactory(List<? extends AbstractFromMessageConverter> customConverters,
+			ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
 		if (!CollectionUtils.isEmpty(customConverters)) {
 			this.converters = new ArrayList<>(customConverters);
 		}
@@ -58,12 +64,11 @@ public class CompositeMessageConverterFactory {
 	}
 
 
-
 	private void initDefaultConverters() {
 		this.converters.add(new JsonToTupleMessageConverter());
-		this.converters.add(new TupleToJsonMessageConverter());
-		this.converters.add(new JsonToPojoMessageConverter());
-		this.converters.add(new PojoToJsonMessageConverter());
+		this.converters.add(new TupleToJsonMessageConverter(objectMapper));
+		this.converters.add(new JsonToPojoMessageConverter(objectMapper));
+		this.converters.add(new PojoToJsonMessageConverter(objectMapper));
 		this.converters.add(new ByteArrayToStringMessageConverter());
 		this.converters.add(new StringToByteArrayMessageConverter());
 		this.converters.add(new PojoToStringMessageConverter());

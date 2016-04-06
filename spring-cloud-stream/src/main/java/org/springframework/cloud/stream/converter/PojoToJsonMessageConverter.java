@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package org.springframework.cloud.stream.converter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeTypeUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -31,17 +30,18 @@ import org.springframework.util.MimeTypeUtils;
  *
  * @author David Turanski
  * @author David Liu
+ * @author Ilayaperumal Gopinathan
  */
 public class PojoToJsonMessageConverter extends AbstractFromMessageConverter {
 
-	private final ObjectMapper mapper = new ObjectMapper();
+	private final ObjectMapper objectMapper;
 
 	@Value("${typeconversion.json.prettyPrint:false}")
 	private volatile boolean prettyPrint;
 
-	public PojoToJsonMessageConverter() {
+	public PojoToJsonMessageConverter(ObjectMapper objectMapper) {
 		super(MimeTypeUtils.APPLICATION_JSON);
-		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
 	}
 
 	@Override
@@ -64,10 +64,10 @@ public class PojoToJsonMessageConverter extends AbstractFromMessageConverter {
 		Object result;
 		try {
 			if (prettyPrint) {
-				result = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(message.getPayload());
+				result = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(message.getPayload());
 			}
 			else {
-				result = mapper.writeValueAsString(message.getPayload());
+				result = objectMapper.writeValueAsString(message.getPayload());
 			}
 		}
 		catch (JsonProcessingException e) {

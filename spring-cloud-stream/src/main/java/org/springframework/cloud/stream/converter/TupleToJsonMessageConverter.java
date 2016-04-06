@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,12 @@ package org.springframework.cloud.stream.converter;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -32,18 +31,22 @@ import org.springframework.util.MimeTypeUtils;
  * to convert a {@link Tuple} to a JSON String
  *
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  */
 public class TupleToJsonMessageConverter extends AbstractFromMessageConverter {
 
 	@Value("${typeconversion.json.prettyPrint:false}")
 	private volatile boolean prettyPrint;
 
+	private final ObjectMapper objectMapper;
+
 	public void setPrettyPrint(boolean prettyPrint) {
 		this.prettyPrint = prettyPrint;
 	}
 
-	public TupleToJsonMessageConverter() {
+	public TupleToJsonMessageConverter(ObjectMapper objectMapper) {
 		super(MimeTypeUtils.APPLICATION_JSON);
+		this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
 	}
 
 	@Override
@@ -61,11 +64,9 @@ public class TupleToJsonMessageConverter extends AbstractFromMessageConverter {
 		Tuple t = (Tuple) message.getPayload();
 		String json;
 		if (prettyPrint) {
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 			try {
-				Object tmp = mapper.readValue(t.toString(), Object.class);
-				json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tmp);
+				Object tmp = objectMapper.readValue(t.toString(), Object.class);
+				json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tmp);
 			}
 			catch (IOException e) {
 				logger.error(e.getMessage(), e);

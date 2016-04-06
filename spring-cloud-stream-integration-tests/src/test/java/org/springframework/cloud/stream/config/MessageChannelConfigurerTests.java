@@ -16,6 +16,7 @@
 package org.springframework.cloud.stream.config;
 
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -39,6 +40,9 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.tuple.Tuple;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 /**
  * @author Ilayaperumal Gopinathan
  */
@@ -48,6 +52,9 @@ public class MessageChannelConfigurerTests {
 
 	@Autowired @Bindings(TestSink.class)
 	private Sink testSink;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	@Test
 	public void testMessageConverterConfigurer() throws Exception {
@@ -65,6 +72,12 @@ public class MessageChannelConfigurerTests {
 		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
 		assertTrue(latch.await(10, TimeUnit.SECONDS));
 		testSink.input().unsubscribe(messageHandler);
+	}
+
+	@Test
+	public void testObjectMapperConfig() {
+		assertNotNull( "ObjectMapper should exist", objectMapper);
+		assertTrue("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled", !objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
 	}
 	
 	@EnableBinding(Sink.class)
