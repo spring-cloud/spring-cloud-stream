@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -55,6 +56,7 @@ public class SpelExpressionConverterConfiguration {
 
 		@Autowired
 		@Qualifier(IntegrationContextUtils.INTEGRATION_EVALUATION_CONTEXT_BEAN_NAME)
+		@Lazy
 		private EvaluationContext evaluationContext;
 
 		@Override

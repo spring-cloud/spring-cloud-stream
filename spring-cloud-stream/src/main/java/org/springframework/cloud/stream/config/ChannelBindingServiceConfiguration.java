@@ -85,7 +85,7 @@ public class ChannelBindingServiceConfiguration {
 	@Autowired
 	private MessageBuilderFactory messageBuilderFactory;
 
-	@Lazy @Autowired(required = false)
+	@Autowired(required = false)
 	private ObjectMapper objectMapper;
 
 	/**
