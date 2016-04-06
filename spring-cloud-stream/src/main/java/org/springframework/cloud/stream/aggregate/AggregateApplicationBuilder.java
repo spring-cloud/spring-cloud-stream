@@ -121,13 +121,15 @@ public class AggregateApplicationBuilder {
 		for (int i = 0; i < apps.size(); i++) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			Class<?> appToEmbed = appConfigurer.getApp();
+			// Always update namespace before preparing SharedChannelRegistry
+			if (appConfigurer.namespace == null) {
+				appConfigurer.namespace = AggregateApplication.getNamespace(appConfigurer.getApp().getName(), i);
+			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 		}
 		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);
 		for (int i = apps.size() - 1; i >= 0; i--) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
-			appConfigurer.namespace(AggregateApplication
-					.getNamespace(appConfigurer.namespace, appConfigurer.getApp().getName(), i));
 			appConfigurer.embed();
 		}
 		return parentContext;
