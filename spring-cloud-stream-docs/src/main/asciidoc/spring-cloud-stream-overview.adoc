@@ -603,6 +603,12 @@ partitioned::
   Whether the consumer receives data from a partitioned producer.
 +
 Default: `false`.
+mode::
+    When set to `raw`, disables header parsing on input.
+Effective only for messaging middleware that that does not support message headers natively and require header embedding.
+Useful when inbound data is coming from outside Spring Cloud Stream applications.
++
+Default: `embeddedHeaders`.
 maxAttempts::
   The number of attempts of re-processing an inbound message.
 Currently ignored by Kafka.
@@ -663,6 +669,12 @@ On Kafka, interpreted as a
 Default: `1`. 
 requiredGroups::
   A comma-separated list of groups to which the producer must ensure message delivery even if they start after it has been created (e.g., by pre-creating durable queues in RabbitMQ).
+mode::
+  When set to `raw`, disables header embedding on output.
+Effective only for messaging middleware that that does not support message headers natively and require header embedding.
+Useful when producing data for non-Spring Cloud Stream applications.
++
+Default: `embeddedHeaders`.
 
 [[binder-specific-configuration]]
 == Binder-Specific Configuration
@@ -841,11 +853,6 @@ autoCommitOffset::
 If set to `false`, an `Acknowledgment` header will be available in the message headers for late acknowledgment.
 +
 Default: `true`.
-mode::
-    When set to `raw`, disables header parsing on input.
-Useful when inbound data is coming from outside Spring Cloud Stream applications.
-+
-Default: `embeddedHeaders`.
 resetOffsets::
   Whether to reset offsets on the consumer to the value provided by `startOffset`.
 +
@@ -878,11 +885,6 @@ batchTimeout::
 (Normally the producer does not wait at all, and simply sends all the messages that accumulated while the previous send was in progress.) A non-zero value may increase throughput at the expense of latency.
 +
 Default: `0`.
-mode::
-    When set to `raw`, disables header propagation on output.
-Useful when producing data for non-Spring Cloud Stream applications.
-+
-Default: `embeddedHeaders`.
 
 == Binder Detection
 
