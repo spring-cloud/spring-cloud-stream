@@ -125,7 +125,7 @@ Communication between applications follows a publish-subscribe model, where data
 This can be seen in the following figure, which shows a typical deployment for a set of interacting Spring Cloud Stream applications.
 
 .Spring Cloud Stream Application topologies
-image::SCSt-with-binder.png[width=300,scaledwidth="50%"]
+image::SCSt-sensors.png[width=300,scaledwidth="50%"]
 
 Data reported by sensors to an HTTP endpoint is sent to a common destination named `raw-sensor-data`.
 From the destination, it is independently processed by a microservice application that computes time-windowed averages and by another microservice application that ingests the raw data into HDFS.
@@ -395,7 +395,7 @@ public class SendingBean {
 }
 ----
 
-==== Programming Model
+==== Producing and Consuming Messages
 
 You can write a Spring Cloud Stream application using either Spring Integration annotations or Spring Cloud Stream's `@StreamListener` annotation.
 The `@StreamListener` annotation is modeled after other Spring Messaging annotations (such as `@MessageMapping`, `@JmsListener`, `@RabbitListener`, etc.) but adds content type management and type coercion features.
