@@ -124,7 +124,7 @@ For more complex use cases, you can also package multiple binders with your appl
 Communication between applications follows a publish-subscribe model, where data is broadcast through shared topics.
 This can be seen in the following figure, which shows a typical deployment for a set of interacting Spring Cloud Stream applications.
 
-.Spring Cloud Stream Application topologies
+.Spring Cloud Stream Publish-Subscribe
 image::SCSt-sensors.png[width=300,scaledwidth="50%"]
 
 Data reported by sensors to an HTTP endpoint is sent to a common destination named `raw-sensor-data`.
