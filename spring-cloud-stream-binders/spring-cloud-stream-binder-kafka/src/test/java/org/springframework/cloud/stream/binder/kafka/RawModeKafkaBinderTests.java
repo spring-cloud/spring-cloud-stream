@@ -26,13 +26,11 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -41,6 +39,9 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
+
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * @author Marius Bogoevici
@@ -55,6 +56,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	public void testPartitionedModuleJava() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
+		properties.setHeaderMode(HeaderMode.raw);
 		properties.setPartitionKeyExtractorClass(RawKafkaPartitionTestSupport.class);
 		properties.setPartitionSelectorClass(RawKafkaPartitionTestSupport.class);
 		properties.setPartitionCount(3);
@@ -68,6 +70,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setInstanceIndex(0);
 		consumerProperties.setPartitioned(true);
+		consumerProperties.setHeaderMode(HeaderMode.raw);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("partJ.0", "test", input0, consumerProperties);
@@ -111,6 +114,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		properties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload[0]"));
 		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
 		properties.setPartitionCount(3);
+		properties.setHeaderMode(HeaderMode.raw);
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
@@ -128,6 +132,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		consumerProperties.setInstanceIndex(0);
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setPartitioned(true);
+		consumerProperties.setHeaderMode(HeaderMode.raw);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0S");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer("part.0", "test", input0, consumerProperties);
@@ -175,8 +180,12 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		KafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, createProducerProperties());
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, createConsumerProperties());
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.setHeaderMode(HeaderMode.raw);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, producerProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setHeaderMode(HeaderMode.raw);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, consumerProperties);
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
@@ -204,14 +213,18 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		QueueChannel module1InputChannel = new QueueChannel();
 		QueueChannel module2InputChannel = new QueueChannel();
 		QueueChannel module3InputChannel = new QueueChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("baz.0", moduleOutputChannel, createProducerProperties());
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("baz.0", "test", module1InputChannel, createConsumerProperties());
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.setHeaderMode(HeaderMode.raw);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("baz.0", moduleOutputChannel, producerProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setHeaderMode(HeaderMode.raw);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("baz.0", "test", module1InputChannel, consumerProperties);
 		// A new module is using the tap as an input channel
 		String fooTapName = "baz.0";
-		Binding<MessageChannel> input2Binding = binder.bindConsumer(fooTapName, "tap1", module2InputChannel, createConsumerProperties());
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(fooTapName, "tap1", module2InputChannel, consumerProperties);
 		// Another new module is using tap as an input channel
 		String barTapName = "baz.0";
-		Binding<MessageChannel> input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, createConsumerProperties());
+		Binding<MessageChannel> input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, consumerProperties);
 
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		boolean success = false;
