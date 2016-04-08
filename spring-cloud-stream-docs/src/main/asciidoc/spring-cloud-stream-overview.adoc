@@ -603,9 +603,9 @@ partitioned::
   Whether the consumer receives data from a partitioned producer.
 +
 Default: `false`.
-mode::
+headerMode::
     When set to `raw`, disables header parsing on input.
-Effective only for messaging middleware that that does not support message headers natively and require header embedding.
+Effective only for messaging middleware that does not support message headers natively and requires header embedding.
 Useful when inbound data is coming from outside Spring Cloud Stream applications.
 +
 Default: `embeddedHeaders`.
@@ -669,9 +669,9 @@ On Kafka, interpreted as a
 Default: `1`. 
 requiredGroups::
   A comma-separated list of groups to which the producer must ensure message delivery even if they start after it has been created (e.g., by pre-creating durable queues in RabbitMQ).
-mode::
+headerMode::
   When set to `raw`, disables header embedding on output.
-Effective only for messaging middleware that that does not support message headers natively and require header embedding.
+Effective only for messaging middleware that does not support message headers natively and requires header embedding.
 Useful when producing data for non-Spring Cloud Stream applications.
 +
 Default: `embeddedHeaders`.
