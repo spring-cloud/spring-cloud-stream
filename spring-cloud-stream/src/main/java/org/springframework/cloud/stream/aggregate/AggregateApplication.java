@@ -35,7 +35,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Ilayaperumal Gopinathan
  * @author Venil Noronha
  */
-public class AggregateApplication {
+class AggregateApplication {
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
@@ -55,14 +55,14 @@ public class AggregateApplication {
 	 *
 	 * @return the resulting parent context for the aggregate
 	 */
-	public static ConfigurableApplicationContext run(Class<?>[] apps, String[] parentArgs, String[][] appArgs) {
+	static ConfigurableApplicationContext run(Class<?>[] apps, String[] parentArgs, String[][] appArgs) {
 		ConfigurableApplicationContext parentContext = createParentContext(parentArgs != null ? parentArgs
 				: new String[0]);
 		runEmbedded(parentContext, apps, appArgs);
 		return parentContext;
 	}
 
-	public static ConfigurableApplicationContext run(Class<?>... apps) {
+	static ConfigurableApplicationContext run(Class<?>... apps) {
 		return run(apps, null, null);
 	}
 
@@ -73,7 +73,7 @@ public class AggregateApplication {
 	 * @param apps a list of classes, representing root context definitions for apps
 	 * @param args arguments for the apps
 	 */
-	public static void runEmbedded(ConfigurableApplicationContext parentContext,
+	static void runEmbedded(ConfigurableApplicationContext parentContext,
 			Class<?>[] apps, String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
 		prepareSharedChannelRegistry(bean, apps);
@@ -81,7 +81,7 @@ public class AggregateApplication {
 		createChildContexts(parentContext, apps, args);
 	}
 
-	protected static ConfigurableApplicationContext createParentContext(String[] args) {
+	static ConfigurableApplicationContext createParentContext(String[] args) {
 		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
 		aggregatorParentConfiguration
 				.sources(AggregatorParentConfiguration.class)
@@ -92,7 +92,7 @@ public class AggregateApplication {
 		return aggregatorParentConfiguration.run(args);
 	}
 
-	private static void createChildContexts(ConfigurableApplicationContext parentContext,
+	static void createChildContexts(ConfigurableApplicationContext parentContext,
 			Class<?>[] apps, String args[][]) {
 		for (int i = apps.length - 1; i >= 0; i--) {
 			String appClassName = apps[i].getName();
@@ -101,7 +101,7 @@ public class AggregateApplication {
 		}
 	}
 
-	protected static String getNamespace(String appClassName, int index) {
+	static String getNamespace(String appClassName, int index) {
 		return appClassName + "_" + index;
 	}
 
@@ -117,7 +117,7 @@ public class AggregateApplication {
 				.parent(applicationContext);
 	}
 
-	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps) {
+	static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps) {
 		LinkedHashMap<Class<?>, String> appsToRegister = new LinkedHashMap<>();
 		for (int i = apps.length - 1; i >= 0; i--) {
 			String appClassName = apps[i].getName();
@@ -126,7 +126,7 @@ public class AggregateApplication {
 		prepareSharedChannelRegistry(sharedChannelRegistry, appsToRegister);
 	}
 
-	protected static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry,
+	static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry,
 			LinkedHashMap<Class<?>, String> appsWithNamespace) {
 		int i = 0;
 		SubscribableChannel sharedChannel = null;
