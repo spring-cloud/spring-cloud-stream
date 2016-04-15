@@ -97,7 +97,8 @@ public class BinderAwareChannelResolverTests {
 		bindings.put("foo", bindingProperties);
 		this.channelBindingServiceProperties.setBindings(bindings);
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
-																									  this.channelBindingServiceProperties, new DefaultMessageBuilderFactory(), new CompositeMessageConverterFactory());
+				this.channelBindingServiceProperties, new DefaultMessageBuilderFactory(),
+				new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
 		this.bindableChannelFactory = new DefaultBindableChannelFactory(messageConverterConfigurer);
@@ -197,7 +198,8 @@ public class BinderAwareChannelResolverTests {
 		private final Map<String, DirectChannel> destinations = new ConcurrentHashMap<>();
 
 		@Override
-		public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, ConsumerProperties properties) {
+		public Binding<MessageChannel> bindConsumer(String name, String group,
+				MessageChannel inboundBindTarget, ConsumerProperties properties) {
 			synchronized (destinations) {
 				if (!destinations.containsKey(name)) {
 					destinations.put(name, new DirectChannel());
@@ -210,7 +212,8 @@ public class BinderAwareChannelResolverTests {
 
 
 		@Override
-		public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, ProducerProperties properties) {
+		public Binding<MessageChannel> bindProducer(String name,
+				MessageChannel outboundBindTarget, ProducerProperties properties) {
 			synchronized (destinations) {
 				if (!destinations.containsKey(name)) {
 					destinations.put(name, new DirectChannel());

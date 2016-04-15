@@ -68,48 +68,64 @@ public class StreamListenerTests {
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-								  .setHeader("contentType", "application/json").build());
+				.setHeader("contentType", "application/json").build());
 		assertTrue(testSink.latch.await(10, TimeUnit.SECONDS));
 		assertThat(testSink.receivedArguments, hasSize(1));
-		assertThat(testSink.receivedArguments.get(0), hasProperty("bar", equalTo("barbar" + id)));
+		assertThat(testSink.receivedArguments.get(0),
+				hasProperty("bar", equalTo("barbar" + id)));
 		context.close();
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testAnnotatedArguments() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class);
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestPojoWithAnnotatedArguments.class);
 
-		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context.getBean(TestPojoWithAnnotatedArguments.class);
+		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context
+				.getBean(TestPojoWithAnnotatedArguments.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
-		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-								  .setHeader("contentType", "application/json").setHeader("testHeader", "testValue").build());
+		sink.input()
+				.send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+						.setHeader("contentType", "application/json")
+						.setHeader("testHeader", "testValue").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments, hasSize(3));
-		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0), instanceOf(FooPojo.class));
-		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0), hasProperty("bar", equalTo("barbar" + id)));
-		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(1), instanceOf(Map.class));
-		assertThat((Map<String, String>) testPojoWithAnnotatedArguments.receivedArguments.get(1),
+		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0),
+				instanceOf(FooPojo.class));
+		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0),
+				hasProperty("bar", equalTo("barbar" + id)));
+		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(1),
+				instanceOf(Map.class));
+		assertThat(
+				(Map<String, String>) testPojoWithAnnotatedArguments.receivedArguments
+						.get(1),
 				hasEntry(MessageHeaders.CONTENT_TYPE, "application/json"));
-		assertThat((Map<String, String>) testPojoWithAnnotatedArguments.receivedArguments.get(1),
-				hasEntry(equalTo("testHeader"), equalTo("testValue")));
-		assertThat((String) testPojoWithAnnotatedArguments.receivedArguments.get(2), equalTo("application/json"));
+		assertThat((Map<String, String>) testPojoWithAnnotatedArguments.receivedArguments
+				.get(1), hasEntry(equalTo("testHeader"), equalTo("testValue")));
+		assertThat((String) testPojoWithAnnotatedArguments.receivedArguments.get(2),
+				equalTo("application/json"));
 		context.close();
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testReturn() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestStringProcessor.class);
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestStringProcessor.class);
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
-		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
-		TestStringProcessor testStringProcessor = context.getBean(TestStringProcessor.class);
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+						.setHeader("contentType", "application/json").build());
+		Message<String> message = (Message<String>) collector
+				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+		TestStringProcessor testStringProcessor = context
+				.getBean(TestStringProcessor.class);
 		assertThat(testStringProcessor.receivedPojos, hasSize(1));
-		assertThat(testStringProcessor.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
+		assertThat(testStringProcessor.receivedPojos.get(0),
+				hasProperty("bar", equalTo("barbar" + id)));
 		assertThat(message, not(nullValue(Message.class)));
 		assertThat(message.getPayload(), equalTo("barbar" + id));
 		context.close();
@@ -118,36 +134,47 @@ public class StreamListenerTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testReturnConversion() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithMimeType.class,
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestPojoWithMimeType.class,
 				"--spring.cloud.stream.bindings.output.contentType=application/json");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
-		TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+						.setHeader("contentType", "application/json").build());
+		TestPojoWithMimeType testPojoWithMimeType = context
+				.getBean(TestPojoWithMimeType.class);
 		assertThat(testPojoWithMimeType.receivedPojos, hasSize(1));
-		assertThat(testPojoWithMimeType.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
-		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(testPojoWithMimeType.receivedPojos.get(0),
+				hasProperty("bar", equalTo("barbar" + id)));
+		Message<String> message = (Message<String>) collector
+				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message, not(nullValue(Message.class)));
 		assertThat(message.getPayload(), equalTo("{\"qux\":\"barbar" + id + "\"}"));
-		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, String.class), equalTo("application/json"));
+		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, String.class),
+				equalTo("application/json"));
 		context.close();
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testReturnNoConversion() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithMimeType.class);
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestPojoWithMimeType.class);
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
-		TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+						.setHeader("contentType", "application/json").build());
+		TestPojoWithMimeType testPojoWithMimeType = context
+				.getBean(TestPojoWithMimeType.class);
 		assertThat(testPojoWithMimeType.receivedPojos, hasSize(1));
-		assertThat(testPojoWithMimeType.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
-		Message<BazPojo> message = (Message<BazPojo>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(testPojoWithMimeType.receivedPojos.get(0),
+				hasProperty("bar", equalTo("barbar" + id)));
+		Message<BazPojo> message = (Message<BazPojo>) collector
+				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message, not(nullValue(Message.class)));
 		assertThat(message.getPayload().getQux(), equalTo("barbar" + id));
 		context.close();
@@ -156,16 +183,21 @@ public class StreamListenerTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testReturnMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithMessageReturn.class);
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestPojoWithMessageReturn.class);
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
-		TestPojoWithMessageReturn testPojoWithMessageReturn = context.getBean(TestPojoWithMessageReturn.class);
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+						.setHeader("contentType", "application/json").build());
+		TestPojoWithMessageReturn testPojoWithMessageReturn = context
+				.getBean(TestPojoWithMessageReturn.class);
 		assertThat(testPojoWithMessageReturn.receivedPojos, hasSize(1));
-		assertThat(testPojoWithMessageReturn.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
-		Message<BazPojo> message = (Message<BazPojo>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(testPojoWithMessageReturn.receivedPojos.get(0),
+				hasProperty("bar", equalTo("barbar" + id)));
+		Message<BazPojo> message = (Message<BazPojo>) collector
+				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message, not(nullValue(Message.class)));
 		assertThat(message.getPayload().getQux(), equalTo("barbar" + id));
 		context.close();
@@ -174,16 +206,20 @@ public class StreamListenerTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testMessageArgument() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithMessageArgument.class);
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestPojoWithMessageArgument.class);
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload("barbar" + id)
-									   .setHeader("contentType", "text/plain").build());
-		TestPojoWithMessageArgument testPojoWithMessageArgument = context.getBean(TestPojoWithMessageArgument.class);
+				.setHeader("contentType", "text/plain").build());
+		TestPojoWithMessageArgument testPojoWithMessageArgument = context
+				.getBean(TestPojoWithMessageArgument.class);
 		assertThat(testPojoWithMessageArgument.receivedMessages, hasSize(1));
-		assertThat(testPojoWithMessageArgument.receivedMessages.get(0).getPayload(), equalTo("barbar" + id));
-		Message<BazPojo> message = (Message<BazPojo>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(testPojoWithMessageArgument.receivedMessages.get(0).getPayload(),
+				equalTo("barbar" + id));
+		Message<BazPojo> message = (Message<BazPojo>) collector
+				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message, not(nullValue(Message.class)));
 		assertThat(message.getPayload().getQux(), equalTo("barbar" + id));
 		context.close();
@@ -193,32 +229,38 @@ public class StreamListenerTests {
 	@SuppressWarnings("unchecked")
 	public void testDuplicateMapping() throws Exception {
 		try {
-			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping.class);
+			ConfigurableApplicationContext context = SpringApplication
+					.run(TestDuplicateMapping.class);
 			fail("Exception expected on duplicate mapping");
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage(), startsWith("Duplicate @StreamListener mapping"));
+			assertThat(e.getCause().getMessage(),
+					startsWith("Duplicate @StreamListener mapping"));
 		}
 	}
-
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testHandlerBean() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestHandlerBean.class,
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestHandlerBean.class,
 				"--spring.cloud.stream.bindings.output.contentType=application/json");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
-									   .setHeader("contentType", "application/json").build());
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+						.setHeader("contentType", "application/json").build());
 		HandlerBean handlerBean = context.getBean(HandlerBean.class);
 		assertThat(handlerBean.receivedPojos, hasSize(1));
-		assertThat(handlerBean.receivedPojos.get(0), hasProperty("bar", equalTo("barbar" + id)));
-		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(handlerBean.receivedPojos.get(0),
+				hasProperty("bar", equalTo("barbar" + id)));
+		Message<String> message = (Message<String>) collector
+				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message, not(nullValue(Message.class)));
 		assertThat(message.getPayload(), equalTo("{\"qux\":\"barbar" + id + "\"}"));
-		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, String.class), equalTo("application/json"));
+		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, String.class),
+				equalTo("application/json"));
 		context.close();
 	}
 
@@ -229,7 +271,6 @@ public class StreamListenerTests {
 		List<FooPojo> receivedArguments = new ArrayList<>();
 
 		CountDownLatch latch = new CountDownLatch(1);
-
 
 		@StreamListener(Sink.INPUT)
 		public void receive(FooPojo fooPojo) {
@@ -275,8 +316,9 @@ public class StreamListenerTests {
 		List<Object> receivedArguments = new ArrayList<>();
 
 		@StreamListener(Processor.INPUT)
-		public void receive(@Payload FooPojo fooPojo, @Headers Map<String, Object> headers,
-								   @Header(MessageHeaders.CONTENT_TYPE) String contentType) {
+		public void receive(@Payload FooPojo fooPojo,
+				@Headers Map<String, Object> headers,
+				@Header(MessageHeaders.CONTENT_TYPE) String contentType) {
 			receivedArguments.add(fooPojo);
 			receivedArguments.add(headers);
 			receivedArguments.add(contentType);

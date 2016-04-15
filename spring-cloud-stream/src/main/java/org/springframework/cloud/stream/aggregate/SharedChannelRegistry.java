@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.springframework.messaging.MessageChannel;
 
 /**
  * A registry for channels that can be shared between modules, used for module aggregation.
- *
  * @author Marius Bogoevici
  */
 public class SharedChannelRegistry {
@@ -39,7 +38,7 @@ public class SharedChannelRegistry {
 	}
 
 	public void register(String id, MessageChannel messageChannel) {
-		 sharedChannels.put(id, messageChannel);
+		sharedChannels.put(id, messageChannel);
 	}
 
 	public Map<String, MessageChannel> getAll() {

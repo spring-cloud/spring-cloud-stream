@@ -21,8 +21,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Matchers.same;
 
-import java.util.Properties;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 

@@ -29,4 +29,4 @@ public class StubBinder2ConfigurationB {
 	public StubBinder2Dependency dependency() {
 		return new StubBinder2Dependency();
 	}
- }
+}
