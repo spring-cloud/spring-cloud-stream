@@ -141,7 +141,6 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 	}
 
 	@Override
-	//todo: support module input type
 	protected void handleMessageInternal(Message<?> message) throws Exception {
 		subject.onNext(message.getPayload());
 	}

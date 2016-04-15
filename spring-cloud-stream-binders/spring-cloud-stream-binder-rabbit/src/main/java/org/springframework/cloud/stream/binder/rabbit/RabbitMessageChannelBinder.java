@@ -491,13 +491,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 			}
 		}
 		catch (UncategorizedAmqpException e) {
-			if (e.getCause() instanceof NullPointerException) {
-				// Temporary fix for https://jira.spring.io/browse/AMQP-565
-				// TODO remove once Spring AMQP is upgraded beyond 1.5.4
-			}
-			else {
 				throw e;
-			}
 		}
 		addToAutoDeclareContext(beanName, queue);
 	}
