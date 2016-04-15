@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.amqp.AmqpConnectException;
-import org.springframework.amqp.UncategorizedAmqpException;
 import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -488,15 +487,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 		catch (AmqpConnectException e) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Declaration of queue: " + queue.getName() + " deferred - connection not available");
-			}
-		}
-		catch (UncategorizedAmqpException e) {
-			if (e.getCause() instanceof NullPointerException) {
-				// Temporary fix for https://jira.spring.io/browse/AMQP-565
-				// TODO remove once Spring AMQP is upgraded beyond 1.5.4
-			}
-			else {
-				throw e;
 			}
 		}
 		addToAutoDeclareContext(beanName, queue);
