@@ -97,7 +97,6 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 								" already existing for " + mappedBindings.get(streamListener.value()).getShortLogMessage());
 					}
 					mappedBindings.put(streamListener.value(), invocableHandlerMethod);
-					// TODO: support pollable channels https://github.com/spring-cloud/spring-cloud-stream/issues/436
 					SubscribableChannel channel = applicationContext.getBean(streamListener.value(),
 							SubscribableChannel.class);
 					final String defaultOutputChannel = extractDefaultOutput(method);
