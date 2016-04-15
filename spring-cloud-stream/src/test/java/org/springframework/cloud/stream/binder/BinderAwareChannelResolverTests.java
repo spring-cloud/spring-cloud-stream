@@ -74,7 +74,7 @@ public class BinderAwareChannelResolverTests {
 
 	private volatile BinderAwareChannelResolver resolver;
 
-	private volatile Binder<MessageChannel, ConsumerProperties, ProducerProperties> binder;
+	private volatile ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> binder;
 
 	private volatile BindableChannelFactory bindableChannelFactory;
 
@@ -86,7 +86,7 @@ public class BinderAwareChannelResolverTests {
 		BinderFactory binderFactory = new BinderFactory<MessageChannel>() {
 
 			@Override
-			public Binder<MessageChannel, ConsumerProperties, ProducerProperties> getBinder(String configurationName) {
+			public ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> getBinder(String configurationName) {
 				return binder;
 			}
 		};
@@ -127,7 +127,7 @@ public class BinderAwareChannelResolverTests {
 				latch.countDown();
 			}
 		});
-		binder.bindConsumer("foo", null, testChannel, new ConsumerProperties());
+		binder.bindConsumer("foo", null, testChannel, binder.getExtendedConsumerProperties("foo"));
 		assertEquals(0, received.size());
 		registered.send(MessageBuilder.withPayload("hello").build());
 		try {
@@ -193,13 +193,13 @@ public class BinderAwareChannelResolverTests {
 	/**
 	 * A simple test binder that creates queues for the destinations. Ignores groups.
 	 */
-	private class TestBinder implements Binder<MessageChannel, ConsumerProperties, ProducerProperties> {
+	private class TestBinder implements ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> {
 
 		private final Map<String, DirectChannel> destinations = new ConcurrentHashMap<>();
 
 		@Override
 		public Binding<MessageChannel> bindConsumer(String name, String group,
-				MessageChannel inboundBindTarget, ConsumerProperties properties) {
+				MessageChannel inboundBindTarget, ExtendedConsumerProperties properties) {
 			synchronized (destinations) {
 				if (!destinations.containsKey(name)) {
 					destinations.put(name, new DirectChannel());
@@ -213,7 +213,7 @@ public class BinderAwareChannelResolverTests {
 
 		@Override
 		public Binding<MessageChannel> bindProducer(String name,
-				MessageChannel outboundBindTarget, ProducerProperties properties) {
+				MessageChannel outboundBindTarget, ExtendedProducerProperties properties) {
 			synchronized (destinations) {
 				if (!destinations.containsKey(name)) {
 					destinations.put(name, new DirectChannel());
@@ -223,6 +223,16 @@ public class BinderAwareChannelResolverTests {
 			// for test purposes we can assume it is a SubscribableChannel
 			((SubscribableChannel) outboundBindTarget).subscribe(directHandler);
 			return new TestBinding(name, directHandler);
+		}
+
+		@Override
+		public ExtendedConsumerProperties getExtendedConsumerProperties(String channelName) {
+			return new ExtendedConsumerProperties(new ConsumerProperties());
+		}
+
+		@Override
+		public ExtendedProducerProperties getExtendedProducerProperties(String channelName) {
+			return new ExtendedProducerProperties(new ProducerProperties());
 		}
 
 		private class TestBinding implements Binding<MessageChannel> {

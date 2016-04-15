@@ -20,6 +20,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.messaging.MessageChannel;
@@ -111,6 +112,11 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					Binder<MessageChannel, ?, ProducerProperties> binder =
 							(Binder<MessageChannel, ?, ProducerProperties>) binderFactory.getBinder(binderName);
 					ProducerProperties producerProperties = this.channelBindingServiceProperties.getProducerProperties(channelName);
+					if (binder instanceof ExtendedPropertiesBinder) {
+						producerProperties = ProducerConsumerPropertiesUtil.getExtendedProducerProperties((ExtendedPropertiesBinder) binder,
+								channelName, producerProperties);
+					}
+					ProducerConsumerPropertiesUtil.validate(producerProperties);
 					String destinationName = this.channelBindingServiceProperties.getBindingDestination(channelName);
 					this.dynamicDestinationsBindable.addOutputBinding(beanName,
 							binder.bindProducer(destinationName, channel, producerProperties));
