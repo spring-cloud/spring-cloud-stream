@@ -53,7 +53,7 @@ public class BinderFactoryConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
 	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
-									   ChannelBindingServiceProperties channelBindingServiceProperties) {
+			ChannelBindingServiceProperties channelBindingServiceProperties) {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
 		if (!CollectionUtils.isEmpty(channelBindingServiceProperties.getBinders())) {
 			for (Map.Entry<String, BinderProperties> binderEntry :
@@ -120,8 +120,8 @@ public class BinderFactoryConfiguration {
 		Collection<BinderType> parsedBinderConfigurations = new ArrayList<>();
 		for (Map.Entry<?, ?> entry : properties.entrySet()) {
 			String binderType = (String) entry.getKey();
-			String[] binderConfigurationClassNames =
-					StringUtils.commaDelimitedListToStringArray((String)entry.getValue());
+			String[] binderConfigurationClassNames = StringUtils
+					.commaDelimitedListToStringArray((String) entry.getValue());
 			Class[] binderConfigurationClasses = new Class[binderConfigurationClassNames.length];
 			int i = 0;
 			for (String binderConfigurationClassName : binderConfigurationClassNames) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,105 +29,110 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 /**
- * Abstract base class for JUnit {@link Rule}s that detect the presence of some external resource. If the resource is
- * indeed present, it will be available during the test lifecycle through {@link #getResource()}. If it is not, tests
- * will either fail or be skipped, depending on the value of system property {@value #SCS_EXTERNAL_SERVERS_REQUIRED}.
+ * Abstract base class for JUnit {@link Rule}s that detect the presence of some external
+ * resource. If the resource is indeed present, it will be available during the test
+ * lifecycle through {@link #getResource()}. If it is not, tests will either fail or be
+ * skipped, depending on the value of system property
+ * {@value #SCS_EXTERNAL_SERVERS_REQUIRED}.
  *
  * @author Eric Bottard
  * @author Gary Russell
  */
 public abstract class AbstractExternalResourceTestSupport<R> implements TestRule {
 
-    public static final String SCS_EXTERNAL_SERVERS_REQUIRED = "SCS_EXTERNAL_SERVERS_REQUIRED";
+	public static final String SCS_EXTERNAL_SERVERS_REQUIRED = "SCS_EXTERNAL_SERVERS_REQUIRED";
 
-    protected R resource;
+	protected R resource;
 
-    private String resourceDescription;
+	private String resourceDescription;
 
-    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    protected AbstractExternalResourceTestSupport(String resourceDescription) {
-        Assert.hasText(resourceDescription, "resourceDescription is required");
-        this.resourceDescription = resourceDescription;
-    }
+	protected AbstractExternalResourceTestSupport(String resourceDescription) {
+		Assert.hasText(resourceDescription, "resourceDescription is required");
+		this.resourceDescription = resourceDescription;
+	}
 
-    @Override
-    public Statement apply(final Statement base, Description description) {
-        try {
-            obtainResource();
-        }
-        catch (Exception e) {
-            maybeCleanup();
+	@Override
+	public Statement apply(final Statement base, Description description) {
+		try {
+			obtainResource();
+		}
+		catch (Exception e) {
+			maybeCleanup();
 
-            return failOrSkip(e);
-        }
+			return failOrSkip(e);
+		}
 
-        return new Statement() {
+		return new Statement() {
 
-            @Override
-            public void evaluate() throws Throwable {
-                try {
-                    base.evaluate();
-                }
-                finally {
-                    try {
-                        cleanupResource();
-                    }
-                    catch (Exception ignored) {
-                        logger.warn("Exception while trying to cleanup proper resource", ignored);
-                    }
-                }
-            }
+			@Override
+			public void evaluate() throws Throwable {
+				try {
+					base.evaluate();
+				}
+				finally {
+					try {
+						cleanupResource();
+					}
+					catch (Exception ignored) {
+						logger.warn("Exception while trying to cleanup proper resource",
+								ignored);
+					}
+				}
+			}
 
-        };
-    }
+		};
+	}
 
-    private Statement failOrSkip(final Exception e) {
-        String serversRequired = System.getenv(SCS_EXTERNAL_SERVERS_REQUIRED);
-        if ("true".equalsIgnoreCase(serversRequired)) {
-            logger.error(resourceDescription + " IS REQUIRED BUT NOT AVAILABLE", e);
-            fail(resourceDescription + " IS NOT AVAILABLE");
-            // Never reached, here to satisfy method signature
-            return null;
-        }
-        else {
-            logger.error(resourceDescription + " IS NOT AVAILABLE, SKIPPING TESTS", e);
-            return new Statement() {
+	private Statement failOrSkip(final Exception e) {
+		String serversRequired = System.getenv(SCS_EXTERNAL_SERVERS_REQUIRED);
+		if ("true".equalsIgnoreCase(serversRequired)) {
+			logger.error(resourceDescription + " IS REQUIRED BUT NOT AVAILABLE", e);
+			fail(resourceDescription + " IS NOT AVAILABLE");
+			// Never reached, here to satisfy method signature
+			return null;
+		}
+		else {
+			logger.error(resourceDescription + " IS NOT AVAILABLE, SKIPPING TESTS", e);
+			return new Statement() {
 
-                @Override
-                public void evaluate() throws Throwable {
-                    Assume.assumeTrue("Skipping test due to " + resourceDescription + " not being available " + e, false);
-                }
-            };
-        }
-    }
+				@Override
+				public void evaluate() throws Throwable {
+					Assume.assumeTrue("Skipping test due to " + resourceDescription
+							+ " not being available " + e, false);
+				}
+			};
+		}
+	}
 
-    private void maybeCleanup() {
-        if (resource != null) {
-            try {
-                cleanupResource();
-            }
-            catch (Exception ignored) {
-                logger.warn("Exception while trying to cleanup failed resource", ignored);
-            }
-        }
-    }
+	private void maybeCleanup() {
+		if (resource != null) {
+			try {
+				cleanupResource();
+			}
+			catch (Exception ignored) {
+				logger.warn("Exception while trying to cleanup failed resource", ignored);
+			}
+		}
+	}
 
-    public R getResource() {
-        return resource;
-    }
+	public R getResource() {
+		return resource;
+	}
 
-    /**
-     * Perform cleanup of the {@link #resource} field, which is guaranteed to be non null.
-     *
-     * @throws Exception any exception thrown by this method will be logged and swallowed
-     */
-    protected abstract void cleanupResource() throws Exception;
+	/**
+	 * Perform cleanup of the {@link #resource} field, which is guaranteed to be non null.
+	 *
+	 * @throws Exception any exception thrown by this method will be logged and swallowed
+	 */
+	protected abstract void cleanupResource() throws Exception;
 
-    /**
-     * Try to obtain and validate a resource. Implementors should either set the {@link #resource} field with a valid
-     * resource and return normally, or throw an exception.
-     */
-    protected abstract void obtainResource() throws Exception;
+	/**
+	 * Try to obtain and validate a resource. Implementors should either set the
+	 * {@link #resource} field with a valid resource and return normally, or throw an
+	 * exception.
+	 */
+	protected abstract void obtainResource() throws Exception;
 
 }

@@ -21,8 +21,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.Properties;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -54,10 +52,14 @@ public class ArbitraryInterfaceBindingTestsWithDefaults {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
-		verify(binder).bindConsumer(eq("foo"), anyString(), eq(fooChannels.foo()), Mockito.<ConsumerProperties>any());
-		verify(binder).bindConsumer(eq("bar"), anyString(), eq(fooChannels.bar()), Mockito.<ConsumerProperties>any());
-		verify(binder).bindProducer(eq("baz"), eq(fooChannels.baz()), Mockito.<ProducerProperties>any());
-		verify(binder).bindProducer(eq("qux"), eq(fooChannels.qux()), Mockito.<ProducerProperties>any());
+		verify(binder).bindConsumer(eq("foo"), anyString(), eq(fooChannels.foo()),
+				Mockito.<ConsumerProperties>any());
+		verify(binder).bindConsumer(eq("bar"), anyString(), eq(fooChannels.bar()),
+				Mockito.<ConsumerProperties>any());
+		verify(binder).bindProducer(eq("baz"), eq(fooChannels.baz()),
+				Mockito.<ProducerProperties>any());
+		verify(binder).bindProducer(eq("qux"), eq(fooChannels.qux()),
+				Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}
 

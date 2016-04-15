@@ -18,8 +18,6 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import javax.validation.constraints.Min;
 
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-
 /**
  * @author Marius Bogoevici
  */

@@ -20,8 +20,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 
-import java.util.Properties;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -48,14 +46,17 @@ public class ProcessorBindingTestsWithBindingTargets {
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestProcessor.class)
+	@Autowired
+	@Bindings(TestProcessor.class)
 	private Processor testProcessor;
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindConsumer(eq("testtock.0"), anyString(), eq(testProcessor.input()), Mockito.<ConsumerProperties>any());
-		verify(binder).bindProducer(eq("testtock.1"), eq(testProcessor.output()), Mockito.<ProducerProperties>any());
+		verify(binder).bindConsumer(eq("testtock.0"), anyString(),
+				eq(testProcessor.input()), Mockito.<ConsumerProperties>any());
+		verify(binder).bindProducer(eq("testtock.1"), eq(testProcessor.output()),
+				Mockito.<ProducerProperties>any());
 	}
 
 	@EnableBinding(Processor.class)
