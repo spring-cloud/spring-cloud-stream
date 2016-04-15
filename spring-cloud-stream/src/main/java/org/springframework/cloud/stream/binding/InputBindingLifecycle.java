@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binding;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -28,7 +27,6 @@ import org.springframework.context.SmartLifecycle;
 /**
  * Coordinates binding/unbinding of input channels in accordance to the lifecycle
  * of the host context.
- *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
@@ -106,7 +104,8 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 	}
 
 	/**
-	 * Return a high value so that this bean is started after receiving Lifecycle beans are started. Beans that need to start after bindings will set a higher phase value.
+	 * Return a high value so that this bean is started after receiving Lifecycle beans
+	 * are started. Beans that need to start after bindings will set a higher phase value.
 	 */
 	@Override
 	public int getPhase() {

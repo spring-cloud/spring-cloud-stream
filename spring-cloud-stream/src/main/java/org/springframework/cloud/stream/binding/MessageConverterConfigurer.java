@@ -39,12 +39,10 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
-
  * A {@link MessageChannelConfigurer} that sets data types and message converters based on {@link
  * BindingProperties#contentType}. Also adds a {@link org.springframework.messaging.support.ChannelInterceptor} to
  * the message channel to set the `ContentType` header for the message (if not already set) based on the `ContentType`
  * binding property of the channel.
- @
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
@@ -59,8 +57,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
 	public MessageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties,
-									  MessageBuilderFactory messageBuilderFactory,
-									  CompositeMessageConverterFactory compositeMessageConverterFactory) {
+			MessageBuilderFactory messageBuilderFactory,
+			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		Assert.notNull(compositeMessageConverterFactory, "The message converter factory cannot be null");
 		this.messageBuilderFactory = messageBuilderFactory;
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
@@ -95,14 +93,15 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			messageChannel.setDatatypes(supportedDataTypes);
 			messageChannel.setMessageConverter(new MessageWrappingMessageConverter(messageConverter, mimeType));
 			messageChannel.addInterceptor(new ChannelInterceptorAdapter() {
+
 				@Override
 				public Message<?> preSend(Message<?> message, MessageChannel messageChannel) {
 					Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 					if (contentTypeFromMessage == null) {
 						return messageBuilderFactory
-									   .fromMessage(message)
-									   .setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-									   .build();
+.fromMessage(message)
+								.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
+								.build();
 					}
 					return message;
 				}
@@ -171,7 +170,9 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			MimeType messageContentType = MessageConverterUtils.X_JAVA_OBJECT.equals(contentType) ?
 					MessageConverterUtils.javaObjectMimeType(payload.getClass()) : contentType;
 			return messageBuilderFactory.withPayload(payload).copyHeaders(headers)
-						   .copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, messageContentType.toString())).build();
+					.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
+							messageContentType.toString()))
+					.build();
 		}
 	}
 }

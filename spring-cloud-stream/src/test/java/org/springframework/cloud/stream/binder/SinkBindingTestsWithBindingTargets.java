@@ -21,8 +21,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.Properties;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -49,13 +47,15 @@ public class SinkBindingTestsWithBindingTargets {
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestSink.class)
+	@Autowired
+	@Bindings(TestSink.class)
 	private Sink testSink;
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindConsumer(eq("testtock"), anyString(), eq(testSink.input()), Mockito.<ConsumerProperties>any());
+		verify(binder).bindConsumer(eq("testtock"), anyString(), eq(testSink.input()),
+				Mockito.<ConsumerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}
 

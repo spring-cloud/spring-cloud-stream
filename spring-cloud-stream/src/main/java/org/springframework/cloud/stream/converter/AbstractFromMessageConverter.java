@@ -37,7 +37,6 @@ import org.springframework.util.MimeType;
  *
  * Extend this class to implement {@link org.springframework.messaging.converter.MessageConverter MessageConverters}
  * used with custom Message conversion. Only {@link #fromMessage} is supported.
- *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -50,7 +49,6 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	/**
 	 * Creates a converter that ignores content-type message headers
-	 *
 	 * @param targetMimeType the required target type
 	 */
 	protected AbstractFromMessageConverter(MimeType targetMimeType) {
@@ -63,7 +61,8 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	/**
 	 * Creates a converter that handles one or more content-type message headers
-	 *  @param supportedSourceMimeTypes list of {@link MimeType} that may present in content-type header
+	 * @param supportedSourceMimeTypes list of {@link MimeType} that may present in
+	 * content-type header
 	 * @param targetMimeType the required target type
 	 */
 	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes, MimeType targetMimeType) {
@@ -73,12 +72,13 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	}
 
 	/**
-	 * Creates a converter that handles one or more content-type message headers and one or more target MIME types
-	 *  @param supportedSourceMimeTypes a list of supported content types
+	 * Creates a converter that handles one or more content-type message headers and one
+	 * or more target MIME types
+	 * @param supportedSourceMimeTypes a list of supported content types
 	 * @param targetMimeTypes a list of supported target types
 	 */
 	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes,
-										   Collection<MimeType> targetMimeTypes) {
+			Collection<MimeType> targetMimeTypes) {
 		super(supportedSourceMimeTypes);
 		Assert.notNull(targetMimeTypes, "'targetMimeTypes' cannot be null");
 		this.targetMimeTypes = new ArrayList<>(targetMimeTypes);
@@ -86,7 +86,8 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	/**
 	 * Creates a converter that requires a specific content-type message header
-	 *  @param supportedSourceMimeType {@link MimeType} that must be present in content-type header
+	 * @param supportedSourceMimeType {@link MimeType} that must be present in
+	 * content-type header
 	 * @param targetMimeType the required target type
 	 */
 	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, MimeType targetMimeType) {
@@ -94,8 +95,10 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	}
 
 	/**
-	 * Creates a converter that requires a specific content-type message header and supports multiple target MIME types.
-	 *  @param supportedSourceMimeType {@link MimeType} that must be present in content-type header
+	 * Creates a converter that requires a specific content-type message header and
+	 * supports multiple target MIME types.
+	 * @param supportedSourceMimeType {@link MimeType} that must be present in
+	 * content-type header
 	 * @param targetMimeTypes a list of supported target types
 	 */
 	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, Collection<MimeType> targetMimeTypes) {
@@ -104,14 +107,12 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	/**
 	 * Subclasses implement this to specify supported target types
-	 *
 	 * @return an array of supported classes or null if any target type is supported
 	 */
 	protected abstract Class<?>[] supportedTargetTypes();
 
 	/**
 	 * Subclasses implement this to specify supported payload types
-	 *
 	 * @return an array of supported classes or null if any target type is supported
 	 */
 	protected abstract Class<?>[] supportedPayloadTypes();

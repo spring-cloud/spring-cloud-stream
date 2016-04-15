@@ -29,6 +29,12 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import kafka.admin.AdminUtils;
+import kafka.api.OffsetRequest;
+import kafka.serializer.Decoder;
+import kafka.serializer.DefaultDecoder;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -83,12 +89,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import kafka.admin.AdminUtils;
-import kafka.api.OffsetRequest;
-import kafka.serializer.Decoder;
-import kafka.serializer.DefaultDecoder;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
 import scala.collection.Seq;
 
 /**
@@ -150,17 +150,17 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
-	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
-									 String... headersToMap) {
+	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers,
+			String zkAddress, String... headersToMap) {
 		this.zookeeperConnect = zookeeperConnect;
 		this.brokers = brokers;
 		this.zkAddress = zkAddress;
 		if (headersToMap.length > 0) {
-			String[] combinedHeadersToMap =
-					Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0, BinderHeaders.STANDARD_HEADERS.length + headersToMap
-							.length);
-			System.arraycopy(headersToMap, 0, combinedHeadersToMap, BinderHeaders.STANDARD_HEADERS.length, headersToMap
-					.length);
+			String[] combinedHeadersToMap = Arrays.copyOfRange(
+					BinderHeaders.STANDARD_HEADERS, 0,
+					BinderHeaders.STANDARD_HEADERS.length + headersToMap.length);
+			System.arraycopy(headersToMap, 0, combinedHeadersToMap,
+					BinderHeaders.STANDARD_HEADERS.length, headersToMap.length);
 			this.headersToMap = combinedHeadersToMap;
 		}
 		else {
@@ -502,8 +502,8 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 
 	KafkaMessageListenerContainer createMessageListenerContainer(
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties,
-																 String group, String topic, Collection<Partition> listenedPartitions,
-																 long referencePoint) {
+			String group, String topic, Collection<Partition> listenedPartitions,
+			long referencePoint) {
 		Assert.isTrue(StringUtils.hasText(topic) ^ !CollectionUtils.isEmpty(listenedPartitions),
 				"Exactly one of topic or a list of listened partitions must be provided");
 		KafkaMessageListenerContainer messageListenerContainer;
@@ -617,7 +617,7 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 
 		private SendingHandler(String topicName, ExtendedProducerProperties<KafkaProducerProperties> properties,
 				int numberOfPartitions,
-							   ProducerConfiguration<byte[], byte[]> producerConfiguration) {
+				ProducerConfiguration<byte[], byte[]> producerConfiguration) {
 			this.topicName = topicName;
 			producerProperties = properties;
 			this.numberOfKafkaPartitions = numberOfPartitions;
