@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>spring-cloud-bus-parent</artifactId>
-    <version>1.1.0.BUILD-SNAPSHOT</version>
+    <version>1.1.0.RC2</version>
     <packaging>pom</packaging>
 
     <name>spring-cloud-bus-parent</name>
@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-build</artifactId>
-        <version>1.1.0.BUILD-SNAPSHOT</version>
+        <version>1.1.0.RC2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
