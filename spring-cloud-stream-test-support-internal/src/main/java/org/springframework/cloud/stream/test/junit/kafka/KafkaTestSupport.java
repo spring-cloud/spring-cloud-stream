@@ -21,9 +21,9 @@ import java.util.Properties;
 
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Rule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
 import org.springframework.util.SocketUtils;
@@ -46,7 +46,7 @@ import kafka.utils.ZkUtils;
  */
 public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String> {
 
-	private static final Logger log = LoggerFactory.getLogger(KafkaTestSupport.class);
+	private static final Log log = LogFactory.getLog(KafkaTestSupport.class);
 
 	private static final String SCS_KAFKA_TEST_EMBEDDED = "SCS_KAFKA_TEST_EMBEDDED";
 
