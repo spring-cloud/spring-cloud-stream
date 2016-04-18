@@ -22,11 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.stream.binder.BindingCleaner;
 import org.springframework.cloud.stream.binder.AbstractBinder;
+import org.springframework.cloud.stream.binder.BindingCleaner;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -39,7 +39,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 public class RabbitBindingCleaner implements BindingCleaner {
 
-	private final static Logger logger = LoggerFactory.getLogger(RabbitBindingCleaner.class);
+	private static final Log logger = LogFactory.getLog(RabbitBindingCleaner.class);
 
 	private static final String PREFIX_DELIMITER = ".";
 

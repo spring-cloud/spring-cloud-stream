@@ -24,8 +24,6 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import org.aopalliance.aop.Advice;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.core.AnonymousQueue;
@@ -123,8 +121,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 			};
 
 	private static final ExpressionParser EXPRESSION_PARSER = new SpelExpressionParser();
-
-	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	private final RabbitAdmin rabbitAdmin;
 

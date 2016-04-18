@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.annotation.rxjava;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.SmartLifecycle;
 import org.springframework.integration.handler.AbstractMessageProducingHandler;
@@ -65,7 +65,7 @@ import rx.subjects.Subject;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SubjectMessageHandler extends AbstractMessageProducingHandler implements SmartLifecycle {
 
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private final Log logger = LogFactory.getLog(getClass());
 
 	@SuppressWarnings("rawtypes")
 	private final RxJavaProcessor processor;

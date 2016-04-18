@@ -18,13 +18,13 @@ package org.springframework.cloud.stream.test.junit;
 
 import static org.junit.Assert.fail;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.springframework.util.Assert;
 
@@ -46,7 +46,7 @@ public abstract class AbstractExternalResourceTestSupport<R> implements TestRule
 
 	private String resourceDescription;
 
-	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+	protected final Log logger = LogFactory.getLog(getClass());
 
 	protected AbstractExternalResourceTestSupport(String resourceDescription) {
 		Assert.hasText(resourceDescription, "resourceDescription is required");
