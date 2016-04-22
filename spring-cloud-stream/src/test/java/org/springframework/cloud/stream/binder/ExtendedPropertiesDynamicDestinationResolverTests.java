@@ -33,9 +33,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
-import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
@@ -55,7 +55,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  */
-public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwareChannelResolverTests {
+public class ExtendedPropertiesDynamicDestinationResolverTests extends DynamicDestinationResolverTests {
 
 	private volatile ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> binder;
 
@@ -82,8 +82,8 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
 		this.bindableChannelFactory = new DefaultBindableChannelFactory(messageConverterConfigurer);
-		this.resolver = new BinderAwareChannelResolver(binderFactory, this.channelBindingServiceProperties,
-				new DynamicDestinationsBindable(), bindableChannelFactory);
+		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties, binderFactory);
+		this.resolver = new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory);
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver",
 				this.resolver);

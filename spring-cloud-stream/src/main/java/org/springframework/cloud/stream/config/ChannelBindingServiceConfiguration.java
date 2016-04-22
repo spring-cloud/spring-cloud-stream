@@ -33,13 +33,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
-import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
@@ -144,24 +143,16 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver(BinderFactory<MessageChannel> binderFactory,
-			ChannelBindingServiceProperties channelBindingServiceProperties,
+	public BinderAwareChannelResolver binderAwareChannelResolver(ChannelBindingService channelBindingService,
 			BindableChannelFactory bindableChannelFactory) {
-		return new BinderAwareChannelResolver(binderFactory, channelBindingServiceProperties, dynamicBindable(),
-				bindableChannelFactory);
+		return new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory);
 	}
-
 
 	@Bean
 	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
 	public SingleChannelBindable errorChannelBindable(
 			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
 		return new SingleChannelBindable(ERROR_CHANNEL_NAME, errorChannel);
-	}
-
-	@Bean
-	public DynamicDestinationsBindable dynamicBindable() {
-		return new DynamicDestinationsBindable();
 	}
 
 	@Bean

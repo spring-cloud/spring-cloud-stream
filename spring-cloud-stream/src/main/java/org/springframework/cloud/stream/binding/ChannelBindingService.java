@@ -127,4 +127,8 @@ public class ChannelBindingService {
 		String transport = this.channelBindingServiceProperties.getBinder(channelName);
 		return binderFactory.getBinder(transport);
 	}
+
+	public ChannelBindingServiceProperties getChannelBindingServiceProperties() {
+		return this.channelBindingServiceProperties;
+	}
 }

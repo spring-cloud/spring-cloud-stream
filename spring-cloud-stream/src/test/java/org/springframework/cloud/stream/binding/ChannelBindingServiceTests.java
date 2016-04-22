@@ -203,9 +203,7 @@ public class ChannelBindingServiceTests {
 
 	@Test
 	public void checkDynamicBinding() {
-
 		ChannelBindingServiceProperties properties = new ChannelBindingServiceProperties();
-		DynamicDestinationsBindable dynamicDestinationsBindable = new DynamicDestinationsBindable();
 		DefaultBinderFactory<MessageChannel> binderFactory = new DefaultBinderFactory<>(
 				Collections
 						.singletonMap("mock",
@@ -215,22 +213,23 @@ public class ChannelBindingServiceTests {
 														MockBinderConfiguration.class }),
 										new Properties(), true)));
 		Binder binder = binderFactory.getBinder("mock");
-
-		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		@SuppressWarnings("unchecked")
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
-		when(binder.bindProducer(matches("bar"), any(DirectChannel.class),
+		when(binder.bindProducer(matches("foo"), any(DirectChannel.class),
 				any(ProducerProperties.class))).thenReturn(mockBinding);
+		ChannelBindingService channelBindingService = new ChannelBindingService(properties, binderFactory);
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(
-				binderFactory, properties, dynamicDestinationsBindable,
+				channelBindingService,
 				new DefaultBindableChannelFactory(new MessageConverterConfigurer(
 						properties, new DefaultMessageBuilderFactory(),
 						new CompositeMessageConverterFactory())));
 		ConfigurableListableBeanFactory beanFactory = mock(
 				ConfigurableListableBeanFactory.class);
-		when(beanFactory.getBean("mock:bar", MessageChannel.class))
+		when(beanFactory.getBean("foo", MessageChannel.class))
+				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
+		when(beanFactory.getBean("bar", MessageChannel.class))
 				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
 		doAnswer(new Answer<Void>() {
 
@@ -240,7 +239,7 @@ public class ChannelBindingServiceTests {
 				return null;
 			}
 
-		}).when(beanFactory).registerSingleton(eq("bar"), any(MessageChannel.class));
+		}).when(beanFactory).registerSingleton(eq("foo"), any(MessageChannel.class));
 		doAnswer(new Answer<Object>() {
 
 			@Override
@@ -248,23 +247,23 @@ public class ChannelBindingServiceTests {
 				return dynamic.get();
 			}
 
-		}).when(beanFactory).initializeBean(any(MessageChannel.class), eq("bar"));
+		}).when(beanFactory).initializeBean(any(MessageChannel.class), eq("foo"));
 		resolver.setBeanFactory(beanFactory);
-		MessageChannel resolved = resolver.resolveDestination("mock:bar");
+		MessageChannel resolved = resolver.resolveDestination("foo");
 		assertThat(resolved, sameInstance(dynamic.get()));
-		verify(binder).bindProducer(eq("bar"), eq(dynamic.get()),
+		verify(binder).bindProducer(eq("foo"), eq(dynamic.get()),
 				any(ProducerProperties.class));
-		properties.setDynamicDestinations(new String[] { "mock:bar" });
-		resolved = resolver.resolveDestination("mock:bar");
+		properties.setDynamicDestinations(new String[] { "foo" });
+		resolved = resolver.resolveDestination("foo");
 		assertThat(resolved, sameInstance(dynamic.get()));
-		properties.setDynamicDestinations(new String[] { "foo:bar" });
+		properties.setDynamicDestinations(new String[] { "test" });
 		try {
-			resolved = resolver.resolveDestination("mock:bar");
+			resolved = resolver.resolveDestination("bar");
 			fail();
 		}
 		catch (DestinationResolutionException e) {
 			assertThat(e.getMessage(), containsString(
-					"Failed to find MessageChannel bean with name 'mock:bar'"));
+					"Failed to find MessageChannel bean with name 'bar'"));
 		}
 	}
 
