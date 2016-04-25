@@ -22,7 +22,6 @@ import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeTypeUtils;
 
@@ -40,7 +39,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 public class BusJacksonAutoConfiguration {
 
 	@Bean
-	public MessageConverter busJsonConverter() {
+	public BusJacksonMessageConverter busJsonConverter() {
 		return new BusJacksonMessageConverter();
 	}
 
