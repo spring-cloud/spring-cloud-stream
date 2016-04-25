@@ -16,9 +16,11 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.integration.kafka.support.ProducerMetadata;
+
+import javax.validation.constraints.NotNull;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Marius Bogoevici
@@ -32,6 +34,8 @@ public class KafkaProducerProperties {
 	private boolean sync = false;
 
 	private int batchTimeout = 0;
+
+	private Map<String, String> config = new HashMap<>();
 
 	public int getBufferSize() {
 		return bufferSize;
@@ -64,5 +68,13 @@ public class KafkaProducerProperties {
 
 	public void setBatchTimeout(int batchTimeout) {
 		this.batchTimeout = batchTimeout;
+	}
+
+	public Map<String, String> getConfig() {
+		return config;
+	}
+
+	public void setConfig(Map<String, String> config) {
+		this.config = config;
 	}
 }

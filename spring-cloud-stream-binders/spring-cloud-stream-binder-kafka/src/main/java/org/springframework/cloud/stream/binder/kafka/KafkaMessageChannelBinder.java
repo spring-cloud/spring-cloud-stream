@@ -348,6 +348,9 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 		Properties additionalProps = new Properties();
 		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(requiredAcks));
 		additionalProps.put(ProducerConfig.LINGER_MS_CONFIG, String.valueOf(properties.getExtension().getBatchTimeout()));
+		for(Map.Entry<String, String> configEntry:properties.getExtension().getConfig().entrySet()){
+			additionalProps.put(configEntry.getKey(), configEntry.getValue());
+		}
 		ProducerFactoryBean<byte[], byte[]> producerFB = new ProducerFactoryBean<>(producerMetadata, brokers, additionalProps);
 
 		try {
