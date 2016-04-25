@@ -103,5 +103,9 @@ queries on the data. Or forward it to a specialized tracing service.
 
 The Bus can carry any event of type `RemoteApplicationEvent`, but the
 default transport is JSON and the deserializer needs to know which
-types are going to be used ahead of time. To register a new type you
-can use `@JsonTypeName` on your custom class.
+types are going to be used ahead of time. To register a new type it
+needs to be in a subpackage of `org.springframework.cloud.bus.event`.
+You can use `@JsonTypeName` on your custom class or rely on the
+default strategy which is to use the simple name of the class. Note
+that both the producer and the consumer will need access to the class
+definition.

@@ -22,6 +22,7 @@ import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeTypeUtils;
 
@@ -39,7 +40,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 public class BusJacksonAutoConfiguration {
 
 	@Bean
-	public BusJacksonMessageConverter busJsonConverter() {
+	public MessageConverter busJsonConverter() {
 		return new BusJacksonMessageConverter();
 	}
 
@@ -68,8 +69,8 @@ class BusJacksonMessageConverter extends AbstractFromMessageConverter {
 
 	public BusJacksonMessageConverter() {
 		super(MimeTypeUtils.APPLICATION_JSON, MessageConverterUtils.X_JAVA_OBJECT);
-		mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		mapper.registerModule(new SubtypeModule(findSubTypes()));
+		this.mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		this.mapper.registerModule(new SubtypeModule(findSubTypes()));
 	}
 
 	private Class<?>[] findSubTypes() {
@@ -125,14 +126,14 @@ class BusJacksonMessageConverter extends AbstractFromMessageConverter {
 			Object payload = message.getPayload();
 
 			if (payload instanceof byte[]) {
-				result = mapper.readValue((byte[]) payload, targetClass);
+				result = this.mapper.readValue((byte[]) payload, targetClass);
 			}
 			else if (payload instanceof String) {
-				result = mapper.readValue((String) payload, targetClass);
+				result = this.mapper.readValue((String) payload, targetClass);
 			}
 		}
 		catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			this.logger.error(e.getMessage(), e);
 			return null;
 		}
 		return result;

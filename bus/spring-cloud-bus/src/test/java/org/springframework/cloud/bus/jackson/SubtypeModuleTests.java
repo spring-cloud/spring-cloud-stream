@@ -5,6 +5,10 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
+import org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent;
+import org.springframework.cloud.bus.event.test.TypedRemoteApplicationEvent;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.support.MessageBuilder;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class SubtypeModuleTests {
 
 	@Test
-	public void testSubclass() throws Exception {
+	public void testDeserializeSubclass() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.registerModule(new SubtypeModule(MyRemoteApplicationEvent.class));
 
@@ -27,10 +31,33 @@ public class SubtypeModuleTests {
 		assertEquals("originService was wrong", "myorigin", myEvent.getOriginService());
 		assertEquals("destinationService was wrong", "myservice",
 				myEvent.getDestinationService());
+	}
 
-		event = mapper.readValue("{\"type\":\"another\"}",
+	@Test
+	public void testDeserializeWhenTypeIsKnown() throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
+
+		RemoteApplicationEvent event = mapper.readValue("{\"type\":\"another\"}",
 				AnotherRemoteApplicationEvent.class);
 		assertTrue("event is wrong type", event instanceof AnotherRemoteApplicationEvent);
+	}
+
+	@Test
+	public void testDeserializeWithMessageConverter() throws Exception {
+		MessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		Object event = converter.fromMessage(
+				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
+				RemoteApplicationEvent.class);
+		assertTrue("event is wrong type", event instanceof TestRemoteApplicationEvent);
+	}
+
+	@Test
+	public void testDeserializeJsonTypeWithMessageConverter() throws Exception {
+		MessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		Object event = converter.fromMessage(
+				MessageBuilder.withPayload("{\"type\":\"typed\"}").build(),
+				RemoteApplicationEvent.class);
+		assertTrue("event is wrong type", event instanceof TypedRemoteApplicationEvent);
 	}
 
 	@SuppressWarnings("serial")
