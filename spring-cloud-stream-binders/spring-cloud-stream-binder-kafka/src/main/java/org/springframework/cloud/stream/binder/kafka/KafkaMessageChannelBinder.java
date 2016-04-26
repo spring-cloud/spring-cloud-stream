@@ -465,13 +465,12 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 		final FixedSubscriberChannel bridge = new FixedSubscriberChannel(rh);
 		bridge.setBeanName("bridge." + name);
 
-		Assert.isTrue(StringUtils.hasText(null) ^ !CollectionUtils.isEmpty(listenedPartitions),
-				"Exactly one of topic or a list of listened partitions must be provided");
+		Assert.isTrue(!CollectionUtils.isEmpty(listenedPartitions), "A list of partitions must be provided");
 		final KafkaMessageListenerContainer messageListenerContainer = new KafkaMessageListenerContainer(connectionFactory,
 				listenedPartitions.toArray(new Partition[listenedPartitions.size()]));
 
 		if (logger.isDebugEnabled()) {
-			logger.debug("Listening to topic " + null);
+			logger.debug("Listened partitions: " + StringUtils.collectionToCommaDelimitedString(listenedPartitions));
 		}
 
 		OffsetManager offsetManager = createOffsetManager(group, referencePoint);
