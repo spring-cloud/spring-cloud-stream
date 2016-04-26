@@ -28,11 +28,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 
-import kafka.api.OffsetRequest;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -47,10 +43,7 @@ import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.integration.kafka.core.KafkaMessage;
 import org.springframework.integration.kafka.core.Partition;
-import org.springframework.integration.kafka.listener.KafkaMessageListenerContainer;
-import org.springframework.integration.kafka.listener.MessageListener;
 import org.springframework.integration.kafka.support.ProducerConfiguration;
 import org.springframework.integration.kafka.support.ProducerMetadata;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
@@ -119,33 +112,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 
 	@Override
 	public Spy spyOn(final String name) {
-		KafkaMessageChannelBinder.validateTopicName(name);
-
-		KafkaTestBinder binderWrapper = getBinder();
-		// Rewind offset, as tests will have typically already sent the messages we're trying to consume
-
-		KafkaMessageListenerContainer messageListenerContainer = binderWrapper.getCoreBinder().createMessageListenerContainer(
-				createConsumerProperties(), UUID.randomUUID().toString(), name, null, OffsetRequest.EarliestTime());
-
-		final BlockingQueue<KafkaMessage> messages = new ArrayBlockingQueue<KafkaMessage>(10);
-
-		messageListenerContainer.setMessageListener(new MessageListener() {
-
-			@Override
-			public void onMessage(KafkaMessage message) {
-				messages.offer(message);
-			}
-		});
-
-
-		return new Spy() {
-
-			@Override
-			public Object receive(boolean expectNull) throws Exception {
-				return messages.poll(expectNull ? 50 : 5000, TimeUnit.MILLISECONDS);
-			}
-		};
-
+		throw new UnsupportedOperationException("'spyOn' is not used by Kafka tests");
 	}
 
 	@Test(expected = IllegalArgumentException.class)

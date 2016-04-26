@@ -27,6 +27,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import kafka.admin.AdminUtils;
@@ -105,6 +108,8 @@ import scala.collection.Seq;
 public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
 	public static final ByteArraySerializer BYTE_ARRAY_SERIALIZER = new ByteArraySerializer();
+
+	public static final DaemonThreadFactory DAEMON_THREAD_FACTORY = new DaemonThreadFactory();
 
 	private RetryOperations retryOperations;
 
@@ -460,9 +465,28 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 		final FixedSubscriberChannel bridge = new FixedSubscriberChannel(rh);
 		bridge.setBeanName("bridge." + name);
 
-		final KafkaMessageListenerContainer messageListenerContainer =
-				createMessageListenerContainer(properties, group, null, listenedPartitions, referencePoint);
+		Assert.isTrue(StringUtils.hasText(null) ^ !CollectionUtils.isEmpty(listenedPartitions),
+				"Exactly one of topic or a list of listened partitions must be provided");
+		final KafkaMessageListenerContainer messageListenerContainer = new KafkaMessageListenerContainer(connectionFactory,
+				listenedPartitions.toArray(new Partition[listenedPartitions.size()]));
 
+		if (logger.isDebugEnabled()) {
+			logger.debug("Listening to topic " + null);
+		}
+
+		OffsetManager offsetManager = createOffsetManager(group, referencePoint);
+		if (properties.getExtension().isResetOffsets()) {
+			offsetManager.resetOffsets(listenedPartitions);
+		}
+		messageListenerContainer.setOffsetManager(offsetManager);
+		messageListenerContainer.setQueueSize(queueSize);
+		messageListenerContainer.setMaxFetch(fetchSize);
+
+		int concurrency = Math.min(properties.getConcurrency(), listenedPartitions.size());
+		messageListenerContainer.setConcurrency(concurrency);
+		final ExecutorService dispatcherTaskExecutor = Executors.newFixedThreadPool(concurrency, DAEMON_THREAD_FACTORY);
+		messageListenerContainer.setDispatcherTaskExecutor(dispatcherTaskExecutor);
+		
 		final KafkaMessageDrivenChannelAdapter kafkaMessageDrivenChannelAdapter =
 				new KafkaMessageDrivenChannelAdapter(messageListenerContainer);
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
@@ -495,38 +519,15 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 		String groupedName = groupedName(name, group);
 		edc.setBeanName("inbound." + groupedName);
 
-		DefaultBinding<MessageChannel> consumerBinding = new DefaultBinding<>(name, group, moduleInputChannel, edc);
+		DefaultBinding<MessageChannel> consumerBinding = new DefaultBinding<MessageChannel>(name, group,
+				moduleInputChannel, edc) {
+			@Override
+			protected void afterUnbind() {
+				dispatcherTaskExecutor.shutdown();
+			}
+		};
 		edc.start();
 		return consumerBinding;
-	}
-
-	KafkaMessageListenerContainer createMessageListenerContainer(
-			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties,
-			String group, String topic, Collection<Partition> listenedPartitions,
-			long referencePoint) {
-		Assert.isTrue(StringUtils.hasText(topic) ^ !CollectionUtils.isEmpty(listenedPartitions),
-				"Exactly one of topic or a list of listened partitions must be provided");
-		KafkaMessageListenerContainer messageListenerContainer;
-		if (topic != null) {
-			messageListenerContainer = new KafkaMessageListenerContainer(connectionFactory, topic);
-		}
-		else {
-			messageListenerContainer = new KafkaMessageListenerContainer(connectionFactory,
-					listenedPartitions.toArray(new Partition[listenedPartitions.size()]));
-		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("Listening to topic " + topic);
-		}
-		// if we have fewer target partitions than target concurrency, adjust accordingly
-		messageListenerContainer.setConcurrency(Math.min(consumerProperties.getConcurrency(), listenedPartitions.size()));
-		OffsetManager offsetManager = createOffsetManager(group, referencePoint);
-		if (consumerProperties.getExtension().isResetOffsets()) {
-			offsetManager.resetOffsets(listenedPartitions);
-		}
-		messageListenerContainer.setOffsetManager(offsetManager);
-		messageListenerContainer.setQueueSize(queueSize);
-		messageListenerContainer.setMaxFetch(fetchSize);
-		return messageListenerContainer;
 	}
 
 	private OffsetManager createOffsetManager(String group, long referencePoint) {
@@ -561,6 +562,16 @@ public class KafkaMessageChannelBinder extends AbstractBinder<MessageChannel, Ex
 			Assert.notNull(acknowledgment, "Acknowledgement shouldn't be null when acknowledging kafka message " +
 					"manually.");
 			acknowledgment.acknowledge();
+		}
+	}
+
+	private static class DaemonThreadFactory implements ThreadFactory {
+
+		@Override
+		public Thread newThread(Runnable r) {
+			Thread thread = new Thread(r, "kafka-binder-");
+			thread.setDaemon(true);
+			return thread;
 		}
 	}
 
