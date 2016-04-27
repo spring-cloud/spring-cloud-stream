@@ -16,14 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import javax.validation.constraints.Min;
-
 /**
  * @author Marius Bogoevici
  */
 public class KafkaConsumerProperties {
-
-	private int minPartitionCount = 1;
 
 	private boolean autoCommitOffset = true;
 
@@ -32,15 +28,6 @@ public class KafkaConsumerProperties {
 	private KafkaMessageChannelBinder.StartOffset startOffset = null;
 
 	private boolean enableDlq = false;
-
-	public void setMinPartitionCount(int minPartitionCount) {
-		this.minPartitionCount = minPartitionCount;
-	}
-
-	@Min(value = 1, message = "Min Partition Count should be greater than zero.")
-	public int getMinPartitionCount() {
-		return minPartitionCount;
-	}
 
 	public boolean isAutoCommitOffset() {
 		return autoCommitOffset;

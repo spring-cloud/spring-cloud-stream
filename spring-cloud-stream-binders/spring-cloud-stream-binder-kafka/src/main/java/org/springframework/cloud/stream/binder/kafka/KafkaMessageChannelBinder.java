@@ -474,12 +474,11 @@ public class KafkaMessageChannelBinder
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties, String group, long referencePoint) {
 
 		validateTopicName(name);
-		int minKafkaPartitions = properties.getExtension().getMinPartitionCount();
 		int instance = properties.getInstanceCount();
 		if (instance == 0) {
 			throw new IllegalArgumentException("Instance count cannot be zero");
 		}
-		final int numPartitions = Math.max(minKafkaPartitions, instance * properties.getConcurrency());
+		int numPartitions = Math.max(this.defaultMinPartitionCount, instance * properties.getConcurrency());
 		Collection<Partition> allPartitions = ensureTopicCreated(name, numPartitions, replicationFactor);
 
 		Decoder<byte[]> valueDecoder = new DefaultDecoder(null);
@@ -526,7 +525,6 @@ public class KafkaMessageChannelBinder
 		messageListenerContainer.setConcurrency(concurrency);
 		final ExecutorService dispatcherTaskExecutor = Executors.newFixedThreadPool(concurrency, DAEMON_THREAD_FACTORY);
 		messageListenerContainer.setDispatcherTaskExecutor(dispatcherTaskExecutor);
-
 		final KafkaMessageDrivenChannelAdapter kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter(
 				messageListenerContainer);
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
