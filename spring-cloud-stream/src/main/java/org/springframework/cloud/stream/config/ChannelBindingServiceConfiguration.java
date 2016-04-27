@@ -62,6 +62,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
+import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.tuple.spel.TuplePropertyAccessor;
 import org.springframework.util.CollectionUtils;
 
@@ -235,12 +236,17 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(
-			@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
-			@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
 		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
-		messageHandlerMethodFactory.afterPropertiesSet();
-		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver, messageHandlerMethodFactory);
+		return messageHandlerMethodFactory;
+	}
+
+	@Bean
+	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(
+			@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
+			@Lazy MessageHandlerMethodFactory messageHandlerMethodFactory) {
+		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver,
+				messageHandlerMethodFactory);
 	}
 }
