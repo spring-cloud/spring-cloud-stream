@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -44,10 +46,13 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binding.BindableChannelFactory;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
+import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -68,7 +73,7 @@ import org.springframework.util.Assert;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  */
-public class DynamicDestinationResolverTests {
+public class BinderAwareChannelResolverTests {
 
 	protected final StaticApplicationContext context = new StaticApplicationContext();
 
@@ -80,8 +85,13 @@ public class DynamicDestinationResolverTests {
 
 	protected volatile ChannelBindingServiceProperties channelBindingServiceProperties;
 
+	protected volatile DynamicDestinationsBindable dynamicDestinationsBindable;
+
+	private volatile List<TestBinder.TestBinding> producerBindings;
+
 	@Before
 	public void setupContext() throws Exception {
+		producerBindings = new ArrayList<>();
 		this.binder = new TestBinder();
 		BinderFactory binderFactory = new BinderFactory<MessageChannel>() {
 
@@ -103,19 +113,28 @@ public class DynamicDestinationResolverTests {
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
 		this.bindableChannelFactory = new DefaultBindableChannelFactory(messageConverterConfigurer);
-		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory);
+		dynamicDestinationsBindable = new DynamicDestinationsBindable();
+		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory,
+				dynamicDestinationsBindable);
 		this.resolver.setBeanFactory(context.getBeanFactory());
-		context.getBeanFactory().registerSingleton("channelResolver",
-				this.resolver);
+		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);
+		context.getBeanFactory().registerSingleton("dynamicDestinationBindable", this.dynamicDestinationsBindable);
 		context.registerSingleton("other", DirectChannel.class);
 		context.registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				DefaultMessageBuilderFactory.class);
+		context.getBeanFactory().registerSingleton("channelBindingService", channelBindingService);
+		context.registerSingleton("inputBindingLifecycle", InputBindingLifecycle.class);
+		context.registerSingleton("outputBindingLifecycle", OutputBindingLifecycle.class);
 		context.refresh();
 	}
 
 	@Test
 	public void resolveChannel() {
+		assertThat(producerBindings, hasSize(0));
 		MessageChannel registered = resolver.resolveDestination("foo");
+		assertThat(producerBindings, hasSize(1));
+		TestBinder.TestBinding binding = producerBindings.get(0);
+		assertTrue("Must be bound", binding.isBound());
 		DirectChannel testChannel = new DirectChannel();
 		final CountDownLatch latch = new CountDownLatch(1);
 		final List<Message<?>> received = new ArrayList<>();
@@ -140,6 +159,8 @@ public class DynamicDestinationResolverTests {
 		assertEquals(1, received.size());
 		assertEquals("hello", received.get(0).getPayload());
 		context.close();
+		assertThat(producerBindings, hasSize(1));
+		assertTrue("Must not be bound", !binding.isBound());
 	}
 
 	@Test
@@ -171,7 +192,7 @@ public class DynamicDestinationResolverTests {
 		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties, mockBinderFactory);
 		@SuppressWarnings("unchecked")
 		BinderAwareChannelResolver resolver =
-				new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory);
+				new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory, new DynamicDestinationsBindable());
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
 		SubscribableChannel resolved = (SubscribableChannel) resolver.resolveDestination("foo");
@@ -215,7 +236,9 @@ public class DynamicDestinationResolverTests {
 			DirectHandler directHandler = new DirectHandler(destinations.get(name));
 			// for test purposes we can assume it is a SubscribableChannel
 			((SubscribableChannel) outboundBindTarget).subscribe(directHandler);
-			return new TestBinding(name, directHandler);
+			TestBinding binding = new TestBinding(name, directHandler);
+			producerBindings.add(binding);
+			return binding;
 		}
 
 		private class TestBinding implements Binding<MessageChannel> {
@@ -224,6 +247,8 @@ public class DynamicDestinationResolverTests {
 
 			private final DirectHandler directHandler;
 
+			private boolean bound = true;
+
 			private TestBinding(String name, DirectHandler directHandler) {
 				this.name = name;
 				this.directHandler = directHandler;
@@ -231,7 +256,12 @@ public class DynamicDestinationResolverTests {
 
 			@Override
 			public void unbind() {
+				bound = false;
 				destinations.get(name).unsubscribe(directHandler);
+			}
+
+			public boolean isBound() {
+				return bound;
 			}
 		}
 	}

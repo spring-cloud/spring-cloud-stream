@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -28,15 +30,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
+import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -55,13 +61,16 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  */
-public class ExtendedPropertiesDynamicDestinationResolverTests extends DynamicDestinationResolverTests {
+public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwareChannelResolverTests {
 
 	private volatile ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> binder;
+
+	private volatile List<TestBinder.TestBinding> producerBindings;
 
 	@Before
 	@Override
 	public void setupContext() throws Exception {
+		producerBindings = new ArrayList<>();
 		this.binder = new TestBinder();
 		BinderFactory binderFactory = new BinderFactory<MessageChannel>() {
 
@@ -82,21 +91,31 @@ public class ExtendedPropertiesDynamicDestinationResolverTests extends DynamicDe
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
 		this.bindableChannelFactory = new DefaultBindableChannelFactory(messageConverterConfigurer);
-		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties, binderFactory);
-		this.resolver = new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory);
+		dynamicDestinationsBindable = new DynamicDestinationsBindable();
+		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
+				binderFactory);
+		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory,
+				dynamicDestinationsBindable);
 		this.resolver.setBeanFactory(context.getBeanFactory());
-		context.getBeanFactory().registerSingleton("channelResolver",
-				this.resolver);
+		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);
+		context.getBeanFactory().registerSingleton("dynamicDestinationBindable", this.dynamicDestinationsBindable);
 		context.registerSingleton("other", DirectChannel.class);
 		context.registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				DefaultMessageBuilderFactory.class);
+		context.getBeanFactory().registerSingleton("channelBindingService", channelBindingService);
+		context.registerSingleton("inputBindingLifecycle", InputBindingLifecycle.class);
+		context.registerSingleton("outputBindingLifecycle", OutputBindingLifecycle.class);
 		context.refresh();
 	}
 
 	@Test
 	@Override
 	public void resolveChannel() {
+		assertThat(producerBindings, hasSize(0));
 		MessageChannel registered = resolver.resolveDestination("foo");
+		Assert.assertThat(producerBindings, hasSize(1));
+		TestBinder.TestBinding binding = producerBindings.get(0);
+		assertTrue("Must be bound", binding.isBound());
 		DirectChannel testChannel = new DirectChannel();
 		final CountDownLatch latch = new CountDownLatch(1);
 		final List<Message<?>> received = new ArrayList<>();
@@ -121,12 +140,14 @@ public class ExtendedPropertiesDynamicDestinationResolverTests extends DynamicDe
 		assertEquals(1, received.size());
 		assertEquals("hello", received.get(0).getPayload());
 		context.close();
+		Assert.assertThat(producerBindings, hasSize(1));
+		assertTrue("Must not be bound", !binding.isBound());
 	}
 
 	/**
 	 * A simple test binder that creates queues for the destinations. Ignores groups.
 	 */
-	private class TestBinder implements ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> {
+	class TestBinder implements ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> {
 
 		private final Map<String, DirectChannel> destinations = new ConcurrentHashMap<>();
 
@@ -155,7 +176,9 @@ public class ExtendedPropertiesDynamicDestinationResolverTests extends DynamicDe
 			DirectHandler directHandler = new DirectHandler(destinations.get(name));
 			// for test purposes we can assume it is a SubscribableChannel
 			((SubscribableChannel) outboundBindTarget).subscribe(directHandler);
-			return new TestBinding(name, directHandler);
+			TestBinding binding = new TestBinding(name, directHandler);
+			producerBindings.add(binding);
+			return binding;
 		}
 
 		@Override
@@ -174,6 +197,8 @@ public class ExtendedPropertiesDynamicDestinationResolverTests extends DynamicDe
 
 			private final DirectHandler directHandler;
 
+			private boolean bound = true;
+
 			private TestBinding(String name, DirectHandler directHandler) {
 				this.name = name;
 				this.directHandler = directHandler;
@@ -181,7 +206,12 @@ public class ExtendedPropertiesDynamicDestinationResolverTests extends DynamicDe
 
 			@Override
 			public void unbind() {
+				bound = false;
 				destinations.get(name).unsubscribe(directHandler);
+			}
+
+			public boolean isBound() {
+				return bound;
 			}
 		}
 	}

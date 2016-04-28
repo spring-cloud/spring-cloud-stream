@@ -224,7 +224,7 @@ public class ChannelBindingServiceTests {
 				channelBindingService,
 				new DefaultBindableChannelFactory(new MessageConverterConfigurer(
 						properties, new DefaultMessageBuilderFactory(),
-						new CompositeMessageConverterFactory())));
+						new CompositeMessageConverterFactory())), new DynamicDestinationsBindable());
 		ConfigurableListableBeanFactory beanFactory = mock(
 				ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("foo", MessageChannel.class))

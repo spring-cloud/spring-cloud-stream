@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binding;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
@@ -40,11 +41,14 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private final BindableChannelFactory bindableChannelFactory;
 
+	private final DynamicDestinationsBindable dynamicDestinationsBindable;
+
 	private ConfigurableListableBeanFactory beanFactory;
 
 	@SuppressWarnings("unchecked")
 	public BinderAwareChannelResolver(ChannelBindingService channelBindingService,
-			BindableChannelFactory bindableChannelFactory) {
+			BindableChannelFactory bindableChannelFactory, DynamicDestinationsBindable dynamicDestinationsBindable) {
+		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 		Assert.notNull(channelBindingService, "'channelBindingService' cannot be null");
 		Assert.notNull(bindableChannelFactory, "'bindableChannelFactory' cannot be null");
 		this.channelBindingService = channelBindingService;
@@ -83,7 +87,8 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					channel = this.bindableChannelFactory.createSubscribableChannel(channelName);
 					this.beanFactory.registerSingleton(channelName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
-					this.channelBindingService.bindProducer(channel, channelName);
+					Binding<MessageChannel> binding = this.channelBindingService.bindProducer(channel, channelName);
+					this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
 				}
 				else {
 					throw destinationResolutionException;
