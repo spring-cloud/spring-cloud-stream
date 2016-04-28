@@ -31,6 +31,8 @@ public class KafkaConsumerProperties {
 
 	private KafkaMessageChannelBinder.StartOffset startOffset = null;
 
+	private boolean enableDlq = false;
+
 	public void setMinPartitionCount(int minPartitionCount) {
 		this.minPartitionCount = minPartitionCount;
 	}
@@ -62,5 +64,13 @@ public class KafkaConsumerProperties {
 
 	public void setStartOffset(KafkaMessageChannelBinder.StartOffset startOffset) {
 		this.startOffset = startOffset;
+	}
+
+	public boolean isEnableDlq() {
+		return enableDlq;
+	}
+
+	public void setEnableDlq(boolean enableDlq) {
+		this.enableDlq = enableDlq;
 	}
 }

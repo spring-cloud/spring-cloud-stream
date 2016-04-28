@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +51,9 @@ import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.messaging.support.MessageBuilder;
 
 
 /**
@@ -113,6 +116,48 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	@Override
 	public Spy spyOn(final String name) {
 		throw new UnsupportedOperationException("'spyOn' is not used by Kafka tests");
+	}
+
+	@Test
+	public void testDlqAndRetry() {
+		KafkaTestBinder binder = getBinder();
+
+		DirectChannel moduleOutputChannel = new DirectChannel();
+		DirectChannel moduleInputChannel = new DirectChannel();
+		QueueChannel  dlqChannel = new QueueChannel();
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.setPartitionCount(10);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setMaxAttempts(3);
+		consumerProperties.setBackOffInitialInterval(100);
+		consumerProperties.setBackOffMaxInterval(150);
+		consumerProperties.getExtension().setMinPartitionCount(10);
+		consumerProperties.getExtension().setEnableDlq(true);
+		long uniqueBindingId = System.currentTimeMillis();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("retryTest." + uniqueBindingId + ".0",
+				moduleOutputChannel, producerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0", "testGroup",
+				moduleInputChannel, consumerProperties);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
+		dlqConsumerProperties.setMaxAttempts(1);
+
+		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
+				"error.retryTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel, dlqConsumerProperties);
+
+		String testMessagePayload = "test." + UUID.randomUUID().toString();
+		Message<String> testMessage = MessageBuilder.withPayload(testMessagePayload).build();
+		moduleOutputChannel.send(testMessage);
+
+		Message<?> receivedMessage = receive(dlqChannel, 3);
+		assertNotNull(receivedMessage);
+		assertEquals(testMessagePayload, receivedMessage.getPayload());
+		assertThat(handler.getInvocationCount(), equalTo(consumerProperties.getMaxAttempts()));
+		dlqConsumerBinding.unbind();
+		consumerBinding.unbind();
+		producerBinding.unbind();
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -399,5 +444,23 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		ProducerConfiguration producerConfiguration = (ProducerConfiguration) accessor1.getPropertyValue("producerConfiguration");
 		assertTrue("Kafka Sync Producer should have been enabled.", producerConfiguration.getProducerMetadata().isSync());
 		producerBinding.unbind();
+	}
+
+	private static class FailingInvocationCountingMessageHandler implements MessageHandler {
+
+		private int invocationCount = 0;
+
+		public FailingInvocationCountingMessageHandler() {
+		}
+
+		@Override
+		public void handleMessage(Message<?> message) throws MessagingException {
+			invocationCount++;
+			throw new RuntimeException();
+		}
+
+		public int getInvocationCount() {
+			return invocationCount;
+		}
 	}
 }
