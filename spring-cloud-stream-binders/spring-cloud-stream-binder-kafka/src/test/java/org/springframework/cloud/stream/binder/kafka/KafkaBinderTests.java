@@ -39,6 +39,7 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.Spy;
+import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
@@ -77,7 +78,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	@Override
 	protected KafkaTestBinder getBinder() {
 		if (binder == null) {
-			binder = new KafkaTestBinder(kafkaTestSupport);
+			binder = new KafkaTestBinder(kafkaTestSupport, new KafkaBinderConfigurationProperties());
 		}
 		return binder;
 	}
@@ -155,14 +156,15 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 
 		byte[] ratherBigPayload = new byte[2048];
 		Arrays.fill(ratherBigPayload, (byte) 65);
-		KafkaTestBinder binder = getBinder();
+		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
+		binderConfiguration.setMinPartitionCount(10);
+		KafkaTestBinder binder = new KafkaTestBinder(kafkaTestSupport, binderConfiguration);
 
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionCount(10);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		consumerProperties.getExtension().setMinPartitionCount(10);
 		long uniqueBindingId = System.currentTimeMillis();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("foo" + uniqueBindingId + ".0", moduleOutputChannel, producerProperties);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo" + uniqueBindingId + ".0", null, moduleInputChannel, consumerProperties);
@@ -185,7 +187,9 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 
 		byte[] ratherBigPayload = new byte[2048];
 		Arrays.fill(ratherBigPayload, (byte) 65);
-		KafkaTestBinder binder = getBinder();
+		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
+		binderConfiguration.setMinPartitionCount(5);
+		KafkaTestBinder binder = new KafkaTestBinder(kafkaTestSupport, binderConfiguration);
 
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
@@ -193,7 +197,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		producerProperties.setPartitionCount(5);
 		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		consumerProperties.getExtension().setMinPartitionCount(3);
 		long uniqueBindingId = System.currentTimeMillis();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("foo" + uniqueBindingId + ".0", moduleOutputChannel, producerProperties);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo" + uniqueBindingId + ".0", null, moduleInputChannel, consumerProperties);
@@ -216,7 +219,9 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 
 		byte[] ratherBigPayload = new byte[2048];
 		Arrays.fill(ratherBigPayload, (byte) 65);
-		KafkaTestBinder binder = getBinder();
+		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
+		binderConfiguration.setMinPartitionCount(5);
+		KafkaTestBinder binder = new KafkaTestBinder(kafkaTestSupport, binderConfiguration);
 
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
@@ -224,7 +229,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		producerProperties.setPartitionCount(5);
 		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		consumerProperties.getExtension().setMinPartitionCount(5);
 		long uniqueBindingId = System.currentTimeMillis();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("foo" + uniqueBindingId + ".0", moduleOutputChannel, producerProperties);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo" + uniqueBindingId + ".0", null, moduleInputChannel, consumerProperties);

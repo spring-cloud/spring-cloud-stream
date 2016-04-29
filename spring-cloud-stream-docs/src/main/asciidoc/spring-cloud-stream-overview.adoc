@@ -842,6 +842,10 @@ Mutually exclusive with `offsetUpdateTimeWindow`.
 Default: `0`. 
 spring.cloud.stream.kafka.binder.requiredAcks::
   The number of required acks on the broker.
+spring.cloud.stream.kafka.binder.minPartitionCount::
+  The minimum number of partitions expected by the consumer if it creates the consumed topic automatically.
++
+Default: `1`.
 
 ==== Kafka Consumer Properties
 
@@ -862,10 +866,6 @@ startOffset::
 Allowed values: `earliest`, `latest`.
 +
 Default: null (equivalent to `earliest`).
-minPartitionCount::
-  The minimum number of partitions expected by the consumer if it creates the consumed topic automatically.
-+
-Default: `1`.
 
 ==== Kafka Producer Properties
 

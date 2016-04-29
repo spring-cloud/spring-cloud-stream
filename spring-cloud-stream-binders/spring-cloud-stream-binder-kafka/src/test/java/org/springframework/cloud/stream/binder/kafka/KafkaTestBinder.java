@@ -16,14 +16,15 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.util.List;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
+
+import java.util.List;
 
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.cloud.stream.test.junit.kafka.TestKafkaCluster;
 import org.springframework.context.support.GenericApplicationContext;
@@ -35,32 +36,33 @@ import org.springframework.integration.kafka.support.ProducerListener;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
 
-
 /**
- * Test support class for {@link KafkaMessageChannelBinder}.
- * Creates a binder that uses a test {@link TestKafkaCluster kafka cluster}.
+ * Test support class for {@link KafkaMessageChannelBinder}. Creates a binder that uses a
+ * test {@link TestKafkaCluster kafka cluster}.
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author David Turanski
  * @author Gary Russell
  * @author Soby Chacko
  */
-public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
+public class KafkaTestBinder extends
+		AbstractTestBinder<KafkaMessageChannelBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
 
-	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport) {
-
+	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport, KafkaBinderConfigurationProperties binderConfiguration) {
 		try {
 			ZookeeperConnect zookeeperConnect = new ZookeeperConnect();
 			zookeeperConnect.setZkConnect(kafkaTestSupport.getZkConnectString());
 			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(zookeeperConnect,
-					kafkaTestSupport.getBrokerAddress(),
-					kafkaTestSupport.getZkConnectString());
+					kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
 			binder.setCodec(getCodec());
 			ProducerListener producerListener = new LoggingProducerListener();
 			binder.setProducerListener(producerListener);
 			GenericApplicationContext context = new GenericApplicationContext();
 			context.refresh();
 			binder.setApplicationContext(context);
+			binder.setFetchSize(binderConfiguration.getFetchSize());
+			binder.setMaxWait(binderConfiguration.getMaxWait());
+			binder.setDefaultMinPartitionCount(binderConfiguration.getMinPartitionCount());
 			binder.afterPropertiesSet();
 			this.setBinder(binder);
 		}
@@ -83,12 +85,12 @@ public class KafkaTestBinder extends AbstractTestBinder<KafkaMessageChannelBinde
 
 		@Override
 		public void registerTypes(Kryo kryo) {
-			delegate.registerTypes(kryo);
+			this.delegate.registerTypes(kryo);
 		}
 
 		@Override
 		public List<Registration> getRegistrations() {
-			return delegate.getRegistrations();
+			return this.delegate.getRegistrations();
 		}
 	}
 
