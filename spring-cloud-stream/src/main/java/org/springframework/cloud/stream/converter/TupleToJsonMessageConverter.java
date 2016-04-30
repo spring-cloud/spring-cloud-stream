@@ -16,14 +16,14 @@
 
 package org.springframework.cloud.stream.converter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -50,7 +50,7 @@ public class TupleToJsonMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	protected Class<?>[] supportedTargetTypes() {
+	public Class<?>[] supportedTargetTypes() {
 		return new Class<?>[] { String.class };
 	}
 

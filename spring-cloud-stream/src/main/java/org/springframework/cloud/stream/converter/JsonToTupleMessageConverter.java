@@ -46,7 +46,7 @@ public class JsonToTupleMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	protected Class<?>[] supportedTargetTypes() {
+	public Class<?>[] supportedTargetTypes() {
 		return new Class<?>[] { Tuple.class };
 	}
 

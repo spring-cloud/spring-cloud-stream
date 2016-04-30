@@ -86,7 +86,7 @@ public class CustomMessageConverterTests {
 		}
 
 		@Override
-		protected Class<?>[] supportedTargetTypes() {
+		public Class<?>[] supportedTargetTypes() {
 			return new Class[] {Bar.class};
 		}
 
@@ -119,7 +119,7 @@ public class CustomMessageConverterTests {
 		}
 
 		@Override
-		protected Class<?>[] supportedTargetTypes() {
+		public Class<?>[] supportedTargetTypes() {
 			return new Class[] {Foo.class};
 		}
 

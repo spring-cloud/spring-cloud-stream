@@ -19,9 +19,15 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,11 +47,6 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -83,7 +84,7 @@ public class MessageChannelConfigurerTests {
 
 	@Test
 	public void testObjectMapperConfig() throws Exception {
-		CompositeMessageConverter compositeMessageConverter = messageConverterFactory.getMessageConverterForType(MimeTypeUtils.APPLICATION_JSON);
+		CompositeMessageConverter compositeMessageConverter = messageConverterFactory.getMessageConverterForTargetType(MimeTypeUtils.APPLICATION_JSON);
 		List<MessageConverter> converters = compositeMessageConverter.getConverters();
 		for (MessageConverter converter : converters) {
 			DirectFieldAccessor converterAccessor = new DirectFieldAccessor(converter);

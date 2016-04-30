@@ -45,7 +45,7 @@ public class StringToByteArrayMessageConverter extends AbstractFromMessageConver
 	}
 
 	@Override
-	protected Class<?>[] supportedTargetTypes() {
+	public Class<?>[] supportedTargetTypes() {
 		return new Class<?>[] { byte[].class };
 	}
 

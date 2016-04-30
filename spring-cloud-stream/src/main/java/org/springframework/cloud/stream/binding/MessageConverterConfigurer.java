@@ -88,7 +88,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		final String contentType = bindingProperties.getContentType();
 		if (StringUtils.hasText(contentType)) {
 			MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
-			SmartMessageConverter messageConverter = this.compositeMessageConverterFactory.getMessageConverterForType(mimeType);
+			SmartMessageConverter messageConverter = this.compositeMessageConverterFactory.getMessageConverterForTargetType(mimeType);
 			Class<?>[] supportedDataTypes = this.compositeMessageConverterFactory.supportedDataTypes(mimeType);
 			messageChannel.setDatatypes(supportedDataTypes);
 			messageChannel.setMessageConverter(new MessageWrappingMessageConverter(messageConverter, mimeType));
