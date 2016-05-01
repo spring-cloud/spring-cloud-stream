@@ -89,7 +89,7 @@ public class KafkaBinderConfiguration {
 		kafkaMessageChannelBinder.setReplicationFactor(kafkaBinderConfigurationProperties.getReplicationFactor());
 		kafkaMessageChannelBinder.setRequiredAcks(kafkaBinderConfigurationProperties.getRequiredAcks());
 		kafkaMessageChannelBinder.setMaxWait(kafkaBinderConfigurationProperties.getMaxWait());
-
+		kafkaMessageChannelBinder.setAutoConfigureTopics(kafkaBinderConfigurationProperties.isAutoConfigureTopics());
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(kafkaExtendedBindingProperties);
 		return kafkaMessageChannelBinder;

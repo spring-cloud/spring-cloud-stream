@@ -110,7 +110,7 @@ You can use the extensible API to write your own Binder.
 Spring Cloud Stream uses Spring Boot for configuration, and the Binder abstraction makes it possible for a Spring Cloud Stream application to be flexible in how it connects to middleware.
 For example, deployers can dynamically choose, at runtime, the destinations (e.g., the Kafka topics or RabbitMQ exchanges) to which channels connect.
 Such configuration can be provided through external configuration properties and in any form supported by Spring Boot (including application arguments, environment variables, and `application.yml` or `application.properties` files).
-In the sink example from the <<_introducing_spring_cloud_stream>> section, setting the application property `spring.cloud.stream.bindings.input.destination` to `raw-sensor-data` will cause it to read from the `raw-sensor-data` Kafka topic, or from a queue bound to the `raw-sensor-data` RabbitMQ exchange. 
+In the sink example from the <<_introducing_spring_cloud_stream>> section, setting the application property `spring.cloud.stream.bindings.input.destination` to `raw-sensor-data` will cause it to read from the `raw-sensor-data` Kafka topic, or from a queue bound to the `raw-sensor-data` RabbitMQ exchange.
 
 Spring Cloud Stream automatically detects and uses a binder found on the classpath.
 You can easily use different types of middleware with the same code: just include a different binder at build time.
@@ -654,7 +654,7 @@ image::kafka-binder.png[width=300,scaledwidth="50%"]
 The Kafka Binder implementation maps the destination to a Kafka topic.
 The consumer group maps directly to the same Kafka concept.
 Spring Cloud Stream does not use the high-level consumer, but implements a similar concept for the simple consumer.
- 
+
 
 ==== RabbitMQ Binder
 
@@ -716,12 +716,12 @@ group::
 Applies only to inbound bindings.
 See <<consumer-groups,Consumer Groups>>.
 +
-Default: null (indicating an anonymous consumer). 
+Default: null (indicating an anonymous consumer).
 contentType::
     The content type of the channel.
 //See <<content type management>>.
 +
-Default: null (so that no type coercion is performed). 
+Default: null (so that no type coercion is performed).
 binder::
     The binder used by this binding.
 See <<multiple-binders>> for details.
@@ -776,26 +776,26 @@ If set, or if `partitionKeyExtractorClass` is set, outbound data on this channel
 The two options are mutually exclusive.
 See <<partitioning>>.
 +
-Default: null. 
+Default: null.
 partitionKeyExtractorClass::
   A `PartitionKeyExtractorStrategy` implementation.
 If set, or if `partitionKeyExpression` is set, outbound data on this channel will be partitioned, and `partitionCount` must be set to a value greater than 1 to be effective.
 The two options are mutually exclusive.
 See <<partitioning>>.
 +
-Default: null. 
+Default: null.
 partitionSelectorClass::
   A `PartitionSelectorStrategy` implementation.
 Mutually exclusive with `partitionSelectorExpression`.
 If neither is set, the partition will be selected as the `hashCode(key) % partitionCount`, where `key` is computed via either `partitionKeyExpression` or `partitionKeyExtractorClass`.
 +
-Default: null. 
+Default: null.
 partitionSelectorExpression::
   A SpEL expression for customizing partition selection.
 Mutually exclusive with `partitionSelectorClass`.
 If neither is set, the partition will be selected as the `hashCode(key) % partitionCount`, where `key` is computed via either `partitionKeyExpression` or `partitionKeyExtractorClass`.
 +
-Default: null. 
+Default: null.
 partitionCount::
   The number of target partitions for the data, if partitioning is enabled.
 Must be
@@ -803,7 +803,7 @@ Must be
 On Kafka, interpreted as a
   hint; the larger of this and the partition count of the target topic is used instead.
 +
-Default: `1`. 
+Default: `1`.
 requiredGroups::
   A comma-separated list of groups to which the producer must ensure message delivery even if they start after it has been created (e.g., by pre-creating durable queues in RabbitMQ).
 headerMode::
@@ -976,13 +976,26 @@ spring.cloud.stream.kafka.binder.offsetUpdateCount::
 Ignored if `0`.
 Mutually exclusive with `offsetUpdateTimeWindow`.
 +
-Default: `0`. 
+Default: `0`.
 spring.cloud.stream.kafka.binder.requiredAcks::
   The number of required acks on the broker.
++
+Default: `1`.
 spring.cloud.stream.kafka.binder.minPartitionCount::
   The minimum number of partitions expected by the consumer if it creates the consumed topic automatically.
 +
 Default: `1`.
+spring.cloud.stream.kafka.binder.replicationFactor::
+  The replication factor of auto-created topics if `autoConfigureTopics` is active.
++
+Default: `1`.
+spring.cloud.stream.kafka.binder.autoConfigureTopics::
+  If set to `true`, the binder will create new topics or add new partitions to existing topics automatically to match the requirements of the producers and consumers.
+If set to `false`, the binder will rely on the topics being already configured.
+In the latter case, if the topics do not exist or the partition count is smaller than the expected partition count, the binder will fail to start.
+Of note, this setting is independent of the `auto.topic.create.enable` setting of the broker and it does not influence it: if the server is set to auto-create topics, they may be created as part of the metadata retrieval request, with default broker settings.
++
+Default: `true`.
 
 ==== Kafka Consumer Properties
 
@@ -1281,7 +1294,7 @@ To get started with creating Spring Cloud Stream applications, visit the https:/
 Select Spring Boot version 1.3.4 SNAPSHOT and search or tick the checkbox for Stream Kafka (we will be using Kafka for messaging).
 
 Next, create a new class, `GreetingSource`, in the same package as the `GreetingSourceApplication` class.
-Give it the following code: 
+Give it the following code:
 
 [source,java]
 ----

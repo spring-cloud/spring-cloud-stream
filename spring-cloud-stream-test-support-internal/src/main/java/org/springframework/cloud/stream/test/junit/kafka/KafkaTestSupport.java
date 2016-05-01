@@ -19,6 +19,13 @@ package org.springframework.cloud.stream.test.junit.kafka;
 
 import java.util.Properties;
 
+import kafka.server.KafkaConfig;
+import kafka.server.KafkaServer;
+import kafka.utils.SystemTime$;
+import kafka.utils.TestUtils;
+import kafka.utils.Utils;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkInterruptedException;
 import org.apache.commons.logging.Log;
@@ -27,14 +34,6 @@ import org.junit.Rule;
 
 import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
 import org.springframework.util.SocketUtils;
-
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServer;
-import kafka.utils.SystemTime$;
-import kafka.utils.TestUtils;
-import kafka.utils.Utils;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
 
 
 /**
@@ -131,6 +130,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 						log.debug("Creating Kafka server");
 						Properties brokerConfigProperties = brokerConfig;
 						brokerConfig.put("zookeeper.connect", zookeeper.getConnectString());
+						brokerConfig.put("auto.create.topics.enable", "false");
+						brokerConfig.put("delete.topic.enable", "true");
 						kafkaServer = TestUtils.createServer(new KafkaConfig(brokerConfigProperties), SystemTime$.MODULE$);
 						log.debug("Created Kafka server at " + kafkaServer.config().hostName() + ":" + kafkaServer.config().port());
 					}
