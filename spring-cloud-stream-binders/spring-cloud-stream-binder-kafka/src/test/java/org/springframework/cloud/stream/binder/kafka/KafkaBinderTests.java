@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -25,16 +27,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.UUID;
 
+import kafka.admin.AdminUtils;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
@@ -45,6 +51,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.kafka.core.Partition;
+import org.springframework.integration.kafka.core.TopicNotFoundException;
 import org.springframework.integration.kafka.support.ProducerConfiguration;
 import org.springframework.integration.kafka.support.ProducerMetadata;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
@@ -54,6 +61,9 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 
 
 /**
@@ -444,6 +454,88 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		ProducerConfiguration producerConfiguration = (ProducerConfiguration) accessor1.getPropertyValue("producerConfiguration");
 		assertTrue("Kafka Sync Producer should have been enabled.", producerConfiguration.getProducerMetadata().isSync());
 		producerBinding.unbind();
+	}
+	
+	@Test
+	public void testAutoConfigureTopicsDisabledFailsIfTopicMissing() throws Exception {
+
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
+				kafkaTestSupport.getZkConnectString());
+		GenericApplicationContext context = new GenericApplicationContext();
+		binder.setAutoConfigureTopics(false);
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(1000);
+		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		String testTopicName = "nonexisting"  + System.currentTimeMillis();
+		try {
+			binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
+			fail();
+		}
+		catch (Exception e) {
+			assertTrue(e instanceof BinderException);
+			assertThat(e.getCause(), instanceOf(TopicNotFoundException.class));
+			assertThat(e.getCause().getMessage(), containsString(testTopicName));
+		}
+
+		try {
+			binder.getConnectionFactory().getPartitions(testTopicName);
+			fail();
+		}
+		catch (Exception e) {
+			assertThat(e, instanceOf(TopicNotFoundException.class));
+		}
+	}
+
+	@Test
+	public void testAutoConfigureTopicsSucceedsIfTopicExisting() throws Exception {
+
+		String testTopicName = "nonexisting"  + System.currentTimeMillis();
+		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 5, 1, new Properties());
+
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
+				kafkaTestSupport.getZkConnectString());
+		GenericApplicationContext context = new GenericApplicationContext();
+		binder.setAutoConfigureTopics(false);
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<MessageChannel> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
+	}
+
+	@Test
+	public void testAutoConfigureTopicsEnabledSucceeds() throws Exception {
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
+				kafkaTestSupport.getZkConnectString());
+		GenericApplicationContext context = new GenericApplicationContext();
+		binder.setAutoConfigureTopics(true);
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(1000);
+		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		String testTopicName = "nonexisting"  + System.currentTimeMillis();
+		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
 	}
 
 	private static class FailingInvocationCountingMessageHandler implements MessageHandler {

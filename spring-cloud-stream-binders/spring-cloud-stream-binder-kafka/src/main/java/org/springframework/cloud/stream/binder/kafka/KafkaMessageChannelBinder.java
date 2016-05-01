@@ -32,6 +32,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import kafka.admin.AdminUtils;
+import kafka.api.OffsetRequest;
+import kafka.serializer.Decoder;
+import kafka.serializer.DefaultDecoder;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -96,12 +102,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
-import kafka.admin.AdminUtils;
-import kafka.api.OffsetRequest;
-import kafka.serializer.Decoder;
-import kafka.serializer.DefaultDecoder;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
 import scala.collection.Seq;
 
 /**
@@ -126,7 +126,9 @@ public class KafkaMessageChannelBinder
 
 	public static final DaemonThreadFactory DAEMON_THREAD_FACTORY = new DaemonThreadFactory();
 
-	private RetryOperations retryOperations;
+	private boolean autoConfigureTopics = true;
+
+	private RetryOperations metadataRetryOperations;
 
 	private final Map<String, Collection<Partition>> topicsInUse = new HashMap<>();
 
@@ -219,10 +221,10 @@ public class KafkaMessageChannelBinder
 
 	/**
 	 * Retry configuration for operations such as validating topic creation
-	 * @param retryOperations the retry configuration
+	 * @param metadataRetryOperations the retry configuration
 	 */
-	public void setRetryOperations(RetryOperations retryOperations) {
-		this.retryOperations = retryOperations;
+	public void setMetadataRetryOperations(RetryOperations metadataRetryOperations) {
+		this.metadataRetryOperations = metadataRetryOperations;
 	}
 
 	public void setExtendedBindingProperties(KafkaExtendedBindingProperties extendedBindingProperties) {
@@ -237,7 +239,7 @@ public class KafkaMessageChannelBinder
 		DefaultConnectionFactory defaultConnectionFactory = new DefaultConnectionFactory(configuration);
 		defaultConnectionFactory.afterPropertiesSet();
 		this.connectionFactory = defaultConnectionFactory;
-		if (retryOperations == null) {
+		if (metadataRetryOperations == null) {
 			RetryTemplate retryTemplate = new RetryTemplate();
 
 			SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy();
@@ -249,7 +251,7 @@ public class KafkaMessageChannelBinder
 			backOffPolicy.setMultiplier(2);
 			backOffPolicy.setMaxInterval(1000);
 			retryTemplate.setBackOffPolicy(backOffPolicy);
-			retryOperations = retryTemplate;
+			metadataRetryOperations = retryTemplate;
 		}
 	}
 
@@ -318,6 +320,14 @@ public class KafkaMessageChannelBinder
 
 	public void setZkConnectionTimeout(int zkConnectionTimeout) {
 		this.zkConnectionTimeout = zkConnectionTimeout;
+	}
+
+	public boolean isAutoConfigureTopics() {
+		return autoConfigureTopics;
+	}
+
+	public void setAutoConfigureTopics(boolean autoConfigureTopics) {
+		this.autoConfigureTopics = autoConfigureTopics;
 	}
 
 	@Override
@@ -419,7 +429,7 @@ public class KafkaMessageChannelBinder
 	 * Creates a Kafka topic if needed, or try to increase its partition count to the
 	 * desired number.
 	 */
-	private Collection<Partition> ensureTopicCreated(final String topicName, final int numPartitions,
+	private Collection<Partition> ensureTopicCreated(final String topicName, final int minExpectedPartitions,
 			int replicationFactor) {
 
 		final ZkClient zkClient = new ZkClient(zkAddress, getZkSessionTimeout(), getZkConnectionTimeout(),
@@ -428,29 +438,31 @@ public class KafkaMessageChannelBinder
 			// The following is basically copy/paste from AdminUtils.createTopic() with
 			// createOrUpdateTopicPartitionAssignmentPathInZK(..., update=true)
 			final Properties topicConfig = new Properties();
-			Seq<Object> brokerList = ZkUtils.getSortedBrokerList(zkClient);
-			final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
-					.assignReplicasToBrokers(brokerList, numPartitions, replicationFactor, -1, -1);
-			retryOperations.execute(new RetryCallback<Object, RuntimeException>() {
+			if (isAutoConfigureTopics()) {
+				Seq<Object> brokerList = ZkUtils.getSortedBrokerList(zkClient);
+				final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
+						.assignReplicasToBrokers(brokerList, minExpectedPartitions, replicationFactor, -1, -1);
+				metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
 
-				@Override
-				public Object doWithRetry(RetryContext context) throws RuntimeException {
-					AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkClient, topicName, replicaAssignment,
-							topicConfig, true);
-					return null;
-				}
-			});
+					@Override
+					public Object doWithRetry(RetryContext context) throws RuntimeException {
+						AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkClient, topicName, replicaAssignment,
+								topicConfig, true);
+						return null;
+					}
+				});
+			}
 			try {
-				Collection<Partition> partitions = retryOperations
+				Collection<Partition> partitions = metadataRetryOperations
 						.execute(new RetryCallback<Collection<Partition>, Exception>() {
 
 							@Override
 							public Collection<Partition> doWithRetry(RetryContext context) throws Exception {
 								connectionFactory.refreshMetadata(Collections.singleton(topicName));
 								Collection<Partition> partitions = connectionFactory.getPartitions(topicName);
-								if (partitions.size() < numPartitions) {
+								if (partitions.size() < minExpectedPartitions) {
 									throw new IllegalStateException(
-											"The number of expected partitions was: " + numPartitions + ", but "
+											"The number of expected partitions was: " + minExpectedPartitions + ", but "
 													+ partitions.size() + " have been found instead");
 								}
 								connectionFactory.getLeaders(partitions);

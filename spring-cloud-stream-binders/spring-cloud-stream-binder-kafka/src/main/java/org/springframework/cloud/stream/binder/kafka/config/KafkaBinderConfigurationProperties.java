@@ -45,6 +45,8 @@ class KafkaBinderConfigurationProperties {
 
 	private int maxWait = 100;
 
+	private boolean autoConfigureTopics = true;
+
 	/**
 	 * ZK session timeout in milliseconds.
 	 */
@@ -204,4 +206,11 @@ class KafkaBinderConfigurationProperties {
 		this.queueSize = queueSize;
 	}
 
+	public boolean isAutoConfigureTopics() {
+		return autoConfigureTopics;
+	}
+
+	public void setAutoConfigureTopics(boolean autoConfigureTopics) {
+		this.autoConfigureTopics = autoConfigureTopics;
+	}
 }
