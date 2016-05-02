@@ -486,6 +486,146 @@ In the case of RabbitMQ, content type headers can be set by external application
 Spring Cloud Stream supports them as part of an extended internal protocol used for any type of transport (including transports, such as Kafka, that do not normally support headers).
 ====
 
+==== Aggregation
+
+Spring Cloud Stream provides support for aggregating multiple applications together, connecting their input and output channels directly and avoiding the additional cost of exchanging messages via a broker.
+As of version 1.0 of Spring Cloud Stream, aggregation is supported only for the following types of applications:
+
+* _sources_ - applications with a single output channel named `output`, typically having a single binding of the type `org.springframework.cloud.stream.messaging.Source`
+* _sinks_ - applications with a single input channel named `input`, typically having a single binding of the type `org.springframework.cloud.stream.messaging.Sink`
+* _processors_ - applications with a single input channel named `input` and a single output channel named `output`, typically having a single binding of the type `org.springframework.cloud.stream.messaging.Processor`.
+
+They can be aggregated together by creating a sequence of interconnected applications, in which the output channel of an element in the sequence is connected to the input channel of the next element, if it exists.
+A sequence can start with either a _source_ or a _processor_, it can contain an arbitrary number of _processors_ and must end with either a _processor_ or a _sink_.
+
+Depending on the nature of the starting and ending element, the sequence may have one or more bindable channels, as follows:
+
+* if the sequence starts with a source and ends with a sink, all communication between the applications is direct and no channels will be bound
+* if the sequence starts with a processor, then its input channel will become the `input` channel of the aggregate and will be bound accordingly
+* if the sequence ends with a processor, then its output channel will become the `output` channel of the aggregate and will be bound accordingly
+
+Aggregation is performed using the `AggregateApplicationBuilder` utility class, as in the following example.
+Let's consider a project in which we have source, processor and a sink, which may be defined in the project, or may be contained in one of the project's dependencies.
+
+[source,java]
+----
+@SpringBootApplication
+@EnableBinding(Sink.class)
+public class SinkApplication {
+
+	private static Logger logger = LoggerFactory.getLogger(SinkModuleDefinition.class);
+
+	@ServiceActivator(inputChannel=Sink.INPUT)
+	public void loggerSink(Object payload) {
+		logger.info("Received: " + payload);
+	}
+}
+----
+
+[source,java]
+----
+@SpringBootApplication
+@EnableBinding(Processor.class)
+public class ProcessorApplication {
+
+	@Transformer
+	public String loggerSink(String payload) {
+		return payload.toUpperCase();
+	}
+}
+----
+
+[source,java]
+----
+@SpringBootApplication
+@EnableBinding(Source.class)
+public class SourceApplication {
+
+	@Bean
+	@InboundChannelAdapter(value = Source.OUTPUT)
+	public String timerMessageSource() {
+		return new SimpleDateFormat().format(new Date());
+	}
+}
+----
+
+Each configuration can be used for running a separate component, but in this case they can be aggregated together as follows:
+
+[source,java]
+----
+@SpringBootApplication
+public class DoubleApplication {
+
+	public static void main(String[] args) {
+		new AggregateApplicationBuilder()
+			.from(SourceApplication.class).args("--fixedDelay=5000")
+			.via(ProcessorApplication.class)
+			.to(SinkApplication.class).args("--debug=true").run(args);
+	}
+}
+----
+
+The starting component of the sequence is provided as argument to the `from()` method.
+The ending component of the sequence is provided as argument to the `to()` method.
+Intermediate processors are provided as argument to the `via()` method.
+Multiple processors of the same type can be chained together (e.g. for pipelining transformations with different configurations).
+For each component, the builder can provide runtime arguments for Spring Boot configuration.
+
+
+==== RxJava support
+
+Spring Cloud Stream provides support for RxJava-based processors through the `RxJavaProcessor` available in `spring-cloud-stream-rxjava`.
+
+[source,java]
+----
+public interface RxJavaProcessor<I, O> {
+	Observable<O> process(Observable<I> input);
+}
+----
+
+An implementation of `RxJavaProcessor` will receive as input an `Observable` that represents the flow of inbound message payloads.
+The `process` method is invoked once at startup for setting up the data flow.
+
+You can enable the use of RxJava-based processors and use them in your processor application by using the `@EnableRxJavaProcessor` annotation.
+`@EnableRxJavaProcessor` is meta-annotated with `@EnableBinding(Processor.class)` and will create the `Processor` binding.
+Here is an example of an RxJava-based processor:
+
+[source,java]
+----
+@EnableRxJavaProcessor
+public class RxJavaTransformer {
+
+	private static Logger logger = LoggerFactory.getLogger(RxJavaTransformer.class);
+
+	@Bean
+	public RxJavaProcessor<String,String> processor() {
+		return inputStream -> inputStream.map(data -> {
+			logger.info("Got data = " + data);
+			return data;
+		})
+		.buffer(5)
+		.map(data -> String.valueOf(avg(data)));
+	}
+
+	private static Double avg(List<String> data) {
+		double sum = 0;
+		double count = 0;
+		for(String d : data) {
+			count++;
+			sum += Double.valueOf(d);
+		}
+		return sum/count;
+	}
+}
+----
+
+
+[NOTE]
+====
+When implementing an RxJava processor, it is important to handle exceptions as part of your processing flow.
+Uncaught exceptions will be treated as errors by RxJava and will cause the `Observable` to complete, disrupting the flow.
+====
+
 === Binder SPI
 
 Spring Cloud Stream provides a Binder abstraction for use in connecting to physical destinations.
