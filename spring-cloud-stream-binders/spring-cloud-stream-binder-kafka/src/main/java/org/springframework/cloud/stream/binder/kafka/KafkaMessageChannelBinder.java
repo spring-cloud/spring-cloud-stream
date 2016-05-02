@@ -463,7 +463,8 @@ public class KafkaMessageChannelBinder
 								if (partitions.size() < minExpectedPartitions) {
 									throw new IllegalStateException(
 											"The number of expected partitions was: " + minExpectedPartitions + ", but "
-													+ partitions.size() + " have been found instead");
+													+ partitions.size() + (partitions.size() > 1 ? " have " : " has ")
+													+ "been found instead");
 								}
 								connectionFactory.getLeaders(partitions);
 								return partitions;
