@@ -839,6 +839,19 @@ Mutually exclusive with `offsetUpdateTimeWindow`.
 Default: `0`. 
 spring.cloud.stream.kafka.binder.requiredAcks::
   The number of required acks on the broker.
++
+Default: `1`.
+spring.cloud.stream.kafka.binder.autoConfigureTopics::
+  If set to `true`, the binder will create new topics or add new partitions to existing topics automatically to match the requirements of the producers and consumers.
+If set to `false`, the binder will rely on the topics being already configured.
+In the latter case, if the topics do not exist or the partition count is smaller than the expected partition count, the binder will fail to start.
+Of note, this setting is independent of the `auto.topic.create.enable` setting of the broker and it does not influence it: if the server is set to auto-create topics, they may be created as part of the metadata retrieval request, with default broker settings.
++
+Default: `false`.
+spring.cloud.stream.kafka.binder.replicationFactor::
+  The replication factor of auto-created topics if `autoConfigureTopics` is active.
++
+Default: `1`.
 
 ==== Kafka Consumer Properties
 
