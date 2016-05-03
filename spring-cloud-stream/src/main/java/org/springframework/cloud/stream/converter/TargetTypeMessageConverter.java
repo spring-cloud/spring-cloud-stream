@@ -28,6 +28,4 @@ public interface TargetTypeMessageConverter {
 
 	boolean supportsTargetMimeType(MimeType targetMimeType);
 
-	Class<?>[] supportedTargetTypes();
-
 }

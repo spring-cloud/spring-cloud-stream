@@ -115,9 +115,11 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 		return supportsType(clazz, supportedPayloadTypes());
 	}
 
+	protected abstract Class<?>[] supportedTargetTypes();
+
 	@Override
 	protected boolean supports(Class<?> clazz) {
-		return supportsType(clazz, supportedTargetTypes());
+		return clazz == Object.class || supportsType(clazz, supportedTargetTypes());
 	}
 
 	private boolean supportsType(Class<?> clazz, Class<?>[] supportedTypes) {

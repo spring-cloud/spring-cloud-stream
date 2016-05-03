@@ -32,9 +32,11 @@ import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
@@ -88,20 +90,22 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		final String contentType = bindingProperties.getContentType();
 		if (StringUtils.hasText(contentType)) {
 			MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
-			SmartMessageConverter messageConverter = this.compositeMessageConverterFactory.getMessageConverterForTargetType(mimeType);
-			Class<?>[] supportedDataTypes = this.compositeMessageConverterFactory.supportedDataTypes(mimeType);
-			messageChannel.setDatatypes(supportedDataTypes);
-			messageChannel.setMessageConverter(new MessageWrappingMessageConverter(messageConverter, mimeType));
+			CompositeMessageConverter messageConverter = this.compositeMessageConverterFactory
+					.getMessageConverterForTargetType(mimeType);
+			if (CollectionUtils.isEmpty(messageConverter.getConverters())) {
+				throw new IllegalStateException(
+						"No converters registered with a target content type of '" + contentType + "'");
+			}
+			final MessageWrappingMessageConverter wrappingMessageConverter = new MessageWrappingMessageConverter(
+					messageConverter, mimeType);
 			messageChannel.addInterceptor(new ChannelInterceptorAdapter() {
-
 				@Override
 				public Message<?> preSend(Message<?> message, MessageChannel messageChannel) {
+					message = (Message<?>) wrappingMessageConverter.fromMessage(message, Object.class, null);
 					Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 					if (contentTypeFromMessage == null) {
-						return messageBuilderFactory
-.fromMessage(message)
-								.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-								.build();
+						return messageBuilderFactory.fromMessage(message)
+								.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
 					}
 					return message;
 				}
