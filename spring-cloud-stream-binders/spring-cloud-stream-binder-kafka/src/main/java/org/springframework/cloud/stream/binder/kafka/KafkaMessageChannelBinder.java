@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import kafka.admin.AdminUtils;
 import kafka.api.OffsetRequest;
+import kafka.api.TopicMetadata;
+import kafka.common.ErrorMapping;
 import kafka.serializer.Decoder;
 import kafka.serializer.DefaultDecoder;
 import kafka.utils.ZKStringSerializer$;
@@ -435,22 +437,33 @@ public class KafkaMessageChannelBinder
 		final ZkClient zkClient = new ZkClient(zkAddress, getZkSessionTimeout(), getZkConnectionTimeout(),
 				ZKStringSerializer$.MODULE$);
 		try {
-			// The following is basically copy/paste from AdminUtils.createTopic() with
-			// createOrUpdateTopicPartitionAssignmentPathInZK(..., update=true)
 			final Properties topicConfig = new Properties();
 			if (isAutoConfigureTopics()) {
-				Seq<Object> brokerList = ZkUtils.getSortedBrokerList(zkClient);
-				final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
-						.assignReplicasToBrokers(brokerList, minExpectedPartitions, replicationFactor, -1, -1);
-				metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
-
-					@Override
-					public Object doWithRetry(RetryContext context) throws RuntimeException {
-						AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkClient, topicName, replicaAssignment,
-								topicConfig, true);
-						return null;
+				TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkClient);
+				if (topicMetadata.errorCode() == ErrorMapping.NoError()) {
+					if (topicMetadata.partitionsMetadata().size() < minExpectedPartitions) {
+						AdminUtils.addPartitions(zkClient, topicName, minExpectedPartitions, null, false,
+								new Properties());
 					}
-				});
+				}
+				else if (topicMetadata.errorCode() == ErrorMapping.UnknownTopicOrPartitionCode()) {
+					Seq<Object> brokerList = ZkUtils.getSortedBrokerList(zkClient);
+					final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
+							.assignReplicasToBrokers(brokerList, minExpectedPartitions, replicationFactor, -1, -1);
+					metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
+
+						@Override
+						public Object doWithRetry(RetryContext context) throws RuntimeException {
+							AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkClient, topicName,
+									replicaAssignment, topicConfig, true);
+							return null;
+						}
+					});
+				}
+				else {
+					throw new BinderException("Error fetching Kafka topic metadata: ",
+							ErrorMapping.exceptionFor(topicMetadata.errorCode()));
+				}
 			}
 			try {
 				Collection<Partition> partitions = metadataRetryOperations

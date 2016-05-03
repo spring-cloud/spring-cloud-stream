@@ -36,6 +36,8 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.UUID;
 
+import kafka.admin.AdminUtils;
+import kafka.api.TopicMetadata;
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -68,8 +70,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
-
-import kafka.admin.AdminUtils;
 
 
 /**
@@ -632,5 +632,63 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		public int getInvocationCount() {
 			return invocationCount;
 		}
+	}
+
+	@Test
+	public void testPartitionCountNotReduced() throws Exception {
+		String testTopicName = "existing"  + System.currentTimeMillis();
+		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 6, 1, new Properties());
+
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
+				kafkaTestSupport.getZkConnectString());
+
+		GenericApplicationContext context = new GenericApplicationContext();
+		binder.setAutoConfigureTopics(true);
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(1000);
+		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
+		TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(testTopicName, kafkaTestSupport.getZkClient());
+		assertThat(topicMetadata.partitionsMetadata().size(), equalTo(6));
+	}
+
+	@Test
+	public void testPartitionCountIncreasedIfAutoConfigureTopicsSet() throws Exception {
+		String testTopicName = "existing"  + System.currentTimeMillis();
+		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 1, 1, new Properties());
+
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
+				kafkaTestSupport.getZkConnectString());
+
+		binder.setDefaultMinPartitionCount(6);
+
+		GenericApplicationContext context = new GenericApplicationContext();
+		binder.setAutoConfigureTopics(true);
+		context.refresh();
+		binder.setApplicationContext(context);
+		binder.afterPropertiesSet();
+		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(1000);
+		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
+		TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(testTopicName, kafkaTestSupport.getZkClient());
+		assertThat(topicMetadata.partitionsMetadata().size(), equalTo(6));
 	}
 }
