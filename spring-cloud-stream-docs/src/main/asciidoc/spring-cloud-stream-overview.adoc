@@ -554,7 +554,7 @@ Each configuration can be used for running a separate component, but in this cas
 [source,java]
 ----
 @SpringBootApplication
-public class DoubleApplication {
+public class SampleAggregateApplication {
 
 	public static void main(String[] args) {
 		new AggregateApplicationBuilder()
@@ -583,7 +583,7 @@ public interface RxJavaProcessor<I, O> {
 }
 ----
 
-An implementation of `RxJavaProcessor` will receive as input an `Observable` that represents the flow of inbound message payloads.
+An implementation of `RxJavaProcessor` will receive `Observable` as an input that represents the flow of inbound message payloads.
 The `process` method is invoked once at startup for setting up the data flow.
 
 You can enable the use of RxJava-based processors and use them in your processor application by using the `@EnableRxJavaProcessor` annotation.
