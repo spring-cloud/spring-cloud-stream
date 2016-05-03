@@ -44,7 +44,8 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeWithMessageConverter() throws Exception {
-		MessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(
 				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
 				RemoteApplicationEvent.class);
@@ -53,7 +54,8 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeJsonTypeWithMessageConverter() throws Exception {
-		MessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(
 				MessageBuilder.withPayload("{\"type\":\"typed\"}").build(),
 				RemoteApplicationEvent.class);
