@@ -982,20 +982,29 @@ spring.cloud.stream.kafka.binder.requiredAcks::
 +
 Default: `1`.
 spring.cloud.stream.kafka.binder.minPartitionCount::
-  The minimum number of partitions expected by the consumer if it creates the consumed topic automatically.
+  Effective only if `autoCreateTopics` or `autoAddPartitions` is set.
+  The global minimum number of partitions that the binder will configure on topics on which it produces/consumes data.
+It can be superseded by the `partitionCount` setting of the producer or by the value of
+`instanceCount` * `concurrency` settings of the producer (if either is larger).
 +
 Default: `1`.
 spring.cloud.stream.kafka.binder.replicationFactor::
-  The replication factor of auto-created topics if `autoConfigureTopics` is active.
+  The replication factor of auto-created topics if `autoCreateTopics` is active.
 +
 Default: `1`.
-spring.cloud.stream.kafka.binder.autoConfigureTopics::
-  If set to `true`, the binder will create new topics or add new partitions to existing topics automatically to match the requirements of the producers and consumers.
+spring.cloud.stream.kafka.binder.autoCreateTopics::
+  If set to `true`, the binder will create new topics automatically.
 If set to `false`, the binder will rely on the topics being already configured.
-In the latter case, if the topics do not exist or the partition count is smaller than the expected partition count, the binder will fail to start.
+In the latter case, if the topics do not exist, the binder will fail to start.
 Of note, this setting is independent of the `auto.topic.create.enable` setting of the broker and it does not influence it: if the server is set to auto-create topics, they may be created as part of the metadata retrieval request, with default broker settings.
 +
 Default: `true`.
+spring.cloud.stream.kafka.binder.autoAddPartitions::
+  If set to `true`, the binder will create add new partitions if required.
+If set to `false`, the binder will rely on the partition size of the topic being already configured.
+If the partition count of the target topic is smaller than the expected value, the binder will fail to start.
+Default: `false`.
+
 
 ==== Kafka Consumer Properties
 
@@ -1168,7 +1177,7 @@ When scaling up Spring Cloud Stream applications, each instance can receive info
 Spring Cloud Stream does this through the `spring.cloud.stream.instanceCount` and `spring.cloud.stream.instanceIndex` properties.
 For example, if there are three instances of a HDFS sink application, all three instances will have `spring.cloud.stream.instanceCount` set to `3`, and the individual applications will have `spring.cloud.stream.instanceIndex` set to `0`, `1`, and `2`, respectively.
 
-When Spring Cloud Stream applications are deployed via Spring Cloud Dataflow, these properties are configured automatically; when Spring Cloud Stream applications are launched independently, these properties must be set correctly.
+When Spring Cloud Stream applications are deployed via Spring Cloud Data Flow, these properties are configured automatically; when Spring Cloud Stream applications are launched independently, these properties must be set correctly.
 By default, `spring.cloud.stream.instanceCount` is `1`, and `spring.cloud.stream.instanceIndex` is `0`.
 
 In a scaled-up scenario, correct configuration of these two properties is important for addressing partitioning behavior (see below) in general, and the two properties are always required by certain binders (e.g., the Kafka binder) in order to ensure that data are split correctly across multiple consumer instances.
@@ -1201,6 +1210,15 @@ The default calculation, applicable in most scenarios, is based on the formula `
 This can be customized on the binding, either by setting a SpEL expression to be evaluated against the key (via the `partitionSelectorExpression` property) or by setting a `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` implementation (via the `partitionSelectorClass` property).
 
 Additional properties can be configured for more advanced scenarios, as described in the following section.
+
+[NOTE]
+====
+The Kafka binder will use the `partitionCount` setting as a hint to create a topic with the given partition count (in conjunction with the `minPartitionCount`, the maximum of the two being the value being used).
+Exercise caution when configuring both `minPartitionCount` for a binder and `partitionCount` for an application, as the larger value will be used.
+If a topic already exists with a smaller partition count and `autoAddPartitions` is disabled (the default), then the binder will fail to start.
+If a topic already exists with a smaller partition count and `autoAddPartitions` is enabled, new partitions will be added.
+If a topic already exists with a larger number of partitions than the maximum of (`minPartitionCount` and `partitionCount`), the existing partition count will be used.
+====
 
 ===== Configuring Input Bindings for Partitioning
 

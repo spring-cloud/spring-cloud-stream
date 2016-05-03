@@ -45,7 +45,9 @@ public class KafkaBinderConfigurationProperties {
 
 	private int maxWait = 100;
 
-	private boolean autoConfigureTopics = true;
+	private boolean autoCreateTopics = true;
+
+	private boolean autoAddPartitions = false;
 
 	/**
 	 * ZK session timeout in milliseconds.
@@ -206,11 +208,19 @@ public class KafkaBinderConfigurationProperties {
 		this.queueSize = queueSize;
 	}
 
-	public boolean isAutoConfigureTopics() {
-		return autoConfigureTopics;
+	public boolean isAutoCreateTopics() {
+		return autoCreateTopics;
 	}
 
-	public void setAutoConfigureTopics(boolean autoConfigureTopics) {
-		this.autoConfigureTopics = autoConfigureTopics;
+	public void setAutoCreateTopics(boolean autoCreateTopics) {
+		this.autoCreateTopics = autoCreateTopics;
+	}
+
+	public boolean isAutoAddPartitions() {
+		return autoAddPartitions;
+	}
+
+	public void setAutoAddPartitions(boolean autoAddPartitions) {
+		this.autoAddPartitions = autoAddPartitions;
 	}
 }

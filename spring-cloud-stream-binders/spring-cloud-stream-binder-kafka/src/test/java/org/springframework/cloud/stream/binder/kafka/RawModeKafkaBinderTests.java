@@ -26,6 +26,9 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
 
+import org.junit.Ignore;
+import org.junit.Test;
+
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -39,9 +42,6 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
-
-import org.junit.Ignore;
-import org.junit.Test;
 
 /**
  * @author Marius Bogoevici
@@ -59,7 +59,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		properties.setHeaderMode(HeaderMode.raw);
 		properties.setPartitionKeyExtractorClass(RawKafkaPartitionTestSupport.class);
 		properties.setPartitionSelectorClass(RawKafkaPartitionTestSupport.class);
-		properties.setPartitionCount(3);
+		properties.setPartitionCount(6);
 
 		DirectChannel output = new DirectChannel();
 		output.setBeanName("test.output");
@@ -113,7 +113,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload[0]"));
 		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
-		properties.setPartitionCount(3);
+		properties.setPartitionCount(6);
 		properties.setHeaderMode(HeaderMode.raw);
 
 		DirectChannel output = new DirectChannel();

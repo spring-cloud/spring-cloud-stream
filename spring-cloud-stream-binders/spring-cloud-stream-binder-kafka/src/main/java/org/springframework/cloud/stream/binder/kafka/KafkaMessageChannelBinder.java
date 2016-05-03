@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import kafka.admin.AdminUtils;
 import kafka.api.OffsetRequest;
+import kafka.api.TopicMetadata;
+import kafka.common.ErrorMapping;
 import kafka.serializer.Decoder;
 import kafka.serializer.DefaultDecoder;
 import kafka.utils.ZKStringSerializer$;
@@ -126,7 +128,9 @@ public class KafkaMessageChannelBinder
 
 	public static final DaemonThreadFactory DAEMON_THREAD_FACTORY = new DaemonThreadFactory();
 
-	private boolean autoConfigureTopics = true;
+	private boolean autoCreateTopics = true;
+
+	private boolean autoAddPartitions = false;
 
 	private RetryOperations metadataRetryOperations;
 
@@ -152,7 +156,7 @@ public class KafkaMessageChannelBinder
 
 	private int fetchSize = 1024 * 1024;
 
-	private int defaultMinPartitionCount = 1;
+	private int minPartitionCount = 1;
 
 	private ConnectionFactory connectionFactory;
 
@@ -298,8 +302,8 @@ public class KafkaMessageChannelBinder
 		this.fetchSize = fetchSize;
 	}
 
-	public void setDefaultMinPartitionCount(int defaultMinPartitionCount) {
-		this.defaultMinPartitionCount = defaultMinPartitionCount;
+	public void setMinPartitionCount(int minPartitionCount) {
+		this.minPartitionCount = minPartitionCount;
 	}
 
 	public void setMaxWait(int maxWait) {
@@ -322,12 +326,20 @@ public class KafkaMessageChannelBinder
 		this.zkConnectionTimeout = zkConnectionTimeout;
 	}
 
-	public boolean isAutoConfigureTopics() {
-		return autoConfigureTopics;
+	public boolean isAutoCreateTopics() {
+		return autoCreateTopics;
 	}
 
-	public void setAutoConfigureTopics(boolean autoConfigureTopics) {
-		this.autoConfigureTopics = autoConfigureTopics;
+	public void setAutoCreateTopics(boolean autoCreateTopics) {
+		this.autoCreateTopics = autoCreateTopics;
+	}
+
+	public boolean isAutoAddPartitions() {
+		return autoAddPartitions;
+	}
+
+	public void setAutoAddPartitions(boolean autoAddPartitions) {
+		this.autoAddPartitions = autoAddPartitions;
 	}
 
 	@Override
@@ -381,8 +393,15 @@ public class KafkaMessageChannelBinder
 
 		validateTopicName(name);
 
-		int numPartitions = Math.max(defaultMinPartitionCount, properties.getPartitionCount());
-		Collection<Partition> partitions = ensureTopicCreated(name, numPartitions, replicationFactor);
+		Collection<Partition> partitions = ensureTopicCreated(name, properties.getPartitionCount());
+
+		if (properties.getPartitionCount() < partitions.size()) {
+			if (logger.isInfoEnabled()) {
+				logger.info("The `partitionCount` of the producer for topic " + name + " is " +
+						properties.getPartitionCount() + ", smaller than the actual partition count of " +
+						partitions.size() + " of the topic. The larger number will be used instead.");
+			}
+		}
 
 		topicsInUse.put(name, partitions);
 
@@ -429,28 +448,53 @@ public class KafkaMessageChannelBinder
 	 * Creates a Kafka topic if needed, or try to increase its partition count to the
 	 * desired number.
 	 */
-	private Collection<Partition> ensureTopicCreated(final String topicName, final int minExpectedPartitions,
-			int replicationFactor) {
+	private Collection<Partition> ensureTopicCreated(final String topicName, final int partitionCount) {
 
 		final ZkClient zkClient = new ZkClient(zkAddress, getZkSessionTimeout(), getZkConnectionTimeout(),
 				ZKStringSerializer$.MODULE$);
 		try {
-			// The following is basically copy/paste from AdminUtils.createTopic() with
-			// createOrUpdateTopicPartitionAssignmentPathInZK(..., update=true)
 			final Properties topicConfig = new Properties();
-			if (isAutoConfigureTopics()) {
-				Seq<Object> brokerList = ZkUtils.getSortedBrokerList(zkClient);
-				final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
-						.assignReplicasToBrokers(brokerList, minExpectedPartitions, replicationFactor, -1, -1);
-				metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
-
-					@Override
-					public Object doWithRetry(RetryContext context) throws RuntimeException {
-						AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkClient, topicName, replicaAssignment,
-								topicConfig, true);
-						return null;
+			TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkClient);
+			if (topicMetadata.errorCode() == ErrorMapping.NoError()) {
+				// only consider minPartitionCount for resizing if autoAddPartitions is true
+				int effectivePartitionCount = isAutoAddPartitions() ? Math.max(minPartitionCount, partitionCount)
+						: partitionCount;
+				if (topicMetadata.partitionsMetadata().size() < effectivePartitionCount) {
+					if (isAutoAddPartitions()) {
+						AdminUtils.addPartitions(zkClient, topicName, effectivePartitionCount, null, false,
+								new Properties());
 					}
-				});
+					else {
+						int topicSize = topicMetadata.partitionsMetadata().size();
+						throw new BinderException("The number of expected partitions was: " + partitionCount
+								+ ", but " + topicSize + (topicSize > 1 ? " have " : " has ") + "been found instead." +
+								"Consider either increasing the partition count of the topic or enabling `autoAddPartitions`");
+					}
+				}
+			}
+			else if (topicMetadata.errorCode() == ErrorMapping.UnknownTopicOrPartitionCode()) {
+				if (isAutoCreateTopics()) {
+					Seq<Object> brokerList = ZkUtils.getSortedBrokerList(zkClient);
+					// always consider minPartitionCount for topic creation
+					int effectivePartitionCount = Math.max(this.minPartitionCount, partitionCount);
+					final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
+							.assignReplicasToBrokers(brokerList, effectivePartitionCount, replicationFactor, -1, -1);
+					metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
+						@Override
+						public Object doWithRetry(RetryContext context) throws RuntimeException {
+							AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkClient, topicName,
+									replicaAssignment, topicConfig, true);
+							return null;
+						}
+					});
+				}
+				else {
+					throw new BinderException("Topic " + topicName + " does not exist");
+				}
+			}
+			else {
+				throw new BinderException("Error fetching Kafka topic metadata: ",
+						ErrorMapping.exceptionFor(topicMetadata.errorCode()));
 			}
 			try {
 				Collection<Partition> partitions = metadataRetryOperations
@@ -460,11 +504,11 @@ public class KafkaMessageChannelBinder
 							public Collection<Partition> doWithRetry(RetryContext context) throws Exception {
 								connectionFactory.refreshMetadata(Collections.singleton(topicName));
 								Collection<Partition> partitions = connectionFactory.getPartitions(topicName);
-								if (partitions.size() < minExpectedPartitions) {
-									throw new IllegalStateException(
-											"The number of expected partitions was: " + minExpectedPartitions + ", but "
-													+ partitions.size() + (partitions.size() > 1 ? " have " : " has ")
-													+ "been found instead");
+								// do a sanity check on the partition set
+								if (partitions.size() < partitionCount) {
+									throw new IllegalStateException("The number of expected partitions was: "
+											+ partitionCount + ", but " + partitions.size()
+											+ (partitions.size() > 1 ? " have " : " has ") + "been found instead");
 								}
 								connectionFactory.getLeaders(partitions);
 								return partitions;
@@ -487,26 +531,25 @@ public class KafkaMessageChannelBinder
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties, String group, long referencePoint) {
 
 		validateTopicName(name);
-		int instance = properties.getInstanceCount();
-		if (instance == 0) {
+		if (properties.getInstanceCount() == 0) {
 			throw new IllegalArgumentException("Instance count cannot be zero");
 		}
-		int numPartitions = Math.max(this.defaultMinPartitionCount, instance * properties.getConcurrency());
-		Collection<Partition> allPartitions = ensureTopicCreated(name, numPartitions, replicationFactor);
+		Collection<Partition> allPartitions = ensureTopicCreated(name,
+				properties.getInstanceCount() * properties.getConcurrency());
 
 		Decoder<byte[]> valueDecoder = new DefaultDecoder(null);
 		Decoder<byte[]> keyDecoder = new DefaultDecoder(null);
 
 		Collection<Partition> listenedPartitions;
 
-		if (instance == 1) {
+		if (properties.getInstanceCount() == 1) {
 			listenedPartitions = allPartitions;
 		}
 		else {
 			listenedPartitions = new ArrayList<>();
 			for (Partition partition : allPartitions) {
 				// divide partitions across modules
-				if ((partition.getId() % instance) == properties.getInstanceIndex()) {
+				if ((partition.getId() % properties.getInstanceCount()) == properties.getInstanceIndex()) {
 					listenedPartitions.add(partition);
 				}
 			}
