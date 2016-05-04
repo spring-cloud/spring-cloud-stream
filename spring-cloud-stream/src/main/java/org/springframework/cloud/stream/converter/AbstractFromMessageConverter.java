@@ -41,7 +41,7 @@ import org.springframework.util.MimeType;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
-public abstract class AbstractFromMessageConverter extends AbstractMessageConverter implements TargetTypeMessageConverter {
+public abstract class AbstractFromMessageConverter extends AbstractMessageConverter implements TargetMimeTypeMessageConverter {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
@@ -116,6 +116,16 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	}
 
 	protected abstract Class<?>[] supportedTargetTypes();
+
+	@Override
+	public Class<?>[] getSupportedJavaTypes(MimeType targetMimeType) {
+		if (supportsTargetMimeType(targetMimeType)) {
+			return supportedTargetTypes();
+		}
+		else {
+			return new Class<?>[0];
+		}
+	}
 
 	@Override
 	protected boolean supports(Class<?> clazz) {

@@ -92,6 +92,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
 			CompositeMessageConverter messageConverter = this.compositeMessageConverterFactory
 					.getMessageConverterForTargetType(mimeType);
+			messageChannel.setMessageConverter(messageConverter);
+			messageChannel.setDatatypes(this.compositeMessageConverterFactory.supportedDataTypes(mimeType));
 			if (CollectionUtils.isEmpty(messageConverter.getConverters())) {
 				throw new IllegalStateException(
 						"No converters registered with a target content type of '" + contentType + "'");
@@ -101,7 +103,6 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			messageChannel.addInterceptor(new ChannelInterceptorAdapter() {
 				@Override
 				public Message<?> preSend(Message<?> message, MessageChannel messageChannel) {
-					message = (Message<?>) wrappingMessageConverter.fromMessage(message, Object.class, null);
 					Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 					if (contentTypeFromMessage == null) {
 						return messageBuilderFactory.fromMessage(message)

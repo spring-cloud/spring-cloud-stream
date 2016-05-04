@@ -19,13 +19,17 @@ package org.springframework.cloud.stream.converter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.ObjectUtils;
 
 
 /**
@@ -80,9 +84,9 @@ public class CompositeMessageConverterFactory {
 	public CompositeMessageConverter getMessageConverterForTargetType(MimeType targetMimeType) {
 		List<MessageConverter> targetMimeTypeConverters = new ArrayList<MessageConverter>();
 		for (MessageConverter converter : converters) {
-			if (converter instanceof TargetTypeMessageConverter) {
-				TargetTypeMessageConverter targetTypeMessageConverter = (TargetTypeMessageConverter) converter;
-				if (targetTypeMessageConverter.supportsTargetMimeType(targetMimeType)) {
+			if (converter instanceof TargetMimeTypeMessageConverter) {
+				TargetMimeTypeMessageConverter targetTypeMessageConverter = (TargetMimeTypeMessageConverter) converter;
+				if (!ObjectUtils.isEmpty(targetTypeMessageConverter.getSupportedJavaTypes(targetMimeType))) {
 					targetMimeTypeConverters.add(converter);
 				}
 			}
@@ -96,5 +100,25 @@ public class CompositeMessageConverterFactory {
 
 	public CompositeMessageConverter getMessageConverterForAllRegistered() {
 		return new CompositeMessageConverter(new ArrayList<>(converters));
+	}
+
+	public Class<?>[] supportedDataTypes(MimeType targetMimeType) {
+		Set<Class<?>> supportedDataTypes = new HashSet<>();
+		// Make sure to check if the target type is of explicit java object type.
+		if (MessageConverterUtils.X_JAVA_OBJECT.includes(targetMimeType)) {
+			supportedDataTypes.add(MessageConverterUtils.getJavaTypeForJavaObjectContentType(targetMimeType));
+		}
+		else {
+			for (MessageConverter converter : converters) {
+				if (converter instanceof TargetMimeTypeMessageConverter) {
+					TargetMimeTypeMessageConverter targetTypeMessageConverter = (TargetMimeTypeMessageConverter) converter;
+					Class<?>[] targetTypes = targetTypeMessageConverter.getSupportedJavaTypes(targetMimeType);
+					if (!ObjectUtils.isEmpty(targetTypes)) {
+						supportedDataTypes.addAll(Arrays.asList(targetTypes));
+					}
+				}
+			}
+		}
+		return supportedDataTypes.toArray(new Class<?>[supportedDataTypes.size()]);
 	}
 }

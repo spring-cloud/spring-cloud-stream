@@ -19,13 +19,18 @@ package org.springframework.cloud.stream.converter;
 import org.springframework.util.MimeType;
 
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter} that supports a
- * target {@link MimeType}/{@link Class} combination.
+ * A {@link org.springframework.messaging.converter.MessageConverter} that support
  *
  * @author Marius Bogoevici
  */
-public interface TargetTypeMessageConverter {
+public interface TargetMimeTypeMessageConverter {
 
-	boolean supportsTargetMimeType(MimeType targetMimeType);
+	/**
+	 * If the converter supports a
+	 *
+	 * @param targetMimeType the target mime type to convert to
+	 * @return
+	 */
+	Class<?>[] getSupportedJavaTypes(MimeType targetMimeType);
 
 }
