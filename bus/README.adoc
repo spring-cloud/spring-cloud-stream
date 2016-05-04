@@ -7,7 +7,7 @@ Spring Cloud Bus links nodes of a distributed system with a lightweight message 
 
 == Quick Start
 
-Spring Cloud Bus works by adding Spring Boot autconfiguration if it detects itself on the classpath. All you need to do to enable the bus is to add `spring-cloud-starter-bus-amqp` to your dependency management and Spring Cloud takes care of the rest. Make sure RabbitMQ is available and configured to provide a `ConnectionFactory`: running on localhost you shouldn't have to do anything, but if you are running remotely use Spring Cloud Connectors, or Spring Boot conventions to define the broker credentials, e.g.
+Spring Cloud Bus works by adding Spring Boot autconfiguration if it detects itself on the classpath. All you need to do to enable the bus is to add `spring-cloud-starter-bus-amqp` or `spring-cloud-starter-bus-kafka` to your dependency management and Spring Cloud takes care of the rest. Make sure the broker (RabbitMQ or Kafka) is available and configured: running on localhost you shouldn't have to do anything, but if you are running remotely use Spring Cloud Connectors, or Spring Boot conventions to define the broker credentials, e.g. for Rabbit
 
 .application.yml
 ----
@@ -19,7 +19,9 @@ spring:
     password: secret
 ----
 
-The bus currently supports sending messages to all nodes listening or all nodes for a particular service (as defined by Eureka).  More selector criteria will be added in the future (ie. only service X nodes in data center Y, etc...). The http endpoints are under the `/bus/*` actuator namespace.  There are currently two implemented.  The first, `/bus/env`, sends key/values pairs to update each nodes Spring Environment.  The second, `/bus/refresh`, will reload each application's configuration, just as if they had all been pinged on their `/refresh` endpoint.
+The bus currently supports sending messages to all nodes listening or all nodes for a particular service (as defined by Eureka).  More selector criteria may be added in the future (ie. only service X nodes in data center Y, etc...). There are also some http endpoints are under the `/bus/*` actuator namespace.  There are currently two implemented.  The first, `/bus/env`, sends key/values pairs to update each nodes Spring Environment.  The second, `/bus/refresh`, will reload each application's configuration, just as if they had all been pinged on their `/refresh` endpoint.
+
+NOTE: the Bus starters cover Rabbit and Kafka, because those are the two most common implementations, but Spring Cloud Stream is quite flexible and binder will work combined with `spring-cloud-bus`.
 
 == Building
 
@@ -139,7 +141,7 @@ or you will encounter compile problems. It also needs a specific version of mave
 enabled. Intellij 14.1+ requires some configuration to ensure these are setup properly.
 
  1. Click Preferences, Plugins. *Ensure Lombok is installed*
- 2. Click New, Project from Existing Sources, choose your spring-cloud-sleuth directory
+ 2. Click New, Project from Existing Sources, choose your spring-cloud project directory
  3. Choose Maven, and select Environment Settings. *Ensure you are using Maven 3.3.3*
  4. In the next screen, *Select the profile `spring`* click Next until Finish.
  5. Click Preferences, "Build, Execution, Deployment", Compiler, Annotation Processors. *Click Enable Annotation Processing*
