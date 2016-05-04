@@ -156,7 +156,7 @@ public class KafkaMessageChannelBinder
 
 	private int fetchSize = 1024 * 1024;
 
-	private int defaultMinPartitionCount = 1;
+	private int minPartitionCount = 1;
 
 	private ConnectionFactory connectionFactory;
 
@@ -302,8 +302,8 @@ public class KafkaMessageChannelBinder
 		this.fetchSize = fetchSize;
 	}
 
-	public void setDefaultMinPartitionCount(int defaultMinPartitionCount) {
-		this.defaultMinPartitionCount = defaultMinPartitionCount;
+	public void setMinPartitionCount(int minPartitionCount) {
+		this.minPartitionCount = minPartitionCount;
 	}
 
 	public void setMaxWait(int maxWait) {
@@ -457,7 +457,7 @@ public class KafkaMessageChannelBinder
 			TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkClient);
 			if (topicMetadata.errorCode() == ErrorMapping.NoError()) {
 				// only consider minPartitionCount for resizing if autoAddPartitions is true
-				int effectivePartitionCount = isAutoAddPartitions() ? Math.max(defaultMinPartitionCount, partitionCount)
+				int effectivePartitionCount = isAutoAddPartitions() ? Math.max(minPartitionCount, partitionCount)
 						: partitionCount;
 				if (topicMetadata.partitionsMetadata().size() < effectivePartitionCount) {
 					if (isAutoAddPartitions()) {
@@ -476,7 +476,7 @@ public class KafkaMessageChannelBinder
 				if (isAutoCreateTopics()) {
 					Seq<Object> brokerList = ZkUtils.getSortedBrokerList(zkClient);
 					// always consider minPartitionCount for topic creation
-					int effectivePartitionCount = Math.max(this.defaultMinPartitionCount, partitionCount);
+					int effectivePartitionCount = Math.max(this.minPartitionCount, partitionCount);
 					final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
 							.assignReplicasToBrokers(brokerList, effectivePartitionCount, replicationFactor, -1, -1);
 					metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {

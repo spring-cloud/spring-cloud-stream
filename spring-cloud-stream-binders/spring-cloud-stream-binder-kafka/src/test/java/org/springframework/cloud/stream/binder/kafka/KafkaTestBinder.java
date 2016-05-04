@@ -62,7 +62,7 @@ public class KafkaTestBinder extends
 			binder.setApplicationContext(context);
 			binder.setFetchSize(binderConfiguration.getFetchSize());
 			binder.setMaxWait(binderConfiguration.getMaxWait());
-			binder.setDefaultMinPartitionCount(binderConfiguration.getMinPartitionCount());
+			binder.setMinPartitionCount(binderConfiguration.getMinPartitionCount());
 			binder.afterPropertiesSet();
 			this.setBinder(binder);
 		}

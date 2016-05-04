@@ -84,7 +84,7 @@ public class KafkaBinderConfiguration {
 		kafkaMessageChannelBinder.setZkConnectionTimeout(kafkaBinderConfigurationProperties.getZkConnectionTimeout());
 
 		kafkaMessageChannelBinder.setFetchSize(kafkaBinderConfigurationProperties.getFetchSize());
-		kafkaMessageChannelBinder.setDefaultMinPartitionCount(kafkaBinderConfigurationProperties.getMinPartitionCount());
+		kafkaMessageChannelBinder.setMinPartitionCount(kafkaBinderConfigurationProperties.getMinPartitionCount());
 		kafkaMessageChannelBinder.setQueueSize(kafkaBinderConfigurationProperties.getQueueSize());
 		kafkaMessageChannelBinder.setReplicationFactor(kafkaBinderConfigurationProperties.getReplicationFactor());
 		kafkaMessageChannelBinder.setRequiredAcks(kafkaBinderConfigurationProperties.getRequiredAcks());

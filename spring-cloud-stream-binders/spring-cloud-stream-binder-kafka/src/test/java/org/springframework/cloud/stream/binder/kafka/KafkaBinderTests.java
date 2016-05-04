@@ -669,7 +669,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
 				kafkaTestSupport.getZkConnectString());
 
-		binder.setDefaultMinPartitionCount(6);
+		binder.setMinPartitionCount(6);
 
 		GenericApplicationContext context = new GenericApplicationContext();
 		binder.setAutoAddPartitions(true);
