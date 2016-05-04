@@ -36,7 +36,7 @@ public class SerializedToJavaMessageConverter extends AbstractFromMessageConvert
 	}
 
 	@Override
-	protected Class<?>[] supportedTargetTypes() {
+	public Class<?>[] supportedTargetTypes() {
 		return new Class<?>[] { Serializable.class };
 	}
 

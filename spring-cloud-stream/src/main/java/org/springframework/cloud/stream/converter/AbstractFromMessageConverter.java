@@ -41,7 +41,7 @@ import org.springframework.util.MimeType;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
-public abstract class AbstractFromMessageConverter extends AbstractMessageConverter {
+public abstract class AbstractFromMessageConverter extends AbstractMessageConverter implements TargetMimeTypeMessageConverter {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
@@ -106,12 +106,6 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	}
 
 	/**
-	 * Subclasses implement this to specify supported target types
-	 * @return an array of supported classes or null if any target type is supported
-	 */
-	protected abstract Class<?>[] supportedTargetTypes();
-
-	/**
 	 * Subclasses implement this to specify supported payload types
 	 * @return an array of supported classes or null if any target type is supported
 	 */
@@ -121,9 +115,21 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 		return supportsType(clazz, supportedPayloadTypes());
 	}
 
+	protected abstract Class<?>[] supportedTargetTypes();
+
+	@Override
+	public Class<?>[] getSupportedJavaTypes(MimeType targetMimeType) {
+		if (supportsTargetMimeType(targetMimeType)) {
+			return supportedTargetTypes();
+		}
+		else {
+			return new Class<?>[0];
+		}
+	}
+
 	@Override
 	protected boolean supports(Class<?> clazz) {
-		return supportsType(clazz, supportedTargetTypes());
+		return clazz == Object.class || supportsType(clazz, supportedTargetTypes());
 	}
 
 	private boolean supportsType(Class<?> clazz, Class<?>[] supportedTypes) {

@@ -66,7 +66,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.util.Assert;
 
 /**
  * @author Mark Fisher
@@ -197,9 +196,6 @@ public class BinderAwareChannelResolverTests {
 		resolver.setBeanFactory(beanFactory);
 		SubscribableChannel resolved = (SubscribableChannel) resolver.resolveDestination("foo");
 		DirectFieldAccessor accessor = new DirectFieldAccessor(resolved);
-		Class<?>[] dataTypes = (Class<?>[]) accessor.getPropertyValue("datatypes");
-		Assert.isTrue(dataTypes.length == 1, "Data type must be set for the Foo Channel");
-		Assert.isTrue(dataTypes[0].equals(String.class), "Data type should be of type String");
 		verify(binder).bindProducer(eq("foo"), any(MessageChannel.class), any(ProducerProperties.class));
 		assertSame(resolved, beanFactory.getBean("foo"));
 	}

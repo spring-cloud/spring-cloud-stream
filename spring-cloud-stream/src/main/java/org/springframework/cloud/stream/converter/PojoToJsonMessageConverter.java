@@ -16,12 +16,12 @@
 
 package org.springframework.cloud.stream.converter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeTypeUtils;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -45,7 +45,7 @@ public class PojoToJsonMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	protected Class<?>[] supportedTargetTypes() {
+	public Class<?>[] supportedTargetTypes() {
 		return new Class<?>[] {String.class};
 	}
 

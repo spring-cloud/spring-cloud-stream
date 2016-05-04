@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.converter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,8 +31,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ObjectUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 
 /**
  * A factory for creating an instance of {@link CompositeMessageConverter} for a given target MIME type
@@ -42,7 +42,7 @@ public class CompositeMessageConverterFactory {
 
 	private final ObjectMapper objectMapper;
 
-	private final List<AbstractFromMessageConverter> converters;
+	private final List<MessageConverter> converters;
 
 	public CompositeMessageConverterFactory() {
 		this(Collections.<AbstractFromMessageConverter>emptyList(), new ObjectMapper());
@@ -51,7 +51,7 @@ public class CompositeMessageConverterFactory {
 	/**
 	 * @param customConverters a list of {@link AbstractFromMessageConverter}
 	 */
-	public CompositeMessageConverterFactory(List<? extends AbstractFromMessageConverter> customConverters,
+	public CompositeMessageConverterFactory(List<? extends MessageConverter> customConverters,
 			ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		if (!CollectionUtils.isEmpty(customConverters)) {
@@ -81,11 +81,14 @@ public class CompositeMessageConverterFactory {
 	 * @param targetMimeType the target MIME type
 	 * @return a converter for the target MIME type
 	 */
-	public CompositeMessageConverter getMessageConverterForType(MimeType targetMimeType) {
+	public CompositeMessageConverter getMessageConverterForTargetType(MimeType targetMimeType) {
 		List<MessageConverter> targetMimeTypeConverters = new ArrayList<MessageConverter>();
-		for (AbstractFromMessageConverter converter : converters) {
-			if (converter.supportsTargetMimeType(targetMimeType)) {
-				targetMimeTypeConverters.add(converter);
+		for (MessageConverter converter : converters) {
+			if (converter instanceof TargetMimeTypeMessageConverter) {
+				TargetMimeTypeMessageConverter targetTypeMessageConverter = (TargetMimeTypeMessageConverter) converter;
+				if (!ObjectUtils.isEmpty(targetTypeMessageConverter.getSupportedJavaTypes(targetMimeType))) {
+					targetMimeTypeConverters.add(converter);
+				}
 			}
 		}
 		if (CollectionUtils.isEmpty(targetMimeTypeConverters)) {
@@ -96,7 +99,7 @@ public class CompositeMessageConverterFactory {
 	}
 
 	public CompositeMessageConverter getMessageConverterForAllRegistered() {
-		return new CompositeMessageConverter(new ArrayList<MessageConverter>(converters));
+		return new CompositeMessageConverter(new ArrayList<>(converters));
 	}
 
 	public Class<?>[] supportedDataTypes(MimeType targetMimeType) {
@@ -106,9 +109,10 @@ public class CompositeMessageConverterFactory {
 			supportedDataTypes.add(MessageConverterUtils.getJavaTypeForJavaObjectContentType(targetMimeType));
 		}
 		else {
-			for (AbstractFromMessageConverter converter : converters) {
-				if (converter.supportsTargetMimeType(targetMimeType)) {
-					Class<?>[] targetTypes = converter.supportedTargetTypes();
+			for (MessageConverter converter : converters) {
+				if (converter instanceof TargetMimeTypeMessageConverter) {
+					TargetMimeTypeMessageConverter targetTypeMessageConverter = (TargetMimeTypeMessageConverter) converter;
+					Class<?>[] targetTypes = targetTypeMessageConverter.getSupportedJavaTypes(targetMimeType);
 					if (!ObjectUtils.isEmpty(targetTypes)) {
 						supportedDataTypes.addAll(Arrays.asList(targetTypes));
 					}
