@@ -93,12 +93,20 @@ public class KafkaBinderConfigurationProperties {
 		return this.offsetUpdateShutdownTimeout;
 	}
 
+	public String[] getZkNodes() {
+		return zkNodes;
+	}
+
 	public void setZkNodes(String[] zkNodes) {
 		this.zkNodes = zkNodes;
 	}
 
 	public void setDefaultZkPort(String defaultZkPort) {
 		this.defaultZkPort = defaultZkPort;
+	}
+
+	public String[] getBrokers() {
+		return brokers;
 	}
 
 	public void setBrokers(String[] brokers) {
@@ -108,7 +116,6 @@ public class KafkaBinderConfigurationProperties {
 	public void setDefaultBrokerPort(String defaultBrokerPort) {
 		this.defaultBrokerPort = defaultBrokerPort;
 	}
-
 
 	public void setHeaders(String[] headers) {
 		this.headers = headers;
