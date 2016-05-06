@@ -1190,8 +1190,8 @@ An output binding is configured to send partitioned data by setting one and only
 For example, the following is a valid and typical configuration:
 
 ----
-spring.cloud.stream.bindings.output.partitionKeyExpression=payload.id
-spring.cloud.stream.bindings.output.partitionCount=5
+spring.cloud.stream.bindings.output.producer.partitionKeyExpression=payload.id
+spring.cloud.stream.bindings.output.producer.partitionCount=5
 ----
 
 Based on the above example configuration, data will be sent to the target partition using the following logic.
