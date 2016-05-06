@@ -183,15 +183,15 @@ public class KafkaMessageChannelBinder
 		this.zookeeperConnect = zookeeperConnect;
 		this.brokers = brokers;
 		this.zkAddress = zkAddress;
-		if (headersToMap.length > 0) {
+		if (ObjectUtils.isEmpty(headersToMap)) {
+			this.headersToMap = BinderHeaders.STANDARD_HEADERS;
+		}
+		else {
 			String[] combinedHeadersToMap = Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0,
 					BinderHeaders.STANDARD_HEADERS.length + headersToMap.length);
 			System.arraycopy(headersToMap, 0, combinedHeadersToMap, BinderHeaders.STANDARD_HEADERS.length,
 					headersToMap.length);
 			this.headersToMap = combinedHeadersToMap;
-		}
-		else {
-			this.headersToMap = BinderHeaders.STANDARD_HEADERS;
 		}
 	}
 
@@ -793,7 +793,6 @@ public class KafkaMessageChannelBinder
 		}
 
 		@Override
-		@SuppressWarnings("unchecked")
 		protected Object handleRequestMessage(Message<?> requestMessage) {
 			if (HeaderMode.embeddedHeaders.equals(consumerProperties.getHeaderMode())) {
 				MessageValues messageValues = extractMessageValues(requestMessage);
