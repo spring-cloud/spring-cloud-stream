@@ -32,7 +32,6 @@ import org.springframework.integration.codec.Codec;
 import org.springframework.integration.kafka.support.LoggingProducerListener;
 import org.springframework.integration.kafka.support.ProducerListener;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
-import org.springframework.util.ObjectUtils;
 
 /**
  * @author David Turanski
@@ -71,10 +70,8 @@ public class KafkaBinderConfiguration {
 		String[] headers = kafkaBinderConfigurationProperties.getHeaders();
 		String kafkaConnectionString = kafkaBinderConfigurationProperties.getKafkaConnectionString();
 		String zkConnectionString = kafkaBinderConfigurationProperties.getZkConnectionString();
-		KafkaMessageChannelBinder kafkaMessageChannelBinder = ObjectUtils.isEmpty(headers) ?
-				new KafkaMessageChannelBinder(zookeeperConnect(), kafkaConnectionString, zkConnectionString)
-				: new KafkaMessageChannelBinder(zookeeperConnect(), kafkaConnectionString, zkConnectionString,
-				headers);
+		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
+				zookeeperConnect(), kafkaConnectionString, zkConnectionString, headers);
 		kafkaMessageChannelBinder.setCodec(codec);
 		kafkaMessageChannelBinder.setOffsetUpdateTimeWindow(kafkaBinderConfigurationProperties.getOffsetUpdateTimeWindow());
 		kafkaMessageChannelBinder.setOffsetUpdateCount(kafkaBinderConfigurationProperties.getOffsetUpdateCount());
