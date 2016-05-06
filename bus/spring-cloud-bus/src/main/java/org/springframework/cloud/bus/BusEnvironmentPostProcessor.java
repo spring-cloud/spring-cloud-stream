@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
-import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
@@ -46,10 +45,6 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 				+ ".content-type",
 				environment.getProperty("spring.cloud.bus.content-type",
 						"application/json"));
-		map.put("spring.cloud.stream.bindings." + SpringCloudBusClient.INPUT
-				+ ".content-type",
-				"application/x-java-object;type="
-						+ RemoteApplicationEvent.class.getName());
 		addOrReplace(environment.getPropertySources(), map);
 	}
 

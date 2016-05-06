@@ -24,6 +24,7 @@ import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.cloud.context.scope.refresh.RefreshScope;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.context.ApplicationContext;
@@ -32,7 +33,6 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
-import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.AntPathMatcher;
@@ -105,7 +105,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		}
 	}
 
-	@ServiceActivator(inputChannel = SpringCloudBusClient.INPUT)
+	@StreamListener(SpringCloudBusClient.INPUT)
 	public void acceptRemote(RemoteApplicationEvent event) {
 		if (event instanceof AckRemoteApplicationEvent) {
 			if (this.bus.getTrace().isEnabled() && !this.serviceMatcher.isFromSelf(event)
