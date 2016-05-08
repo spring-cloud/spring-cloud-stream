@@ -14,8 +14,8 @@
 	<description>Spring Cloud Stream Dependencies</description>
 	<properties>
 		<rxjava.version>1.0.14</rxjava.version>
-		<spring.tuple.version>1.0.0.RC1</spring.tuple.version>
-		<spring.integration.tuple.version>1.0.0.RC1</spring.integration.tuple.version>
+		<spring.tuple.version>1.0.0.RELEASE</spring.tuple.version>
+		<spring.integration.tuple.version>1.0.0.RELEASE</spring.integration.tuple.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
