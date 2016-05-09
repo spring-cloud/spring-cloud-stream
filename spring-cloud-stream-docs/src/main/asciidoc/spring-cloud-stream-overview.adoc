@@ -829,6 +829,7 @@ must be prefixed with `spring.cloud.stream.bindings.<channelName>.`.
 
 destination::
     The target destination of a channel on the bound middleware (e.g., the RabbitMQ exchange or Kafka topic).
+    If the channel is bound as a consumer, it could be bound to multiple destinations and the destination names can be specified as comma separated String values.
     If not set, the channel name is used instead.
 group::
     The consumer group of the channel.
