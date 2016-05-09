@@ -626,12 +626,12 @@ When implementing an RxJava processor, it is important to handle exceptions as p
 Uncaught exceptions will be treated as errors by RxJava and will cause the `Observable` to complete, disrupting the flow.
 ====
 
-=== Binder SPI
+== Binders
 
-Spring Cloud Stream provides a Binder abstraction for use in connecting to physical destinations.
+Spring Cloud Stream provides a Binder abstraction for use in connecting to physical destinations at the external middleware.
 This section provides information about the main concepts behind the Binder SPI, its main components, and implementation-specific details.
 
-==== Producers and Consumers
+=== Producers and Consumers
 
 .Producers and Consumers
 image::producers-consumers.png[width=300,scaledwidth="75%"]
@@ -645,6 +645,125 @@ As with a producer, the consumer's channel can be bound to an external message b
 When invoking the `bindConsumer()` method, the first parameter is the destination name, and a second parameter provides the name of a logical group of consumers.
 Each group that is represented by consumer bindings for a given destination receives a copy of each message that a producer sends to that destination (i.e., publish-subscribe semantics).
 If there are multiple consumer instances bound using the same group name, then messages will be load-balanced across those consumer instances so that each message sent by a producer is consumed by only a single consumer instance within each group (i.e., queueing semantics).
+
+=== Binder SPI
+
+The Binder SPI consists of a number of interfaces, out-of-the box utility classes and discovery strategies that provide a pluggable mechanism for connecting to external middleware.
+
+The key point of the SPI is the `Binder` interface which is a strategy for connecting inputs and outputs to external middleware.
+
+[source,java]
+----
+public interface Binder<T, C extends ConsumerProperties, P extends ProducerProperties> {
+	Binding<T> bindConsumer(String name, String group, T inboundBindTarget, C consumerProperties);
+
+	Binding<T> bindProducer(String name, T outboundBindTarget, P producerProperties);
+}
+----
+
+The interface is parameterized, offering a number of extension points:
+
+* input and output bind targets - as of version 1.0, only `MessageChannel` is supported, but this is intended to be used as an extension point in the future;
+* extended consumer and producer properties - allowing specific Binder implementations to add supplemental properties which can be supported in a type-safe manner.
+
+A typical binder implementation consists of the following
+
+* a class that implements the `Binder` interface;
+* a Spring `@Configuration` class that creates a bean of the type above along with the middleware connection infrastructure;
+* a `META-INF/spring.binders` file found on the classpath containing one or more binder definitions, e.g.
+
+```
+kafka:\
+org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration
+```
+
+=== Binder Detection
+
+Spring Cloud Stream relies on implementations of the Binder SPI to perform the task of connecting channels to message brokers.
+Each Binder implementation typically connects to one type of messaging system.
+Out of the box, Spring Cloud Stream provides binders for Kafka, RabbitMQ, and Redis.
+
+==== Classpath Detection
+
+By default, Spring Cloud Stream relies on Spring Boot's auto-configuration to configure the binding process.
+If a single Binder implementation is found on the classpath, Spring Cloud Stream will use it automatically.
+For example, a Spring Cloud Stream project that aims to bind only to RabbitMQ can simply add the following dependency:
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
+</dependency>
+----
+
+[[multiple-binders]]
+=== Multiple Binders on the Classpath
+
+When multiple binders are present on the classpath, the application must indicate which binder is to be used for each channel binding.
+Each binder configuration contains a `META-INF/spring.binders`, which is a simple properties file:
+
+[source]
+----
+rabbit:\
+org.springframework.cloud.stream.binder.rabbit.config.RabbitServiceAutoConfiguration
+----
+
+Similar files exist for the other provided binder implementations (e.g., Kafka), and custom binder implementations are expected to provide them, as well.
+The key represents an identifying name for the binder implementation, whereas the value is a comma-separated list of configuration classes that each contain one and only one bean definition of type `org.springframework.cloud.stream.binder.Binder`.
+
+Binder selection can either be performed globally, using the `spring.cloud.stream.defaultBinder` property (e.g., `spring.cloud.stream.defaultBinder=rabbit`) or individually, by configuring the binder on each channel binding.
+For instance, a processor application which reads from Kafka and writes to RabbitMQ can specify the following configuration:
+
+----
+spring.cloud.stream.bindings.input.binder=kafka
+spring.cloud.stream.bindings.output.binder=rabbit
+----
+
+=== Connecting to Multiple Systems
+
+By default, binders share the application's Spring Boot auto-configuration, so that one instance of each binder found on the classpath will be created.
+If your application should connect to more than one broker of the same type, you can specify multiple binder configurations, each with different environment settings.
+
+[NOTE]
+====
+Turning on explicit binder configuration will disable the default binder configuration process altogether.
+If you do this, all binders in use must be included in the configuration.
+====
+
+For example, this is the typical configuration for a processor application which connects to two RabbitMQ broker instances:
+
+[source,yml]
+----
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: foo
+          binder: rabbit1
+        output:
+          destination: bar
+          binder: rabbit2
+      binders:
+        rabbit1:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: <host1>
+        rabbit2:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: <host2>
+----
+
+
+=== Implementation strategies
+
+This section details the binder implementation strategies for Kafka and Rabbit MQ, in what concerns mapping the Spring Cloud Stream concepts onto the middleware concepts.
 
 ==== Kafka Binder
 
@@ -1050,89 +1169,6 @@ batchTimeout::
 (Normally the producer does not wait at all, and simply sends all the messages that accumulated while the previous send was in progress.) A non-zero value may increase throughput at the expense of latency.
 +
 Default: `0`.
-
-== Binder Detection
-
-Spring Cloud Stream relies on implementations of the Binder SPI to perform the task of connecting channels to message brokers.
-Each Binder implementation typically connects to one type of messaging system.
-Out of the box, Spring Cloud Stream provides binders for Kafka, RabbitMQ, and Redis.
-
-=== Classpath Detection
-
-By default, Spring Cloud Stream relies on Spring Boot's auto-configuration to configure the binding process.
-If a single Binder implementation is found on the classpath, Spring Cloud Stream will use it automatically.
-For example, a Spring Cloud Stream project that aims to bind only to RabbitMQ can simply add the following dependency:
-
-[source,xml]
-----
-<dependency>
-  <groupId>org.springframework.cloud</groupId>
-  <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-</dependency>
-----
-
-[[multiple-binders]]
-=== Multiple Binders on the Classpath
-
-When multiple binders are present on the classpath, the application must indicate which binder is to be used for each channel binding.
-Each binder configuration contains a `META-INF/spring.binders`, which is a simple properties file:
-
-[source]
-----
-rabbit:\
-org.springframework.cloud.stream.binder.rabbit.config.RabbitServiceAutoConfiguration
-----
-
-Similar files exist for the other provided binder implementations (e.g., Kafka), and custom binder implementations are expected to provide them, as well.
-The key represents an identifying name for the binder implementation, whereas the value is a comma-separated list of configuration classes that each contain one and only one bean definition of type `org.springframework.cloud.stream.binder.Binder`.
-
-Binder selection can either be performed globally, using the `spring.cloud.stream.defaultBinder` property (e.g., `spring.cloud.stream.defaultBinder=rabbit`) or individually, by configuring the binder on each channel binding.
-For instance, a processor application which reads from Kafka and writes to RabbitMQ can specify the following configuration:
-
-----
-spring.cloud.stream.bindings.input.binder=kafka
-spring.cloud.stream.bindings.output.binder=rabbit
-----
-
-=== Connecting to Multiple Systems
-
-By default, binders share the application's Spring Boot auto-configuration, so that one instance of each binder found on the classpath will be created.
-If your application should connect to more than one broker of the same type, you can specify multiple binder configurations, each with different environment settings.
-
-[NOTE]
-====
-Turning on explicit binder configuration will disable the default binder configuration process altogether.
-If you do this, all binders in use must be included in the configuration.
-====
-
-For example, this is the typical configuration for a processor application which connects to two RabbitMQ broker instances:
-
-[source,yml]
-----
-spring:
-  cloud:
-    stream:
-      bindings:
-        input:
-          destination: foo
-          binder: rabbit1
-        output:
-          destination: bar
-          binder: rabbit2
-      binders:
-        rabbit1:
-          type: rabbit
-          environment:
-            spring:
-              rabbitmq:
-                host: <host1>
-        rabbit2:
-          type: rabbit
-          environment:
-            spring:
-              rabbitmq:
-                host: <host2>
-----
 
 [[contenttypemanagement]]
 == Content Type and Transformation
