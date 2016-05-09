@@ -19,39 +19,6 @@
 			<id>full</id>
 			<build>
 				<plugins>
-<!--
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-javadoc-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>attach-javadocs</id>
-								<goals>
-									<goal>jar</goal>
-								</goals>
-								<phase>prepare-package</phase>
-								<configuration>
-									<includeDependencySources>true</includeDependencySources>
-									<dependencySourceIncludes>
-										<dependencySourceInclude>${project.groupId}:*</dependencySourceInclude>
-									</dependencySourceIncludes>
-									<attach>false</attach>
-									<quiet>true</quiet>
-									<stylesheetfile>${basedir}/src/main/javadoc/spring-javadoc.css</stylesheetfile>
-									<links>
-										<link>http://docs.oracle.com/javase/7/docs/api/</link>
-										<link>http://docs.oracle.com/javaee/7/api/</link>
-										<link>http://docs.spring.io/spring-framework/docs/${spring.version}/javadoc-api/</link>
-										<link>http://docs.spring.io/autorepo/docs/spring-security/${spring-security.version}/apidocs/</link>
-										<link>http://tomcat.apache.org/tomcat-8.0-doc/api/</link>
-										<link>http://download.eclipse.org/jetty/stable-9/apidocs/</link>
-										<link>http://www.thymeleaf.org/apidocs/thymeleaf/${thymeleaf.version}/</link>
-									</links>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
--->
 					<plugin>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>xml-maven-plugin</artifactId>
@@ -95,11 +62,8 @@
 									<doctype>book</doctype>
 									<attributes>
 										<docinfo>true</docinfo>
-										<spring-boot-version>${project.version}</spring-boot-version>
-										<spring-boot-docs-version>${project.version}</spring-boot-docs-version>
-										<spring-boot-repo>${spring-boot-repo}</spring-boot-repo>
-										<spring-docs-version>${spring.version}</spring-docs-version>
-										<spring-security-docs-version>${spring-security.version}</spring-security-docs-version>
+										<spring-cloud-stream-version>${project.version}</spring-cloud-stream-version>
+										<spring-cloud-stream-docs-version>${project.version}</spring-cloud-stream-docs-version>
 										<github-tag>${github-tag}</github-tag>
 									</attributes>
 								</configuration>

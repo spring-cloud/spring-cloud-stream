@@ -1,5 +1,5 @@
 <productname>Spring Cloud Stream</productname>
-<releaseinfo>{spring-boot-version}</releaseinfo>
+<releaseinfo>{spring-cloud-stream-version}</releaseinfo>
 <copyright>
 	<year>2013-2016</year>
 	<holder>Pivotal Software, Inc.</holder>
