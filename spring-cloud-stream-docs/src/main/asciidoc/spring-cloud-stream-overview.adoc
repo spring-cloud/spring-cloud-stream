@@ -983,9 +983,8 @@ spring.cloud.stream.kafka.binder.requiredAcks::
 Default: `1`.
 spring.cloud.stream.kafka.binder.minPartitionCount::
   Effective only if `autoCreateTopics` or `autoAddPartitions` is set.
-  The global minimum number of partitions that the binder will configure on topics on which it produces/consumes data.
-It can be superseded by the `partitionCount` setting of the producer or by the value of
-`instanceCount` * `concurrency` settings of the producer (if either is larger).
+The global minimum number of partitions that the binder will configure on topics on which it produces/consumes data.
+It can be superseded by the `partitionCount` setting of the producer or by the value of `instanceCount` * `concurrency` settings of the producer (if either is larger).
 +
 Default: `1`.
 spring.cloud.stream.kafka.binder.replicationFactor::
@@ -1003,6 +1002,7 @@ spring.cloud.stream.kafka.binder.autoAddPartitions::
   If set to `true`, the binder will create add new partitions if required.
 If set to `false`, the binder will rely on the partition size of the topic being already configured.
 If the partition count of the target topic is smaller than the expected value, the binder will fail to start.
++
 Default: `false`.
 
 
@@ -1146,9 +1146,136 @@ Spring Cloud Stream can handle messages based on this information in two ways:
 * Through its `contentType` settings on inbound and outbound channels
 * Through its argument mapping performed for methods annotated with `@StreamListener`
 
-//=== Type-Converting Message Channels
+Spring Cloud Stream allows you to declaratively configure type conversion for inputs and outputs using the `content-type` property of a binding.
+Note that general type conversion may also be accomplished easily by using a transformer inside your application.
+Currently, Spring Cloud Stream natively supports the following type conversions commonly used in streams:
 
-//=== @StreamListener and Conversion
+* *JSON* to/from *POJO*
+* *JSON* to/from https://github.com/spring-projects/spring-tuple/blob/master/spring-tuple/src/main/java/org/springframework/tuple/Tuple.java[org.springframework.tuple.Tuple]
+* *Object* to/from *byte[]* : Either the raw bytes serialized for remote transport, bytes emitted by an application, or converted to bytes using Java serialization(requires the object to be Serializable)
+* *String* to/from *byte[]*
+* *Object* to *plain text* (invokes the object's _toString()_ method)
+
+Where _JSON_ represents either a byte array or String payload containing JSON.
+Currently, Objects may be converted from a JSON byte array or String.
+Converting to JSON always produces a String.
+
+[[mime-types]]
+=== MIME types
+`content-type` values are parsed as media types, e.g., `application/json` or `text/plain;charset=UTF-8`.
+MIME types are especially useful for indicating how to convert to String or byte[] content.
+Spring Cloud Stream also uses MIME type format to represent Java types, using the general type `application/x-java-object` with a `type` parameter.
+For example, `application/x-java-object;type=java.util.Map` or `application/x-java-object;type=com.bar.Foo` can be set as the `content-type` property of an input binding.
+In addition, Spring Cloud Stream provides custom MIME types, notably, `application/x-spring-tuple` to specify a Tuple.
+
+[[mime-types-and-java-types]]
+=== MIME types and Java types
+
+The type conversions Spring Cloud Stream provides out of the box are summarized in the following table:
+
+|===
+|Source Payload |Target Payload |content-type header | content-type | Comments
+
+|POJO
+|JSON String
+|ignored
+|application/json
+|
+
+|Tuple
+|JSON String
+|ignored
+|application/json
+|JSON is tailored for Tuple
+
+|POJO
+|String (toString())
+|ignored
+|text/plain, java.lang.String
+|
+
+|POJO
+|byte[] (java.io serialized)
+|ignored
+|application/x-java-serialized-object
+|
+
+|JSON byte[] or String
+|POJO
+|application/json (or none)
+|application/x-java-object
+|
+
+|byte[] or String
+|Serializable
+|application/x-java-serialized-object
+|application/x-java-object
+|
+
+|JSON byte[] or String
+|Tuple
+|application/json (or none)
+|application/x-spring-tuple
+|
+
+|byte[]
+|String
+|any
+|text/plain, java.lang.String
+|will apply any Charset specified in the content-type header
+
+|String
+|byte[]
+|any
+|application/octet-stream
+|will apply any Charset specified in the content-type header
+
+|===
+
+[[NOTE]]
+Conversion applies to payloads that require type conversion.
+For example, if a module produces an XML string with outputType=application/json, the payload will not be converted from XML to JSON.
+This is because the payload at the module's output channel is already a String so no conversion will be applied at runtime.
+
+[[TIP]]
+While conversion is supported for both input and output channels, it is especially recommended to be used for the conversion of outbound messages.
+For the conversion of inbound messages, especially when the target is a POJO, the `@StreamListener` support will perform the conversion automatically.
+
+=== ``@StreamListener` and Message Conversion
+
+The `@StreamListener` annotation provides a convenient way for converting incoming messages without the need to specify the content type of an input channel.
+During the dispatching process to methods annotated with `@StreamListener`, a conversion will be applied automatically if the argument requires it.
+
+For example, let's consider a message with the String content `{"greeting":"Hello, world"}` and a `content-type` header of `application/json` is received on the input channel.
+Let us consider the following application that receives it:
+
+[source,java]
+----
+public class GreetingMessage {
+
+  String greeting;
+
+  public String getGreeting() {
+    return greeting;
+  }
+
+  public void setGreeting(String greeting) {
+    this.greeting = greeting;
+  }
+}
+
+@EnableBinding(Sink.class)
+@EnableAutoConfiguration
+public static class GreetingSink {
+
+		@StreamListener(Sink.INPUT)
+		public void receive(Greeting greeting) {
+			// handle Greeting
+		}
+	}
+----
+
+The argument of the method will be populated automatically with the POJO containing the unmarshalled form of the JSON String.
 
 == Inter-Application Communication
 
