@@ -13,7 +13,7 @@
 	<name>spring-cloud-stream-dependencies</name>
 	<description>Spring Cloud Stream Dependencies</description>
 	<properties>
-		<rxjava.version>1.0.14</rxjava.version>
+		<rxjava.version>1.1.5</rxjava.version>
 		<spring.tuple.version>1.0.0.RELEASE</spring.tuple.version>
 		<spring.integration.tuple.version>1.0.0.RELEASE</spring.integration.tuple.version>
 	</properties>
