@@ -8,12 +8,12 @@ apply plugin: "io.spring.dependency-management"
 
 dependencyManagement {
      imports {
-          mavenBom '{@= groupId @}:spring-cloud-streams-parent:{@= version @}'
+          mavenBom '{@= groupId @}:spring-cloud-stream-dependencies:{@= version @}'
      }
 }
 
 dependencies {
     compile '{@= groupId @}:spring-cloud-stream'
-    compile 'org.springframework.boot:spring-boot-starter-redis'
-    compile 'org.springframework.cloud:spring-cloud-starter-stream-redis'
+    compile 'org.springframework.boot:spring-boot-starter-kafka'
+    compile 'org.springframework.cloud:spring-cloud-starter-stream-kafka'
 }
