@@ -194,7 +194,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		if (testBinder != null) {
 			testBinder.cleanup();
 		}
-		System.clearProperty("SCS_KAFKA_TEST_EMBEDDED");
 	}
 
 	/**

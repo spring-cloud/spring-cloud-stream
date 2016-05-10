@@ -70,7 +70,9 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 
 	static {
 		// check if either the environment or Java property is set to use embedded tests
-		defaultEmbedded = "true".equals(System.getenv(SCS_KAFKA_TEST_EMBEDDED)) || "true".equals(System.getProperty(SCS_KAFKA_TEST_EMBEDDED));
+		// unless the property is explicitly set to false, default to embedded
+		defaultEmbedded = !("false".equals(System.getenv(SCS_KAFKA_TEST_EMBEDDED))
+				|| "false".equals(System.getProperty(SCS_KAFKA_TEST_EMBEDDED)));
 	}
 
 	public KafkaTestSupport() {

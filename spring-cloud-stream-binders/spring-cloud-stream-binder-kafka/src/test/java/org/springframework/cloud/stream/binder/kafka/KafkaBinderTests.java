@@ -84,7 +84,7 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
 	@ClassRule
-	public static KafkaTestSupport kafkaTestSupport = new KafkaTestSupport(true);
+	public static KafkaTestSupport kafkaTestSupport = new KafkaTestSupport();
 
 	private KafkaTestBinder binder;
 
