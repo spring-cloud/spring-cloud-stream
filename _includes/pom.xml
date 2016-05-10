@@ -2,7 +2,7 @@
     <dependencies>
         <dependency>
             <groupId>{@= groupId @}</groupId>
-            <artifactId>spring-cloud-stream-parent</artifactId>
+            <artifactId>spring-cloud-stream-dependencies</artifactId>
             <version>{@= version @}</version>
             <type>pom</type>
             <scope>import</scope>
