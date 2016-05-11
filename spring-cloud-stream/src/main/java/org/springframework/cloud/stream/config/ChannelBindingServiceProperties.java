@@ -69,6 +69,8 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	private boolean ignoreUnknownProperties = true;
 
+	private boolean autoStartup = true;
+
 	private ConfigurableApplicationContext applicationContext;
 
 	public Map<String, BindingProperties> getBindings() {
@@ -141,6 +143,14 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	public void setIgnoreUnknownProperties(boolean ignoreUnknownProperties) {
 		this.ignoreUnknownProperties = ignoreUnknownProperties;
+	}
+
+	public boolean isAutoStartup() {
+		return this.autoStartup;
+	}
+
+	public void setAutoStartup(boolean autoStartup) {
+		this.autoStartup = autoStartup;
 	}
 
 	@Override
