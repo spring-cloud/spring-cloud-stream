@@ -29,7 +29,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -199,7 +198,7 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 				MessageDeliveryMode.class);
 		assertEquals(MessageDeliveryMode.PERSISTENT, mode);
 		List<?> requestHeaders = TestUtils.getPropertyValue(endpoint,
-				"handler.delegate.headerMapper.requestHeaderMatcher.strategies", List.class);
+				"handler.delegate.headerMapper.requestHeaderMatcher.matchers", List.class);
 		assertEquals(2, requestHeaders.size());
 		producerBinding.unbind();
 		assertFalse(endpoint.isRunning());
@@ -753,22 +752,20 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		assertEquals(5.0, TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.multiplier"));
 
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
-				"headerMapper.requestHeaderMatcher.strategies",
+				"headerMapper.requestHeaderMatcher.matchers",
 				List.class);
 		assertEquals(1, requestMatchers.size());
-		assertEquals("foo",
-				TestUtils.getPropertyValue(requestMatchers.get(0), "patterns", Collection.class).iterator().next());
+		assertEquals("foo", TestUtils.getPropertyValue(requestMatchers.get(0), "pattern"));
 
 		return container;
 	}
 
 	private void verifyFooRequestProducer(AbstractEndpoint endpoint) {
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
-				"handler.delegate.headerMapper.requestHeaderMatcher.strategies",
+				"handler.delegate.headerMapper.requestHeaderMatcher.matchers",
 				List.class);
 		assertEquals(1, requestMatchers.size());
-		assertEquals("foo",
-				TestUtils.getPropertyValue(requestMatchers.get(0), "patterns", Collection.class).iterator().next());
+		assertEquals("foo", TestUtils.getPropertyValue(requestMatchers.get(0), "pattern"));
 	}
 
 	@Override
