@@ -16,9 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import org.springframework.messaging.Message;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
+import org.springframework.messaging.Message;
 
 
 /**

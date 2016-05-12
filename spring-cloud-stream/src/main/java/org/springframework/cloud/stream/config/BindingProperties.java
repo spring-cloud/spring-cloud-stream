@@ -18,12 +18,12 @@ package org.springframework.cloud.stream.config;
 
 import javax.validation.constraints.AssertTrue;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.validation.annotation.Validated;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * Contains the properties of a binding.

@@ -14,11 +14,22 @@
 			<property name="message" value="Indent must use tab characters"/>
 			<property name="ignoreComments" value="true"/>
 		</module>
+		<module name="AvoidStarImport"/>
+		<module name="AvoidStaticImport">
+			<property name="excludes" value="org.junit.Assert.*,org.mockito.Mockito.*,org.mockito.Matchers.*,org.hamcrest.Matchers.*"/>
+		</module>
+		<module name="ImportOrder">
+			<property name="groups" value="java,/^javax?\./,*,org.springframework" />
+			<property name="ordered" value="true" />
+			<property name="separated" value="true" />
+			<property name="option" value="bottom" />
+			<property name="sortStaticImportsAlphabetically" value="true" />
+		</module>
 		<module name="UnusedImports"/>
 		<module name="RedundantImport"/>
-        <module name="IllegalImport">
-            <property name="illegalPkgs" value="org.slf4j"/>
-        </module>
+		<module name="IllegalImport">
+			<property name="illegalPkgs" value="org.slf4j"/>
+		</module>
 		<module name="NeedBraces"/>
 	</module>
 </module>

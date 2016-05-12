@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Matchers.same;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -33,6 +28,11 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.MessageChannel;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Matchers.same;
 
 /**
  * @author Marius Bogoevici

@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -30,6 +27,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Marius Bogoevici

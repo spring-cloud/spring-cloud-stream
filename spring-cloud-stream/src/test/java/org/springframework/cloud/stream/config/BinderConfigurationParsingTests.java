@@ -16,14 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
-import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
-import static org.hamcrest.collection.IsArrayContainingInAnyOrder.arrayContainingInAnyOrder;
-import static org.hamcrest.core.CombinableMatcher.both;
-
 import java.io.ByteArrayInputStream;
 import java.util.Collection;
 
@@ -36,6 +28,14 @@ import org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationA;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationB;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.Matchers.hasProperty;
 
 /**
  * @author Marius Bogoevici

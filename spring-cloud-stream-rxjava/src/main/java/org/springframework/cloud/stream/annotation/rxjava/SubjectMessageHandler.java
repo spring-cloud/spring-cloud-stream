@@ -18,14 +18,6 @@ package org.springframework.cloud.stream.annotation.rxjava;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.springframework.context.SmartLifecycle;
-import org.springframework.integration.handler.AbstractMessageProducingHandler;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action0;
@@ -33,6 +25,13 @@ import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 import rx.subjects.SerializedSubject;
 import rx.subjects.Subject;
+
+import org.springframework.context.SmartLifecycle;
+import org.springframework.integration.handler.AbstractMessageProducingHandler;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * Adapts the item at a time delivery of a {@link org.springframework.messaging.MessageHandler}

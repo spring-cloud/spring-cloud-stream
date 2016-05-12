@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_DEFAULT;
-
 import javax.validation.constraints.Min;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -28,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-@JsonInclude(NON_DEFAULT)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class ConsumerProperties {
 
 	private int concurrency = 1;

@@ -18,12 +18,12 @@ package org.springframework.cloud.stream.converter;
 
 import java.io.IOException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**

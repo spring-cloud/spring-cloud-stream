@@ -15,9 +15,6 @@
  */
 package org.springframework.cloud.stream.config;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -34,6 +31,9 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Ilayaperumal Gopinathan

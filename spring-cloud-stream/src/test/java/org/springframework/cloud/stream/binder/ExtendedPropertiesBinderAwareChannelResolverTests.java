@@ -16,12 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -55,6 +48,12 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Mark Fisher
@@ -113,7 +112,7 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 	public void resolveChannel() {
 		assertThat(producerBindings, hasSize(0));
 		MessageChannel registered = resolver.resolveDestination("foo");
-		Assert.assertThat(producerBindings, hasSize(1));
+		assertThat(producerBindings, hasSize(1));
 		TestBinder.TestBinding binding = producerBindings.get(0);
 		assertTrue("Must be bound", binding.isBound());
 		DirectChannel testChannel = new DirectChannel();
@@ -140,7 +139,7 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		assertEquals(1, received.size());
 		assertEquals("hello", received.get(0).getPayload());
 		context.close();
-		Assert.assertThat(producerBindings, hasSize(1));
+		assertThat(producerBindings, hasSize(1));
 		assertTrue("Must not be bound", !binding.isBound());
 	}
 

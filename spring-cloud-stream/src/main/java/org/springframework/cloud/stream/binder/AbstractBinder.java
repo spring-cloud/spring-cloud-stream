@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.springframework.util.MimeTypeUtils.APPLICATION_JSON;
-import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -260,7 +257,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private Object deserializePayload(Object payload, MimeType contentType) {
 		if (payload instanceof byte[]) {
-			if (contentType == null || APPLICATION_OCTET_STREAM.equals(contentType)) {
+			if (contentType == null || MimeTypeUtils.APPLICATION_OCTET_STREAM.equals(contentType)) {
 				return payload;
 			}
 			else {
@@ -271,7 +268,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	private Object deserializePayload(byte[] bytes, MimeType contentType) {
-		if ("text".equalsIgnoreCase(contentType.getType()) || APPLICATION_JSON.equals(contentType)) {
+		if ("text".equalsIgnoreCase(contentType.getType()) || MimeTypeUtils.APPLICATION_JSON.equals(contentType)) {
 			try {
 				return new String(bytes, "UTF-8");
 			}

@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -47,6 +42,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.util.ObjectUtils;
+
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * @author Marius Bogoevici

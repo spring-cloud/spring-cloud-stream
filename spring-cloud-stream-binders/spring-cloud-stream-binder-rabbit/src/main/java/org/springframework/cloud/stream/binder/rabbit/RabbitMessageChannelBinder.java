@@ -23,6 +23,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Envelope;
 import org.aopalliance.aop.Advice;
 
 import org.springframework.amqp.AmqpConnectException;
@@ -84,10 +87,6 @@ import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Envelope;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.

@@ -16,14 +16,12 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,8 +41,9 @@ import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author Gary Russell
