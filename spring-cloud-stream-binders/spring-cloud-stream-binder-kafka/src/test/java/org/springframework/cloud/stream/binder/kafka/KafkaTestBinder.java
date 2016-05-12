@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
-
 import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -36,6 +36,10 @@ import org.springframework.integration.kafka.support.ProducerListener;
 import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
+import kafka.admin.AdminUtils;
+
 /**
  * Test support class for {@link KafkaMessageChannelBinder}. Creates a binder that uses a
  * test {@link TestKafkaCluster kafka cluster}.
@@ -44,9 +48,14 @@ import org.springframework.integration.tuple.TupleKryoRegistrar;
  * @author David Turanski
  * @author Gary Russell
  * @author Soby Chacko
+ * @author Ilayaperumal Gopinathan
  */
 public class KafkaTestBinder extends
 		AbstractTestBinder<KafkaMessageChannelBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
+
+	protected final Log log = LogFactory.getLog(getClass());
+
+	private final KafkaTestSupport kafkaTestSupport;
 
 	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport, KafkaBinderConfigurationProperties binderConfiguration) {
 		try {
@@ -65,6 +74,7 @@ public class KafkaTestBinder extends
 			binder.setMinPartitionCount(binderConfiguration.getMinPartitionCount());
 			binder.afterPropertiesSet();
 			this.setBinder(binder);
+			this.kafkaTestSupport = kafkaTestSupport;
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
@@ -73,7 +83,14 @@ public class KafkaTestBinder extends
 
 	@Override
 	public void cleanup() {
-		// do nothing - the rule will take care of that
+		try {
+			for (String topic: destinations) {
+				AdminUtils.deleteTopic(kafkaTestSupport.getZkClient(), topic);
+			}
+		}
+		catch (Exception e) {
+			log.error(e.getMessage());
+		}
 	}
 
 	private static Codec getCodec() {

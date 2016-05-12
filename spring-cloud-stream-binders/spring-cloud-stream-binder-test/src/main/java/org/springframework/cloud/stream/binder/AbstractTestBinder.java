@@ -30,7 +30,7 @@ import org.springframework.messaging.MessageChannel;
  */
 public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> implements Binder<MessageChannel, CP, PP> {
 
-	protected Set<String> queues = new HashSet<String>();
+	protected Set<String> destinations = new HashSet<String>();
 
 	private C binder;
 
@@ -46,13 +46,13 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel, CP properties) {
-		queues.add(name);
+		destinations.add(name);
 		return binder.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
 	@Override
 	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, PP properties) {
-		queues.add(name);
+		destinations.add(name);
 		return binder.bindProducer(name, moduleOutputChannel, properties); 
 	}
 
