@@ -524,10 +524,10 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 	}
 
 	public void cleanAutoDeclareContext(String prefix, String name) {
-		synchronized(this.autoDeclareContext) {
-			removeSingleton(applyPrefix(prefix,name) + ".binding");
-			removeSingleton(applyPrefix(prefix,name));
-			String dlq = applyPrefix(prefix,name) + ".dlq";
+		synchronized (this.autoDeclareContext) {
+			removeSingleton(applyPrefix(prefix, name) + ".binding");
+			removeSingleton(applyPrefix(prefix, name));
+			String dlq = applyPrefix(prefix, name) + ".dlq";
 			removeSingleton(dlq + ".binding");
 			removeSingleton(dlq);
 		}
@@ -564,7 +564,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 		}
 	}
 
-	private class SendingHandler extends AbstractMessageHandler implements Lifecycle {
+	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {
 
 		private final MessageHandler delegate;
 
@@ -626,9 +626,9 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 
 	}
 
-	private class ReceivingHandler extends AbstractReplyProducingMessageHandler {
+	private final class ReceivingHandler extends AbstractReplyProducingMessageHandler {
 
-		public ReceivingHandler() {
+		private ReceivingHandler() {
 			super();
 			this.setBeanFactory(RabbitMessageChannelBinder.this.getBeanFactory());
 		}

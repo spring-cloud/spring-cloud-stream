@@ -47,7 +47,8 @@ public class KryoCodecAutoConfiguration {
 	@Autowired
 	ApplicationContext applicationContext;
 
-	@Autowired KryoCodecProperties kryoCodecProperties;
+	@Autowired
+	KryoCodecProperties kryoCodecProperties;
 
 	@Bean
 	public PojoCodec codec() {

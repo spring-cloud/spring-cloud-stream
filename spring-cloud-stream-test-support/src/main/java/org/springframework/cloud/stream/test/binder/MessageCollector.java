@@ -32,5 +32,5 @@ public interface MessageCollector {
 	/**
 	 * Obtain a queue that will receive messages sent to the given channel.
 	 */
-	public BlockingQueue<Message<?>> forChannel(MessageChannel channel);
+	BlockingQueue<Message<?>> forChannel(MessageChannel channel);
 }

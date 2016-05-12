@@ -241,7 +241,7 @@ public class BinderAwareChannelResolverTests {
 			return binding;
 		}
 
-		private class TestBinding implements Binding<MessageChannel> {
+		private final class TestBinding implements Binding<MessageChannel> {
 
 			private final String name;
 

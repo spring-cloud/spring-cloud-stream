@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.converter;
 
 import org.springframework.messaging.Message;
@@ -49,7 +50,7 @@ public class PojoToStringMessageConverter extends AbstractFromMessageConverter {
 		String payloadString = null;
 		if (message.getPayload() instanceof Tuple) {
 			TupleBuilder builder = TupleBuilder.tuple();
-			builder.putAll((Tuple)message.getPayload());
+			builder.putAll((Tuple) message.getPayload());
 			payloadString = builder.build().toString();
 		}
 		else {

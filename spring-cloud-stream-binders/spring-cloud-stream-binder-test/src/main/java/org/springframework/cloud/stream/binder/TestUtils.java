@@ -22,7 +22,7 @@ import org.springframework.util.Assert;
 /**
  * Copy of class in org.springframework.amqp.utils.test to avoid dependency on spring-amqp
  */
-public class TestUtils {
+public abstract class TestUtils {
 
 	/**
 	 * Uses nested {@link DirectFieldAccessor}s to obtain a property using dotted notation

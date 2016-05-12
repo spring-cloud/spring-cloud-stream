@@ -38,17 +38,15 @@ public class MessageConverterTests {
 	@Test
 	public void testHeaderEmbedding() throws Exception {
 		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
-		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
-				.setHeader("foo", "bar")
-				.setHeader("baz", "quxx")
-				.build();
+		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes()).setHeader("foo", "bar")
+				.setHeader("baz", "quxx").build();
 		byte[] embedded = converter.embedHeaders(new MessageValues(message), "foo", "baz");
 		assertEquals(0xff, embedded[0] & 0xff);
 		assertEquals("\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0006\"quxx\"Hello",
 				new String(embedded).substring(1));
 
 		MessageValues extracted = converter.extractHeaders(MessageBuilder.withPayload(embedded).build(), false);
-		assertEquals("Hello", new String((byte[])extracted.getPayload()));
+		assertEquals("Hello", new String((byte[]) extracted.getPayload()));
 		assertEquals("bar", extracted.get("foo"));
 		assertEquals("quxx", extracted.get("baz"));
 	}
@@ -56,17 +54,15 @@ public class MessageConverterTests {
 	@Test
 	public void testUnicodeHeader() throws Exception {
 		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
-		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
-				.setHeader("foo", "bar")
-				.setHeader("baz", "ØØØØØØØØ")
-				.build();
+		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes()).setHeader("foo", "bar")
+				.setHeader("baz", "ØØØØØØØØ").build();
 		byte[] embedded = converter.embedHeaders(new MessageValues(message), "foo", "baz");
 		assertEquals(0xff, embedded[0] & 0xff);
 		assertEquals("\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0012\"ØØØØØØØØ\"Hello",
 				new String(embedded, "UTF-8").substring(1));
 
 		MessageValues extracted = converter.extractHeaders(MessageBuilder.withPayload(embedded).build(), false);
-		assertEquals("Hello", new String((byte[])extracted.getPayload()));
+		assertEquals("Hello", new String((byte[]) extracted.getPayload()));
 		assertEquals("bar", extracted.get("foo"));
 		assertEquals("ØØØØØØØØ", extracted.get("baz"));
 	}
@@ -74,13 +70,10 @@ public class MessageConverterTests {
 	@Test
 	public void testHeaderEmbeddingMissingHeader() throws Exception {
 		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
-		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
-				.setHeader("foo", "bar")
-				.build();
+		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes()).setHeader("foo", "bar").build();
 		byte[] embedded = converter.embedHeaders(new MessageValues(message), "foo", "baz");
 		assertEquals(0xff, embedded[0] & 0xff);
-		assertEquals("\u0001\u0003foo\u0000\u0000\u0000\u0005\"bar\"Hello",
-				new String(embedded).substring(1));
+		assertEquals("\u0001\u0003foo\u0000\u0000\u0000\u0005\"bar\"Hello", new String(embedded).substring(1));
 	}
 
 	@Test
@@ -88,8 +81,8 @@ public class MessageConverterTests {
 		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
 		byte[] bytes = "\u0002\u0003foo\u0003bar\u0003baz\u0004quxxHello".getBytes("UTF-8");
 		Message<byte[]> message = new GenericMessage<byte[]>(bytes);
-		MessageValues extracted = converter.extractHeaders(message,false);
-		assertEquals("Hello", new String((byte[])extracted.getPayload()));
+		MessageValues extracted = converter.extractHeaders(message, false);
+		assertEquals("Hello", new String((byte[]) extracted.getPayload()));
 		assertEquals("bar", extracted.get("foo"));
 		assertEquals("quxx", extracted.get("baz"));
 	}
@@ -100,7 +93,7 @@ public class MessageConverterTests {
 		byte[] bytes = "\u0002\u0003foo\u0020bar\u0003baz\u0004quxxHello".getBytes("UTF-8");
 		Message<byte[]> message = new GenericMessage<byte[]>(bytes);
 		try {
-			converter.extractHeaders(message,false);
+			converter.extractHeaders(message, false);
 			Assert.fail("Exception expected");
 		}
 		catch (Exception e) {

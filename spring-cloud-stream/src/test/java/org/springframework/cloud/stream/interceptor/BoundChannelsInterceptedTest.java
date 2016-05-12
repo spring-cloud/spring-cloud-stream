@@ -74,7 +74,8 @@ public class BoundChannelsInterceptedTest {
 		public void fooSink(Message<?> message) {
 		}
 
-		@GlobalChannelInterceptor @Bean
+		@Bean
+		@GlobalChannelInterceptor
 		public ChannelInterceptor globalChannelInterceptor() {
 			return mock(ChannelInterceptor.class);
 		}

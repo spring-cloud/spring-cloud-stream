@@ -31,11 +31,11 @@ public class ConsumerProperties {
 
 	private int concurrency = 1;
 
-	private boolean partitioned = false;
+	private boolean partitioned;
 
 	private int instanceCount = 1;
 
-	private int instanceIndex = 0;
+	private int instanceIndex;
 
 	private int maxAttempts = 3;
 

@@ -61,9 +61,10 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 	 * Registers a single subscriber to the channel, that enqueues messages for later retrieval and assertion in tests.
 	 */
 	@Override
-	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget, ProducerProperties properties) {
+	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget,
+			ProducerProperties properties) {
 		final BlockingQueue<Message<?>> queue = messageCollector.register(outboundBindTarget);
-		((SubscribableChannel)outboundBindTarget).subscribe(new MessageHandler() {
+		((SubscribableChannel) outboundBindTarget).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				queue.add(message);
@@ -112,7 +113,7 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 	/**
 	 * @author Marius Bogoevici
 	 */
-	private static class TestBinding implements Binding<MessageChannel> {
+	private static final class TestBinding implements Binding<MessageChannel> {
 
 		private final MessageChannel target;
 

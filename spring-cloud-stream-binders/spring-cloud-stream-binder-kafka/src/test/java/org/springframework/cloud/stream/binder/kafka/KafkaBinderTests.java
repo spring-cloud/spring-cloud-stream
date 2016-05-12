@@ -79,7 +79,8 @@ import static org.junit.Assert.fail;
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
  */
-public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
+public class KafkaBinderTests extends
+		PartitionCapableBinderTests<KafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
 
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
@@ -614,24 +615,6 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		binding.unbind();
 	}
 
-	private static class FailingInvocationCountingMessageHandler implements MessageHandler {
-
-		private int invocationCount = 0;
-
-		public FailingInvocationCountingMessageHandler() {
-		}
-
-		@Override
-		public void handleMessage(Message<?> message) throws MessagingException {
-			invocationCount++;
-			throw new RuntimeException();
-		}
-
-		public int getInvocationCount() {
-			return invocationCount;
-		}
-	}
-
 	@Test
 	public void testPartitionCountNotReduced() throws Exception {
 		String testTopicName = "existing"  + System.currentTimeMillis();
@@ -688,5 +671,23 @@ public class KafkaBinderTests extends PartitionCapableBinderTests<KafkaTestBinde
 		binding.unbind();
 		TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(testTopicName, kafkaTestSupport.getZkClient());
 		assertThat(topicMetadata.partitionsMetadata().size(), equalTo(6));
+	}
+
+	private static final class FailingInvocationCountingMessageHandler implements MessageHandler {
+
+		private int invocationCount;
+
+		private FailingInvocationCountingMessageHandler() {
+		}
+
+		@Override
+		public void handleMessage(Message<?> message) throws MessagingException {
+			invocationCount++;
+			throw new RuntimeException();
+		}
+
+		public int getInvocationCount() {
+			return invocationCount;
+		}
 	}
 }

@@ -83,9 +83,9 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		input2.setBeanName("test.input2J");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("partJ.0", "test", input2, consumerProperties);
 
-		output.send(new GenericMessage<>(new byte[]{(byte)0}));
-		output.send(new GenericMessage<>(new byte[]{(byte)1}));
-		output.send(new GenericMessage<>(new byte[]{(byte)2}));
+		output.send(new GenericMessage<>(new byte[] { (byte) 0 }));
+		output.send(new GenericMessage<>(new byte[] { (byte) 1 }));
+		output.send(new GenericMessage<>(new byte[] { (byte) 2 }));
 
 		Message<?> receive0 = receive(input0);
 		assertNotNull(receive0);
@@ -94,11 +94,8 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Message<?> receive2 = receive(input2);
 		assertNotNull(receive2);
 
-		assertThat(Arrays.asList(
-						((byte[]) receive0.getPayload())[0],
-						((byte[]) receive1.getPayload())[0],
-						((byte[]) receive2.getPayload())[0]),
-				containsInAnyOrder((byte)0, (byte)1, (byte)2));
+		assertThat(Arrays.asList(((byte[]) receive0.getPayload())[0], ((byte[]) receive1.getPayload())[0],
+				((byte[]) receive2.getPayload())[0]), containsInAnyOrder((byte) 0, (byte) 1, (byte) 2));
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -166,7 +163,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 						((byte[]) receive0.getPayload())[0],
 						((byte[]) receive1.getPayload())[0],
 						((byte[]) receive2.getPayload())[0]),
-				containsInAnyOrder((byte)0, (byte)1, (byte)2));
+				containsInAnyOrder((byte) 0, (byte) 1, (byte) 2));
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -192,7 +189,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		moduleOutputChannel.send(message);
 		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
-		assertEquals("foo", new String((byte[])inbound.getPayload()));
+		assertEquals("foo", new String((byte[]) inbound.getPayload()));
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -233,7 +230,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 			moduleOutputChannel.send(message);
 			Message<?> inbound = receive(module1InputChannel);
 			assertNotNull(inbound);
-			assertEquals("foo", new String((byte[])inbound.getPayload()));
+			assertEquals("foo", new String((byte[]) inbound.getPayload()));
 
 			Message<?> tapped1 = receive(module2InputChannel);
 			Message<?> tapped2 = receive(module3InputChannel);
@@ -277,7 +274,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	private void assertMessageReceive(QueueChannel moduleInputChannel, String payload) {
 		Message<?> inbound = receive(moduleInputChannel);
 		assertNotNull(inbound);
-		assertEquals(payload, new String((byte[])inbound.getPayload()));
+		assertEquals(payload, new String((byte[]) inbound.getPayload()));
 		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
 	}
 

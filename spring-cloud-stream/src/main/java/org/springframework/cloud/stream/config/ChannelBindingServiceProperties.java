@@ -51,7 +51,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	private ConversionService conversionService;
 
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
-	private int instanceIndex = 0;
+	private int instanceIndex;
 
 	private int instanceCount = 1;
 

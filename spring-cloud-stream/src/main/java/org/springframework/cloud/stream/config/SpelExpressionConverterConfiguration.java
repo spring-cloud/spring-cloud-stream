@@ -40,7 +40,8 @@ import org.springframework.integration.context.IntegrationContextUtils;
 public class SpelExpressionConverterConfiguration {
 
 	@Bean
-	@ConfigurationPropertiesBinding @IntegrationConverter
+	@ConfigurationPropertiesBinding
+	@IntegrationConverter
 	public Converter<String, Expression> spelConverter() {
 		return new SpelConverter();
 	}
@@ -69,7 +70,8 @@ public class SpelExpressionConverterConfiguration {
 				return expression;
 			}
 			catch (ParseException e) {
-				throw new IllegalArgumentException(String.format("Could not convert '%s' into a SpEL expression", source), e);
+				throw new IllegalArgumentException(
+						String.format("Could not convert '%s' into a SpEL expression", source), e);
 			}
 		}
 	}

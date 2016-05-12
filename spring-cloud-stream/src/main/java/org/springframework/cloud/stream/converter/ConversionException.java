@@ -18,7 +18,7 @@ package org.springframework.cloud.stream.converter;
 
 /**
  * Exception thrown when an error is encountered during message conversion.
- * 
+ *
  * @author David Turanski
  */
 @SuppressWarnings("serial")

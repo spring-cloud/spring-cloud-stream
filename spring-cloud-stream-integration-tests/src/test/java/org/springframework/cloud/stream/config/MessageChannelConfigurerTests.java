@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.config;
 
 import java.util.List;
@@ -54,7 +55,8 @@ import static org.junit.Assert.assertTrue;
 @SpringApplicationConfiguration({MessageChannelConfigurerTests.TestSink.class})
 public class MessageChannelConfigurerTests {
 
-	@Autowired @Bindings(TestSink.class)
+	@Autowired
+	@Bindings(TestSink.class)
 	private Sink testSink;
 
 	@Autowired
@@ -95,7 +97,7 @@ public class MessageChannelConfigurerTests {
 			assertTrue(objectMapper == this.objectMapper);
 		}
 	}
-	
+
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	@PropertySource("classpath:/org/springframework/cloud/stream/config/channel/sink-channel-configurers.properties")

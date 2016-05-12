@@ -51,7 +51,8 @@ import static org.junit.Assert.assertThat;
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
-abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> extends BrokerBinderTests<B,CP,PP> {
+abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
+		extends BrokerBinderTests<B, CP, PP> {
 
 	protected static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
@@ -60,13 +61,16 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	public void testAnonymousGroup() throws Exception {
 		B binder = getBinder();
 		DirectChannel output = new DirectChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("defaultGroup.0", output, createProducerProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer("defaultGroup.0", output,
+				createProducerProperties());
 
 		QueueChannel input1 = new QueueChannel();
-		Binding<MessageChannel> binding1 = binder.bindConsumer("defaultGroup.0", null, input1, createConsumerProperties());
+		Binding<MessageChannel> binding1 = binder.bindConsumer("defaultGroup.0", null, input1,
+				createConsumerProperties());
 
 		QueueChannel input2 = new QueueChannel();
-		Binding<MessageChannel> binding2 = binder.bindConsumer("defaultGroup.0", null, input2, createConsumerProperties());
+		Binding<MessageChannel> binding2 = binder.bindConsumer("defaultGroup.0", null, input2,
+				createConsumerProperties());
 
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
@@ -120,7 +124,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		output.send(new GenericMessage<>(testPayload.getBytes()));
 
 		QueueChannel inbound1 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testDestination, "test1", inbound1, createConsumerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testDestination, "test1", inbound1,
+				createConsumerProperties());
 
 		Message<?> receivedMessage1 = receive(inbound1);
 		assertThat(receivedMessage1, not(nullValue()));
@@ -138,16 +143,18 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
 
 		PP producerProperties = createProducerProperties();
-		producerProperties.setRequiredGroups("test1","test2");
+		producerProperties.setRequiredGroups("test1", "test2");
 		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, producerProperties);
 
 		String testPayload = "foo-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload.getBytes()));
 
 		QueueChannel inbound1 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination, "test1", inbound1, createConsumerProperties());
+		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination, "test1", inbound1,
+				createConsumerProperties());
 		QueueChannel inbound2 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer(testDestination, "test2", inbound2, createConsumerProperties());
+		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer(testDestination, "test2", inbound2,
+				createConsumerProperties());
 
 		Message<?> receivedMessage1 = receive(inbound1);
 		assertThat(receivedMessage1, not(nullValue()));
@@ -192,8 +199,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
 		try {
 			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint), containsString(
-					getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']"));
+			assertThat(getEndpointRouting(endpoint),
+					containsString(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']"));
 		}
 		catch (UnsupportedOperationException ignored) {
 		}
@@ -201,8 +208,7 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Message<Integer> message2 = MessageBuilder.withPayload(2)
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, 42)
-				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43)
-				.build();
+				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43).build();
 		output.send(message2);
 		output.send(new GenericMessage<>(1));
 		output.send(new GenericMessage<>(0));
@@ -219,9 +225,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 			@Override
 			public boolean matches(Object item) {
 				IntegrationMessageHeaderAccessor accessor = new IntegrationMessageHeaderAccessor((Message<?>) item);
-				boolean result = "foo".equals(accessor.getCorrelationId()) &&
-						42 == accessor.getSequenceNumber() &&
-						43 == accessor.getSequenceSize();
+				boolean result = "foo".equals(accessor.getCorrelationId()) && 42 == accessor.getSequenceNumber()
+						&& 43 == accessor.getSequenceSize();
 				return result;
 			}
 		};
@@ -232,21 +237,13 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 			assertThat(receive2, fooMatcher);
 		}
 		else {
-			assertThat(Arrays.asList(
-					(Integer) receive0.getPayload(),
-					(Integer) receive1.getPayload(),
-					(Integer) receive2.getPayload()),
-					containsInAnyOrder(0, 1, 2));
+			assertThat(Arrays.asList((Integer) receive0.getPayload(), (Integer) receive1.getPayload(),
+					(Integer) receive2.getPayload()), containsInAnyOrder(0, 1, 2));
 
 			@SuppressWarnings("unchecked")
-			Matcher<Iterable<? extends Message<?>>> containsOur3Messages = containsInAnyOrder(
-					fooMatcher,
-					hasProperty("payload", equalTo(0)),
-					hasProperty("payload", equalTo(1))
-					);
-			assertThat(
-					Arrays.asList(receive0, receive1, receive2),
-					containsOur3Messages);
+			Matcher<Iterable<? extends Message<?>>> containsOur3Messages = containsInAnyOrder(fooMatcher,
+					hasProperty("payload", equalTo(0)), hasProperty("payload", equalTo(1)));
+			assertThat(Arrays.asList(receive0, receive1, receive2), containsOur3Messages);
 
 		}
 		input0Binding.unbind();
@@ -285,8 +282,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
 		if (usesExplicitRouting()) {
 			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint), containsString(
-					getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']"));
+			assertThat(getEndpointRouting(endpoint),
+					containsString(getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']"));
 		}
 
 		output.send(new GenericMessage<>(2));
@@ -307,11 +304,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		}
 		else {
 
-			assertThat(Arrays.asList(
-					(Integer) receive0.getPayload(),
-					(Integer) receive1.getPayload(),
-					(Integer) receive2.getPayload()),
-					containsInAnyOrder(0, 1, 2));
+			assertThat(Arrays.asList((Integer) receive0.getPayload(), (Integer) receive1.getPayload(),
+					(Integer) receive2.getPayload()), containsInAnyOrder(0, 1, 2));
 		}
 
 		input0Binding.unbind();
@@ -321,10 +315,12 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	}
 
 	/**
-	 * Implementations should return whether the binder under test uses "explicit" routing (e.g. Rabbit)
-	 * whereby Spring Cloud Stream is responsible for assigning a partition and knows which exact consumer will receive the
-	 * message (i.e. honor "partitionIndex") or "implicit" routing (e.g. Kafka) whereby the only guarantee
-	 * is that messages will be spread, but we don't control exactly which consumer gets which message.
+	 * Implementations should return whether the binder under test uses "explicit" routing
+	 * (e.g. Rabbit) whereby Spring Cloud Stream is responsible for assigning a partition
+	 * and knows which exact consumer will receive the message (i.e. honor
+	 * "partitionIndex") or "implicit" routing (e.g. Kafka) whereby the only guarantee is
+	 * that messages will be spread, but we don't control exactly which consumer gets
+	 * which message.
 	 */
 	protected abstract boolean usesExplicitRouting();
 
@@ -336,8 +332,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	}
 
 	/**
-	 * For implementations that rely on explicit routing, return the expected base destination
-	 * (the part that precedes '-partition' within the expression).
+	 * For implementations that rely on explicit routing, return the expected base
+	 * destination (the part that precedes '-partition' within the expression).
 	 */
 	protected String getExpectedRoutingBaseDestination(String name, String group) {
 		throw new UnsupportedOperationException();

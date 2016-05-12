@@ -73,7 +73,7 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 
 	private volatile Subscription subscription;
 
-	private volatile boolean running = false;
+	private volatile boolean running;
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public SubjectMessageHandler(RxJavaProcessor processor) {

@@ -26,32 +26,32 @@ import org.springframework.util.MimeType;
 
 /**
  * A {@link DefaultContentTypeResolver} that can parse String values.
- * 
+ *
  * @author David Turanski
  */
 public class StringConvertingContentTypeResolver extends DefaultContentTypeResolver {
 
-	private ConcurrentMap<String,MimeType> mimeTypeCache = new ConcurrentHashMap<>();
+	private ConcurrentMap<String, MimeType> mimeTypeCache = new ConcurrentHashMap<>();
 
 	@Override
 	public MimeType resolve(MessageHeaders headers) {
 		return resolve((Map<String, Object>) headers);
 	}
 
-	public MimeType resolve(Map<String,Object> headers) {
+	public MimeType resolve(Map<String, Object> headers) {
+		MimeType mimeType = null;
 		Object value = headers.get(MessageHeaders.CONTENT_TYPE);
 		if (value instanceof MimeType) {
-			return (MimeType) value;
+			mimeType = (MimeType) value;
 		}
 		else if (value instanceof String) {
-			MimeType mimeType = mimeTypeCache.get(value);
+			mimeType = mimeTypeCache.get(value);
 			if (mimeType == null) {
 				String valueAsString = (String) value;
 				mimeType = MimeType.valueOf(valueAsString);
-				mimeTypeCache.put(valueAsString,mimeType);
+				mimeTypeCache.put(valueAsString, mimeType);
 			}
-			return mimeType;
 		}
-		return getDefaultMimeType();
+		return mimeType != null ? mimeType : getDefaultMimeType();
 	}
 }

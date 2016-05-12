@@ -45,7 +45,8 @@ public class SourceBindingTestsWithDefaults {
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestSource.class)
+	@Autowired
+	@Bindings(TestSource.class)
 	private Source testSource;
 
 	@SuppressWarnings("unchecked")

@@ -70,7 +70,7 @@ public class InputOutputBindingOrderTest {
 
 	public static class SomeLifecycle implements SmartLifecycle {
 
-		private boolean running = false;
+		private boolean running;
 
 		@SuppressWarnings("rawtypes")
 		@Autowired

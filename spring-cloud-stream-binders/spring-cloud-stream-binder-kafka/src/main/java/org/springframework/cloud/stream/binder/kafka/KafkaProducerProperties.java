@@ -29,9 +29,9 @@ public class KafkaProducerProperties {
 
 	private ProducerMetadata.CompressionType compressionType = ProducerMetadata.CompressionType.none;
 
-	private boolean sync = false;
+	private boolean sync;
 
-	private int batchTimeout = 0;
+	private int batchTimeout;
 
 	public int getBufferSize() {
 		return bufferSize;

@@ -73,7 +73,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	 * Allows accomodating tests which are slower than normal (e.g. retry).
 	 */
 	protected Message<?> receive(PollableChannel channel, int additionalMultiplier) {
-		return channel.receive((int)(1000 * timeoutMultiplier * additionalMultiplier));
+		return channel.receive((int) (1000 * timeoutMultiplier * additionalMultiplier));
 	}
 
 	@Test
@@ -143,7 +143,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel2.send(message2);
 
 
-		Message<?> messages[] = new Message[2];
+		Message<?>[] messages = new Message[2];
 		messages[0] = receive(moduleInputChannel);
 		messages[1] = receive(moduleInputChannel);
 

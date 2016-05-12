@@ -584,9 +584,6 @@ public class RabbitBinderTests extends PartitionCapableBinderTests<RabbitTestBin
 		output.setBeanName("batchingProducer");
 		Binding<MessageChannel> producerBinding = binder.bindProducer("batching.0", output, properties);
 
-		while (template.receive(properties.getExtension().getPrefix() + "batching.0.default") != null) {
-		}
-
 		Log logger = spy(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor.logger", Log.class));
 		new DirectFieldAccessor(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor"))
 				.setPropertyValue("logger", logger);

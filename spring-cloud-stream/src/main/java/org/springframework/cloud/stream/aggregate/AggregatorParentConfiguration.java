@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.aggregate;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

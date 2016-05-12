@@ -59,8 +59,7 @@ public class EmbeddedHeadersMessageConverter {
 		int headerCount = 0;
 		int headersLength = 0;
 		for (String header : headers) {
-			Object value = original.get(header) == null ? null
-					: original.get(header);
+			Object value = original.get(header) == null ? null : original.get(header);
 			if (value != null) {
 				String json = this.objectMapper.toJson(value);
 				headerValues[n] = json.getBytes("UTF-8");
@@ -72,7 +71,7 @@ public class EmbeddedHeadersMessageConverter {
 			}
 		}
 		// 0xff, n(1), [ [lenHdr(1), hdr, lenValue(4), value] ... ]
-		byte[] newPayload = new byte[((byte[])original.getPayload()).length + headersLength + headerCount * 5 + 2];
+		byte[] newPayload = new byte[((byte[]) original.getPayload()).length + headersLength + headerCount * 5 + 2];
 		ByteBuffer byteBuffer = ByteBuffer.wrap(newPayload);
 		byteBuffer.put((byte) 0xff); // signal new format
 		byteBuffer.put((byte) headerCount);
@@ -85,16 +84,18 @@ public class EmbeddedHeadersMessageConverter {
 			}
 		}
 
-		byteBuffer.put((byte[])original.getPayload());
+		byteBuffer.put((byte[]) original.getPayload());
 		return byteBuffer.array();
 	}
 
 	/**
-	 * Return a message where headers, that were originally embedded into the payload, have been promoted
-	 * back to actual headers. The new payload is now the original payload.
+	 * Return a message where headers, that were originally embedded into the payload,
+	 * have been promoted back to actual headers. The new payload is now the original
+	 * payload.
 	 *
 	 * @param message the message to extract headers
-	 * @param copyRequestHeaders boolean value to specify if original headers should be copied
+	 * @param copyRequestHeaders boolean value to specify if original headers should be
+	 * copied
 	 */
 	public MessageValues extractHeaders(Message<byte[]> message, boolean copyRequestHeaders) throws Exception {
 		byte[] bytes = message.getPayload();

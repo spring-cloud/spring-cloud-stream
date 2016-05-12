@@ -27,7 +27,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class KryoCodecProperties {
 	private boolean references = true;
-	
+
 	public boolean isReferences() {
 		return references;
 	}
@@ -35,5 +35,5 @@ public class KryoCodecProperties {
 	public void setReferences(boolean references) {
 		this.references = references;
 	}
-	
+
 }

@@ -46,7 +46,8 @@ public class SinkBindingTestsWithDefaults {
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestSink.class)
+	@Autowired
+	@Bindings(TestSink.class)
 	private Sink testSink;
 
 	@SuppressWarnings("unchecked")

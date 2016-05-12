@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.config;
 
 import java.util.concurrent.TimeUnit;
@@ -54,7 +55,7 @@ public class ErrorChannelTests {
 
 	@Test
 	public void testErrorChannelBinding() throws Exception {
-		Message<?> message = (Message<?>) ((TestSupportBinder) binderFactory.getBinder(null)).messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
+		Message<?> message = ((TestSupportBinder) binderFactory.getBinder(null)).messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
 		Assert.isTrue(message instanceof ErrorMessage, "Message should be an instance of ErrorMessage");
 		Assert.isTrue(message.getPayload() instanceof MessagingException, "Message payload should be an instance" +
 				"of MessagingException");

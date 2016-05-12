@@ -42,7 +42,7 @@ import org.springframework.web.client.RestTemplate;
  * @author Gary Russell
  * @since 1.2
  */
-public class RabbitManagementUtils {
+public abstract class RabbitManagementUtils {
 
 	public static RestTemplate buildRestTemplate(String adminUri, String user, String password) {
 		BasicCredentialsProvider credsProvider = new BasicCredentialsProvider();

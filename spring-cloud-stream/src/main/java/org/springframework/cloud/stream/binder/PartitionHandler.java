@@ -129,33 +129,36 @@ public class PartitionHandler {
 		return strategy.selectPartition(key, producerProperties.getPartitionCount());
 	}
 
+	@SuppressWarnings("unchecked")
 	private <T> T getBean(String className, Class<T> type) {
 		if (this.beanFactory.containsBean(className)) {
 			return this.beanFactory.getBean(className, type);
 		}
 		else {
 			synchronized (this) {
+				T bean;
 				if (this.beanFactory.containsBean(className)) {
-					return this.beanFactory.getBean(className, type);
+					bean = this.beanFactory.getBean(className, type);
 				}
-				Class<?> clazz;
-				try {
-					clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
+				else {
+					Class<?> clazz;
+					try {
+						clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
+					}
+					catch (Exception e) {
+						throw new BinderException("Failed to load class: " + className, e);
+					}
+					try {
+						bean = (T) clazz.newInstance();
+						Assert.isInstanceOf(type, bean);
+						this.beanFactory.registerSingleton(className, bean);
+						this.beanFactory.initializeBean(bean, className);
+					}
+					catch (Exception e) {
+						throw new BinderException("Failed to instantiate class: " + className, e);
+					}
 				}
-				catch (Exception e) {
-					throw new BinderException("Failed to load class: " + className, e);
-				}
-				try {
-					@SuppressWarnings("unchecked")
-					T object = (T) clazz.newInstance();
-					Assert.isInstanceOf(type, object);
-					this.beanFactory.registerSingleton(className, object);
-					this.beanFactory.initializeBean(object, className);
-					return object;
-				}
-				catch (Exception e) {
-					throw new BinderException("Failed to instantiate class: " + className, e);
-				}
+				return bean;
 			}
 		}
 	}

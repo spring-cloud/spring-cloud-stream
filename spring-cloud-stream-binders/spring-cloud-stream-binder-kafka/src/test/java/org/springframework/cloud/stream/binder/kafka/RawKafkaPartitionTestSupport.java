@@ -20,16 +20,14 @@ import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.messaging.Message;
 
-
 /**
- * 
  * @author Marius Bogoevici
  */
 public class RawKafkaPartitionTestSupport implements PartitionKeyExtractorStrategy, PartitionSelectorStrategy {
 
 	@Override
 	public int selectPartition(Object key, int divisor) {
-		return ((byte[])key)[0] % divisor;
+		return ((byte[]) key)[0] % divisor;
 	}
 
 	@Override

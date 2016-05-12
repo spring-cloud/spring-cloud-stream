@@ -129,7 +129,7 @@ public class KafkaMessageChannelBinder
 
 	private boolean autoCreateTopics = true;
 
-	private boolean autoAddPartitions = false;
+	private boolean autoAddPartitions;
 
 	private RetryOperations metadataRetryOperations;
 
@@ -163,7 +163,7 @@ public class KafkaMessageChannelBinder
 
 	private int offsetUpdateTimeWindow = 10000;
 
-	private int offsetUpdateCount = 0;
+	private int offsetUpdateCount;
 
 	private int offsetUpdateShutdownTimeout = 2000;
 
@@ -173,7 +173,7 @@ public class KafkaMessageChannelBinder
 
 	private ProducerListener producerListener;
 
-	private volatile Producer<byte[],byte[]> dlqProducer;
+	private volatile Producer<byte[], byte[]> dlqProducer;
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
@@ -783,11 +783,11 @@ public class KafkaMessageChannelBinder
 		}
 	}
 
-	private class ReceivingHandler extends AbstractReplyProducingMessageHandler {
+	private final class ReceivingHandler extends AbstractReplyProducingMessageHandler {
 
 		private final ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties;
 
-		public ReceivingHandler(ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+		private ReceivingHandler(ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
 			this.consumerProperties = consumerProperties;
 		}
 
@@ -802,22 +802,21 @@ public class KafkaMessageChannelBinder
 			}
 		}
 
-		@SuppressWarnings("serial")
-		private final class KafkaBinderHeaders extends MessageHeaders {
-
-			KafkaBinderHeaders(Map<String, Object> headers) {
-				super(headers, MessageHeaders.ID_VALUE_NONE, -1L);
-			}
-		}
-
 		@Override
 		protected boolean shouldCopyRequestHeaders() {
 			// prevent the message from being copied again in superclass
 			return false;
 		}
+
+		@SuppressWarnings("serial")
+		private final class KafkaBinderHeaders extends MessageHeaders {
+			KafkaBinderHeaders(Map<String, Object> headers) {
+				super(headers, MessageHeaders.ID_VALUE_NONE, -1L);
+			}
+		}
 	}
 
-	private class SendingHandler extends AbstractMessageHandler {
+	private final class SendingHandler extends AbstractMessageHandler {
 
 		private final AtomicInteger roundRobinCount = new AtomicInteger();
 

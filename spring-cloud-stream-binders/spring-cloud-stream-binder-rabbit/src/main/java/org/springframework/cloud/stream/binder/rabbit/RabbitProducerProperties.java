@@ -30,11 +30,11 @@ public class RabbitProducerProperties {
 
 	private String[] requestHeaderPatterns = new String[] {"STANDARD_REQUEST_HEADERS", "*"};
 
-	private boolean autoBindDlq = false;
+	private boolean autoBindDlq;
 
-	private boolean compress = false;
+	private boolean compress;
 
-	private boolean batchingEnabled = false;
+	private boolean batchingEnabled;
 
 	private int batchSize = 100;
 

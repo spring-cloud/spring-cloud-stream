@@ -172,11 +172,11 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 		return method;
 	}
 
-	private class StreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
+	private final class StreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
 
 		private final InvocableHandlerMethod invocableHandlerMethod;
 
-		public StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod) {
+		private StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod) {
 			this.invocableHandlerMethod = invocableHandlerMethod;
 		}
 
