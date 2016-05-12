@@ -50,7 +50,8 @@ public class SourceBindingTestsWithBindingTargets {
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestSource.class)
+	@Autowired
+	@Bindings(TestSource.class)
 	private Source testSource;
 
 	@Autowired

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -87,12 +87,13 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	}
 
 	@Override
-	public synchronized Binder<T,?,?> getBinder(String name) {
+	public synchronized Binder<T, ?, ?> getBinder(String name) {
 		String configurationName;
 		// Fall back to a default if no argument is provided
 		if (StringUtils.isEmpty(name)) {
 			if (this.binderConfigurations.size() == 0) {
-				throw new IllegalStateException("A default binder has been requested, but there there is no binder available");
+				throw new IllegalStateException(
+						"A default binder has been requested, but there there is no binder available");
 			}
 			else if (this.binderConfigurations.size() == 1) {
 				configurationName = this.binderConfigurations.keySet().iterator().next();
@@ -104,11 +105,12 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				else {
 					throw new IllegalStateException(
 							"A default binder has been requested, but there is more than one binder available: "
-									+ StringUtils.collectionToCommaDelimitedString(this.binderConfigurations.keySet()) + ", and"
-									+ " no default binder has been set.");
+									+ StringUtils.collectionToCommaDelimitedString(this.binderConfigurations.keySet())
+									+ ", and" + " no default binder has been set.");
 				}
 			}
-		} else {
+		}
+		else {
 			configurationName = name;
 		}
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
@@ -120,7 +122,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 			// Convert all properties to arguments, so that they receive maximum precedence
 			ArrayList<String> args = new ArrayList<>();
 			for (Map.Entry<Object, Object> property : binderProperties.entrySet()) {
-				args.add(String.format("--%s=%s",property.getKey(),property.getValue()));
+				args.add(String.format("--%s=%s", property.getKey(), property.getValue()));
 			}
 			// Initialize the domain with a unique name based on the bootstrapping context setting
 			ConfigurableEnvironment environment = context != null ? context.getEnvironment() : null;
@@ -155,7 +157,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 			ConfigurableApplicationContext binderProducingContext =
 					springApplicationBuilder.run(args.toArray(new String[args.size()]));
 			@SuppressWarnings("unchecked")
-			Binder<T,?,?> binder = binderProducingContext.getBean(Binder.class);
+			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
 			if (bindersHealthIndicator != null) {
 				OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
 				Map<String, HealthIndicator> indicators = binderProducingContext.getBeansOfType(HealthIndicator.class);
@@ -175,18 +177,18 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	 *
 	 * @param <T>
 	 */
-	private static class BinderInstanceHolder<T> {
+	private static final class BinderInstanceHolder<T> {
 
-		private final Binder<T,?,?> binderInstance;
+		private final Binder<T, ?, ?> binderInstance;
 
 		private final ConfigurableApplicationContext binderContext;
 
-		public BinderInstanceHolder(Binder<T,?,?> binderInstance, ConfigurableApplicationContext binderContext) {
+		private BinderInstanceHolder(Binder<T, ?, ?> binderInstance, ConfigurableApplicationContext binderContext) {
 			this.binderInstance = binderInstance;
 			this.binderContext = binderContext;
 		}
 
-		public Binder<T,?,?> getBinderInstance() {
+		public Binder<T, ?, ?> getBinderInstance() {
 			return this.binderInstance;
 		}
 

@@ -68,7 +68,7 @@ public class WindowingOffsetManager implements OffsetManager, InitializingBean, 
 
 	private long timespan = 10 * 1000;
 
-	private int count = 0;
+	private int count;
 
 	private Subject<PartitionAndOffset, PartitionAndOffset> offsets;
 
@@ -187,13 +187,13 @@ public class WindowingOffsetManager implements OffsetManager, InitializingBean, 
 		delegate.flush();
 	}
 
-	class PartitionAndOffset {
+	private final class PartitionAndOffset {
 
 		private final Partition partition;
 
 		private final Long offset;
 
-		public PartitionAndOffset(Partition partition, Long offset) {
+		private PartitionAndOffset(Partition partition, Long offset) {
 			this.partition = partition;
 			this.offset = offset;
 		}

@@ -18,10 +18,9 @@ package org.springframework.cloud.stream.binder;
 
 import org.springframework.messaging.Message;
 
-
 /**
  * Strategy for extracting a partition key from a Message.
- * 
+ *
  * @author Gary Russell
  */
 public interface PartitionKeyExtractorStrategy {

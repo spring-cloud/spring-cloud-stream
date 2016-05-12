@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,7 +31,7 @@ import org.springframework.validation.annotation.Validated;
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  */
-@JsonInclude(value = Include.NON_DEFAULT)
+@JsonInclude(Include.NON_DEFAULT)
 @Validated
 public class BindingProperties {
 
@@ -56,9 +56,9 @@ public class BindingProperties {
 
 	private String binder;
 
-	private ConsumerProperties consumer = null;
+	private ConsumerProperties consumer;
 
-	private ProducerProperties producer = null;
+	private ProducerProperties producer;
 
 	public String getDestination() {
 		return this.destination;

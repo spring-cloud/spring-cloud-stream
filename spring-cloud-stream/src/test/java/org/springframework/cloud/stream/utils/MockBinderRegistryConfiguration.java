@@ -37,11 +37,11 @@ public class MockBinderRegistryConfiguration {
 	@Bean
 	public BinderTypeRegistry binderTypeRegistry() {
 		return new DefaultBinderTypeRegistry(
-				Collections.singletonMap("mock", new BinderType("", new Class[]{MockBinderConfiguration.class})));
+				Collections.singletonMap("mock", new BinderType("", new Class[] { MockBinderConfiguration.class })));
 	}
 
 	@Bean
-	public Binder<?,?,?> defaultBinder(BinderFactory<MessageChannel> binderFactory) {
+	public Binder<?, ?, ?> defaultBinder(BinderFactory<MessageChannel> binderFactory) {
 		return binderFactory.getBinder(null);
 	}
 }

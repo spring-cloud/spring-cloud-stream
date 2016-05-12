@@ -47,7 +47,7 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	@Override
 	public Map<String, List<String>> clean(String entity, boolean isJob) {
-		return clean("http://localhost:15672", "guest", "guest", "/", BINDER_PREFIX , entity, isJob);
+		return clean("http://localhost:15672", "guest", "guest", "/", BINDER_PREFIX, entity, isJob);
 	}
 
 	public Map<String, List<String>> clean(String adminUri, String user, String pw, String vhost,

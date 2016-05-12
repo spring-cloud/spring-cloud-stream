@@ -48,6 +48,11 @@ import org.springframework.context.annotation.Profile;
 @AutoConfigureBefore({CloudAutoConfiguration.class, RabbitAutoConfiguration.class})
 public class RabbitServiceAutoConfiguration {
 
+	@Bean
+	public HealthIndicator binderHealthIndicator(RabbitTemplate rabbitTemplate) {
+		return new RabbitHealthIndicator(rabbitTemplate);
+	}
+
 	@Configuration
 	@Profile("cloud")
 	@ConditionalOnClass(Cloud.class)
@@ -69,10 +74,5 @@ public class RabbitServiceAutoConfiguration {
 	@Profile("!cloud")
 	@Import(RabbitAutoConfiguration.class)
 	protected static class NoCloudConfig {
-	}
-
-	@Bean
-	public HealthIndicator binderHealthIndicator(RabbitTemplate rabbitTemplate) {
-		return new RabbitHealthIndicator(rabbitTemplate);
 	}
 }

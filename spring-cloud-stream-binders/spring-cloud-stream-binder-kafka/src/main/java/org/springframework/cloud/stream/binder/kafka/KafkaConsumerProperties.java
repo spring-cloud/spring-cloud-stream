@@ -23,11 +23,11 @@ public class KafkaConsumerProperties {
 
 	private boolean autoCommitOffset = true;
 
-	private boolean resetOffsets = false;
+	private boolean resetOffsets;
 
-	private KafkaMessageChannelBinder.StartOffset startOffset = null;
+	private KafkaMessageChannelBinder.StartOffset startOffset;
 
-	private boolean enableDlq = false;
+	private boolean enableDlq;
 
 	public boolean isAutoCommitOffset() {
 		return autoCommitOffset;

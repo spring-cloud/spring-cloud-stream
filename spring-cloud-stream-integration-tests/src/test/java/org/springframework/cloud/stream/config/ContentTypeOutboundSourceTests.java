@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.config;
 
 import org.junit.Test;
@@ -42,16 +43,19 @@ import static org.junit.Assert.assertThat;
 @SpringApplicationConfiguration({ContentTypeOutboundSourceTests.TestSource.class})
 public class ContentTypeOutboundSourceTests {
 
-	@Autowired @Bindings(TestSource.class)
+	@Autowired
+	@Bindings(TestSource.class)
 	private Source testSource;
 
 	@Autowired
 	private BinderFactory binderFactory;
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testMessageHeaderWhenNoExplicitContentTypeOnMessage() throws Exception {
 		testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null)).messageCollector().forChannel(testSource.output()).poll();
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null))
+				.messageCollector().forChannel(testSource.output()).poll();
 		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString(), equalTo("application/json"));
 		assertThat(received.getPayload(), equalTo("{\"message\":\"Hi\"}"));
 	}

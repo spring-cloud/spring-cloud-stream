@@ -44,14 +44,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(PartitionedProducerTest.TestSource.class)
-
 public class PartitionedProducerTest {
 
 	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestSource.class)
+	@Autowired
+	@Bindings(TestSource.class)
 	private Source testSource;
 
 	@Test

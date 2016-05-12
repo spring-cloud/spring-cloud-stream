@@ -30,7 +30,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  */
-public class MessageConverterUtils {
+public abstract class MessageConverterUtils {
 
 	/**
 	 * An MimeType specifying a {@link Tuple}.

@@ -39,7 +39,7 @@ public class KafkaBinderConfigurationProperties {
 
 	private int offsetUpdateTimeWindow = 10000;
 
-	private int offsetUpdateCount = 0;
+	private int offsetUpdateCount;
 
 	private int offsetUpdateShutdownTimeout = 2000;
 
@@ -47,7 +47,7 @@ public class KafkaBinderConfigurationProperties {
 
 	private boolean autoCreateTopics = true;
 
-	private boolean autoAddPartitions = false;
+	private boolean autoAddPartitions;
 
 	/**
 	 * ZK session timeout in milliseconds.

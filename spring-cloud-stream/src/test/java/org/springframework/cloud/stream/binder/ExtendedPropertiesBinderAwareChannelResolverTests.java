@@ -190,7 +190,7 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 			return new ExtendedProducerProperties(new ProducerProperties());
 		}
 
-		private class TestBinding implements Binding<MessageChannel> {
+		private final class TestBinding implements Binding<MessageChannel> {
 
 			private final String name;
 

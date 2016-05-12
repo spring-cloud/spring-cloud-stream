@@ -20,7 +20,6 @@ import org.springframework.messaging.Message;
 
 
 /**
- * 
  * @author Gary Russell
  */
 public class PartitionTestSupport implements PartitionKeyExtractorStrategy, PartitionSelectorStrategy {

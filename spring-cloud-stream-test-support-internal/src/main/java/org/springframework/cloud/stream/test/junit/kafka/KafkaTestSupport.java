@@ -66,7 +66,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	private final Properties brokerConfig = TestUtils.createBrokerConfig(0, TestUtils.choosePort(), false);
 
 	// caches previous failures to reach the external server - preventing repeated retries
-	private static boolean hasFailedAlready = false;
+	private static boolean hasFailedAlready;
 
 	static {
 		// check if either the environment or Java property is set to use embedded tests
@@ -122,7 +122,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 					try {
 						int zkConnectionTimeout = 10000;
 						int zkSessionTimeout = 10000;
-						zkClient = new ZkClient(getZkConnectString(), zkSessionTimeout, zkConnectionTimeout, ZKStringSerializer$.MODULE$);
+						zkClient = new ZkClient(getZkConnectString(), zkSessionTimeout, zkConnectionTimeout,
+								ZKStringSerializer$.MODULE$);
 					}
 					catch (Exception e) {
 						zookeeper.shutdown();
@@ -134,15 +135,18 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 						brokerConfig.put("zookeeper.connect", zookeeper.getConnectString());
 						brokerConfig.put("auto.create.topics.enable", "false");
 						brokerConfig.put("delete.topic.enable", "true");
-						kafkaServer = TestUtils.createServer(new KafkaConfig(brokerConfigProperties), SystemTime$.MODULE$);
-						log.debug("Created Kafka server at " + kafkaServer.config().hostName() + ":" + kafkaServer.config().port());
+						kafkaServer = TestUtils.createServer(new KafkaConfig(brokerConfigProperties),
+								SystemTime$.MODULE$);
+						log.debug("Created Kafka server at " + kafkaServer.config().hostName() + ":"
+								+ kafkaServer.config().port());
 					}
 					catch (Exception e) {
 						zookeeper.shutdown();
 						zkClient.close();
 						throw e;
 					}
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					hasFailedAlready = true;
 					throw e;
 				}
@@ -154,7 +158,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 					throw new RuntimeException("Kafka server not available");
 				}
 			}
-		} else {
+		}
+		else {
 			throw new RuntimeException("Kafka server not available");
 		}
 	}

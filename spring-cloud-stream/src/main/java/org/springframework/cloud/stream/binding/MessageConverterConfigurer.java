@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binding;
 
 
@@ -115,13 +116,13 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	 * Will wrap the returning result of the conversion into a {@link Message} if it is not a {@link Message}
 	 * instance already.
 	 */
-	class MessageWrappingMessageConverter implements SmartMessageConverter {
+	private final class MessageWrappingMessageConverter implements SmartMessageConverter {
 
 		private final MimeType contentType;
 
 		private final SmartMessageConverter delegate;
 
-		public MessageWrappingMessageConverter(SmartMessageConverter delegate, MimeType contentType) {
+		private MessageWrappingMessageConverter(SmartMessageConverter delegate, MimeType contentType) {
 			Assert.notNull(delegate, "Delegate converter cannot be null");
 			Assert.notNull(contentType, "Content type cannot be null");
 			this.delegate = delegate;
@@ -166,7 +167,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		 * @param headers the existing message headers
 		 * @return the converted message
 		 */
-		protected final Object build(Object payload, MessageHeaders headers) {
+		protected Object build(Object payload, MessageHeaders headers) {
 			MimeType messageContentType = MessageConverterUtils.X_JAVA_OBJECT.equals(contentType) ?
 					MessageConverterUtils.javaObjectMimeType(payload.getClass()) : contentType;
 			return messageBuilderFactory.withPayload(payload).copyHeaders(headers)

@@ -35,7 +35,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Ilayaperumal Gopinathan
  * @author Venil Noronha
  */
-class AggregateApplication {
+abstract class AggregateApplication {
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
@@ -92,12 +92,10 @@ class AggregateApplication {
 		return aggregatorParentConfiguration.run(args);
 	}
 
-	static void createChildContexts(ConfigurableApplicationContext parentContext,
-			Class<?>[] apps, String args[][]) {
+	static void createChildContexts(ConfigurableApplicationContext parentContext, Class<?>[] apps, String[][] args) {
 		for (int i = apps.length - 1; i >= 0; i--) {
 			String appClassName = apps[i].getName();
-			embedApp(parentContext, getNamespace(appClassName, i), apps[i])
-					.run(args != null ? args[i] : new String[0]);
+			embedApp(parentContext, getNamespace(appClassName, i), apps[i]).run(args != null ? args[i] : new String[0]);
 		}
 	}
 

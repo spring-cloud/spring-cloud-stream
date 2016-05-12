@@ -28,7 +28,7 @@ public class RabbitConsumerProperties {
 
 	private String prefix = "";
 
-	private boolean transacted = false;
+	private boolean transacted;
 
 	private AcknowledgeMode acknowledgeMode = AcknowledgeMode.AUTO;
 
@@ -40,11 +40,11 @@ public class RabbitConsumerProperties {
 
 	private int txSize = 1;
 
-	private boolean autoBindDlq = false;
+	private boolean autoBindDlq;
 
 	private boolean durableSubscription = true;
 
-	private boolean republishToDlq = false;
+	private boolean republishToDlq;
 
 	private boolean requeueRejected = true;
 

@@ -53,7 +53,7 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 	@Override
 	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, PP properties) {
 		queues.add(name);
-		return binder.bindProducer(name, moduleOutputChannel, properties); 
+		return binder.bindProducer(name, moduleOutputChannel, properties);
 	}
 
 	public C getCoreBinder() {

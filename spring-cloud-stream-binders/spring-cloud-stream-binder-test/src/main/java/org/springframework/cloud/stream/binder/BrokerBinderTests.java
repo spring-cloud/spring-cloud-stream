@@ -23,12 +23,13 @@ import org.springframework.messaging.MessageChannel;
  *
  * @author Gary Russell
  */
-public abstract class BrokerBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> extends AbstractBinderTests<B,CP,PP> {
+public abstract class BrokerBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
+		extends AbstractBinderTests<B, CP, PP> {
 
 	/**
 	 * Create a new spy on the given 'queue'. This allows de-correlating the creation of
-	 * the 'connection' from its actual usage, which may be needed by some implementations to
-	 * see messages sent after connection creation.
+	 * the 'connection' from its actual usage, which may be needed by some implementations
+	 * to see messages sent after connection creation.
 	 */
 	public abstract Spy spyOn(final String name);
 

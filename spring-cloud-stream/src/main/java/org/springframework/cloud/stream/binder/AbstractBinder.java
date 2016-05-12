@@ -192,10 +192,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * @return the constructed name.
 	 */
 	protected final String groupedName(String name, String group) {
-		if (!StringUtils.hasText(group)) {
-			group = "default";
-		}
-		return name + GROUP_INDEX_DELIMITER + group;
+		return name + GROUP_INDEX_DELIMITER + (StringUtils.hasText(group) ? group : "default");
 	}
 
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
@@ -290,7 +287,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			}
 			catch (ClassNotFoundException e) {
 				throw new SerializationFailedException("unable to deserialize [" + className + "]. Class not found.",
-						e);//NOSONAR
+						e); //NOSONAR
 			}
 			catch (IOException e) {
 				throw new SerializationFailedException("unable to deserialize [" + className + "]", e);
@@ -326,6 +323,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		}
 	}
 
+	/**
+	 * Perform manual acknowledgement based on the metadata stored in the binder.
+	 */
+	public void doManualAck(LinkedList<MessageHeaders> messageHeaders) {
+	}
 
 	/**
 	 * Handles representing any java class as a {@link MimeType}.
@@ -380,12 +382,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			return className;
 		}
 
-	}
-
-	/**
-	 * Perform manual acknowledgement based on the metadata stored in the binder.
-	 */
-	public void doManualAck(LinkedList<MessageHeaders> messageHeaders) {
 	}
 
 }

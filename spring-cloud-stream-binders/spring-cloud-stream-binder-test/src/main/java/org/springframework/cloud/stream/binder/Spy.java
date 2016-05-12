@@ -25,5 +25,5 @@ package org.springframework.cloud.stream.binder;
  */
 public interface Spy {
 
-	public Object receive(boolean expectNull) throws Exception;
+	Object receive(boolean expectNull) throws Exception;
 }

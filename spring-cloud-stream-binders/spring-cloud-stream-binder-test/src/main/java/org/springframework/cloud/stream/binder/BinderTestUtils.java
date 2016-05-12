@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
  *
  * @author Gary Russell
  */
-public class BinderTestUtils {
+public abstract class BinderTestUtils {
 
 	private static final MessageBuilderFactory mbf = new DefaultMessageBuilderFactory();
 

@@ -119,8 +119,8 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer
-			(MessageConverterConfigurer messageConverterConfigurer) {
+	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer(
+			MessageConverterConfigurer messageConverterConfigurer) {
 		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
 		configurerList.add(messageConverterConfigurer);
 		return new CompositeMessageChannelConfigurer(configurerList);
@@ -169,6 +169,21 @@ public class ChannelBindingServiceConfiguration {
 			messageConverters.addAll(Collections.unmodifiableCollection(customMessageConverters));
 		}
 		return new CompositeMessageConverterFactory(messageConverters, objectMapper);
+	}
+
+	@Bean
+	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
+		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		return messageHandlerMethodFactory;
+	}
+
+	@Bean
+	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(
+			@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
+			@Lazy MessageHandlerMethodFactory messageHandlerMethodFactory) {
+		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver,
+				messageHandlerMethodFactory);
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
@@ -232,18 +247,4 @@ public class ChannelBindingServiceConfiguration {
 		}
 	}
 
-	@Bean
-	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
-		return messageHandlerMethodFactory;
-	}
-
-	@Bean
-	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(
-			@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
-			@Lazy MessageHandlerMethodFactory messageHandlerMethodFactory) {
-		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver,
-				messageHandlerMethodFactory);
-	}
 }

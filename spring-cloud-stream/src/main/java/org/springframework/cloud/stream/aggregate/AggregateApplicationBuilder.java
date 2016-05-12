@@ -57,7 +57,7 @@ public class AggregateApplicationBuilder {
 	}
 
 	public AggregateApplicationBuilder(Object[] sources, String[] args) {
-		this(SpringApplication.run(addAggregatorParentIfMissing(sources),args));
+		this(SpringApplication.run(addAggregatorParentIfMissing(sources), args));
 	}
 
 	public AggregateApplicationBuilder(ConfigurableApplicationContext parentContext) {
@@ -135,6 +135,13 @@ public class AggregateApplicationBuilder {
 		return parentContext;
 	}
 
+	private ChildContextBuilder childContext(Class<?> app,
+			ConfigurableApplicationContext parentContext, String namespace) {
+		return new ChildContextBuilder(
+				AggregateApplication.embedApp(parentContext, namespace, app));
+	}
+
+
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
 
 		public SourceConfigurer(Class<?> app) {
@@ -184,9 +191,9 @@ public class AggregateApplicationBuilder {
 
 		String[] args;
 
-		String[] names = null;
+		String[] names;
 
-		String[] profiles = null;
+		String[] profiles;
 
 		String namespace;
 
@@ -226,17 +233,11 @@ public class AggregateApplicationBuilder {
 		void embed() {
 			childContext(this.app, AggregateApplicationBuilder.this.parentContext,
 					this.namespace).args(this.args).config(this.names)
-							.profiles(this.profiles).run();
+					.profiles(this.profiles).run();
 		}
 	}
 
-	private ChildContextBuilder childContext(Class<?> app,
-			ConfigurableApplicationContext parentContext, String namespace) {
-		return new ChildContextBuilder(
-				AggregateApplication.embedApp(parentContext, namespace, app));
-	}
-
-	private class ChildContextBuilder {
+	private final class ChildContextBuilder {
 
 		private SpringApplicationBuilder builder;
 
@@ -244,7 +245,7 @@ public class AggregateApplicationBuilder {
 
 		private String[] args;
 
-		public ChildContextBuilder(SpringApplicationBuilder builder) {
+		private ChildContextBuilder(SpringApplicationBuilder builder) {
 			this.builder = builder;
 		}
 

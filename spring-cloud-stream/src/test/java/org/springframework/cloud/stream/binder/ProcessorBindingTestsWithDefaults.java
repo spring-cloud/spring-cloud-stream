@@ -45,7 +45,8 @@ public class ProcessorBindingTestsWithDefaults {
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestProcessor.class)
+	@Autowired
+	@Bindings(TestProcessor.class)
 	private Processor processor;
 
 	@SuppressWarnings("unchecked")

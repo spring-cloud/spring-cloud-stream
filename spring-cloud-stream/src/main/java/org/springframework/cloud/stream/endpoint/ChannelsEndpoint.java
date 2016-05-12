@@ -66,7 +66,7 @@ public class ChannelsEndpoint extends AbstractEndpoint<Map<String, Object>> {
 		});
 	}
 
-	@JsonInclude(value = Include.NON_DEFAULT)
+	@JsonInclude(Include.NON_DEFAULT)
 	public static class ChannelsMetaData {
 
 		private Map<String, BindingProperties> inputs = new LinkedHashMap<>();

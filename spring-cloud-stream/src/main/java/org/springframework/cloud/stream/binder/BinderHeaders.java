@@ -26,7 +26,7 @@ import org.springframework.messaging.MessageHeaders;
  * @author David Turanski
  */
 public final class BinderHeaders {
-	
+
 	public static final String BINDER_ORIGINAL_CONTENT_TYPE = "originalContentType";
 
 	/**

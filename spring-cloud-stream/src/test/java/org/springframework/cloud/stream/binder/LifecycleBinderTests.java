@@ -58,7 +58,7 @@ public class LifecycleBinderTests {
 
 	public static class SimpleLifecycle implements Lifecycle {
 
-		private boolean running = false;
+		private boolean running;
 
 		@Override
 		public synchronized void start() {

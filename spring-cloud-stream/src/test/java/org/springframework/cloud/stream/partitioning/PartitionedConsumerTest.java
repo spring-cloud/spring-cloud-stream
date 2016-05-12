@@ -46,14 +46,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(PartitionedConsumerTest.TestSink.class)
-
 public class PartitionedConsumerTest {
 
 	@SuppressWarnings("rawtypes")
 	@Autowired
 	private Binder binder;
 
-	@Autowired @Bindings(TestSink.class)
+	@Autowired
+	@Bindings(TestSink.class)
 	private Sink testSink;
 
 	@Test
@@ -65,7 +65,6 @@ public class PartitionedConsumerTest {
 		Assert.assertThat(argumentCaptor.getValue().getInstanceCount(), equalTo(2));
 		verifyNoMoreInteractions(binder);
 	}
-
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration

@@ -70,7 +70,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private Class<?> type;
 
-	private Object proxy = null;
+	private Object proxy;
 
 	private Map<String, ChannelHolder> inputHolders = new HashMap<>();
 
@@ -82,21 +82,22 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public synchronized Object invoke(MethodInvocation invocation) throws Throwable {
+		MessageChannel messageChannel = null;
 		Method method = invocation.getMethod();
 		if (MessageChannel.class.isAssignableFrom(method.getReturnType())) {
 			Input input = AnnotationUtils.findAnnotation(method, Input.class);
 			if (input != null) {
 				String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
-				return this.inputHolders.get(name).getMessageChannel();
+				messageChannel = this.inputHolders.get(name).getMessageChannel();
 			}
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
 				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
-				return this.outputHolders.get(name).getMessageChannel();
+				messageChannel =  this.outputHolders.get(name).getMessageChannel();
 			}
 		}
 		//ignore
-		return null;
+		return messageChannel;
 	}
 
 	@Override
@@ -251,13 +252,13 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	 * Holds information about the channels exposed by the interface proxy, as well as
 	 * their status.
 	 */
-	class ChannelHolder {
+	private final class ChannelHolder {
 
 		private MessageChannel messageChannel;
 
 		private boolean bindable;
 
-		public ChannelHolder(MessageChannel messageChannel, boolean bindable) {
+		private ChannelHolder(MessageChannel messageChannel, boolean bindable) {
 			this.messageChannel = messageChannel;
 			this.bindable = bindable;
 		}

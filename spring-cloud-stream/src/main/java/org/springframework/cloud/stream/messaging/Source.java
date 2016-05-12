@@ -27,9 +27,9 @@ import org.springframework.messaging.MessageChannel;
  * @author Marius Bogoevici
  */
 public interface Source {
-	
+
 	String OUTPUT = "output";
-	
+
 	@Output(Source.OUTPUT)
 	MessageChannel output();
 

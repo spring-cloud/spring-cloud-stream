@@ -35,14 +35,14 @@ import org.springframework.expression.Expression;
 public class ProducerProperties {
 
 	@JsonSerialize(using = ExpressionSerializer.class)
-	private Expression partitionKeyExpression = null;
+	private Expression partitionKeyExpression;
 
-	private Class<?> partitionKeyExtractorClass = null;
+	private Class<?> partitionKeyExtractorClass;
 
-	private Class<?> partitionSelectorClass = null;
+	private Class<?> partitionSelectorClass;
 
 	@JsonSerialize(using = ExpressionSerializer.class)
-	private Expression partitionSelectorExpression = null;
+	private Expression partitionSelectorExpression;
 
 	private int partitionCount = 1;
 
