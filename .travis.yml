@@ -8,7 +8,7 @@ jdk:
 services:
   - redis-server
 env:
-  - REDIS_TIMEOUT_MULTIPLIER=3 KAFKA_TIMEOUT_MULTIPLIER=30
+  - REDIS_TIMEOUT_MULTIPLIER=3 KAFKA_TIMEOUT_MULTIPLIER=30 SCS_KAFKA_TEST_EMBEDDED=false
 before_install:
   - wget http://www.us.apache.org/dist/kafka/0.8.2.1/kafka_2.10-0.8.2.1.tgz -O kafka.tgz
   - mkdir -p kafka && tar xzf kafka.tgz -C kafka --strip-components 1
@@ -20,6 +20,6 @@ install: true
 # is for a normal branch commit. When the build is for a pull request, it will 
 # contain the pull request’s number.
 script:
-  - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -s .settings.xml package -Pfull -U -Dmaven.test.redirectTestOutputToFile=false'
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || ./mvnw -s .settings.xml package -U -Dmaven.test.redirectTestOutputToFile=false'
+  - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw -Pspring,full -U -Dmaven.test.redirectTestOutputToFile=false'
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || ./mvnw -Pspring package -U -Dmaven.test.redirectTestOutputToFile=false'
 
