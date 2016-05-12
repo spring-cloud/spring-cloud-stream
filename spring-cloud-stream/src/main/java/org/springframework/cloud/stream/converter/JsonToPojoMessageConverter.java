@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.stream.converter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeTypeUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  *

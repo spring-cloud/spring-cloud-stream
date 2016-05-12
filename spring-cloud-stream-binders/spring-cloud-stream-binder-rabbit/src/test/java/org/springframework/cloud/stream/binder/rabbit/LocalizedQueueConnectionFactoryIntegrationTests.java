@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.UUID;
 
 import org.junit.Before;
@@ -31,6 +29,8 @@ import org.springframework.amqp.rabbit.connection.LocalizedQueueConnectionFactor
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
+
+import static org.junit.Assert.assertEquals;
 
 
 /**

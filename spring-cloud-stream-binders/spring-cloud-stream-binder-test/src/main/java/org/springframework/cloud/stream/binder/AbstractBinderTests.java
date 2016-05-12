@@ -16,17 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.collection.IsArrayContainingInAnyOrder.arrayContainingInAnyOrder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-
 import java.util.UUID;
 
+import org.hamcrest.collection.IsArrayContainingInAnyOrder;
 import org.junit.After;
 import org.junit.Test;
 
@@ -39,6 +31,14 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.util.MimeTypeUtils;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Gary Russell
@@ -149,7 +149,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		assertNotNull(messages[0]);
 		assertNotNull(messages[1]);
-		assertThat(messages, arrayContainingInAnyOrder(
+		assertThat(messages, IsArrayContainingInAnyOrder.arrayContainingInAnyOrder(
 				hasProperty("payload", equalTo(testPayload1.getBytes())),
 				hasProperty("payload", equalTo(testPayload2.getBytes()))));
 

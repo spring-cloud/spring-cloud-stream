@@ -19,11 +19,11 @@ package org.springframework.cloud.stream.binder;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Min;
 
-import org.springframework.expression.Expression;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import org.springframework.expression.Expression;
 
 /**
  * Common producer properties.

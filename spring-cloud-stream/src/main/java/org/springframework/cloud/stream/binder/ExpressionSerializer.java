@@ -17,11 +17,11 @@ package org.springframework.cloud.stream.binder;
 
 import java.io.IOException;
 
-import org.springframework.expression.Expression;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+
+import org.springframework.expression.Expression;
 
 /**
  * JSON serializer for Expression value.
