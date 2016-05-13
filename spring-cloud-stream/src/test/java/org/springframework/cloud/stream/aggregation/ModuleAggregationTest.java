@@ -42,7 +42,8 @@ public class ModuleAggregationTest {
 	@Test
 	public void testModuleAggregation() {
 		ConfigurableApplicationContext aggregatedApplicationContext =
-				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class)
+				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class,
+						"--server.port=0")
 						.from(TestSource.class)
 						.to(TestProcessor.class)
 						.run();
@@ -56,11 +57,10 @@ public class ModuleAggregationTest {
 	@Test
 	public void testNamespaces() {
 		ConfigurableApplicationContext aggregatedApplicationContext =
-				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class)
+				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class,
+						"--server.port=0")
 						.from(TestSource.class)
-						.namespace("foo")
-						.to(TestProcessor.class)
-						.namespace("bar")
+						.namespace("foo").to(TestProcessor.class).namespace("bar")
 						.run();
 		SharedChannelRegistry sharedChannelRegistry
 				= aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
