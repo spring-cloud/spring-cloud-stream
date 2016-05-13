@@ -62,7 +62,7 @@ public class StreamListenerTests {
 
 	@Test
 	public void testContentTypeConversion() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestSink.class);
+		ConfigurableApplicationContext context = SpringApplication.run(TestSink.class, "--server.port=0");
 		@SuppressWarnings("unchecked")
 		TestSink testSink = context.getBean(TestSink.class);
 		Sink sink = context.getBean(Sink.class);
@@ -80,7 +80,7 @@ public class StreamListenerTests {
 	@SuppressWarnings("unchecked")
 	public void testAnnotatedArguments() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
-				.run(TestPojoWithAnnotatedArguments.class);
+				.run(TestPojoWithAnnotatedArguments.class, "--server.port=0");
 
 		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context
 				.getBean(TestPojoWithAnnotatedArguments.class);
@@ -112,7 +112,7 @@ public class StreamListenerTests {
 	@SuppressWarnings("unchecked")
 	public void testReturn() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
-				.run(TestStringProcessor.class);
+				.run(TestStringProcessor.class, "--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
@@ -136,7 +136,8 @@ public class StreamListenerTests {
 	public void testReturnConversion() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(
 				TestPojoWithMimeType.class,
-				"--spring.cloud.stream.bindings.output.contentType=application/json");
+				"--spring.cloud.stream.bindings.output.contentType=application/json",
+				"--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
@@ -161,7 +162,7 @@ public class StreamListenerTests {
 	@SuppressWarnings("unchecked")
 	public void testReturnNoConversion() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
-				.run(TestPojoWithMimeType.class);
+				.run(TestPojoWithMimeType.class, "--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
@@ -184,7 +185,7 @@ public class StreamListenerTests {
 	@SuppressWarnings("unchecked")
 	public void testReturnMessage() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
-				.run(TestPojoWithMessageReturn.class);
+				.run(TestPojoWithMessageReturn.class, "--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
@@ -207,7 +208,7 @@ public class StreamListenerTests {
 	@SuppressWarnings("unchecked")
 	public void testMessageArgument() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
-				.run(TestPojoWithMessageArgument.class);
+				.run(TestPojoWithMessageArgument.class, "--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
@@ -230,7 +231,7 @@ public class StreamListenerTests {
 	public void testDuplicateMapping() throws Exception {
 		try {
 			ConfigurableApplicationContext context = SpringApplication
-					.run(TestDuplicateMapping.class);
+					.run(TestDuplicateMapping.class, "--server.port=0");
 			fail("Exception expected on duplicate mapping");
 		}
 		catch (BeanCreationException e) {
@@ -244,7 +245,8 @@ public class StreamListenerTests {
 	public void testHandlerBean() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(
 				TestHandlerBean.class,
-				"--spring.cloud.stream.bindings.output.contentType=application/json");
+				"--spring.cloud.stream.bindings.output.contentType=application/json",
+				"--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
