@@ -868,17 +868,14 @@ Useful when inbound data is coming from outside Spring Cloud Stream applications
 Default: `embeddedHeaders`.
 maxAttempts::
   The number of attempts of re-processing an inbound message.
-Currently ignored by Kafka.
 +
 Default: `3`.
 backOffInitialInterval::
   The backoff initial interval on retry.
-Currently ignored by Kafka.
 +
 Default: `1000`.
 backOffMaxInterval::
   The maximum backoff interval.
-Currently ignored by Kafka.
 +
 Default: `10000`.
 backOffMultiplier::
