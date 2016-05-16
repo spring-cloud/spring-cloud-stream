@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binding;
 import java.util.Map;
 
 import org.springframework.beans.BeansException;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -46,12 +45,10 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 	@Override
 	public void start() {
 		if (!running) {
-			ChannelBindingServiceProperties channelBindingServiceProperties = null;
 			// retrieve the ChannelBindingService lazily, avoiding early initialization
 			try {
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				channelBindingServiceProperties = channelBindingService.getChannelBindingServiceProperties();
 				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.bindInputs(channelBindingService);
@@ -61,9 +58,7 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 				throw new IllegalStateException(
 						"Cannot perform binding, no proper implementation found", e);
 			}
-			if (channelBindingServiceProperties != null && channelBindingServiceProperties.isAutoStartup()) {
-				this.running = true;
-			}
+			this.running = true;
 		}
 	}
 

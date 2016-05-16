@@ -814,6 +814,12 @@ spring.cloud.stream.defaultBinder::
   The default binder to use, if multiple binders are configured.
 See <<multiple-binders,Multiple Binders on the Classpath>>.
 
+spring.cloud.stream.autoStartContext::
+  Auto start the main application context during the application startup. This is useful when the context is
+  started based on some criteria.
++
+Default: `true`.
+
 [[binding-properties]]
 === Binding Properties
 
