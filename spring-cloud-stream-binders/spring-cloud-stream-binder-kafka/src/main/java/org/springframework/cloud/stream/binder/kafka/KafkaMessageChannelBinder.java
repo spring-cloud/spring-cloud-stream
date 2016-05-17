@@ -100,6 +100,7 @@ import org.springframework.retry.RetryOperations;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -125,7 +126,13 @@ public class KafkaMessageChannelBinder
 
 	public static final ByteArraySerializer BYTE_ARRAY_SERIALIZER = new ByteArraySerializer();
 
-	public static final DaemonThreadFactory DAEMON_THREAD_FACTORY = new DaemonThreadFactory();
+	public static final ThreadFactory DAEMON_THREAD_FACTORY;
+
+	static {
+		CustomizableThreadFactory threadFactory = new CustomizableThreadFactory("kafka-binder-");
+		threadFactory.setDaemon(true);
+		DAEMON_THREAD_FACTORY = threadFactory;
+	}
 
 	private boolean autoCreateTopics = true;
 
@@ -770,16 +777,6 @@ public class KafkaMessageChannelBinder
 			Assert.notNull(acknowledgment,
 					"Acknowledgement shouldn't be null when acknowledging kafka message " + "manually.");
 			acknowledgment.acknowledge();
-		}
-	}
-
-	private static class DaemonThreadFactory implements ThreadFactory {
-
-		@Override
-		public Thread newThread(Runnable r) {
-			Thread thread = new Thread(r, "kafka-binder-");
-			thread.setDaemon(true);
-			return thread;
 		}
 	}
 
