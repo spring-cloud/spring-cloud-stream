@@ -64,6 +64,7 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
+import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.FixedSubscriberChannel;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
@@ -117,12 +118,10 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Soby Chacko
  */
-public class KafkaMessageChannelBinder
-		extends
-			AbstractBinder<MessageChannel, ExtendedConsumerProperties<KafkaConsumerProperties>,
-			ExtendedProducerProperties<KafkaProducerProperties>>
+public class KafkaMessageChannelBinder extends
+		AbstractBinder<MessageChannel, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>>
 		implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties>,
-						DisposableBean {
+		DisposableBean {
 
 	public static final ByteArraySerializer BYTE_ARRAY_SERIALIZER = new ByteArraySerializer();
 
@@ -134,49 +133,17 @@ public class KafkaMessageChannelBinder
 		DAEMON_THREAD_FACTORY = threadFactory;
 	}
 
-	private boolean autoCreateTopics = true;
+	private final KafkaBinderConfigurationProperties configurationProperties;
 
-	private boolean autoAddPartitions;
+	private final String[] headersToMap;
 
 	private RetryOperations metadataRetryOperations;
 
 	private final Map<String, Collection<Partition>> topicsInUse = new HashMap<>();
 
-	private final ZookeeperConnect zookeeperConnect;
-
-	private final String brokers;
-
-	private String[] headersToMap;
-
-	private final String zkAddress;
-
 	// -------- Default values for properties -------
 
-	private int replicationFactor = 1;
-
-	private int requiredAcks = 1;
-
-	private int queueSize = 1024;
-
-	private int maxWait = 100;
-
-	private int fetchSize = 1024 * 1024;
-
-	private int minPartitionCount = 1;
-
 	private ConnectionFactory connectionFactory;
-
-	private int socketBufferSize = 2097152;
-
-	private int offsetUpdateTimeWindow = 10000;
-
-	private int offsetUpdateCount;
-
-	private int offsetUpdateShutdownTimeout = 2000;
-
-	private int zkSessionTimeout = 10000;
-
-	private int zkConnectionTimeout = 10000;
 
 	private ProducerListener producerListener;
 
@@ -184,41 +151,23 @@ public class KafkaMessageChannelBinder
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
-	public KafkaMessageChannelBinder(ZookeeperConnect zookeeperConnect, String brokers, String zkAddress,
-			String... headersToMap) {
-		this.zookeeperConnect = zookeeperConnect;
-		this.brokers = brokers;
-		this.zkAddress = zkAddress;
-		if (ObjectUtils.isEmpty(headersToMap)) {
+	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties) {
+		this.configurationProperties = configurationProperties;
+		String[] configuredHeaders = configurationProperties.getHeaders();
+		if (ObjectUtils.isEmpty(configuredHeaders)) {
 			this.headersToMap = BinderHeaders.STANDARD_HEADERS;
 		}
 		else {
 			String[] combinedHeadersToMap = Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0,
-					BinderHeaders.STANDARD_HEADERS.length + headersToMap.length);
-			System.arraycopy(headersToMap, 0, combinedHeadersToMap, BinderHeaders.STANDARD_HEADERS.length,
-					headersToMap.length);
+					BinderHeaders.STANDARD_HEADERS.length + configuredHeaders.length);
+			System.arraycopy(configuredHeaders, 0, combinedHeadersToMap, BinderHeaders.STANDARD_HEADERS.length,
+					configuredHeaders.length);
 			this.headersToMap = combinedHeadersToMap;
 		}
 	}
 
 	String getZkAddress() {
-		return this.zkAddress;
-	}
-
-	public void setSocketBufferSize(int socketBufferSize) {
-		this.socketBufferSize = socketBufferSize;
-	}
-
-	public void setOffsetUpdateTimeWindow(int offsetUpdateTimeWindow) {
-		this.offsetUpdateTimeWindow = offsetUpdateTimeWindow;
-	}
-
-	public void setOffsetUpdateCount(int offsetUpdateCount) {
-		this.offsetUpdateCount = offsetUpdateCount;
-	}
-
-	public void setOffsetUpdateShutdownTimeout(int offsetUpdateShutdownTimeout) {
-		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
+		return this.configurationProperties.getZkConnectionString();
 	}
 
 	public ConnectionFactory getConnectionFactory() {
@@ -243,9 +192,10 @@ public class KafkaMessageChannelBinder
 
 	@Override
 	public void onInit() throws Exception {
-		ZookeeperConfiguration configuration = new ZookeeperConfiguration(this.zookeeperConnect);
-		configuration.setBufferSize(socketBufferSize);
-		configuration.setMaxWait(maxWait);
+		ZookeeperConfiguration configuration = new ZookeeperConfiguration(
+				new ZookeeperConnect(configurationProperties.getZkConnectionString()));
+		configuration.setBufferSize(configurationProperties.getSocketBufferSize());
+		configuration.setMaxWait(configurationProperties.getMaxWait());
 		DefaultConnectionFactory defaultConnectionFactory = new DefaultConnectionFactory(configuration);
 		defaultConnectionFactory.afterPropertiesSet();
 		this.connectionFactory = defaultConnectionFactory;
@@ -290,62 +240,6 @@ public class KafkaMessageChannelBinder
 		catch (UnsupportedEncodingException e) {
 			throw new AssertionError(e); // Can't happen
 		}
-	}
-
-	public void setReplicationFactor(int replicationFactor) {
-		this.replicationFactor = replicationFactor;
-	}
-
-	public void setRequiredAcks(int requiredAcks) {
-		this.requiredAcks = requiredAcks;
-	}
-
-	public void setQueueSize(int queueSize) {
-		this.queueSize = queueSize;
-	}
-
-	public void setFetchSize(int fetchSize) {
-		this.fetchSize = fetchSize;
-	}
-
-	public void setMinPartitionCount(int minPartitionCount) {
-		this.minPartitionCount = minPartitionCount;
-	}
-
-	public void setMaxWait(int maxWait) {
-		this.maxWait = maxWait;
-	}
-
-	public int getZkSessionTimeout() {
-		return this.zkSessionTimeout;
-	}
-
-	public void setZkSessionTimeout(int zkSessionTimeout) {
-		this.zkSessionTimeout = zkSessionTimeout;
-	}
-
-	public int getZkConnectionTimeout() {
-		return this.zkConnectionTimeout;
-	}
-
-	public void setZkConnectionTimeout(int zkConnectionTimeout) {
-		this.zkConnectionTimeout = zkConnectionTimeout;
-	}
-
-	public boolean isAutoCreateTopics() {
-		return autoCreateTopics;
-	}
-
-	public void setAutoCreateTopics(boolean autoCreateTopics) {
-		this.autoCreateTopics = autoCreateTopics;
-	}
-
-	public boolean isAutoAddPartitions() {
-		return autoAddPartitions;
-	}
-
-	public void setAutoAddPartitions(boolean autoAddPartitions) {
-		this.autoAddPartitions = autoAddPartitions;
 	}
 
 	@Override
@@ -403,9 +297,9 @@ public class KafkaMessageChannelBinder
 
 		if (properties.getPartitionCount() < partitions.size()) {
 			if (logger.isInfoEnabled()) {
-				logger.info("The `partitionCount` of the producer for topic " + name + " is " +
-						properties.getPartitionCount() + ", smaller than the actual partition count of " +
-						partitions.size() + " of the topic. The larger number will be used instead.");
+				logger.info("The `partitionCount` of the producer for topic " + name + " is "
+						+ properties.getPartitionCount() + ", smaller than the actual partition count of "
+						+ partitions.size() + " of the topic. The larger number will be used instead.");
 			}
 		}
 
@@ -417,11 +311,11 @@ public class KafkaMessageChannelBinder
 		producerMetadata.setCompressionType(properties.getExtension().getCompressionType());
 		producerMetadata.setBatchBytes(properties.getExtension().getBufferSize());
 		Properties additionalProps = new Properties();
-		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(requiredAcks));
+		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(configurationProperties.getRequiredAcks()));
 		additionalProps.put(ProducerConfig.LINGER_MS_CONFIG,
 				String.valueOf(properties.getExtension().getBatchTimeout()));
-		ProducerFactoryBean<byte[], byte[]> producerFB = new ProducerFactoryBean<>(producerMetadata, brokers,
-				additionalProps);
+		ProducerFactoryBean<byte[], byte[]> producerFB = new ProducerFactoryBean<>(producerMetadata,
+				configurationProperties.getKafkaConnectionString(), additionalProps);
 
 		try {
 			final ProducerConfiguration<byte[], byte[]> producerConfiguration = new ProducerConfiguration<>(
@@ -456,35 +350,39 @@ public class KafkaMessageChannelBinder
 	 */
 	private Collection<Partition> ensureTopicCreated(final String topicName, final int partitionCount) {
 
-		final ZkClient zkClient = new ZkClient(zkAddress, getZkSessionTimeout(), getZkConnectionTimeout(),
+		final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
 				ZKStringSerializer$.MODULE$);
 		try {
 			final Properties topicConfig = new Properties();
 			TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkClient);
 			if (topicMetadata.errorCode() == ErrorMapping.NoError()) {
-				// only consider minPartitionCount for resizing if autoAddPartitions is true
-				int effectivePartitionCount = isAutoAddPartitions() ? Math.max(minPartitionCount, partitionCount)
-						: partitionCount;
+				// only consider minPartitionCount for resizing if autoAddPartitions is
+				// true
+				int effectivePartitionCount = configurationProperties.isAutoAddPartitions()
+						? Math.max(configurationProperties.getMinPartitionCount(), partitionCount) : partitionCount;
 				if (topicMetadata.partitionsMetadata().size() < effectivePartitionCount) {
-					if (isAutoAddPartitions()) {
+					if (configurationProperties.isAutoAddPartitions()) {
 						AdminUtils.addPartitions(zkClient, topicName, effectivePartitionCount, null, false,
 								new Properties());
 					}
 					else {
 						int topicSize = topicMetadata.partitionsMetadata().size();
-						throw new BinderException("The number of expected partitions was: " + partitionCount
-								+ ", but " + topicSize + (topicSize > 1 ? " have " : " has ") + "been found instead." +
-								"Consider either increasing the partition count of the topic or enabling `autoAddPartitions`");
+						throw new BinderException("The number of expected partitions was: " + partitionCount + ", but "
+								+ topicSize + (topicSize > 1 ? " have " : " has ") + "been found instead."
+								+ "Consider either increasing the partition count of the topic or enabling `autoAddPartitions`");
 					}
 				}
 			}
 			else if (topicMetadata.errorCode() == ErrorMapping.UnknownTopicOrPartitionCode()) {
-				if (isAutoCreateTopics()) {
+				if (configurationProperties.isAutoCreateTopics()) {
 					Seq<Object> brokerList = ZkUtils.getSortedBrokerList(zkClient);
 					// always consider minPartitionCount for topic creation
-					int effectivePartitionCount = Math.max(this.minPartitionCount, partitionCount);
+					int effectivePartitionCount = Math.max(configurationProperties.getMinPartitionCount(),
+							partitionCount);
 					final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
-							.assignReplicasToBrokers(brokerList, effectivePartitionCount, replicationFactor, -1, -1);
+							.assignReplicasToBrokers(brokerList, effectivePartitionCount,
+									configurationProperties.getReplicationFactor(), -1, -1);
 					metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
 						@Override
 						public Object doWithRetry(RetryContext context) throws RuntimeException {
@@ -580,8 +478,8 @@ public class KafkaMessageChannelBinder
 			offsetManager.resetOffsets(listenedPartitions);
 		}
 		messageListenerContainer.setOffsetManager(offsetManager);
-		messageListenerContainer.setQueueSize(queueSize);
-		messageListenerContainer.setMaxFetch(fetchSize);
+		messageListenerContainer.setQueueSize(configurationProperties.getQueueSize());
+		messageListenerContainer.setMaxFetch(configurationProperties.getFetchSize());
 
 		int concurrency = Math.min(properties.getConcurrency(), listenedPartitions.size());
 		messageListenerContainer.setConcurrency(concurrency);
@@ -630,6 +528,7 @@ public class KafkaMessageChannelBinder
 				messageListenerContainer.setMessageListener(new AcknowledgingMessageListener() {
 					final AcknowledgingMessageListener originalMessageListener = (AcknowledgingMessageListener) messageListenerContainer
 							.getMessageListener();
+
 					@Override
 					public void onMessage(final KafkaMessage message, final Acknowledgment acknowledgment) {
 						retryTemplate.execute(new RetryCallback<Object, RuntimeException>() {
@@ -723,11 +622,11 @@ public class KafkaMessageChannelBinder
 						producerMetadata.setCompressionType(ProducerMetadata.CompressionType.none);
 						producerMetadata.setBatchBytes(16384);
 						Properties additionalProps = new Properties();
-						additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(requiredAcks));
-						additionalProps.put(ProducerConfig.LINGER_MS_CONFIG,
-								String.valueOf(0));
+						additionalProps.put(ProducerConfig.ACKS_CONFIG,
+								String.valueOf(configurationProperties.getRequiredAcks()));
+						additionalProps.put(ProducerConfig.LINGER_MS_CONFIG, String.valueOf(0));
 						ProducerFactoryBean<byte[], byte[]> producerFactoryBean = new ProducerFactoryBean<>(
-								producerMetadata, brokers, additionalProps);
+								producerMetadata, configurationProperties.getKafkaConnectionString(), additionalProps);
 						dlqProducer = producerFactoryBean.getObject();
 					}
 				}
@@ -742,15 +641,16 @@ public class KafkaMessageChannelBinder
 		try {
 
 			KafkaNativeOffsetManager kafkaOffsetManager = new KafkaNativeOffsetManager(connectionFactory,
-					zookeeperConnect, Collections.<Partition, Long>emptyMap());
+					new ZookeeperConnect(configurationProperties.getZkConnectionString()),
+					Collections.<Partition, Long>emptyMap());
 			kafkaOffsetManager.setConsumerId(group);
 			kafkaOffsetManager.setReferenceTimestamp(referencePoint);
 			kafkaOffsetManager.afterPropertiesSet();
 
 			WindowingOffsetManager windowingOffsetManager = new WindowingOffsetManager(kafkaOffsetManager);
-			windowingOffsetManager.setTimespan(offsetUpdateTimeWindow);
-			windowingOffsetManager.setCount(offsetUpdateCount);
-			windowingOffsetManager.setShutdownTimeout(offsetUpdateShutdownTimeout);
+			windowingOffsetManager.setTimespan(configurationProperties.getOffsetUpdateTimeWindow());
+			windowingOffsetManager.setCount(configurationProperties.getOffsetUpdateCount());
+			windowingOffsetManager.setShutdownTimeout(configurationProperties.getOffsetUpdateShutdownTimeout());
 
 			windowingOffsetManager.afterPropertiesSet();
 			return windowingOffsetManager;
@@ -759,7 +659,6 @@ public class KafkaMessageChannelBinder
 			throw new RuntimeException(e);
 		}
 	}
-
 
 	private String toDisplayString(String original, int maxCharacters) {
 		if (original.length() <= maxCharacters) {
@@ -880,8 +779,7 @@ public class KafkaMessageChannelBinder
 	}
 
 	public enum StartOffset {
-		earliest(OffsetRequest.EarliestTime()),
-		latest(OffsetRequest.LatestTime());
+		earliest(OffsetRequest.EarliestTime()), latest(OffsetRequest.LatestTime());
 
 		private final long referencePoint;
 

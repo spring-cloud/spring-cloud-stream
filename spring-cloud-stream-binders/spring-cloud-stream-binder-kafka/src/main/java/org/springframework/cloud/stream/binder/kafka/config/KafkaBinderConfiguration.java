@@ -31,7 +31,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.kafka.support.LoggingProducerListener;
 import org.springframework.integration.kafka.support.ProducerListener;
-import org.springframework.integration.kafka.support.ZookeeperConnect;
 
 /**
  * @author David Turanski
@@ -42,15 +41,15 @@ import org.springframework.integration.kafka.support.ZookeeperConnect;
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
-@EnableConfigurationProperties({KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class})
+@Import({ KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class })
+@EnableConfigurationProperties({ KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class })
 public class KafkaBinderConfiguration {
 
 	@Autowired
 	private Codec codec;
 
 	@Autowired
-	private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
+	private KafkaBinderConfigurationProperties configurationProperties;
 
 	@Autowired
 	private KafkaExtendedBindingProperties kafkaExtendedBindingProperties;
@@ -59,35 +58,9 @@ public class KafkaBinderConfiguration {
 	private ProducerListener producerListener;
 
 	@Bean
-	ZookeeperConnect zookeeperConnect() {
-		ZookeeperConnect zookeeperConnect = new ZookeeperConnect();
-		zookeeperConnect.setZkConnect(kafkaBinderConfigurationProperties.getZkConnectionString());
-		return zookeeperConnect;
-	}
-
-	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder() {
-		String[] headers = kafkaBinderConfigurationProperties.getHeaders();
-		String kafkaConnectionString = kafkaBinderConfigurationProperties.getKafkaConnectionString();
-		String zkConnectionString = kafkaBinderConfigurationProperties.getZkConnectionString();
-		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
-				zookeeperConnect(), kafkaConnectionString, zkConnectionString, headers);
+		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(configurationProperties);
 		kafkaMessageChannelBinder.setCodec(codec);
-		kafkaMessageChannelBinder.setOffsetUpdateTimeWindow(kafkaBinderConfigurationProperties.getOffsetUpdateTimeWindow());
-		kafkaMessageChannelBinder.setOffsetUpdateCount(kafkaBinderConfigurationProperties.getOffsetUpdateCount());
-		kafkaMessageChannelBinder.setOffsetUpdateShutdownTimeout(kafkaBinderConfigurationProperties.getOffsetUpdateShutdownTimeout());
-
-		kafkaMessageChannelBinder.setZkSessionTimeout(kafkaBinderConfigurationProperties.getZkSessionTimeout());
-		kafkaMessageChannelBinder.setZkConnectionTimeout(kafkaBinderConfigurationProperties.getZkConnectionTimeout());
-
-		kafkaMessageChannelBinder.setFetchSize(kafkaBinderConfigurationProperties.getFetchSize());
-		kafkaMessageChannelBinder.setMinPartitionCount(kafkaBinderConfigurationProperties.getMinPartitionCount());
-		kafkaMessageChannelBinder.setQueueSize(kafkaBinderConfigurationProperties.getQueueSize());
-		kafkaMessageChannelBinder.setReplicationFactor(kafkaBinderConfigurationProperties.getReplicationFactor());
-		kafkaMessageChannelBinder.setRequiredAcks(kafkaBinderConfigurationProperties.getRequiredAcks());
-		kafkaMessageChannelBinder.setMaxWait(kafkaBinderConfigurationProperties.getMaxWait());
-		kafkaMessageChannelBinder.setAutoCreateTopics(kafkaBinderConfigurationProperties.isAutoCreateTopics());
-		kafkaMessageChannelBinder.setAutoAddPartitions(kafkaBinderConfigurationProperties.isAutoAddPartitions());
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(kafkaExtendedBindingProperties);
 		return kafkaMessageChannelBinder;
@@ -101,6 +74,6 @@ public class KafkaBinderConfiguration {
 
 	@Bean
 	KafkaBinderHealthIndicator healthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder) {
-		return new KafkaBinderHealthIndicator(kafkaMessageChannelBinder);
+		return new KafkaBinderHealthIndicator(kafkaMessageChannelBinder, configurationProperties);
 	}
 }

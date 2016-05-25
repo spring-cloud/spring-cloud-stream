@@ -30,6 +30,7 @@ import scala.collection.Seq;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
 import org.springframework.integration.kafka.core.BrokerAddress;
 import org.springframework.integration.kafka.core.Partition;
 
@@ -42,16 +43,21 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 	private final KafkaMessageChannelBinder binder;
 
-	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder) {
+	private final KafkaBinderConfigurationProperties configurationProperties;
+
+	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder,
+			KafkaBinderConfigurationProperties configurationProperties) {
 		this.binder = binder;
+		this.configurationProperties = configurationProperties;
 	}
 
 	@Override
 	public Health health() {
 		ZkClient zkClient = null;
 		try {
-			zkClient = new ZkClient(binder.getZkAddress(), binder.getZkSessionTimeout(),
-					binder.getZkConnectionTimeout(), ZKStringSerializer$.MODULE$);
+			zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+					configurationProperties.getZkSessionTimeout(),
+					configurationProperties.getZkConnectionTimeout(), ZKStringSerializer$.MODULE$);
 			Set<String> brokersInClusterSet = new HashSet<>();
 			Seq<Broker> allBrokersInCluster = ZkUtils$.MODULE$.getAllBrokersInCluster(zkClient);
 			Collection<Broker> brokersInCluster = JavaConversions.asJavaCollection(allBrokersInCluster);

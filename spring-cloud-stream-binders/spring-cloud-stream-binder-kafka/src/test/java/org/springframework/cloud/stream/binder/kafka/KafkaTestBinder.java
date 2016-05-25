@@ -25,7 +25,6 @@ import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
-import org.springframework.cloud.stream.test.junit.kafka.KafkaTestSupport;
 import org.springframework.cloud.stream.test.junit.kafka.TestKafkaCluster;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.codec.Codec;
@@ -33,7 +32,6 @@ import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.kafka.support.LoggingProducerListener;
 import org.springframework.integration.kafka.support.ProducerListener;
-import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
 
 /**
@@ -48,21 +46,15 @@ import org.springframework.integration.tuple.TupleKryoRegistrar;
 public class KafkaTestBinder extends
 		AbstractTestBinder<KafkaMessageChannelBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
 
-	public KafkaTestBinder(KafkaTestSupport kafkaTestSupport, KafkaBinderConfigurationProperties binderConfiguration) {
+	public KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration) {
 		try {
-			ZookeeperConnect zookeeperConnect = new ZookeeperConnect();
-			zookeeperConnect.setZkConnect(kafkaTestSupport.getZkConnectString());
-			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(zookeeperConnect,
-					kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(binderConfiguration);
 			binder.setCodec(getCodec());
 			ProducerListener producerListener = new LoggingProducerListener();
 			binder.setProducerListener(producerListener);
 			GenericApplicationContext context = new GenericApplicationContext();
 			context.refresh();
 			binder.setApplicationContext(context);
-			binder.setFetchSize(binderConfiguration.getFetchSize());
-			binder.setMaxWait(binderConfiguration.getMaxWait());
-			binder.setMinPartitionCount(binderConfiguration.getMinPartitionCount());
 			binder.afterPropertiesSet();
 			this.setBinder(binder);
 		}

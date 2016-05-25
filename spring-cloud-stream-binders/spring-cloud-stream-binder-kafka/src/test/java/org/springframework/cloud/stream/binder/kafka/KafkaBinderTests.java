@@ -45,7 +45,6 @@ import org.springframework.integration.kafka.core.Partition;
 import org.springframework.integration.kafka.core.TopicNotFoundException;
 import org.springframework.integration.kafka.support.ProducerConfiguration;
 import org.springframework.integration.kafka.support.ProducerMetadata;
-import org.springframework.integration.kafka.support.ZookeeperConnect;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -97,9 +96,17 @@ public class KafkaBinderTests extends
 	@Override
 	protected KafkaTestBinder getBinder() {
 		if (binder == null) {
-			binder = new KafkaTestBinder(kafkaTestSupport, new KafkaBinderConfigurationProperties());
+			KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
+			binder = new KafkaTestBinder(binderConfiguration);
 		}
 		return binder;
+	}
+
+	private KafkaBinderConfigurationProperties createConfigurationProperties() {
+		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
+		binderConfiguration.setBrokers(kafkaTestSupport.getBrokerAddress());
+		binderConfiguration.setZkNodes(kafkaTestSupport.getZkConnectString());
+		return binderConfiguration;
 	}
 
 	@Override
@@ -216,9 +223,9 @@ public class KafkaBinderTests extends
 
 		byte[] ratherBigPayload = new byte[2048];
 		Arrays.fill(ratherBigPayload, (byte) 65);
-		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
+		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 		binderConfiguration.setMinPartitionCount(10);
-		KafkaTestBinder binder = new KafkaTestBinder(kafkaTestSupport, binderConfiguration);
+		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration);
 
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
@@ -247,10 +254,9 @@ public class KafkaBinderTests extends
 
 		byte[] ratherBigPayload = new byte[2048];
 		Arrays.fill(ratherBigPayload, (byte) 65);
-		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
-		binderConfiguration.setMinPartitionCount(5);
-		KafkaTestBinder binder = new KafkaTestBinder(kafkaTestSupport, binderConfiguration);
-
+		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
+		binderConfiguration.setMinPartitionCount(6);
+		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration);
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -269,7 +275,7 @@ public class KafkaBinderTests extends
 		assertArrayEquals(ratherBigPayload, (byte[]) inbound.getPayload());
 		Collection<Partition> partitions = binder.getCoreBinder().getConnectionFactory().getPartitions(
 				"foo" + uniqueBindingId + ".0");
-		assertThat(partitions, hasSize(5));
+		assertThat(partitions, hasSize(6));
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -279,9 +285,9 @@ public class KafkaBinderTests extends
 
 		byte[] ratherBigPayload = new byte[2048];
 		Arrays.fill(ratherBigPayload, (byte) 65);
-		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
-		binderConfiguration.setMinPartitionCount(5);
-		KafkaTestBinder binder = new KafkaTestBinder(kafkaTestSupport, binderConfiguration);
+		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
+		binderConfiguration.setMinPartitionCount(4);
+		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration);
 
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
@@ -309,8 +315,7 @@ public class KafkaBinderTests extends
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testDefaultConsumerStartsAtEarliest() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
-				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(createConfigurationProperties());
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.refresh();
 		binder.setApplicationContext(context);
@@ -406,8 +411,8 @@ public class KafkaBinderTests extends
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testResume() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
-				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.refresh();
 		binder.setApplicationContext(context);
@@ -444,8 +449,7 @@ public class KafkaBinderTests extends
 
 	@Test
 	public void testSyncProducerMetadata() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(new ZookeeperConnect(kafkaTestSupport.getZkConnectString()),
-				kafkaTestSupport.getBrokerAddress(), kafkaTestSupport.getZkConnectString());
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(createConfigurationProperties());
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.refresh();
 		binder.setApplicationContext(context);
@@ -467,12 +471,10 @@ public class KafkaBinderTests extends
 
 	@Test
 	public void testAutoCreateTopicsDisabledFailsIfTopicMissing() throws Exception {
-
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
-				kafkaTestSupport.getZkConnectString());
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setAutoCreateTopics(false);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
-		binder.setAutoCreateTopics(false);
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
@@ -508,12 +510,10 @@ public class KafkaBinderTests extends
 
 		String testTopicName = "existing"  + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 5, 1, new Properties());
-
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
-				kafkaTestSupport.getZkConnectString());
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setAutoCreateTopics(false);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
-		binder.setAutoCreateTopics(false);
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
@@ -528,13 +528,10 @@ public class KafkaBinderTests extends
 
 		String testTopicName = "existing"  + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 1, 1, new Properties());
-
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
-				kafkaTestSupport.getZkConnectString());
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setAutoAddPartitions(false);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
-		binder.setAutoAddPartitions(false);
-
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
@@ -558,12 +555,10 @@ public class KafkaBinderTests extends
 
 		String testTopicName = "existing"  + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 6, 1, new Properties());
-
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
-				kafkaTestSupport.getZkConnectString());
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setAutoAddPartitions(false);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
-		binder.setAutoAddPartitions(false);
 		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
 		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
 		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
@@ -594,11 +589,10 @@ public class KafkaBinderTests extends
 
 	@Test
 	public void testAutoCreateTopicsEnabledSucceeds() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
-				kafkaTestSupport.getZkConnectString());
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setAutoCreateTopics(true);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
-		binder.setAutoCreateTopics(true);
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
@@ -619,13 +613,10 @@ public class KafkaBinderTests extends
 	public void testPartitionCountNotReduced() throws Exception {
 		String testTopicName = "existing"  + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 6, 1, new Properties());
-
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
-				kafkaTestSupport.getZkConnectString());
-
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setAutoAddPartitions(true);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
-		binder.setAutoAddPartitions(true);
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
@@ -647,15 +638,11 @@ public class KafkaBinderTests extends
 	public void testPartitionCountIncreasedIfAutoAddPartitionsSet() throws Exception {
 		String testTopicName = "existing"  + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 1, 1, new Properties());
-
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-				new ZookeeperConnect(kafkaTestSupport.getZkConnectString()), kafkaTestSupport.getBrokerAddress(),
-				kafkaTestSupport.getZkConnectString());
-
-		binder.setMinPartitionCount(6);
-
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setMinPartitionCount(6);
+		configurationProperties.setAutoAddPartitions(true);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
-		binder.setAutoAddPartitions(true);
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
