@@ -1136,6 +1136,13 @@ autoCommitOffset::
 If set to `false`, an `Acknowledgment` header will be available in the message headers for late acknowledgment.
 +
 Default: `true`.
+autoCommitOnError::
+  Effective only if `autoCommitOffset` is set to `true`.
+If set to `false` it suppresses auto-commits for messages that result in errors, and will commit only for successful messages, allows a stream to automatically replay from the last successfully processed message, in case of persistent failures.
+If set to `true`, it will always auto-commit (if auto-commit is enabled).
+If not set (default), it effectively has the same value `enableDlq`, auto-committing erroneous messages if they are sent to a DLQ, and not committing them otherwise.
++
+Default: not set.
 resetOffsets::
   Whether to reset offsets on the consumer to the value provided by `startOffset`.
 +

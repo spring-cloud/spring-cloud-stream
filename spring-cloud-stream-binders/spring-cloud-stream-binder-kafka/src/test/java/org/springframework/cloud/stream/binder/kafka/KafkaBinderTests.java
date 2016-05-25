@@ -18,8 +18,11 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import kafka.admin.AdminUtils;
 import kafka.api.TopicMetadata;
@@ -43,6 +46,7 @@ import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.kafka.core.Partition;
 import org.springframework.integration.kafka.core.TopicNotFoundException;
+import org.springframework.integration.kafka.support.KafkaHeaders;
 import org.springframework.integration.kafka.support.ProducerConfiguration;
 import org.springframework.integration.kafka.support.ProducerMetadata;
 import org.springframework.messaging.Message;
@@ -145,7 +149,6 @@ public class KafkaBinderTests extends
 	@Test
 	public void testDlqAndRetry() {
 		KafkaTestBinder binder = getBinder();
-
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		DirectChannel moduleInputChannel = new DirectChannel();
 		QueueChannel  dlqChannel = new QueueChannel();
@@ -179,6 +182,115 @@ public class KafkaBinderTests extends
 		assertEquals(testMessagePayload, receivedMessage.getPayload());
 		assertThat(handler.getInvocationCount(), equalTo(consumerProperties.getMaxAttempts()));
 		dlqConsumerBinding.unbind();
+		consumerBinding.unbind();
+		producerBinding.unbind();
+	}
+
+	@Test
+	public void testDefaultAutoCommitOnErrorWithoutDlq() throws Exception {
+		KafkaTestBinder binder = getBinder();
+		DirectChannel moduleOutputChannel = new DirectChannel();
+		DirectChannel moduleInputChannel = new DirectChannel();
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.setPartitionCount(10);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setMaxAttempts(1);
+		consumerProperties.setBackOffInitialInterval(100);
+		consumerProperties.setBackOffMaxInterval(150);
+		long uniqueBindingId = System.currentTimeMillis();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("retryTest." + uniqueBindingId + ".0",
+				moduleOutputChannel, producerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0",
+				"testGroup", moduleInputChannel, consumerProperties);
+
+		String testMessagePayload = "test." + UUID.randomUUID().toString();
+		Message<String> testMessage = MessageBuilder.withPayload(testMessagePayload).build();
+		moduleOutputChannel.send(testMessage);
+
+		assertTrue(handler.getLatch().await((int) (timeoutMultiplier * 1000), TimeUnit.MILLISECONDS));
+		// first attempt fails
+		assertThat(handler.getReceivedMessages().entrySet(), hasSize(1));
+		Message<?> receivedMessage = handler.getReceivedMessages().entrySet().iterator().next().getValue();
+		assertNotNull(receivedMessage);
+		assertEquals(testMessagePayload, receivedMessage.getPayload());
+		assertThat(handler.getInvocationCount(), equalTo(consumerProperties.getMaxAttempts()));
+		consumerBinding.unbind();
+
+		// on the second attempt the message is redelivered
+		QueueChannel successfulInputChannel = new QueueChannel();
+		consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0", "testGroup",
+				successfulInputChannel, consumerProperties);
+		String testMessage2Payload = "test." + UUID.randomUUID().toString();
+		Message<String> testMessage2 = MessageBuilder.withPayload(testMessage2Payload).build();
+		moduleOutputChannel.send(testMessage2);
+
+		Message<?> firstReceived = receive(successfulInputChannel);
+		assertEquals(testMessagePayload, firstReceived.getPayload());
+		Message<?> secondReceived = receive(successfulInputChannel);
+		assertEquals(testMessage2Payload, secondReceived.getPayload());
+		consumerBinding.unbind();
+		producerBinding.unbind();
+	}
+
+	@Test
+	public void testDefaultAutoCommitOnErrorWithDlq() throws Exception {
+		KafkaTestBinder binder = getBinder();
+		DirectChannel moduleOutputChannel = new DirectChannel();
+		DirectChannel moduleInputChannel = new DirectChannel();
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.setPartitionCount(10);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setMaxAttempts(3);
+		consumerProperties.setBackOffInitialInterval(100);
+		consumerProperties.setBackOffMaxInterval(150);
+		consumerProperties.getExtension().setEnableDlq(true);
+		long uniqueBindingId = System.currentTimeMillis();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("retryTest." + uniqueBindingId + ".0",
+				moduleOutputChannel, producerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0",
+				"testGroup", moduleInputChannel, consumerProperties);
+
+		String testMessagePayload = "test." + UUID.randomUUID().toString();
+		Message<String> testMessage = MessageBuilder.withPayload(testMessagePayload).build();
+		moduleOutputChannel.send(testMessage);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
+		dlqConsumerProperties.setMaxAttempts(1);
+
+		QueueChannel dlqChannel = new QueueChannel();
+		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
+				"error.retryTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel, dlqConsumerProperties);
+
+		Message<?> dlqMessage = receive(dlqChannel, 3);
+		assertNotNull(dlqMessage);
+		assertEquals(testMessagePayload, dlqMessage.getPayload());
+
+		// first attempt fails
+		assertThat(handler.getReceivedMessages().entrySet(), hasSize(1));
+		Message<?> handledMessage = handler.getReceivedMessages().entrySet().iterator().next().getValue();
+		assertNotNull(handledMessage);
+		assertEquals(testMessagePayload, handledMessage.getPayload());
+		assertThat(handler.getInvocationCount(), equalTo(consumerProperties.getMaxAttempts()));
+
+		dlqConsumerBinding.unbind();
+		consumerBinding.unbind();
+
+
+		// on the second attempt the message is not redelivered because the DLQ is set
+		QueueChannel successfulInputChannel = new QueueChannel();
+		consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0", "testGroup",
+				successfulInputChannel, consumerProperties);
+		String testMessage2Payload = "test." + UUID.randomUUID().toString();
+		Message<String> testMessage2 = MessageBuilder.withPayload(testMessage2Payload).build();
+		moduleOutputChannel.send(testMessage2);
+
+		Message<?> receivedMessage = receive(successfulInputChannel);
+		assertEquals(testMessage2Payload, receivedMessage.getPayload());
+
 		consumerBinding.unbind();
 		producerBinding.unbind();
 	}
@@ -454,9 +566,7 @@ public class KafkaBinderTests extends
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
-
 		DirectChannel output = new DirectChannel();
-
 		String testTopicName = UUID.randomUUID().toString();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.getExtension().setSync(true);
@@ -507,7 +617,6 @@ public class KafkaBinderTests extends
 
 	@Test
 	public void testAutoConfigureTopicsDisabledSucceedsIfTopicExisting() throws Exception {
-
 		String testTopicName = "existing"  + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 5, 1, new Properties());
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
@@ -525,7 +634,6 @@ public class KafkaBinderTests extends
 
 	@Test
 	public void testAutoAddPartitionsDisabledFailsIfTopicUnderpartitioned() throws Exception {
-
 		String testTopicName = "existing"  + System.currentTimeMillis();
 		AdminUtils.createTopic(kafkaTestSupport.getZkClient(), testTopicName, 1, 1, new Properties());
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
@@ -664,17 +772,40 @@ public class KafkaBinderTests extends
 
 		private int invocationCount;
 
+		private final LinkedHashMap<Long, Message<?>> receivedMessages = new LinkedHashMap<>();
+
+		private final CountDownLatch latch;
+
+		private FailingInvocationCountingMessageHandler(int latchSize) {
+			latch = new CountDownLatch(latchSize);
+		}
+
 		private FailingInvocationCountingMessageHandler() {
+			this(1);
 		}
 
 		@Override
 		public void handleMessage(Message<?> message) throws MessagingException {
 			invocationCount++;
+			Long offset = message.getHeaders().get(KafkaHeaders.OFFSET, Long.class);
+			// using the offset as key allows to ensure that we don't store duplicate messages on retry
+			if (!receivedMessages.containsKey(offset)) {
+				receivedMessages.put(offset, message);
+				latch.countDown();
+			}
 			throw new RuntimeException();
+		}
+
+		public LinkedHashMap<Long, Message<?>> getReceivedMessages() {
+			return receivedMessages;
 		}
 
 		public int getInvocationCount() {
 			return invocationCount;
+		}
+
+		public CountDownLatch getLatch() {
+			return latch;
 		}
 	}
 }
