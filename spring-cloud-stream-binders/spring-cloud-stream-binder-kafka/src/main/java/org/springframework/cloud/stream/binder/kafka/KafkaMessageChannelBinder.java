@@ -480,6 +480,10 @@ public class KafkaMessageChannelBinder extends
 		messageListenerContainer.setOffsetManager(offsetManager);
 		messageListenerContainer.setQueueSize(configurationProperties.getQueueSize());
 		messageListenerContainer.setMaxFetch(configurationProperties.getFetchSize());
+		boolean autoCommitOnError = properties.getExtension().getAutoCommitOnError() != null
+				? properties.getExtension().getAutoCommitOnError()
+				: properties.getExtension().isAutoCommitOffset() && properties.getExtension().isEnableDlq();
+		messageListenerContainer.setAutoCommitOnError(autoCommitOnError);
 
 		int concurrency = Math.min(properties.getConcurrency(), listenedPartitions.size());
 		messageListenerContainer.setConcurrency(concurrency);
