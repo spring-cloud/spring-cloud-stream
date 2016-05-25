@@ -27,11 +27,11 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
 
-	private String[] zkNodes = new String[] {"localhost"};
+	private String[] zkNodes = new String[] { "localhost" };
 
 	private String defaultZkPort = "2181";
 
-	private String[] brokers = new String[] {"localhost"};
+	private String[] brokers = new String[] { "localhost" };
 
 	private String defaultBrokerPort = "9092";
 
@@ -48,6 +48,8 @@ public class KafkaBinderConfigurationProperties {
 	private boolean autoCreateTopics = true;
 
 	private boolean autoAddPartitions;
+
+	private int socketBufferSize = 2097152;
 
 	/**
 	 * ZK session timeout in milliseconds.
@@ -97,7 +99,7 @@ public class KafkaBinderConfigurationProperties {
 		return zkNodes;
 	}
 
-	public void setZkNodes(String[] zkNodes) {
+	public void setZkNodes(String... zkNodes) {
 		this.zkNodes = zkNodes;
 	}
 
@@ -109,7 +111,7 @@ public class KafkaBinderConfigurationProperties {
 		return brokers;
 	}
 
-	public void setBrokers(String[] brokers) {
+	public void setBrokers(String... brokers) {
 		this.brokers = brokers;
 	}
 
@@ -117,7 +119,7 @@ public class KafkaBinderConfigurationProperties {
 		this.defaultBrokerPort = defaultBrokerPort;
 	}
 
-	public void setHeaders(String[] headers) {
+	public void setHeaders(String... headers) {
 		this.headers = headers;
 	}
 
@@ -229,5 +231,13 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setAutoAddPartitions(boolean autoAddPartitions) {
 		this.autoAddPartitions = autoAddPartitions;
+	}
+
+	public int getSocketBufferSize() {
+		return socketBufferSize;
+	}
+
+	public void setSocketBufferSize(int socketBufferSize) {
+		this.socketBufferSize = socketBufferSize;
 	}
 }
