@@ -143,8 +143,8 @@ When doing this, different instances of an application are placed in a competing
 
 Spring Cloud Stream models this behavior through the concept of a _consumer group_.
 (Spring Cloud Stream consumer groups are similar to and inspired by Kafka consumer groups.)
-Each consumer binding can use the `spring.cloud.stream.bindings.input.group` property to specify a group name.
-For the consumers shown in the following figure, this property would be set as `spring.cloud.stream.bindings.input.group=hdfsWrite` or `spring.cloud.stream.bindings.input.group=average`.
+Each consumer binding can use the `spring.cloud.stream.bindings.<channelName>.group` property to specify a group name.
+For the consumers shown in the following figure, this property would be set as `spring.cloud.stream.bindings.<channelName>.group=hdfsWrite` or `spring.cloud.stream.bindings.<channelName>.group=average`.
 
 .Spring Cloud Stream Consumer Groups
 image::SCSt-groups.png[width=300,scaledwidth="50%"]
@@ -713,7 +713,7 @@ Similar files exist for the other provided binder implementations (e.g., Kafka),
 The key represents an identifying name for the binder implementation, whereas the value is a comma-separated list of configuration classes that each contain one and only one bean definition of type `org.springframework.cloud.stream.binder.Binder`.
 
 Binder selection can either be performed globally, using the `spring.cloud.stream.defaultBinder` property (e.g., `spring.cloud.stream.defaultBinder=rabbit`) or individually, by configuring the binder on each channel binding.
-For instance, a processor application which reads from Kafka and writes to RabbitMQ can specify the following configuration:
+For instance, a processor application (that has channels with the names `input` and `output` for read/write respectively) which reads from Kafka and writes to RabbitMQ can specify the following configuration:
 
 ----
 spring.cloud.stream.bindings.input.binder=kafka
@@ -1323,13 +1323,13 @@ You can achieve this scenario by correlating the input and output destinations o
 
 Supposing that a design calls for the Time Source application to send data to the Log Sink application, you can use a common destination named `ticktock` for bindings within both applications.
 
-Time Source will set the following property:
+Time Source (that has the channel name `output`) will set the following property:
 
 ----
 spring.cloud.stream.bindings.output.destination=ticktock
 ----
 
-Log Sink will set the following property:
+Log Sink (that has the channel name `input`) will set the following property:
 
 ----
 spring.cloud.stream.bindings.input.destination=ticktock
@@ -1386,7 +1386,7 @@ If a topic already exists with a larger number of partitions than the maximum of
 
 ===== Configuring Input Bindings for Partitioning
 
-An input binding is configured to receive partitioned data by setting its `partitioned` property, as well as the `instanceIndex` and `instanceCount` properties on the application itself, as in the following example:
+An input binding (with the channel name `input`) is configured to receive partitioned data by setting its `partitioned` property, as well as the `instanceIndex` and `instanceCount` properties on the application itself, as in the following example:
 
 ----
 spring.cloud.stream.bindings.input.consumer.partitioned=true
