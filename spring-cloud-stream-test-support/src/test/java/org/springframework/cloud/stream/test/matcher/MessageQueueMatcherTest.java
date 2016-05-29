@@ -27,8 +27,8 @@ import org.junit.Test;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests for MessageQueueMatcher.
@@ -44,71 +44,64 @@ public class MessageQueueMatcherTest {
 	@Test
 	public void testTimeout() {
 		Message<?> msg = new GenericMessage<>("hello");
-		MessageQueueMatcher<?> matcher = MessageQueueMatcher.receivesMessageThat(is(msg)).within(2, TimeUnit.MILLISECONDS);
+		MessageQueueMatcher<?> matcher = MessageQueueMatcher.receivesMessageThat(is(msg)).within(2,
+				TimeUnit.MILLISECONDS);
 
-		boolean result = matcher.matches(queue);
-		assertThat(result, is(false));
-		matcher.describeMismatch(queue, description);
-		assertThat(description.toString(), is("timed out after 2 milliseconds"));
+		boolean result = matcher.matches(this.queue);
+		assertThat(result).isFalse();
+		matcher.describeMismatch(this.queue, this.description);
+		assertThat(this.description.toString()).isEqualTo("timed out after 2 milliseconds");
 	}
 
 	@Test
 	public void testMatch() {
 		Message<?> msg = new GenericMessage<>("hello");
 		MessageQueueMatcher<?> matcher = MessageQueueMatcher.receivesMessageThat(is(msg));
-
-		queue.offer(msg);
-
-		boolean result = matcher.matches(queue);
-		assertThat(result, is(true));
+		this.queue.offer(msg);
+		boolean result = matcher.matches(this.queue);
+		assertThat(result).isTrue();
 	}
 
 	@Test
-	public void testMisMatch() {
+	public void testMismatch() {
 		Message<?> msg = new GenericMessage<>("hello");
 		Message<?> other = new GenericMessage<>("world");
-
 		MessageQueueMatcher<?> matcher = MessageQueueMatcher.receivesMessageThat(is(msg));
-
-		queue.offer(other);
-
-		boolean result = matcher.matches(queue);
-		assertThat(result, is(false));
-		matcher.describeMismatch(queue, description);
-		assertThat(description.toString(), is("received: <" + other + ">"));
+		this.queue.offer(other);
+		boolean result = matcher.matches(this.queue);
+		assertThat(result).isFalse();
+		matcher.describeMismatch(this.queue, this.description);
+		assertThat(this.description.toString()).isEqualTo(("received: <" + other + ">"));
 	}
 
 	@Test
 	public void testExtractor() {
 		Message<?> msg = new GenericMessage<>("hello", Collections.singletonMap("foo", (Object) "bar"));
 
-		MessageQueueMatcher.Extractor<Message<?>, String> headerExtractor = new MessageQueueMatcher.Extractor<Message<?>, String>("whose 'foo' header") {
+		MessageQueueMatcher.Extractor<Message<?>, String> headerExtractor = new MessageQueueMatcher.Extractor<Message<?>, String>(
+				"whose 'foo' header") {
 			@Override
 			public String apply(Message<?> message) {
 				return message.getHeaders().get("foo", String.class);
 			}
 		};
-
 		MessageQueueMatcher<?> matcher = new MessageQueueMatcher<>(is("bar"), -1, null, headerExtractor);
-		queue.offer(msg);
-		boolean result = matcher.matches(queue);
-		assertThat(result, is(true));
-
+		this.queue.offer(msg);
+		boolean result = matcher.matches(this.queue);
+		assertThat(result);
 		matcher = new MessageQueueMatcher<>(is("wizz"), -1, null, headerExtractor);
-		queue.offer(msg);
-		result = matcher.matches(queue);
-		assertThat(result, is(false));
-		matcher.describeMismatch(queue, description);
-		assertThat(description.toString(), is("received: \"bar\""));
+		this.queue.offer(msg);
+		result = matcher.matches(this.queue);
+		assertThat(result).isFalse();
+		matcher.describeMismatch(this.queue, this.description);
+		assertThat(this.description.toString()).isEqualTo(("received: \"bar\""));
 	}
 
 	@Test
 	public void testDescription() {
 		Message<?> msg = new GenericMessage<>("hello");
-
 		MessageQueueMatcher<?> matcher = MessageQueueMatcher.receivesMessageThat(is(msg));
-
-		description.appendDescriptionOf(matcher);
-		assertThat(description.toString(), is("Channel to receive a message that is <" + msg + ">"));
+		this.description.appendDescriptionOf(matcher);
+		assertThat(this.description.toString()).isEqualTo(("Channel to receive a message that is <" + msg + ">"));
 	}
 }

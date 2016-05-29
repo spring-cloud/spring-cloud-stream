@@ -29,10 +29,7 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.MessageChannel;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
@@ -49,8 +46,8 @@ public class ModuleAggregationTest {
 						.run();
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
 		BindableChannelFactory channelFactory = aggregatedApplicationContext.getBean(BindableChannelFactory.class);
-		assertNotNull(channelFactory);
-		assertThat(sharedChannelRegistry.getAll().keySet(), hasSize(2));
+		assertThat(channelFactory).isNotNull();
+		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();
 	}
 
@@ -67,13 +64,13 @@ public class ModuleAggregationTest {
 		BindableChannelFactory channelFactory
 				= aggregatedApplicationContext.getBean(BindableChannelFactory.class);
 		Object fooOutput = sharedChannelRegistry.get("foo.output");
-		assertNotNull(fooOutput);
-		assertThat(fooOutput, instanceOf(MessageChannel.class));
+		assertThat(fooOutput).isNotNull();
+		assertThat(fooOutput).isInstanceOf(MessageChannel.class);
 		Object barInput = sharedChannelRegistry.get("bar.input");
-		assertNotNull(barInput);
-		assertThat(barInput, instanceOf(MessageChannel.class));
-		assertNotNull(channelFactory);
-		assertThat(sharedChannelRegistry.getAll().keySet(), hasSize(2));
+		assertThat(barInput).isNotNull();
+		assertThat(barInput).isInstanceOf(MessageChannel.class);
+		assertThat(channelFactory).isNotNull();
+		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();
 	}
 

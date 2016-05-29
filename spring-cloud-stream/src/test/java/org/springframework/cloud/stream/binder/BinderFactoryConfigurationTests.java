@@ -38,17 +38,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.util.ObjectUtils;
 
-import static org.hamcrest.Matchers.arrayContaining;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -59,16 +49,12 @@ public class BinderFactoryConfigurationTests {
 	@Test
 	public void loadBinderTypeRegistry() throws Exception {
 		try {
-			ConfigurableApplicationContext context = createBinderTestContext(
-					new String[] {});
+			createBinderTestContext(new String[] {});
 			fail();
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getMessage(),
-					containsString(
-							"Cannot create binder factory, no `META-INF/spring.binders` "
-									+
-					"resources found on the classpath"));
+			assertThat(e.getMessage()).contains(
+					"Cannot create binder factory, no `META-INF/spring.binders` resources found on the classpath");
 		}
 	}
 
@@ -78,19 +64,19 @@ public class BinderFactoryConfigurationTests {
 				new String[] {"binder1"});
 
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
-		assertThat(binderTypeRegistry, notNullValue());
-		assertThat(binderTypeRegistry.getAll().size(), equalTo(1));
-		assertThat(binderTypeRegistry.getAll(), hasKey("binder1"));
-		assertThat(binderTypeRegistry.get("binder1"),
-				hasProperty("configurationClasses", arrayContaining(StubBinder1Configuration.class)));
+		assertThat(binderTypeRegistry).isNotNull();
+		assertThat(binderTypeRegistry.getAll()).hasSize(1);
+		assertThat(binderTypeRegistry.getAll()).containsKey("binder1");
+		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
+				.containsExactlyInAnyOrder(StubBinder1Configuration.class);
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
 		Binder binder1 = binderFactory.getBinder("binder1");
-		assertThat(binder1, instanceOf(StubBinder1.class));
+		assertThat(binder1).isInstanceOf(StubBinder1.class);
 
 		Binder defaultBinder = binderFactory.getBinder(null);
-		assertThat(defaultBinder, is(binder1));
+		assertThat(defaultBinder).isSameAs(binder1);
 	}
 
 	@Test
@@ -101,7 +87,7 @@ public class BinderFactoryConfigurationTests {
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
 		Binder binder1 = binderFactory.getBinder("binder1");
-		assertThat(((StubBinder1) binder1).getName(), is(equalTo("foo")));
+		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
 	}
 
 	@Test
@@ -114,7 +100,7 @@ public class BinderFactoryConfigurationTests {
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
 		Binder binder1 = binderFactory.getBinder("custom");
-		assertThat(((StubBinder1) binder1).getName(), is(equalTo("foo")));
+		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
 	}
 
 	@Test
@@ -128,23 +114,20 @@ public class BinderFactoryConfigurationTests {
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
 		Binder binder1 = binderFactory.getBinder("custom");
-		assertThat(((StubBinder1) binder1).getName(), isEmptyOrNullString());
+		assertThat(binder1).hasFieldOrPropertyWithValue("name", null);
 	}
 
 	@Test
 	public void loadBinderTypeRegistryWithTwoBinders() throws Exception {
-
-		ConfigurableApplicationContext context = createBinderTestContext(
-				new String[] { "binder1", "binder2" });
+		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" });
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
-		assertThat(binderTypeRegistry, notNullValue());
-		assertThat(binderTypeRegistry.getAll().size(), equalTo(2));
-		assertThat(binderTypeRegistry.getAll().keySet(), containsInAnyOrder("binder1", "binder2"));
-		assertThat(binderTypeRegistry.get("binder1"),
-				hasProperty("configurationClasses", arrayContaining(StubBinder1Configuration.class)));
-		assertThat(binderTypeRegistry.get("binder2"),
-				hasProperty("configurationClasses", arrayContaining(StubBinder2ConfigurationA.class,
-						StubBinder2ConfigurationB.class)));
+		assertThat(binderTypeRegistry).isNotNull();
+		assertThat(binderTypeRegistry.getAll()).hasSize(2);
+		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2");
+		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
+				.containsExactly(StubBinder1Configuration.class);
+		assertThat((Class[]) binderTypeRegistry.get("binder2").getConfigurationClasses())
+				.containsExactlyInAnyOrder(StubBinder2ConfigurationA.class, StubBinder2ConfigurationB.class);
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
@@ -153,15 +136,15 @@ public class BinderFactoryConfigurationTests {
 			fail();
 		}
 		catch (Exception e) {
-			assertThat(e, instanceOf(IllegalStateException.class));
-			assertThat(e.getMessage(), containsString("A default binder has been requested, but there is more than " +
-					"one binder available:"));
+			assertThat(e).isInstanceOf(IllegalStateException.class);
+			assertThat(e.getMessage()).contains(
+					"A default binder has been requested, but there is more than one binder available:");
 		}
 
 		Binder binder1 = binderFactory.getBinder("binder1");
-		assertThat(binder1, instanceOf(StubBinder1.class));
+		assertThat(binder1).isInstanceOf(StubBinder1.class);
 		Binder binder2 = binderFactory.getBinder("binder2");
-		assertThat(binder2, instanceOf(StubBinder2.class));
+		assertThat(binder2).isInstanceOf(StubBinder2.class);
 	}
 
 	@Test
@@ -172,27 +155,26 @@ public class BinderFactoryConfigurationTests {
 				new String[] { "binder1", "binder2" },
 				"spring.cloud.stream.defaultBinder:binder2");
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
-		assertThat(binderTypeRegistry, notNullValue());
-		assertThat(binderTypeRegistry.getAll().size(), equalTo(2));
-		assertThat(binderTypeRegistry.getAll().keySet(), containsInAnyOrder("binder1", "binder2"));
-		assertThat(binderTypeRegistry.get("binder1"),
-				hasProperty("configurationClasses", arrayContaining(StubBinder1Configuration.class)));
-		assertThat(binderTypeRegistry.get("binder2"),
-				hasProperty("configurationClasses", arrayContaining(StubBinder2ConfigurationA.class,
-						StubBinder2ConfigurationB.class)));
+		assertThat(binderTypeRegistry).isNotNull();
+		assertThat(binderTypeRegistry.getAll()).hasSize(2);
+		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2");
+		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
+				.containsExactlyInAnyOrder(StubBinder1Configuration.class);
+		assertThat((Class[]) binderTypeRegistry.get("binder2").getConfigurationClasses())
+				.containsExactlyInAnyOrder(StubBinder2ConfigurationA.class, StubBinder2ConfigurationB.class);
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
 		Binder binder1 = binderFactory.getBinder("binder1");
-		assertThat(binder1, instanceOf(StubBinder1.class));
+		assertThat(binder1).isInstanceOf(StubBinder1.class);
 		Binder binder2 = binderFactory.getBinder("binder2");
-		assertThat(binder2, instanceOf(StubBinder2.class));
+		assertThat(binder2).isInstanceOf(StubBinder2.class);
 
 		Binder defaultBinder = binderFactory.getBinder(null);
-		assertThat(defaultBinder, is(binder2));
+		assertThat(defaultBinder).isSameAs(binder2);
 	}
 
-	public static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
+	private static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
 			String... properties) throws IOException {
 		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ?
 				new URL[0] : new URL[additionalClasspathDirectories.length];

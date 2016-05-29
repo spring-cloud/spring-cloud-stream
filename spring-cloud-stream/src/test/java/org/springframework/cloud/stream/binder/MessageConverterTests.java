@@ -23,10 +23,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
@@ -41,14 +38,14 @@ public class MessageConverterTests {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes()).setHeader("foo", "bar")
 				.setHeader("baz", "quxx").build();
 		byte[] embedded = converter.embedHeaders(new MessageValues(message), "foo", "baz");
-		assertEquals(0xff, embedded[0] & 0xff);
-		assertEquals("\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0006\"quxx\"Hello",
-				new String(embedded).substring(1));
+		assertThat(embedded[0] & 0xff).isEqualTo(0xff);
+		assertThat(new String(embedded).substring(1)).isEqualTo(
+				"\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0006\"quxx\"Hello");
 
 		MessageValues extracted = converter.extractHeaders(MessageBuilder.withPayload(embedded).build(), false);
-		assertEquals("Hello", new String((byte[]) extracted.getPayload()));
-		assertEquals("bar", extracted.get("foo"));
-		assertEquals("quxx", extracted.get("baz"));
+		assertThat(new String((byte[]) extracted.getPayload())).isEqualTo("Hello");
+		assertThat(extracted.get("foo")).isEqualTo("bar");
+		assertThat(extracted.get("baz")).isEqualTo("quxx");
 	}
 
 	@Test
@@ -57,14 +54,14 @@ public class MessageConverterTests {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes()).setHeader("foo", "bar")
 				.setHeader("baz", "ØØØØØØØØ").build();
 		byte[] embedded = converter.embedHeaders(new MessageValues(message), "foo", "baz");
-		assertEquals(0xff, embedded[0] & 0xff);
-		assertEquals("\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0012\"ØØØØØØØØ\"Hello",
-				new String(embedded, "UTF-8").substring(1));
+		assertThat(embedded[0] & 0xff).isEqualTo(0xff);
+		assertThat(new String(embedded, "UTF-8").substring(1)).isEqualTo(
+				"\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0012\"ØØØØØØØØ\"Hello");
 
 		MessageValues extracted = converter.extractHeaders(MessageBuilder.withPayload(embedded).build(), false);
-		assertEquals("Hello", new String((byte[]) extracted.getPayload()));
-		assertEquals("bar", extracted.get("foo"));
-		assertEquals("ØØØØØØØØ", extracted.get("baz"));
+		assertThat(new String((byte[]) extracted.getPayload())).isEqualTo("Hello");
+		assertThat(extracted.get("foo")).isEqualTo("bar");
+		assertThat(extracted.get("baz")).isEqualTo("ØØØØØØØØ");
 	}
 
 	@Test
@@ -72,19 +69,19 @@ public class MessageConverterTests {
 		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes()).setHeader("foo", "bar").build();
 		byte[] embedded = converter.embedHeaders(new MessageValues(message), "foo", "baz");
-		assertEquals(0xff, embedded[0] & 0xff);
-		assertEquals("\u0001\u0003foo\u0000\u0000\u0000\u0005\"bar\"Hello", new String(embedded).substring(1));
+		assertThat(embedded[0] & 0xff).isEqualTo(0xff);
+		assertThat(new String(embedded).substring(1)).isEqualTo("\u0001\u0003foo\u0000\u0000\u0000\u0005\"bar\"Hello");
 	}
 
 	@Test
 	public void testCanDecodeOldFormat() throws Exception {
 		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
 		byte[] bytes = "\u0002\u0003foo\u0003bar\u0003baz\u0004quxxHello".getBytes("UTF-8");
-		Message<byte[]> message = new GenericMessage<byte[]>(bytes);
+		Message<byte[]> message = new GenericMessage<>(bytes);
 		MessageValues extracted = converter.extractHeaders(message, false);
-		assertEquals("Hello", new String((byte[]) extracted.getPayload()));
-		assertEquals("bar", extracted.get("foo"));
-		assertEquals("quxx", extracted.get("baz"));
+		assertThat(new String((byte[]) extracted.getPayload())).isEqualTo("Hello");
+		assertThat(extracted.get("foo")).isEqualTo("bar");
+		assertThat(extracted.get("baz")).isEqualTo("quxx");
 	}
 
 	@Test
@@ -98,8 +95,8 @@ public class MessageConverterTests {
 		}
 		catch (Exception e) {
 			String s = EmbeddedHeadersMessageConverter.decodeExceptionMessage(message);
-			assertThat(e, instanceOf(StringIndexOutOfBoundsException.class));
-			assertThat(s, startsWith("Could not convert message: 0203666F6F"));
+			assertThat(e).isInstanceOf(StringIndexOutOfBoundsException.class);
+			assertThat(s).startsWith("Could not convert message: 0203666F6F");
 		}
 
 	}

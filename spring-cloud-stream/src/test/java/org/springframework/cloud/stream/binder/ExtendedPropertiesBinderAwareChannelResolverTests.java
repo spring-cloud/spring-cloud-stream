@@ -49,10 +49,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -110,11 +107,11 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 	@Test
 	@Override
 	public void resolveChannel() {
-		assertThat(producerBindings, hasSize(0));
+		assertThat(producerBindings).hasSize(0);
 		MessageChannel registered = resolver.resolveDestination("foo");
-		assertThat(producerBindings, hasSize(1));
+		assertThat(producerBindings).hasSize(1);
 		TestBinder.TestBinding binding = producerBindings.get(0);
-		assertTrue("Must be bound", binding.isBound());
+		assertThat(binding.isBound()).describedAs("Must be bound");
 		DirectChannel testChannel = new DirectChannel();
 		final CountDownLatch latch = new CountDownLatch(1);
 		final List<Message<?>> received = new ArrayList<>();
@@ -127,20 +124,20 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 			}
 		});
 		binder.bindConsumer("foo", null, testChannel, new ExtendedConsumerProperties(new ConsumerProperties()));
-		assertEquals(0, received.size());
+		assertThat(received).hasSize(0);
 		registered.send(MessageBuilder.withPayload("hello").build());
 		try {
-			assertTrue("latch timed out", latch.await(1, TimeUnit.SECONDS));
+			assertThat(latch.await(1, TimeUnit.SECONDS)).describedAs("latch timed out");
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			fail("interrupted while awaiting latch");
 		}
-		assertEquals(1, received.size());
-		assertEquals("hello", received.get(0).getPayload());
+		assertThat(received).hasSize(1);
+		assertThat(received.get(0).getPayload()).isEqualTo("hello");
 		context.close();
-		assertThat(producerBindings, hasSize(1));
-		assertTrue("Must not be bound", !binding.isBound());
+		assertThat(producerBindings).hasSize(1);
+		assertThat(binding.isBound()).isFalse().describedAs("Must not be bound");
 	}
 
 	/**

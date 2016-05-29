@@ -30,8 +30,7 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -52,9 +51,9 @@ public class InputOutputBindingOrderTest {
 		// input is bound after the context has been started
 		verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<ConsumerProperties>any());
 		SomeLifecycle someLifecycle = applicationContext.getBean(SomeLifecycle.class);
-		assertTrue(someLifecycle.isRunning());
+		assertThat(someLifecycle.isRunning());
 		applicationContext.close();
-		assertFalse(someLifecycle.isRunning());
+		assertThat(someLifecycle.isRunning()).isFalse();
 	}
 
 	@EnableBinding(Processor.class)
@@ -70,14 +69,14 @@ public class InputOutputBindingOrderTest {
 
 	public static class SomeLifecycle implements SmartLifecycle {
 
-		private boolean running;
-
 		@SuppressWarnings("rawtypes")
 		@Autowired
 		private Binder binder;
 
 		@Autowired
 		private Processor processor;
+
+		private boolean running;
 
 		@Override
 		@SuppressWarnings("unchecked")

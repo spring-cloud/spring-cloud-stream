@@ -41,9 +41,8 @@ import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 /**
  * @author Gary Russell
@@ -66,61 +65,57 @@ public class MessageChannelBinderSupportTests {
 		byte[] payload = "foo".getBytes();
 		Message<byte[]> message = MessageBuilder.withPayload(payload).build();
 		MessageValues converted = binder.serializePayloadIfNecessary(message);
-		assertSame(payload, converted.getPayload());
+		assertThat(converted.getPayload()).isSameAs(payload);
 		Message<?> convertedMessage = converted.toMessage();
-		assertSame(payload, convertedMessage.getPayload());
-		assertEquals(MimeTypeUtils.APPLICATION_OCTET_STREAM,
-				contentTypeResolver.resolve(convertedMessage.getHeaders()));
+		assertThat(convertedMessage.getPayload()).isSameAs(payload);
+		assertThat(contentTypeResolver.resolve(convertedMessage.getHeaders()))
+				.isEqualTo(MimeTypeUtils.APPLICATION_OCTET_STREAM);
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(convertedMessage);
 		payload = (byte[]) reconstructed.getPayload();
-		assertSame(converted.getPayload(), payload);
-		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
+		assertThat(converted.getPayload()).isSameAs(payload);
+		assertThat(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
 	}
 
 	@Test
 	public void testBytesPassThruContentType() {
 		byte[] payload = "foo".getBytes();
 		Message<byte[]> message = MessageBuilder.withPayload(payload)
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE)
-				.build();
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE).build();
 		MessageValues messageValues = binder.serializePayloadIfNecessary(message);
 		Message<?> converted = messageValues.toMessage();
-		assertSame(payload, converted.getPayload());
-		assertEquals(MimeTypeUtils.APPLICATION_OCTET_STREAM,
-				contentTypeResolver.resolve(converted.getHeaders()));
+		assertThat(converted.getPayload()).isSameAs(payload);
+		assertThat(contentTypeResolver.resolve(converted.getHeaders()))
+				.isEqualTo(MimeTypeUtils.APPLICATION_OCTET_STREAM);
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		payload = (byte[]) reconstructed.getPayload();
-		assertSame(converted.getPayload(), payload);
-		assertEquals(MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE,
-				reconstructed.get(MessageHeaders.CONTENT_TYPE));
-		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
+		assertThat(converted.getPayload()).isSameAs(payload);
+		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo(MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE);
+		assertThat(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
 	}
 
 	@Test
 	public void testString() throws IOException {
-		MessageValues convertedValues = binder.serializePayloadIfNecessary(
-				new GenericMessage<String>("foo"));
-
+		MessageValues convertedValues = binder.serializePayloadIfNecessary(new GenericMessage<>("foo"));
 		Message<?> converted = convertedValues.toMessage();
-		assertEquals(MimeTypeUtils.TEXT_PLAIN,
-				contentTypeResolver.resolve(converted.getHeaders()));
+		assertThat(contentTypeResolver.resolve(converted.getHeaders())).isEqualTo(MimeTypeUtils.TEXT_PLAIN);
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
-		assertEquals("foo", reconstructed.getPayload());
-		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertEquals(MimeTypeUtils.TEXT_PLAIN_VALUE, reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertThat(reconstructed.getPayload()).isEqualTo("foo");
+		assertThat(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
 	}
 
 	@Test
 	public void testStringXML() throws IOException {
 		Message<?> message = MessageBuilder
 				.withPayload("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><test></test>")
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_XML)
-				.build();
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_XML).build();
 		Message<?> converted = binder.serializePayloadIfNecessary(message).toMessage();
-		assertEquals(MimeTypeUtils.TEXT_PLAIN, contentTypeResolver.resolve(converted.getHeaders()));
+		assertThat(contentTypeResolver.resolve(converted.getHeaders())).isEqualTo(MimeTypeUtils.TEXT_PLAIN);
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
-		assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><test></test>", reconstructed.getPayload());
-		assertEquals(MimeTypeUtils.TEXT_XML.toString(), reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertThat(reconstructed.getPayload())
+				.isEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><test></test>");
+		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.TEXT_XML.toString());
 	}
 
 	@Test
@@ -133,13 +128,11 @@ public class MessageChannelBinderSupportTests {
 
 		Message<?> converted = convertedValues.toMessage();
 
-		assertEquals(MimeTypeUtils.TEXT_PLAIN,
-				contentTypeResolver.resolve(converted.getHeaders()));
-		assertEquals(MimeTypeUtils.APPLICATION_JSON.toString(),
-				converted.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
+		assertThat(contentTypeResolver.resolve(converted.getHeaders())).isEqualTo(MimeTypeUtils.TEXT_PLAIN);
+		assertThat(converted.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isEqualTo(MimeTypeUtils.APPLICATION_JSON.toString());
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
-		assertEquals("{\"foo\":\"foo\"}", reconstructed.getPayload());
-		assertEquals(MimeTypeUtils.APPLICATION_JSON_VALUE, reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertThat(reconstructed.getPayload()).isEqualTo("{\"foo\":\"foo\"}");
+		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.APPLICATION_JSON_VALUE);
 	}
 
 	@Test
@@ -148,59 +141,24 @@ public class MessageChannelBinderSupportTests {
 				.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON))
 				.build();
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(inbound);
-		assertEquals("{\"foo\":\"bar\"}", reconstructed.getPayload());
-		assertEquals(MimeTypeUtils.APPLICATION_JSON, reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertThat(reconstructed.getPayload()).isEqualTo("{\"foo\":\"bar\"}");
+		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.APPLICATION_JSON);
 	}
 
 	@Test
 	public void testPojoSerialization() {
-		MessageValues convertedValues = binder.serializePayloadIfNecessary(
-				new GenericMessage<Foo>(new Foo("bar")));
+		MessageValues convertedValues = binder.serializePayloadIfNecessary(new GenericMessage<>(new Foo("bar")));
 		Message<?> converted = convertedValues.toMessage();
 		MimeType mimeType = contentTypeResolver.resolve(converted.getHeaders());
-		assertEquals("application", mimeType.getType());
-		assertEquals("x-java-object", mimeType.getSubtype());
-		assertEquals(Foo.class.getName(), mimeType.getParameter("type"));
+		assertThat(mimeType.getType()).isEqualTo("application");
+		assertThat(mimeType.getSubtype()).isEqualTo("x-java-object");
+		assertThat(mimeType.getParameter("type")).isEqualTo(Foo.class.getName());
 
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
-		assertEquals("bar", ((Foo) reconstructed.getPayload()).getBar());
-		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertEquals("application/x-java-object;type=org.springframework.cloud.stream.binder.MessageChannelBinderSupportTests$Foo",
-				reconstructed.get(MessageHeaders.CONTENT_TYPE));
-	}
-
-	@Test
-	public void testPojoWithXJavaObjectMimeTypeNoType() {
-		MessageValues convertedValues = binder.serializePayloadIfNecessary(
-				new GenericMessage<Foo>(new Foo("bar")));
-		Message<?> converted = convertedValues.toMessage();
-		MimeType mimeType = contentTypeResolver.resolve(converted.getHeaders());
-		assertEquals("application", mimeType.getType());
-		assertEquals("x-java-object", mimeType.getSubtype());
-		assertEquals(Foo.class.getName(), mimeType.getParameter("type"));
-
-		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
-		assertEquals("bar", ((Foo) reconstructed.getPayload()).getBar());
-		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertEquals("application/x-java-object;type=org.springframework.cloud.stream.binder.MessageChannelBinderSupportTests$Foo",
-				reconstructed.get(MessageHeaders.CONTENT_TYPE));
-	}
-
-	@Test
-	public void testPojoWithXJavaObjectMimeTypeExplicitType() {
-		MessageValues convertedValues = binder.serializePayloadIfNecessary(
-				new GenericMessage<Foo>(new Foo("bar")));
-		Message<?> converted = convertedValues.toMessage();
-		MimeType mimeType = contentTypeResolver.resolve(converted.getHeaders());
-		assertEquals("application", mimeType.getType());
-		assertEquals("x-java-object", mimeType.getSubtype());
-		assertEquals(Foo.class.getName(), mimeType.getParameter("type"));
-
-		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
-		assertEquals("bar", ((Foo) reconstructed.getPayload()).getBar());
-		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertEquals("application/x-java-object;type=org.springframework.cloud.stream.binder.MessageChannelBinderSupportTests$Foo",
-				reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertThat(((Foo) reconstructed.getPayload()).getBar()).isEqualTo("bar");
+		assertThat(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(
+				"application/x-java-object;type=org.springframework.cloud.stream.binder.MessageChannelBinderSupportTests$Foo");
 	}
 
 	@Test
@@ -209,50 +167,50 @@ public class MessageChannelBinderSupportTests {
 		MessageValues convertedValues = binder.serializePayloadIfNecessary(new GenericMessage<>(payload));
 		Message<?> converted = convertedValues.toMessage();
 		MimeType mimeType = contentTypeResolver.resolve(converted.getHeaders());
-		assertEquals("application", mimeType.getType());
-		assertEquals("x-java-object", mimeType.getSubtype());
-		assertEquals(DefaultTuple.class.getName(), mimeType.getParameter("type"));
+		assertThat(mimeType.getType()).isEqualTo("application");
+		assertThat(mimeType.getSubtype()).isEqualTo("x-java-object");
+		assertThat(mimeType.getParameter("type")).isEqualTo(DefaultTuple.class.getName());
 
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
-		assertEquals("bar", ((Tuple) reconstructed.getPayload()).getString("foo"));
-		assertNull(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertEquals("application/x-java-object;type=org.springframework.tuple.DefaultTuple",
-				reconstructed.get(MessageHeaders.CONTENT_TYPE));
+		assertThat(((Tuple) reconstructed.getPayload()).getString("foo")).isEqualTo("bar");
+		assertThat(reconstructed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo("application/x-java-object;type=org.springframework.tuple.DefaultTuple");
 	}
 
 	@Test
 	public void mimeTypeIsSimpleObject() throws ClassNotFoundException {
 		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new Object());
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
-		assertEquals(Object.class, Class.forName(className));
+		assertThat(Class.forName(className)).isEqualTo(Object.class);
 	}
 
 	@Test
 	public void mimeTypeIsObjectArray() throws ClassNotFoundException {
 		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0]);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
-		assertEquals(String[].class, Class.forName(className));
+		assertThat(Class.forName(className)).isEqualTo(String[].class);
 	}
 
 	@Test
 	public void mimeTypeIsMultiDimensionalObjectArray() throws ClassNotFoundException {
 		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0][0][0]);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
-		assertEquals(String[][][].class, Class.forName(className));
+		assertThat(Class.forName(className)).isEqualTo(String[][][].class);
 	}
 
 	@Test
 	public void mimeTypeIsPrimitiveArray() throws ClassNotFoundException {
 		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0]);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
-		assertEquals(int[].class, Class.forName(className));
+		assertThat(Class.forName(className)).isEqualTo(int[].class);
 	}
 
 	@Test
 	public void mimeTypeIsMultiDimensionalPrimitiveArray() throws ClassNotFoundException {
 		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0][0][0]);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
-		assertEquals(int[][][].class, Class.forName(className));
+		assertThat(Class.forName(className)).isEqualTo(int[][][].class);
 	}
 
 	public static class Foo {

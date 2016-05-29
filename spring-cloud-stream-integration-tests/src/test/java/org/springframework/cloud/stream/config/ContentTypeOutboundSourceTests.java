@@ -33,8 +33,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -56,8 +55,8 @@ public class ContentTypeOutboundSourceTests {
 		testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
 		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null))
 				.messageCollector().forChannel(testSource.output()).poll();
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString(), equalTo("application/json"));
-		assertThat(received.getPayload(), equalTo("{\"message\":\"Hi\"}"));
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
+		assertThat(received).hasFieldOrPropertyWithValue("payload", "{\"message\":\"Hi\"}");
 	}
 
 	@EnableBinding(Source.class)

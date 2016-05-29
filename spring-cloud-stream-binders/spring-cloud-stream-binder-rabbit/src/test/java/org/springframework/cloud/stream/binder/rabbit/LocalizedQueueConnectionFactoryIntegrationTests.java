@@ -30,7 +30,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 
 /**
@@ -65,7 +65,7 @@ public class LocalizedQueueConnectionFactoryIntegrationTests {
 		ConnectionFactory targetConnectionFactory = this.lqcf.getTargetConnectionFactory("[" + queue.getName() + "]");
 		RabbitTemplate template = new RabbitTemplate(targetConnectionFactory);
 		template.convertAndSend("", queue.getName(), "foo");
-		assertEquals("foo", template.receiveAndConvert(queue.getName()));
+		assertThat(template.receiveAndConvert(queue.getName())).isEqualTo("foo");
 		((CachingConnectionFactory) targetConnectionFactory).destroy();
 		admin.deleteQueue(queue.getName());
 	}
