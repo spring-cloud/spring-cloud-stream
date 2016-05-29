@@ -253,17 +253,15 @@ public class KafkaBinderTests extends
 				moduleOutputChannel, producerProperties);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0",
 				"testGroup", moduleInputChannel, consumerProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
+		dlqConsumerProperties.setMaxAttempts(1);
+		QueueChannel dlqChannel = new QueueChannel();
+		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
+				"error.retryTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel, dlqConsumerProperties);
 
 		String testMessagePayload = "test." + UUID.randomUUID().toString();
 		Message<String> testMessage = MessageBuilder.withPayload(testMessagePayload).build();
 		moduleOutputChannel.send(testMessage);
-
-		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
-		dlqConsumerProperties.setMaxAttempts(1);
-
-		QueueChannel dlqChannel = new QueueChannel();
-		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
-				"error.retryTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel, dlqConsumerProperties);
 
 		Message<?> dlqMessage = receive(dlqChannel, 3);
 		assertNotNull(dlqMessage);
