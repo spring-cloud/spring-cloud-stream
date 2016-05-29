@@ -47,11 +47,7 @@ import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -94,9 +90,9 @@ public class ChannelBindingServiceTests {
 				any(ConsumerProperties.class))).thenReturn(mockBinding);
 		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel,
 				inputChannelName);
-		assertThat(bindings.size(), is(1));
+		assertThat(bindings).hasSize(1);
 		Binding<MessageChannel> binding = bindings.iterator().next();
-		assertThat(binding, sameInstance(mockBinding));
+		assertThat(binding).isSameAs(mockBinding);
 		service.unbindConsumers(inputChannelName);
 		verify(binder).bindConsumer(eq("foo"), isNull(String.class), same(inputChannel),
 				any(ConsumerProperties.class));
@@ -141,14 +137,14 @@ public class ChannelBindingServiceTests {
 
 		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel,
 				"input");
-		assertThat(bindings.size(), is(2));
+		assertThat(bindings).hasSize(2);
 
 		Iterator<Binding<MessageChannel>> iterator = bindings.iterator();
 		Binding<MessageChannel> binding1 = iterator.next();
 		Binding<MessageChannel> binding2 = iterator.next();
 
-		assertThat(binding1, sameInstance(mockBinding1));
-		assertThat(binding2, sameInstance(mockBinding2));
+		assertThat(binding1).isSameAs(mockBinding1);
+		assertThat(binding2).isSameAs(mockBinding2);
 
 		service.unbindConsumers("input");
 
@@ -190,9 +186,9 @@ public class ChannelBindingServiceTests {
 				any(ConsumerProperties.class))).thenReturn(mockBinding);
 		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel,
 				inputChannelName);
-		assertThat(bindings.size(), is(1));
+		assertThat(bindings).hasSize(1);
 		Binding<MessageChannel> binding = bindings.iterator().next();
-		assertThat(binding, sameInstance(mockBinding));
+		assertThat(binding).isSameAs(mockBinding);
 
 		service.unbindConsumers(inputChannelName);
 		verify(binder).bindConsumer(eq("foo"), eq(props.getGroup()), same(inputChannel),
@@ -250,20 +246,19 @@ public class ChannelBindingServiceTests {
 		}).when(beanFactory).initializeBean(any(MessageChannel.class), eq("foo"));
 		resolver.setBeanFactory(beanFactory);
 		MessageChannel resolved = resolver.resolveDestination("foo");
-		assertThat(resolved, sameInstance(dynamic.get()));
+		assertThat(resolved).isSameAs(dynamic.get());
 		verify(binder).bindProducer(eq("foo"), eq(dynamic.get()),
 				any(ProducerProperties.class));
 		properties.setDynamicDestinations(new String[] { "foo" });
 		resolved = resolver.resolveDestination("foo");
-		assertThat(resolved, sameInstance(dynamic.get()));
+		assertThat(resolved).isSameAs(dynamic.get());
 		properties.setDynamicDestinations(new String[] { "test" });
 		try {
 			resolved = resolver.resolveDestination("bar");
 			fail();
 		}
 		catch (DestinationResolutionException e) {
-			assertThat(e.getMessage(), containsString(
-					"Failed to find MessageChannel bean with name 'bar'"));
+			assertThat(e).hasMessageContaining("Failed to find MessageChannel bean with name 'bar'");
 		}
 	}
 
@@ -290,7 +285,7 @@ public class ChannelBindingServiceTests {
 			fail("Producer properties should be validated.");
 		}
 		catch (IllegalStateException e) {
-			assertTrue(e.getMessage().contains("Partition count should be greater than zero."));
+			assertThat(e).hasMessageContaining("Partition count should be greater than zero.");
 		}
 	}
 
@@ -322,8 +317,7 @@ public class ChannelBindingServiceTests {
 			fail("Consumer properties should be validated.");
 		}
 		catch (IllegalStateException e) {
-			assertTrue(
-					e.getMessage().contains("Concurrency should be greater than zero."));
+			assertThat(e).hasMessageContaining("Concurrency should be greater than zero.");
 		}
 	}
 }

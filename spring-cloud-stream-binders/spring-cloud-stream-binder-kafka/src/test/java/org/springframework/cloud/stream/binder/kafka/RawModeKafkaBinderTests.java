@@ -21,7 +21,6 @@ import java.util.Arrays;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
@@ -35,13 +34,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
@@ -88,14 +81,14 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		output.send(new GenericMessage<>(new byte[] { (byte) 2 }));
 
 		Message<?> receive0 = receive(input0);
-		assertNotNull(receive0);
+		assertThat(receive0).isNotNull();
 		Message<?> receive1 = receive(input1);
-		assertNotNull(receive1);
+		assertThat(receive1).isNotNull();
 		Message<?> receive2 = receive(input2);
-		assertNotNull(receive2);
+		assertThat(receive2).isNotNull();
 
 		assertThat(Arrays.asList(((byte[]) receive0.getPayload())[0], ((byte[]) receive1.getPayload())[0],
-				((byte[]) receive2.getPayload())[0]), containsInAnyOrder((byte) 0, (byte) 1, (byte) 2));
+				((byte[]) receive2.getPayload())[0])).containsExactlyInAnyOrder((byte) 0, (byte) 1, (byte) 2);
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -118,7 +111,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, properties);
 		try {
 			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint), containsString("part.0-' + headers['partition']"));
+			assertThat(getEndpointRouting(endpoint)).contains("part.0-' + headers['partition']");
 		}
 		catch (UnsupportedOperationException ignored) {
 
@@ -142,29 +135,21 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		input2.setBeanName("test.input2S");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("part.0", "test", input2, consumerProperties);
 
-		Message<byte[]> message2 = MessageBuilder.withPayload(new byte[]{2})
+		Message<byte[]> message2 = MessageBuilder.withPayload(new byte[] { 2 })
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, 42)
-				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43)
-				.build();
+				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43).build();
 		output.send(message2);
-		output.send(new GenericMessage<>(new byte[]{1}));
-		output.send(new GenericMessage<>(new byte[]{0}));
-
+		output.send(new GenericMessage<>(new byte[] { 1 }));
+		output.send(new GenericMessage<>(new byte[] { 0 }));
 		Message<?> receive0 = receive(input0);
-		assertNotNull(receive0);
+		assertThat(receive0).isNotNull();
 		Message<?> receive1 = receive(input1);
-		assertNotNull(receive1);
+		assertThat(receive1).isNotNull();
 		Message<?> receive2 = receive(input2);
-		assertNotNull(receive2);
-
-
-		assertThat(Arrays.asList(
-						((byte[]) receive0.getPayload())[0],
-						((byte[]) receive1.getPayload())[0],
-						((byte[]) receive2.getPayload())[0]),
-				containsInAnyOrder((byte) 0, (byte) 1, (byte) 2));
-
+		assertThat(receive2).isNotNull();
+		assertThat(Arrays.asList(((byte[]) receive0.getPayload())[0], ((byte[]) receive1.getPayload())[0],
+				((byte[]) receive2.getPayload())[0])).containsExactlyInAnyOrder((byte) 0, (byte) 1, (byte) 2);
 		input0Binding.unbind();
 		input1Binding.unbind();
 		input2Binding.unbind();
@@ -182,14 +167,15 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, producerProperties);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.setHeaderMode(HeaderMode.raw);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, consumerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel,
+				consumerProperties);
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
 		Message<?> inbound = receive(moduleInputChannel);
-		assertNotNull(inbound);
-		assertEquals("foo", new String((byte[]) inbound.getPayload()));
+		assertThat(inbound).isNotNull();
+		assertThat(new String((byte[]) inbound.getPayload())).isEqualTo("foo");
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -215,13 +201,16 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		Binding<MessageChannel> producerBinding = binder.bindProducer("baz.0", moduleOutputChannel, producerProperties);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.setHeaderMode(HeaderMode.raw);
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("baz.0", "test", module1InputChannel, consumerProperties);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("baz.0", "test", module1InputChannel,
+				consumerProperties);
 		// A new module is using the tap as an input channel
 		String fooTapName = "baz.0";
-		Binding<MessageChannel> input2Binding = binder.bindConsumer(fooTapName, "tap1", module2InputChannel, consumerProperties);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(fooTapName, "tap1", module2InputChannel,
+				consumerProperties);
 		// Another new module is using tap as an input channel
 		String barTapName = "baz.0";
-		Binding<MessageChannel> input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, consumerProperties);
+		Binding<MessageChannel> input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel,
+				consumerProperties);
 
 		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).build();
 		boolean success = false;
@@ -229,20 +218,20 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 		while (!success) {
 			moduleOutputChannel.send(message);
 			Message<?> inbound = receive(module1InputChannel);
-			assertNotNull(inbound);
-			assertEquals("foo", new String((byte[]) inbound.getPayload()));
+			assertThat(inbound).isNotNull();
+			assertThat(new String((byte[]) inbound.getPayload())).isEqualTo("foo");
 
 			Message<?> tapped1 = receive(module2InputChannel);
 			Message<?> tapped2 = receive(module3InputChannel);
 			if (tapped1 == null || tapped2 == null) {
 				// listener may not have started
-				assertFalse("Failed to receive tap after retry", retried);
+				assertThat(retried).isFalse().withFailMessage("Failed to receive tap after retry");
 				retried = true;
 				continue;
 			}
 			success = true;
-			assertEquals("foo", new String((byte[]) tapped1.getPayload()));
-			assertEquals("foo", new String((byte[]) tapped2.getPayload()));
+			assertThat(new String((byte[]) tapped1.getPayload())).isEqualTo("foo");
+			assertThat(new String((byte[]) tapped2.getPayload())).isEqualTo("foo");
 		}
 		// delete one tap stream is deleted
 		input3Binding.unbind();
@@ -251,31 +240,23 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 		// other tap still receives messages
 		Message<?> tapped = receive(module2InputChannel);
-		assertNotNull(tapped);
+		assertThat(tapped).isNotNull();
 
 		// removed tap does not
-		assertNull(receive(module3InputChannel));
+		assertThat(receive(module3InputChannel)).isNull();
 
 		// re-subscribed tap does receive the message
 		input3Binding = binder.bindConsumer(barTapName, "tap2", module3InputChannel, createConsumerProperties());
-		assertNotNull(receive(module3InputChannel));
+		assertThat(receive(module3InputChannel)).isNotNull();
 
 		// clean up
 		input1Binding.unbind();
 		input2Binding.unbind();
 		input3Binding.unbind();
 		producerBinding.unbind();
-		assertFalse(extractEndpoint(input1Binding).isRunning());
-		assertFalse(extractEndpoint(input2Binding).isRunning());
-		assertFalse(extractEndpoint(input3Binding).isRunning());
-		assertFalse(extractEndpoint(producerBinding).isRunning());
+		assertThat(extractEndpoint(input1Binding).isRunning()).isFalse();
+		assertThat(extractEndpoint(input2Binding).isRunning()).isFalse();
+		assertThat(extractEndpoint(input3Binding).isRunning()).isFalse();
+		assertThat(extractEndpoint(producerBinding).isRunning()).isFalse();
 	}
-
-	private void assertMessageReceive(QueueChannel moduleInputChannel, String payload) {
-		Message<?> inbound = receive(moduleInputChannel);
-		assertNotNull(inbound);
-		assertEquals(payload, new String((byte[]) inbound.getPayload()));
-		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-	}
-
 }

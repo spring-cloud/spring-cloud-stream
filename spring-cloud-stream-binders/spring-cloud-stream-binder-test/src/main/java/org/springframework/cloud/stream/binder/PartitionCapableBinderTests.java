@@ -17,10 +17,10 @@
 package org.springframework.cloud.stream.binder;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
-import org.hamcrest.CustomMatcher;
-import org.hamcrest.Matcher;
+import org.assertj.core.api.Condition;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -34,15 +34,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for binders that support partitioning.
@@ -76,12 +68,12 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		output.send(new GenericMessage<>(testPayload1.getBytes()));
 
 		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
-		assertThat(receivedMessage1, not(nullValue()));
-		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload1));
+		assertThat(receivedMessage1).isNotNull();
+		assertThat(new String(receivedMessage1.getPayload())).isEqualTo(testPayload1);
 
 		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input2);
-		assertThat(receivedMessage2, not(nullValue()));
-		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload1));
+		assertThat(receivedMessage2).isNotNull();
+		assertThat(new String(receivedMessage2.getPayload())).isEqualTo(testPayload1);
 
 		binding2.unbind();
 
@@ -93,15 +85,15 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		output.send(new GenericMessage<>(testPayload3.getBytes()));
 
 		receivedMessage1 = (Message<byte[]>) receive(input1);
-		assertThat(receivedMessage1, not(nullValue()));
-		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload2));
+		assertThat(receivedMessage1).isNotNull();
+		assertThat(new String(receivedMessage1.getPayload())).isEqualTo(testPayload2);
 		receivedMessage1 = (Message<byte[]>) receive(input1);
-		assertThat(receivedMessage1, not(nullValue()));
-		assertThat(new String(receivedMessage1.getPayload()), equalTo(testPayload3));
+		assertThat(receivedMessage1).isNotNull();
+		assertThat(new String(receivedMessage1.getPayload())).isNotNull();
 
 		receivedMessage2 = (Message<byte[]>) receive(input2);
-		assertThat(receivedMessage2, not(nullValue()));
-		assertThat(new String(receivedMessage2.getPayload()), equalTo(testPayload3));
+		assertThat(receivedMessage2).isNotNull();
+		assertThat(new String(receivedMessage2.getPayload())).isEqualTo(testPayload3);
 
 		producerBinding.unbind();
 		binding1.unbind();
@@ -128,8 +120,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 				createConsumerProperties());
 
 		Message<?> receivedMessage1 = receive(inbound1);
-		assertThat(receivedMessage1, not(nullValue()));
-		assertThat(new String((byte[]) receivedMessage1.getPayload()), equalTo(testPayload));
+		assertThat(receivedMessage1).isNotNull();
+		assertThat(new String((byte[]) receivedMessage1.getPayload())).isEqualTo(testPayload);
 
 		producerBinding.unbind();
 		consumerBinding.unbind();
@@ -157,11 +149,11 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 				createConsumerProperties());
 
 		Message<?> receivedMessage1 = receive(inbound1);
-		assertThat(receivedMessage1, not(nullValue()));
-		assertThat(new String((byte[]) receivedMessage1.getPayload()), equalTo(testPayload));
+		assertThat(receivedMessage1).isNotNull();
+		assertThat(new String((byte[]) receivedMessage1.getPayload())).isEqualTo(testPayload);
 		Message<?> receivedMessage2 = receive(inbound2);
-		assertThat(receivedMessage2, not(nullValue()));
-		assertThat(new String((byte[]) receivedMessage2.getPayload()), equalTo(testPayload));
+		assertThat(receivedMessage2).isNotNull();
+		assertThat(new String((byte[]) receivedMessage2.getPayload())).isEqualTo(testPayload);
 
 		consumerBinding1.unbind();
 		consumerBinding2.unbind();
@@ -199,8 +191,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
 		try {
 			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint),
-					containsString(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']"));
+			assertThat(getEndpointRouting(endpoint))
+					.contains(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']");
 		}
 		catch (UnsupportedOperationException ignored) {
 		}
@@ -214,36 +206,38 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		output.send(new GenericMessage<>(0));
 
 		Message<?> receive0 = receive(input0);
-		assertNotNull(receive0);
+		assertThat(receive0).isNotNull();
 		Message<?> receive1 = receive(input1);
-		assertNotNull(receive1);
+		assertThat(receive1).isNotNull();
 		Message<?> receive2 = receive(input2);
-		assertNotNull(receive2);
+		assertThat(receive2).isNotNull();
 
-		Matcher<Message<?>> fooMatcher = new CustomMatcher<Message<?>>("the message with 'foo' as its correlationId") {
-
+		Condition<Message<?>> correlationHeadersForPayload2 = new Condition<Message<?>>() {
 			@Override
-			public boolean matches(Object item) {
-				IntegrationMessageHeaderAccessor accessor = new IntegrationMessageHeaderAccessor((Message<?>) item);
-				boolean result = "foo".equals(accessor.getCorrelationId()) && 42 == accessor.getSequenceNumber()
+			public boolean matches(Message<?> value) {
+				IntegrationMessageHeaderAccessor accessor = new IntegrationMessageHeaderAccessor(value);
+				return "foo".equals(accessor.getCorrelationId()) && 42 == accessor.getSequenceNumber()
 						&& 43 == accessor.getSequenceSize();
-				return result;
 			}
 		};
+
 		if (usesExplicitRouting()) {
-			assertEquals(0, receive0.getPayload());
-			assertEquals(1, receive1.getPayload());
-			assertEquals(2, receive2.getPayload());
-			assertThat(receive2, fooMatcher);
+			assertThat(receive0.getPayload()).isEqualTo(0);
+			assertThat(receive1.getPayload()).isEqualTo(1);
+			assertThat(receive2.getPayload()).isEqualTo(2);
+			assertThat(receive2).has(correlationHeadersForPayload2);
 		}
 		else {
-			assertThat(Arrays.asList((Integer) receive0.getPayload(), (Integer) receive1.getPayload(),
-					(Integer) receive2.getPayload()), containsInAnyOrder(0, 1, 2));
+			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1, receive2);
+			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder(0, 1, 2);
+			Condition<Message<?>> payloadIs2 = new Condition<Message<?>>() {
 
-			@SuppressWarnings("unchecked")
-			Matcher<Iterable<? extends Message<?>>> containsOur3Messages = containsInAnyOrder(fooMatcher,
-					hasProperty("payload", equalTo(0)), hasProperty("payload", equalTo(1)));
-			assertThat(Arrays.asList(receive0, receive1, receive2), containsOur3Messages);
+				@Override
+				public boolean matches(Message<?> value) {
+					return value.getPayload().equals(2);
+				}
+			};
+			assertThat(receivedMessages).filteredOn(payloadIs2).areExactly(1, correlationHeadersForPayload2);
 
 		}
 		input0Binding.unbind();
@@ -282,8 +276,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
 		if (usesExplicitRouting()) {
 			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint),
-					containsString(getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']"));
+			assertThat(getEndpointRouting(endpoint)).
+					contains(getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']");
 		}
 
 		output.send(new GenericMessage<>(2));
@@ -291,21 +285,20 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		output.send(new GenericMessage<>(0));
 
 		Message<?> receive0 = receive(input0);
-		assertNotNull(receive0);
+		assertThat(receive0).isNotNull();
 		Message<?> receive1 = receive(input1);
-		assertNotNull(receive1);
+		assertThat(receive1).isNotNull();
 		Message<?> receive2 = receive(input2);
-		assertNotNull(receive2);
+		assertThat(receive2).isNotNull();
 
 		if (usesExplicitRouting()) {
-			assertEquals(0, receive0.getPayload());
-			assertEquals(1, receive1.getPayload());
-			assertEquals(2, receive2.getPayload());
+			assertThat(receive0.getPayload()).isEqualTo(0);
+			assertThat(receive1.getPayload()).isEqualTo(1);
+			assertThat(receive2.getPayload()).isEqualTo(2);
 		}
 		else {
-
-			assertThat(Arrays.asList((Integer) receive0.getPayload(), (Integer) receive1.getPayload(),
-					(Integer) receive2.getPayload()), containsInAnyOrder(0, 1, 2));
+			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1, receive2);
+			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder(0, 1, 2);
 		}
 
 		input0Binding.unbind();

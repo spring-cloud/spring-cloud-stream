@@ -35,8 +35,7 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration test that validates that {@link org.springframework.cloud.stream.test.binder.TestSupportBinder} applies
@@ -49,31 +48,28 @@ import static org.junit.Assert.assertThat;
 public class ExampleTest {
 
 	@Autowired
-	@Bindings(MyProcessor.class)
-	private Processor processor;
-
-	@Autowired
 	private BinderFactory<MessageChannel> binderFactory;
 
 	@Autowired
 	private MessageCollector messageCollector;
 
+	@Autowired
+	@Bindings(MyProcessor.class)
+	private Processor processor;
+
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testWiring() {
 		Message<String> message = new GenericMessage<>("hello");
-		processor.input().send(message);
-		Message<String> received = (Message<String>) messageCollector.forChannel(processor.output()).poll();
-		assertThat(received.getPayload(), equalTo("hello world"));
+		this.processor.input().send(message);
+		Message<String> received = (Message<String>) this.messageCollector.forChannel(this.processor.output()).poll();
+		assertThat(received.getPayload()).isEqualTo("hello world");
 	}
 
 
 	@SpringBootApplication
 	@EnableBinding(Processor.class)
 	public static class MyProcessor {
-
-		@Autowired
-		private Processor channels;
 
 		@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
 		public String transform(String in) {

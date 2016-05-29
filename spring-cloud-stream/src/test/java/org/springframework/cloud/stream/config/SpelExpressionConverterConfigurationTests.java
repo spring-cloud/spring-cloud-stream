@@ -32,8 +32,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.expression.Expression;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for SpelExpressionConverterConfiguration.
@@ -50,7 +49,7 @@ public class SpelExpressionConverterConfigurationTests {
 
 	@Test
 	public void converterCorrectlyInstalled() {
-		assertThat(pojo.getExpression().getValue("{\"a\": {\"b\": 5}}").toString(), is((Object) "5"));
+		assertThat(pojo.getExpression().getValue("{\"a\": {\"b\": 5}}").toString()).isEqualTo("5");
 	}
 
 	@ConfigurationProperties

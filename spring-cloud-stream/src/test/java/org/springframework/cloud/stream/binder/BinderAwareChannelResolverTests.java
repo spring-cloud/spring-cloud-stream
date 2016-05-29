@@ -55,11 +55,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -101,7 +97,7 @@ public class BinderAwareChannelResolverTests {
 			}
 		};
 		this.channelBindingServiceProperties = new ChannelBindingServiceProperties();
-		Map<String, BindingProperties> bindings = new HashMap<String, BindingProperties>();
+		Map<String, BindingProperties> bindings = new HashMap<>();
 		BindingProperties bindingProperties = new BindingProperties();
 		bindingProperties.setContentType("text/plain");
 		bindings.put("foo", bindingProperties);
@@ -130,11 +126,11 @@ public class BinderAwareChannelResolverTests {
 
 	@Test
 	public void resolveChannel() {
-		assertThat(producerBindings, hasSize(0));
+		assertThat(producerBindings).hasSize(0);
 		MessageChannel registered = resolver.resolveDestination("foo");
-		assertThat(producerBindings, hasSize(1));
+		assertThat(producerBindings).hasSize(1);
 		TestBinder.TestBinding binding = producerBindings.get(0);
-		assertTrue("Must be bound", binding.isBound());
+		assertThat(binding.isBound()).describedAs("Must be bound");
 		DirectChannel testChannel = new DirectChannel();
 		final CountDownLatch latch = new CountDownLatch(1);
 		final List<Message<?>> received = new ArrayList<>();
@@ -147,26 +143,26 @@ public class BinderAwareChannelResolverTests {
 			}
 		});
 		binder.bindConsumer("foo", null, testChannel, new ConsumerProperties());
-		assertEquals(0, received.size());
+		assertThat(received).hasSize(0);
 		registered.send(MessageBuilder.withPayload("hello").build());
 		try {
-			assertTrue("latch timed out", latch.await(1, TimeUnit.SECONDS));
+			assertThat(latch.await(1, TimeUnit.SECONDS)).describedAs("Latch timed out");
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			fail("interrupted while awaiting latch");
 		}
-		assertEquals(1, received.size());
-		assertEquals("hello", received.get(0).getPayload());
+		assertThat(received).hasSize(1);
+		assertThat(received.get(0).getPayload()).isEqualTo("hello");
 		context.close();
-		assertThat(producerBindings, hasSize(1));
-		assertTrue("Must not be bound", !binding.isBound());
+		assertThat(producerBindings).hasSize(1);
+		assertThat(binding.isBound()).isFalse().describedAs("Must not be bound");
 	}
 
 	@Test
 	public void resolveNonRegisteredChannel() {
 		MessageChannel other = resolver.resolveDestination("other");
-		assertSame(context.getBean("other"), other);
+		assertThat(context.getBean("other")).isSameAs(other);
 	}
 
 	@Test
@@ -201,7 +197,7 @@ public class BinderAwareChannelResolverTests {
 		Assert.isTrue(dataTypes.length == 1, "Data type must be set for the Foo Channel");
 		Assert.isTrue(dataTypes[0].equals(String.class), "Data type should be of type String");
 		verify(binder).bindProducer(eq("foo"), any(MessageChannel.class), any(ProducerProperties.class));
-		assertSame(resolved, beanFactory.getBean("foo"));
+		assertThat(resolved).isSameAs(beanFactory.getBean("foo"));
 	}
 
 	/**

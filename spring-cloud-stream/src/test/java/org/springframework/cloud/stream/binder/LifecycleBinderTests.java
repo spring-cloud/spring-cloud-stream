@@ -28,8 +28,7 @@ import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
@@ -40,9 +39,9 @@ public class LifecycleBinderTests {
 	public void testNonSmartLifecyclesStarted() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
 		SimpleLifecycle simpleLifecycle = applicationContext.getBean(SimpleLifecycle.class);
-		assertTrue(simpleLifecycle.isRunning());
+		assertThat(simpleLifecycle.isRunning());
 		applicationContext.close();
-		assertFalse(simpleLifecycle.isRunning());
+		assertThat(simpleLifecycle.isRunning()).isFalse();
 	}
 
 	@EnableBinding(Source.class)

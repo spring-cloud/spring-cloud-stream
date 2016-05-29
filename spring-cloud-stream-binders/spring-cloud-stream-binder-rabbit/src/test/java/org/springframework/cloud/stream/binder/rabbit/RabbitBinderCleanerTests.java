@@ -39,10 +39,7 @@ import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -116,7 +113,7 @@ public class RabbitBinderCleanerTests {
 					fail("Expected exception");
 				}
 				catch (RabbitAdminException e) {
-					assertEquals("Queue " + queueName + " is in use", e.getMessage());
+					assertThat(e).hasMessageContaining("Queue " + queueName + " is in use");
 				}
 				channel.basicCancel(consumerTag);
 				waitForConsumerStateNot(queueName, 1);
@@ -125,8 +122,8 @@ public class RabbitBinderCleanerTests {
 					fail("Expected exception");
 				}
 				catch (RabbitAdminException e) {
-					assertThat(e.getMessage(), containsString("Cannot delete exchange "));
-					assertThat(e.getMessage(), containsString("; it has bindings:"));
+					assertThat(e).hasMessageContaining("Cannot delete exchange ");
+					assertThat(e).hasMessageContaining("; it has bindings:");
 				}
 				return null;
 			}
@@ -144,7 +141,7 @@ public class RabbitBinderCleanerTests {
 					}
 					Thread.sleep(100);
 				}
-				assertTrue("Consumer state remained at " + state + " after 10 seconds", n < 100);
+				assertThat(n < 100).withFailMessage("Consumer state remained at " + state + " after 10 seconds");
 			}
 
 		});
@@ -153,27 +150,27 @@ public class RabbitBinderCleanerTests {
 		rabbitAdmin.deleteQueue(foreignQueue);
 		connectionFactory.destroy();
 		Map<String, List<String>> cleanedMap = cleaner.clean(stream1, false);
-		assertEquals(2, cleanedMap.size());
+		assertThat(cleanedMap).hasSize(2);
 		List<String> cleanedQueues = cleanedMap.get("queues");
 		// should *not* clean stream2
-		assertEquals(10, cleanedQueues.size());
+		assertThat(cleanedQueues).hasSize(10);
 		for (int i = 0; i < 5; i++) {
-			assertEquals(BINDER_PREFIX + stream1 + ".default." + i, cleanedQueues.get(i * 2));
-			assertEquals(BINDER_PREFIX + stream1 + ".default." + i + ".dlq", cleanedQueues.get(i * 2 + 1));
+			assertThat(cleanedQueues.get(i * 2)).isEqualTo(BINDER_PREFIX + stream1 + ".default." + i);
+			assertThat(cleanedQueues.get(i * 2 + 1)).isEqualTo(BINDER_PREFIX + stream1 + ".default." + i + ".dlq");
 		}
 		List<String> cleanedExchanges = cleanedMap.get("exchanges");
-		assertEquals(6, cleanedExchanges.size());
+		assertThat(cleanedExchanges).hasSize(6);
 
 		// wild card *should* clean stream2
 		cleanedMap = cleaner.clean(stream1 + "*", false);
-		assertEquals(2, cleanedMap.size());
+		assertThat(cleanedMap).hasSize(2);
 		cleanedQueues = cleanedMap.get("queues");
-		assertEquals(5, cleanedQueues.size());
+		assertThat(cleanedQueues).hasSize(5);
 		for (int i = 0; i < 5; i++) {
-			assertEquals(BINDER_PREFIX + stream2 + ".default." + i, cleanedQueues.get(i));
+			assertThat(cleanedQueues.get(i)).isEqualTo(BINDER_PREFIX + stream2 + ".default." + i);
 		}
 		cleanedExchanges = cleanedMap.get("exchanges");
-		assertEquals(6, cleanedExchanges.size());
+		assertThat(cleanedExchanges).hasSize(6);
 	}
 
 	public static class AmqpQueue {
