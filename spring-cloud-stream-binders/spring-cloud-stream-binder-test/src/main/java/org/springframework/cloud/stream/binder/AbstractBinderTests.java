@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.UUID;
 
-import org.hamcrest.collection.IsArrayContainingInAnyOrder;
 import org.junit.After;
 import org.junit.Test;
 
@@ -32,19 +31,14 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.util.MimeTypeUtils;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  * @author David Turanski
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
 @SuppressWarnings("unchecked")
 public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> {
@@ -79,21 +73,31 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	@Test
 	public void testClean() throws Exception {
 		Binder binder = getBinder();
-		Binding<MessageChannel> foo0ProducerBinding = binder.bindProducer("foo.0", new DirectChannel(), createProducerProperties());
-		Binding<MessageChannel> foo0ConsumerBinding = binder.bindConsumer("foo.0", "test", new DirectChannel(), createConsumerProperties());
-		Binding<MessageChannel> foo1ProducerBinding = binder.bindProducer("foo.1", new DirectChannel(), createProducerProperties());
-		Binding<MessageChannel> foo1ConsumerBinding = binder.bindConsumer("foo.1", "test", new DirectChannel(), createConsumerProperties());
-		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer("foo.2", new DirectChannel(), createProducerProperties());
+		Binding<MessageChannel> foo0ProducerBinding = binder.bindProducer("foo.0", new DirectChannel(),
+				createProducerProperties());
+		Binding<MessageChannel> foo0ConsumerBinding = binder.bindConsumer("foo.0", "test", new DirectChannel(),
+				createConsumerProperties());
+		Binding<MessageChannel> foo1ProducerBinding = binder.bindProducer("foo.1", new DirectChannel(),
+				createProducerProperties());
+		Binding<MessageChannel> foo1ConsumerBinding = binder.bindConsumer("foo.1", "test", new DirectChannel(),
+				createConsumerProperties());
+		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer("foo.2", new DirectChannel(),
+				createProducerProperties());
 		foo0ProducerBinding.unbind();
-		assertFalse(TestUtils.getPropertyValue(foo0ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning());
+		assertThat(TestUtils.getPropertyValue(foo0ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning())
+				.isFalse();
 		foo0ConsumerBinding.unbind();
 		foo1ProducerBinding.unbind();
-		assertFalse(TestUtils.getPropertyValue(foo0ConsumerBinding, "endpoint", AbstractEndpoint.class).isRunning());
-		assertFalse(TestUtils.getPropertyValue(foo1ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning());
+		assertThat(TestUtils.getPropertyValue(foo0ConsumerBinding, "endpoint", AbstractEndpoint.class).isRunning())
+				.isFalse();
+		assertThat(TestUtils.getPropertyValue(foo1ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning())
+				.isFalse();
 		foo1ConsumerBinding.unbind();
 		foo2ProducerBinding.unbind();
-		assertFalse(TestUtils.getPropertyValue(foo1ConsumerBinding, "endpoint", AbstractEndpoint.class).isRunning());
-		assertFalse(TestUtils.getPropertyValue(foo2ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning());
+		assertThat(TestUtils.getPropertyValue(foo1ConsumerBinding, "endpoint", AbstractEndpoint.class).isRunning())
+				.isFalse();
+		assertThat(TestUtils.getPropertyValue(foo2ProducerBinding, "endpoint", AbstractEndpoint.class).isRunning())
+				.isFalse();
 	}
 
 	@Test
@@ -101,18 +105,20 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel, createProducerProperties());
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel, createConsumerProperties());
-		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,
-				"foo/bar").build();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel,
+				createProducerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel,
+				createConsumerProperties());
+		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
+				.build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
 		Message<?> inbound = receive(moduleInputChannel);
-		assertNotNull(inbound);
-		assertEquals("foo", inbound.getPayload());
-		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertEquals("foo/bar", inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+		assertThat(inbound).isNotNull();
+		assertThat(inbound.getPayload()).isEqualTo("foo");
+		assertThat(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("foo/bar");
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -147,12 +153,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		messages[0] = receive(moduleInputChannel);
 		messages[1] = receive(moduleInputChannel);
 
-		assertNotNull(messages[0]);
-		assertNotNull(messages[1]);
-		assertThat(messages, IsArrayContainingInAnyOrder.arrayContainingInAnyOrder(
-				hasProperty("payload", equalTo(testPayload1.getBytes())),
-				hasProperty("payload", equalTo(testPayload2.getBytes()))));
-
+		assertThat(messages[0]).isNotNull();
+		assertThat(messages[1]).isNotNull();
+		assertThat(messages).extracting("payload").containsExactlyInAnyOrder(testPayload1.getBytes(),
+				testPayload2.getBytes());
 
 		producerBinding1.unbind();
 		producerBinding2.unbind();
@@ -174,10 +178,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Message<?> message = MessageBuilder.withPayload("foo").build();
 		moduleOutputChannel.send(message);
 		Message<?> inbound = receive(moduleInputChannel);
-		assertNotNull(inbound);
-		assertEquals("foo", inbound.getPayload());
-		assertNull(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE));
-		assertEquals(MimeTypeUtils.TEXT_PLAIN_VALUE, inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+		assertThat(inbound).isNotNull();
+		assertThat(inbound.getPayload()).isEqualTo("foo");
+		assertThat(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}

@@ -48,14 +48,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.MessageChannel;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
@@ -89,22 +82,22 @@ public class RabbitBinderModuleTests {
 		context = SpringApplication.run(SimpleProcessor.class, "--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder binder = binderFactory.getBinder(null);
-		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
+		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
-		assertThat(binderConnectionFactory, instanceOf(CachingConnectionFactory.class));
+		assertThat(binderConnectionFactory).isInstanceOf(CachingConnectionFactory.class);
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
-		assertThat(binderConnectionFactory, is(connectionFactory));
+		assertThat(binderConnectionFactory).isSameAs(connectionFactory);
 		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
 				CompositeHealthIndicator.class);
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
-		assertNotNull(bindersHealthIndicator);
+		assertThat(bindersHealthIndicator).isNotNull();
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("indicators");
-		assertThat(healthIndicators, hasKey("rabbit"));
-		assertThat(healthIndicators.get("rabbit").health().getStatus(), equalTo(Status.UP));
+		assertThat(healthIndicators).containsKey(("rabbit"));
+		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo((Status.UP));
 	}
 
 	@Test
@@ -115,7 +108,7 @@ public class RabbitBinderModuleTests {
 				"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder binder = binderFactory.getBinder(null);
-		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
+		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		ChannelBindingService channelBindingService = context.getBean(ChannelBindingService.class);
 		DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(channelBindingService);
 		Map<String, List<Binding<MessageChannel>>> consumerBindings = (Map<String, List<Binding<MessageChannel>>>) channelBindingServiceAccessor
@@ -123,27 +116,27 @@ public class RabbitBinderModuleTests {
 		Binding<MessageChannel> inputBinding = consumerBindings.get("input").get(0);
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(inputBinding,
 				"endpoint.messageListenerContainer", SimpleMessageListenerContainer.class);
-		assertTrue(TestUtils.getPropertyValue(container, "transactional", Boolean.class));
+		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class)).isTrue();
 		Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>) TestUtils
 				.getPropertyValue(channelBindingService, "producerBindings");
 		Binding<MessageChannel> outputBinding = producerBindings.get("output");
-		assertTrue(TestUtils.getPropertyValue(outputBinding, "endpoint.handler.delegate.amqpTemplate.transactional",
-				Boolean.class));
+		assertThat(TestUtils.getPropertyValue(outputBinding, "endpoint.handler.delegate.amqpTemplate.transactional",
+				Boolean.class)).isTrue();
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
-		assertThat(binderConnectionFactory, instanceOf(CachingConnectionFactory.class));
+		assertThat(binderConnectionFactory).isInstanceOf(CachingConnectionFactory.class);
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
-		assertThat(binderConnectionFactory, is(connectionFactory));
+		assertThat(binderConnectionFactory).isSameAs(connectionFactory);
 		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
 				CompositeHealthIndicator.class);
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
-		assertNotNull(bindersHealthIndicator);
+		assertThat(bindersHealthIndicator).isNotNull();
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("indicators");
-		assertThat(healthIndicators, hasKey("rabbit"));
-		assertThat(healthIndicators.get("rabbit").health().getStatus(), equalTo(Status.UP));
+		assertThat(healthIndicators).containsKey("rabbit");
+		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo(Status.UP);
 	}
 
 	@Test
@@ -152,23 +145,23 @@ public class RabbitBinderModuleTests {
 				.run("--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder binder = binderFactory.getBinder(null);
-		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
+		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
-		assertThat(binderConnectionFactory, is(MOCK_CONNECTION_FACTORY));
+		assertThat(binderConnectionFactory).isSameAs(MOCK_CONNECTION_FACTORY);
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
-		assertThat(binderConnectionFactory, is(connectionFactory));
+		assertThat(binderConnectionFactory).isSameAs(connectionFactory);
 		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
 				CompositeHealthIndicator.class);
-		assertNotNull(bindersHealthIndicator);
+		assertThat(bindersHealthIndicator).isNotNull();
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("indicators");
-		assertThat(healthIndicators, hasKey("rabbit"));
+		assertThat(healthIndicators).containsKey("rabbit");
 		// mock connection factory behaves as if down
-		assertThat(healthIndicators.get("rabbit").health().getStatus(), equalTo(Status.DOWN));
+		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo(Status.DOWN);
 	}
 
 	@Test
@@ -182,21 +175,21 @@ public class RabbitBinderModuleTests {
 		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[params.size()]));
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder binder = binderFactory.getBinder(null);
-		assertThat(binder, instanceOf(RabbitMessageChannelBinder.class));
+		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
-		assertThat(binderConnectionFactory, not(is(connectionFactory)));
+		assertThat(binderConnectionFactory).isNotSameAs(connectionFactory);
 		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
 				CompositeHealthIndicator.class);
-		assertNotNull(bindersHealthIndicator);
+		assertThat(bindersHealthIndicator);
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("indicators");
-		assertThat(healthIndicators, hasKey("custom"));
-		assertThat(healthIndicators.get("custom").health().getStatus(), equalTo(Status.UP));
+		assertThat(healthIndicators).containsKey("custom");
+		assertThat(healthIndicators.get("custom").health().getStatus()).isEqualTo(Status.UP);
 	}
 
 	@EnableBinding(Processor.class)

@@ -44,9 +44,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
 
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -71,15 +69,15 @@ public class MessageChannelConfigurerTests {
 		MessageHandler messageHandler = new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				assertThat(message.getPayload(), instanceOf(Tuple.class));
-				assertTrue(((Tuple) message.getPayload()).getFieldNames().get(0).equals("message"));
-				assertTrue(((Tuple) message.getPayload()).getValue(0).equals("Hi"));
+				assertThat(message.getPayload()).isInstanceOf(Tuple.class);
+				assertThat(((Tuple) message.getPayload()).getFieldNames().get(0)).isEqualTo("message");
+				assertThat(((Tuple) message.getPayload()).getValue(0)).isEqualTo("Hi");
 				latch.countDown();
 			}
 		};
 		testSink.input().subscribe(messageHandler);
 		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
-		assertTrue(latch.await(10, TimeUnit.SECONDS));
+		assertThat(latch.await(10, TimeUnit.SECONDS));
 		testSink.input().unsubscribe(messageHandler);
 	}
 
@@ -91,10 +89,9 @@ public class MessageChannelConfigurerTests {
 			DirectFieldAccessor converterAccessor = new DirectFieldAccessor(converter);
 			ObjectMapper objectMapper = (ObjectMapper) converterAccessor.getPropertyValue("objectMapper");
 			// assert that the ObjectMapper used by the converters is compliant with the Boot configuration
-			assertTrue("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled",
-					!objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
+			assertThat(!objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).withFailMessage("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled");
 			// assert that the globally set bean is used by the converters
-			assertTrue(objectMapper == this.objectMapper);
+			assertThat(objectMapper).isSameAs(this.objectMapper);
 		}
 	}
 

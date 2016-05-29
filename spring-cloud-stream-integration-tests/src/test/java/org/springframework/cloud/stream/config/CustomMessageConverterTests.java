@@ -41,12 +41,8 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.MimeType;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.isA;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -67,16 +63,15 @@ public class CustomMessageConverterTests {
 
 	@Test
 	public void testCustomMessageConverter() throws Exception {
-		assertTrue(customMessageConverters.size() == 2);
-		assertThat(customMessageConverters, hasItem(isA(FooToBarConverter.class)));
-		assertThat(customMessageConverters, hasItem(isA(BarToFooConverter.class)));
+		assertThat(customMessageConverters).hasSize(2);
+		assertThat(customMessageConverters).extracting("class").contains(FooToBarConverter.class,
+				BarToFooConverter.class);
 		testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
 		@SuppressWarnings("unchecked")
 		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null))
 				.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
 		Assert.assertThat(received, notNullValue());
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString(),
-				equalTo("test/bar"));
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("test/bar");
 	}
 
 	@EnableBinding(Source.class)

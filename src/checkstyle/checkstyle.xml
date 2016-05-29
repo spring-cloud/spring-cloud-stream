@@ -79,7 +79,8 @@
 		<!-- Imports -->
 		<module name="AvoidStarImport"/>
 		<module name="AvoidStaticImport">
-			<property name="excludes" value="org.junit.Assert.*,org.mockito.Mockito.*,org.mockito.Matchers.*,org.hamcrest.Matchers.*"/>
+			<property name="excludes"
+					  value="org.junit.Assert.*,org.mockito.Mockito.*,org.mockito.Matchers.*,org.hamcrest.Matchers.*,org.assertj.core.api.Assertions.*"/>
 		</module>
 		<module name="FallThrough"/>
 		<module name="ImportOrder">
@@ -127,6 +128,13 @@
 			<property name="format" value="[ \t]+$" />
 			<property name="illegalPattern" value="true" />
 			<property name="message" value="Trailing whitespace" />
+		</module>
+		<module name="RegexpSinglelineJava">
+			<property name="maximum" value="0"/>
+			<property name="format" value="org\.junit\.Assert\.assert"/>
+			<property name="message"
+					  value="Please use AssertJ imports."/>
+			<property name="ignoreComments" value="true"/>
 		</module>
 
 		<!-- Whitespace -->
