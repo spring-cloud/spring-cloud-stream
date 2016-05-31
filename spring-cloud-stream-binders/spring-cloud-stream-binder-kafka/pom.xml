@@ -16,7 +16,7 @@
 	<properties>
 		<kafka.version>0.8.2.2</kafka.version>
 		<curator.version>2.6.0</curator.version>
-		<spring-integration-kafka.version>1.3.0.RELEASE</spring-integration-kafka.version>
+		<spring-integration-kafka.version>1.3.1.BUILD-SNAPSHOT</spring-integration-kafka.version>
 		<rxjava-math.version>1.0.0</rxjava-math.version>
 	</properties>
 

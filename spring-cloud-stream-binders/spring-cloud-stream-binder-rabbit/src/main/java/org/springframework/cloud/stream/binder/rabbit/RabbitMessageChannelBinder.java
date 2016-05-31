@@ -280,7 +280,6 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 		listenerContainer.setAcknowledgeMode(properties.getExtension().getAcknowledgeMode());
 		listenerContainer.setChannelTransacted(properties.getExtension().isTransacted());
 		listenerContainer.setDefaultRequeueRejected(properties.getExtension().isRequeueRejected());
-
 		int concurrency = properties.getConcurrency();
 		concurrency = concurrency > 0 ? concurrency : 1;
 		listenerContainer.setConcurrentConsumers(concurrency);
@@ -288,8 +287,8 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 		if (maxConcurrency > concurrency) {
 			listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
 		}
-
 		listenerContainer.setPrefetchCount(properties.getExtension().getPrefetch());
+		listenerContainer.setRecoveryInterval(properties.getExtension().getRecoveryInterval());
 		listenerContainer.setTxSize(properties.getExtension().getTxSize());
 		listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(queue.getName() + "-"));
 		listenerContainer.setQueues(queue);
@@ -545,7 +544,7 @@ public class RabbitMessageChannelBinder extends AbstractBinder<MessageChannel, E
 	@Override
 	public void doManualAck(LinkedList<MessageHeaders> messageHeadersList) {
 		Iterator<MessageHeaders> iterator = messageHeadersList.iterator();
-		Map<Object, Long> channelsToAck = new HashMap<Object, Long>();
+		Map<Object, Long> channelsToAck = new HashMap<>();
 		while (iterator.hasNext()) {
 			MessageHeaders messageHeaders = iterator.next();
 			if (messageHeaders.containsKey(AmqpHeaders.CHANNEL)) {
