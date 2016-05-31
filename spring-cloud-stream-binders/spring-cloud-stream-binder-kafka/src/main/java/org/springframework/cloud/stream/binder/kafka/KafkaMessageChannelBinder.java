@@ -484,6 +484,7 @@ public class KafkaMessageChannelBinder extends
 				? properties.getExtension().getAutoCommitOnError()
 				: properties.getExtension().isAutoCommitOffset() && properties.getExtension().isEnableDlq();
 		messageListenerContainer.setAutoCommitOnError(autoCommitOnError);
+		messageListenerContainer.setRecoveryInterval(properties.getExtension().getRecoveryInterval());
 
 		int concurrency = Math.min(properties.getConcurrency(), listenedPartitions.size());
 		messageListenerContainer.setConcurrency(concurrency);

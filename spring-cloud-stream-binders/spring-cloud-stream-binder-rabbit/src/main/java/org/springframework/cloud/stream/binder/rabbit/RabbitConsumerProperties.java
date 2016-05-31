@@ -50,6 +50,8 @@ public class RabbitConsumerProperties {
 
 	private String[] replyHeaderPatterns = new String[] {"STANDARD_REPLY_HEADERS", "*"};
 
+	private long recoveryInterval = 5000;
+
 	public String getPrefix() {
 		return prefix;
 	}
@@ -148,5 +150,13 @@ public class RabbitConsumerProperties {
 
 	public void setReplyHeaderPatterns(String[] replyHeaderPatterns) {
 		this.replyHeaderPatterns = replyHeaderPatterns;
+	}
+
+	public long getRecoveryInterval() {
+		return recoveryInterval;
+	}
+
+	public void setRecoveryInterval(long recoveryInterval) {
+		this.recoveryInterval = recoveryInterval;
 	}
 }

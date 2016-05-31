@@ -31,6 +31,8 @@ public class KafkaConsumerProperties {
 
 	private boolean enableDlq;
 
+	private int recoveryInterval = 5000;
+
 	public boolean isAutoCommitOffset() {
 		return autoCommitOffset;
 	}
@@ -69,5 +71,13 @@ public class KafkaConsumerProperties {
 
 	public void setAutoCommitOnError(Boolean autoCommitOnError) {
 		this.autoCommitOnError = autoCommitOnError;
+	}
+
+	public int getRecoveryInterval() {
+		return recoveryInterval;
+	}
+
+	public void setRecoveryInterval(int recoveryInterval) {
+		this.recoveryInterval = recoveryInterval;
 	}
 }

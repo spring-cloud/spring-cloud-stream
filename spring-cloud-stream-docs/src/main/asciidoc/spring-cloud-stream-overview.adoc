@@ -990,6 +990,10 @@ prefix::
   A prefix to be added to the name of the `destination` and queues.
 +
 Default: "".
+recoveryInterval::
+  The interval between connection recovery attempts, in milliseconds.
++
+Default: `5000`.
 requeueRejected::
   Whether delivery failures should be requeued.
 +
@@ -1143,6 +1147,10 @@ If set to `true`, it will always auto-commit (if auto-commit is enabled).
 If not set (default), it effectively has the same value as `enableDlq`, auto-committing erroneous messages if they are sent to a DLQ, and not committing them otherwise.
 +
 Default: not set.
+recoveryInterval::
+  The interval between connection recovery attempts, in milliseconds.
++
+Default: `5000`.
 resetOffsets::
   Whether to reset offsets on the consumer to the value provided by `startOffset`.
 +
