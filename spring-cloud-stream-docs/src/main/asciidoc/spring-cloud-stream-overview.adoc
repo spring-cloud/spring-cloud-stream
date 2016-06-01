@@ -729,6 +729,9 @@ If your application should connect to more than one broker of the same type, you
 ====
 Turning on explicit binder configuration will disable the default binder configuration process altogether.
 If you do this, all binders in use must be included in the configuration.
+Frameworks that intend to use Spring Cloud Stream transparently may create binder configurations that will be referenceable by name, but will not affect the default binder configuration.
+In order to do so, a binder configuration may have its the `applicationProvided` flag set to false, e.g. `spring.cloud.stream.binders.<configurationName>.applicationProvided=false`.
+This denotes a configuration that will exist independently of the default binder configuration process.
 ====
 
 For example, this is the typical configuration for a processor application which connects to two RabbitMQ broker instances:
@@ -759,6 +762,32 @@ spring:
               rabbitmq:
                 host: <host2>
 ----
+
+=== Binder configuration properties
+
+The following properties are available when creating custom binder configurations.
+They must be prefixed with `spring.cloud.stream.binder.<configurationName>`.
+
+type::
+  The binder type.
+It typically references one of the binders found on the classpath, in particular a key in a `META-INF/spring.binders` file.
++
+By default, it has the same value as the configuration name.
+inheritEnvironment::
+  Whether the configuration will inherit the environment of the application itself.
++
+Default `true`.
+environment::
+  Root for a set of properties that can be used to customize the environment of the binder.
+When this is configured, the context in which the binder is being created is not a child of the application context.
+This allows for complete separation between the binder components and the application components.
++
+Default `empty`.
+applicationProvided::
+  Whether the binder configuration is provided by the application (the default case) or a framework included by an application.
+This allows framework authors to depend on Spring Cloud Stream and provide their own infrastructure without interfering with the application.
++
+Default `true`.
 
 
 === Implementation strategies

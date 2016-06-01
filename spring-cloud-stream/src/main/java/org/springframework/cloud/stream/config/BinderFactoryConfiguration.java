@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
@@ -41,7 +42,6 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -55,30 +55,34 @@ public class BinderFactoryConfiguration {
 	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
 			ChannelBindingServiceProperties channelBindingServiceProperties) {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
-		if (!CollectionUtils.isEmpty(channelBindingServiceProperties.getBinders())) {
-			for (Map.Entry<String, BinderProperties> binderEntry :
-					channelBindingServiceProperties.getBinders().entrySet()) {
-				BinderProperties binderProperties = binderEntry.getValue();
-				if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
-					binderConfigurations.put(binderEntry.getKey(),
-							new BinderConfiguration(binderTypeRegistry.get(binderEntry.getKey()),
-									binderProperties.getEnvironment(), binderProperties.isInheritEnvironment()));
-				}
-				else {
-					Assert.hasText(binderProperties.getType(), "No 'type' property present for custom " +
-							"binder " + binderEntry.getKey());
-					BinderType binderType = binderTypeRegistry.get(binderProperties.getType());
-					Assert.notNull(binderType, "Binder type " + binderProperties.getType() + " is not defined");
-					binderConfigurations.put(binderEntry.getKey(),
-							new BinderConfiguration(binderType, binderProperties.getEnvironment(),
-									binderProperties.isInheritEnvironment()));
-				}
+		Map<String, BinderProperties> declaredBinders = channelBindingServiceProperties.getBinders();
+		boolean hasUserDefinedBinders = false;
+		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders.entrySet().iterator();
+		while (!hasUserDefinedBinders && binderPropertiesIterator.hasNext()) {
+			hasUserDefinedBinders = binderPropertiesIterator.next().getValue().isApplicationProvided();
+		}
+		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
+			BinderProperties binderProperties = binderEntry.getValue();
+			if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
+				binderConfigurations.put(binderEntry.getKey(),
+						new BinderConfiguration(binderTypeRegistry.get(binderEntry.getKey()),
+								binderProperties.getEnvironment(), binderProperties.isInheritEnvironment(),
+								binderProperties.isApplicationProvided()));
+			}
+			else {
+				Assert.hasText(binderProperties.getType(),
+						"No 'type' property present for custom " + "binder " + binderEntry.getKey());
+				BinderType binderType = binderTypeRegistry.get(binderProperties.getType());
+				Assert.notNull(binderType, "Binder type " + binderProperties.getType() + " is not defined");
+				binderConfigurations.put(binderEntry.getKey(),
+						new BinderConfiguration(binderType, binderProperties.getEnvironment(),
+								binderProperties.isInheritEnvironment(), binderProperties.isApplicationProvided()));
 			}
 		}
-		else {
+		if (!hasUserDefinedBinders) {
 			for (Map.Entry<String, BinderType> entry : binderTypeRegistry.getAll().entrySet()) {
 				binderConfigurations.put(entry.getKey(),
-						new BinderConfiguration(entry.getValue(), new Properties(), true));
+						new BinderConfiguration(entry.getValue(), new Properties(), true, true));
 			}
 		}
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory<>(binderConfigurations);

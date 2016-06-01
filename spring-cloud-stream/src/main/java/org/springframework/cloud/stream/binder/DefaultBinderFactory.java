@@ -19,9 +19,11 @@ package org.springframework.cloud.stream.binder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,8 +97,31 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				throw new IllegalStateException(
 						"A default binder has been requested, but there there is no binder available");
 			}
-			else if (this.binderConfigurations.size() == 1) {
-				configurationName = this.binderConfigurations.keySet().iterator().next();
+			else if (!StringUtils.hasText(defaultBinder)) {
+				Set<String> applicationProvidedConfigurations = new HashSet<>();
+				for (Map.Entry<String, BinderConfiguration> binderConfigurationEntry : binderConfigurations
+						.entrySet()) {
+					if (binderConfigurationEntry.getValue().isApplicationProvided()) {
+						applicationProvidedConfigurations.add(binderConfigurationEntry.getKey());
+					}
+				}
+				if (applicationProvidedConfigurations.size() == 1) {
+					this.defaultBinder = applicationProvidedConfigurations.iterator().next();
+					configurationName = this.defaultBinder;
+				}
+				else {
+					if (applicationProvidedConfigurations.size() > 1) {
+						throw new IllegalStateException(
+								"A default binder has been requested, but there is more than one binder available: "
+										+ StringUtils
+												.collectionToCommaDelimitedString(applicationProvidedConfigurations)
+										+ ", and" + " no default binder has been set.");
+					}
+					else {
+						throw new IllegalStateException(
+								"A default binder has been requested, but there there is no binder available");
+					}
+				}
 			}
 			else {
 				if (StringUtils.hasText(this.defaultBinder)) {
@@ -135,7 +160,8 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 			}
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
 			List<Class<?>> configurationClasses =
-					new ArrayList<>(Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
+					new ArrayList<Class<?>>(
+							Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
 			SpringApplicationBuilder springApplicationBuilder =
 					new SpringApplicationBuilder()
 							.sources(configurationClasses.toArray(new Class<?>[]{}))
@@ -150,9 +176,11 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				springApplicationBuilder.parent(context);
 			}
 			if (useApplicationContextAsParent || (environment != null && binderConfiguration.isInheritEnvironment())) {
-				StandardEnvironment binderEnvironment = new StandardEnvironment();
-				binderEnvironment.merge(environment);
-				springApplicationBuilder.environment(binderEnvironment);
+				if (environment != null) {
+					StandardEnvironment binderEnvironment = new StandardEnvironment();
+					binderEnvironment.merge(environment);
+					springApplicationBuilder.environment(binderEnvironment);
+				}
 			}
 			ConfigurableApplicationContext binderProducingContext =
 					springApplicationBuilder.run(args.toArray(new String[args.size()]));
