@@ -119,21 +119,19 @@ public class MessageChannelBinderSupportTests {
 	}
 
 	@Test
-	public void testContentTypePreserved() throws IOException {
+	public void testContentTypePreservedForJson() throws IOException {
 		Message<String> inbound = MessageBuilder.withPayload("{\"foo\":\"foo\"}")
 				.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON))
 				.build();
-		MessageValues convertedValues = binder.serializePayloadIfNecessary(
-				inbound);
-
+		MessageValues convertedValues = binder.serializePayloadIfNecessary(inbound);
 		Message<?> converted = convertedValues.toMessage();
-
-		assertThat(contentTypeResolver.resolve(converted.getHeaders())).isEqualTo(MimeTypeUtils.TEXT_PLAIN);
-		assertThat(converted.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isEqualTo(MimeTypeUtils.APPLICATION_JSON.toString());
+		assertThat(contentTypeResolver.resolve(converted.getHeaders())).isEqualTo(MimeTypeUtils.APPLICATION_JSON);
+		assertThat(converted.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertThat(reconstructed.getPayload()).isEqualTo("{\"foo\":\"foo\"}");
 		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.APPLICATION_JSON_VALUE);
 	}
+
 
 	@Test
 	public void testContentTypePreservedForNonSCStApp() {
@@ -180,35 +178,35 @@ public class MessageChannelBinderSupportTests {
 
 	@Test
 	public void mimeTypeIsSimpleObject() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new Object());
+		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new Object(), null);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(Object.class);
 	}
 
 	@Test
 	public void mimeTypeIsObjectArray() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0]);
+		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0], null);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(String[].class);
 	}
 
 	@Test
 	public void mimeTypeIsMultiDimensionalObjectArray() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0][0][0]);
+		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0][0][0], null);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(String[][][].class);
 	}
 
 	@Test
 	public void mimeTypeIsPrimitiveArray() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0]);
+		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0], null);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(int[].class);
 	}
 
 	@Test
 	public void mimeTypeIsMultiDimensionalPrimitiveArray() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0][0][0]);
+		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0][0][0], null);
 		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(int[][][].class);
 	}
