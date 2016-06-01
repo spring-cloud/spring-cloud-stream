@@ -1421,7 +1421,7 @@ They can be retrieved during tests and have assertions made against them.
 The user can also send messages to inbound message channels, so that the consumer application can consume the messages.
 The following example shows how to test both input and output channels on a processor.
 
-[source]
+[source,java]
 ----
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = ExampleTest.MyProcessor.class)
