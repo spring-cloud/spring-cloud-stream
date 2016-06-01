@@ -94,13 +94,15 @@ public class BinderFactoryConfigurationTests {
 	public void loadBinderTypeRegistryWithOneCustomBinderAndSharedEnvironment() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] {"binder1"}, "binder1.name=foo",
-				"spring.cloud.stream.binders.custom.properties.foo=bar",
+				"spring.cloud.stream.binders.custom.environment.foo=bar",
 				"spring.cloud.stream.binders.custom.type=binder1");
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
 		Binder binder1 = binderFactory.getBinder("custom");
 		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
+
+		assertThat(binderFactory.getBinder(null)).isSameAs(binder1);
 	}
 
 	@Test
@@ -145,6 +147,38 @@ public class BinderFactoryConfigurationTests {
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
 		Binder binder2 = binderFactory.getBinder("binder2");
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
+	}
+
+	@Test
+	public void loadBinderTypeRegistryWithCustomNonDefaultCandidate() throws Exception {
+
+		ConfigurableApplicationContext context = createBinderTestContext(
+				new String[] { "binder1"},
+				"spring.cloud.stream.binders.custom.type=binder1",
+				"spring.cloud.stream.binders.custom.environment.binder1.name=foo",
+				"spring.cloud.stream.binders.custom.defaultCandidate=false",
+				"spring.cloud.stream.binders.custom.inheritEnvironment=false");
+		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
+		assertThat(binderTypeRegistry).isNotNull();
+		assertThat(binderTypeRegistry.getAll().size()).isEqualTo(1);
+		assertThat(binderTypeRegistry.getAll().keySet().contains("binder1"));
+		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
+				.contains(StubBinder1Configuration.class);
+
+		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+
+		Binder defaultBinder = binderFactory.getBinder(null);
+		assertThat(defaultBinder).isInstanceOf(StubBinder1.class);
+		assertThat(((StubBinder1) defaultBinder).getName()).isNullOrEmpty();
+
+		Binder binder1 = binderFactory.getBinder("binder1");
+		assertThat(binder1).isInstanceOf(StubBinder1.class);
+		assertThat(binder1).isSameAs(defaultBinder);
+
+		Binder custom = binderFactory.getBinder("custom");
+		assertThat(custom).isInstanceOf(StubBinder1.class);
+		assertThat(custom).isNotSameAs(defaultBinder);
+		assertThat(((StubBinder1) custom).getName()).isEqualTo("foo");
 	}
 
 	@Test

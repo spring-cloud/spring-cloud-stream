@@ -79,10 +79,9 @@ public class ChannelBindingServiceTests {
 		DefaultBinderFactory<MessageChannel> binderFactory =
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
-								new Properties(), true)));
+								new Properties(), true, true)));
 		Binder binder = binderFactory.getBinder("mock");
-		ChannelBindingService service = new ChannelBindingService(properties,
-				binderFactory);
+		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
@@ -111,14 +110,9 @@ public class ChannelBindingServiceTests {
 
 		properties.setBindings(bindingProperties);
 
-		DefaultBinderFactory<MessageChannel> binderFactory = new DefaultBinderFactory<>(
-				Collections
-						.singletonMap("mock",
-								new BinderConfiguration(
-										new BinderType("mock",
-												new Class[] {
-														MockBinderConfiguration.class }),
-										new Properties(), true)));
+		DefaultBinderFactory<MessageChannel> binderFactory = new DefaultBinderFactory<>(Collections.singletonMap("mock",
+				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
+						new Properties(), true, true)));
 
 		Binder binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties,
@@ -175,7 +169,7 @@ public class ChannelBindingServiceTests {
 										new BinderType("mock",
 												new Class[] {
 														MockBinderConfiguration.class }),
-										new Properties(), true)));
+										new Properties(), true, true)));
 		Binder binder = binderFactory.getBinder("mock");
 		ChannelBindingService service = new ChannelBindingService(properties,
 				binderFactory);
@@ -207,7 +201,7 @@ public class ChannelBindingServiceTests {
 										new BinderType("mock",
 												new Class[] {
 														MockBinderConfiguration.class }),
-										new Properties(), true)));
+										new Properties(), true, true)));
 		Binder binder = binderFactory.getBinder("mock");
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
@@ -277,7 +271,7 @@ public class ChannelBindingServiceTests {
 		DefaultBinderFactory<MessageChannel> binderFactory =
 				new DefaultBinderFactory<>(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
-								new Properties(), true)));
+								new Properties(), true, true)));
 		ChannelBindingService service = new ChannelBindingService(serviceProperties, binderFactory);
 		MessageChannel outputChannel = new DirectChannel();
 		try {
@@ -301,14 +295,9 @@ public class ChannelBindingServiceTests {
 		final String inputChannelName = "input";
 		bindingProperties.put(inputChannelName, props);
 		serviceProperties.setBindings(bindingProperties);
-		DefaultBinderFactory<MessageChannel> binderFactory = new DefaultBinderFactory<>(
-				Collections
-						.singletonMap("mock",
-								new BinderConfiguration(
-										new BinderType("mock",
-												new Class[] {
-														MockBinderConfiguration.class }),
-										new Properties(), true)));
+		DefaultBinderFactory<MessageChannel> binderFactory = new DefaultBinderFactory<>(Collections.singletonMap("mock",
+				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
+						new Properties(), true, true)));
 		ChannelBindingService service = new ChannelBindingService(serviceProperties,
 				binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
