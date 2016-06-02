@@ -34,15 +34,21 @@ public class BinderConfiguration {
 
 	private final boolean inheritEnvironment;
 
+	private final boolean defaultCandidate;
+
 	/**
 	 * @param binderType the binder type used by this configuration
 	 * @param properties the properties for setting up the binder
-	 * @param inheritEnvironment whether the binder should inherit the environment of the module
+	 * @param inheritEnvironment whether the binder should inherit the environment of the
+	 * module
+	 * @param defaultCandidate whether the binder is user defined
 	 */
-	public BinderConfiguration(BinderType binderType, Properties properties, boolean inheritEnvironment) {
+	public BinderConfiguration(BinderType binderType, Properties properties, boolean inheritEnvironment,
+			boolean defaultCandidate) {
 		this.binderType = binderType;
 		this.properties = properties;
 		this.inheritEnvironment = inheritEnvironment;
+		this.defaultCandidate = defaultCandidate;
 	}
 
 	public BinderType getBinderType() {
@@ -55,5 +61,9 @@ public class BinderConfiguration {
 
 	public boolean isInheritEnvironment() {
 		return inheritEnvironment;
+	}
+
+	public boolean isDefaultCandidate() {
+		return defaultCandidate;
 	}
 }

@@ -729,6 +729,9 @@ If your application should connect to more than one broker of the same type, you
 ====
 Turning on explicit binder configuration will disable the default binder configuration process altogether.
 If you do this, all binders in use must be included in the configuration.
+Frameworks that intend to use Spring Cloud Stream transparently may create binder configurations that can be referenced by name, but will not affect the default binder configuration.
+In order to do so, a binder configuration may have its the `defaultCandidate` flag set to false, e.g. `spring.cloud.stream.binders.<configurationName>.defaultCandidate=false`.
+This denotes a configuration that will exist independently of the default binder configuration process.
 ====
 
 For example, this is the typical configuration for a processor application which connects to two RabbitMQ broker instances:
@@ -759,6 +762,32 @@ spring:
               rabbitmq:
                 host: <host2>
 ----
+
+=== Binder configuration properties
+
+The following properties are available when creating custom binder configurations.
+They must be prefixed with `spring.cloud.stream.binder.<configurationName>`.
+
+type::
+  The binder type.
+It typically references one of the binders found on the classpath, in particular a key in a `META-INF/spring.binders` file.
++
+By default, it has the same value as the configuration name.
+inheritEnvironment::
+  Whether the configuration will inherit the environment of the application itself.
++
+Default `true`.
+environment::
+  Root for a set of properties that can be used to customize the environment of the binder.
+When this is configured, the context in which the binder is being created is not a child of the application context.
+This allows for complete separation between the binder components and the application components.
++
+Default `empty`.
+defaultCandidate::
+  Whether the binder configuration is a candidate for being considered a default binder, or can be used only when explicitly referenced.
+This allows adding binder configurations without interfering with the default processing.
++
+Default `true`.
 
 
 === Implementation strategies
