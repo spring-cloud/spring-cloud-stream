@@ -113,9 +113,8 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 					if (defaultCandidateConfigurations.size() > 1) {
 						throw new IllegalStateException(
 								"A default binder has been requested, but there is more than one binder available: "
-										+ StringUtils
-												.collectionToCommaDelimitedString(defaultCandidateConfigurations)
-										+ ", and" + " no default binder has been set.");
+										+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations)
+										+ ", and no default binder has been set.");
 					}
 					else {
 						throw new IllegalStateException(
@@ -131,7 +130,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 					throw new IllegalStateException(
 							"A default binder has been requested, but there is more than one binder available: "
 									+ StringUtils.collectionToCommaDelimitedString(this.binderConfigurations.keySet())
-									+ ", and" + " no default binder has been set.");
+									+ ", and no default binder has been set.");
 				}
 			}
 		}

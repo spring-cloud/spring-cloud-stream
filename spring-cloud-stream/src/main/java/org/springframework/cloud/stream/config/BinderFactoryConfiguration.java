@@ -52,7 +52,7 @@ public class BinderFactoryConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
-	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
+	public BinderFactory<?> binderFactory(BinderTypeRegistry binderTypeRegistry,
 			ChannelBindingServiceProperties channelBindingServiceProperties) {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
 		Map<String, BinderProperties> declaredBinders = channelBindingServiceProperties.getBinders();
@@ -71,7 +71,7 @@ public class BinderFactoryConfiguration {
 			}
 			else {
 				Assert.hasText(binderProperties.getType(),
-						"No 'type' property present for custom " + "binder " + binderEntry.getKey());
+						"No 'type' property present for custom binder " + binderEntry.getKey());
 				BinderType binderType = binderTypeRegistry.get(binderProperties.getType());
 				Assert.notNull(binderType, "Binder type " + binderProperties.getType() + " is not defined");
 				binderConfigurations.put(binderEntry.getKey(),
@@ -85,7 +85,7 @@ public class BinderFactoryConfiguration {
 						new BinderConfiguration(entry.getValue(), new Properties(), true, true));
 			}
 		}
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory<>(binderConfigurations);
+		DefaultBinderFactory<?> binderFactory = new DefaultBinderFactory<>(binderConfigurations);
 		binderFactory.setDefaultBinder(channelBindingServiceProperties.getDefaultBinder());
 		return binderFactory;
 	}
@@ -126,7 +126,7 @@ public class BinderFactoryConfiguration {
 			String binderType = (String) entry.getKey();
 			String[] binderConfigurationClassNames = StringUtils
 					.commaDelimitedListToStringArray((String) entry.getValue());
-			Class[] binderConfigurationClasses = new Class[binderConfigurationClassNames.length];
+			Class<?>[] binderConfigurationClasses = new Class[binderConfigurationClassNames.length];
 			int i = 0;
 			for (String binderConfigurationClassName : binderConfigurationClassNames) {
 				binderConfigurationClasses[i++] = ClassUtils.forName(binderConfigurationClassName, classLoader);
