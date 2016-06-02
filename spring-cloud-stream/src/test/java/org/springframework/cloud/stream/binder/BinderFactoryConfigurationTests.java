@@ -101,6 +101,8 @@ public class BinderFactoryConfigurationTests {
 
 		Binder binder1 = binderFactory.getBinder("custom");
 		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
+
+		assertThat(binderFactory.getBinder(null)).isSameAs(binder1);
 	}
 
 	@Test
@@ -148,13 +150,13 @@ public class BinderFactoryConfigurationTests {
 	}
 
 	@Test
-	public void loadBinderTypeRegistryWithUserDefinedBinder() throws Exception {
+	public void loadBinderTypeRegistryWithCustomNonDefaultCandidate() throws Exception {
 
 		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] { "binder1"},
 				"spring.cloud.stream.binders.custom.type=binder1",
 				"spring.cloud.stream.binders.custom.environment.binder1.name=foo",
-				"spring.cloud.stream.binders.custom.applicationProvided=false",
+				"spring.cloud.stream.binders.custom.defaultCandidate=false",
 				"spring.cloud.stream.binders.custom.inheritEnvironment=false");
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
 		assertThat(binderTypeRegistry).isNotNull();

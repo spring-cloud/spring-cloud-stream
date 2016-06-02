@@ -98,23 +98,23 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 						"A default binder has been requested, but there there is no binder available");
 			}
 			else if (!StringUtils.hasText(defaultBinder)) {
-				Set<String> applicationProvidedConfigurations = new HashSet<>();
+				Set<String> defaultCandidateConfigurations = new HashSet<>();
 				for (Map.Entry<String, BinderConfiguration> binderConfigurationEntry : binderConfigurations
 						.entrySet()) {
-					if (binderConfigurationEntry.getValue().isApplicationProvided()) {
-						applicationProvidedConfigurations.add(binderConfigurationEntry.getKey());
+					if (binderConfigurationEntry.getValue().isDefaultCandidate()) {
+						defaultCandidateConfigurations.add(binderConfigurationEntry.getKey());
 					}
 				}
-				if (applicationProvidedConfigurations.size() == 1) {
-					this.defaultBinder = applicationProvidedConfigurations.iterator().next();
+				if (defaultCandidateConfigurations.size() == 1) {
+					this.defaultBinder = defaultCandidateConfigurations.iterator().next();
 					configurationName = this.defaultBinder;
 				}
 				else {
-					if (applicationProvidedConfigurations.size() > 1) {
+					if (defaultCandidateConfigurations.size() > 1) {
 						throw new IllegalStateException(
 								"A default binder has been requested, but there is more than one binder available: "
 										+ StringUtils
-												.collectionToCommaDelimitedString(applicationProvidedConfigurations)
+												.collectionToCommaDelimitedString(defaultCandidateConfigurations)
 										+ ", and" + " no default binder has been set.");
 					}
 					else {

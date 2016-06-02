@@ -31,7 +31,7 @@ public class BinderProperties {
 
 	private boolean inheritEnvironment = true;
 
-	private boolean applicationProvided = true;
+	private boolean defaultCandidate = true;
 
 	public String getType() {
 		return type;
@@ -57,11 +57,11 @@ public class BinderProperties {
 		this.inheritEnvironment = inheritEnvironment;
 	}
 
-	public boolean isApplicationProvided() {
-		return applicationProvided;
+	public boolean isDefaultCandidate() {
+		return defaultCandidate;
 	}
 
-	public void setApplicationProvided(boolean applicationProvided) {
-		this.applicationProvided = applicationProvided;
+	public void setDefaultCandidate(boolean defaultCandidate) {
+		this.defaultCandidate = defaultCandidate;
 	}
 }

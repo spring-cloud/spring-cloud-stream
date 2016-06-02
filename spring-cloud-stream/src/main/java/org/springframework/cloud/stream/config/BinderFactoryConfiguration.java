@@ -56,10 +56,10 @@ public class BinderFactoryConfiguration {
 			ChannelBindingServiceProperties channelBindingServiceProperties) {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
 		Map<String, BinderProperties> declaredBinders = channelBindingServiceProperties.getBinders();
-		boolean hasUserDefinedBinders = false;
+		boolean defaultCandidatesExist = false;
 		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders.entrySet().iterator();
-		while (!hasUserDefinedBinders && binderPropertiesIterator.hasNext()) {
-			hasUserDefinedBinders = binderPropertiesIterator.next().getValue().isApplicationProvided();
+		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
+			defaultCandidatesExist = binderPropertiesIterator.next().getValue().isDefaultCandidate();
 		}
 		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
 			BinderProperties binderProperties = binderEntry.getValue();
@@ -67,7 +67,7 @@ public class BinderFactoryConfiguration {
 				binderConfigurations.put(binderEntry.getKey(),
 						new BinderConfiguration(binderTypeRegistry.get(binderEntry.getKey()),
 								binderProperties.getEnvironment(), binderProperties.isInheritEnvironment(),
-								binderProperties.isApplicationProvided()));
+								binderProperties.isDefaultCandidate()));
 			}
 			else {
 				Assert.hasText(binderProperties.getType(),
@@ -76,10 +76,10 @@ public class BinderFactoryConfiguration {
 				Assert.notNull(binderType, "Binder type " + binderProperties.getType() + " is not defined");
 				binderConfigurations.put(binderEntry.getKey(),
 						new BinderConfiguration(binderType, binderProperties.getEnvironment(),
-								binderProperties.isInheritEnvironment(), binderProperties.isApplicationProvided()));
+								binderProperties.isInheritEnvironment(), binderProperties.isDefaultCandidate()));
 			}
 		}
-		if (!hasUserDefinedBinders) {
+		if (!defaultCandidatesExist) {
 			for (Map.Entry<String, BinderType> entry : binderTypeRegistry.getAll().entrySet()) {
 				binderConfigurations.put(entry.getKey(),
 						new BinderConfiguration(entry.getValue(), new Properties(), true, true));
