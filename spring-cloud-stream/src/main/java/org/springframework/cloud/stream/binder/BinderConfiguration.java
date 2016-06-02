@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder;
 import java.util.Properties;
 
 /**
- *
  * Configuration for a binder instance, associating a {@link BinderType} with its configuration {@link Properties}.
  * An application may contain multiple {@link BinderConfiguration}s per {@link BinderType}, when connecting to multiple
  * systems of the same type.
@@ -39,9 +38,8 @@ public class BinderConfiguration {
 	/**
 	 * @param binderType the binder type used by this configuration
 	 * @param properties the properties for setting up the binder
-	 * @param inheritEnvironment whether the binder should inherit the environment of the
-	 * module
-	 * @param defaultCandidate whether the binder is user defined
+	 * @param inheritEnvironment whether the binder should inherit the environment of the application
+	 * @param defaultCandidate whether the binder should be considered as a candidate when determining a default
 	 */
 	public BinderConfiguration(BinderType binderType, Properties properties, boolean inheritEnvironment,
 			boolean defaultCandidate) {

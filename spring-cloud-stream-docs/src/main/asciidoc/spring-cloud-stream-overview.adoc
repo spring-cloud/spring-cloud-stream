@@ -730,7 +730,7 @@ If your application should connect to more than one broker of the same type, you
 Turning on explicit binder configuration will disable the default binder configuration process altogether.
 If you do this, all binders in use must be included in the configuration.
 Frameworks that intend to use Spring Cloud Stream transparently may create binder configurations that can be referenced by name, but will not affect the default binder configuration.
-In order to do so, a binder configuration may have its the `defaultCandidate` flag set to false, e.g. `spring.cloud.stream.binders.<configurationName>.defaultCandidate=false`.
+In order to do so, a binder configuration may have its `defaultCandidate` flag set to false, e.g. `spring.cloud.stream.binders.<configurationName>.defaultCandidate=false`.
 This denotes a configuration that will exist independently of the default binder configuration process.
 ====
 
@@ -766,7 +766,7 @@ spring:
 === Binder configuration properties
 
 The following properties are available when creating custom binder configurations.
-They must be prefixed with `spring.cloud.stream.binder.<configurationName>`.
+They must be prefixed with `spring.cloud.stream.binders.<configurationName>`.
 
 type::
   The binder type.
