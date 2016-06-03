@@ -108,6 +108,7 @@ abstract class AggregateApplication {
 			Class<?> app) {
 		return new SpringApplicationBuilder(app)
 				.web(false)
+				.main(app)
 				.bannerMode(Mode.OFF)
 				.properties("spring.jmx.default-domain=" + app)
 				.properties(CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
