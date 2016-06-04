@@ -19,9 +19,10 @@ package org.springframework.cloud.stream.binder;
 import java.util.Map;
 
 /**
- * A registry of {@link BinderType}s, indexed by name. A {@link BinderTypeRegistry} bean is created automatically
- * based on information found in the {@literal META-INF/spring.binders} files provided by binder implementors.
- * This can be overridden by registering a {@link BinderTypeRegistry} bean in the context.
+ * A registry of {@link BinderType}s, indexed by name. A {@link BinderTypeRegistry} bean
+ * is created automatically based on information found in the
+ * {@literal META-INF/spring.binders} files provided by binder implementors. This can be
+ * overridden by registering a {@link BinderTypeRegistry} bean in the context.
  *
  * @author Marius Bogoevici
  */

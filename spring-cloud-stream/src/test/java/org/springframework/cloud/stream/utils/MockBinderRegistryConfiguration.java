@@ -28,7 +28,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * A simple configuration that creates mock {@link org.springframework.cloud.stream.binder.Binder}s.
+ * A simple configuration that creates mock
+ * {@link org.springframework.cloud.stream.binder.Binder}s.
  * @author Marius Bogoevici
  */
 @Configuration
@@ -36,8 +37,8 @@ public class MockBinderRegistryConfiguration {
 
 	@Bean
 	public BinderTypeRegistry binderTypeRegistry() {
-		return new DefaultBinderTypeRegistry(
-				Collections.singletonMap("mock", new BinderType("", new Class[] { MockBinderConfiguration.class })));
+		return new DefaultBinderTypeRegistry(Collections.singletonMap("mock",
+				new BinderType("", new Class[] { MockBinderConfiguration.class })));
 	}
 
 	@Bean

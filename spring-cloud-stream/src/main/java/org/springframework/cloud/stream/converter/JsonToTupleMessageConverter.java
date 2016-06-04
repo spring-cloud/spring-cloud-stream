@@ -25,10 +25,9 @@ import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
-
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert from a JSON (byte[] or String) to a {@link Tuple}.
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert from a
+ * JSON (byte[] or String) to a {@link Tuple}.
  *
  * @author David Turanski
  */
@@ -56,7 +55,8 @@ public class JsonToTupleMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		String source = null;
 		if (message.getPayload() instanceof byte[]) {
 			source = new String((byte[]) message.getPayload());

@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-
 /**
  * Strategy for determining the partition to which a message should be sent.
  *
@@ -25,11 +24,11 @@ package org.springframework.cloud.stream.binder;
 public interface PartitionSelectorStrategy {
 
 	/**
-	 * Determine the partition based on a key. The partitionCount is 1 greater
-	 * than the maximum value of a valid partition. Typical implementations
-	 * will return {@code someValue % partitionCount}. The caller will apply
-	 * that same modulo operation (as well as enforcing absolute value) if the
-	 * value exceeds partitionCount - 1.
+	 * Determine the partition based on a key. The partitionCount is 1 greater than the
+	 * maximum value of a valid partition. Typical implementations will return
+	 * {@code someValue % partitionCount}. The caller will apply that same modulo
+	 * operation (as well as enforcing absolute value) if the value exceeds partitionCount
+	 * - 1.
 	 *
 	 * @param key the key
 	 * @param partitionCount the number of partitions

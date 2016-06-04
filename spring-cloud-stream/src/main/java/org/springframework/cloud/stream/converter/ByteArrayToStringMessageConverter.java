@@ -25,11 +25,9 @@ import org.springframework.messaging.Message;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
-
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert from byte[] to String applying the Charset provided in
- * the content-type header if any.
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert from
+ * byte[] to String applying the Charset provided in the content-type header if any.
  *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
@@ -37,14 +35,15 @@ import org.springframework.util.MimeTypeUtils;
 public class ByteArrayToStringMessageConverter extends AbstractFromMessageConverter {
 
 	private final static List<MimeType> targetMimeTypes = new ArrayList<MimeType>();
+
 	static {
 		targetMimeTypes.add(MessageConverterUtils.X_JAVA_OBJECT);
 		targetMimeTypes.add(MimeTypeUtils.TEXT_PLAIN);
 	}
 
 	public ByteArrayToStringMessageConverter() {
-		super(Arrays.asList(new MimeType[] { MimeTypeUtils.APPLICATION_OCTET_STREAM, MimeTypeUtils.TEXT_PLAIN }),
-				targetMimeTypes);
+		super(Arrays.asList(new MimeType[] { MimeTypeUtils.APPLICATION_OCTET_STREAM,
+				MimeTypeUtils.TEXT_PLAIN }), targetMimeTypes);
 	}
 
 	@Override
@@ -61,7 +60,8 @@ public class ByteArrayToStringMessageConverter extends AbstractFromMessageConver
 	 * Don't need to manipulate message headers. Just return payload
 	 */
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		MimeType mimeType = getContentTypeResolver().resolve(message.getHeaders());
 
 		String converted = null;
@@ -76,7 +76,7 @@ public class ByteArrayToStringMessageConverter extends AbstractFromMessageConver
 					converted = new String((byte[]) message.getPayload(), encoding);
 				}
 				catch (UnsupportedEncodingException e) {
-					logger.error(e.getMessage(), e);
+					this.logger.error(e.getMessage(), e);
 				}
 			}
 		}

@@ -16,12 +16,10 @@
 
 package org.springframework.cloud.stream.converter;
 
-import org.springframework.tuple.Tuple;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
-
 
 /**
  * Message conversion utility methods.
@@ -33,19 +31,22 @@ import org.springframework.util.StringUtils;
 public abstract class MessageConverterUtils {
 
 	/**
-	 * An MimeType specifying a {@link Tuple}.
+	 * An MimeType specifying a Tuple.
 	 */
-	public static final MimeType X_SPRING_TUPLE = MimeType.valueOf("application/x-spring-tuple");
+	public static final MimeType X_SPRING_TUPLE = MimeType
+			.valueOf("application/x-spring-tuple");
 
 	/**
 	 * A general MimeType for Java Types.
 	 */
-	public static final MimeType X_JAVA_OBJECT = MimeType.valueOf("application/x-java-object");
+	public static final MimeType X_JAVA_OBJECT = MimeType
+			.valueOf("application/x-java-object");
 
 	/**
 	 * A general MimeType for a Java serialized byte array.
 	 */
-	public static final MimeType X_JAVA_SERIALIZED_OBJECT = MimeType.valueOf("application/x-java-serialized-object");
+	public static final MimeType X_JAVA_SERIALIZED_OBJECT = MimeType
+			.valueOf("application/x-java-serialized-object");
 
 	/**
 	 * Get the java Object type for the MimeType X_JAVA_OBJECT
@@ -53,8 +54,8 @@ public abstract class MessageConverterUtils {
 	 * @return the class for the content type
 	 */
 	public static Class<?> getJavaTypeForJavaObjectContentType(MimeType contentType) {
-		Assert.isTrue(X_JAVA_OBJECT.includes(contentType), "Content type must be " + X_JAVA_OBJECT.toString() + ", or " +
-				"included in it");
+		Assert.isTrue(X_JAVA_OBJECT.includes(contentType), "Content type must be "
+				+ X_JAVA_OBJECT.toString() + ", or " + "included in it");
 		if (contentType.getParameter("type") != null) {
 			try {
 				return ClassUtils.forName(contentType.getParameter("type"), null);
@@ -83,13 +84,16 @@ public abstract class MessageConverterUtils {
 				mimeType = resolveContentType(contentTypeString);
 			}
 			catch (ClassNotFoundException cfe) {
-				throw new IllegalArgumentException("Could not find the class required for " + contentTypeString, cfe);
+				throw new IllegalArgumentException(
+						"Could not find the class required for " + contentTypeString,
+						cfe);
 			}
 		}
 		return mimeType;
 	}
 
-	public static MimeType resolveContentType(String type) throws ClassNotFoundException, LinkageError {
+	public static MimeType resolveContentType(String type)
+			throws ClassNotFoundException, LinkageError {
 		if (!type.contains("/")) {
 			Class<?> javaType = resolveJavaType(type);
 			return javaObjectMimeType(javaType);
@@ -97,7 +101,8 @@ public abstract class MessageConverterUtils {
 		return MimeType.valueOf(type);
 	}
 
-	public static Class<?> resolveJavaType(String type) throws ClassNotFoundException, LinkageError {
+	public static Class<?> resolveJavaType(String type)
+			throws ClassNotFoundException, LinkageError {
 		return ClassUtils.forName(type, null);
 	}
 

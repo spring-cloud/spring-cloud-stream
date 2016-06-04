@@ -22,8 +22,9 @@ package org.springframework.cloud.stream.binder;
 public interface BinderFactory<T> {
 
 	/**
-	 * Returns the binder instance associated with the given configuration name. Instance caching is a requirement,
-	 * and implementations must return the same instance on subsequent invocations with the same argument.
+	 * Returns the binder instance associated with the given configuration name. Instance
+	 * caching is a requirement, and implementations must return the same instance on
+	 * subsequent invocations with the same argument.
 	 *
 	 * @param configurationName the name of a binder configuration
 	 * @return the binder instance

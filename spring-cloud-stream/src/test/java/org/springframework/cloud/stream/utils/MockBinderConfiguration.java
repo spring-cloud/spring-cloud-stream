@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.utils;
 
 import org.mockito.Mockito;
-
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +29,7 @@ public class MockBinderConfiguration {
 
 	@Bean
 	public Binder<?, ?, ?> binder() {
-		return Mockito.mock(Binder.class, Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS));
+		return Mockito.mock(Binder.class,
+				Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS));
 	}
 }

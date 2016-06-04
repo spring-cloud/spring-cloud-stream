@@ -25,8 +25,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 
 /**
- * Coordinates binding/unbinding of input channels in accordance to the lifecycle
- * of the host context.
+ * Coordinates binding/unbinding of input channels in accordance to the lifecycle of the
+ * host context.
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
@@ -44,7 +44,7 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 
 	@Override
 	public void start() {
-		if (!running) {
+		if (!this.running) {
 			// retrieve the ChannelBindingService lazily, avoiding early initialization
 			try {
 				ChannelBindingService channelBindingService = this.applicationContext
@@ -65,7 +65,7 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 
 	@Override
 	public void stop() {
-		if (running) {
+		if (this.running) {
 			try {
 				// retrieve the ChannelBindingService lazily, avoiding early
 				// initialization
@@ -87,7 +87,7 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 
 	@Override
 	public boolean isRunning() {
-		return running;
+		return this.running;
 	}
 
 	@Override

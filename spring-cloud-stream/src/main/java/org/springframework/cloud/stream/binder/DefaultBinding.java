@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-
 import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.util.Assert;
 
@@ -39,7 +38,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	private final AbstractEndpoint endpoint;
 
-	public DefaultBinding(String name, String group, T target, AbstractEndpoint endpoint) {
+	public DefaultBinding(String name, String group, T target,
+			AbstractEndpoint endpoint) {
 		Assert.notNull(target, "target must not be null");
 		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
@@ -48,19 +48,17 @@ public class DefaultBinding<T> implements Binding<T> {
 		this.endpoint = endpoint;
 	}
 
-
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	public String getGroup() {
-		return group;
+		return this.group;
 	}
-
 
 	@Override
 	public final void unbind() {
-		endpoint.stop();
+		this.endpoint.stop();
 		afterUnbind();
 	}
 
@@ -69,7 +67,7 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public String toString() {
-		return " Binding [name=" + name + ", target=" + target + ", endpoint=" + endpoint.getComponentName()
-				+ "]";
+		return " Binding [name=" + this.name + ", target=" + this.target + ", endpoint="
+				+ this.endpoint.getComponentName() + "]";
 	}
 }

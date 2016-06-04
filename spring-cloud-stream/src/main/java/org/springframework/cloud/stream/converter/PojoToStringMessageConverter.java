@@ -21,10 +21,9 @@ import org.springframework.tuple.Tuple;
 import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeTypeUtils;
 
-
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert a Java object to a String using toString()
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert a Java
+ * object to a String using toString()
  *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
@@ -46,7 +45,8 @@ public class PojoToStringMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		String payloadString = null;
 		if (message.getPayload() instanceof Tuple) {
 			TupleBuilder builder = TupleBuilder.tuple();

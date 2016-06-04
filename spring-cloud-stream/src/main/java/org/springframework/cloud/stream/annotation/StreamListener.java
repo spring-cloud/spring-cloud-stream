@@ -25,22 +25,29 @@ import java.lang.annotation.Target;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 
 /**
- * Annotation that marks a method to be a listener to an input component declared through {@link EnableBinding}
- * (e.g. a channel).
+ * Annotation that marks a method to be a listener to an input component declared through
+ * {@link EnableBinding} (e.g. a channel).
  *
- * Annotated methods are allowed to have flexible signatures, as described by {@link MessageMapping}.
+ * Annotated methods are allowed to have flexible signatures, as described by
+ * {@link MessageMapping}.
  *
- * If the method returns a {@link org.springframework.messaging.Message}, the result will be automatically sent
- * to a channel, as follows:
+ * If the method returns a {@link org.springframework.messaging.Message}, the result will
+ * be automatically sent to a channel, as follows:
  * <ul>
- * <li>A result of the type {@link org.springframework.messaging.Message} will be sent as-is</li>
- * <li>All other results will become the payload of a {@link org.springframework.messaging.Message}</li>
+ * <li>A result of the type {@link org.springframework.messaging.Message} will be sent
+ * as-is</li>
+ * <li>All other results will become the payload of a
+ * {@link org.springframework.messaging.Message}</li>
  * </ul>
  *
- * The target channel of the return message is determined by consulting in the following order:
+ * The target channel of the return message is determined by consulting in the following
+ * order:
  * <ul>
- * <li>The {@link org.springframework.messaging.MessageHeaders} of the resulting message.</li>
- * <li>The value set on the {@link org.springframework.messaging.handler.annotation.SendTo} annotation, if present</li>
+ * <li>The {@link org.springframework.messaging.MessageHeaders} of the resulting message.
+ * </li>
+ * <li>The value set on the
+ * {@link org.springframework.messaging.handler.annotation.SendTo} annotation, if present
+ * </li>
  * </ul>
  *
  * @see {@link MessageMapping}
@@ -48,7 +55,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * @see {@link org.springframework.messaging.handler.annotation.SendTo}
  * @author Marius Bogoevici
  */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @MessageMapping
 @Documented

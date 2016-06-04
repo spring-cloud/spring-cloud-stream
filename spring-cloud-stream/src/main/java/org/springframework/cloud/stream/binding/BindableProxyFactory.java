@@ -25,7 +25,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -51,13 +50,15 @@ import org.springframework.util.ReflectionUtils;
  *
  * @see EnableBinding
  */
-public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>, Bindable, InitializingBean {
+public class BindableProxyFactory
+		implements MethodInterceptor, FactoryBean<Object>, Bindable, InitializingBean {
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
-	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
+	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX
+			+ ".channelNamespace";
 
 	@Value("${" + CHANNEL_NAMESPACE_PROPERTY_NAME + ":}")
 	private String channelNamespace;
@@ -87,52 +88,69 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (MessageChannel.class.isAssignableFrom(method.getReturnType())) {
 			Input input = AnnotationUtils.findAnnotation(method, Input.class);
 			if (input != null) {
-				String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+				String name = BindingBeanDefinitionRegistryUtils.getChannelName(input,
+						method);
 				messageChannel = this.inputHolders.get(name).getMessageChannel();
 			}
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
-				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
-				messageChannel =  this.outputHolders.get(name).getMessageChannel();
+				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output,
+						method);
+				messageChannel = this.outputHolders.get(name).getMessageChannel();
 			}
 		}
-		//ignore
+		// ignore
 		return messageChannel;
 	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
+		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
-				Assert.notNull(channelFactory, "Channel Factory cannot be null");
+				Assert.notNull(BindableProxyFactory.this.channelFactory,
+						"Channel Factory cannot be null");
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input,
+							method);
 					validateChannelType(method.getReturnType());
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
-						inputHolders.put(name, new ChannelHolder(channelFactory.createSubscribableChannel(name), true));
+						BindableProxyFactory.this.inputHolders
+								.put(name,
+										new ChannelHolder(
+												BindableProxyFactory.this.channelFactory
+														.createSubscribableChannel(name),
+												true));
 					}
 					else {
-						inputHolders.put(name, new ChannelHolder(sharedChannel, false));
+						BindableProxyFactory.this.inputHolders.put(name,
+								new ChannelHolder(sharedChannel, false));
 					}
 				}
 			}
 		});
-		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
+		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+					String name = BindingBeanDefinitionRegistryUtils
+							.getChannelName(output, method);
 					validateChannelType(method.getReturnType());
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
-						outputHolders.put(name, new ChannelHolder(channelFactory.createSubscribableChannel(name), true));
+						BindableProxyFactory.this.outputHolders
+								.put(name,
+										new ChannelHolder(
+												BindableProxyFactory.this.channelFactory
+														.createSubscribableChannel(name),
+												true));
 					}
 					else {
-						outputHolders.put(name, new ChannelHolder(sharedChannel, false));
+						BindableProxyFactory.this.outputHolders.put(name,
+								new ChannelHolder(sharedChannel, false));
 					}
 				}
 			}
@@ -141,14 +159,17 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	private void validateChannelType(Class<?> channelType) {
-		Assert.isTrue(SubscribableChannel.class.equals(channelType) || MessageChannel.class.equals(channelType),
-				"A bound channel should be either a '" + MessageChannel.class.getName() + "', " +
-						" or a '" + SubscribableChannel.class.getName() + "'");
+		Assert.isTrue(
+				SubscribableChannel.class.equals(channelType)
+						|| MessageChannel.class.equals(channelType),
+				"A bound channel should be either a '" + MessageChannel.class.getName()
+						+ "', " + " or a '" + SubscribableChannel.class.getName() + "'");
 	}
 
 	private MessageChannel locateSharedChannel(String name) {
-		return this.sharedChannelRegistry != null ?
-				this.sharedChannelRegistry.get(getNamespacePrefixedChannelName(name)) : null;
+		return this.sharedChannelRegistry != null
+				? this.sharedChannelRegistry.get(getNamespacePrefixedChannelName(name))
+				: null;
 	}
 
 	private String getNamespacePrefixedChannelName(String name) {
@@ -177,16 +198,20 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public void bindInputs(ChannelBindingService channelBindingService) {
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace, this.type));
+			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace,
+					this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputHolders.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputHolders
+				.entrySet()) {
 			String inputChannelName = channelHolderEntry.getKey();
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			if (channelHolder.isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, inputChannelName));
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace,
+							this.type, inputChannelName));
 				}
-				channelBindingService.bindConsumer(channelHolder.getMessageChannel(), inputChannelName);
+				channelBindingService.bindConsumer(channelHolder.getMessageChannel(),
+						inputChannelName);
 			}
 		}
 	}
@@ -194,16 +219,20 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public void bindOutputs(ChannelBindingService channelBindingService) {
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
+			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace,
+					this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputHolders.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputHolders
+				.entrySet()) {
 			ChannelHolder channelHolder = channelHolderEntry.getValue();
 			String outputChannelName = channelHolderEntry.getKey();
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, outputChannelName));
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace,
+							this.type, outputChannelName));
 				}
-				channelBindingService.bindProducer(channelHolder.getMessageChannel(), outputChannelName);
+				channelBindingService.bindProducer(channelHolder.getMessageChannel(),
+						outputChannelName);
 			}
 		}
 	}
@@ -211,12 +240,15 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public void unbindInputs(ChannelBindingService channelBindingService) {
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace, this.type));
+			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace,
+					this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputHolders.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.inputHolders
+				.entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
+					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace,
+							this.type, channelHolderEntry.getKey()));
 				}
 				channelBindingService.unbindConsumers(channelHolderEntry.getKey());
 			}
@@ -226,12 +258,15 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public void unbindOutputs(ChannelBindingService channelBindingService) {
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace, this.type));
+			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace,
+					this.type));
 		}
-		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputHolders.entrySet()) {
+		for (Map.Entry<String, ChannelHolder> channelHolderEntry : this.outputHolders
+				.entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, channelHolderEntry.getKey()));
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace,
+							this.type, channelHolderEntry.getKey()));
 				}
 				channelBindingService.unbindProducers(channelHolderEntry.getKey());
 			}

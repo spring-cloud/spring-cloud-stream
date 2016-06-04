@@ -34,7 +34,7 @@ public class BinderProperties {
 	private boolean defaultCandidate = true;
 
 	public String getType() {
-		return type;
+		return this.type;
 	}
 
 	public void setType(String name) {
@@ -42,7 +42,7 @@ public class BinderProperties {
 	}
 
 	public Properties getEnvironment() {
-		return environment;
+		return this.environment;
 	}
 
 	public void setEnvironment(Properties environment) {
@@ -50,7 +50,7 @@ public class BinderProperties {
 	}
 
 	public boolean isInheritEnvironment() {
-		return inheritEnvironment;
+		return this.inheritEnvironment;
 	}
 
 	public void setInheritEnvironment(boolean inheritEnvironment) {
@@ -58,7 +58,7 @@ public class BinderProperties {
 	}
 
 	public boolean isDefaultCandidate() {
-		return defaultCandidate;
+		return this.defaultCandidate;
 	}
 
 	public void setDefaultCandidate(boolean defaultCandidate) {

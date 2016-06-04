@@ -18,11 +18,11 @@ package org.springframework.cloud.stream.binder;
 
 import java.io.IOException;
 
+import org.springframework.expression.Expression;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-
-import org.springframework.expression.Expression;
 
 /**
  * JSON serializer for Expression value.
@@ -35,8 +35,8 @@ public class ExpressionSerializer extends JsonSerializer<Expression> {
 	}
 
 	@Override
-	public void serialize(Expression expression, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-			throws IOException {
+	public void serialize(Expression expression, JsonGenerator jsonGenerator,
+			SerializerProvider serializerProvider) throws IOException {
 		if (expression != null) {
 			jsonGenerator.writeString(expression.getExpressionString());
 		}

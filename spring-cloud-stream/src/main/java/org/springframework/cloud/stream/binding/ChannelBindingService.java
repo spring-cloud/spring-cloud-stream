@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.cloud.stream.binder.Binder;
@@ -42,8 +41,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.beanvalidation.CustomValidatorBean;
 
 /**
- * Handles the operations related to channel binding including binding of input/output channels by delegating
- * to an underlying {@link Binder}, setting up data type conversion for binding channel.
+ * Handles the operations related to channel binding including binding of input/output
+ * channels by delegating to an underlying {@link Binder}, setting up data type conversion
+ * for binding channel.
  * @author Mark Fisher
  * @author Dave Syer
  * @author Marius Bogoevici
@@ -64,7 +64,8 @@ public class ChannelBindingService {
 
 	private final Map<String, List<Binding<MessageChannel>>> consumerBindings = new HashMap<>();
 
-	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
+	public ChannelBindingService(
+			ChannelBindingServiceProperties channelBindingServiceProperties,
 			BinderFactory<MessageChannel> binderFactory) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.binderFactory = binderFactory;
@@ -72,25 +73,31 @@ public class ChannelBindingService {
 		this.validator.afterPropertiesSet();
 	}
 
-
 	@SuppressWarnings("unchecked")
-	public Collection<Binding<MessageChannel>> bindConsumer(MessageChannel inputChannel, String inputChannelName) {
-		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
-		String[] channelBindingTargets = StringUtils.commaDelimitedListToStringArray(channelBindingTarget);
+	public Collection<Binding<MessageChannel>> bindConsumer(MessageChannel inputChannel,
+			String inputChannelName) {
+		String channelBindingTarget = this.channelBindingServiceProperties
+				.getBindingDestination(inputChannelName);
+		String[] channelBindingTargets = StringUtils
+				.commaDelimitedListToStringArray(channelBindingTarget);
 		List<Binding<MessageChannel>> bindings = new ArrayList<>();
-		Binder<MessageChannel, ConsumerProperties, ?> binder =
-				(Binder<MessageChannel, ConsumerProperties, ?>) getBinderForChannel(inputChannelName);
-		ConsumerProperties consumerProperties =
-				this.channelBindingServiceProperties.getConsumerProperties(inputChannelName);
+		Binder<MessageChannel, ConsumerProperties, ?> binder = (Binder<MessageChannel, ConsumerProperties, ?>) getBinderForChannel(
+				inputChannelName);
+		ConsumerProperties consumerProperties = this.channelBindingServiceProperties
+				.getConsumerProperties(inputChannelName);
 		if (binder instanceof ExtendedPropertiesBinder) {
-			Object extension = ((ExtendedPropertiesBinder) binder).getExtendedConsumerProperties(inputChannelName);
-			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(extension);
+			Object extension = ((ExtendedPropertiesBinder) binder)
+					.getExtendedConsumerProperties(inputChannelName);
+			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(
+					extension);
 			BeanUtils.copyProperties(consumerProperties, extendedConsumerProperties);
 			consumerProperties = extendedConsumerProperties;
 		}
 		validate(consumerProperties);
 		for (String target : channelBindingTargets) {
-			Binding<MessageChannel> binding = binder.bindConsumer(target, channelBindingServiceProperties.getGroup(inputChannelName), inputChannel, consumerProperties);
+			Binding<MessageChannel> binding = binder.bindConsumer(target,
+					this.channelBindingServiceProperties.getGroup(inputChannelName),
+					inputChannel, consumerProperties);
 			bindings.add(binding);
 		}
 		this.consumerBindings.put(inputChannelName, bindings);
@@ -98,32 +105,40 @@ public class ChannelBindingService {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Binding<MessageChannel> bindProducer(MessageChannel outputChannel, String outputChannelName) {
-		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(outputChannelName);
-		Binder<MessageChannel, ?, ProducerProperties> binder =
-				(Binder<MessageChannel, ?, ProducerProperties>) getBinderForChannel(outputChannelName);
-		ProducerProperties producerProperties = this.channelBindingServiceProperties.getProducerProperties(outputChannelName);
+	public Binding<MessageChannel> bindProducer(MessageChannel outputChannel,
+			String outputChannelName) {
+		String channelBindingTarget = this.channelBindingServiceProperties
+				.getBindingDestination(outputChannelName);
+		Binder<MessageChannel, ?, ProducerProperties> binder = (Binder<MessageChannel, ?, ProducerProperties>) getBinderForChannel(
+				outputChannelName);
+		ProducerProperties producerProperties = this.channelBindingServiceProperties
+				.getProducerProperties(outputChannelName);
 		if (binder instanceof ExtendedPropertiesBinder) {
-			Object extension = ((ExtendedPropertiesBinder) binder).getExtendedProducerProperties(outputChannelName);
-			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(extension);
+			Object extension = ((ExtendedPropertiesBinder) binder)
+					.getExtendedProducerProperties(outputChannelName);
+			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(
+					extension);
 			BeanUtils.copyProperties(producerProperties, extendedProducerProperties);
 			producerProperties = extendedProducerProperties;
 		}
 		validate(producerProperties);
-		Binding<MessageChannel> binding = binder.bindProducer(channelBindingTarget, outputChannel, producerProperties);
+		Binding<MessageChannel> binding = binder.bindProducer(channelBindingTarget,
+				outputChannel, producerProperties);
 		this.producerBindings.put(outputChannelName, binding);
 		return binding;
 	}
 
 	public void unbindConsumers(String inputChannelName) {
-		List<Binding<MessageChannel>> bindings = this.consumerBindings.remove(inputChannelName);
+		List<Binding<MessageChannel>> bindings = this.consumerBindings
+				.remove(inputChannelName);
 		if (bindings != null && !CollectionUtils.isEmpty(bindings)) {
 			for (Binding<MessageChannel> binding : bindings) {
 				binding.unbind();
 			}
 		}
-		else if (log.isWarnEnabled()) {
-			log.warn("Trying to unbind channel '" + inputChannelName + "', but no binding found.");
+		else if (this.log.isWarnEnabled()) {
+			this.log.warn("Trying to unbind channel '" + inputChannelName
+					+ "', but no binding found.");
 		}
 	}
 
@@ -132,14 +147,15 @@ public class ChannelBindingService {
 		if (binding != null) {
 			binding.unbind();
 		}
-		else if (log.isWarnEnabled()) {
-			log.warn("Trying to unbind channel '" + outputChannelName + "', but no binding found.");
+		else if (this.log.isWarnEnabled()) {
+			this.log.warn("Trying to unbind channel '" + outputChannelName
+					+ "', but no binding found.");
 		}
 	}
 
 	private Binder<MessageChannel, ?, ?> getBinderForChannel(String channelName) {
 		String transport = this.channelBindingServiceProperties.getBinder(channelName);
-		return binderFactory.getBinder(transport);
+		return this.binderFactory.getBinder(transport);
 	}
 
 	public ChannelBindingServiceProperties getChannelBindingServiceProperties() {
@@ -148,7 +164,7 @@ public class ChannelBindingService {
 
 	private void validate(Object properties) {
 		RelaxedDataBinder dataBinder = new RelaxedDataBinder(properties);
-		dataBinder.setValidator(validator);
+		dataBinder.setValidator(this.validator);
 		dataBinder.validate();
 		if (dataBinder.getBindingResult().hasErrors()) {
 			throw new IllegalStateException(dataBinder.getBindingResult().toString());

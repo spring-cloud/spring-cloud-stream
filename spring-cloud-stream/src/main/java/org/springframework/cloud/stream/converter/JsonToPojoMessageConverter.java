@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.stream.converter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeTypeUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  *
@@ -37,7 +37,7 @@ public class JsonToPojoMessageConverter extends AbstractFromMessageConverter {
 
 	@Override
 	protected Class<?>[] supportedPayloadTypes() {
-		return new Class<?>[] {String.class, byte[].class};
+		return new Class<?>[] { String.class, byte[].class };
 	}
 
 	@Override
@@ -46,20 +46,21 @@ public class JsonToPojoMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		Object result = null;
 		try {
 			Object payload = message.getPayload();
 
 			if (payload instanceof byte[]) {
-				result = objectMapper.readValue((byte[]) payload, targetClass);
+				result = this.objectMapper.readValue((byte[]) payload, targetClass);
 			}
 			else if (payload instanceof String) {
-				result = objectMapper.readValue((String) payload, targetClass);
+				result = this.objectMapper.readValue((String) payload, targetClass);
 			}
 		}
 		catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			this.logger.error(e.getMessage(), e);
 			return null;
 		}
 		return result;

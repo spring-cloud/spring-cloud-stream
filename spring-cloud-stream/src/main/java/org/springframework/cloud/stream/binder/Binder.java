@@ -17,9 +17,9 @@
 package org.springframework.cloud.stream.binder;
 
 /**
- * A strategy interface used to bind an app interface to a logical name. The name is intended to identify a
- * logical consumer or producer of messages. This may be a queue, a channel adapter, another message channel, a Spring
- * bean, etc.
+ * A strategy interface used to bind an app interface to a logical name. The name is
+ * intended to identify a logical consumer or producer of messages. This may be a queue, a
+ * channel adapter, another message channel, a Spring bean, etc.
  *
  * @author Mark Fisher
  * @author David Turanski
@@ -32,18 +32,22 @@ package org.springframework.cloud.stream.binder;
 public interface Binder<T, C extends ConsumerProperties, P extends ProducerProperties> {
 
 	/**
-	 * Bind the target component as a message consumer to the logical entity identified by the name.
+	 * Bind the target component as a message consumer to the logical entity identified by
+	 * the name.
 	 * @param name the logical identity of the message source
-	 * @param group the consumer group to which this consumer belongs - subscriptions are shared among consumers
-	 * in the same group (a <code>null</code> or empty String, must be treated as an anonymous group that doesn't share
-	 * the subscription with any other consumer)
+	 * @param group the consumer group to which this consumer belongs - subscriptions are
+	 * shared among consumers in the same group (a <code>null</code> or empty String, must
+	 * be treated as an anonymous group that doesn't share the subscription with any other
+	 * consumer)
 	 * @param inboundBindTarget the app interface to be bound as a consumer
 	 * @param consumerProperties the consumer properties
 	 */
-	Binding<T> bindConsumer(String name, String group, T inboundBindTarget, C consumerProperties);
+	Binding<T> bindConsumer(String name, String group, T inboundBindTarget,
+			C consumerProperties);
 
 	/**
-	 * Bind the target component as a message producer to the logical entity identified by the name.
+	 * Bind the target component as a message producer to the logical entity identified by
+	 * the name.
 	 * @param name the logical identity of the message target
 	 * @param outboundBindTarget the app interface to be bound as a producer
 	 * @param producerProperties the producer properties

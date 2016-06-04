@@ -23,17 +23,17 @@ import java.io.Serializable;
 
 import org.springframework.messaging.Message;
 
-
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert from a POJO to byte[] with Java.io serialization if any.
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert from a
+ * POJO to byte[] with Java.io serialization if any.
  *
  * @author David Turanski
  */
 public class JavaToSerializedMessageConverter extends AbstractFromMessageConverter {
 
 	public JavaToSerializedMessageConverter() {
-		super(MessageConverterUtils.X_JAVA_OBJECT, MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT);
+		super(MessageConverterUtils.X_JAVA_OBJECT,
+				MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT);
 	}
 
 	@Override
@@ -47,13 +47,14 @@ public class JavaToSerializedMessageConverter extends AbstractFromMessageConvert
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		try {
 			new ObjectOutputStream(bos).writeObject(message.getPayload());
 		}
 		catch (IOException e) {
-			logger.error(e.getMessage(), e);
+			this.logger.error(e.getMessage(), e);
 			return null;
 		}
 		return bos.toByteArray();

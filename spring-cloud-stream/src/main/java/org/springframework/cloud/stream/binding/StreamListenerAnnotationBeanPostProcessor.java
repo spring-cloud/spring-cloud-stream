@@ -46,11 +46,13 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * {@link BeanPostProcessor} that handles {@link StreamListener} annotations found on bean methods.
+ * {@link BeanPostProcessor} that handles {@link StreamListener} annotations found on bean
+ * methods.
  *
  * @author Marius Bogoevici
  */
-public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProcessor, ApplicationContextAware, SmartInitializingSingleton {
+public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProcessor,
+		ApplicationContextAware, SmartInitializingSingleton {
 
 	private final DestinationResolver<MessageChannel> binderAwareChannelResolver;
 
@@ -60,57 +62,81 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 
 	private ConfigurableApplicationContext applicationContext;
 
-	public StreamListenerAnnotationBeanPostProcessor(DestinationResolver<MessageChannel> binderAwareChannelResolver, MessageHandlerMethodFactory messageHandlerMethodFactory) {
+	public StreamListenerAnnotationBeanPostProcessor(
+			DestinationResolver<MessageChannel> binderAwareChannelResolver,
+			MessageHandlerMethodFactory messageHandlerMethodFactory) {
 		Assert.notNull(binderAwareChannelResolver, "Destination resolver cannot be null");
-		Assert.notNull(messageHandlerMethodFactory, "Message handler method factory cannot be null");
+		Assert.notNull(messageHandlerMethodFactory,
+				"Message handler method factory cannot be null");
 		this.binderAwareChannelResolver = binderAwareChannelResolver;
 		this.messageHandlerMethodFactory = messageHandlerMethodFactory;
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	@Override
-	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+	public Object postProcessBeforeInitialization(Object bean, String beanName)
+			throws BeansException {
 		return bean;
 	}
 
 	@Override
-	public Object postProcessAfterInitialization(final Object bean, String beanName) throws BeansException {
-		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
+	public Object postProcessAfterInitialization(final Object bean, String beanName)
+			throws BeansException {
+		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean)
+				: bean.getClass();
 		ReflectionUtils.doWithMethods(targetClass, new ReflectionUtils.MethodCallback() {
 			@Override
-			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
-				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
+			public void doWith(final Method method)
+					throws IllegalArgumentException, IllegalAccessException {
+				StreamListener streamListener = AnnotationUtils.findAnnotation(method,
+						StreamListener.class);
 				if (streamListener != null) {
 					Method targetMethod = checkProxy(method, bean);
-					Assert.hasText(streamListener.value(), "The binding name cannot be null");
-					final InvocableHandlerMethod invocableHandlerMethod = messageHandlerMethodFactory.createInvocableHandlerMethod(bean, targetMethod);
+					Assert.hasText(streamListener.value(),
+							"The binding name cannot be null");
+					final InvocableHandlerMethod invocableHandlerMethod = StreamListenerAnnotationBeanPostProcessor.this.messageHandlerMethodFactory
+							.createInvocableHandlerMethod(bean, targetMethod);
 					if (!StringUtils.hasText(streamListener.value())) {
-						throw new BeanInitializationException("A bound component name must be specified");
+						throw new BeanInitializationException(
+								"A bound component name must be specified");
 					}
-					if (mappedBindings.containsKey(streamListener.value())) {
-						throw new BeanInitializationException("Duplicate @" + StreamListener.class.getSimpleName() +
-								" mapping for '" + streamListener.value() + "' on " + invocableHandlerMethod.getShortLogMessage() +
-								" already existing for " + mappedBindings.get(streamListener.value()).getShortLogMessage());
+					if (StreamListenerAnnotationBeanPostProcessor.this.mappedBindings
+							.containsKey(streamListener.value())) {
+						throw new BeanInitializationException("Duplicate @"
+								+ StreamListener.class.getSimpleName() + " mapping for '"
+								+ streamListener.value() + "' on "
+								+ invocableHandlerMethod.getShortLogMessage()
+								+ " already existing for "
+								+ StreamListenerAnnotationBeanPostProcessor.this.mappedBindings
+										.get(streamListener.value())
+										.getShortLogMessage());
 					}
-					mappedBindings.put(streamListener.value(), invocableHandlerMethod);
-					SubscribableChannel channel = applicationContext.getBean(streamListener.value(),
-							SubscribableChannel.class);
+					StreamListenerAnnotationBeanPostProcessor.this.mappedBindings
+							.put(streamListener.value(), invocableHandlerMethod);
+					SubscribableChannel channel = StreamListenerAnnotationBeanPostProcessor.this.applicationContext
+							.getBean(streamListener.value(), SubscribableChannel.class);
 					final String defaultOutputChannel = extractDefaultOutput(method);
 					if (invocableHandlerMethod.isVoid()) {
-						Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel), "An output channel cannot be specified for a method that " +
-								"does not return a value");
+						Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
+								"An output channel cannot be specified for a method that "
+										+ "does not return a value");
 					}
 					else {
-						Assert.isTrue(!StringUtils.isEmpty(defaultOutputChannel), "An output channel must be specified for a method that " +
-								"can return a value");
+						Assert.isTrue(!StringUtils.isEmpty(defaultOutputChannel),
+								"An output channel must be specified for a method that "
+										+ "can return a value");
 					}
-					StreamListenerMessageHandler handler = new StreamListenerMessageHandler(invocableHandlerMethod);
-					handler.setApplicationContext(applicationContext);
-					handler.setChannelResolver(binderAwareChannelResolver);
+					StreamListenerMessageHandler handler = new StreamListenerMessageHandler(
+							invocableHandlerMethod);
+					handler.setApplicationContext(
+							StreamListenerAnnotationBeanPostProcessor.this.applicationContext);
+					handler.setChannelResolver(
+							StreamListenerAnnotationBeanPostProcessor.this.binderAwareChannelResolver);
 					if (!StringUtils.isEmpty(defaultOutputChannel)) {
 						handler.setOutputChannelName(defaultOutputChannel);
 					}
@@ -124,16 +150,19 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 
 	@Override
 	public void afterSingletonsInstantiated() {
-		// Dump the mappings after the context has been created, ensuring that beans can be processed correctly
+		// Dump the mappings after the context has been created, ensuring that beans can
+		// be processed correctly
 		// again.
-		mappedBindings.clear();
+		this.mappedBindings.clear();
 	}
 
 	private String extractDefaultOutput(Method method) {
 		SendTo sendTo = AnnotationUtils.findAnnotation(method, SendTo.class);
 		if (sendTo != null) {
-			Assert.isTrue(!ObjectUtils.isEmpty(sendTo.value()), "At least one output must be specified");
-			Assert.isTrue(sendTo.value().length == 1, "Multiple destinations cannot be specified");
+			Assert.isTrue(!ObjectUtils.isEmpty(sendTo.value()),
+					"At least one output must be specified");
+			Assert.isTrue(sendTo.value().length == 1,
+					"Multiple destinations cannot be specified");
 			Assert.hasText(sendTo.value()[0], "An empty destination cannot be specified");
 			return sendTo.value()[0];
 		}
@@ -144,13 +173,16 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 		Method method = methodArg;
 		if (AopUtils.isJdkDynamicProxy(bean)) {
 			try {
-				// Found a @StreamListener method on the target class for this JDK proxy ->
+				// Found a @StreamListener method on the target class for this JDK proxy
+				// ->
 				// is it also present on the proxy itself?
-				method = bean.getClass().getMethod(method.getName(), method.getParameterTypes());
+				method = bean.getClass().getMethod(method.getName(),
+						method.getParameterTypes());
 				Class<?>[] proxiedInterfaces = ((Advised) bean).getProxiedInterfaces();
 				for (Class<?> iface : proxiedInterfaces) {
 					try {
-						method = iface.getMethod(method.getName(), method.getParameterTypes());
+						method = iface.getMethod(method.getName(),
+								method.getParameterTypes());
 						break;
 					}
 					catch (NoSuchMethodException noMethod) {
@@ -162,21 +194,25 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 			}
 			catch (NoSuchMethodException ex) {
 				throw new IllegalStateException(String.format(
-						"@StreamListener method '%s' found on bean target class '%s', " +
-								"but not found in any interface(s) for bean JDK proxy. Either " +
-								"pull the method up to an interface or switch to subclass (CGLIB) " +
-								"proxies by setting proxy-target-class/proxyTargetClass " +
-								"attribute to 'true'", method.getName(), method.getDeclaringClass().getSimpleName()), ex);
+						"@StreamListener method '%s' found on bean target class '%s', "
+								+ "but not found in any interface(s) for bean JDK proxy. Either "
+								+ "pull the method up to an interface or switch to subclass (CGLIB) "
+								+ "proxies by setting proxy-target-class/proxyTargetClass "
+								+ "attribute to 'true'",
+						method.getName(), method.getDeclaringClass().getSimpleName()),
+						ex);
 			}
 		}
 		return method;
 	}
 
-	private final class StreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
+	private final class StreamListenerMessageHandler
+			extends AbstractReplyProducingMessageHandler {
 
 		private final InvocableHandlerMethod invocableHandlerMethod;
 
-		private StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod) {
+		private StreamListenerMessageHandler(
+				InvocableHandlerMethod invocableHandlerMethod) {
 			this.invocableHandlerMethod = invocableHandlerMethod;
 		}
 
@@ -188,14 +224,17 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 		@Override
 		protected Object handleRequestMessage(Message<?> requestMessage) {
 			try {
-				return invocableHandlerMethod.invoke(requestMessage);
+				return this.invocableHandlerMethod.invoke(requestMessage);
 			}
 			catch (Exception e) {
 				if (e instanceof MessagingException) {
 					throw (MessagingException) e;
 				}
 				else {
-					throw new MessagingException(requestMessage, "Exception thrown while invoking " + invocableHandlerMethod.getShortLogMessage(), e);
+					throw new MessagingException(requestMessage,
+							"Exception thrown while invoking "
+									+ this.invocableHandlerMethod.getShortLogMessage(),
+							e);
 				}
 			}
 		}

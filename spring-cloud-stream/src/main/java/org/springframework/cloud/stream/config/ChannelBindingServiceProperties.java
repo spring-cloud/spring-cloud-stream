@@ -21,9 +21,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -38,6 +35,9 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
  * @author Dave Syer
  * @author Marius Bogoevici
@@ -46,7 +46,8 @@ import org.springframework.util.Assert;
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
-public class ChannelBindingServiceProperties implements ApplicationContextAware, InitializingBean {
+public class ChannelBindingServiceProperties
+		implements ApplicationContextAware, InitializingBean {
 
 	private ConversionService conversionService;
 
@@ -55,7 +56,8 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	private int instanceCount = 1;
 
-	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+	private Map<String, BindingProperties> bindings = new TreeMap<>(
+			String.CASE_INSENSITIVE_ORDER);
 
 	private Map<String, BinderProperties> binders = new HashMap<>();
 
@@ -72,7 +74,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	private ConfigurableApplicationContext applicationContext;
 
 	public Map<String, BindingProperties> getBindings() {
-		return bindings;
+		return this.bindings;
 	}
 
 	public void setBindings(Map<String, BindingProperties> bindings) {
@@ -80,7 +82,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public Map<String, BinderProperties> getBinders() {
-		return binders;
+		return this.binders;
 	}
 
 	public void setBinders(Map<String, BinderProperties> binders) {
@@ -88,7 +90,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public String getDefaultBinder() {
-		return defaultBinder;
+		return this.defaultBinder;
 	}
 
 	public void setDefaultBinder(String defaultBinder) {
@@ -96,7 +98,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public int getInstanceIndex() {
-		return instanceIndex;
+		return this.instanceIndex;
 	}
 
 	public void setInstanceIndex(int instanceIndex) {
@@ -104,7 +106,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public int getInstanceCount() {
-		return instanceCount;
+		return this.instanceCount;
 	}
 
 	public void setInstanceCount(int instanceCount) {
@@ -112,7 +114,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public String[] getDynamicDestinations() {
-		return dynamicDestinations;
+		return this.dynamicDestinations;
 	}
 
 	public void setDynamicDestinations(String[] dynamicDestinations) {
@@ -120,7 +122,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public Properties getConsumerDefaults() {
-		return consumerDefaults;
+		return this.consumerDefaults;
 	}
 
 	public void setConsumerDefaults(Properties consumerDefaults) {
@@ -128,7 +130,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public Properties getProducerDefaults() {
-		return producerDefaults;
+		return this.producerDefaults;
 	}
 
 	public void setProducerDefaults(Properties producerDefaults) {
@@ -136,7 +138,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public boolean isIgnoreUnknownProperties() {
-		return ignoreUnknownProperties;
+		return this.ignoreUnknownProperties;
 	}
 
 	public void setIgnoreUnknownProperties(boolean ignoreUnknownProperties) {
@@ -144,14 +146,17 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		if (conversionService == null) {
-			conversionService = applicationContext.getBean(IntegrationUtils.INTEGRATION_CONVERSION_SERVICE_BEAN_NAME, ConversionService.class);
+		if (this.conversionService == null) {
+			this.conversionService = this.applicationContext.getBean(
+					IntegrationUtils.INTEGRATION_CONVERSION_SERVICE_BEAN_NAME,
+					ConversionService.class);
 		}
 	}
 
@@ -169,10 +174,10 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		properties.put("instanceCount", String.valueOf(getInstanceCount()));
 		properties.put("defaultBinder", getDefaultBinder());
 		properties.put("dynamicDestinations", getDynamicDestinations());
-		for (Map.Entry<String, BindingProperties> entry : bindings.entrySet()) {
+		for (Map.Entry<String, BindingProperties> entry : this.bindings.entrySet()) {
 			properties.put(entry.getKey(), entry.getValue().toString());
 		}
-		for (Map.Entry<String, BinderProperties> entry : binders.entrySet()) {
+		for (Map.Entry<String, BinderProperties> entry : this.binders.entrySet()) {
 			properties.put(entry.getKey(), entry.getValue());
 		}
 		return properties;
@@ -180,7 +185,8 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	public ConsumerProperties getConsumerProperties(String inputChannelName) {
 		Assert.notNull(inputChannelName, "The input channel name cannot be null");
-		ConsumerProperties consumerProperties = getBindingProperties(inputChannelName).getConsumer();
+		ConsumerProperties consumerProperties = getBindingProperties(inputChannelName)
+				.getConsumer();
 		if (consumerProperties == null) {
 			consumerProperties = new ConsumerProperties();
 		}
@@ -191,7 +197,8 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	public ProducerProperties getProducerProperties(String outputChannelName) {
 		Assert.notNull(outputChannelName, "The output channel name cannot be null");
-		ProducerProperties producerProperties = getBindingProperties(outputChannelName).getProducer();
+		ProducerProperties producerProperties = getBindingProperties(outputChannelName)
+				.getProducer();
 		if (producerProperties == null) {
 			producerProperties = new ProducerProperties();
 		}

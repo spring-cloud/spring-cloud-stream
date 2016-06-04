@@ -16,10 +16,13 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
+import org.mockito.Matchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -30,10 +33,6 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
 
 /**
  * @author Marius Bogoevici
@@ -53,10 +52,10 @@ public class ProcessorBindingTestsWithBindingTargets {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindConsumer(eq("testtock.0"), anyString(),
-				eq(testProcessor.input()), Mockito.<ConsumerProperties>any());
-		verify(binder).bindProducer(eq("testtock.1"), eq(testProcessor.output()),
-				Mockito.<ProducerProperties>any());
+		verify(this.binder).bindConsumer(eq("testtock.0"), anyString(),
+				eq(this.testProcessor.input()), Matchers.<ConsumerProperties>any());
+		verify(this.binder).bindProducer(eq("testtock.1"),
+				eq(this.testProcessor.output()), Matchers.<ProducerProperties>any());
 	}
 
 	@EnableBinding(Processor.class)

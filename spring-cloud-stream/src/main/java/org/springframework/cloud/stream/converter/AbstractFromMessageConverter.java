@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
@@ -31,12 +30,12 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 
-
 /**
  * Base class for converters applied via Spring Integration 4.x data type channels.
  *
- * Extend this class to implement {@link org.springframework.messaging.converter.MessageConverter MessageConverters}
- * used with custom Message conversion. Only {@link #fromMessage} is supported.
+ * Extend this class to implement
+ * {@link org.springframework.messaging.converter.MessageConverter MessageConverters} used
+ * with custom Message conversion. Only {@link #fromMessage} is supported.
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -65,7 +64,8 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * content-type header
 	 * @param targetMimeType the required target type
 	 */
-	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes, MimeType targetMimeType) {
+	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes,
+			MimeType targetMimeType) {
 		super(supportedSourceMimeTypes);
 		Assert.notNull(targetMimeType, "'targetMimeType' cannot be null");
 		this.targetMimeTypes = Collections.singletonList(targetMimeType);
@@ -90,7 +90,8 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * content-type header
 	 * @param targetMimeType the required target type
 	 */
-	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, MimeType targetMimeType) {
+	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType,
+			MimeType targetMimeType) {
 		this(Collections.singletonList(supportedSourceMimeType), targetMimeType);
 	}
 
@@ -101,7 +102,8 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * content-type header
 	 * @param targetMimeTypes a list of supported target types
 	 */
-	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, Collection<MimeType> targetMimeTypes) {
+	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType,
+			Collection<MimeType> targetMimeTypes) {
 		this(Collections.singletonList(supportedSourceMimeType), targetMimeTypes);
 	}
 
@@ -140,11 +142,12 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	@Override
 	protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
-		return super.canConvertFrom(message, targetClass) && supportsPayloadType(message.getPayload().getClass());
+		return super.canConvertFrom(message, targetClass)
+				&& supportsPayloadType(message.getPayload().getClass());
 	}
 
 	public boolean supportsTargetMimeType(MimeType mimeType) {
-		for (MimeType targetMimeType : targetMimeTypes) {
+		for (MimeType targetMimeType : this.targetMimeTypes) {
 			if (targetMimeType.includes(mimeType)) {
 				return true;
 			}
@@ -164,7 +167,8 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * Not supported by default
 	 */
 	@Override
-	public Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+	public Object convertToInternal(Object payload, MessageHeaders headers,
+			Object conversionHint) {
 		throw new UnsupportedOperationException("'convertTo' not supported");
 	}
 

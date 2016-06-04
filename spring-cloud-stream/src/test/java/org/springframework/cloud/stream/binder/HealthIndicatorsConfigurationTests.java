@@ -16,13 +16,15 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
 
 import org.junit.Test;
-
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
@@ -41,9 +43,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.util.ObjectUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
-
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -52,25 +51,33 @@ public class HealthIndicatorsConfigurationTests {
 
 	@Test
 	public void healthIndicatorsCheck() throws Exception {
-		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" },
+		ConfigurableApplicationContext context = createBinderTestContext(
+				new String[] { "binder1", "binder2" },
 				"spring.cloud.stream.defaultBinder:binder2");
 		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1");
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
 		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2");
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
-		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
-				CompositeHealthIndicator.class);
-		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		CompositeHealthIndicator bindersHealthIndicator = context
+				.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(
+				bindersHealthIndicator);
 		assertThat(bindersHealthIndicator).isNotNull();
-		assertThat(context.getBean("testHealthIndicator1", CompositeHealthIndicator.class)).isNotNull();
-		assertThat(context.getBean("testHealthIndicator2", CompositeHealthIndicator.class)).isNotNull();
+		assertThat(
+				context.getBean("testHealthIndicator1", CompositeHealthIndicator.class))
+						.isNotNull();
+		assertThat(
+				context.getBean("testHealthIndicator2", CompositeHealthIndicator.class))
+						.isNotNull();
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("indicators");
 		assertThat(healthIndicators).containsKey("binder1");
-		assertThat(healthIndicators.get("binder1").health().getStatus()).isEqualTo(Status.UP);
+		assertThat(healthIndicators.get("binder1").health().getStatus())
+				.isEqualTo(Status.UP);
 		assertThat(healthIndicators).containsKey("binder2");
-		assertThat(healthIndicators.get("binder2").health().getStatus()).isEqualTo(Status.UNKNOWN);
+		assertThat(healthIndicators.get("binder2").health().getStatus())
+				.isEqualTo(Status.UNKNOWN);
 	}
 
 	@Test
@@ -90,8 +97,12 @@ public class HealthIndicatorsConfigurationTests {
 		}
 		catch (NoSuchBeanDefinitionException e) {
 		}
-		assertThat(context.getBean("testHealthIndicator1", CompositeHealthIndicator.class)).isNotNull();
-		assertThat(context.getBean("testHealthIndicator2", CompositeHealthIndicator.class)).isNotNull();
+		assertThat(
+				context.getBean("testHealthIndicator1", CompositeHealthIndicator.class))
+						.isNotNull();
+		assertThat(
+				context.getBean("testHealthIndicator2", CompositeHealthIndicator.class))
+						.isNotNull();
 	}
 
 	public static ConfigurableApplicationContext createBinderTestContext(

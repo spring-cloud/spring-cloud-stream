@@ -23,25 +23,28 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * A registry for channels that can be shared between modules, used for module aggregation.
+ * A registry for channels that can be shared between modules, used for module
+ * aggregation.
  * @author Marius Bogoevici
  */
 public class SharedChannelRegistry {
 
 	/**
-	 * A {@link Map} of channels, indexed by name. A channel's name may be prefixed by a namespace.
+	 * A {@link Map} of channels, indexed by name. A channel's name may be prefixed by a
+	 * namespace.
 	 */
-	private Map<String, MessageChannel> sharedChannels = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
+	private Map<String, MessageChannel> sharedChannels = new ConcurrentSkipListMap<>(
+			String.CASE_INSENSITIVE_ORDER);
 
 	public MessageChannel get(String id) {
-		return sharedChannels.get(id);
+		return this.sharedChannels.get(id);
 	}
 
 	public void register(String id, MessageChannel messageChannel) {
-		sharedChannels.put(id, messageChannel);
+		this.sharedChannels.put(id, messageChannel);
 	}
 
 	public Map<String, MessageChannel> getAll() {
-		return Collections.unmodifiableMap(sharedChannels);
+		return Collections.unmodifiableMap(this.sharedChannels);
 	}
 }

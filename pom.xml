@@ -64,11 +64,6 @@
 							<artifactId>spring-cloud-build-tools</artifactId>
 							<version>${spring-cloud-build.version}</version>
 						</dependency>
-						<dependency>
-							<groupId>com.puppycrawl.tools</groupId>
-							<artifactId>checkstyle</artifactId>
-							<version>6.17</version>
-						</dependency>
 					</dependencies>
 				</plugin>
 				<plugin>
@@ -93,14 +88,13 @@
 				<artifactId>maven-checkstyle-plugin</artifactId>
 				<executions>
 					<execution>
-						<id>checkstyle-validation</id>
+						<id>validate</id>
 						<phase>validate</phase>
 						<configuration>
 							<configLocation>checkstyle.xml</configLocation>
 							<headerLocation>LICENSE.txt</headerLocation>
 							<consoleOutput>true</consoleOutput>
 							<failsOnError>true</failsOnError>
-							<includeTestSourceDirectory>true</includeTestSourceDirectory>
 						</configuration>
 						<goals>
 							<goal>check</goal>

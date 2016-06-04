@@ -45,11 +45,11 @@ public class StringConvertingContentTypeResolver extends DefaultContentTypeResol
 			mimeType = (MimeType) value;
 		}
 		else if (value instanceof String) {
-			mimeType = mimeTypeCache.get(value);
+			mimeType = this.mimeTypeCache.get(value);
 			if (mimeType == null) {
 				String valueAsString = (String) value;
 				mimeType = MimeType.valueOf(valueAsString);
-				mimeTypeCache.put(valueAsString, mimeType);
+				this.mimeTypeCache.put(valueAsString, mimeType);
 			}
 		}
 		return mimeType != null ? mimeType : getDefaultMimeType();

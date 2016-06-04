@@ -62,7 +62,7 @@ public class ChannelBindingAutoConfiguration {
 
 	@Bean
 	public ChannelsEndpoint channelsEndpoint(ChannelBindingServiceProperties properties) {
-		return new ChannelsEndpoint(adapters, properties);
+		return new ChannelsEndpoint(this.adapters, properties);
 	}
 
 	@Bean

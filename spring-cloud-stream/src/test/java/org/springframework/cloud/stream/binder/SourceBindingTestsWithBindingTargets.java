@@ -16,10 +16,13 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
+import org.mockito.Matchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -33,10 +36,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Marius Bogoevici
@@ -61,8 +60,9 @@ public class SourceBindingTestsWithBindingTargets {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindProducer(eq("testtock"), eq(testSource.output()), Mockito.<ProducerProperties>any());
-		verifyNoMoreInteractions(binder);
+		verify(this.binder).bindProducer(eq("testtock"), eq(this.testSource.output()),
+				Matchers.<ProducerProperties>any());
+		verifyNoMoreInteractions(this.binder);
 	}
 
 	@EnableBinding(Source.class)

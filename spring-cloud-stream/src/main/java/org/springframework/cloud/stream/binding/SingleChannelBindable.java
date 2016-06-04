@@ -24,9 +24,9 @@ import java.util.Set;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * A {@link Bindable} component that wraps a generic channel. Useful for binding channels outside the
- * {@link org.springframework.cloud.stream.annotation.Input} and {@link org.springframework.cloud.stream.annotation.Output}
- * annotated interfaces.
+ * A {@link Bindable} component that wraps a generic channel. Useful for binding channels
+ * outside the {@link org.springframework.cloud.stream.annotation.Input} and
+ * {@link org.springframework.cloud.stream.annotation.Output} annotated interfaces.
  *
  * @author Ilayaperumal Gopinathan
  */
@@ -43,16 +43,16 @@ public class SingleChannelBindable extends BindableAdapter {
 
 	@Override
 	public void bindOutputs(ChannelBindingService adapter) {
-		adapter.bindProducer(messageChannel, name);
+		adapter.bindProducer(this.messageChannel, this.name);
 	}
 
 	@Override
 	public void unbindOutputs(ChannelBindingService adapter) {
-		adapter.unbindProducers(name);
+		adapter.unbindProducers(this.name);
 	}
 
 	@Override
 	public Set<String> getOutputs() {
-		return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(name)));
+		return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(this.name)));
 	}
 }

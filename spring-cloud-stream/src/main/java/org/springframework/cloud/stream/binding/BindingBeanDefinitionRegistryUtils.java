@@ -61,17 +61,18 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
 		rootBeanDefinition.setFactoryBeanName(channelInterfaceBeanName);
 		rootBeanDefinition.setUniqueFactoryMethodName(channelInterfaceMethodName);
-		rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(qualifier,
-				qualifierValue));
+		rootBeanDefinition
+				.addQualifier(new AutowireCandidateQualifier(qualifier, qualifierValue));
 		registry.registerBeanDefinition(name, rootBeanDefinition);
 	}
 
 	public static void registerChannelBeanDefinitions(Class<?> type,
-			final String channelInterfaceBeanName, final BeanDefinitionRegistry registry) {
+			final String channelInterfaceBeanName,
+			final BeanDefinitionRegistry registry) {
 		ReflectionUtils.doWithMethods(type, new MethodCallback() {
 			@Override
-			public void doWith(Method method) throws IllegalArgumentException,
-					IllegalAccessException {
+			public void doWith(Method method)
+					throws IllegalArgumentException, IllegalAccessException {
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
 					String name = getChannelName(input, method);
@@ -95,16 +96,16 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		if (type.isInterface()) {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
 					BindableProxyFactory.class);
-			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(
-					Bindings.class, parent));
-			rootBeanDefinition.getConstructorArgumentValues().addGenericArgumentValue(
-					type);
+			rootBeanDefinition
+					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
+			rootBeanDefinition.getConstructorArgumentValues()
+					.addGenericArgumentValue(type);
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 		else {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(type);
-			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(
-					Bindings.class, parent));
+			rootBeanDefinition
+					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 	}

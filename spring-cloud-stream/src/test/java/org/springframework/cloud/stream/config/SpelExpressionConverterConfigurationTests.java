@@ -16,9 +16,10 @@
 
 package org.springframework.cloud.stream.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -31,8 +32,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.expression.Expression;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for SpelExpressionConverterConfiguration.
@@ -49,7 +48,8 @@ public class SpelExpressionConverterConfigurationTests {
 
 	@Test
 	public void converterCorrectlyInstalled() {
-		assertThat(pojo.getExpression().getValue("{\"a\": {\"b\": 5}}").toString()).isEqualTo("5");
+		assertThat(this.pojo.getExpression().getValue("{\"a\": {\"b\": 5}}").toString())
+				.isEqualTo("5");
 	}
 
 	@ConfigurationProperties
@@ -58,7 +58,7 @@ public class SpelExpressionConverterConfigurationTests {
 		private Expression expression;
 
 		public Expression getExpression() {
-			return expression;
+			return this.expression;
 		}
 
 		public void setExpression(Expression expression) {

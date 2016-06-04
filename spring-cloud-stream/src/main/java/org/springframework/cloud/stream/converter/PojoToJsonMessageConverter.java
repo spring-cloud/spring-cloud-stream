@@ -16,17 +16,16 @@
 
 package org.springframework.cloud.stream.converter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeTypeUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert a Java object to a JSON String
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert a Java
+ * object to a JSON String
  *
  * @author David Turanski
  * @author David Liu
@@ -46,7 +45,7 @@ public class PojoToJsonMessageConverter extends AbstractFromMessageConverter {
 
 	@Override
 	protected Class<?>[] supportedTargetTypes() {
-		return new Class<?>[] {String.class};
+		return new Class<?>[] { String.class };
 	}
 
 	@Override
@@ -54,24 +53,25 @@ public class PojoToJsonMessageConverter extends AbstractFromMessageConverter {
 		return null;
 	}
 
-
 	public void setPrettyPrint(boolean prettyPrint) {
 		this.prettyPrint = prettyPrint;
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		Object result;
 		try {
-			if (prettyPrint) {
-				result = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(message.getPayload());
+			if (this.prettyPrint) {
+				result = this.objectMapper.writerWithDefaultPrettyPrinter()
+						.writeValueAsString(message.getPayload());
 			}
 			else {
-				result = objectMapper.writeValueAsString(message.getPayload());
+				result = this.objectMapper.writeValueAsString(message.getPayload());
 			}
 		}
 		catch (JsonProcessingException e) {
-			logger.error(e.getMessage(), e);
+			this.logger.error(e.getMessage(), e);
 			return null;
 		}
 		return result;

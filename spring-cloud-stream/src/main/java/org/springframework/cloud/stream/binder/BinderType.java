@@ -19,10 +19,12 @@ package org.springframework.cloud.stream.binder;
 import java.util.Arrays;
 
 /**
- * References one or more {@link org.springframework.context.annotation.Configuration}-annotated classes which
- * provide a context definition which contains exactly one {@link Binder}, typically for a given type of system (e.g.
- * Rabbit, Kafka, Redis, etc.). An application may contain multiple instances of a given {@link BinderType},
- * when connecting to multiple systems of the same type.
+ * References one or more
+ * {@link org.springframework.context.annotation.Configuration}-annotated classes which
+ * provide a context definition which contains exactly one {@link Binder}, typically for a
+ * given type of system (e.g. Rabbit, Kafka, Redis, etc.). An application may contain
+ * multiple instances of a given {@link BinderType}, when connecting to multiple systems
+ * of the same type.
  *
  * @author Marius Bogoevici
  */
@@ -38,11 +40,11 @@ public class BinderType {
 	}
 
 	public String getDefaultName() {
-		return defaultName;
+		return this.defaultName;
 	}
 
 	public Class<?>[] getConfigurationClasses() {
-		return configurationClasses;
+		return this.configurationClasses;
 	}
 
 	@Override
@@ -54,17 +56,17 @@ public class BinderType {
 			return false;
 		}
 		BinderType that = (BinderType) o;
-		if (!defaultName.equals(that.defaultName)) {
+		if (!this.defaultName.equals(that.defaultName)) {
 			return false;
 		}
-		return Arrays.equals(configurationClasses, that.configurationClasses);
+		return Arrays.equals(this.configurationClasses, that.configurationClasses);
 
 	}
 
 	@Override
 	public int hashCode() {
-		int result = defaultName.hashCode();
-		result = 31 * result + Arrays.hashCode(configurationClasses);
+		int result = this.defaultName.hashCode();
+		result = 31 * result + Arrays.hashCode(this.configurationClasses);
 		return result;
 	}
 }
