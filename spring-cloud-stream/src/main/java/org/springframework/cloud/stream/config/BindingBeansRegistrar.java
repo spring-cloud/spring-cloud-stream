@@ -34,23 +34,19 @@ import org.springframework.util.ClassUtils;
 public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 
 	@Override
-	public void registerBeanDefinitions(AnnotationMetadata metadata,
-			BeanDefinitionRegistry registry) {
+	public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
 		AnnotationAttributes attrs = AnnotatedElementUtils.getMergedAnnotationAttributes(
-				ClassUtils.resolveClassName(metadata.getClassName(), null),
-				EnableBinding.class);
+				ClassUtils.resolveClassName(metadata.getClassName(), null), EnableBinding.class);
 		for (Class<?> type : collectClasses(attrs, metadata.getClassName())) {
-			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type,
-					type.getName(), registry);
+			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type, type.getName(), registry);
 			BindingBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
-					ClassUtils.resolveClassName(metadata.getClassName(), null), type,
-					registry);
+					ClassUtils.resolveClassName(metadata.getClassName(), null), type, registry);
 		}
 	}
 
 	private Class<?>[] collectClasses(AnnotationAttributes attrs, String className) {
-		EnableBinding enableBinding = AnnotationUtils.synthesizeAnnotation(attrs,
-				EnableBinding.class, ClassUtils.resolveClassName(className, null));
+		EnableBinding enableBinding = AnnotationUtils.synthesizeAnnotation(attrs, EnableBinding.class,
+				ClassUtils.resolveClassName(className, null));
 		return enableBinding.value();
 	}
 

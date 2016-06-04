@@ -35,8 +35,8 @@ public class ExpressionSerializer extends JsonSerializer<Expression> {
 	}
 
 	@Override
-	public void serialize(Expression expression, JsonGenerator jsonGenerator,
-			SerializerProvider serializerProvider) throws IOException {
+	public void serialize(Expression expression, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+			throws IOException {
 		if (expression != null) {
 			jsonGenerator.writeString(expression.getExpressionString());
 		}

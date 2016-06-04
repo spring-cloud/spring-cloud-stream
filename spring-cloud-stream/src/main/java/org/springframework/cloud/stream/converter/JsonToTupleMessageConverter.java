@@ -55,8 +55,7 @@ public class JsonToTupleMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		String source = null;
 		if (message.getPayload() instanceof byte[]) {
 			source = new String((byte[]) message.getPayload());

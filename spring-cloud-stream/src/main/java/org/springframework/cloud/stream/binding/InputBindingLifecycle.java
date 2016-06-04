@@ -37,8 +37,7 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 	private ConfigurableApplicationContext applicationContext;
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
@@ -49,15 +48,13 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 			try {
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.bindInputs(channelBindingService);
 				}
 			}
 			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform binding, no proper implementation found", e);
+				throw new IllegalStateException("Cannot perform binding, no proper implementation found", e);
 			}
 			this.running = true;
 		}
@@ -71,15 +68,13 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 				// initialization
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.unbindInputs(channelBindingService);
 				}
 			}
 			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform unbinding, no proper implementation found", e);
+				throw new IllegalStateException("Cannot perform unbinding, no proper implementation found", e);
 			}
 			this.running = false;
 		}

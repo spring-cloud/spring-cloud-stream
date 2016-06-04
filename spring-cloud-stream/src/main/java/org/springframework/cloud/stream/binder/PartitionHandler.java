@@ -52,14 +52,12 @@ public class PartitionHandler {
 	 * @param partitionSelector configured partition selector; may be {@code null}
 	 * @param properties binder properties
 	 */
-	public PartitionHandler(ConfigurableListableBeanFactory beanFactory,
-			EvaluationContext evaluationContext,
+	public PartitionHandler(ConfigurableListableBeanFactory beanFactory, EvaluationContext evaluationContext,
 			PartitionSelectorStrategy partitionSelector, ProducerProperties properties) {
 		Assert.notNull(beanFactory, "BeanFactory must not be null");
 		this.beanFactory = beanFactory;
 		this.evaluationContext = evaluationContext;
-		this.partitionSelector = partitionSelector == null
-				? new DefaultPartitionSelector() : partitionSelector;
+		this.partitionSelector = partitionSelector == null ? new DefaultPartitionSelector() : partitionSelector;
 		this.producerProperties = properties;
 	}
 
@@ -88,12 +86,11 @@ public class PartitionHandler {
 			partition = invokePartitionSelector(key);
 		}
 		else if (this.producerProperties.getPartitionSelectorExpression() != null) {
-			partition = this.producerProperties.getPartitionSelectorExpression()
-					.getValue(this.evaluationContext, key, Integer.class);
+			partition = this.producerProperties.getPartitionSelectorExpression().getValue(this.evaluationContext, key,
+					Integer.class);
 		}
 		else {
-			partition = this.partitionSelector.selectPartition(key,
-					this.producerProperties.getPartitionCount());
+			partition = this.partitionSelector.selectPartition(key, this.producerProperties.getPartitionCount());
 		}
 		// protection in case a user selector returns a negative.
 		return Math.abs(partition % this.producerProperties.getPartitionCount());
@@ -105,8 +102,7 @@ public class PartitionHandler {
 			key = invokeKeyExtractor(message);
 		}
 		else if (this.producerProperties.getPartitionKeyExpression() != null) {
-			key = this.producerProperties.getPartitionKeyExpression()
-					.getValue(this.evaluationContext, message);
+			key = this.producerProperties.getPartitionKeyExpression().getValue(this.evaluationContext, message);
 		}
 		Assert.notNull(key, "Partition key cannot be null");
 
@@ -115,14 +111,12 @@ public class PartitionHandler {
 
 	private Object invokeKeyExtractor(Message<?> message) {
 		PartitionKeyExtractorStrategy strategy = getBean(
-				this.producerProperties.getPartitionKeyExtractorClass().getName(),
-				PartitionKeyExtractorStrategy.class);
+				this.producerProperties.getPartitionKeyExtractorClass().getName(), PartitionKeyExtractorStrategy.class);
 		return strategy.extractKey(message);
 	}
 
 	private int invokePartitionSelector(Object key) {
-		PartitionSelectorStrategy strategy = getBean(
-				this.producerProperties.getPartitionSelectorClass().getName(),
+		PartitionSelectorStrategy strategy = getBean(this.producerProperties.getPartitionSelectorClass().getName(),
 				PartitionSelectorStrategy.class);
 		return strategy.selectPartition(key, this.producerProperties.getPartitionCount());
 	}
@@ -141,12 +135,10 @@ public class PartitionHandler {
 				else {
 					Class<?> clazz;
 					try {
-						clazz = ClassUtils.forName(className,
-								this.beanFactory.getBeanClassLoader());
+						clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
 					}
 					catch (Exception e) {
-						throw new BinderException("Failed to load class: " + className,
-								e);
+						throw new BinderException("Failed to load class: " + className, e);
 					}
 					try {
 						bean = (T) clazz.newInstance();
@@ -155,8 +147,7 @@ public class PartitionHandler {
 						this.beanFactory.initializeBean(bean, className);
 					}
 					catch (Exception e) {
-						throw new BinderException(
-								"Failed to instantiate class: " + className, e);
+						throw new BinderException("Failed to instantiate class: " + className, e);
 					}
 				}
 				return bean;

@@ -42,8 +42,7 @@ public interface Binder<T, C extends ConsumerProperties, P extends ProducerPrope
 	 * @param inboundBindTarget the app interface to be bound as a consumer
 	 * @param consumerProperties the consumer properties
 	 */
-	Binding<T> bindConsumer(String name, String group, T inboundBindTarget,
-			C consumerProperties);
+	Binding<T> bindConsumer(String name, String group, T inboundBindTarget, C consumerProperties);
 
 	/**
 	 * Bind the target component as a message producer to the logical entity identified by

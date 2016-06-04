@@ -51,8 +51,7 @@ public class CompositeMessageConverterFactory {
 	/**
 	 * @param customConverters a list of {@link AbstractFromMessageConverter}
 	 */
-	public CompositeMessageConverterFactory(
-			List<? extends AbstractFromMessageConverter> customConverters,
+	public CompositeMessageConverterFactory(List<? extends AbstractFromMessageConverter> customConverters,
 			ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		if (!CollectionUtils.isEmpty(customConverters)) {
@@ -89,23 +88,20 @@ public class CompositeMessageConverterFactory {
 			}
 		}
 		if (CollectionUtils.isEmpty(targetMimeTypeConverters)) {
-			throw new ConversionException("No message converter is registered for "
-					+ targetMimeType.toString());
+			throw new ConversionException("No message converter is registered for " + targetMimeType.toString());
 		}
 		return new CompositeMessageConverter(targetMimeTypeConverters);
 	}
 
 	public CompositeMessageConverter getMessageConverterForAllRegistered() {
-		return new CompositeMessageConverter(
-				new ArrayList<MessageConverter>(this.converters));
+		return new CompositeMessageConverter(new ArrayList<MessageConverter>(this.converters));
 	}
 
 	public Class<?>[] supportedDataTypes(MimeType targetMimeType) {
 		Set<Class<?>> supportedDataTypes = new HashSet<>();
 		// Make sure to check if the target type is of explicit java object type.
 		if (MessageConverterUtils.X_JAVA_OBJECT.includes(targetMimeType)) {
-			supportedDataTypes.add(MessageConverterUtils
-					.getJavaTypeForJavaObjectContentType(targetMimeType));
+			supportedDataTypes.add(MessageConverterUtils.getJavaTypeForJavaObjectContentType(targetMimeType));
 		}
 		else {
 			for (AbstractFromMessageConverter converter : this.converters) {

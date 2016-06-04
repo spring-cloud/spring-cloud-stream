@@ -29,14 +29,12 @@ public class CompositeMessageChannelConfigurer implements MessageChannelConfigur
 
 	private final List<MessageChannelConfigurer> messageChannelConfigurers;
 
-	public CompositeMessageChannelConfigurer(
-			List<MessageChannelConfigurer> messageChannelConfigurers) {
+	public CompositeMessageChannelConfigurer(List<MessageChannelConfigurer> messageChannelConfigurers) {
 		this.messageChannelConfigurers = messageChannelConfigurers;
 	}
 
 	@Override
-	public void configureMessageChannel(MessageChannel messageChannel,
-			String channelName) {
+	public void configureMessageChannel(MessageChannel messageChannel, String channelName) {
 		for (MessageChannelConfigurer messageChannelConfigurer : this.messageChannelConfigurers) {
 			messageChannelConfigurer.configureMessageChannel(messageChannel, channelName);
 		}

@@ -24,8 +24,7 @@ package org.springframework.cloud.stream.binder;
  *
  * @author Marius Bogoevici
  */
-public interface ExtendedPropertiesBinder<T, C, P>
-		extends Binder<T, ExtendedConsumerProperties<C>, ExtendedProducerProperties<P>>,
-		ExtendedBindingProperties<C, P> {
+public interface ExtendedPropertiesBinder<T, C, P> extends
+		Binder<T, ExtendedConsumerProperties<C>, ExtendedProducerProperties<P>>, ExtendedBindingProperties<C, P> {
 
 }

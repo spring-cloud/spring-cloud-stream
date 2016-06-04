@@ -102,8 +102,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		Assert.isInstanceOf(AbstractApplicationContext.class, applicationContext);
 		this.applicationContext = (AbstractApplicationContext) applicationContext;
 	}
@@ -135,11 +134,9 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	@Override
 	public final void afterPropertiesSet() throws Exception {
-		Assert.notNull(this.applicationContext,
-				"The 'applicationContext' property must not be null");
+		Assert.notNull(this.applicationContext, "The 'applicationContext' property must not be null");
 		if (this.evaluationContext == null) {
-			this.evaluationContext = ExpressionUtils
-					.createStandardEvaluationContext(getBeanFactory());
+			this.evaluationContext = ExpressionUtils.createStandardEvaluationContext(getBeanFactory());
 		}
 		onInit();
 	}
@@ -155,12 +152,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	public MessageValues extractMessageValues(Message<?> receivedMessage) {
 		MessageValues messageValues;
 		try {
-			messageValues = this.embeddedHeadersMessageConverter
-					.extractHeaders((Message<byte[]>) receivedMessage, true);
+			messageValues = this.embeddedHeadersMessageConverter.extractHeaders((Message<byte[]>) receivedMessage,
+					true);
 		}
 		catch (Exception e) {
-			this.logger.error(EmbeddedHeadersMessageConverter
-					.decodeExceptionMessage(receivedMessage), e);
+			this.logger.error(EmbeddedHeadersMessageConverter.decodeExceptionMessage(receivedMessage), e);
 			messageValues = new MessageValues(receivedMessage);
 		}
 		return deserializePayloadIfNecessary(messageValues);
@@ -175,26 +171,21 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	@Override
-	public final Binding<T> bindConsumer(String name, String group, T target,
-			C properties) {
+	public final Binding<T> bindConsumer(String name, String group, T target, C properties) {
 		if (StringUtils.isEmpty(group)) {
-			Assert.isTrue(!properties.isPartitioned(),
-					"A consumer group is required for a partitioned subscription");
+			Assert.isTrue(!properties.isPartitioned(), "A consumer group is required for a partitioned subscription");
 		}
 		return doBindConsumer(name, group, target, properties);
 	}
 
-	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget,
-			C properties);
+	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget, C properties);
 
 	@Override
-	public final Binding<T> bindProducer(String name, T outboundBindTarget,
-			P properties) {
+	public final Binding<T> bindProducer(String name, T outboundBindTarget, P properties) {
 		return doBindProducer(name, outboundBindTarget, properties);
 	}
 
-	protected abstract Binding<T> doBindProducer(String name, T outboundBindTarget,
-			P properties);
+	protected abstract Binding<T> doBindProducer(String name, T outboundBindTarget, P properties);
 
 	/**
 	 * Construct a name comprised of the name and group.
@@ -203,29 +194,23 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * @return the constructed name.
 	 */
 	protected final String groupedName(String name, String group) {
-		return name + GROUP_INDEX_DELIMITER
-				+ (StringUtils.hasText(group) ? group : "default");
+		return name + GROUP_INDEX_DELIMITER + (StringUtils.hasText(group) ? group : "default");
 	}
 
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
 		Object originalPayload = message.getPayload();
-		Object originalContentType = message.getHeaders()
-				.get(MessageHeaders.CONTENT_TYPE);
+		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 
 		// Pass content type as String since some transport adapters will exclude
 		// CONTENT_TYPE Header otherwise
 		Object contentType = JavaClassMimeTypeConversion
-				.mimeTypeFromObject(originalPayload,
-						ObjectUtils.nullSafeToString(originalContentType))
-				.toString();
+				.mimeTypeFromObject(originalPayload, ObjectUtils.nullSafeToString(originalContentType)).toString();
 		Object payload = serializePayloadIfNecessary(originalPayload);
 		MessageValues messageValues = new MessageValues(message);
 		messageValues.setPayload(payload);
 		messageValues.put(MessageHeaders.CONTENT_TYPE, contentType);
-		if (originalContentType != null
-				&& !originalContentType.toString().equals(contentType.toString())) {
-			messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE,
-					originalContentType.toString());
+		if (originalContentType != null && !originalContentType.toString().equals(contentType.toString())) {
+			messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
 		}
 		return messageValues;
 	}
@@ -244,8 +229,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 				return bos.toByteArray();
 			}
 			catch (IOException e) {
-				throw new SerializationFailedException("unable to serialize payload ["
-						+ originalPayload.getClass().getName() + "]", e);
+				throw new SerializationFailedException(
+						"unable to serialize payload [" + originalPayload.getClass().getName() + "]", e);
 			}
 		}
 	}
@@ -254,15 +239,13 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return deserializePayloadIfNecessary(new MessageValues(message));
 	}
 
-	protected final MessageValues deserializePayloadIfNecessary(
-			MessageValues messageValues) {
+	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
 		Object originalPayload = messageValues.getPayload();
 		MimeType contentType = this.contentTypeResolver.resolve(messageValues);
 		Object payload = deserializePayload(originalPayload, contentType);
 		if (payload != null) {
 			messageValues.setPayload(payload);
-			Object originalContentType = messageValues
-					.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			Object originalContentType = messageValues.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
 			// Reset content-type only if the original content type is not null (when
 			// receiving messages from
 			// non-SCSt applications).
@@ -276,8 +259,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private Object deserializePayload(Object payload, MimeType contentType) {
 		if (payload instanceof byte[]) {
-			if (contentType == null
-					|| MimeTypeUtils.APPLICATION_OCTET_STREAM.equals(contentType)) {
+			if (contentType == null || MimeTypeUtils.APPLICATION_OCTET_STREAM.equals(contentType)) {
 				return payload;
 			}
 			else {
@@ -288,20 +270,17 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	private Object deserializePayload(byte[] bytes, MimeType contentType) {
-		if ("text".equalsIgnoreCase(contentType.getType())
-				|| MimeTypeUtils.APPLICATION_JSON.equals(contentType)) {
+		if ("text".equalsIgnoreCase(contentType.getType()) || MimeTypeUtils.APPLICATION_JSON.equals(contentType)) {
 			try {
 				return new String(bytes, "UTF-8");
 			}
 			catch (UnsupportedEncodingException e) {
 				throw new SerializationFailedException(
-						"unable to deserialize [java.lang.String]. Encoding not supported.",
-						e);
+						"unable to deserialize [java.lang.String]. Encoding not supported.", e);
 			}
 		}
 		else {
-			String className = JavaClassMimeTypeConversion
-					.classNameFromMimeType(contentType);
+			String className = JavaClassMimeTypeConversion.classNameFromMimeType(contentType);
 			try {
 				// Cache types to avoid unnecessary ClassUtils.forName calls.
 				Class<?> targetType = this.payloadTypeCache.get(className);
@@ -312,12 +291,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 				return this.codec.decode(bytes, targetType);
 			}
 			catch (ClassNotFoundException e) {
-				throw new SerializationFailedException(
-						"unable to deserialize [" + className + "]. Class not found.", e); // NOSONAR
+				throw new SerializationFailedException("unable to deserialize [" + className + "]. Class not found.",
+						e); // NOSONAR
 			}
 			catch (IOException e) {
-				throw new SerializationFailedException(
-						"unable to deserialize [" + className + "]", e);
+				throw new SerializationFailedException("unable to deserialize [" + className + "]", e);
 			}
 		}
 	}
@@ -332,8 +310,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * @param properties The properties.
 	 * @return The retry template, or null if retry is not enabled.
 	 */
-	protected RetryTemplate buildRetryTemplateIfRetryEnabled(
-			ConsumerProperties properties) {
+	protected RetryTemplate buildRetryTemplateIfRetryEnabled(ConsumerProperties properties) {
 		int maxAttempts = properties.getMaxAttempts();
 		if (maxAttempts > 1) {
 			RetryTemplate template = new RetryTemplate();
@@ -374,8 +351,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 				return MimeTypeUtils.APPLICATION_OCTET_STREAM;
 			}
 			if (payload instanceof String) {
-				return MimeTypeUtils.APPLICATION_JSON_VALUE.equals(originalContentType)
-						? MimeTypeUtils.APPLICATION_JSON : MimeTypeUtils.TEXT_PLAIN;
+				return MimeTypeUtils.APPLICATION_JSON_VALUE.equals(originalContentType) ? MimeTypeUtils.APPLICATION_JSON
+						: MimeTypeUtils.TEXT_PLAIN;
 			}
 			String className = payload.getClass().getName();
 			MimeType mimeType = mimeTypesCache.get(className);
@@ -386,14 +363,12 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 					// "[Ljava.lang.String;" or multi-dimensional
 					// "[[[Ljava.lang.String;"
 					if (modifiedClassName.endsWith(";")) {
-						modifiedClassName = modifiedClassName.substring(0,
-								modifiedClassName.length() - 1);
+						modifiedClassName = modifiedClassName.substring(0, modifiedClassName.length() - 1);
 					}
 					// Wrap in quotes to handle the illegal '[' character
 					modifiedClassName = "\"" + modifiedClassName + "\"";
 				}
-				mimeType = MimeType
-						.valueOf("application/x-java-object;type=" + modifiedClassName);
+				mimeType = MimeType.valueOf("application/x-java-object;type=" + modifiedClassName);
 				mimeTypesCache.put(className, mimeType);
 			}
 			return mimeType;

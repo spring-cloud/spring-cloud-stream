@@ -38,8 +38,7 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 	private ConfigurableApplicationContext applicationContext;
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
@@ -51,15 +50,13 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 			try {
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.bindOutputs(channelBindingService);
 				}
 			}
 			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform binding, no proper implementation found", e);
+				throw new IllegalStateException("Cannot perform binding, no proper implementation found", e);
 			}
 			this.running = true;
 			this.applicationContext.start();
@@ -74,15 +71,13 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 				// initialization
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.unbindOutputs(channelBindingService);
 				}
 			}
 			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform unbinding, no proper implementation found", e);
+				throw new IllegalStateException("Cannot perform unbinding, no proper implementation found", e);
 			}
 			this.running = false;
 		}

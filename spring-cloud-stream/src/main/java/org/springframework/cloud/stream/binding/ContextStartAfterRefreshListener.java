@@ -34,15 +34,13 @@ public class ContextStartAfterRefreshListener
 	private ApplicationContext applicationContext;
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
 	}
 
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		ConfigurableApplicationContext source = (ConfigurableApplicationContext) event
-				.getSource();
+		ConfigurableApplicationContext source = (ConfigurableApplicationContext) event.getSource();
 		if (source == this.applicationContext && !source.isRunning()) {
 			source.start();
 		}

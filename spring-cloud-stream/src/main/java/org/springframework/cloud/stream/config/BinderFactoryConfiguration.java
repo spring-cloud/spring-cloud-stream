@@ -55,77 +55,59 @@ public class BinderFactoryConfiguration {
 	public BinderFactory<?> binderFactory(BinderTypeRegistry binderTypeRegistry,
 			ChannelBindingServiceProperties channelBindingServiceProperties) {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
-		Map<String, BinderProperties> declaredBinders = channelBindingServiceProperties
-				.getBinders();
+		Map<String, BinderProperties> declaredBinders = channelBindingServiceProperties.getBinders();
 		boolean defaultCandidatesExist = false;
-		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders
-				.entrySet().iterator();
+		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders.entrySet().iterator();
 		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
-			defaultCandidatesExist = binderPropertiesIterator.next().getValue()
-					.isDefaultCandidate();
+			defaultCandidatesExist = binderPropertiesIterator.next().getValue().isDefaultCandidate();
 		}
-		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders
-				.entrySet()) {
+		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
 			BinderProperties binderProperties = binderEntry.getValue();
 			if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
 				binderConfigurations.put(binderEntry.getKey(),
-						new BinderConfiguration(
-								binderTypeRegistry.get(binderEntry.getKey()),
-								binderProperties.getEnvironment(),
-								binderProperties.isInheritEnvironment(),
+						new BinderConfiguration(binderTypeRegistry.get(binderEntry.getKey()),
+								binderProperties.getEnvironment(), binderProperties.isInheritEnvironment(),
 								binderProperties.isDefaultCandidate()));
 			}
 			else {
 				Assert.hasText(binderProperties.getType(),
-						"No 'type' property present for custom binder "
-								+ binderEntry.getKey());
-				BinderType binderType = binderTypeRegistry
-						.get(binderProperties.getType());
-				Assert.notNull(binderType,
-						"Binder type " + binderProperties.getType() + " is not defined");
+						"No 'type' property present for custom binder " + binderEntry.getKey());
+				BinderType binderType = binderTypeRegistry.get(binderProperties.getType());
+				Assert.notNull(binderType, "Binder type " + binderProperties.getType() + " is not defined");
 				binderConfigurations.put(binderEntry.getKey(),
-						new BinderConfiguration(binderType,
-								binderProperties.getEnvironment(),
-								binderProperties.isInheritEnvironment(),
-								binderProperties.isDefaultCandidate()));
+						new BinderConfiguration(binderType, binderProperties.getEnvironment(),
+								binderProperties.isInheritEnvironment(), binderProperties.isDefaultCandidate()));
 			}
 		}
 		if (!defaultCandidatesExist) {
-			for (Map.Entry<String, BinderType> entry : binderTypeRegistry.getAll()
-					.entrySet()) {
-				binderConfigurations.put(entry.getKey(), new BinderConfiguration(
-						entry.getValue(), new Properties(), true, true));
+			for (Map.Entry<String, BinderType> entry : binderTypeRegistry.getAll().entrySet()) {
+				binderConfigurations.put(entry.getKey(),
+						new BinderConfiguration(entry.getValue(), new Properties(), true, true));
 			}
 		}
-		DefaultBinderFactory<?> binderFactory = new DefaultBinderFactory<>(
-				binderConfigurations);
-		binderFactory
-				.setDefaultBinder(channelBindingServiceProperties.getDefaultBinder());
+		DefaultBinderFactory<?> binderFactory = new DefaultBinderFactory<>(binderConfigurations);
+		binderFactory.setDefaultBinder(channelBindingServiceProperties.getDefaultBinder());
 		return binderFactory;
 	}
 
 	@Bean
 	@ConditionalOnMissingBean(BinderTypeRegistry.class)
-	public BinderTypeRegistry binderTypeRegistry(
-			ConfigurableApplicationContext configurableApplicationContext) {
+	public BinderTypeRegistry binderTypeRegistry(ConfigurableApplicationContext configurableApplicationContext) {
 		Map<String, BinderType> binderTypes = new HashMap<>();
 		ClassLoader classLoader = configurableApplicationContext.getClassLoader();
 		if (classLoader == null) {
 			classLoader = ChannelBindingAutoConfiguration.class.getClassLoader();
 		}
 		try {
-			Enumeration<URL> resources = classLoader
-					.getResources("META-INF/spring.binders");
+			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
 			if (resources == null || !resources.hasMoreElements()) {
-				throw new BeanCreationException(
-						"Cannot create binder factory, no `META-INF/spring.binders` "
-								+ "resources found on the classpath");
+				throw new BeanCreationException("Cannot create binder factory, no `META-INF/spring.binders` "
+						+ "resources found on the classpath");
 			}
 			while (resources.hasMoreElements()) {
 				URL url = resources.nextElement();
 				UrlResource resource = new UrlResource(url);
-				for (BinderType binderType : parseBinderConfigurations(classLoader,
-						resource)) {
+				for (BinderType binderType : parseBinderConfigurations(classLoader, resource)) {
 					binderTypes.put(binderType.getDefaultName(), binderType);
 				}
 			}
@@ -136,8 +118,8 @@ public class BinderFactoryConfiguration {
 		return new DefaultBinderTypeRegistry(binderTypes);
 	}
 
-	static Collection<BinderType> parseBinderConfigurations(ClassLoader classLoader,
-			Resource resource) throws IOException, ClassNotFoundException {
+	static Collection<BinderType> parseBinderConfigurations(ClassLoader classLoader, Resource resource)
+			throws IOException, ClassNotFoundException {
 		Properties properties = PropertiesLoaderUtils.loadProperties(resource);
 		Collection<BinderType> parsedBinderConfigurations = new ArrayList<>();
 		for (Map.Entry<?, ?> entry : properties.entrySet()) {
@@ -147,11 +129,9 @@ public class BinderFactoryConfiguration {
 			Class<?>[] binderConfigurationClasses = new Class[binderConfigurationClassNames.length];
 			int i = 0;
 			for (String binderConfigurationClassName : binderConfigurationClassNames) {
-				binderConfigurationClasses[i++] = ClassUtils
-						.forName(binderConfigurationClassName, classLoader);
+				binderConfigurationClasses[i++] = ClassUtils.forName(binderConfigurationClassName, classLoader);
 			}
-			parsedBinderConfigurations
-					.add(new BinderType(binderType, binderConfigurationClasses));
+			parsedBinderConfigurations.add(new BinderType(binderType, binderConfigurationClasses));
 		}
 		return parsedBinderConfigurations;
 	}

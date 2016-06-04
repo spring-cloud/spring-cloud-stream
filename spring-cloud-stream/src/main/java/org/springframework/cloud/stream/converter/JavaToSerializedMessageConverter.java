@@ -32,8 +32,7 @@ import org.springframework.messaging.Message;
 public class JavaToSerializedMessageConverter extends AbstractFromMessageConverter {
 
 	public JavaToSerializedMessageConverter() {
-		super(MessageConverterUtils.X_JAVA_OBJECT,
-				MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT);
+		super(MessageConverterUtils.X_JAVA_OBJECT, MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT);
 	}
 
 	@Override
@@ -47,8 +46,7 @@ public class JavaToSerializedMessageConverter extends AbstractFromMessageConvert
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		try {
 			new ObjectOutputStream(bos).writeObject(message.getPayload());

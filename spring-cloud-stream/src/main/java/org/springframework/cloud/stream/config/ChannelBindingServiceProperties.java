@@ -46,8 +46,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
-public class ChannelBindingServiceProperties
-		implements ApplicationContextAware, InitializingBean {
+public class ChannelBindingServiceProperties implements ApplicationContextAware, InitializingBean {
 
 	private ConversionService conversionService;
 
@@ -56,8 +55,7 @@ public class ChannelBindingServiceProperties
 
 	private int instanceCount = 1;
 
-	private Map<String, BindingProperties> bindings = new TreeMap<>(
-			String.CASE_INSENSITIVE_ORDER);
+	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	private Map<String, BinderProperties> binders = new HashMap<>();
 
@@ -146,17 +144,15 @@ public class ChannelBindingServiceProperties
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		if (this.conversionService == null) {
-			this.conversionService = this.applicationContext.getBean(
-					IntegrationUtils.INTEGRATION_CONVERSION_SERVICE_BEAN_NAME,
-					ConversionService.class);
+			this.conversionService = this.applicationContext
+					.getBean(IntegrationUtils.INTEGRATION_CONVERSION_SERVICE_BEAN_NAME, ConversionService.class);
 		}
 	}
 
@@ -185,8 +181,7 @@ public class ChannelBindingServiceProperties
 
 	public ConsumerProperties getConsumerProperties(String inputChannelName) {
 		Assert.notNull(inputChannelName, "The input channel name cannot be null");
-		ConsumerProperties consumerProperties = getBindingProperties(inputChannelName)
-				.getConsumer();
+		ConsumerProperties consumerProperties = getBindingProperties(inputChannelName).getConsumer();
 		if (consumerProperties == null) {
 			consumerProperties = new ConsumerProperties();
 		}
@@ -197,8 +192,7 @@ public class ChannelBindingServiceProperties
 
 	public ProducerProperties getProducerProperties(String outputChannelName) {
 		Assert.notNull(outputChannelName, "The output channel name cannot be null");
-		ProducerProperties producerProperties = getBindingProperties(outputChannelName)
-				.getProducer();
+		ProducerProperties producerProperties = getBindingProperties(outputChannelName).getProducer();
 		if (producerProperties == null) {
 			producerProperties = new ProducerProperties();
 		}

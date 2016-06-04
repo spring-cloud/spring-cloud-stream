@@ -66,8 +66,7 @@ public class MessageValues implements Map<String, Object> {
 	 * @return the Message
 	 */
 	public Message<?> toMessage(MessageBuilderFactory messageBuilderFactory) {
-		return messageBuilderFactory.withPayload(this.payload).copyHeaders(this.headers)
-				.build();
+		return messageBuilderFactory.withPayload(this.payload).copyHeaders(this.headers).build();
 	}
 
 	/**

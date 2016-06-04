@@ -45,8 +45,7 @@ public class PojoToStringMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		String payloadString = null;
 		if (message.getPayload() instanceof Tuple) {
 			TupleBuilder builder = TupleBuilder.tuple();

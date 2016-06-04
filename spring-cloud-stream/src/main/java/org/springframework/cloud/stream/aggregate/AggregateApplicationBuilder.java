@@ -49,8 +49,7 @@ public class AggregateApplicationBuilder {
 	ConfigurableApplicationContext parentContext;
 
 	public AggregateApplicationBuilder() {
-		this(SpringApplication.run(addAggregatorParentIfMissing(new Object[] {}),
-				new String[] {}));
+		this(SpringApplication.run(addAggregatorParentIfMissing(new Object[] {}), new String[] {}));
 	}
 
 	public AggregateApplicationBuilder(Object source, String... args) {
@@ -87,8 +86,7 @@ public class AggregateApplicationBuilder {
 		return parent(SpringApplication.run(addAggregatorParentIfMissing(sources), args));
 	}
 
-	public AggregateApplicationBuilder parent(
-			ConfigurableApplicationContext parentContext) {
+	public AggregateApplicationBuilder parent(ConfigurableApplicationContext parentContext) {
 		Assert.isNull(this.parentContext, "A parent context has already been set");
 		this.parentContext = parentContext;
 		return this;
@@ -101,11 +99,9 @@ public class AggregateApplicationBuilder {
 	}
 
 	public ConfigurableApplicationContext run(String[] parentArgs) {
-		ConfigurableApplicationContext parentContext = this.parentContext != null
-				? this.parentContext
+		ConfigurableApplicationContext parentContext = this.parentContext != null ? this.parentContext
 				: AggregateApplication.createParentContext(parentArgs);
-		SharedChannelRegistry sharedChannelRegistry = parentContext
-				.getBean(SharedChannelRegistry.class);
+		SharedChannelRegistry sharedChannelRegistry = parentContext.getBean(SharedChannelRegistry.class);
 		List<AppConfigurer<?>> apps = new ArrayList<AppConfigurer<?>>();
 		if (this.sourceConfigurer != null) {
 			apps.add(this.sourceConfigurer);
@@ -124,13 +120,11 @@ public class AggregateApplicationBuilder {
 			Class<?> appToEmbed = appConfigurer.getApp();
 			// Always update namespace before preparing SharedChannelRegistry
 			if (appConfigurer.namespace == null) {
-				appConfigurer.namespace = AggregateApplication
-						.getNamespace(appConfigurer.getApp().getName(), i);
+				appConfigurer.namespace = AggregateApplication.getNamespace(appConfigurer.getApp().getName(), i);
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 		}
-		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry,
-				appsToEmbed);
+		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);
 		for (int i = apps.size() - 1; i >= 0; i--) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			appConfigurer.embed();
@@ -138,10 +132,9 @@ public class AggregateApplicationBuilder {
 		return parentContext;
 	}
 
-	private ChildContextBuilder childContext(Class<?> app,
-			ConfigurableApplicationContext parentContext, String namespace) {
-		return new ChildContextBuilder(
-				AggregateApplication.embedApp(parentContext, namespace, app));
+	private ChildContextBuilder childContext(Class<?> app, ConfigurableApplicationContext parentContext,
+			String namespace) {
+		return new ChildContextBuilder(AggregateApplication.embedApp(parentContext, namespace, app));
 	}
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
@@ -233,9 +226,8 @@ public class AggregateApplicationBuilder {
 		}
 
 		void embed() {
-			childContext(this.app, AggregateApplicationBuilder.this.parentContext,
-					this.namespace).args(this.args).config(this.names)
-							.profiles(this.profiles).run();
+			childContext(this.app, AggregateApplicationBuilder.this.parentContext, this.namespace).args(this.args)
+					.config(this.names).profiles(this.profiles).run();
 		}
 	}
 

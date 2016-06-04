@@ -32,11 +32,9 @@ public final class BinderHeaders {
 	 * The headers that will be propagated, by default, by binder implementations that
 	 * have no inherent header support (by embedding the headers in the payload).
 	 */
-	public static final String[] STANDARD_HEADERS = new String[] {
-			IntegrationMessageHeaderAccessor.CORRELATION_ID,
-			IntegrationMessageHeaderAccessor.SEQUENCE_SIZE,
-			IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, MessageHeaders.CONTENT_TYPE,
-			BINDER_ORIGINAL_CONTENT_TYPE };
+	public static final String[] STANDARD_HEADERS = new String[] { IntegrationMessageHeaderAccessor.CORRELATION_ID,
+			IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER,
+			MessageHeaders.CONTENT_TYPE, BINDER_ORIGINAL_CONTENT_TYPE };
 
 	private BinderHeaders() {
 	}

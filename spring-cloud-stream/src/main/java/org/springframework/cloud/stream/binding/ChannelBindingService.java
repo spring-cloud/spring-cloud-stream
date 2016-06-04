@@ -64,8 +64,7 @@ public class ChannelBindingService {
 
 	private final Map<String, List<Binding<MessageChannel>>> consumerBindings = new HashMap<>();
 
-	public ChannelBindingService(
-			ChannelBindingServiceProperties channelBindingServiceProperties,
+	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
 			BinderFactory<MessageChannel> binderFactory) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.binderFactory = binderFactory;
@@ -74,30 +73,24 @@ public class ChannelBindingService {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Collection<Binding<MessageChannel>> bindConsumer(MessageChannel inputChannel,
-			String inputChannelName) {
-		String channelBindingTarget = this.channelBindingServiceProperties
-				.getBindingDestination(inputChannelName);
-		String[] channelBindingTargets = StringUtils
-				.commaDelimitedListToStringArray(channelBindingTarget);
+	public Collection<Binding<MessageChannel>> bindConsumer(MessageChannel inputChannel, String inputChannelName) {
+		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
+		String[] channelBindingTargets = StringUtils.commaDelimitedListToStringArray(channelBindingTarget);
 		List<Binding<MessageChannel>> bindings = new ArrayList<>();
 		Binder<MessageChannel, ConsumerProperties, ?> binder = (Binder<MessageChannel, ConsumerProperties, ?>) getBinderForChannel(
 				inputChannelName);
 		ConsumerProperties consumerProperties = this.channelBindingServiceProperties
 				.getConsumerProperties(inputChannelName);
 		if (binder instanceof ExtendedPropertiesBinder) {
-			Object extension = ((ExtendedPropertiesBinder) binder)
-					.getExtendedConsumerProperties(inputChannelName);
-			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(
-					extension);
+			Object extension = ((ExtendedPropertiesBinder) binder).getExtendedConsumerProperties(inputChannelName);
+			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(extension);
 			BeanUtils.copyProperties(consumerProperties, extendedConsumerProperties);
 			consumerProperties = extendedConsumerProperties;
 		}
 		validate(consumerProperties);
 		for (String target : channelBindingTargets) {
 			Binding<MessageChannel> binding = binder.bindConsumer(target,
-					this.channelBindingServiceProperties.getGroup(inputChannelName),
-					inputChannel, consumerProperties);
+					this.channelBindingServiceProperties.getGroup(inputChannelName), inputChannel, consumerProperties);
 			bindings.add(binding);
 		}
 		this.consumerBindings.put(inputChannelName, bindings);
@@ -105,40 +98,33 @@ public class ChannelBindingService {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Binding<MessageChannel> bindProducer(MessageChannel outputChannel,
-			String outputChannelName) {
-		String channelBindingTarget = this.channelBindingServiceProperties
-				.getBindingDestination(outputChannelName);
+	public Binding<MessageChannel> bindProducer(MessageChannel outputChannel, String outputChannelName) {
+		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(outputChannelName);
 		Binder<MessageChannel, ?, ProducerProperties> binder = (Binder<MessageChannel, ?, ProducerProperties>) getBinderForChannel(
 				outputChannelName);
 		ProducerProperties producerProperties = this.channelBindingServiceProperties
 				.getProducerProperties(outputChannelName);
 		if (binder instanceof ExtendedPropertiesBinder) {
-			Object extension = ((ExtendedPropertiesBinder) binder)
-					.getExtendedProducerProperties(outputChannelName);
-			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(
-					extension);
+			Object extension = ((ExtendedPropertiesBinder) binder).getExtendedProducerProperties(outputChannelName);
+			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(extension);
 			BeanUtils.copyProperties(producerProperties, extendedProducerProperties);
 			producerProperties = extendedProducerProperties;
 		}
 		validate(producerProperties);
-		Binding<MessageChannel> binding = binder.bindProducer(channelBindingTarget,
-				outputChannel, producerProperties);
+		Binding<MessageChannel> binding = binder.bindProducer(channelBindingTarget, outputChannel, producerProperties);
 		this.producerBindings.put(outputChannelName, binding);
 		return binding;
 	}
 
 	public void unbindConsumers(String inputChannelName) {
-		List<Binding<MessageChannel>> bindings = this.consumerBindings
-				.remove(inputChannelName);
+		List<Binding<MessageChannel>> bindings = this.consumerBindings.remove(inputChannelName);
 		if (bindings != null && !CollectionUtils.isEmpty(bindings)) {
 			for (Binding<MessageChannel> binding : bindings) {
 				binding.unbind();
 			}
 		}
 		else if (this.log.isWarnEnabled()) {
-			this.log.warn("Trying to unbind channel '" + inputChannelName
-					+ "', but no binding found.");
+			this.log.warn("Trying to unbind channel '" + inputChannelName + "', but no binding found.");
 		}
 	}
 
@@ -148,8 +134,7 @@ public class ChannelBindingService {
 			binding.unbind();
 		}
 		else if (this.log.isWarnEnabled()) {
-			this.log.warn("Trying to unbind channel '" + outputChannelName
-					+ "', but no binding found.");
+			this.log.warn("Trying to unbind channel '" + outputChannelName + "', but no binding found.");
 		}
 	}
 

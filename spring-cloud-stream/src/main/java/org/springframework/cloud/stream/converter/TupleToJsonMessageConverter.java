@@ -59,15 +59,13 @@ public class TupleToJsonMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		Tuple t = (Tuple) message.getPayload();
 		String json;
 		if (this.prettyPrint) {
 			try {
 				Object tmp = this.objectMapper.readValue(t.toString(), Object.class);
-				json = this.objectMapper.writerWithDefaultPrettyPrinter()
-						.writeValueAsString(tmp);
+				json = this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tmp);
 			}
 			catch (IOException e) {
 				this.logger.error(e.getMessage(), e);

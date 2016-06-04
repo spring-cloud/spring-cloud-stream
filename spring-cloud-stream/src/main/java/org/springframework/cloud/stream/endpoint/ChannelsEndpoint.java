@@ -43,8 +43,7 @@ public class ChannelsEndpoint extends AbstractEndpoint<Map<String, Object>> {
 
 	private ChannelBindingServiceProperties properties;
 
-	public ChannelsEndpoint(List<Bindable> adapters,
-			ChannelBindingServiceProperties properties) {
+	public ChannelsEndpoint(List<Bindable> adapters, ChannelBindingServiceProperties properties) {
 		super("channels");
 		this.adapters = adapters;
 		this.properties = properties;
@@ -63,9 +62,8 @@ public class ChannelsEndpoint extends AbstractEndpoint<Map<String, Object>> {
 				outputs.put(name, this.properties.getBindingProperties(name));
 			}
 		}
-		return new ObjectMapper().convertValue(map,
-				new TypeReference<Map<String, Object>>() {
-				});
+		return new ObjectMapper().convertValue(map, new TypeReference<Map<String, Object>>() {
+		});
 	}
 
 	@JsonInclude(Include.NON_DEFAULT)

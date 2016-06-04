@@ -67,8 +67,7 @@ public class ProducerProperties {
 	}
 
 	public boolean isPartitioned() {
-		return this.partitionKeyExpression != null
-				|| this.partitionKeyExtractorClass != null;
+		return this.partitionKeyExpression != null || this.partitionKeyExtractorClass != null;
 	}
 
 	public Class<?> getPartitionSelectorClass() {
@@ -106,14 +105,12 @@ public class ProducerProperties {
 
 	@AssertTrue(message = "Partition key expression and partition key extractor class properties are mutually exclusive.")
 	public boolean isValidPartitionKeyProperty() {
-		return (this.partitionKeyExpression == null)
-				|| (this.partitionKeyExtractorClass == null);
+		return (this.partitionKeyExpression == null) || (this.partitionKeyExtractorClass == null);
 	}
 
 	@AssertTrue(message = "Partition selector class and partition selector expression properties are mutually exclusive.")
 	public boolean isValidPartitionSelectorProperty() {
-		return (this.partitionSelectorClass == null)
-				|| (this.partitionSelectorExpression == null);
+		return (this.partitionSelectorClass == null) || (this.partitionSelectorExpression == null);
 	}
 
 	public HeaderMode getHeaderMode() {

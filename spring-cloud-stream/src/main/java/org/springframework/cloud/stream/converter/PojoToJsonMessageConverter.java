@@ -58,13 +58,11 @@ public class PojoToJsonMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		Object result;
 		try {
 			if (this.prettyPrint) {
-				result = this.objectMapper.writerWithDefaultPrettyPrinter()
-						.writeValueAsString(message.getPayload());
+				result = this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(message.getPayload());
 			}
 			else {
 				result = this.objectMapper.writeValueAsString(message.getPayload());

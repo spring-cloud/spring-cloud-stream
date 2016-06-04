@@ -46,8 +46,7 @@ public class JsonToPojoMessageConverter extends AbstractFromMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		Object result = null;
 		try {
 			Object payload = message.getPayload();

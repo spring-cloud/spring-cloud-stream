@@ -33,8 +33,7 @@ public class SharedChannelRegistry {
 	 * A {@link Map} of channels, indexed by name. A channel's name may be prefixed by a
 	 * namespace.
 	 */
-	private Map<String, MessageChannel> sharedChannels = new ConcurrentSkipListMap<>(
-			String.CASE_INSENSITIVE_ORDER);
+	private Map<String, MessageChannel> sharedChannels = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	public MessageChannel get(String id) {
 		return this.sharedChannels.get(id);

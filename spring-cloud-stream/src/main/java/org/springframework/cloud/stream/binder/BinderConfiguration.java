@@ -44,8 +44,8 @@ public class BinderConfiguration {
 	 * @param defaultCandidate whether the binder should be considered as a candidate when
 	 * determining a default
 	 */
-	public BinderConfiguration(BinderType binderType, Properties properties,
-			boolean inheritEnvironment, boolean defaultCandidate) {
+	public BinderConfiguration(BinderType binderType, Properties properties, boolean inheritEnvironment,
+			boolean defaultCandidate) {
 		this.binderType = binderType;
 		this.properties = properties;
 		this.inheritEnvironment = inheritEnvironment;

@@ -65,14 +65,13 @@ public class SpelExpressionConverterConfiguration {
 			try {
 				Expression expression = this.parser.parseExpression(source);
 				if (expression instanceof SpelExpression) {
-					((SpelExpression) expression)
-							.setEvaluationContext(this.evaluationContext);
+					((SpelExpression) expression).setEvaluationContext(this.evaluationContext);
 				}
 				return expression;
 			}
 			catch (ParseException e) {
-				throw new IllegalArgumentException(String.format(
-						"Could not convert '%s' into a SpEL expression", source), e);
+				throw new IllegalArgumentException(
+						String.format("Could not convert '%s' into a SpEL expression", source), e);
 			}
 		}
 	}

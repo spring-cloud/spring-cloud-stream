@@ -38,8 +38,7 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	private final AbstractEndpoint endpoint;
 
-	public DefaultBinding(String name, String group, T target,
-			AbstractEndpoint endpoint) {
+	public DefaultBinding(String name, String group, T target, AbstractEndpoint endpoint) {
 		Assert.notNull(target, "target must not be null");
 		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;

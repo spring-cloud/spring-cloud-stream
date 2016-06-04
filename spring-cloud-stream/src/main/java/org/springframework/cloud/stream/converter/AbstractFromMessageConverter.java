@@ -64,8 +64,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * content-type header
 	 * @param targetMimeType the required target type
 	 */
-	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes,
-			MimeType targetMimeType) {
+	protected AbstractFromMessageConverter(Collection<MimeType> supportedSourceMimeTypes, MimeType targetMimeType) {
 		super(supportedSourceMimeTypes);
 		Assert.notNull(targetMimeType, "'targetMimeType' cannot be null");
 		this.targetMimeTypes = Collections.singletonList(targetMimeType);
@@ -90,8 +89,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * content-type header
 	 * @param targetMimeType the required target type
 	 */
-	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType,
-			MimeType targetMimeType) {
+	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, MimeType targetMimeType) {
 		this(Collections.singletonList(supportedSourceMimeType), targetMimeType);
 	}
 
@@ -102,8 +100,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * content-type header
 	 * @param targetMimeTypes a list of supported target types
 	 */
-	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType,
-			Collection<MimeType> targetMimeTypes) {
+	protected AbstractFromMessageConverter(MimeType supportedSourceMimeType, Collection<MimeType> targetMimeTypes) {
 		this(Collections.singletonList(supportedSourceMimeType), targetMimeTypes);
 	}
 
@@ -142,8 +139,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 
 	@Override
 	protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
-		return super.canConvertFrom(message, targetClass)
-				&& supportsPayloadType(message.getPayload().getClass());
+		return super.canConvertFrom(message, targetClass) && supportsPayloadType(message.getPayload().getClass());
 	}
 
 	public boolean supportsTargetMimeType(MimeType mimeType) {
@@ -167,8 +163,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	 * Not supported by default
 	 */
 	@Override
-	public Object convertToInternal(Object payload, MessageHeaders headers,
-			Object conversionHint) {
+	public Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
 		throw new UnsupportedOperationException("'convertTo' not supported");
 	}
 

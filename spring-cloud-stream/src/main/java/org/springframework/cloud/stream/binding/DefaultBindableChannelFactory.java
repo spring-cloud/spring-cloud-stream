@@ -30,8 +30,7 @@ public class DefaultBindableChannelFactory implements BindableChannelFactory {
 
 	private final MessageChannelConfigurer messageChannelConfigurer;
 
-	public DefaultBindableChannelFactory(
-			MessageChannelConfigurer messageChannelConfigurer) {
+	public DefaultBindableChannelFactory(MessageChannelConfigurer messageChannelConfigurer) {
 		this.messageChannelConfigurer = messageChannelConfigurer;
 	}
 

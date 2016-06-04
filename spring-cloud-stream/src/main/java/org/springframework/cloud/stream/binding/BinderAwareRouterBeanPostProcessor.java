@@ -33,23 +33,19 @@ public class BinderAwareRouterBeanPostProcessor implements BeanPostProcessor {
 
 	private final DestinationResolver<MessageChannel> channelResolver;
 
-	public BinderAwareRouterBeanPostProcessor(
-			DestinationResolver<MessageChannel> channelResolver) {
+	public BinderAwareRouterBeanPostProcessor(DestinationResolver<MessageChannel> channelResolver) {
 		this.channelResolver = channelResolver;
 	}
 
 	@Override
-	public Object postProcessBeforeInitialization(Object bean, String beanName)
-			throws BeansException {
+	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 		return bean;
 	}
 
 	@Override
-	public Object postProcessAfterInitialization(Object bean, String beanName)
-			throws BeansException {
+	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		if (bean instanceof AbstractMappingMessageRouter) {
-			((AbstractMappingMessageRouter) bean)
-					.setChannelResolver(this.channelResolver);
+			((AbstractMappingMessageRouter) bean).setChannelResolver(this.channelResolver);
 		}
 		return bean;
 	}
