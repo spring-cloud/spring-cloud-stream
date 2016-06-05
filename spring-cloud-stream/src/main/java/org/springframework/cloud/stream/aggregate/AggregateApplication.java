@@ -56,8 +56,7 @@ abstract class AggregateApplication {
 	 *
 	 * @return the resulting parent context for the aggregate
 	 */
-	static ConfigurableApplicationContext run(Class<?>[] apps, String[] parentArgs,
-			String[][] appArgs) {
+	static ConfigurableApplicationContext run(Class<?>[] apps, String[] parentArgs, String[][] appArgs) {
 		ConfigurableApplicationContext parentContext = createParentContext(
 				parentArgs != null ? parentArgs : new String[0]);
 		runEmbedded(parentContext, apps, appArgs);
@@ -75,8 +74,7 @@ abstract class AggregateApplication {
 	 * @param apps a list of classes, representing root context definitions for apps
 	 * @param args arguments for the apps
 	 */
-	static void runEmbedded(ConfigurableApplicationContext parentContext, Class<?>[] apps,
-			String[][] args) {
+	static void runEmbedded(ConfigurableApplicationContext parentContext, Class<?>[] apps, String[][] args) {
 		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
 		prepareSharedChannelRegistry(bean, apps);
 		// create child contexts first
@@ -85,18 +83,15 @@ abstract class AggregateApplication {
 
 	static ConfigurableApplicationContext createParentContext(String[] args) {
 		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
-		aggregatorParentConfiguration.sources(AggregatorParentConfiguration.class)
-				.web(false).headless(true).properties("spring.jmx.default-domain="
-						+ AggregatorParentConfiguration.class.getName());
+		aggregatorParentConfiguration.sources(AggregatorParentConfiguration.class).web(false).headless(true)
+				.properties("spring.jmx.default-domain=" + AggregatorParentConfiguration.class.getName());
 		return aggregatorParentConfiguration.run(args);
 	}
 
-	static void createChildContexts(ConfigurableApplicationContext parentContext,
-			Class<?>[] apps, String[][] args) {
+	static void createChildContexts(ConfigurableApplicationContext parentContext, Class<?>[] apps, String[][] args) {
 		for (int i = apps.length - 1; i >= 0; i--) {
 			String appClassName = apps[i].getName();
-			embedApp(parentContext, getNamespace(appClassName, i), apps[i])
-					.run(args != null ? args[i] : new String[0]);
+			embedApp(parentContext, getNamespace(appClassName, i), apps[i]).run(args != null ? args[i] : new String[0]);
 		}
 	}
 
@@ -104,17 +99,15 @@ abstract class AggregateApplication {
 		return appClassName + "_" + index;
 	}
 
-	protected static SpringApplicationBuilder embedApp(
-			ConfigurableApplicationContext applicationContext, String namespace,
-			Class<?> app) {
+	protected static SpringApplicationBuilder embedApp(ConfigurableApplicationContext applicationContext,
+			String namespace, Class<?> app) {
 		return new SpringApplicationBuilder(app).web(false).main(app).bannerMode(Mode.OFF)
 				.properties("spring.jmx.default-domain=" + app)
-				.properties(CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
-				.registerShutdownHook(false).parent(applicationContext);
+				.properties(CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace).registerShutdownHook(false)
+				.parent(applicationContext);
 	}
 
-	static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry,
-			Class<?>[] apps) {
+	static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps) {
 		LinkedHashMap<Class<?>, String> appsToRegister = new LinkedHashMap<>();
 		for (int i = apps.length - 1; i >= 0; i--) {
 			String appClassName = apps[i].getName();
@@ -130,13 +123,11 @@ abstract class AggregateApplication {
 		for (Entry<Class<?>, String> appEntry : appsWithNamespace.entrySet()) {
 			String namespace = appEntry.getValue();
 			if (i > 0) {
-				sharedChannelRegistry.register(namespace + "." + INPUT_CHANNEL_NAME,
-						sharedChannel);
+				sharedChannelRegistry.register(namespace + "." + INPUT_CHANNEL_NAME, sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
 			if (i < appsWithNamespace.size() - 1) {
-				sharedChannelRegistry.register(namespace + "." + OUTPUT_CHANNEL_NAME,
-						sharedChannel);
+				sharedChannelRegistry.register(namespace + "." + OUTPUT_CHANNEL_NAME, sharedChannel);
 			}
 			i++;
 		}
