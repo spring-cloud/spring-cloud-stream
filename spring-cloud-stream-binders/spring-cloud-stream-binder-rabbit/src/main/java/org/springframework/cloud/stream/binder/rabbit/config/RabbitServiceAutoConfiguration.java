@@ -21,10 +21,12 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.RabbitHealthIndicator;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.stream.binder.Binder;
@@ -67,22 +69,41 @@ public class RabbitServiceAutoConfiguration {
 		@Configuration
 		@ConditionalOnClass(Cloud.class)
 		protected static class CloudConnectors {
-			@Bean
-			public Cloud cloud() {
-				return new CloudFactory().getCloud();
-			}
 
 			/**
-			 * Creates a {@link ConnectionFactory} using the singleton service connector.
 			 * Active only if {@code spring.cloud.stream.overrideCloudConnectors} is not
 			 * set to {@code true}.
-			 * @param cloud {@link Cloud} instance to be used for accessing services.
-			 * @return the @{@link ConnectionFactory} used by the binder.
 			 */
-			@Bean
+			@Configuration
 			@ConditionalOnProperty(value = "spring.cloud.stream.overrideCloudConnectors", havingValue = "false", matchIfMissing = true)
-			ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
-				return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
+			// Required to parse Rabbit properties which are passed to the binder for
+			// clustering. We need to enable it here explicitly as the default Rabbit
+			// configuration is not triggered.
+			@EnableConfigurationProperties(RabbitProperties.class)
+			protected static class UseCloudConnectors {
+
+				@Bean
+				public Cloud cloud() {
+					return new CloudFactory().getCloud();
+				}
+
+				/**
+				 * Creates a {@link ConnectionFactory} using the singleton service
+				 * connector.
+				 *
+				 * @param cloud {@link Cloud} instance to be used for accessing services.
+				 * @return the @{@link ConnectionFactory} used by the binder.
+				 */
+				@Bean
+				ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
+					return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
+				}
+
+				@Bean
+				@ConditionalOnMissingBean(RabbitTemplate.class)
+				RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+					return new RabbitTemplate(connectionFactory);
+				}
 			}
 
 			/**
@@ -93,7 +114,7 @@ public class RabbitServiceAutoConfiguration {
 			@Configuration
 			@ConditionalOnProperty("spring.cloud.stream.overrideCloudConnectors")
 			@Import(RabbitAutoConfiguration.class)
-			public class OverrideCloudConnectors {
+			protected static class OverrideCloudConnectors {
 			}
 		}
 
