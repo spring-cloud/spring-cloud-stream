@@ -20,11 +20,11 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.RabbitHealthIndicator;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
-import org.springframework.boot.autoconfigure.cloud.CloudAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.stream.binder.Binder;
@@ -41,11 +41,11 @@ import org.springframework.context.annotation.Profile;
  * @author Glenn Renfro
  * @author David Turanski
  * @author Eric Bottard
+ * @author Marius Bogoevici
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
 @Import(RabbitMessageChannelBinderConfiguration.class)
-@AutoConfigureBefore({CloudAutoConfiguration.class, RabbitAutoConfiguration.class})
 public class RabbitServiceAutoConfiguration {
 
 	@Bean
@@ -53,26 +53,64 @@ public class RabbitServiceAutoConfiguration {
 		return new RabbitHealthIndicator(rabbitTemplate);
 	}
 
+	/**
+	 * Configuration to be used when the cloud profile is set.
+	 */
 	@Configuration
 	@Profile("cloud")
-	@ConditionalOnClass(Cloud.class)
-	protected static class CloudConfig {
+	protected static class CloudProfile {
 
-		@Bean
-		public Cloud cloud() {
-			return new CloudFactory().getCloud();
+		/**
+		 * Configuration to be used when the cloud profile is set, and Cloud Connectors
+		 * are found on the classpath.
+		 */
+		@Configuration
+		@ConditionalOnClass(Cloud.class)
+		protected static class CloudConnectors {
+			@Bean
+			public Cloud cloud() {
+				return new CloudFactory().getCloud();
+			}
+
+			/**
+			 * Creates a {@link ConnectionFactory} using the singleton service connector.
+			 * Active only if {@code spring.cloud.stream.overrideCloudConnectors} is not
+			 * set to {@code true}.
+			 * @param cloud {@link Cloud} instance to be used for accessing services.
+			 * @return the @{@link ConnectionFactory} used by the binder.
+			 */
+			@Bean
+			@ConditionalOnProperty(value = "spring.cloud.stream.overrideCloudConnectors", havingValue = "false", matchIfMissing = true)
+			ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
+				return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
+			}
+
+			/**
+			 * Configuration to be used if
+			 * {@code spring.cloud.stream.overrideCloudConnectors} is set to {@code true}.
+			 * Defers to Spring Boot Autoconfiguration.
+			 */
+			@Configuration
+			@ConditionalOnProperty("spring.cloud.stream.overrideCloudConnectors")
+			@Import(RabbitAutoConfiguration.class)
+			public class OverrideCloudConnectors {
+			}
 		}
 
-		@Bean
-		@ConditionalOnMissingBean(ConnectionFactory.class)
-		ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
-			return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
+		@Configuration
+		@ConditionalOnMissingClass("org.springframework.cloud.Cloud")
+		@Import(RabbitAutoConfiguration.class)
+		protected static class NoCloudConnectors {
 		}
 	}
 
+	/**
+	 * Configuration to be used when the cloud profile is not set. Defer to Spring Boot
+	 * autoconfiguration.
+	 */
 	@Configuration
 	@Profile("!cloud")
 	@Import(RabbitAutoConfiguration.class)
-	protected static class NoCloudConfig {
+	protected static class NoCloudProfile {
 	}
 }
