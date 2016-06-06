@@ -720,6 +720,7 @@ spring.cloud.stream.bindings.input.binder=kafka
 spring.cloud.stream.bindings.output.binder=rabbit
 ----
 
+[[multiple-systems]]
 === Connecting to Multiple Systems
 
 By default, binders share the application's Spring Boot auto-configuration, so that one instance of each binder found on the classpath will be created.
@@ -842,6 +843,16 @@ Default: empty (allowing any destination to be bound).
 spring.cloud.stream.defaultBinder::
   The default binder to use, if multiple binders are configured.
 See <<multiple-binders,Multiple Binders on the Classpath>>.
++
+Default: empty.
+
+spring.cloud.stream.overrideCloudConnectors::
+  This property is only applicable when the `cloud` profile is active and Spring Cloud Connectors are provided with the application.
+If the property is false (the default), the binder will detect a suitable bound service (e.g. a RabbitMQ service bound in Cloud Foundry for the RabbitMQ binder) and will use it for creating connections (usually via Spring Cloud Connectors).
+When set to true, this property instructs binders to completely ignore the bound services and rely on Spring Boot properties (e.g. relying on the `spring.rabbitmq.*` properties provided in the environment for the RabbitMQ binder).
+The typical usage of this property is to be nested in a customized environment <<multiple-systems, when connecting to multiple systems>>.
++
+Default: false.
 
 [[binding-properties]]
 === Binding Properties
