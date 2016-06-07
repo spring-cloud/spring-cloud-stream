@@ -70,6 +70,11 @@ public class RabbitServiceAutoConfiguration {
 		@ConditionalOnClass(Cloud.class)
 		protected static class CloudConnectors {
 
+			@Bean
+			public Cloud cloud() {
+				return new CloudFactory().getCloud();
+			}
+
 			/**
 			 * Active only if {@code spring.cloud.stream.overrideCloudConnectors} is not
 			 * set to {@code true}.
@@ -81,11 +86,6 @@ public class RabbitServiceAutoConfiguration {
 			// configuration is not triggered.
 			@EnableConfigurationProperties(RabbitProperties.class)
 			protected static class UseCloudConnectors {
-
-				@Bean
-				public Cloud cloud() {
-					return new CloudFactory().getCloud();
-				}
 
 				/**
 				 * Creates a {@link ConnectionFactory} using the singleton service
