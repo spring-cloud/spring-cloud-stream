@@ -63,7 +63,7 @@ public class RabbitMessageChannelBinderConfiguration {
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() {
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory, rabbitProperties);
 		binder.setCodec(codec);
-		binder.setAdminAddresses(rabbitBinderConfigurationProperties.getAdminAdresses());
+		binder.setAdminAddresses(rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());
 		binder.setNodes(rabbitBinderConfigurationProperties.getNodes());

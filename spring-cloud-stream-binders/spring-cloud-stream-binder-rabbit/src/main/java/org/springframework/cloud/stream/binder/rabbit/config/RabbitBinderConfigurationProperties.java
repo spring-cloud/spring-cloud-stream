@@ -24,18 +24,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "spring.cloud.stream.rabbit.binder")
 class RabbitBinderConfigurationProperties {
 
-	private String[] adminAdresses = new String[0];
+	private String[] adminAddresses = new String[0];
 
 	private String[] nodes = new String[0];
 
 	private int compressionLevel;
 
-	public String[] getAdminAdresses() {
-		return adminAdresses;
+	public String[] getAdminAddresses() {
+		return adminAddresses;
 	}
 
-	public void setAdminAdresses(String[] adminAdresses) {
-		this.adminAdresses = adminAdresses;
+	public void setAdminAddresses(String[] adminAddresses) {
+		this.adminAddresses = adminAddresses;
 	}
 
 	public String[] getNodes() {
