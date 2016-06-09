@@ -1,1 +1,3 @@
 # spring-cloud-stream-binder-kafka
+
+Spring Cloud Stream Binder implementation for Kafka
