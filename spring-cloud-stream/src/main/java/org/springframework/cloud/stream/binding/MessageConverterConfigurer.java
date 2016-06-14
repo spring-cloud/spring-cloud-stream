@@ -24,15 +24,21 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
+import org.springframework.expression.EvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
+import org.springframework.integration.support.MutableMessageBuilderFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.util.Assert;
@@ -41,7 +47,8 @@ import org.springframework.util.StringUtils;
 
 /**
  * A {@link MessageChannelConfigurer} that sets data types and message converters based on {@link
- * BindingProperties#contentType}. Also adds a {@link org.springframework.messaging.support.ChannelInterceptor} to
+ * org.springframework.cloud.stream.config.BindingProperties#contentType}. Also adds a
+ * {@link org.springframework.messaging.support.ChannelInterceptor} to
  * the message channel to set the `ContentType` header for the message (if not already set) based on the `ContentType`
  * binding property of the channel.
  * @author Ilayaperumal Gopinathan
@@ -49,7 +56,7 @@ import org.springframework.util.StringUtils;
  */
 public class MessageConverterConfigurer implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
 
-	private final MessageBuilderFactory messageBuilderFactory;
+	private final MessageBuilderFactory messageBuilderFactory = new MutableMessageBuilderFactory();
 
 	private ConfigurableListableBeanFactory beanFactory;
 
@@ -58,10 +65,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
 	public MessageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties,
-			MessageBuilderFactory messageBuilderFactory,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		Assert.notNull(compositeMessageConverterFactory, "The message converter factory cannot be null");
-		this.messageBuilderFactory = messageBuilderFactory;
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
 	}
@@ -85,28 +90,14 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	public void configureMessageChannel(MessageChannel channel, String channelName) {
 		Assert.isAssignable(AbstractMessageChannel.class, channel.getClass());
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
-		BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindingProperties(channelName);
+		final BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindingProperties(
+				channelName);
 		final String contentType = bindingProperties.getContentType();
+		if (bindingProperties.getProducer() != null && bindingProperties.getProducer().isPartitioned()) {
+			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties));
+		}
 		if (StringUtils.hasText(contentType)) {
-			MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
-			SmartMessageConverter messageConverter = this.compositeMessageConverterFactory.getMessageConverterForType(mimeType);
-			Class<?>[] supportedDataTypes = this.compositeMessageConverterFactory.supportedDataTypes(mimeType);
-			messageChannel.setDatatypes(supportedDataTypes);
-			messageChannel.setMessageConverter(new MessageWrappingMessageConverter(messageConverter, mimeType));
-			messageChannel.addInterceptor(new ChannelInterceptorAdapter() {
-
-				@Override
-				public Message<?> preSend(Message<?> message, MessageChannel messageChannel) {
-					Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-					if (contentTypeFromMessage == null) {
-						return messageBuilderFactory
-.fromMessage(message)
-								.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-								.build();
-					}
-					return message;
-				}
-			});
+			messageChannel.addInterceptor(new ContentTypeConvertingInterceptor(contentType));
 		}
 	}
 
@@ -131,7 +122,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Object fromMessage(Message<?> message, Class<?> targetClass) {
-			Object converted = delegate.fromMessage(message, targetClass);
+			Object converted = this.delegate.fromMessage(message, targetClass);
 			if (converted instanceof Message) {
 				return converted;
 			}
@@ -142,7 +133,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Object fromMessage(Message<?> message, Class<?> targetClass, Object conversionHint) {
-			Object converted = delegate.fromMessage(message, targetClass, conversionHint);
+			Object converted = this.delegate.fromMessage(message, targetClass, conversionHint);
 			if (converted == null || converted instanceof Message) {
 				return converted;
 			}
@@ -153,12 +144,12 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Message<?> toMessage(Object payload, MessageHeaders headers) {
-			return delegate.toMessage(payload, headers);
+			return this.delegate.toMessage(payload, headers);
 		}
 
 		@Override
 		public Message<?> toMessage(Object payload, MessageHeaders headers, Object conversionHint) {
-			return delegate.toMessage(payload, headers, conversionHint);
+			return this.delegate.toMessage(payload, headers, conversionHint);
 		}
 
 		/**
@@ -168,12 +159,78 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		 * @return the converted message
 		 */
 		protected Object build(Object payload, MessageHeaders headers) {
-			MimeType messageContentType = MessageConverterUtils.X_JAVA_OBJECT.equals(contentType) ?
-					MessageConverterUtils.javaObjectMimeType(payload.getClass()) : contentType;
-			return messageBuilderFactory.withPayload(payload).copyHeaders(headers)
+			MimeType messageContentType = MessageConverterUtils.X_JAVA_OBJECT.equals(this.contentType) ?
+					MessageConverterUtils.javaObjectMimeType(payload.getClass()) : this.contentType;
+			return MessageConverterConfigurer.this.messageBuilderFactory.withPayload(payload).copyHeaders(headers)
 					.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
 							messageContentType.toString()))
 					.build();
+		}
+	}
+
+	private final class ContentTypeConvertingInterceptor extends ChannelInterceptorAdapter {
+
+		private final String contentType;
+
+		private final MimeType mimeType;
+
+		private ContentTypeConvertingInterceptor(String contentType) {
+			this.contentType = contentType;
+			this.mimeType = MessageConverterUtils.getMimeType(contentType);
+		}
+
+		@Override
+		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			Class<?>[] classes =
+					MessageConverterConfigurer.this.compositeMessageConverterFactory.supportedDataTypes(
+							this.mimeType);
+			MessageWrappingMessageConverter messageConverter =
+					new MessageWrappingMessageConverter(
+							MessageConverterConfigurer.this.compositeMessageConverterFactory
+									.getMessageConverterForType(this.mimeType), this.mimeType);
+			for (Class<?> aClass : classes) {
+				if (aClass.isAssignableFrom(message.getPayload().getClass())) {
+					Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+					if (contentTypeFromMessage == null) {
+						return MessageConverterConfigurer.this.messageBuilderFactory
+								.fromMessage(message)
+								.setHeader(MessageHeaders.CONTENT_TYPE, this.contentType)
+								.build();
+					}
+					else {
+						return message;
+					}
+				}
+				else {
+					Object converted = messageConverter.fromMessage(message, aClass);
+					if (converted != null) {
+						return (Message<?>) converted;
+					}
+				}
+			}
+			throw new MessageConversionException("Cannot convert " + message + " to " + this.contentType);
+		}
+	}
+
+	private final class PartitioningInterceptor extends ChannelInterceptorAdapter {
+
+		private final BindingProperties bindingProperties;
+
+		private PartitioningInterceptor(BindingProperties bindingProperties) {
+			this.bindingProperties = bindingProperties;
+		}
+
+		@Override
+		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			EvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(
+					MessageConverterConfigurer.this.beanFactory);
+			PartitionHandler partitionHandler = new PartitionHandler(MessageConverterConfigurer.this
+					.beanFactory, evaluationContext, null,
+					this.bindingProperties.getProducer());
+			int partition = partitionHandler.determinePartition(message);
+			return new MutableMessageBuilderFactory().fromMessage(message)
+					.setHeader(BinderHeaders.PARTITION_HEADER, partition).build();
+
 		}
 	}
 }

@@ -21,7 +21,7 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Sink;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(BoundChannelsInterceptedTest.Foo.class)
+@SpringBootTest(classes = BoundChannelsInterceptedTest.Foo.class)
 public class BoundChannelsInterceptedTest {
 
 	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").build();
@@ -59,9 +59,9 @@ public class BoundChannelsInterceptedTest {
 
 	@Test
 	public void testBoundChannelsIntercepted() {
-		fooSink.input().send(TEST_MESSAGE);
-		verify(channelInterceptor).preSend(TEST_MESSAGE, fooSink.input());
-		verifyNoMoreInteractions(channelInterceptor);
+		this.fooSink.input().send(TEST_MESSAGE);
+		verify(this.channelInterceptor).preSend(TEST_MESSAGE, this.fooSink.input());
+		verifyNoMoreInteractions(this.channelInterceptor);
 	}
 
 

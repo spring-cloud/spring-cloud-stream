@@ -24,7 +24,7 @@ import org.mockito.ArgumentMatcher;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(PartitionedConsumerTest.TestSink.class)
+@SpringBootTest(classes = PartitionedConsumerTest.TestSink.class)
 public class PartitionedConsumerTest {
 
 	@SuppressWarnings("rawtypes")
@@ -60,10 +60,11 @@ public class PartitionedConsumerTest {
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedConsumer() {
 		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor.forClass(ConsumerProperties.class);
-		verify(binder).bindConsumer(eq("partIn"), anyString(), eq(testSink.input()), argumentCaptor.capture());
+		verify(this.binder).bindConsumer(eq("partIn"), anyString(), eq(this.testSink.input()),
+				argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getInstanceIndex(), equalTo(0));
 		Assert.assertThat(argumentCaptor.getValue().getInstanceCount(), equalTo(2));
-		verifyNoMoreInteractions(binder);
+		verifyNoMoreInteractions(this.binder);
 	}
 
 	@EnableBinding(Sink.class)

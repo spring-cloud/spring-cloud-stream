@@ -18,8 +18,8 @@ package org.springframework.cloud.stream.binder;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.integration.support.MessageBuilderFactory;
+import org.springframework.integration.support.MutableMessageBuilderFactory;
 import org.springframework.integration.support.utils.IntegrationUtils;
 
 import static org.mockito.Mockito.mock;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  */
 public abstract class BinderTestUtils {
 
-	private static final MessageBuilderFactory mbf = new DefaultMessageBuilderFactory();
+	private static final MessageBuilderFactory mbf = new MutableMessageBuilderFactory();
 
 	public static final AbstractApplicationContext MOCK_AC = mock(AbstractApplicationContext.class);
 

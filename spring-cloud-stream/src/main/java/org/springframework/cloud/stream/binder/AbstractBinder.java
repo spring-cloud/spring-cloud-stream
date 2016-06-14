@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -56,9 +55,8 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
-public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties> implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
-
-	protected static final String PARTITION_HEADER = "partition";
+public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
+		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
 
 	/**
 	 * The delimiter between a group and index when constructing a binder consumer/producer.
@@ -73,14 +71,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
-	protected final EmbeddedHeadersMessageConverter embeddedHeadersMessageConverter = new
-			EmbeddedHeadersMessageConverter();
+	private volatile EvaluationContext evaluationContext;
 
-	protected volatile EvaluationContext evaluationContext;
-
-	protected volatile PartitionSelectorStrategy partitionSelector;
-
-	// Payload type cache
 	private volatile Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
 
 	/**
@@ -119,14 +111,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		this.codec = codec;
 	}
 
-	/**
-	 * Set the partition strategy to be used by this binder if no partitionExpression is provided for a module.
-	 * @param partitionSelector The selector.
-	 */
-	public void setPartitionSelector(PartitionSelectorStrategy partitionSelector) {
-		this.partitionSelector = partitionSelector;
-	}
-
 	public void setIntegrationEvaluationContext(EvaluationContext evaluationContext) {
 		this.evaluationContext = evaluationContext;
 	}
@@ -138,26 +122,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			this.evaluationContext = ExpressionUtils.createStandardEvaluationContext(getBeanFactory());
 		}
 		onInit();
-	}
-
-	/**
-	 * Extract the message values from the the received message when the received message is embedded with
-	 * header values. Once extracted, deserialize the payload if necessary.
-	 *
-	 * @param receivedMessage the received message
-	 * @return extracted message values
-	 */
-	public MessageValues extractMessageValues(Message<?> receivedMessage) {
-		MessageValues messageValues;
-		try {
-			messageValues = embeddedHeadersMessageConverter.extractHeaders((Message<byte[]>) receivedMessage,
-					true);
-		}
-		catch (Exception e) {
-			logger.error(EmbeddedHeadersMessageConverter.decodeExceptionMessage(receivedMessage), e);
-			messageValues = new MessageValues(receivedMessage);
-		}
-		return deserializePayloadIfNecessary(messageValues);
 	}
 
 	/**
@@ -196,7 +160,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return name + GROUP_INDEX_DELIMITER + (StringUtils.hasText(group) ? group : "default");
 	}
 
-	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
+	final MessageValues serializePayloadIfNecessary(Message<?> message) {
 		Object originalPayload = message.getPayload();
 		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 
@@ -233,11 +197,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		}
 	}
 
-	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
+	final MessageValues deserializePayloadIfNecessary(Message<?> message) {
 		return deserializePayloadIfNecessary(new MessageValues(message));
 	}
 
-	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
+	final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
 		Object originalPayload = messageValues.getPayload();
 		MimeType contentType = this.contentTypeResolver.resolve(messageValues);
 		Object payload = deserializePayload(originalPayload, contentType);
@@ -298,37 +262,25 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
-		return "'" + expressionRoot + "-' + headers['" + PARTITION_HEADER + "']";
+		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
 	}
 
 	/**
-	 * Create and configure a retry template if the consumer 'maxAttempts' property is set.
+	 * Create and configure a retry template.
 	 * @param properties The properties.
-	 * @return The retry template, or null if retry is not enabled.
+	 * @return The retry template
 	 */
-	protected RetryTemplate buildRetryTemplateIfRetryEnabled(ConsumerProperties properties) {
-		int maxAttempts = properties.getMaxAttempts();
-		if (maxAttempts > 1) {
-			RetryTemplate template = new RetryTemplate();
-			SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-			retryPolicy.setMaxAttempts(maxAttempts);
-			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
-			backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
-			backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
-			template.setRetryPolicy(retryPolicy);
-			template.setBackOffPolicy(backOffPolicy);
-			return template;
-		}
-		else {
-			return null;
-		}
-	}
-
-	/**
-	 * Perform manual acknowledgement based on the metadata stored in the binder.
-	 */
-	public void doManualAck(LinkedList<MessageHeaders> messageHeaders) {
+	public RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
+		RetryTemplate template = new RetryTemplate();
+		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+		retryPolicy.setMaxAttempts(properties.getMaxAttempts());
+		ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+		backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
+		backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
+		backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
+		template.setRetryPolicy(retryPolicy);
+		template.setBackOffPolicy(backOffPolicy);
+		return template;
 	}
 
 	/**
@@ -386,5 +338,4 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		}
 
 	}
-
 }

@@ -22,7 +22,7 @@ import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Source;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(SourceBindingTestsWithDefaults.TestSource.class)
+@SpringBootTest(classes = SourceBindingTestsWithDefaults.TestSource.class)
 public class SourceBindingTestsWithDefaults {
 
 	@SuppressWarnings("rawtypes")
@@ -52,8 +52,8 @@ public class SourceBindingTestsWithDefaults {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindProducer(eq("output"), eq(testSource.output()), Mockito.<ProducerProperties>any());
-		verifyNoMoreInteractions(binder);
+		verify(this.binder).bindProducer(eq("output"), eq(this.testSource.output()), Mockito.<ProducerProperties>any());
+		verifyNoMoreInteractions(this.binder);
 	}
 
 	@EnableBinding(Source.class)

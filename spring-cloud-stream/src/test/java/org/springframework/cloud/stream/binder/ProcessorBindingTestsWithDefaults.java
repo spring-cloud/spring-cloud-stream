@@ -22,7 +22,7 @@ import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(ProcessorBindingTestsWithDefaults.TestProcessor.class)
+@SpringBootTest(classes = ProcessorBindingTestsWithDefaults.TestProcessor.class)
 public class ProcessorBindingTestsWithDefaults {
 
 	@SuppressWarnings("rawtypes")
@@ -52,9 +52,11 @@ public class ProcessorBindingTestsWithDefaults {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		Mockito.verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<ConsumerProperties>any());
-		Mockito.verify(binder).bindProducer(eq("output"), eq(processor.output()), Mockito.<ProducerProperties>any());
-		verifyNoMoreInteractions(binder);
+		Mockito.verify(this.binder).bindConsumer(eq("input"), anyString(), eq(this.processor.input()),
+				Mockito.<ConsumerProperties>any());
+		Mockito.verify(this.binder).bindProducer(eq("output"), eq(this.processor.output()),
+				Mockito.<ProducerProperties>any());
+		verifyNoMoreInteractions(this.binder);
 	}
 
 	@EnableBinding(Processor.class)

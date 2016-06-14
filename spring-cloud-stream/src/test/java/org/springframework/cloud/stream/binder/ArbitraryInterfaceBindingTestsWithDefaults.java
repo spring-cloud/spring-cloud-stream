@@ -22,7 +22,7 @@ import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(ArbitraryInterfaceBindingTestsWithDefaults.TestFooChannels.class)
+@SpringBootTest(classes = ArbitraryInterfaceBindingTestsWithDefaults.TestFooChannels.class)
 public class ArbitraryInterfaceBindingTestsWithDefaults {
 
 	@Autowired
@@ -52,15 +52,15 @@ public class ArbitraryInterfaceBindingTestsWithDefaults {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
-		verify(binder).bindConsumer(eq("foo"), anyString(), eq(fooChannels.foo()),
+		verify(this.binder).bindConsumer(eq("foo"), anyString(), eq(this.fooChannels.foo()),
 				Mockito.<ConsumerProperties>any());
-		verify(binder).bindConsumer(eq("bar"), anyString(), eq(fooChannels.bar()),
+		verify(this.binder).bindConsumer(eq("bar"), anyString(), eq(this.fooChannels.bar()),
 				Mockito.<ConsumerProperties>any());
-		verify(binder).bindProducer(eq("baz"), eq(fooChannels.baz()),
+		verify(this.binder).bindProducer(eq("baz"), eq(this.fooChannels.baz()),
 				Mockito.<ProducerProperties>any());
-		verify(binder).bindProducer(eq("qux"), eq(fooChannels.qux()),
+		verify(this.binder).bindProducer(eq("qux"), eq(this.fooChannels.qux()),
 				Mockito.<ProducerProperties>any());
-		verifyNoMoreInteractions(binder);
+		verifyNoMoreInteractions(this.binder);
 	}
 
 	@EnableBinding(FooChannels.class)

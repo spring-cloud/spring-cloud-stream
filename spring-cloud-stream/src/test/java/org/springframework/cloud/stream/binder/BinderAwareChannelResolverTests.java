@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -53,7 +52,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -102,9 +100,10 @@ public class BinderAwareChannelResolverTests {
 		bindingProperties.setContentType("text/plain");
 		bindings.put("foo", bindingProperties);
 		this.channelBindingServiceProperties.setBindings(bindings);
-		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties, binderFactory);
+		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
+				binderFactory);
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
-				this.channelBindingServiceProperties, new DefaultMessageBuilderFactory(),
+				this.channelBindingServiceProperties,
 				new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
@@ -185,17 +184,15 @@ public class BinderAwareChannelResolverTests {
 				matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(barBinding);
 		when(mockBinderFactory.getBinder(null)).thenReturn(binder);
 		when(mockBinderFactory.getBinder("someTransport")).thenReturn(binder2);
-		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties, mockBinderFactory);
+		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
+				mockBinderFactory);
 		@SuppressWarnings("unchecked")
 		BinderAwareChannelResolver resolver =
-				new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory, new DynamicDestinationsBindable());
+				new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory,
+						new DynamicDestinationsBindable());
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
 		SubscribableChannel resolved = (SubscribableChannel) resolver.resolveDestination("foo");
-		DirectFieldAccessor accessor = new DirectFieldAccessor(resolved);
-		Class<?>[] dataTypes = (Class<?>[]) accessor.getPropertyValue("datatypes");
-		Assert.isTrue(dataTypes.length == 1, "Data type must be set for the Foo Channel");
-		Assert.isTrue(dataTypes[0].equals(String.class), "Data type should be of type String");
 		verify(binder).bindProducer(eq("foo"), any(MessageChannel.class), any(ProducerProperties.class));
 		assertThat(resolved).isSameAs(beanFactory.getBean("foo"));
 	}
