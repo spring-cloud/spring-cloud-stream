@@ -22,7 +22,6 @@ import org.springframework.messaging.MessageChannel;
 
 /**
  * {@link MessageChannelConfigurer} that composes all the message channel configurers.
- *
  * @author Ilayaperumal Gopinathan
  */
 public class CompositeMessageChannelConfigurer implements MessageChannelConfigurer {

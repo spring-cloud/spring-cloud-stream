@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,10 @@ import org.springframework.util.Assert;
  * A mutable type for allowing {@link Binder} implementations to transform and enrich message content more
  * efficiently.
  * @author David Turanski
+ * @author Marius Bogoevici
  */
 public class MessageValues implements Map<String, Object> {
+
 	private Map<String, Object> headers = new HashMap<>();
 
 	private Object payload;
@@ -57,6 +59,10 @@ public class MessageValues implements Map<String, Object> {
 	 */
 	public Object getPayload() {
 		return payload;
+	}
+
+	public Map<String, Object> getHeaders() {
+		return headers;
 	}
 
 	/**

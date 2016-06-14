@@ -43,7 +43,6 @@ import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 
@@ -213,7 +212,7 @@ public class ChannelBindingServiceTests {
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(
 				channelBindingService,
 				new DefaultBindableChannelFactory(new MessageConverterConfigurer(
-						properties, new DefaultMessageBuilderFactory(),
+						properties,
 						new CompositeMessageConverterFactory())), new DynamicDestinationsBindable());
 		ConfigurableListableBeanFactory beanFactory = mock(
 				ConfigurableListableBeanFactory.class);

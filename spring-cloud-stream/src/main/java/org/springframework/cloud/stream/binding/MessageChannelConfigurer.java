@@ -20,16 +20,14 @@ import org.springframework.messaging.MessageChannel;
 
 /**
  * Interface to be implemented by the classes that configure the {@link Bindable} message channels.
- *
  * @author Ilayaperumal Gopinathan
  */
 public interface MessageChannelConfigurer {
 
 	/**
 	 * Configure the given message channel.
-	 *
 	 * @param messageChannel the message channel
-	 * @param channelName name of the message channel
+	 * @param channelName    name of the message channel
 	 */
 	void configureMessageChannel(MessageChannel messageChannel, String channelName);
 }

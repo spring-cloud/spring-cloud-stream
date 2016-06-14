@@ -59,7 +59,6 @@ import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.json.JsonPropertyAccessor;
-import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
@@ -70,7 +69,6 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
- *
  * @author Dave Syer
  * @author David Turanski
  * @author Marius Bogoevici
@@ -82,9 +80,6 @@ import org.springframework.util.CollectionUtils;
 public class ChannelBindingServiceConfiguration {
 
 	private static final String ERROR_CHANNEL_NAME = "error";
-
-	@Autowired
-	private MessageBuilderFactory messageBuilderFactory;
 
 	@Autowired(required = false)
 	private ObjectMapper objectMapper;
@@ -108,9 +103,9 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public MessageConverterConfigurer messageConverterConfigurer(
 			ChannelBindingServiceProperties channelBindingServiceProperties,
-			MessageBuilderFactory messageBuilderFactory,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new MessageConverterConfigurer(channelBindingServiceProperties, messageBuilderFactory, compositeMessageConverterFactory);
+		return new MessageConverterConfigurer(channelBindingServiceProperties,
+				compositeMessageConverterFactory);
 	}
 
 	@Bean
@@ -147,7 +142,8 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public BinderAwareChannelResolver binderAwareChannelResolver(ChannelBindingService channelBindingService,
 			BindableChannelFactory bindableChannelFactory, DynamicDestinationsBindable dynamicDestinationsBindable) {
-		return new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory, dynamicDestinationsBindable);
+		return new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory,
+				dynamicDestinationsBindable);
 	}
 
 	@Bean
@@ -165,16 +161,18 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public CompositeMessageConverterFactory compositeMessageConverterFactory() {
 		List<AbstractFromMessageConverter> messageConverters = new ArrayList<>();
-		if (!CollectionUtils.isEmpty(customMessageConverters)) {
-			messageConverters.addAll(Collections.unmodifiableCollection(customMessageConverters));
+		if (!CollectionUtils.isEmpty(this.customMessageConverters)) {
+			messageConverters.addAll(Collections.unmodifiableCollection(this.customMessageConverters));
 		}
-		return new CompositeMessageConverterFactory(messageConverters, objectMapper);
+		return new CompositeMessageConverterFactory(messageConverters, this.objectMapper);
 	}
 
 	@Bean
-	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
+			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		messageHandlerMethodFactory.setMessageConverter(
+				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 		return messageHandlerMethodFactory;
 	}
 
@@ -227,7 +225,8 @@ public class ChannelBindingServiceConfiguration {
 				@Override
 				public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 					if (IntegrationContextUtils.INTEGRATION_EVALUATION_CONTEXT_BEAN_NAME.equals(beanName)) {
-						IntegrationEvaluationContextFactoryBean factoryBean = (IntegrationEvaluationContextFactoryBean) bean;
+						IntegrationEvaluationContextFactoryBean factoryBean =
+								(IntegrationEvaluationContextFactoryBean) bean;
 						Map<String, PropertyAccessor> factoryBeanAccessors = factoryBean.getPropertyAccessors();
 						for (Map.Entry<String, PropertyAccessor> entry : accessors.entrySet()) {
 							if (!factoryBeanAccessors.containsKey(entry.getKey())) {

@@ -27,7 +27,17 @@ import org.springframework.messaging.MessageHeaders;
  */
 public final class BinderHeaders {
 
+	/**
+	 * Indicates the original content type of a message that has been
+	 * transformed in a native transport format.
+	 */
 	public static final String BINDER_ORIGINAL_CONTENT_TYPE = "originalContentType";
+
+	/**
+	 * Indicates the target partition of an outbound message. Binders must
+	 * observe this value when sending data on the transport.
+	 */
+	public static final String PARTITION_HEADER = "partition";
 
 	/**
 	 * The headers that will be propagated, by default, by binder implementations

@@ -72,7 +72,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	private ConfigurableApplicationContext applicationContext;
 
 	public Map<String, BindingProperties> getBindings() {
-		return bindings;
+		return this.bindings;
 	}
 
 	public void setBindings(Map<String, BindingProperties> bindings) {
@@ -80,7 +80,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public Map<String, BinderProperties> getBinders() {
-		return binders;
+		return this.binders;
 	}
 
 	public void setBinders(Map<String, BinderProperties> binders) {
@@ -88,7 +88,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public String getDefaultBinder() {
-		return defaultBinder;
+		return this.defaultBinder;
 	}
 
 	public void setDefaultBinder(String defaultBinder) {
@@ -96,7 +96,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public int getInstanceIndex() {
-		return instanceIndex;
+		return this.instanceIndex;
 	}
 
 	public void setInstanceIndex(int instanceIndex) {
@@ -104,7 +104,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public int getInstanceCount() {
-		return instanceCount;
+		return this.instanceCount;
 	}
 
 	public void setInstanceCount(int instanceCount) {
@@ -112,7 +112,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public String[] getDynamicDestinations() {
-		return dynamicDestinations;
+		return this.dynamicDestinations;
 	}
 
 	public void setDynamicDestinations(String[] dynamicDestinations) {
@@ -120,7 +120,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public Properties getConsumerDefaults() {
-		return consumerDefaults;
+		return this.consumerDefaults;
 	}
 
 	public void setConsumerDefaults(Properties consumerDefaults) {
@@ -128,7 +128,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public Properties getProducerDefaults() {
-		return producerDefaults;
+		return this.producerDefaults;
 	}
 
 	public void setProducerDefaults(Properties producerDefaults) {
@@ -136,7 +136,7 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	}
 
 	public boolean isIgnoreUnknownProperties() {
-		return ignoreUnknownProperties;
+		return this.ignoreUnknownProperties;
 	}
 
 	public void setIgnoreUnknownProperties(boolean ignoreUnknownProperties) {
@@ -148,10 +148,15 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
+	public void setConversionService(ConversionService conversionService) {
+		this.conversionService = conversionService;
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		if (conversionService == null) {
-			conversionService = applicationContext.getBean(IntegrationUtils.INTEGRATION_CONVERSION_SERVICE_BEAN_NAME, ConversionService.class);
+		if (this.conversionService == null) {
+			this.conversionService = this.applicationContext.getBean(
+					IntegrationUtils.INTEGRATION_CONVERSION_SERVICE_BEAN_NAME, ConversionService.class);
 		}
 	}
 
@@ -169,10 +174,10 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		properties.put("instanceCount", String.valueOf(getInstanceCount()));
 		properties.put("defaultBinder", getDefaultBinder());
 		properties.put("dynamicDestinations", getDynamicDestinations());
-		for (Map.Entry<String, BindingProperties> entry : bindings.entrySet()) {
+		for (Map.Entry<String, BindingProperties> entry : this.bindings.entrySet()) {
 			properties.put(entry.getKey(), entry.getValue().toString());
 		}
-		for (Map.Entry<String, BinderProperties> entry : binders.entrySet()) {
+		for (Map.Entry<String, BinderProperties> entry : this.binders.entrySet()) {
 			properties.put(entry.getKey(), entry.getValue());
 		}
 		return properties;

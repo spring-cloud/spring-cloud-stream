@@ -23,8 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.IntegrationTest;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Configuration;
@@ -40,8 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Eric Bottard
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = SpelExpressionConverterConfigurationTests.Config.class)
-@IntegrationTest("expression: a.b")
+@SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class, properties = "expression: a.b")
 public class SpelExpressionConverterConfigurationTests {
 
 	@Autowired

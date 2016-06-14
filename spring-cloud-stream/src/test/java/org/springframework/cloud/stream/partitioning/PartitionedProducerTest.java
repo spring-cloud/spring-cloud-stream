@@ -23,7 +23,7 @@ import org.mockito.ArgumentCaptor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(PartitionedProducerTest.TestSource.class)
+@SpringBootTest(classes = PartitionedProducerTest.TestSource.class)
 public class PartitionedProducerTest {
 
 	@SuppressWarnings("rawtypes")
@@ -58,11 +58,11 @@ public class PartitionedProducerTest {
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedProducer() {
 		ArgumentCaptor<ProducerProperties> argumentCaptor = ArgumentCaptor.forClass(ProducerProperties.class);
-		verify(binder).bindProducer(eq("partOut"), eq(testSource.output()), argumentCaptor.capture());
+		verify(this.binder).bindProducer(eq("partOut"), eq(this.testSource.output()), argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getPartitionCount(), equalTo(3));
 		Assert.assertThat(argumentCaptor.getValue().getPartitionKeyExpression().getExpressionString(),
 				equalTo("payload"));
-		verifyNoMoreInteractions(binder);
+		verifyNoMoreInteractions(this.binder);
 	}
 
 

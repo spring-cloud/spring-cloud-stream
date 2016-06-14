@@ -22,7 +22,7 @@ import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Sink;
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(SinkBindingTestsWithBindingTargets.TestSink.class)
+@SpringBootTest(classes = SinkBindingTestsWithBindingTargets.TestSink.class)
 public class SinkBindingTestsWithBindingTargets {
 
 	@SuppressWarnings("rawtypes")
@@ -54,9 +54,9 @@ public class SinkBindingTestsWithBindingTargets {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(binder).bindConsumer(eq("testtock"), anyString(), eq(testSink.input()),
+		verify(this.binder).bindConsumer(eq("testtock"), anyString(), eq(this.testSink.input()),
 				Mockito.<ConsumerProperties>any());
-		verifyNoMoreInteractions(binder);
+		verifyNoMoreInteractions(this.binder);
 	}
 
 	@EnableBinding(Sink.class)

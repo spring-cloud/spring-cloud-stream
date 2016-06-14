@@ -17,12 +17,13 @@
 package org.springframework.cloud.stream.binder;
 
 
-import org.springframework.integration.endpoint.AbstractEndpoint;
+import org.springframework.context.Lifecycle;
+import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Default implementation for a {@link Binding}.
- *
  * @author Jennifer Hickey
  * @author Mark Fisher
  * @author Gary Russell
@@ -31,15 +32,15 @@ import org.springframework.util.Assert;
  */
 public class DefaultBinding<T> implements Binding<T> {
 
-	private final String name;
+	protected final String name;
 
-	private final String group;
+	protected final String group;
 
-	private final T target;
+	protected final T target;
 
-	private final AbstractEndpoint endpoint;
+	protected final Lifecycle endpoint;
 
-	public DefaultBinding(String name, String group, T target, AbstractEndpoint endpoint) {
+	public DefaultBinding(String name, String group, T target, Lifecycle endpoint) {
 		Assert.notNull(target, "target must not be null");
 		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
@@ -50,17 +51,19 @@ public class DefaultBinding<T> implements Binding<T> {
 
 
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	public String getGroup() {
-		return group;
+		return this.group;
 	}
 
 
 	@Override
 	public final void unbind() {
-		endpoint.stop();
+		if (this.endpoint != null) {
+			this.endpoint.stop();
+		}
 		afterUnbind();
 	}
 
@@ -69,7 +72,9 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public String toString() {
-		return " Binding [name=" + name + ", target=" + target + ", endpoint=" + endpoint.getComponentName()
+		return " Binding [name=" + this.name + ", target=" + this.target + ", endpoint=" +
+				((this.endpoint instanceof NamedComponent) ? ((NamedComponent) this.endpoint).getComponentName() :
+						ObjectUtils.nullSafeToString(this.endpoint))
 				+ "]";
 	}
 }

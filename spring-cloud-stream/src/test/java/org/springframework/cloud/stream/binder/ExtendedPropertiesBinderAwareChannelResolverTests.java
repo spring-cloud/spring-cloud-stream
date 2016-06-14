@@ -82,7 +82,7 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		bindings.put("foo", bindingProperties);
 		this.channelBindingServiceProperties.setBindings(bindings);
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
-				this.channelBindingServiceProperties, new DefaultMessageBuilderFactory(),
+				this.channelBindingServiceProperties,
 				new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();

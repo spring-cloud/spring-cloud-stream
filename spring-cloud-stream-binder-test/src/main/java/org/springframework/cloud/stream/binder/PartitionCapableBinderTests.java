@@ -24,11 +24,12 @@ import org.assertj.core.api.Condition;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.context.Lifecycle;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -43,8 +44,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
-abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
-		extends BrokerBinderTests<B, CP, PP> {
+public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends
+		AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
+		extends AbstractBinderTests<B, CP, PP> {
 
 	protected static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
@@ -52,9 +54,10 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	@SuppressWarnings("unchecked")
 	public void testAnonymousGroup() throws Exception {
 		B binder = getBinder();
-		DirectChannel output = new DirectChannel();
+		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
+		DirectChannel output = createBindableChannel("output", producerBindingProperties);
 		Binding<MessageChannel> producerBinding = binder.bindProducer("defaultGroup.0", output,
-				createProducerProperties());
+				(PP) producerBindingProperties.getProducer());
 
 		QueueChannel input1 = new QueueChannel();
 		Binding<MessageChannel> binding1 = binder.bindConsumer("defaultGroup.0", null, input1,
@@ -103,9 +106,8 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	@Test
 	public void testOneRequiredGroup() throws Exception {
 		B binder = getBinder();
-		DirectChannel output = new DirectChannel();
-
 		PP producerProperties = createProducerProperties();
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 
 		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
 
@@ -130,11 +132,12 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	@Test
 	public void testTwoRequiredGroups() throws Exception {
 		B binder = getBinder();
-		DirectChannel output = new DirectChannel();
+		PP producerProperties = createProducerProperties();
+
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 
 		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
 
-		PP producerProperties = createProducerProperties();
 		producerProperties.setRequiredGroups("test1", "test2");
 		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, producerProperties);
 
@@ -186,11 +189,11 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
 		producerProperties.setPartitionCount(3);
 
-		DirectChannel output = new DirectChannel();
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
 		try {
-			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
+			Object endpoint = extractEndpoint(outputBinding);
 			assertThat(getEndpointRouting(endpoint))
 					.contains(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']");
 		}
@@ -271,11 +274,11 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionCount(3);
-		DirectChannel output = new DirectChannel();
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
 		if (usesExplicitRouting()) {
-			AbstractEndpoint endpoint = extractEndpoint(outputBinding);
+			Object endpoint = extractEndpoint(outputBinding);
 			assertThat(getEndpointRouting(endpoint)).
 					contains(getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']");
 		}
@@ -320,7 +323,7 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	/**
 	 * For implementations that rely on explicit routing, return the routing expression.
 	 */
-	protected String getEndpointRouting(AbstractEndpoint endpoint) {
+	protected String getEndpointRouting(Object endpoint) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -332,17 +335,10 @@ abstract public class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * For implementations that rely on explicit routing, return the routing expression.
-	 */
-	protected String getPubSubEndpointRouting(AbstractEndpoint endpoint) {
-		throw new UnsupportedOperationException();
-	}
-
 	protected abstract String getClassUnderTestName();
 
-	protected AbstractEndpoint extractEndpoint(Binding<MessageChannel> binding) {
+	protected Lifecycle extractEndpoint(Binding<MessageChannel> binding) {
 		DirectFieldAccessor accessor = new DirectFieldAccessor(binding);
-		return (AbstractEndpoint) accessor.getPropertyValue("endpoint");
+		return (Lifecycle) accessor.getPropertyValue("endpoint");
 	}
 }
