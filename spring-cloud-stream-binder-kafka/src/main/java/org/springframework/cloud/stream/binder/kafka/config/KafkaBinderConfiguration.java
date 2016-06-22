@@ -21,7 +21,6 @@ import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfigurati
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
@@ -29,8 +28,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.codec.Codec;
-import org.springframework.integration.kafka.support.LoggingProducerListener;
-import org.springframework.integration.kafka.support.ProducerListener;
+import org.springframework.kafka.support.LoggingProducerListener;
+import org.springframework.kafka.support.ProducerListener;
 
 /**
  * @author David Turanski
@@ -41,8 +40,8 @@ import org.springframework.integration.kafka.support.ProducerListener;
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@Import({ KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class })
-@EnableConfigurationProperties({ KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class })
+@Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
+@EnableConfigurationProperties({KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class})
 public class KafkaBinderConfiguration {
 
 	@Autowired
@@ -59,10 +58,11 @@ public class KafkaBinderConfiguration {
 
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder() {
-		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(configurationProperties);
-		kafkaMessageChannelBinder.setCodec(codec);
-		kafkaMessageChannelBinder.setProducerListener(producerListener);
-		kafkaMessageChannelBinder.setExtendedBindingProperties(kafkaExtendedBindingProperties);
+		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
+				this.configurationProperties);
+		kafkaMessageChannelBinder.setCodec(this.codec);
+		//kafkaMessageChannelBinder.setProducerListener(producerListener);
+		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
 		return kafkaMessageChannelBinder;
 	}
 
@@ -72,8 +72,8 @@ public class KafkaBinderConfiguration {
 		return new LoggingProducerListener();
 	}
 
-	@Bean
-	KafkaBinderHealthIndicator healthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder) {
-		return new KafkaBinderHealthIndicator(kafkaMessageChannelBinder, configurationProperties);
-	}
+//	@Bean
+//	KafkaBinderHealthIndicator healthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+//		return new KafkaBinderHealthIndicator(kafkaMessageChannelBinder, configurationProperties);
+//	}
 }

@@ -23,15 +23,16 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
 
-	private String[] zkNodes = new String[] { "localhost" };
+	private String[] zkNodes = new String[] {"localhost"};
 
 	private String defaultZkPort = "2181";
 
-	private String[] brokers = new String[] { "localhost" };
+	private String[] brokers = new String[] {"localhost"};
 
 	private String defaultBrokerPort = "9092";
 
@@ -71,6 +72,12 @@ public class KafkaBinderConfigurationProperties {
 
 	private int queueSize = 8192;
 
+	private String consumerGroup;
+
+	public String getConsumerGroup() {
+		return this.consumerGroup;
+	}
+
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
 	}
@@ -80,7 +87,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public String[] getHeaders() {
-		return headers;
+		return this.headers;
 	}
 
 	public int getOffsetUpdateTimeWindow() {
@@ -96,7 +103,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public String[] getZkNodes() {
-		return zkNodes;
+		return this.zkNodes;
 	}
 
 	public void setZkNodes(String... zkNodes) {
@@ -108,7 +115,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public String[] getBrokers() {
-		return brokers;
+		return this.brokers;
 	}
 
 	public void setBrokers(String... brokers) {
@@ -170,7 +177,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public int getMaxWait() {
-		return maxWait;
+		return this.maxWait;
 	}
 
 	public void setMaxWait(int maxWait) {
@@ -178,7 +185,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public int getRequiredAcks() {
-		return requiredAcks;
+		return this.requiredAcks;
 	}
 
 	public void setRequiredAcks(int requiredAcks) {
@@ -186,7 +193,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public int getReplicationFactor() {
-		return replicationFactor;
+		return this.replicationFactor;
 	}
 
 	public void setReplicationFactor(int replicationFactor) {
@@ -194,7 +201,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public int getFetchSize() {
-		return fetchSize;
+		return this.fetchSize;
 	}
 
 	public void setFetchSize(int fetchSize) {
@@ -202,7 +209,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public int getMinPartitionCount() {
-		return minPartitionCount;
+		return this.minPartitionCount;
 	}
 
 	public void setMinPartitionCount(int minPartitionCount) {
@@ -210,7 +217,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public int getQueueSize() {
-		return queueSize;
+		return this.queueSize;
 	}
 
 	public void setQueueSize(int queueSize) {
@@ -218,7 +225,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public boolean isAutoCreateTopics() {
-		return autoCreateTopics;
+		return this.autoCreateTopics;
 	}
 
 	public void setAutoCreateTopics(boolean autoCreateTopics) {
@@ -226,7 +233,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public boolean isAutoAddPartitions() {
-		return autoAddPartitions;
+		return this.autoAddPartitions;
 	}
 
 	public void setAutoAddPartitions(boolean autoAddPartitions) {
@@ -234,10 +241,15 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public int getSocketBufferSize() {
-		return socketBufferSize;
+		return this.socketBufferSize;
 	}
 
 	public void setSocketBufferSize(int socketBufferSize) {
 		this.socketBufferSize = socketBufferSize;
 	}
+
+	public void setConsumerGroup(String consumerGroup) {
+		this.consumerGroup = consumerGroup;
+	}
+
 }

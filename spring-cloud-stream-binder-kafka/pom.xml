@@ -14,13 +14,18 @@
 	</parent>
 
 	<properties>
-		<kafka.version>0.8.2.2</kafka.version>
-		<curator.version>2.6.0</curator.version>
-		<spring-integration-kafka.version>1.3.1.BUILD-SNAPSHOT</spring-integration-kafka.version>
+		<kafka.version>0.9.0.1</kafka.version>
+		<spring-kafka.version>1.0.3.BUILD-SNAPSHOT</spring-kafka.version>
+		<spring-integration-kafka.version>2.0.1.BUILD-SNAPSHOT</spring-integration-kafka.version>
 		<rxjava-math.version>1.0.0</rxjava-math.version>
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-binder-kafka-common</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
@@ -62,8 +67,19 @@
 			</exclusions>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+			<version>${spring-kafka.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka-test</artifactId>
+			<scope>test</scope>
+			<version>${spring-kafka.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.10</artifactId>
+			<artifactId>kafka_2.11</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
@@ -79,19 +95,9 @@
 			<version>${rxjava-math.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.curator</groupId>
-			<artifactId>curator-recipes</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.10</artifactId>
+			<artifactId>kafka_2.11</artifactId>
 			<classifier>test</classifier>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.curator</groupId>
-			<artifactId>curator-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -100,7 +106,7 @@
 		<dependencies>
 			<dependency>
 				<groupId>org.apache.kafka</groupId>
-				<artifactId>kafka_2.10</artifactId>
+				<artifactId>kafka_2.11</artifactId>
 				<version>${kafka.version}</version>
 				<exclusions>
 					<exclusion>
@@ -115,7 +121,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.apache.kafka</groupId>
-				<artifactId>kafka_2.10</artifactId>
+				<artifactId>kafka_2.11</artifactId>
 				<classifier>test</classifier>
 				<version>${kafka.version}</version>
 			</dependency>
@@ -123,21 +129,6 @@
 				<groupId>org.apache.kafka</groupId>
 				<artifactId>kafka-clients</artifactId>
 				<version>${kafka.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.curator</groupId>
-				<artifactId>curator-framework</artifactId>
-				<version>${curator.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.curator</groupId>
-				<artifactId>curator-recipes</artifactId>
-				<version>${curator.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.curator</groupId>
-				<artifactId>curator-test</artifactId>
-				<version>${curator.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

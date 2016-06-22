@@ -86,12 +86,12 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	}
 
 	public KafkaServer getKafkaServer() {
-		return kafkaServer;
+		return this.kafkaServer;
 	}
 
 	public String getZkConnectString() {
-		if (embedded) {
-			return zookeeper.getConnectString();
+		if (this.embedded) {
+			return this.zookeeper.getConnectString();
 		}
 		else {
 			return DEFAULT_ZOOKEEPER_CONNECT;
@@ -103,8 +103,8 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	}
 
 	public String getBrokerAddress() {
-		if (embedded) {
-			return kafkaServer.config().hostName() + ":" + kafkaServer.config().port();
+		if (this.embedded) {
+			return this.kafkaServer.config().hostName() + ":" + this.kafkaServer.config().port();
 		}
 		else {
 			return DEFAULT_KAFKA_CONNECT;
@@ -114,35 +114,35 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	@Override
 	protected void obtainResource() throws Exception {
 		if (!hasFailedAlready) {
-			if (embedded) {
+			if (this.embedded) {
 				try {
 					log.debug("Starting Zookeeper");
-					zookeeper = new EmbeddedZookeeper("127.0.0.1:" + SocketUtils.findAvailableTcpPort());
-					log.debug("Started Zookeeper at " + zookeeper.getConnectString());
+					this.zookeeper = new EmbeddedZookeeper("127.0.0.1:" + SocketUtils.findAvailableTcpPort());
+					log.debug("Started Zookeeper at " + this.zookeeper.getConnectString());
 					try {
 						int zkConnectionTimeout = 10000;
 						int zkSessionTimeout = 10000;
-						zkClient = new ZkClient(getZkConnectString(), zkSessionTimeout, zkConnectionTimeout,
+						this.zkClient = new ZkClient(getZkConnectString(), zkSessionTimeout, zkConnectionTimeout,
 								ZKStringSerializer$.MODULE$);
 					}
 					catch (Exception e) {
-						zookeeper.shutdown();
+						this.zookeeper.shutdown();
 						throw e;
 					}
 					try {
 						log.debug("Creating Kafka server");
-						Properties brokerConfigProperties = brokerConfig;
-						brokerConfig.put("zookeeper.connect", zookeeper.getConnectString());
-						brokerConfig.put("auto.create.topics.enable", "false");
-						brokerConfig.put("delete.topic.enable", "true");
-						kafkaServer = TestUtils.createServer(new KafkaConfig(brokerConfigProperties),
+						Properties brokerConfigProperties = this.brokerConfig;
+						this.brokerConfig.put("zookeeper.connect", this.zookeeper.getConnectString());
+						this.brokerConfig.put("auto.create.topics.enable", "false");
+						this.brokerConfig.put("delete.topic.enable", "true");
+						this.kafkaServer = TestUtils.createServer(new KafkaConfig(brokerConfigProperties),
 								SystemTime$.MODULE$);
-						log.debug("Created Kafka server at " + kafkaServer.config().hostName() + ":"
-								+ kafkaServer.config().port());
+						log.debug("Created Kafka server at " + this.kafkaServer.config().hostName() + ":"
+								+ this.kafkaServer.config().port());
 					}
 					catch (Exception e) {
-						zookeeper.shutdown();
-						zkClient.close();
+						this.zookeeper.shutdown();
+						this.zkClient.close();
 						throw e;
 					}
 				}
@@ -153,7 +153,7 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 			}
 			else {
 				this.zkClient = new ZkClient(DEFAULT_ZOOKEEPER_CONNECT, 10000, 10000, ZKStringSerializer$.MODULE$);
-				if (ZkUtils.getAllBrokersInCluster(zkClient).size() == 0) {
+				if (ZkUtils.getAllBrokersInCluster(this.zkClient).size() == 0) {
 					hasFailedAlready = true;
 					throw new RuntimeException("Kafka server not available");
 				}
@@ -166,16 +166,16 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 
 	@Override
 	protected void cleanupResource() throws Exception {
-		if (embedded) {
+		if (this.embedded) {
 			try {
-				kafkaServer.shutdown();
+				this.kafkaServer.shutdown();
 			}
 			catch (Exception e) {
 				// ignore errors on shutdown
 				log.error(e.getMessage(), e);
 			}
 			try {
-				Utils.rm(kafkaServer.config().logDirs());
+				Utils.rm(this.kafkaServer.config().logDirs());
 			}
 			catch (Exception e) {
 				// ignore errors on shutdown
@@ -183,15 +183,15 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 			}
 		}
 		try {
-			zkClient.close();
+			this.zkClient.close();
 		}
 		catch (ZkInterruptedException e) {
 			// ignore errors on shutdown
 			log.error(e.getMessage(), e);
 		}
-		if (embedded) {
+		if (this.embedded) {
 			try {
-				zookeeper.shutdown();
+				this.zookeeper.shutdown();
 			}
 			catch (Exception e) {
 				// ignore errors on shutdown

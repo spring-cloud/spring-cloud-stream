@@ -27,9 +27,9 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
-import org.springframework.integration.kafka.support.LoggingProducerListener;
-import org.springframework.integration.kafka.support.ProducerListener;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
+import org.springframework.kafka.support.LoggingProducerListener;
+import org.springframework.kafka.support.ProducerListener;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;

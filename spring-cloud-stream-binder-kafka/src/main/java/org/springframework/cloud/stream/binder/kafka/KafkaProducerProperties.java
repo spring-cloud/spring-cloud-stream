@@ -18,8 +18,6 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import javax.validation.constraints.NotNull;
 
-import org.springframework.integration.kafka.support.ProducerMetadata;
-
 /**
  * @author Marius Bogoevici
  */
@@ -27,14 +25,14 @@ public class KafkaProducerProperties {
 
 	private int bufferSize = 16384;
 
-	private ProducerMetadata.CompressionType compressionType = ProducerMetadata.CompressionType.none;
+	private CompressionType compressionType = CompressionType.none;
 
 	private boolean sync;
 
 	private int batchTimeout;
 
 	public int getBufferSize() {
-		return bufferSize;
+		return this.bufferSize;
 	}
 
 	public void setBufferSize(int bufferSize) {
@@ -42,16 +40,16 @@ public class KafkaProducerProperties {
 	}
 
 	@NotNull
-	public ProducerMetadata.CompressionType getCompressionType() {
-		return compressionType;
+	public CompressionType getCompressionType() {
+		return this.compressionType;
 	}
 
-	public void setCompressionType(ProducerMetadata.CompressionType compressionType) {
+	public void setCompressionType(CompressionType compressionType) {
 		this.compressionType = compressionType;
 	}
 
 	public boolean isSync() {
-		return sync;
+		return this.sync;
 	}
 
 	public void setSync(boolean sync) {
@@ -59,10 +57,16 @@ public class KafkaProducerProperties {
 	}
 
 	public int getBatchTimeout() {
-		return batchTimeout;
+		return this.batchTimeout;
 	}
 
 	public void setBatchTimeout(int batchTimeout) {
 		this.batchTimeout = batchTimeout;
+	}
+
+	public enum CompressionType {
+		none,
+		gzip,
+		snappy
 	}
 }
