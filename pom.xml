@@ -27,6 +27,7 @@
 	<modules>
 		<module>spring-cloud-stream-binder-kafka</module>
 		<module>spring-cloud-starter-stream-kafka</module>
+		<module>spring-cloud-stream-binder-kafka-test-support</module>
 	</modules>
 	<profiles>
 		<profile>
