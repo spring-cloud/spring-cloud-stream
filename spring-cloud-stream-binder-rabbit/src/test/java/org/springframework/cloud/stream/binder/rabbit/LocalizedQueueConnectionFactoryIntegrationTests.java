@@ -28,7 +28,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.LocalizedQueueConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.cloud.stream.test.junit.rabbit.RabbitTestSupport;
+import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
