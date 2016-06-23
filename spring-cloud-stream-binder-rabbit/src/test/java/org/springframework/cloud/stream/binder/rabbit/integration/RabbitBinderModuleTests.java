@@ -41,9 +41,9 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
+import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.MessageChannel;
@@ -120,7 +120,7 @@ public class RabbitBinderModuleTests {
 		Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>) TestUtils
 				.getPropertyValue(channelBindingService, "producerBindings");
 		Binding<MessageChannel> outputBinding = producerBindings.get("output");
-		assertThat(TestUtils.getPropertyValue(outputBinding, "endpoint.handler.delegate.amqpTemplate.transactional",
+		assertThat(TestUtils.getPropertyValue(outputBinding, "endpoint.amqpTemplate.transactional",
 				Boolean.class)).isTrue();
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
