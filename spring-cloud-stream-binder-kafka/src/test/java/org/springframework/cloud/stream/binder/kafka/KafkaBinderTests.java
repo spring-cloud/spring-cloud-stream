@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -27,6 +24,8 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import kafka.admin.AdminUtils;
+import kafka.api.TopicMetadata;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -59,8 +58,8 @@ import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
-import kafka.admin.AdminUtils;
-import kafka.api.TopicMetadata;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Integration tests for the {@link KafkaMessageChannelBinder}.
@@ -134,20 +133,21 @@ public class KafkaBinderTests extends
 	}
 
 	@Test
-	public void testDlqAndRetry() {
+	public void testDlqAndRetry() throws Exception {
 		KafkaTestBinder binder = getBinder();
-		DirectChannel moduleOutputChannel = new DirectChannel();
-		DirectChannel moduleInputChannel = new DirectChannel();
-		QueueChannel dlqChannel = new QueueChannel();
-		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
-		moduleInputChannel.subscribe(handler);
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionCount(10);
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		QueueChannel dlqChannel = new QueueChannel();
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.setMaxAttempts(3);
 		consumerProperties.setBackOffInitialInterval(100);
 		consumerProperties.setBackOffMaxInterval(150);
 		consumerProperties.getExtension().setEnableDlq(true);
+		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+		moduleInputChannel.subscribe(handler);
 		long uniqueBindingId = System.currentTimeMillis();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("retryTest." + uniqueBindingId + ".0",
 				moduleOutputChannel, producerProperties);
@@ -176,16 +176,16 @@ public class KafkaBinderTests extends
 	@Test
 	public void testDefaultAutoCommitOnErrorWithoutDlq() throws Exception {
 		KafkaTestBinder binder = getBinder();
-		DirectChannel moduleOutputChannel = new DirectChannel();
-		DirectChannel moduleInputChannel = new DirectChannel();
-		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
-		moduleInputChannel.subscribe(handler);
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionCount(10);
+		DirectChannel moduleOutputChannel = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.setMaxAttempts(1);
 		consumerProperties.setBackOffInitialInterval(100);
 		consumerProperties.setBackOffMaxInterval(150);
+		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+		moduleInputChannel.subscribe(handler);
 		long uniqueBindingId = System.currentTimeMillis();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("retryTest." + uniqueBindingId + ".0",
 				moduleOutputChannel, producerProperties);
@@ -224,17 +224,17 @@ public class KafkaBinderTests extends
 	@Test
 	public void testDefaultAutoCommitOnErrorWithDlq() throws Exception {
 		KafkaTestBinder binder = getBinder();
-		DirectChannel moduleOutputChannel = new DirectChannel();
-		DirectChannel moduleInputChannel = new DirectChannel();
 		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
-		moduleInputChannel.subscribe(handler);
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionCount(10);
+		DirectChannel moduleOutputChannel = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.setMaxAttempts(3);
 		consumerProperties.setBackOffInitialInterval(100);
 		consumerProperties.setBackOffMaxInterval(150);
 		consumerProperties.getExtension().setEnableDlq(true);
+		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+		moduleInputChannel.subscribe(handler);
 		long uniqueBindingId = System.currentTimeMillis();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("retryTest." + uniqueBindingId + ".0",
 				moduleOutputChannel, producerProperties);
@@ -293,10 +293,12 @@ public class KafkaBinderTests extends
 		Arrays.fill(testPayload, (byte) 65);
 		KafkaTestBinder binder = getBinder();
 		for (ProducerMetadata.CompressionType codec : codecs) {
-			DirectChannel moduleOutputChannel = new DirectChannel();
-			QueueChannel moduleInputChannel = new QueueChannel();
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 			producerProperties.getExtension().setCompressionType(codec);
+
+			DirectChannel moduleOutputChannel = createBindableChannel("output",
+					createProducerBindingProperties(producerProperties));
+			QueueChannel moduleInputChannel = new QueueChannel();
 			Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel,
 					producerProperties);
 			Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel,
@@ -323,10 +325,10 @@ public class KafkaBinderTests extends
 		binderConfiguration.setMinPartitionCount(10);
 		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration);
 
-		DirectChannel moduleOutputChannel = new DirectChannel();
-		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionCount(10);
+		DirectChannel moduleOutputChannel = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		long uniqueBindingId = System.currentTimeMillis();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("foo" + uniqueBindingId + ".0",
@@ -566,10 +568,8 @@ public class KafkaBinderTests extends
 		properties.getExtension().setSync(true);
 		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output, properties);
 		DirectFieldAccessor accessor = new DirectFieldAccessor(extractEndpoint(producerBinding));
-		MessageHandler handler = (MessageHandler) accessor.getPropertyValue("handler");
-		DirectFieldAccessor accessor1 = new DirectFieldAccessor(handler);
-		ProducerConfiguration producerConfiguration = (ProducerConfiguration) accessor1
-				.getPropertyValue("producerConfiguration");
+		ProducerConfiguration producerConfiguration = (ProducerConfiguration) accessor
+				.getPropertyValue("delegate");
 		assertThat(producerConfiguration.getProducerMetadata().isSync())
 				.withFailMessage("Kafka Sync Producer should have been enabled.");
 		producerBinding.unbind();
@@ -590,8 +590,8 @@ public class KafkaBinderTests extends
 		backOffPolicy.setBackOffPeriod(1000);
 		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
 		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
-		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		DirectChannel output = createBindableChannel("output", createConsumerBindingProperties(consumerProperties));
 		String testTopicName = "nonexisting" + System.currentTimeMillis();
 		try {
 			binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
@@ -622,8 +622,8 @@ public class KafkaBinderTests extends
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
-		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		DirectChannel output = createBindableChannel("output", createConsumerBindingProperties(consumerProperties));
 		Binding<MessageChannel> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
 		binding.unbind();
 	}
@@ -639,18 +639,18 @@ public class KafkaBinderTests extends
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
-		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		// this consumer must consume from partition 2
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setInstanceIndex(2);
+		DirectChannel output = createBindableChannel("output", createConsumerBindingProperties(consumerProperties));
 		try {
 			binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
 		}
 		catch (Exception e) {
 			assertThat(e).isInstanceOf(BinderException.class);
-			assertThat(e)
-					.hasMessageContaining("The number of expected partitions was: 3, but 1 has been found instead");
+			assertThat(e).hasMessageContaining(
+					"The number of expected partitions was: 3, but 1 has been found instead");
 		}
 	}
 
@@ -672,16 +672,15 @@ public class KafkaBinderTests extends
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.afterPropertiesSet();
-		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		// this consumer must consume from partition 2
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setInstanceIndex(2);
-
+		DirectChannel output = createBindableChannel("output", createConsumerBindingProperties(consumerProperties));
 		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
 
 		Partition[] listenedPartitions = TestUtils.getPropertyValue(binding,
-				"endpoint.val$messageListenerContainer.partitions", Partition[].class);
+				"endpoint.messageListenerContainer.partitions", Partition[].class);
 
 		assertThat(listenedPartitions).hasSize(2);
 		assertThat(listenedPartitions).contains(new Partition(testTopicName, 2), new Partition(testTopicName, 5));
@@ -705,8 +704,8 @@ public class KafkaBinderTests extends
 		backOffPolicy.setBackOffPeriod(1000);
 		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
 		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
-		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		DirectChannel output = createBindableChannel("output", createConsumerBindingProperties(consumerProperties));
 		String testTopicName = "nonexisting" + System.currentTimeMillis();
 		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
 		binding.unbind();

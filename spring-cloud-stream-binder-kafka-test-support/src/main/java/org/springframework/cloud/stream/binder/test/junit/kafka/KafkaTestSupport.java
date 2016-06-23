@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binder.test.junit.kafka;
 
+
 import java.util.Properties;
-
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.exception.ZkInterruptedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.junit.Rule;
-
-import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
-import org.springframework.util.SocketUtils;
 
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
@@ -33,6 +26,14 @@ import kafka.utils.TestUtils;
 import kafka.utils.Utils;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.exception.ZkInterruptedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.junit.Rule;
+
+import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
+import org.springframework.util.SocketUtils;
 
 
 /**
@@ -200,4 +201,3 @@ public class KafkaTestSupport extends AbstractExternalResourceTestSupport<String
 	}
 
 }
-
