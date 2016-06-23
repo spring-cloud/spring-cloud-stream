@@ -13,6 +13,26 @@
 		<main.basedir>${basedir}/..</main.basedir>
 	</properties>
 	<dependencies>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-codec</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-stream-kafka</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-rxjava</artifactId>
+		</dependency>
 	</dependencies>
 	<profiles>
 		<profile>
@@ -44,6 +64,32 @@
 								</transformationSet>
 							</transformationSets>
 						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+								<phase>prepare-package</phase>
+								<configuration>
+									<includeDependencySources>true</includeDependencySources>
+									<dependencySourceIncludes>
+										<dependencySourceInclude>${project.groupId}:*</dependencySourceInclude>
+									</dependencySourceIncludes>
+									<attach>false</attach>
+									<quiet>true</quiet>
+									<stylesheetfile>${basedir}/src/main/javadoc/spring-javadoc.css</stylesheetfile>
+									<links>
+										<link>http://docs.spring.io/spring-framework/docs/${spring.version}/javadoc-api/</link>
+										<link>http://docs.spring.io/spring-shell/docs/current/api/</link>
+									</links>
+								</configuration>
+							</execution>
+						</executions>
 					</plugin>
 					<plugin>
 						<groupId>org.asciidoctor</groupId>
@@ -245,6 +291,7 @@
 								<configuration>
 									<target>
 										<zip destfile="${project.build.directory}/${project.artifactId}-${project.version}.zip">
+											<zipfileset src="${project.build.directory}/${project.artifactId}-${project.version}-javadoc.jar" prefix="api" />
 											<fileset dir="${project.build.directory}/contents" />
 										</zip>
 									</target>
