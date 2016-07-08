@@ -1333,7 +1333,7 @@ This is because the payload at the module's output channel is already a String s
 While conversion is supported for both input and output channels, it is especially recommended to be used for the conversion of outbound messages.
 For the conversion of inbound messages, especially when the target is a POJO, the `@StreamListener` support will perform the conversion automatically.
 
-=== ``@StreamListener` and Message Conversion
+=== `@StreamListener` and Message Conversion
 
 The `@StreamListener` annotation provides a convenient way for converting incoming messages without the need to specify the content type of an input channel.
 During the dispatching process to methods annotated with `@StreamListener`, a conversion will be applied automatically if the argument requires it.
