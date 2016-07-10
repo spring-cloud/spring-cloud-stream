@@ -18,17 +18,16 @@ package org.springframework.cloud.stream.converter;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert a {@link Tuple} to a JSON String
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert a
+ * {@link Tuple} to a JSON String
  *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
@@ -63,13 +62,13 @@ public class TupleToJsonMessageConverter extends AbstractFromMessageConverter {
 	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		Tuple t = (Tuple) message.getPayload();
 		String json;
-		if (prettyPrint) {
+		if (this.prettyPrint) {
 			try {
-				Object tmp = objectMapper.readValue(t.toString(), Object.class);
-				json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tmp);
+				Object tmp = this.objectMapper.readValue(t.toString(), Object.class);
+				json = this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tmp);
 			}
 			catch (IOException e) {
-				logger.error(e.getMessage(), e);
+				this.logger.error(e.getMessage(), e);
 				return null;
 			}
 		}

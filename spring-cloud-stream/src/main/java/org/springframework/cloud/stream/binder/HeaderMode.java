@@ -20,6 +20,5 @@ package org.springframework.cloud.stream.binder;
  * @author Marius Bogoevici
  */
 public enum HeaderMode {
-	raw,
-	embeddedHeaders
+	raw, embeddedHeaders
 }

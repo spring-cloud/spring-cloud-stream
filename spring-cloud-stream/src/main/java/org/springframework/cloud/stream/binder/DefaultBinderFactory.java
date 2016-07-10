@@ -97,9 +97,9 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				throw new IllegalStateException(
 						"A default binder has been requested, but there there is no binder available");
 			}
-			else if (!StringUtils.hasText(defaultBinder)) {
+			else if (!StringUtils.hasText(this.defaultBinder)) {
 				Set<String> defaultCandidateConfigurations = new HashSet<>();
-				for (Map.Entry<String, BinderConfiguration> binderConfigurationEntry : binderConfigurations
+				for (Map.Entry<String, BinderConfiguration> binderConfigurationEntry : this.binderConfigurations
 						.entrySet()) {
 					if (binderConfigurationEntry.getValue().isDefaultCandidate()) {
 						defaultCandidateConfigurations.add(binderConfigurationEntry.getKey());
@@ -143,13 +143,15 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				throw new IllegalStateException("Unknown binder configuration: " + configurationName);
 			}
 			Properties binderProperties = binderConfiguration.getProperties();
-			// Convert all properties to arguments, so that they receive maximum precedence
+			// Convert all properties to arguments, so that they receive maximum
+			// precedence
 			ArrayList<String> args = new ArrayList<>();
 			for (Map.Entry<Object, Object> property : binderProperties.entrySet()) {
 				args.add(String.format("--%s=%s", property.getKey(), property.getValue()));
 			}
-			// Initialize the domain with a unique name based on the bootstrapping context setting
-			ConfigurableEnvironment environment = context != null ? context.getEnvironment() : null;
+			// Initialize the domain with a unique name based on the bootstrapping context
+			// setting
+			ConfigurableEnvironment environment = this.context != null ? this.context.getEnvironment() : null;
 			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain") : null;
 			if (defaultDomain == null) {
 				defaultDomain = "";
@@ -158,21 +160,20 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				defaultDomain += ".";
 			}
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
-			List<Class<?>> configurationClasses =
-					new ArrayList<Class<?>>(
-							Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
-			SpringApplicationBuilder springApplicationBuilder =
-					new SpringApplicationBuilder()
-							.sources(configurationClasses.toArray(new Class<?>[]{}))
-							.bannerMode(Mode.OFF)
-							.web(false);
-			// If the environment is not customized and a main context is available, we will set the latter as parent.
-			// This ensures that the defaults and user-defined customizations (e.g. custom connection factory beans)
-			// are propagated to the binder context. If the environment is customized, then the binder context should
+			List<Class<?>> configurationClasses = new ArrayList<Class<?>>(
+					Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
+			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder()
+					.sources(configurationClasses.toArray(new Class<?>[] {})).bannerMode(Mode.OFF).web(false);
+			// If the environment is not customized and a main context is available, we
+			// will set the latter as parent.
+			// This ensures that the defaults and user-defined customizations (e.g. custom
+			// connection factory beans)
+			// are propagated to the binder context. If the environment is customized,
+			// then the binder context should
 			// not inherit any beans from the parent
-			boolean useApplicationContextAsParent = binderProperties.isEmpty() && context != null;
+			boolean useApplicationContextAsParent = binderProperties.isEmpty() && this.context != null;
 			if (useApplicationContextAsParent) {
-				springApplicationBuilder.parent(context);
+				springApplicationBuilder.parent(this.context);
 			}
 			if (useApplicationContextAsParent || (environment != null && binderConfiguration.isInheritEnvironment())) {
 				if (environment != null) {
@@ -181,18 +182,19 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 					springApplicationBuilder.environment(binderEnvironment);
 				}
 			}
-			ConfigurableApplicationContext binderProducingContext =
-					springApplicationBuilder.run(args.toArray(new String[args.size()]));
+			ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
+					.run(args.toArray(new String[args.size()]));
 			@SuppressWarnings("unchecked")
 			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
-			if (bindersHealthIndicator != null) {
+			if (this.bindersHealthIndicator != null) {
 				OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
 				Map<String, HealthIndicator> indicators = binderProducingContext.getBeansOfType(HealthIndicator.class);
-				// if there are no health indicators in the child context, we just mark the binder's health as unknown
+				// if there are no health indicators in the child context, we just mark
+				// the binder's health as unknown
 				// this can happen due to the fact that configuration is inherited
-				HealthIndicator binderHealthIndicator =
-						indicators.isEmpty() ? new DefaultHealthIndicator() : new CompositeHealthIndicator(healthAggregator, indicators);
-				bindersHealthIndicator.addHealthIndicator(configurationName, binderHealthIndicator);
+				HealthIndicator binderHealthIndicator = indicators.isEmpty() ? new DefaultHealthIndicator()
+						: new CompositeHealthIndicator(healthAggregator, indicators);
+				this.bindersHealthIndicator.addHealthIndicator(configurationName, binderHealthIndicator);
 			}
 			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder<>(binder, binderProducingContext));
 		}
@@ -200,7 +202,8 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 	}
 
 	/**
-	 * Utility class for storing {@link Binder} instances, along with their associated contexts.
+	 * Utility class for storing {@link Binder} instances, along with their associated
+	 * contexts.
 	 *
 	 * @param <T>
 	 */

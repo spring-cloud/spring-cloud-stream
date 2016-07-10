@@ -49,11 +49,11 @@ public class AggregateApplicationBuilder {
 	ConfigurableApplicationContext parentContext;
 
 	public AggregateApplicationBuilder() {
-		this(SpringApplication.run(addAggregatorParentIfMissing(new Object[]{}), new String[]{}));
+		this(SpringApplication.run(addAggregatorParentIfMissing(new Object[] {}), new String[] {}));
 	}
 
 	public AggregateApplicationBuilder(Object source, String... args) {
-		this(new Object[]{source}, args);
+		this(new Object[] { source }, args);
 	}
 
 	public AggregateApplicationBuilder(Object[] sources, String[] args) {
@@ -78,9 +78,8 @@ public class AggregateApplicationBuilder {
 		return aggregateParentSources;
 	}
 
-
 	public AggregateApplicationBuilder parent(Object source, String... args) {
-		return parent(new Object[]{source}, args);
+		return parent(new Object[] { source }, args);
 	}
 
 	public AggregateApplicationBuilder parent(Object[] sources, String[] args) {
@@ -100,22 +99,20 @@ public class AggregateApplicationBuilder {
 	}
 
 	public ConfigurableApplicationContext run(String[] parentArgs) {
-		ConfigurableApplicationContext parentContext = this.parentContext != null
-				? this.parentContext
+		ConfigurableApplicationContext parentContext = this.parentContext != null ? this.parentContext
 				: AggregateApplication.createParentContext(parentArgs);
-		SharedChannelRegistry sharedChannelRegistry = parentContext
-				.getBean(SharedChannelRegistry.class);
+		SharedChannelRegistry sharedChannelRegistry = parentContext.getBean(SharedChannelRegistry.class);
 		List<AppConfigurer<?>> apps = new ArrayList<AppConfigurer<?>>();
 		if (this.sourceConfigurer != null) {
-			apps.add(sourceConfigurer);
+			apps.add(this.sourceConfigurer);
 		}
-		if (!processorConfigurers.isEmpty()) {
-			for (ProcessorConfigurer processorConfigurer : processorConfigurers) {
+		if (!this.processorConfigurers.isEmpty()) {
+			for (ProcessorConfigurer processorConfigurer : this.processorConfigurers) {
 				apps.add(processorConfigurer);
 			}
 		}
 		if (this.sinkConfigurer != null) {
-			apps.add(sinkConfigurer);
+			apps.add(this.sinkConfigurer);
 		}
 		LinkedHashMap<Class<?>, String> appsToEmbed = new LinkedHashMap<>();
 		for (int i = 0; i < apps.size(); i++) {
@@ -135,18 +132,16 @@ public class AggregateApplicationBuilder {
 		return parentContext;
 	}
 
-	private ChildContextBuilder childContext(Class<?> app,
-			ConfigurableApplicationContext parentContext, String namespace) {
-		return new ChildContextBuilder(
-				AggregateApplication.embedApp(parentContext, namespace, app));
+	private ChildContextBuilder childContext(Class<?> app, ConfigurableApplicationContext parentContext,
+			String namespace) {
+		return new ChildContextBuilder(AggregateApplication.embedApp(parentContext, namespace, app));
 	}
-
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
 
 		public SourceConfigurer(Class<?> app) {
 			this.app = app;
-			sourceConfigurer = this;
+			AggregateApplicationBuilder.this.sourceConfigurer = this;
 		}
 
 		public SinkConfigurer to(Class<?> sink) {
@@ -163,7 +158,7 @@ public class AggregateApplicationBuilder {
 
 		public SinkConfigurer(Class<?> app) {
 			this.app = app;
-			sinkConfigurer = this;
+			AggregateApplicationBuilder.this.sinkConfigurer = this;
 		}
 
 	}
@@ -172,7 +167,7 @@ public class AggregateApplicationBuilder {
 
 		public ProcessorConfigurer(Class<?> app) {
 			this.app = app;
-			processorConfigurers.add(this);
+			AggregateApplicationBuilder.this.processorConfigurers.add(this);
 		}
 
 		public SinkConfigurer to(Class<?> sink) {
@@ -227,13 +222,12 @@ public class AggregateApplicationBuilder {
 		}
 
 		public ConfigurableApplicationContext run(String... args) {
-			return applicationBuilder.run(args);
+			return AggregateApplicationBuilder.this.applicationBuilder.run(args);
 		}
 
 		void embed() {
-			childContext(this.app, AggregateApplicationBuilder.this.parentContext,
-					this.namespace).args(this.args).config(this.names)
-					.profiles(this.profiles).run();
+			childContext(this.app, AggregateApplicationBuilder.this.parentContext, this.namespace).args(this.args)
+					.config(this.names).profiles(this.profiles).run();
 		}
 	}
 

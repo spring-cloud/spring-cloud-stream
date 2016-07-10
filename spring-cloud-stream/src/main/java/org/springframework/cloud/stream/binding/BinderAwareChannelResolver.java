@@ -76,8 +76,8 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		synchronized (this) {
 			if (this.beanFactory != null) {
 				String[] dynamicDestinations = null;
-				ChannelBindingServiceProperties channelBindingServiceProperties =
-						this.channelBindingService.getChannelBindingServiceProperties();
+				ChannelBindingServiceProperties channelBindingServiceProperties = this.channelBindingService
+						.getChannelBindingServiceProperties();
 				if (channelBindingServiceProperties != null) {
 					dynamicDestinations = channelBindingServiceProperties.getDynamicDestinations();
 				}

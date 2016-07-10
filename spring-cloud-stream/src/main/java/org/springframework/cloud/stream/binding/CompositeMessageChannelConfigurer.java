@@ -35,7 +35,7 @@ public class CompositeMessageChannelConfigurer implements MessageChannelConfigur
 
 	@Override
 	public void configureMessageChannel(MessageChannel messageChannel, String channelName) {
-		for (MessageChannelConfigurer messageChannelConfigurer : messageChannelConfigurers) {
+		for (MessageChannelConfigurer messageChannelConfigurer : this.messageChannelConfigurers) {
 			messageChannelConfigurer.configureMessageChannel(messageChannel, channelName);
 		}
 	}

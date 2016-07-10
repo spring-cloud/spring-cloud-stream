@@ -18,12 +18,12 @@ package org.springframework.cloud.stream.config;
 
 import javax.validation.constraints.AssertTrue;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.validation.annotation.Validated;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * Contains the properties of a binding.
@@ -43,10 +43,12 @@ public class BindingProperties {
 	private String destination;
 
 	/**
-	 * Unique name that the binding belongs to (applies to consumers only). Multiple consumers within the same group
-	 * share the subscription. A null or empty String value indicates an anonymous group that is not shared.
-	 * @see org.springframework.cloud.stream.binder.Binder#bindConsumer(java.lang.String, java.lang.String,
-	 * java.lang.Object, org.springframework.cloud.stream.binder.ConsumerProperties)
+	 * Unique name that the binding belongs to (applies to consumers only). Multiple
+	 * consumers within the same group share the subscription. A null or empty String
+	 * value indicates an anonymous group that is not shared.
+	 * @see org.springframework.cloud.stream.binder.Binder#bindConsumer(java.lang.String,
+	 * java.lang.String, java.lang.Object,
+	 * org.springframework.cloud.stream.binder.ConsumerProperties)
 	 */
 	private String group;
 
@@ -69,7 +71,7 @@ public class BindingProperties {
 	}
 
 	public String getGroup() {
-		return group;
+		return this.group;
 	}
 
 	public void setGroup(String group) {
@@ -85,7 +87,7 @@ public class BindingProperties {
 	}
 
 	public String getBinder() {
-		return binder;
+		return this.binder;
 	}
 
 	public void setBinder(String binder) {
@@ -93,7 +95,7 @@ public class BindingProperties {
 	}
 
 	public ConsumerProperties getConsumer() {
-		return consumer;
+		return this.consumer;
 	}
 
 	public void setConsumer(ConsumerProperties consumer) {
@@ -101,7 +103,7 @@ public class BindingProperties {
 	}
 
 	public ProducerProperties getProducer() {
-		return producer;
+		return this.producer;
 	}
 
 	public void setProducer(ProducerProperties producer) {
@@ -110,9 +112,10 @@ public class BindingProperties {
 
 	@AssertTrue(message = "A binding must not set both producer and consumer properties.")
 	public boolean onlyOneOfProducerOrConsumerSet() {
-		return consumer == null || producer == null;
+		return this.consumer == null || this.producer == null;
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("destination=" + this.destination);

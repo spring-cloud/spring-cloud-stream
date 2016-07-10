@@ -25,10 +25,9 @@ import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
-
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert from a JSON (byte[] or String) to a {@link Tuple}.
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert from a
+ * JSON (byte[] or String) to a {@link Tuple}.
  *
  * @author David Turanski
  */

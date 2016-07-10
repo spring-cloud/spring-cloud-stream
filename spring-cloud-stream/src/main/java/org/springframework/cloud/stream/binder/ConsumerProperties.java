@@ -49,7 +49,7 @@ public class ConsumerProperties {
 
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
-		return concurrency;
+		return this.concurrency;
 	}
 
 	public void setConcurrency(int concurrency) {
@@ -57,7 +57,7 @@ public class ConsumerProperties {
 	}
 
 	public boolean isPartitioned() {
-		return partitioned;
+		return this.partitioned;
 	}
 
 	public void setPartitioned(boolean partitioned) {
@@ -66,7 +66,7 @@ public class ConsumerProperties {
 
 	@Min(value = 1, message = "Instance count should be greater than zero.")
 	public int getInstanceCount() {
-		return instanceCount;
+		return this.instanceCount;
 	}
 
 	public void setInstanceCount(int instanceCount) {
@@ -75,7 +75,7 @@ public class ConsumerProperties {
 
 	@Min(value = 0, message = "Instance index should be greater than or equal to 0")
 	public int getInstanceIndex() {
-		return instanceIndex;
+		return this.instanceIndex;
 	}
 
 	public void setInstanceIndex(int instanceIndex) {
@@ -88,7 +88,7 @@ public class ConsumerProperties {
 
 	@Min(value = 1, message = "Max attempts should be greater than zero.")
 	public int getMaxAttempts() {
-		return maxAttempts;
+		return this.maxAttempts;
 	}
 
 	public void setBackOffInitialInterval(int backOffInitialInterval) {
@@ -97,7 +97,7 @@ public class ConsumerProperties {
 
 	@Min(value = 1, message = "Backoff initial interval should be greater than zero.")
 	public int getBackOffInitialInterval() {
-		return backOffInitialInterval;
+		return this.backOffInitialInterval;
 	}
 
 	public void setBackOffMaxInterval(int backOffMaxInterval) {
@@ -106,7 +106,7 @@ public class ConsumerProperties {
 
 	@Min(value = 1, message = "Backoff max interval should be greater than zero.")
 	public int getBackOffMaxInterval() {
-		return backOffMaxInterval;
+		return this.backOffMaxInterval;
 	}
 
 	public void setBackOffMultiplier(double backOffMultiplier) {
@@ -115,7 +115,7 @@ public class ConsumerProperties {
 
 	@Min(value = 1, message = "Backoff multiplier should be greater than zero.")
 	public double getBackOffMultiplier() {
-		return backOffMultiplier;
+		return this.backOffMultiplier;
 	}
 
 	public HeaderMode getHeaderMode() {
@@ -126,4 +126,3 @@ public class ConsumerProperties {
 		this.headerMode = headerMode;
 	}
 }
-

@@ -17,7 +17,8 @@
 package org.springframework.cloud.stream.binder;
 
 /**
- * Extension of {@link ConsumerProperties} to be used with an {@link ExtendedPropertiesBinder}.
+ * Extension of {@link ConsumerProperties} to be used with an
+ * {@link ExtendedPropertiesBinder}.
  *
  * @author Marius Bogoevici
  */
@@ -30,6 +31,6 @@ public class ExtendedConsumerProperties<T> extends ConsumerProperties {
 	}
 
 	public T getExtension() {
-		return extension;
+		return this.extension;
 	}
 }

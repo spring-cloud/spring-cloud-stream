@@ -20,19 +20,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
+import org.springframework.cloud.stream.binding.Bindable;
+import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
-import org.springframework.boot.actuate.endpoint.Endpoint;
-import org.springframework.cloud.stream.binding.Bindable;
-import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
-
 /**
- * An {@link Endpoint} that has the binding information on all the {@link Bindable} message channels.
+ * An Actuator endpoint that has the binding information on all the {@link Bindable}
+ * message channels.
  *
  * @author Dave Syer
  * @author Ilayaperumal Gopinathan

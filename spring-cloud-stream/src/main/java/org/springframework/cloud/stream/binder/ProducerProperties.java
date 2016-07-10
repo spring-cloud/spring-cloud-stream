@@ -19,11 +19,11 @@ package org.springframework.cloud.stream.binder;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Min;
 
+import org.springframework.expression.Expression;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import org.springframework.expression.Expression;
 
 /**
  * Common producer properties.
@@ -51,7 +51,7 @@ public class ProducerProperties {
 	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
 
 	public Expression getPartitionKeyExpression() {
-		return partitionKeyExpression;
+		return this.partitionKeyExpression;
 	}
 
 	public void setPartitionKeyExpression(Expression partitionKeyExpression) {
@@ -59,7 +59,7 @@ public class ProducerProperties {
 	}
 
 	public Class<?> getPartitionKeyExtractorClass() {
-		return partitionKeyExtractorClass;
+		return this.partitionKeyExtractorClass;
 	}
 
 	public void setPartitionKeyExtractorClass(Class<?> partitionKeyExtractorClass) {
@@ -67,11 +67,11 @@ public class ProducerProperties {
 	}
 
 	public boolean isPartitioned() {
-		return this.partitionKeyExpression != null || partitionKeyExtractorClass != null;
+		return this.partitionKeyExpression != null || this.partitionKeyExtractorClass != null;
 	}
 
 	public Class<?> getPartitionSelectorClass() {
-		return partitionSelectorClass;
+		return this.partitionSelectorClass;
 	}
 
 	public void setPartitionSelectorClass(Class<?> partitionSelectorClass) {
@@ -79,7 +79,7 @@ public class ProducerProperties {
 	}
 
 	public Expression getPartitionSelectorExpression() {
-		return partitionSelectorExpression;
+		return this.partitionSelectorExpression;
 	}
 
 	public void setPartitionSelectorExpression(Expression partitionSelectorExpression) {
@@ -88,7 +88,7 @@ public class ProducerProperties {
 
 	@Min(value = 1, message = "Partition count should be greater than zero.")
 	public int getPartitionCount() {
-		return partitionCount;
+		return this.partitionCount;
 	}
 
 	public void setPartitionCount(int partitionCount) {
@@ -96,7 +96,7 @@ public class ProducerProperties {
 	}
 
 	public String[] getRequiredGroups() {
-		return requiredGroups;
+		return this.requiredGroups;
 	}
 
 	public void setRequiredGroups(String... requiredGroups) {

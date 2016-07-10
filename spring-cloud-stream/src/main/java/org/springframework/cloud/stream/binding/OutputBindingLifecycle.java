@@ -25,8 +25,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 
 /**
- * Coordinates binding/unbinding of output channels in accordance to the lifecycle
- * of the host context.
+ * Coordinates binding/unbinding of output channels in accordance to the lifecycle of the
+ * host context.
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -38,28 +38,25 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 	private ConfigurableApplicationContext applicationContext;
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	@Override
 	public void start() {
-		if (!running) {
+		if (!this.running) {
 
 			// retrieve the ChannelBindingService lazily, avoiding early initialization
 			try {
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.bindOutputs(channelBindingService);
 				}
 			}
 			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform binding, no proper implementation found", e);
+				throw new IllegalStateException("Cannot perform binding, no proper implementation found", e);
 			}
 			this.running = true;
 			this.applicationContext.start();
@@ -68,21 +65,19 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 
 	@Override
 	public void stop() {
-		if (running) {
+		if (this.running) {
 			try {
 				// retrieve the ChannelBindingService lazily, avoiding early
 				// initialization
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.unbindOutputs(channelBindingService);
 				}
 			}
 			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform unbinding, no proper implementation found", e);
+				throw new IllegalStateException("Cannot perform unbinding, no proper implementation found", e);
 			}
 			this.running = false;
 		}
@@ -90,7 +85,7 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 
 	@Override
 	public boolean isRunning() {
-		return running;
+		return this.running;
 	}
 
 	@Override
@@ -107,7 +102,8 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 	}
 
 	/**
-	 * Return a low value so that this bean is started after receiving Lifecycle beans are started. Beans that need to start before bindings will set a lower phase value.
+	 * Return a low value so that this bean is started after receiving Lifecycle beans are
+	 * started. Beans that need to start before bindings will set a lower phase value.
 	 */
 	@Override
 	public int getPhase() {

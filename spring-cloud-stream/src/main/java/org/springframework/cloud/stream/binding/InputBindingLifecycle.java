@@ -25,8 +25,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 
 /**
- * Coordinates binding/unbinding of input channels in accordance to the lifecycle
- * of the host context.
+ * Coordinates binding/unbinding of input channels in accordance to the lifecycle of the
+ * host context.
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
@@ -37,27 +37,24 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 	private ConfigurableApplicationContext applicationContext;
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	@Override
 	public void start() {
-		if (!running) {
+		if (!this.running) {
 			// retrieve the ChannelBindingService lazily, avoiding early initialization
 			try {
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.bindInputs(channelBindingService);
 				}
 			}
 			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform binding, no proper implementation found", e);
+				throw new IllegalStateException("Cannot perform binding, no proper implementation found", e);
 			}
 			this.running = true;
 		}
@@ -65,21 +62,19 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 
 	@Override
 	public void stop() {
-		if (running) {
+		if (this.running) {
 			try {
 				// retrieve the ChannelBindingService lazily, avoiding early
 				// initialization
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.unbindInputs(channelBindingService);
 				}
 			}
 			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform unbinding, no proper implementation found", e);
+				throw new IllegalStateException("Cannot perform unbinding, no proper implementation found", e);
 			}
 			this.running = false;
 		}
@@ -87,7 +82,7 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 
 	@Override
 	public boolean isRunning() {
-		return running;
+		return this.running;
 	}
 
 	@Override

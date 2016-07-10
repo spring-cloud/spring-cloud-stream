@@ -16,8 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -28,8 +29,6 @@ import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author Marius Bogoevici
  */
@@ -37,8 +36,10 @@ public class LifecycleBinderTests {
 
 	@Test
 	public void testNonSmartLifecyclesStarted() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
-		SimpleLifecycle simpleLifecycle = applicationContext.getBean(SimpleLifecycle.class);
+		ConfigurableApplicationContext applicationContext = SpringApplication
+				.run(TestSource.class, "--server.port=-1");
+		SimpleLifecycle simpleLifecycle = applicationContext
+				.getBean(SimpleLifecycle.class);
 		assertThat(simpleLifecycle.isRunning());
 		applicationContext.close();
 		assertThat(simpleLifecycle.isRunning()).isFalse();

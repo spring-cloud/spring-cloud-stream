@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-
 import org.springframework.integration.endpoint.AbstractEndpoint;
 import org.springframework.util.Assert;
 
@@ -48,19 +47,17 @@ public class DefaultBinding<T> implements Binding<T> {
 		this.endpoint = endpoint;
 	}
 
-
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	public String getGroup() {
-		return group;
+		return this.group;
 	}
-
 
 	@Override
 	public final void unbind() {
-		endpoint.stop();
+		this.endpoint.stop();
 		afterUnbind();
 	}
 
@@ -69,7 +66,7 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public String toString() {
-		return " Binding [name=" + name + ", target=" + target + ", endpoint=" + endpoint.getComponentName()
-				+ "]";
+		return " Binding [name=" + this.name + ", target=" + this.target + ", endpoint="
+				+ this.endpoint.getComponentName() + "]";
 	}
 }

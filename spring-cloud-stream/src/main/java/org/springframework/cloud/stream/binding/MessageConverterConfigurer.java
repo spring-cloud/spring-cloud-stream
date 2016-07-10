@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binding;
 
-
 import java.util.Collections;
 
 import org.springframework.beans.BeansException;
@@ -40,10 +39,11 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
- * A {@link MessageChannelConfigurer} that sets data types and message converters based on {@link
- * BindingProperties#contentType}. Also adds a {@link org.springframework.messaging.support.ChannelInterceptor} to
- * the message channel to set the `ContentType` header for the message (if not already set) based on the `ContentType`
- * binding property of the channel.
+ * A {@link MessageChannelConfigurer} that sets data types and message converters based on
+ * {@link BindingProperties#contentType}. Also adds a
+ * {@link org.springframework.messaging.support.ChannelInterceptor} to the message channel
+ * to set the `ContentType` header for the message (if not already set) based on the
+ * `ContentType` binding property of the channel.
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
@@ -78,7 +78,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	/**
 	 * Setup data-type and message converters for the given message channel.
-	 * @param channel     message channel to set the data-type and message converters
+	 * @param channel message channel to set the data-type and message converters
 	 * @param channelName the channel name
 	 */
 	@Override
@@ -89,7 +89,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		final String contentType = bindingProperties.getContentType();
 		if (StringUtils.hasText(contentType)) {
 			MimeType mimeType = MessageConverterUtils.getMimeType(contentType);
-			SmartMessageConverter messageConverter = this.compositeMessageConverterFactory.getMessageConverterForType(mimeType);
+			SmartMessageConverter messageConverter = this.compositeMessageConverterFactory
+					.getMessageConverterForType(mimeType);
 			Class<?>[] supportedDataTypes = this.compositeMessageConverterFactory.supportedDataTypes(mimeType);
 			messageChannel.setDatatypes(supportedDataTypes);
 			messageChannel.setMessageConverter(new MessageWrappingMessageConverter(messageConverter, mimeType));
@@ -99,10 +100,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 				public Message<?> preSend(Message<?> message, MessageChannel messageChannel) {
 					Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 					if (contentTypeFromMessage == null) {
-						return messageBuilderFactory
-.fromMessage(message)
-								.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-								.build();
+						return MessageConverterConfigurer.this.messageBuilderFactory.fromMessage(message)
+								.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
 					}
 					return message;
 				}
@@ -111,10 +110,11 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	}
 
 	/**
-	 * A {@link SmartMessageConverter} that delegates to another {@link SmartMessageConverter} for conversion.
+	 * A {@link SmartMessageConverter} that delegates to another
+	 * {@link SmartMessageConverter} for conversion.
 	 *
-	 * Will wrap the returning result of the conversion into a {@link Message} if it is not a {@link Message}
-	 * instance already.
+	 * Will wrap the returning result of the conversion into a {@link Message} if it is
+	 * not a {@link Message} instance already.
 	 */
 	private final class MessageWrappingMessageConverter implements SmartMessageConverter {
 
@@ -131,7 +131,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Object fromMessage(Message<?> message, Class<?> targetClass) {
-			Object converted = delegate.fromMessage(message, targetClass);
+			Object converted = this.delegate.fromMessage(message, targetClass);
 			if (converted instanceof Message) {
 				return converted;
 			}
@@ -142,7 +142,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Object fromMessage(Message<?> message, Class<?> targetClass, Object conversionHint) {
-			Object converted = delegate.fromMessage(message, targetClass, conversionHint);
+			Object converted = this.delegate.fromMessage(message, targetClass, conversionHint);
 			if (converted == null || converted instanceof Message) {
 				return converted;
 			}
@@ -153,12 +153,12 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Message<?> toMessage(Object payload, MessageHeaders headers) {
-			return delegate.toMessage(payload, headers);
+			return this.delegate.toMessage(payload, headers);
 		}
 
 		@Override
 		public Message<?> toMessage(Object payload, MessageHeaders headers, Object conversionHint) {
-			return delegate.toMessage(payload, headers, conversionHint);
+			return this.delegate.toMessage(payload, headers, conversionHint);
 		}
 
 		/**
@@ -168,11 +168,10 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		 * @return the converted message
 		 */
 		protected Object build(Object payload, MessageHeaders headers) {
-			MimeType messageContentType = MessageConverterUtils.X_JAVA_OBJECT.equals(contentType) ?
-					MessageConverterUtils.javaObjectMimeType(payload.getClass()) : contentType;
-			return messageBuilderFactory.withPayload(payload).copyHeaders(headers)
-					.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
-							messageContentType.toString()))
+			MimeType messageContentType = MessageConverterUtils.X_JAVA_OBJECT.equals(this.contentType)
+					? MessageConverterUtils.javaObjectMimeType(payload.getClass()) : this.contentType;
+			return MessageConverterConfigurer.this.messageBuilderFactory.withPayload(payload).copyHeaders(headers)
+					.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, messageContentType.toString()))
 					.build();
 		}
 	}

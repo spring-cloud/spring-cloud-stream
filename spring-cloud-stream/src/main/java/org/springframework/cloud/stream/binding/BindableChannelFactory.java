@@ -19,8 +19,9 @@ package org.springframework.cloud.stream.binding;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * Defines methods to create/configure the {@link org.springframework.messaging.MessageChannel}s defined
- * in {@link org.springframework.cloud.stream.annotation.EnableBinding}.
+ * Defines methods to create/configure the
+ * {@link org.springframework.messaging.MessageChannel}s defined in
+ * {@link org.springframework.cloud.stream.annotation.EnableBinding}.
  *
  * @author Ilayaperumal Gopinathan
  */

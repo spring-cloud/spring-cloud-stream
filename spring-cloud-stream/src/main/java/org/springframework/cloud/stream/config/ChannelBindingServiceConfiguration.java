@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +66,8 @@ import org.springframework.messaging.handler.annotation.support.MessageHandlerMe
 import org.springframework.tuple.spel.TuplePropertyAccessor;
 import org.springframework.util.CollectionUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
  *
@@ -110,7 +110,8 @@ public class ChannelBindingServiceConfiguration {
 			ChannelBindingServiceProperties channelBindingServiceProperties,
 			MessageBuilderFactory messageBuilderFactory,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new MessageConverterConfigurer(channelBindingServiceProperties, messageBuilderFactory, compositeMessageConverterFactory);
+		return new MessageConverterConfigurer(channelBindingServiceProperties, messageBuilderFactory,
+				compositeMessageConverterFactory);
 	}
 
 	@Bean
@@ -147,7 +148,8 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public BinderAwareChannelResolver binderAwareChannelResolver(ChannelBindingService channelBindingService,
 			BindableChannelFactory bindableChannelFactory, DynamicDestinationsBindable dynamicDestinationsBindable) {
-		return new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory, dynamicDestinationsBindable);
+		return new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory,
+				dynamicDestinationsBindable);
 	}
 
 	@Bean
@@ -165,16 +167,18 @@ public class ChannelBindingServiceConfiguration {
 	@Bean
 	public CompositeMessageConverterFactory compositeMessageConverterFactory() {
 		List<AbstractFromMessageConverter> messageConverters = new ArrayList<>();
-		if (!CollectionUtils.isEmpty(customMessageConverters)) {
-			messageConverters.addAll(Collections.unmodifiableCollection(customMessageConverters));
+		if (!CollectionUtils.isEmpty(this.customMessageConverters)) {
+			messageConverters.addAll(Collections.unmodifiableCollection(this.customMessageConverters));
 		}
-		return new CompositeMessageConverterFactory(messageConverters, objectMapper);
+		return new CompositeMessageConverterFactory(messageConverters, this.objectMapper);
 	}
 
 	@Bean
-	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
+			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		messageHandlerMethodFactory
+				.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 		return messageHandlerMethodFactory;
 	}
 
@@ -182,8 +186,7 @@ public class ChannelBindingServiceConfiguration {
 	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(
 			@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
 			@Lazy MessageHandlerMethodFactory messageHandlerMethodFactory) {
-		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver,
-				messageHandlerMethodFactory);
+		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver, messageHandlerMethodFactory);
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
@@ -196,22 +199,18 @@ public class ChannelBindingServiceConfiguration {
 		public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
 				final ConfigurableListableBeanFactory beanFactory) {
 			// IMPORTANT: Lazy delegate to avoid instantiating all of the above early
-			return new BinderAwareRouterBeanPostProcessor(
-					new DestinationResolver<MessageChannel>() {
+			return new BinderAwareRouterBeanPostProcessor(new DestinationResolver<MessageChannel>() {
 
-						@Override
-						public MessageChannel resolveDestination(String name)
-								throws DestinationResolutionException {
-							if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
-								PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils
-										.beanOfType(beanFactory,
-												BinderAwareChannelResolver.class);
-							}
-							return PostProcessorConfiguration.this.binderAwareChannelResolver
-									.resolveDestination(name);
-						}
+				@Override
+				public MessageChannel resolveDestination(String name) throws DestinationResolutionException {
+					if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
+						PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils
+								.beanOfType(beanFactory, BinderAwareChannelResolver.class);
+					}
+					return PostProcessorConfiguration.this.binderAwareChannelResolver.resolveDestination(name);
+				}
 
-					});
+			});
 		}
 
 		/**

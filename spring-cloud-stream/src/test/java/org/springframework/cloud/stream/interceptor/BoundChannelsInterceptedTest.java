@@ -16,9 +16,12 @@
 
 package org.springframework.cloud.stream.interceptor;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -35,10 +38,6 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-
 /**
  * Verifies that interceptors used by modules are applied correctly to generated channels.
  *
@@ -48,7 +47,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 @SpringApplicationConfiguration(BoundChannelsInterceptedTest.Foo.class)
 public class BoundChannelsInterceptedTest {
 
-	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").build();
+	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar")
+			.build();
 
 	@Autowired
 	ChannelInterceptor channelInterceptor;
@@ -59,11 +59,10 @@ public class BoundChannelsInterceptedTest {
 
 	@Test
 	public void testBoundChannelsIntercepted() {
-		fooSink.input().send(TEST_MESSAGE);
-		verify(channelInterceptor).preSend(TEST_MESSAGE, fooSink.input());
-		verifyNoMoreInteractions(channelInterceptor);
+		this.fooSink.input().send(TEST_MESSAGE);
+		verify(this.channelInterceptor).preSend(TEST_MESSAGE, this.fooSink.input());
+		verifyNoMoreInteractions(this.channelInterceptor);
 	}
-
 
 	@SpringBootApplication
 	@EnableBinding(Sink.class)

@@ -23,8 +23,8 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolver;
 
 /**
- * A {@link BeanPostProcessor} that sets a {@link BinderAwareChannelResolver} on any bean of type
- * {@link AbstractMappingMessageRouter} within the context.
+ * A {@link BeanPostProcessor} that sets a {@link BinderAwareChannelResolver} on any bean
+ * of type {@link AbstractMappingMessageRouter} within the context.
  *
  * @author Mark Fisher
  * @author Gary Russell

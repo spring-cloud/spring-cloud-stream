@@ -20,6 +20,8 @@
 	<properties>
 		<java.version>1.7</java.version>
 		<spring-boot.version>1.4.0.BUILD-SNAPSHOT</spring-boot.version>
+		<checkstyle.version>2.17</checkstyle.version>
+		<spring-cloud-build.version>1.1.2.BUILD-SNAPSHOT</spring-cloud-build.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -54,12 +56,12 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-checkstyle-plugin</artifactId>
-					<version>2.17</version>
+					<version>${checkstyle.version}</version>
 					<dependencies>
 						<dependency>
-							<groupId>com.puppycrawl.tools</groupId>
-							<artifactId>checkstyle</artifactId>
-							<version>6.17</version>
+							<groupId>org.springframework.cloud</groupId>
+							<artifactId>spring-cloud-build-tools</artifactId>
+							<version>${spring-cloud-build.version}</version>
 						</dependency>
 					</dependencies>
 				</plugin>
@@ -85,16 +87,13 @@
 				<artifactId>maven-checkstyle-plugin</artifactId>
 				<executions>
 					<execution>
-						<id>checkstyle-validation</id>
+						<id>validate</id>
 						<phase>validate</phase>
 						<configuration>
-							<configLocation>src/checkstyle/checkstyle.xml</configLocation>
-							<headerLocation>src/checkstyle/checkstyle-header.txt</headerLocation>
-							<propertyExpansion>checkstyle.build.directory=${project.build.directory}</propertyExpansion>
-							<encoding>UTF-8</encoding>
+							<configLocation>checkstyle.xml</configLocation>
+							<headerLocation>LICENSE.txt</headerLocation>
 							<consoleOutput>true</consoleOutput>
 							<failsOnError>true</failsOnError>
-							<includeTestSourceDirectory>true</includeTestSourceDirectory>
 						</configuration>
 						<goals>
 							<goal>check</goal>

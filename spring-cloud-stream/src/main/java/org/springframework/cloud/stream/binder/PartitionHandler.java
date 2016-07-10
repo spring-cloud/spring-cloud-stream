@@ -23,9 +23,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
- * Utility class to determine if a binding is configured for partitioning
- * (based on the binder properties provided in the constructor) and
- * what partition a message should be delivered to.
+ * Utility class to determine if a binding is configured for partitioning (based on the
+ * binder properties provided in the constructor) and what partition a message should be
+ * delivered to.
  *
  * @author Patrick Peralta
  * @author David Turanski
@@ -44,7 +44,6 @@ public class PartitionHandler {
 
 	private final ProducerProperties producerProperties;
 
-
 	/**
 	 * Construct a {@code PartitionHandler}.
 	 *
@@ -53,33 +52,28 @@ public class PartitionHandler {
 	 * @param partitionSelector configured partition selector; may be {@code null}
 	 * @param properties binder properties
 	 */
-	public PartitionHandler(ConfigurableListableBeanFactory beanFactory,
-							EvaluationContext evaluationContext,
-							PartitionSelectorStrategy partitionSelector,
-							ProducerProperties properties) {
+	public PartitionHandler(ConfigurableListableBeanFactory beanFactory, EvaluationContext evaluationContext,
+			PartitionSelectorStrategy partitionSelector, ProducerProperties properties) {
 		Assert.notNull(beanFactory, "BeanFactory must not be null");
 		this.beanFactory = beanFactory;
 		this.evaluationContext = evaluationContext;
-		this.partitionSelector = partitionSelector == null
-				? new DefaultPartitionSelector()
-				: partitionSelector;
+		this.partitionSelector = partitionSelector == null ? new DefaultPartitionSelector() : partitionSelector;
 		this.producerProperties = properties;
 	}
 
 	/**
 	 * Determine the partition to which to send this message.
 	 * <p>
-	 * If a partition key extractor class is provided, it is invoked to determine
-	 * the key. Otherwise, the partition key expression is evaluated to obtain the
-	 * key value.
+	 * If a partition key extractor class is provided, it is invoked to determine the key.
+	 * Otherwise, the partition key expression is evaluated to obtain the key value.
 	 * <p>
 	 * If a partition selector class is provided, it will be invoked to determine the
 	 * partition. Otherwise, if the partition expression is not null, it is evaluated
-	 * against the key and is expected to return an integer to which the modulo
-	 * function will be applied, using the {@code partitionCount} as the divisor. If no
-	 * partition expression is provided, the key will be passed to the binder
-	 * partition strategy along with the {@code partitionCount}. The default partition
-	 * strategy uses {@code key.hashCode()}, and the result will be the mod of that value.
+	 * against the key and is expected to return an integer to which the modulo function
+	 * will be applied, using the {@code partitionCount} as the divisor. If no partition
+	 * expression is provided, the key will be passed to the binder partition strategy
+	 * along with the {@code partitionCount}. The default partition strategy uses
+	 * {@code key.hashCode()}, and the result will be the mod of that value.
 	 *
 	 * @param message the message.
 	 * @return the partition
@@ -92,14 +86,14 @@ public class PartitionHandler {
 			partition = invokePartitionSelector(key);
 		}
 		else if (this.producerProperties.getPartitionSelectorExpression() != null) {
-			partition = this.producerProperties.getPartitionSelectorExpression().getValue(
-					this.evaluationContext, key, Integer.class);
+			partition = this.producerProperties.getPartitionSelectorExpression().getValue(this.evaluationContext, key,
+					Integer.class);
 		}
 		else {
-			partition = this.partitionSelector.selectPartition(key, producerProperties.getPartitionCount());
+			partition = this.partitionSelector.selectPartition(key, this.producerProperties.getPartitionCount());
 		}
 		// protection in case a user selector returns a negative.
-		return Math.abs(partition % producerProperties.getPartitionCount());
+		return Math.abs(partition % this.producerProperties.getPartitionCount());
 	}
 
 	private Object extractKey(Message<?> message) {
@@ -117,16 +111,14 @@ public class PartitionHandler {
 
 	private Object invokeKeyExtractor(Message<?> message) {
 		PartitionKeyExtractorStrategy strategy = getBean(
-				producerProperties.getPartitionKeyExtractorClass().getName(),
-				PartitionKeyExtractorStrategy.class);
+				this.producerProperties.getPartitionKeyExtractorClass().getName(), PartitionKeyExtractorStrategy.class);
 		return strategy.extractKey(message);
 	}
 
 	private int invokePartitionSelector(Object key) {
-		PartitionSelectorStrategy strategy = getBean(
-				producerProperties.getPartitionSelectorClass().getName(),
+		PartitionSelectorStrategy strategy = getBean(this.producerProperties.getPartitionSelectorClass().getName(),
 				PartitionSelectorStrategy.class);
-		return strategy.selectPartition(key, producerProperties.getPartitionCount());
+		return strategy.selectPartition(key, this.producerProperties.getPartitionCount());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -164,8 +156,8 @@ public class PartitionHandler {
 	}
 
 	/**
-	 * Default partition strategy; only works on keys with "real" hash codes,
-	 * such as String. Caller now always applies modulo so no need to do so here.
+	 * Default partition strategy; only works on keys with "real" hash codes, such as
+	 * String. Caller now always applies modulo so no need to do so here.
 	 */
 	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
 

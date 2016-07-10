@@ -63,9 +63,9 @@ public class SpelExpressionConverterConfiguration {
 		@Override
 		public Expression convert(String source) {
 			try {
-				Expression expression = parser.parseExpression(source);
+				Expression expression = this.parser.parseExpression(source);
 				if (expression instanceof SpelExpression) {
-					((SpelExpression) expression).setEvaluationContext(evaluationContext);
+					((SpelExpression) expression).setEvaluationContext(this.evaluationContext);
 				}
 				return expression;
 			}

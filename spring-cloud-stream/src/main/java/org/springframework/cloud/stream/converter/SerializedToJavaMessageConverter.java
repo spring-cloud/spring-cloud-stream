@@ -22,10 +22,9 @@ import java.io.Serializable;
 
 import org.springframework.messaging.Message;
 
-
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to deserialize {@link Serializable} Java objects.
+ * A {@link org.springframework.messaging.converter.MessageConverter} to deserialize
+ * {@link Serializable} Java objects.
  *
  * @author David Turanski
  */
@@ -53,7 +52,7 @@ public class SerializedToJavaMessageConverter extends AbstractFromMessageConvert
 			result = new ObjectInputStream(bis).readObject();
 		}
 		catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			this.logger.error(e.getMessage(), e);
 			return null;
 		}
 

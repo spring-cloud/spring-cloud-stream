@@ -16,11 +16,15 @@
 
 package org.springframework.cloud.stream.partitioning;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -33,11 +37,6 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Marius Bogoevici
@@ -57,14 +56,15 @@ public class PartitionedProducerTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedProducer() {
-		ArgumentCaptor<ProducerProperties> argumentCaptor = ArgumentCaptor.forClass(ProducerProperties.class);
-		verify(binder).bindProducer(eq("partOut"), eq(testSource.output()), argumentCaptor.capture());
+		ArgumentCaptor<ProducerProperties> argumentCaptor = ArgumentCaptor
+				.forClass(ProducerProperties.class);
+		verify(this.binder).bindProducer(eq("partOut"), eq(this.testSource.output()),
+				argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getPartitionCount(), equalTo(3));
-		Assert.assertThat(argumentCaptor.getValue().getPartitionKeyExpression().getExpressionString(),
-				equalTo("payload"));
-		verifyNoMoreInteractions(binder);
+		Assert.assertThat(argumentCaptor.getValue().getPartitionKeyExpression()
+				.getExpressionString(), equalTo("payload"));
+		verifyNoMoreInteractions(this.binder);
 	}
-
 
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration

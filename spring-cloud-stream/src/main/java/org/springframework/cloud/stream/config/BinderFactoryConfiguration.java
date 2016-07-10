@@ -101,8 +101,8 @@ public class BinderFactoryConfiguration {
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
 			if (resources == null || !resources.hasMoreElements()) {
-				throw new BeanCreationException("Cannot create binder factory, no `META-INF/spring.binders` " +
-						"resources found on the classpath");
+				throw new BeanCreationException("Cannot create binder factory, no `META-INF/spring.binders` "
+						+ "resources found on the classpath");
 			}
 			while (resources.hasMoreElements()) {
 				URL url = resources.nextElement();

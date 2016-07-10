@@ -21,10 +21,9 @@ import org.springframework.tuple.Tuple;
 import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeTypeUtils;
 
-
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert a Java object to a String using toString()
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert a Java
+ * object to a String using toString()
  *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan

@@ -17,13 +17,14 @@
 package org.springframework.cloud.stream.binder;
 
 /**
- * Extension of {@link Binder} that takes {@link ExtendedConsumerProperties} and {@link ExtendedProducerProperties}
- * as arguments. In addition to supporting binding operations, it allows the binder to provide values for the
- * additional properties it expects on the bindings.
+ * Extension of {@link Binder} that takes {@link ExtendedConsumerProperties} and
+ * {@link ExtendedProducerProperties} as arguments. In addition to supporting binding
+ * operations, it allows the binder to provide values for the additional properties it
+ * expects on the bindings.
  *
  * @author Marius Bogoevici
  */
-public interface ExtendedPropertiesBinder<T, C, P>
-		extends Binder<T, ExtendedConsumerProperties<C>, ExtendedProducerProperties<P>>, ExtendedBindingProperties<C, P> {
+public interface ExtendedPropertiesBinder<T, C, P> extends
+		Binder<T, ExtendedConsumerProperties<C>, ExtendedProducerProperties<P>>, ExtendedBindingProperties<C, P> {
 
 }

@@ -28,7 +28,7 @@ public class ExtendedProducerProperties<T> extends ProducerProperties {
 	}
 
 	public T getExtension() {
-		return extension;
+		return this.extension;
 	}
 
 }

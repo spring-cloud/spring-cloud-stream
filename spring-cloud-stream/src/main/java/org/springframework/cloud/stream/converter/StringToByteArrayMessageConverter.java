@@ -24,11 +24,9 @@ import org.springframework.messaging.Message;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
-
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert a String to a byte[], applying the provided Charset in
- * the content-type header if any.
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert a String
+ * to a byte[], applying the provided Charset in the content-type header if any.
  *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
@@ -36,6 +34,7 @@ import org.springframework.util.MimeTypeUtils;
 public class StringToByteArrayMessageConverter extends AbstractFromMessageConverter {
 
 	private final static List<MimeType> targetMimeTypes = new ArrayList<MimeType>();
+
 	static {
 		targetMimeTypes.add(MimeTypeUtils.APPLICATION_OCTET_STREAM);
 	}
@@ -71,7 +70,7 @@ public class StringToByteArrayMessageConverter extends AbstractFromMessageConver
 					converted = ((String) message.getPayload()).getBytes(encoding);
 				}
 				catch (UnsupportedEncodingException e) {
-					logger.error(e.getMessage(), e);
+					this.logger.error(e.getMessage(), e);
 				}
 			}
 		}

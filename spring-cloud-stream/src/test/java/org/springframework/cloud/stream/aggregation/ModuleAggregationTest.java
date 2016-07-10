@@ -16,8 +16,9 @@
 
 package org.springframework.cloud.stream.aggregation;
 
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
@@ -29,8 +30,6 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.MessageChannel;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author Marius Bogoevici
  */
@@ -38,14 +37,13 @@ public class ModuleAggregationTest {
 
 	@Test
 	public void testModuleAggregation() {
-		ConfigurableApplicationContext aggregatedApplicationContext =
-				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class,
-						"--server.port=0")
-						.from(TestSource.class)
-						.to(TestProcessor.class)
-						.run();
-		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
-		BindableChannelFactory channelFactory = aggregatedApplicationContext.getBean(BindableChannelFactory.class);
+		ConfigurableApplicationContext aggregatedApplicationContext = new AggregateApplicationBuilder(
+				MockBinderRegistryConfiguration.class, "--server.port=0")
+						.from(TestSource.class).to(TestProcessor.class).run();
+		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext
+				.getBean(SharedChannelRegistry.class);
+		BindableChannelFactory channelFactory = aggregatedApplicationContext
+				.getBean(BindableChannelFactory.class);
 		assertThat(channelFactory).isNotNull();
 		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();
@@ -53,16 +51,14 @@ public class ModuleAggregationTest {
 
 	@Test
 	public void testNamespaces() {
-		ConfigurableApplicationContext aggregatedApplicationContext =
-				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class,
-						"--server.port=0")
-						.from(TestSource.class)
-						.namespace("foo").to(TestProcessor.class).namespace("bar")
-						.run();
-		SharedChannelRegistry sharedChannelRegistry
-				= aggregatedApplicationContext.getBean(SharedChannelRegistry.class);
-		BindableChannelFactory channelFactory
-				= aggregatedApplicationContext.getBean(BindableChannelFactory.class);
+		ConfigurableApplicationContext aggregatedApplicationContext = new AggregateApplicationBuilder(
+				MockBinderRegistryConfiguration.class, "--server.port=0")
+						.from(TestSource.class).namespace("foo").to(TestProcessor.class)
+						.namespace("bar").run();
+		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext
+				.getBean(SharedChannelRegistry.class);
+		BindableChannelFactory channelFactory = aggregatedApplicationContext
+				.getBean(BindableChannelFactory.class);
 		Object fooOutput = sharedChannelRegistry.get("foo.output");
 		assertThat(fooOutput).isNotNull();
 		assertThat(fooOutput).isInstanceOf(MessageChannel.class);
@@ -73,7 +69,6 @@ public class ModuleAggregationTest {
 		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();
 	}
-
 
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration

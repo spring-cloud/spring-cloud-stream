@@ -29,13 +29,13 @@ import org.springframework.messaging.Message;
 
 /**
  * Encodes requested headers into payload with format
- * {@code 0xff, n(1), [ [lenHdr(1), hdr, lenValue(4), value] ... ]}.
- * The 0xff indicates this new format; n is number of headers (max 255); for
- * each header, the name length (1 byte) is followed by the name, followed by
- * the value length (int) followed by the value (json).
+ * {@code 0xff, n(1), [ [lenHdr(1), hdr, lenValue(4), value] ... ]}. The 0xff indicates
+ * this new format; n is number of headers (max 255); for each header, the name length (1
+ * byte) is followed by the name, followed by the value length (int) followed by the value
+ * (json).
  * <p>
- * Previously, there was no leading 0xff; the value length was 1 byte and only
- * String header values were supported (no JSON conversion).
+ * Previously, there was no leading 0xff; the value length was 1 byte and only String
+ * header values were supported (no JSON conversion).
  *
  * @author Eric Bottard
  * @author Gary Russell
@@ -48,10 +48,9 @@ public class EmbeddedHeadersMessageConverter {
 		return "Could not convert message: " + DatatypeConverter.printHexBinary((byte[]) requestMessage.getPayload());
 	}
 
-
 	/**
-	 * Return a new message where some of the original headers of {@code original}
-	 * have been embedded into the new message payload.
+	 * Return a new message where some of the original headers of {@code original} have
+	 * been embedded into the new message payload.
 	 */
 	public byte[] embedHeaders(MessageValues original, String... headers) throws Exception {
 		byte[][] headerValues = new byte[headers.length][];
@@ -124,8 +123,7 @@ public class EmbeddedHeadersMessageConverter {
 	}
 
 	private MessageValues oldExtractHeaders(ByteBuffer byteBuffer, byte[] bytes, int headerCount,
-			Message<byte[]> message, boolean copyRequestHeaders)
-			throws UnsupportedEncodingException {
+			Message<byte[]> message, boolean copyRequestHeaders) throws UnsupportedEncodingException {
 		Map<String, Object> headers = new HashMap<String, Object>();
 		for (int i = 0; i < headerCount; i++) {
 			int len = byteBuffer.get();

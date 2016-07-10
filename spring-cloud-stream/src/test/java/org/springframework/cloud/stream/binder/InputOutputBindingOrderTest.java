@@ -16,9 +16,14 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.junit.Test;
-import org.mockito.Mockito;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import org.junit.Test;
+import org.mockito.Matchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -30,12 +35,6 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-
 /**
  * @author Marius Bogoevici
  */
@@ -44,12 +43,14 @@ public class InputOutputBindingOrderTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testInputOutputBindingOrder() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
+		ConfigurableApplicationContext applicationContext = SpringApplication
+				.run(TestSource.class, "--server.port=-1");
 		@SuppressWarnings("rawtypes")
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
-		verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<ConsumerProperties>any());
+		verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()),
+				Matchers.<ConsumerProperties>any());
 		SomeLifecycle someLifecycle = applicationContext.getBean(SomeLifecycle.class);
 		assertThat(someLifecycle.isRunning());
 		applicationContext.close();
@@ -81,7 +82,8 @@ public class InputOutputBindingOrderTest {
 		@Override
 		@SuppressWarnings("unchecked")
 		public synchronized void start() {
-			verify(this.binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<ProducerProperties>any());
+			verify(this.binder).bindProducer(eq("output"), eq(this.processor.output()),
+					Matchers.<ProducerProperties>any());
 			// input was not bound yet
 			verifyNoMoreInteractions(this.binder);
 			this.running = true;

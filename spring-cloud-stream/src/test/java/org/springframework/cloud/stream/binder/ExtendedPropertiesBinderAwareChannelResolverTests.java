@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
@@ -49,15 +51,13 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
-
 /**
  * @author Mark Fisher
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  */
-public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwareChannelResolverTests {
+public class ExtendedPropertiesBinderAwareChannelResolverTests
+		extends BinderAwareChannelResolverTests {
 
 	private volatile ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> binder;
 
@@ -66,13 +66,14 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 	@Before
 	@Override
 	public void setupContext() throws Exception {
-		producerBindings = new ArrayList<>();
+		this.producerBindings = new ArrayList<>();
 		this.binder = new TestBinder();
 		BinderFactory binderFactory = new BinderFactory<MessageChannel>() {
 
 			@Override
-			public ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> getBinder(String configurationName) {
-				return binder;
+			public ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> getBinder(
+					String configurationName) {
+				return ExtendedPropertiesBinderAwareChannelResolverTests.this.binder;
 			}
 		};
 		this.channelBindingServiceProperties = new ChannelBindingServiceProperties();
@@ -84,33 +85,40 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
 				this.channelBindingServiceProperties, new DefaultMessageBuilderFactory(),
 				new CompositeMessageConverterFactory());
-		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
+		messageConverterConfigurer
+				.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
-		this.bindableChannelFactory = new DefaultBindableChannelFactory(messageConverterConfigurer);
-		dynamicDestinationsBindable = new DynamicDestinationsBindable();
-		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
-				binderFactory);
-		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory,
-				dynamicDestinationsBindable);
-		this.resolver.setBeanFactory(context.getBeanFactory());
-		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);
-		context.getBeanFactory().registerSingleton("dynamicDestinationBindable", this.dynamicDestinationsBindable);
-		context.registerSingleton("other", DirectChannel.class);
-		context.registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
+		this.bindableChannelFactory = new DefaultBindableChannelFactory(
+				messageConverterConfigurer);
+		this.dynamicDestinationsBindable = new DynamicDestinationsBindable();
+		ChannelBindingService channelBindingService = new ChannelBindingService(
+				this.channelBindingServiceProperties, binderFactory);
+		this.resolver = new BinderAwareChannelResolver(channelBindingService,
+				this.bindableChannelFactory, this.dynamicDestinationsBindable);
+		this.resolver.setBeanFactory(this.context.getBeanFactory());
+		this.context.getBeanFactory().registerSingleton("channelResolver", this.resolver);
+		this.context.getBeanFactory().registerSingleton("dynamicDestinationBindable",
+				this.dynamicDestinationsBindable);
+		this.context.registerSingleton("other", DirectChannel.class);
+		this.context.registerSingleton(
+				IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				DefaultMessageBuilderFactory.class);
-		context.getBeanFactory().registerSingleton("channelBindingService", channelBindingService);
-		context.registerSingleton("inputBindingLifecycle", InputBindingLifecycle.class);
-		context.registerSingleton("outputBindingLifecycle", OutputBindingLifecycle.class);
-		context.refresh();
+		this.context.getBeanFactory().registerSingleton("channelBindingService",
+				channelBindingService);
+		this.context.registerSingleton("inputBindingLifecycle",
+				InputBindingLifecycle.class);
+		this.context.registerSingleton("outputBindingLifecycle",
+				OutputBindingLifecycle.class);
+		this.context.refresh();
 	}
 
 	@Test
 	@Override
 	public void resolveChannel() {
-		assertThat(producerBindings).hasSize(0);
-		MessageChannel registered = resolver.resolveDestination("foo");
-		assertThat(producerBindings).hasSize(1);
-		TestBinder.TestBinding binding = producerBindings.get(0);
+		assertThat(this.producerBindings).hasSize(0);
+		MessageChannel registered = this.resolver.resolveDestination("foo");
+		assertThat(this.producerBindings).hasSize(1);
+		TestBinder.TestBinding binding = this.producerBindings.get(0);
 		assertThat(binding.isBound()).describedAs("Must be bound");
 		DirectChannel testChannel = new DirectChannel();
 		final CountDownLatch latch = new CountDownLatch(1);
@@ -123,7 +131,8 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 				latch.countDown();
 			}
 		});
-		binder.bindConsumer("foo", null, testChannel, new ExtendedConsumerProperties(new ConsumerProperties()));
+		this.binder.bindConsumer("foo", null, testChannel,
+				new ExtendedConsumerProperties(new ConsumerProperties()));
 		assertThat(received).hasSize(0);
 		registered.send(MessageBuilder.withPayload("hello").build());
 		try {
@@ -135,55 +144,59 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		}
 		assertThat(received).hasSize(1);
 		assertThat(received.get(0).getPayload()).isEqualTo("hello");
-		context.close();
-		assertThat(producerBindings).hasSize(1);
+		this.context.close();
+		assertThat(this.producerBindings).hasSize(1);
 		assertThat(binding.isBound()).isFalse().describedAs("Must not be bound");
 	}
 
 	/**
 	 * A simple test binder that creates queues for the destinations. Ignores groups.
 	 */
-	class TestBinder implements ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> {
+	class TestBinder implements
+			ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> {
 
 		private final Map<String, DirectChannel> destinations = new ConcurrentHashMap<>();
 
 		@Override
 		public Binding<MessageChannel> bindConsumer(String name, String group,
 				MessageChannel inboundBindTarget, ExtendedConsumerProperties properties) {
-			synchronized (destinations) {
-				if (!destinations.containsKey(name)) {
-					destinations.put(name, new DirectChannel());
+			synchronized (this.destinations) {
+				if (!this.destinations.containsKey(name)) {
+					this.destinations.put(name, new DirectChannel());
 				}
 			}
 			DirectHandler directHandler = new DirectHandler(inboundBindTarget);
-			destinations.get(name).subscribe(directHandler);
+			this.destinations.get(name).subscribe(directHandler);
 			return new TestBinding(name, directHandler);
 		}
 
-
 		@Override
 		public Binding<MessageChannel> bindProducer(String name,
-				MessageChannel outboundBindTarget, ExtendedProducerProperties properties) {
-			synchronized (destinations) {
-				if (!destinations.containsKey(name)) {
-					destinations.put(name, new DirectChannel());
+				MessageChannel outboundBindTarget,
+				ExtendedProducerProperties properties) {
+			synchronized (this.destinations) {
+				if (!this.destinations.containsKey(name)) {
+					this.destinations.put(name, new DirectChannel());
 				}
 			}
-			DirectHandler directHandler = new DirectHandler(destinations.get(name));
+			DirectHandler directHandler = new DirectHandler(this.destinations.get(name));
 			// for test purposes we can assume it is a SubscribableChannel
 			((SubscribableChannel) outboundBindTarget).subscribe(directHandler);
 			TestBinding binding = new TestBinding(name, directHandler);
-			producerBindings.add(binding);
+			ExtendedPropertiesBinderAwareChannelResolverTests.this.producerBindings
+					.add(binding);
 			return binding;
 		}
 
 		@Override
-		public ExtendedConsumerProperties getExtendedConsumerProperties(String channelName) {
+		public ExtendedConsumerProperties getExtendedConsumerProperties(
+				String channelName) {
 			return new ExtendedConsumerProperties(new ConsumerProperties());
 		}
 
 		@Override
-		public ExtendedProducerProperties getExtendedProducerProperties(String channelName) {
+		public ExtendedProducerProperties getExtendedProducerProperties(
+				String channelName) {
 			return new ExtendedProducerProperties(new ProducerProperties());
 		}
 
@@ -202,12 +215,13 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 
 			@Override
 			public void unbind() {
-				bound = false;
-				destinations.get(name).unsubscribe(directHandler);
+				this.bound = false;
+				TestBinder.this.destinations.get(this.name)
+						.unsubscribe(this.directHandler);
 			}
 
 			public boolean isBound() {
-				return bound;
+				return this.bound;
 			}
 		}
 	}

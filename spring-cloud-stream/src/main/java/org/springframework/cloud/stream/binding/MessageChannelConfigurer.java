@@ -19,7 +19,8 @@ package org.springframework.cloud.stream.binding;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * Interface to be implemented by the classes that configure the {@link Bindable} message channels.
+ * Interface to be implemented by the classes that configure the {@link Bindable} message
+ * channels.
  *
  * @author Ilayaperumal Gopinathan
  */

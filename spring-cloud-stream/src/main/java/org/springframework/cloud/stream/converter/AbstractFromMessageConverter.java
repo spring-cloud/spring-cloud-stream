@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
@@ -31,12 +30,12 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 
-
 /**
  * Base class for converters applied via Spring Integration 4.x data type channels.
  *
- * Extend this class to implement {@link org.springframework.messaging.converter.MessageConverter MessageConverters}
- * used with custom Message conversion. Only {@link #fromMessage} is supported.
+ * Extend this class to implement
+ * {@link org.springframework.messaging.converter.MessageConverter MessageConverters} used
+ * with custom Message conversion. Only {@link #fromMessage} is supported.
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -144,7 +143,7 @@ public abstract class AbstractFromMessageConverter extends AbstractMessageConver
 	}
 
 	public boolean supportsTargetMimeType(MimeType mimeType) {
-		for (MimeType targetMimeType : targetMimeTypes) {
+		for (MimeType targetMimeType : this.targetMimeTypes) {
 			if (targetMimeType.includes(mimeType)) {
 				return true;
 			}

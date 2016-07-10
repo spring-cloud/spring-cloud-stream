@@ -16,12 +16,17 @@
 
 package org.springframework.cloud.stream.partitioning;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -34,12 +39,6 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Marius Bogoevici
@@ -59,11 +58,13 @@ public class PartitionedConsumerTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedConsumer() {
-		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor.forClass(ConsumerProperties.class);
-		verify(binder).bindConsumer(eq("partIn"), anyString(), eq(testSink.input()), argumentCaptor.capture());
+		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor
+				.forClass(ConsumerProperties.class);
+		verify(this.binder).bindConsumer(eq("partIn"), anyString(),
+				eq(this.testSink.input()), argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getInstanceIndex(), equalTo(0));
 		Assert.assertThat(argumentCaptor.getValue().getInstanceCount(), equalTo(2));
-		verifyNoMoreInteractions(binder);
+		verifyNoMoreInteractions(this.binder);
 	}
 
 	@EnableBinding(Sink.class)

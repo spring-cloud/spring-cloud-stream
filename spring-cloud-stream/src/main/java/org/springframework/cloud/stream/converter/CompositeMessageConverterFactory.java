@@ -23,17 +23,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ObjectUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * A factory for creating an instance of {@link CompositeMessageConverter} for a given target MIME type
+ * A factory for creating an instance of {@link CompositeMessageConverter} for a given
+ * target MIME type
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -63,12 +63,11 @@ public class CompositeMessageConverterFactory {
 		initDefaultConverters();
 	}
 
-
 	private void initDefaultConverters() {
 		this.converters.add(new JsonToTupleMessageConverter());
-		this.converters.add(new TupleToJsonMessageConverter(objectMapper));
-		this.converters.add(new JsonToPojoMessageConverter(objectMapper));
-		this.converters.add(new PojoToJsonMessageConverter(objectMapper));
+		this.converters.add(new TupleToJsonMessageConverter(this.objectMapper));
+		this.converters.add(new JsonToPojoMessageConverter(this.objectMapper));
+		this.converters.add(new PojoToJsonMessageConverter(this.objectMapper));
 		this.converters.add(new ByteArrayToStringMessageConverter());
 		this.converters.add(new StringToByteArrayMessageConverter());
 		this.converters.add(new PojoToStringMessageConverter());
@@ -83,20 +82,19 @@ public class CompositeMessageConverterFactory {
 	 */
 	public CompositeMessageConverter getMessageConverterForType(MimeType targetMimeType) {
 		List<MessageConverter> targetMimeTypeConverters = new ArrayList<MessageConverter>();
-		for (AbstractFromMessageConverter converter : converters) {
+		for (AbstractFromMessageConverter converter : this.converters) {
 			if (converter.supportsTargetMimeType(targetMimeType)) {
 				targetMimeTypeConverters.add(converter);
 			}
 		}
 		if (CollectionUtils.isEmpty(targetMimeTypeConverters)) {
-			throw new ConversionException("No message converter is registered for "
-					+ targetMimeType.toString());
+			throw new ConversionException("No message converter is registered for " + targetMimeType.toString());
 		}
 		return new CompositeMessageConverter(targetMimeTypeConverters);
 	}
 
 	public CompositeMessageConverter getMessageConverterForAllRegistered() {
-		return new CompositeMessageConverter(new ArrayList<MessageConverter>(converters));
+		return new CompositeMessageConverter(new ArrayList<MessageConverter>(this.converters));
 	}
 
 	public Class<?>[] supportedDataTypes(MimeType targetMimeType) {
@@ -106,7 +104,7 @@ public class CompositeMessageConverterFactory {
 			supportedDataTypes.add(MessageConverterUtils.getJavaTypeForJavaObjectContentType(targetMimeType));
 		}
 		else {
-			for (AbstractFromMessageConverter converter : converters) {
+			for (AbstractFromMessageConverter converter : this.converters) {
 				if (converter.supportsTargetMimeType(targetMimeType)) {
 					Class<?>[] targetTypes = converter.supportedTargetTypes();
 					if (!ObjectUtils.isEmpty(targetTypes)) {
