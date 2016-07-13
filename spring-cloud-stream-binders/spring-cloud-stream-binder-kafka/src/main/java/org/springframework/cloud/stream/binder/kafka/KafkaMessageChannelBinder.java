@@ -314,6 +314,8 @@ public class KafkaMessageChannelBinder extends
 		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(configurationProperties.getRequiredAcks()));
 		additionalProps.put(ProducerConfig.LINGER_MS_CONFIG,
 				String.valueOf(properties.getExtension().getBatchTimeout()));
+		additionalProps.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG,
+				String.valueOf(properties.getExtension().getMaxRequestSize()));
 		ProducerFactoryBean<byte[], byte[]> producerFB = new ProducerFactoryBean<>(producerMetadata,
 				configurationProperties.getKafkaConnectionString(), additionalProps);
 

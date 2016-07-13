@@ -27,6 +27,8 @@ public class KafkaProducerProperties {
 
 	private int bufferSize = 16384;
 
+	private int maxRequestSize = 1048576;
+
 	private ProducerMetadata.CompressionType compressionType = ProducerMetadata.CompressionType.none;
 
 	private boolean sync;
@@ -39,6 +41,14 @@ public class KafkaProducerProperties {
 
 	public void setBufferSize(int bufferSize) {
 		this.bufferSize = bufferSize;
+	}
+
+	public int getMaxRequestSize() {
+		return maxRequestSize;
+	}
+
+	public void setMaxRequestSize(int maxRequestSize) {
+		this.maxRequestSize = maxRequestSize;
 	}
 
 	@NotNull
