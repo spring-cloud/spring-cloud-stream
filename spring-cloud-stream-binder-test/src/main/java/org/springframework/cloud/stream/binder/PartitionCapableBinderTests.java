@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.assertj.core.api.Condition;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -51,6 +52,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	protected static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
 	@Test
+	@Ignore
 	@SuppressWarnings("unchecked")
 	public void testAnonymousGroup() throws Exception {
 		B binder = getBinder();

@@ -266,27 +266,21 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	/**
-	 * Create and configure a retry template if the consumer 'maxAttempts' property is set.
+	 * Create and configure a retry template.
 	 * @param properties The properties.
-	 * @return The retry template, or null if retry is not enabled.
+	 * @return The retry template
 	 */
-	protected RetryTemplate buildRetryTemplateIfRetryEnabled(ConsumerProperties properties) {
-		int maxAttempts = properties.getMaxAttempts();
-		if (maxAttempts > 1) {
-			RetryTemplate template = new RetryTemplate();
-			SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-			retryPolicy.setMaxAttempts(maxAttempts);
-			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
-			backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
-			backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
-			template.setRetryPolicy(retryPolicy);
-			template.setBackOffPolicy(backOffPolicy);
-			return template;
-		}
-		else {
-			return null;
-		}
+	public RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
+		RetryTemplate template = new RetryTemplate();
+		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+		retryPolicy.setMaxAttempts(properties.getMaxAttempts());
+		ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+		backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
+		backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
+		backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
+		template.setRetryPolicy(retryPolicy);
+		template.setBackOffPolicy(backOffPolicy);
+		return template;
 	}
 
 	/**
