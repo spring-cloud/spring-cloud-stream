@@ -17,19 +17,21 @@
 package org.springframework.cloud.stream.converter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
+import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
-import org.springframework.util.ObjectUtils;
 
 
 /**
@@ -40,18 +42,20 @@ import org.springframework.util.ObjectUtils;
  */
 public class CompositeMessageConverterFactory {
 
+	private final Log log = LogFactory.getLog(CompositeMessageConverterFactory.class);
+
 	private final ObjectMapper objectMapper;
 
-	private final List<AbstractFromMessageConverter> converters;
+	private final List<MessageConverter> converters;
 
 	public CompositeMessageConverterFactory() {
-		this(Collections.<AbstractFromMessageConverter>emptyList(), new ObjectMapper());
+		this(Collections.<MessageConverter>emptyList(), new ObjectMapper());
 	}
 
 	/**
-	 * @param customConverters a list of {@link AbstractFromMessageConverter}
+	 * @param customConverters a list of {@link AbstractMessageConverter}
 	 */
-	public CompositeMessageConverterFactory(List<? extends AbstractFromMessageConverter> customConverters,
+	public CompositeMessageConverterFactory(List<? extends MessageConverter> customConverters,
 			ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		if (!CollectionUtils.isEmpty(customConverters)) {
@@ -65,56 +69,52 @@ public class CompositeMessageConverterFactory {
 
 
 	private void initDefaultConverters() {
-		this.converters.add(new JsonToTupleMessageConverter());
-		this.converters.add(new TupleToJsonMessageConverter(objectMapper));
-		this.converters.add(new JsonToPojoMessageConverter(objectMapper));
-		this.converters.add(new PojoToJsonMessageConverter(objectMapper));
-		this.converters.add(new ByteArrayToStringMessageConverter());
-		this.converters.add(new StringToByteArrayMessageConverter());
-		this.converters.add(new PojoToStringMessageConverter());
-		this.converters.add(new JavaToSerializedMessageConverter());
-		this.converters.add(new SerializedToJavaMessageConverter());
+		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));
+
+		MappingJackson2MessageConverter jsonMessageConverter = new MappingJackson2MessageConverter();
+		jsonMessageConverter.setSerializedPayloadClass(String.class);
+		if (this.objectMapper != null) {
+			jsonMessageConverter.setObjectMapper(this.objectMapper);
+		}
+
+		this.converters.add(jsonMessageConverter);
+		this.converters.add(new ByteArrayMessageConverter());
+
+		this.converters.add(new StringMessageConverter());
+		this.converters.add(new JavaSerializationMessageConverter());
 	}
 
 	/**
 	 * Creation method.
-	 * @param targetMimeType the target MIME type
+	 * @param mimeType the target MIME type
 	 * @return a converter for the target MIME type
 	 */
-	public CompositeMessageConverter getMessageConverterForType(MimeType targetMimeType) {
-		List<MessageConverter> targetMimeTypeConverters = new ArrayList<MessageConverter>();
-		for (AbstractFromMessageConverter converter : converters) {
-			if (converter.supportsTargetMimeType(targetMimeType)) {
-				targetMimeTypeConverters.add(converter);
-			}
-		}
-		if (CollectionUtils.isEmpty(targetMimeTypeConverters)) {
-			throw new ConversionException("No message converter is registered for "
-					+ targetMimeType.toString());
-		}
-		return new CompositeMessageConverter(targetMimeTypeConverters);
-	}
-
-	public CompositeMessageConverter getMessageConverterForAllRegistered() {
-		return new CompositeMessageConverter(new ArrayList<MessageConverter>(converters));
-	}
-
-	public Class<?>[] supportedDataTypes(MimeType targetMimeType) {
-		Set<Class<?>> supportedDataTypes = new HashSet<>();
-		// Make sure to check if the target type is of explicit java object type.
-		if (MessageConverterUtils.X_JAVA_OBJECT.includes(targetMimeType)) {
-			supportedDataTypes.add(MessageConverterUtils.getJavaTypeForJavaObjectContentType(targetMimeType));
-		}
-		else {
-			for (AbstractFromMessageConverter converter : converters) {
-				if (converter.supportsTargetMimeType(targetMimeType)) {
-					Class<?>[] targetTypes = converter.supportedTargetTypes();
-					if (!ObjectUtils.isEmpty(targetTypes)) {
-						supportedDataTypes.addAll(Arrays.asList(targetTypes));
+	public CompositeMessageConverter getMessageConverterForType(MimeType mimeType) {
+		List<MessageConverter> converters = new ArrayList<>();
+		for (MessageConverter converter : this.converters) {
+			if (converter instanceof AbstractMessageConverter) {
+				for (MimeType type : ((AbstractMessageConverter) converter).getSupportedMimeTypes()) {
+					if (type.includes(mimeType)) {
+						converters.add(converter);
 					}
 				}
 			}
+			else {
+				if (this.log.isDebugEnabled()) {
+					this.log.debug("Ommitted " + converter + " of type " + converter.getClass().toString() +
+							" for '" + mimeType.toString() + "' as it is not an AbstractMessageConverter");
+				}
+			}
 		}
-		return supportedDataTypes.toArray(new Class<?>[supportedDataTypes.size()]);
+		if (CollectionUtils.isEmpty(converters)) {
+			throw new ConversionException("No message converter is registered for "
+					+ mimeType.toString());
+		}
+		return new CompositeMessageConverter(converters);
 	}
+
+	public CompositeMessageConverter getMessageConverterForAllRegistered() {
+		return new CompositeMessageConverter(new ArrayList<>(this.converters));
+	}
+
 }

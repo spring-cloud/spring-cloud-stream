@@ -48,7 +48,6 @@ import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.SingleChannelBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
-import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,6 +59,7 @@ import org.springframework.integration.config.IntegrationEvaluationContextFactor
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.json.JsonPropertyAccessor;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
@@ -88,7 +88,7 @@ public class ChannelBindingServiceConfiguration {
 	 * User defined custom message converters
 	 */
 	@Autowired(required = false)
-	private List<AbstractFromMessageConverter> customMessageConverters;
+	private List<MessageConverter> customMessageConverters;
 
 	@Bean
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
@@ -160,7 +160,7 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	public CompositeMessageConverterFactory compositeMessageConverterFactory() {
-		List<AbstractFromMessageConverter> messageConverters = new ArrayList<>();
+		List<MessageConverter> messageConverters = new ArrayList<>();
 		if (!CollectionUtils.isEmpty(this.customMessageConverters)) {
 			messageConverters.addAll(Collections.unmodifiableCollection(this.customMessageConverters));
 		}

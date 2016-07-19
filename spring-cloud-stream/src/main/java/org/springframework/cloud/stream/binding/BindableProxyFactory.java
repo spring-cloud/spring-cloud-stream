@@ -102,25 +102,26 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
+		Assert.notNull(BindableProxyFactory.this.channelFactory, "Channel Factory cannot be null");
+		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
-				Assert.notNull(channelFactory, "Channel Factory cannot be null");
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
 					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
 					validateChannelType(method.getReturnType());
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
-						inputHolders.put(name, new ChannelHolder(channelFactory.createSubscribableChannel(name), true));
+						BindableProxyFactory.this.inputHolders.put(name, new ChannelHolder(
+								BindableProxyFactory.this.channelFactory.createInputChannel(name), true));
 					}
 					else {
-						inputHolders.put(name, new ChannelHolder(sharedChannel, false));
+						BindableProxyFactory.this.inputHolders.put(name, new ChannelHolder(sharedChannel, false));
 					}
 				}
 			}
 		});
-		ReflectionUtils.doWithMethods(type, new ReflectionUtils.MethodCallback() {
+		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
@@ -129,10 +130,11 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 					validateChannelType(method.getReturnType());
 					MessageChannel sharedChannel = locateSharedChannel(name);
 					if (sharedChannel == null) {
-						outputHolders.put(name, new ChannelHolder(channelFactory.createSubscribableChannel(name), true));
+						BindableProxyFactory.this.outputHolders.put(name, new ChannelHolder(
+								BindableProxyFactory.this.channelFactory.createOutputChannel(name), true));
 					}
 					else {
-						outputHolders.put(name, new ChannelHolder(sharedChannel, false));
+						BindableProxyFactory.this.outputHolders.put(name, new ChannelHolder(sharedChannel, false));
 					}
 				}
 			}

@@ -29,15 +29,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.integration.support.converter.DefaultDatatypeChannelMessageConverter;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.MimeType;
 
@@ -59,19 +61,19 @@ public class CustomMessageConverterTests {
 	private BinderFactory binderFactory;
 
 	@Autowired
-	private List<AbstractFromMessageConverter> customMessageConverters;
+	private List<MessageConverter> customMessageConverters;
 
 	@Test
 	public void testCustomMessageConverter() throws Exception {
-		assertThat(customMessageConverters).hasSize(2);
-		assertThat(customMessageConverters).extracting("class").contains(FooToBarConverter.class,
-				BarToFooConverter.class);
+		assertThat(customMessageConverters).hasSize(3);
+		assertThat(customMessageConverters).extracting("class").contains(FooConverter.class,
+				BarConverter.class, DefaultDatatypeChannelMessageConverter.class);
 		testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
 		@SuppressWarnings("unchecked")
 		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null))
 				.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
 		Assert.assertThat(received, notNullValue());
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("test/bar");
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("test/foo"));
 	}
 
 	@EnableBinding(Source.class)
@@ -81,39 +83,34 @@ public class CustomMessageConverterTests {
 	public static class TestSource {
 
 		@Bean
-		public AbstractFromMessageConverter fooConverter() {
-			return new FooToBarConverter();
+		public MessageConverter fooConverter() {
+			return new FooConverter();
 		}
 
 		@Bean
-		public AbstractFromMessageConverter barConverter() {
-			return new BarToFooConverter();
+		public MessageConverter barConverter() {
+			return new BarConverter();
 		}
 	}
 
-	public static class FooToBarConverter extends AbstractFromMessageConverter {
+	public static class FooConverter extends AbstractMessageConverter {
 
-		public FooToBarConverter() {
-			super(MimeType.valueOf("test/bar"));
+		public FooConverter() {
+			super(MimeType.valueOf("test/foo"));
 		}
 
 		@Override
-		protected Class<?>[] supportedTargetTypes() {
-			return new Class[] {Bar.class};
+		protected boolean supports(Class<?> clazz) {
+			return clazz.equals(Foo.class);
 		}
 
 		@Override
-		protected Class<?>[] supportedPayloadTypes() {
-			return new Class<?>[] {Foo.class};
-		}
-
-		@Override
-		public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
 			Object result = null;
 			try {
-				if (message.getPayload() instanceof Foo) {
-					Foo fooPayload = (Foo) message.getPayload();
-					result = new Bar(fooPayload.test);
+				if (payload instanceof Foo) {
+					Foo fooPayload = (Foo) payload;
+					result = fooPayload.test.getBytes();
 				}
 			}
 			catch (Exception e) {
@@ -124,29 +121,25 @@ public class CustomMessageConverterTests {
 		}
 	}
 
-	public static class BarToFooConverter extends AbstractFromMessageConverter {
+	public static class BarConverter extends AbstractMessageConverter {
 
-		public BarToFooConverter() {
-			super(MimeType.valueOf("test/foo"));
+		public BarConverter() {
+			super(MimeType.valueOf("test/bar"));
+		}
+
+
+		@Override
+		protected boolean supports(Class<?> clazz) {
+			return clazz.equals(Bar.class);
 		}
 
 		@Override
-		protected Class<?>[] supportedTargetTypes() {
-			return new Class[] {Foo.class};
-		}
-
-		@Override
-		protected Class<?>[] supportedPayloadTypes() {
-			return new Class<?>[] {Bar.class};
-		}
-
-		@Override
-		public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
 			Object result = null;
 			try {
-				if (message.getPayload() instanceof Bar) {
-					Bar barPayload = (Bar) message.getPayload();
-					result = new Foo(barPayload.testing);
+				if (payload instanceof Bar) {
+					Bar barPayload = (Bar) payload;
+					result = barPayload.testing.getBytes();
 				}
 			}
 			catch (Exception e) {

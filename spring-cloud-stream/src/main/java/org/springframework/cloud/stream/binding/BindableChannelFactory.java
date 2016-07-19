@@ -21,18 +21,24 @@ import org.springframework.messaging.SubscribableChannel;
 /**
  * Defines methods to create/configure the {@link org.springframework.messaging.MessageChannel}s defined
  * in {@link org.springframework.cloud.stream.annotation.EnableBinding}.
- *
  * @author Ilayaperumal Gopinathan
  */
 public interface BindableChannelFactory {
 
 	/**
-	 * Create a {@link SubscribableChannel} that will be bound via the message channel
-	 * {@link org.springframework.cloud.stream.binder.Binder}.
-	 *
+	 * Create an input {@link SubscribableChannel} that will be bound via
+	 * the message channel {@link org.springframework.cloud.stream.binder.Binder}.
 	 * @param name name of the message channel
 	 * @return subscribable message channel
 	 */
-	SubscribableChannel createSubscribableChannel(String name);
+	SubscribableChannel createInputChannel(String name);
+
+	/**
+	 * Create an output {@link SubscribableChannel} that will be bound via
+	 * the message channel {@link org.springframework.cloud.stream.binder.Binder}.
+	 * @param name name of the message channel
+	 * @return subscribable message channel
+	 */
+	SubscribableChannel createOutputChannel(String name);
 
 }
