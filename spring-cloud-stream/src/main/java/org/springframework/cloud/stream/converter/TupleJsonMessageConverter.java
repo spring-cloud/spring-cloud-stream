@@ -22,18 +22,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.tuple.Tuple;
-import org.springframework.util.MimeTypeUtils;
-
+import org.springframework.tuple.TupleBuilder;
 
 /**
  * A {@link org.springframework.messaging.converter.MessageConverter}
  * to convert a {@link Tuple} to a JSON String
- *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  */
-public class TupleToJsonMessageConverter extends AbstractFromMessageConverter {
+public class TupleJsonMessageConverter extends AbstractMessageConverter {
 
 	@Value("${typeconversion.json.prettyPrint:false}")
 	private volatile boolean prettyPrint;
@@ -44,32 +44,27 @@ public class TupleToJsonMessageConverter extends AbstractFromMessageConverter {
 		this.prettyPrint = prettyPrint;
 	}
 
-	public TupleToJsonMessageConverter(ObjectMapper objectMapper) {
-		super(MimeTypeUtils.APPLICATION_JSON);
+	public TupleJsonMessageConverter(ObjectMapper objectMapper) {
+		super(MessageConverterUtils.X_SPRING_TUPLE);
 		this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
 	}
 
 	@Override
-	protected Class<?>[] supportedTargetTypes() {
-		return new Class<?>[] { String.class };
+	protected boolean supports(Class<?> clazz) {
+		return Tuple.class.isAssignableFrom(clazz);
 	}
 
 	@Override
-	protected Class<?>[] supportedPayloadTypes() {
-		return new Class<?>[] { Tuple.class };
-	}
-
-	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
-		Tuple t = (Tuple) message.getPayload();
+	protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+		Tuple t = (Tuple) payload;
 		String json;
-		if (prettyPrint) {
+		if (this.prettyPrint) {
 			try {
-				Object tmp = objectMapper.readValue(t.toString(), Object.class);
-				json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tmp);
+				Object tmp = this.objectMapper.readValue(t.toString(), Object.class);
+				json = this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tmp);
 			}
 			catch (IOException e) {
-				logger.error(e.getMessage(), e);
+				this.logger.error(e.getMessage(), e);
 				return null;
 			}
 		}
@@ -77,6 +72,18 @@ public class TupleToJsonMessageConverter extends AbstractFromMessageConverter {
 			json = t.toString();
 		}
 		return json;
+	}
+
+	@Override
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		String source;
+		if (message.getPayload() instanceof byte[]) {
+			source = new String((byte[]) message.getPayload());
+		}
+		else {
+			source = (String) message.getPayload();
+		}
+		return TupleBuilder.fromString(source);
 	}
 
 }

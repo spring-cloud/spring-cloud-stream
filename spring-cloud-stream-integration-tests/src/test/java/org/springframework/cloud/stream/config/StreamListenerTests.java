@@ -129,7 +129,7 @@ public class StreamListenerTests {
 		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isEqualTo("{\"qux\":\"barbar" + id + "\"}");
-		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
+		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, String.class)).startsWith("application/json");
 		context.close();
 	}
 
@@ -224,7 +224,7 @@ public class StreamListenerTests {
 		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isEqualTo("{\"qux\":\"barbar" + id + "\"}");
-		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
+		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, String.class)).startsWith("application/json");
 		context.close();
 	}
 
