@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 
 import org.springframework.messaging.Message;
@@ -33,18 +34,21 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 public class JavaSerializationMessageConverter extends AbstractMessageConverter {
 
 	public JavaSerializationMessageConverter() {
-		super(Arrays.asList(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, MessageConverterUtils.X_JAVA_OBJECT));
+		super(Arrays.asList(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT));
 	}
 
 	@Override
 	protected boolean supports(Class<?> clazz) {
-		return true;
+		return Serializable.class.isAssignableFrom(clazz);
 	}
 
 	@Override
 	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
-		ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) (message.getPayload()));
+		if (!(message.getPayload() instanceof byte[])) {
+			return null;
+		}
 		try {
+			ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) (message.getPayload()));
 			return new ObjectInputStream(bis).readObject();
 		}
 		catch (Exception e) {

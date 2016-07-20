@@ -81,7 +81,7 @@ public class TupleJsonMessageConverter extends AbstractMessageConverter {
 			source = new String((byte[]) message.getPayload());
 		}
 		else {
-			source = (String) message.getPayload();
+			source = message.getPayload().toString();
 		}
 		return TupleBuilder.fromString(source);
 	}
