@@ -35,9 +35,17 @@ public class DefaultBindableChannelFactory implements BindableChannelFactory {
 	}
 
 	@Override
-	public SubscribableChannel createSubscribableChannel(String name) {
+	public SubscribableChannel createInputChannel(String name) {
 		SubscribableChannel subscribableChannel = new DirectChannel();
-		messageChannelConfigurer.configureMessageChannel(subscribableChannel, name);
+		this.messageChannelConfigurer.configureInputChannel(subscribableChannel, name);
 		return subscribableChannel;
 	}
+
+	@Override
+	public SubscribableChannel createOutputChannel(String name) {
+		SubscribableChannel subscribableChannel = new DirectChannel();
+		this.messageChannelConfigurer.configureOutputChannel(subscribableChannel, name);
+		return subscribableChannel;
+	}
+
 }

@@ -25,9 +25,16 @@ import org.springframework.messaging.MessageChannel;
 public interface MessageChannelConfigurer {
 
 	/**
-	 * Configure the given message channel.
+	 * Configure the given input message channel.
 	 * @param messageChannel the message channel
 	 * @param channelName    name of the message channel
 	 */
-	void configureMessageChannel(MessageChannel messageChannel, String channelName);
+	void configureInputChannel(MessageChannel messageChannel, String channelName);
+
+	/**
+	 * Configure the given output message channel.
+	 * @param messageChannel the message channel
+	 * @param channelName    name of the message channel
+	 */
+	void configureOutputChannel(MessageChannel messageChannel, String channelName);
 }

@@ -84,7 +84,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
 						|| ObjectUtils.containsElement(dynamicDestinations, channelName);
 				if (dynamicAllowed) {
-					channel = this.bindableChannelFactory.createSubscribableChannel(channelName);
+					channel = this.bindableChannelFactory.createOutputChannel(channelName);
 					this.beanFactory.registerSingleton(channelName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
 					Binding<MessageChannel> binding = this.channelBindingService.bindProducer(channel, channelName);
