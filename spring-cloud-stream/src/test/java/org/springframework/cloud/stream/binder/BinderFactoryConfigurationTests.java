@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.aggregate.AggregatorParentConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.stub1.StubBinder1;
 import org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration;
@@ -43,6 +44,7 @@ import static org.junit.Assert.fail;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class BinderFactoryConfigurationTests {
 
@@ -56,6 +58,28 @@ public class BinderFactoryConfigurationTests {
 			assertThat(e.getMessage()).contains(
 					"Cannot create binder factory, no `META-INF/spring.binders` resources found on the classpath");
 		}
+	}
+
+	@Test
+	public void loadBinderTypeRegistryWithNonSelfContainedAggregatorApp() throws Exception {
+		try {
+			createBinderTestContextWithSources(
+					new Class[]{SimpleApplication.class, AggregatorParentConfiguration.class}, new String[]{},
+					"spring.cloud.stream.internal.selfContained=false");
+			fail();
+		}
+		catch (BeanCreationException e) {
+			assertThat(e.getMessage()).contains(
+					"Cannot create binder factory, no `META-INF/spring.binders` resources found on the classpath");
+		}
+
+	}
+
+	@Test
+	public void loadBinderTypeRegistryWithSelfContainedAggregatorApp() throws Exception {
+			createBinderTestContextWithSources(
+					new Class[] { SimpleApplication.class, AggregatorParentConfiguration.class}, new String[] {},
+					"spring.cloud.stream.internal.selfContained=true");
 	}
 
 	@Test
@@ -208,7 +232,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(defaultBinder).isSameAs(binder2);
 	}
 
-	private static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
+	private static ClassLoader createClassLoader(String[] additionalClasspathDirectories,
 			String... properties) throws IOException {
 		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ?
 				new URL[0] : new URL[additionalClasspathDirectories.length];
@@ -217,7 +241,12 @@ public class BinderFactoryConfigurationTests {
 				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i]).getURL().toString() + "/");
 			}
 		}
-		ClassLoader classLoader = new URLClassLoader(urls, BinderFactoryConfigurationTests.class.getClassLoader());
+		return new URLClassLoader(urls, BinderFactoryConfigurationTests.class.getClassLoader());
+	}
+
+	private static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
+			String... properties) throws IOException {
+		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
 		return new SpringApplicationBuilder(SimpleApplication.class)
 				.resourceLoader(new DefaultResourceLoader(classLoader))
 				.properties(properties)
@@ -225,6 +254,16 @@ public class BinderFactoryConfigurationTests {
 				.run();
 	}
 
+
+	private static ConfigurableApplicationContext createBinderTestContextWithSources(Class[] sources, String[] additionalClasspathDirectories,
+			String... properties) throws IOException {
+		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
+		return new SpringApplicationBuilder(sources)
+				.resourceLoader(new DefaultResourceLoader(classLoader))
+				.properties(properties)
+				.web(false)
+				.run();
+	}
 	@Import({BinderFactoryConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
 	@EnableBinding
 	public static class SimpleApplication {

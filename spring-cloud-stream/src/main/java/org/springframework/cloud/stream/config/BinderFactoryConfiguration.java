@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -46,9 +47,17 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @Configuration
 public class BinderFactoryConfiguration {
+
+	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
+
+	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".selfContained";
+
+	@Value("${" + SELF_CONTAINED_APP_PROPERTY_NAME + ":}")
+	private String selfContained;
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
@@ -100,7 +109,7 @@ public class BinderFactoryConfiguration {
 		}
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
-			if (resources == null || !resources.hasMoreElements()) {
+			if (!Boolean.valueOf(this.selfContained) && (resources == null || !resources.hasMoreElements())) {
 				throw new BeanCreationException("Cannot create binder factory, no `META-INF/spring.binders` " +
 						"resources found on the classpath");
 			}
@@ -135,5 +144,4 @@ public class BinderFactoryConfiguration {
 		}
 		return parsedBinderConfigurations;
 	}
-
 }
