@@ -42,6 +42,8 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -129,7 +131,7 @@ public class StreamListenerTests {
 		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isEqualTo("{\"qux\":\"barbar" + id + "\"}");
-		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, String.class)).startsWith("application/json");
+		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class).includes(MimeTypeUtils.APPLICATION_JSON));
 		context.close();
 	}
 
@@ -224,7 +226,7 @@ public class StreamListenerTests {
 		Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isEqualTo("{\"qux\":\"barbar" + id + "\"}");
-		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, String.class)).startsWith("application/json");
+		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class).includes(MimeTypeUtils.APPLICATION_JSON));
 		context.close();
 	}
 

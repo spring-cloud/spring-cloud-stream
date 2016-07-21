@@ -17,8 +17,6 @@
 package org.springframework.cloud.stream.binding;
 
 
-import java.util.Collections;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -39,7 +37,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConversionException;
-import org.springframework.messaging.converter.SmartMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.Assert;
@@ -111,75 +109,6 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		}
 	}
 
-	/**
-	 * A {@link SmartMessageConverter} that delegates to another {@link SmartMessageConverter} for conversion.
-	 *
-	 * Will wrap the returning result of the conversion into a {@link Message} if it is not a {@link Message}
-	 * instance already.
-	 */
-	private final class MessageWrappingMessageConverter implements SmartMessageConverter {
-
-		private final MimeType contentType;
-
-		private final SmartMessageConverter delegate;
-
-		private MessageWrappingMessageConverter(SmartMessageConverter delegate, MimeType contentType) {
-			Assert.notNull(delegate, "Delegate converter cannot be null");
-			Assert.notNull(contentType, "Content type cannot be null");
-			this.delegate = delegate;
-			this.contentType = contentType;
-		}
-
-		@Override
-		public Object fromMessage(Message<?> message, Class<?> targetClass) {
-			Object converted = this.delegate.fromMessage(message, targetClass);
-			if (converted instanceof Message) {
-				return converted;
-			}
-			else if (converted != null) {
-				return build(converted, message.getHeaders());
-			}
-			else {
-				return null;
-			}
-		}
-
-		@Override
-		public Object fromMessage(Message<?> message, Class<?> targetClass, Object conversionHint) {
-			Object converted = this.delegate.fromMessage(message, targetClass, conversionHint);
-			if (converted == null || converted instanceof Message) {
-				return converted;
-			}
-			else {
-				return build(converted, message.getHeaders());
-			}
-		}
-
-		@Override
-		public Message<?> toMessage(Object payload, MessageHeaders headers) {
-			return this.delegate.toMessage(payload, headers);
-		}
-
-		@Override
-		public Message<?> toMessage(Object payload, MessageHeaders headers, Object conversionHint) {
-			return this.delegate.toMessage(payload, headers, conversionHint);
-		}
-
-		/**
-		 * Convenience method to construct a converted message
-		 * @param payload the converted payload
-		 * @param headers the existing message headers
-		 * @return the converted message
-		 */
-		protected Object build(Object payload, MessageHeaders headers) {
-			MimeType messageContentType = MessageConverterUtils.X_JAVA_OBJECT.equals(this.contentType) ?
-					MessageConverterUtils.javaObjectMimeType(payload.getClass()) : this.contentType;
-			return MessageConverterConfigurer.this.messageBuilderFactory.withPayload(payload).copyHeaders(headers)
-					.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
-							messageContentType.toString()))
-					.build();
-		}
-	}
 
 	private final class ContentTypeConvertingInterceptor extends ChannelInterceptorAdapter {
 
@@ -191,7 +120,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		private final Class<?> klazz;
 
-		private final MessageWrappingMessageConverter messageConverter;
+		private final MessageConverter messageConverter;
 
 		private ContentTypeConvertingInterceptor(String contentType, boolean input) {
 			this.contentType = contentType;
@@ -212,9 +141,9 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			else {
 				this.klazz = byte[].class;
 			}
-			this.messageConverter = new MessageWrappingMessageConverter(
-						MessageConverterConfigurer.this.compositeMessageConverterFactory
-								.getMessageConverterForType(this.mimeType), this.mimeType);
+			this.messageConverter =
+					MessageConverterConfigurer.this.compositeMessageConverterFactory
+							.getMessageConverterForType(this.mimeType);
 		}
 
 		@Override
@@ -234,27 +163,21 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			}
 			else {
 				Object converted = this.input ? this.messageConverter.fromMessage(message, this.klazz)
-						: this.messageConverter.toMessage(message.getPayload(), message.getHeaders(), null);
-				if (converted != null) {
-					Message<?> convertedMessage = (Message<?>) converted;
-					Object contentType = convertedMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-					if (contentType instanceof MimeType) {
-						sentMessage = MessageConverterConfigurer.this.messageBuilderFactory
-								.fromMessage(convertedMessage).setHeader(
-										MessageHeaders.CONTENT_TYPE,
-										contentType.toString()).build();
-					}
-					else {
-						sentMessage = convertedMessage;
-					}
+						: this.messageConverter.toMessage(message.getPayload(), message.getHeaders());
+				if (converted instanceof Message) {
+					sentMessage = (Message<?>) converted;
+				}
+				else {
+					sentMessage = MessageConverterConfigurer.this.messageBuilderFactory.withPayload(converted)
+							.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE,
+
+									this.mimeType).build();
 				}
 			}
-			if (sentMessage != null) {
-				return sentMessage;
-			}
-			else {
+			if (sentMessage == null) {
 				throw new MessageConversionException("Cannot convert " + message + " to " + this.contentType);
 			}
+			return sentMessage;
 		}
 	}
 

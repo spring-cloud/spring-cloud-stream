@@ -73,7 +73,7 @@ public class CustomMessageConverterTests {
 		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null))
 				.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
 		Assert.assertThat(received, notNullValue());
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("test/foo");
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("test/foo"));
 	}
 
 	@EnableBinding(Source.class)
