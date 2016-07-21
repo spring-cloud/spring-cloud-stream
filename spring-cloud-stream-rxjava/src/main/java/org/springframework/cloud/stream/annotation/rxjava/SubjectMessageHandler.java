@@ -62,6 +62,7 @@ import org.springframework.util.ClassUtils;
  * @author Marius Bogoevici
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
+@Deprecated
 public class SubjectMessageHandler extends AbstractMessageProducingHandler implements SmartLifecycle {
 
 	private final Log logger = LogFactory.getLog(getClass());
@@ -83,10 +84,10 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 
 	@Override
 	public synchronized void start() {
-		if (!running) {
-			subject = new SerializedSubject(PublishSubject.create());
-			Observable<?> outputStream = processor.process(subject);
-			subscription = outputStream.subscribe(new Action1<Object>() {
+		if (!this.running) {
+			this.subject = new SerializedSubject(PublishSubject.create());
+			Observable<?> outputStream = this.processor.process(this.subject);
+			this.subscription = outputStream.subscribe(new Action1<Object>() {
 
 				@Override
 				public void call(Object outputObject) {
@@ -101,22 +102,23 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 
 				@Override
 				public void call(Throwable throwable) {
-					logger.error(throwable.getMessage(), throwable);
+					SubjectMessageHandler.this.logger.error(throwable.getMessage(), throwable);
 				}
 			}, new Action0() {
 
 				@Override
 				public void call() {
-					logger.info("Subscription close for [" + subscription + "]");
+					SubjectMessageHandler.this.logger
+							.info("Subscription close for [" + SubjectMessageHandler.this.subscription + "]");
 				}
 			});
-			running = true;
+			this.running = true;
 		}
 	}
 
 	@Override
 	public synchronized boolean isRunning() {
-		return running;
+		return this.running;
 	}
 
 	@Override
@@ -126,7 +128,7 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 
 	@Override
 	public void stop(Runnable callback) {
-		if (running) {
+		if (this.running) {
 			stop();
 			if (callback != null) {
 				callback.run();
@@ -141,17 +143,17 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 
 	@Override
 	protected void handleMessageInternal(Message<?> message) throws Exception {
-		subject.onNext(message.getPayload());
+		this.subject.onNext(message.getPayload());
 	}
 
 	@Override
 	public synchronized void stop() {
-		if (running) {
-			subject.onCompleted();
-			subscription.unsubscribe();
-			subscription = null;
-			subject = null;
-			running = false;
+		if (this.running) {
+			this.subject.onCompleted();
+			this.subscription.unsubscribe();
+			this.subscription = null;
+			this.subject = null;
+			this.running = false;
 		}
 	}
 }
