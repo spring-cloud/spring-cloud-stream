@@ -51,7 +51,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Marius Bogoevici
  */
-public class StreamListenerTests {
+public class StreamListenerWithHandlerTests {
 
 	@Test
 	public void testContentTypeConversion() throws Exception {
@@ -240,8 +240,8 @@ public class StreamListenerTests {
 
 		@StreamListener(Sink.INPUT)
 		public void receive(FooPojo fooPojo) {
-			receivedArguments.add(fooPojo);
-			latch.countDown();
+			this.receivedArguments.add(fooPojo);
+			this.latch.countDown();
 		}
 	}
 
@@ -254,7 +254,7 @@ public class StreamListenerTests {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public String receive(FooPojo fooPojo) {
-			receivedPojos.add(fooPojo);
+			this.receivedPojos.add(fooPojo);
 			return fooPojo.getBar();
 		}
 	}
@@ -268,7 +268,7 @@ public class StreamListenerTests {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public BazPojo receive(FooPojo fooPojo) {
-			receivedPojos.add(fooPojo);
+			this.receivedPojos.add(fooPojo);
 			BazPojo bazPojo = new BazPojo();
 			bazPojo.setQux(fooPojo.getBar());
 			return bazPojo;
@@ -285,9 +285,9 @@ public class StreamListenerTests {
 		public void receive(@Payload FooPojo fooPojo,
 				@Headers Map<String, Object> headers,
 				@Header(MessageHeaders.CONTENT_TYPE) String contentType) {
-			receivedArguments.add(fooPojo);
-			receivedArguments.add(headers);
-			receivedArguments.add(contentType);
+			this.receivedArguments.add(fooPojo);
+			this.receivedArguments.add(headers);
+			this.receivedArguments.add(contentType);
 		}
 	}
 
@@ -300,7 +300,7 @@ public class StreamListenerTests {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public Message<?> receive(FooPojo fooPojo) {
-			receivedPojos.add(fooPojo);
+			this.receivedPojos.add(fooPojo);
 			BazPojo bazPojo = new BazPojo();
 			bazPojo.setQux(fooPojo.getBar());
 			return MessageBuilder.withPayload(bazPojo).setHeader("foo", "bar").build();
@@ -316,7 +316,7 @@ public class StreamListenerTests {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public BazPojo receive(Message<String> fooMessage) {
-			receivedMessages.add(fooMessage);
+			this.receivedMessages.add(fooMessage);
 			BazPojo bazPojo = new BazPojo();
 			bazPojo.setQux(fooMessage.getPayload());
 			return bazPojo;
@@ -353,7 +353,7 @@ public class StreamListenerTests {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public BazPojo receive(FooPojo fooMessage) {
-			receivedPojos.add(fooMessage);
+			this.receivedPojos.add(fooMessage);
 			BazPojo bazPojo = new BazPojo();
 			bazPojo.setQux(fooMessage.getBar());
 			return bazPojo;
@@ -365,7 +365,7 @@ public class StreamListenerTests {
 		private String bar;
 
 		public String getBar() {
-			return bar;
+			return this.bar;
 		}
 
 		public void setBar(String bar) {
@@ -378,7 +378,7 @@ public class StreamListenerTests {
 		private String qux;
 
 		public String getQux() {
-			return qux;
+			return this.qux;
 		}
 
 		public void setQux(String qux) {

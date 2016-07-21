@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Import;
  * annotated is expected to provide a bean that implements {@link RxJavaProcessor}.
  *
  * @author Ilayaperumal Gopinathan
+ * @deprecated in favor of {@link org.springframework.cloud.stream.annotation.StreamListener} with reactive types
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -39,5 +40,6 @@ import org.springframework.context.annotation.Import;
 @Inherited
 @EnableBinding(Processor.class)
 @Import(RxJavaProcessorConfiguration.class)
+@Deprecated
 public @interface EnableRxJavaProcessor {
 }
