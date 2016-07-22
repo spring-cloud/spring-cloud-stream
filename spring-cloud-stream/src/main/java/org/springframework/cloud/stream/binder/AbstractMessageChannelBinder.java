@@ -21,6 +21,7 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.FixedSubscriberChannel;
+import org.springframework.integration.context.IntegrationObjectSupport;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.handler.AbstractMessageHandler;
@@ -179,6 +180,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			bridge.setBeanName("bridge." + name);
 			consumerEndpoint = createConsumerEndpoint(name, group, destination, properties);
 			consumerEndpoint.setOutputChannel(bridge);
+			if(consumerEndpoint instanceof IntegrationObjectSupport) {
+				((IntegrationObjectSupport) consumerEndpoint).afterPropertiesSet();
+			}
 			if (consumerEndpoint instanceof Lifecycle) {
 				((Lifecycle) consumerEndpoint).start();
 			}
