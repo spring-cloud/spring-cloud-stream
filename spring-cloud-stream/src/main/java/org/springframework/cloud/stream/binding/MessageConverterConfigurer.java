@@ -126,7 +126,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			this.contentType = contentType;
 			this.mimeType = MessageConverterUtils.getMimeType(contentType);
 			this.input = input;
-			if (MessageConverterUtils.X_JAVA_OBJECT.includes(this.mimeType)) {
+			if (MessageConverterUtils.X_JAVA_OBJECT.equals(this.mimeType)) {
 				this.klazz =
 						MessageConverterUtils
 								.getJavaTypeForJavaObjectContentType(this.mimeType);

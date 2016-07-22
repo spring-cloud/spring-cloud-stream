@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
@@ -39,6 +41,8 @@ import org.springframework.util.MimeType;
  * @author Marius Bogoevici
  */
 public class CompositeMessageConverterFactory {
+
+	private final Log log = LogFactory.getLog(CompositeMessageConverterFactory.class);
 
 	private final ObjectMapper objectMapper;
 
@@ -93,6 +97,12 @@ public class CompositeMessageConverterFactory {
 					if (type.includes(mimeType)) {
 						converters.add(converter);
 					}
+				}
+			}
+			else {
+				if (this.log.isDebugEnabled()) {
+					this.log.debug("Ommitted " + converter + " of type " + converter.getClass().toString() +
+							" for '" + mimeType.toString() + "' as it is not an AbstractMessageConverter");
 				}
 			}
 		}

@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.converter;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -78,7 +79,7 @@ public class TupleJsonMessageConverter extends AbstractMessageConverter {
 	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		String source;
 		if (message.getPayload() instanceof byte[]) {
-			source = new String((byte[]) message.getPayload());
+			source = new String((byte[]) message.getPayload(), Charset.forName("UTF-8"));
 		}
 		else {
 			source = message.getPayload().toString();
