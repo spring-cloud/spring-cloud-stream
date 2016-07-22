@@ -31,6 +31,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeType;
 
 /**
  * {@link AbstractBinder} that serves as base class for {@link MessageChannel}
@@ -119,7 +120,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Creates target destinations for outbound channels. The implementation
 	 * is middleware-specific.
-	 * @param name the name of the producer destination
+	 * @param name       the name of the producer destination
 	 * @param properties producer properties
 	 */
 	protected abstract void createProducerDestinationIfNecessary(String name, P properties);
@@ -132,8 +133,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * In order to be fully compliant, the {@link MessageHandler} of the binder
 	 * must observe the following headers:
 	 * <ul>
-	 *     <li>{@link BinderHeaders#PARTITION_HEADER} - indicates the target
-	 *     partition where the message must be sent</li>
+	 * <li>{@link BinderHeaders#PARTITION_HEADER} - indicates the target
+	 * partition where the message must be sent</li>
 	 * </ul>
 	 * <p>
 	 * @param destination        the name of the target destination
@@ -210,8 +211,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	/**
 	 * Creates the middleware destination the consumer will start to consume data from.
-	 * @param name the name of the destination
-	 * @param group the consumer group
+	 * @param name       the name of the destination
+	 * @param group      the consumer group
 	 * @param properties consumer properties
 	 * @return reference to the consumer destination
 	 */
@@ -298,6 +299,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			MessageValues transformed = serializePayloadIfNecessary(message);
 			byte[] payload;
 			if (this.embedHeaders) {
+				Object contentType = transformed.get(MessageHeaders.CONTENT_TYPE);
+				// transform content type headers to String, so that they can be properly embedded in JSON
+				if (contentType instanceof MimeType) {
+					transformed.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
+				}
+				Object originalContentType = transformed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+				if (originalContentType instanceof MimeType) {
+					transformed.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
+				}
 				payload = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.embedHeaders(transformed,
 						this.embeddedHeaders);
 			}
@@ -306,7 +316,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 			if (!this.embedHeaders && !AbstractMessageChannelBinder.this.supportsHeadersNatively) {
 				Object contentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-				if (contentType != null && !contentType.equals(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {
+				if (contentType != null && !contentType.toString().equals(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {
 					this.logger.error(
 							"Raw mode supports only " + MediaType.APPLICATION_OCTET_STREAM_VALUE + " content type"
 									+ message.getPayload().getClass());
