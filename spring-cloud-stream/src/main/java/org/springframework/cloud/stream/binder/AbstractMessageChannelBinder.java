@@ -16,12 +16,12 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.http.MediaType;
 import org.springframework.integration.channel.FixedSubscriberChannel;
-import org.springframework.integration.context.IntegrationObjectSupport;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.handler.AbstractMessageHandler;
@@ -75,7 +75,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * Binds an outbound channel to a given destination. The implementation delegates to
 	 * {@link #createProducerDestinationIfNecessary(String, ProducerProperties)}
 	 * and {@link #createProducerMessageHandler(String, ProducerProperties)} for
-	 * handling the middleware specific logic.
+	 * handling the middleware specific logic. If the returned producer message handler is an
+	 * {@link InitializingBean} then {@link InitializingBean#afterPropertiesSet()} will be
+	 * called on it. Similarly, if the returned producer message handler endpoint is a
+	 * {@link Lifecycle}, then {@link Lifecycle#start()} will be called on it.
 	 * @param destination        the name of the destination
 	 * @param outputChannel      the channel to be bound
 	 * @param producerProperties the {@link ProducerProperties} of the binding
@@ -91,6 +94,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		final MessageHandler producerMessageHandler;
 		try {
 			producerMessageHandler = createProducerMessageHandler(destination, producerProperties);
+			if(producerMessageHandler instanceof InitializingBean) {
+				((InitializingBean) producerMessageHandler).afterPropertiesSet();
+			}
 		}
 		catch (Exception e) {
 			if (e instanceof BinderException) {
@@ -158,7 +164,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * Binds an inbound channel to a given destination. The implementation delegates to
 	 * {@link #createConsumerDestinationIfNecessary(String, String, ConsumerProperties)}
 	 * and {@link #createConsumerEndpoint(String, String, Object, ConsumerProperties)}
-	 * for handling middleware-specific logic.
+	 * for handling middleware-specific logic. If the returned consumer endpoint is an
+	 * {@link InitializingBean} then {@link InitializingBean#afterPropertiesSet()} will be
+	 * called on it. Similarly, if the returned consumer endpoint is a {@link Lifecycle},
+	 * then {@link Lifecycle#start()} will be called on it.
 	 * @param name         the name of the destination
 	 * @param group        the consumer group
 	 * @param inputChannel the channel to be bound
@@ -180,8 +189,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			bridge.setBeanName("bridge." + name);
 			consumerEndpoint = createConsumerEndpoint(name, group, destination, properties);
 			consumerEndpoint.setOutputChannel(bridge);
-			if(consumerEndpoint instanceof IntegrationObjectSupport) {
-				((IntegrationObjectSupport) consumerEndpoint).afterPropertiesSet();
+			if(consumerEndpoint instanceof InitializingBean) {
+				((InitializingBean) consumerEndpoint).afterPropertiesSet();
 			}
 			if (consumerEndpoint instanceof Lifecycle) {
 				((Lifecycle) consumerEndpoint).start();
@@ -204,7 +213,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				((Lifecycle) consumerEndpoint).stop();
 			}
 			if (e instanceof BinderException) {
-				throw e;
+				throw (BinderException)e;
 			}
 			else {
 				throw new BinderException("Exception thrown while starting consumer: ", e);
