@@ -30,6 +30,7 @@ import org.springframework.messaging.MessageHandler;
  * @author Marius Bogoevici
  */
 @Configuration
+@Deprecated
 public class RxJavaProcessorConfiguration {
 
 	@Autowired
@@ -38,7 +39,7 @@ public class RxJavaProcessorConfiguration {
 	@ServiceActivator(inputChannel = Processor.INPUT, phase = "0")
 	@Bean
 	public MessageHandler subjectMessageHandler() {
-		SubjectMessageHandler messageHandler = new SubjectMessageHandler(processor);
+		SubjectMessageHandler messageHandler = new SubjectMessageHandler(this.processor);
 		messageHandler.setOutputChannelName(Processor.OUTPUT);
 		return messageHandler;
 	}
