@@ -21,6 +21,7 @@ import rx.Observable;
 
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.util.Assert;
 
 /**
  * A {@link StreamListenerResultAdapter} from an {@link Observable}
@@ -34,6 +35,7 @@ public class ObservableToMessageChannelResultAdapter
 
 	public ObservableToMessageChannelResultAdapter(
 			FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter) {
+		Assert.notNull(fluxToMessageChannelResultAdapter, "cannot be null");
 		this.fluxToMessageChannelResultAdapter = fluxToMessageChannelResultAdapter;
 	}
 

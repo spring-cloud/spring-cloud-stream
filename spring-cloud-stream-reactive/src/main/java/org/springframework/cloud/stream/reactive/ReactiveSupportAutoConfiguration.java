@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import rx.Observable;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
@@ -30,24 +28,24 @@ import org.springframework.context.annotation.Configuration;
 public class ReactiveSupportAutoConfiguration {
 
 	@Bean
-	public MessageChannelToInputFluxArgumentAdapter messageChannelToFluxConverter(
+	public MessageChannelToInputFluxArgumentAdapter messageChannelToInputFluxArgumentAdapter(
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		return new MessageChannelToInputFluxArgumentAdapter(
 				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 	}
 
 	@Bean
-	public MessageChannelToFluxSenderArgumentAdapter messageChannelToStreamSenderArgumentAdapter() {
+	public MessageChannelToFluxSenderArgumentAdapter messageChannelToFluxSenderArgumentAdapter() {
 		return new MessageChannelToFluxSenderArgumentAdapter();
 	}
 
 	@Bean
-	FluxToMessageChannelResultAdapter subscriberStreamListenerResultHandler() {
+	FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter() {
 		return new FluxToMessageChannelResultAdapter();
 	}
 
 	@Configuration
-	@ConditionalOnClass(Observable.class)
+	@ConditionalOnClass(name = "rx.Observable")
 	public static class RxJava1SupportConfiguration {
 
 		@Bean

@@ -54,8 +54,8 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  *
  * <h3>Declarative mode</h3>
  *
- * The annotation may also have an empty value (the default), case in which the method is a
- * declarative pipeline definition and will be invoked once, when the application starts.
+ * If the annotation has an empty value (the default), the method is a declarative
+ * pipeline definition and will be invoked once, when the application starts.
  * All parameters must be annotated with either {@link Input} or {@link Output} and can
  * be either bound elements (e.g. channels) or conversion targets from bound elements
  * via a registered {@link org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter}.

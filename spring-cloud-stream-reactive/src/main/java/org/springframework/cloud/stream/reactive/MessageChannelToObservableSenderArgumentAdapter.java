@@ -24,6 +24,7 @@ import org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.util.Assert;
 
 /**
  * Adapts an {@link org.springframework.cloud.stream.annotation.Output} annotated
@@ -37,6 +38,7 @@ public class MessageChannelToObservableSenderArgumentAdapter implements
 
 	public MessageChannelToObservableSenderArgumentAdapter(
 			MessageChannelToFluxSenderArgumentAdapter messageChannelToFluxSenderArgumentAdapter) {
+		Assert.notNull(messageChannelToFluxSenderArgumentAdapter, "cannot be null");
 		this.messageChannelToFluxSenderArgumentAdapter = messageChannelToFluxSenderArgumentAdapter;
 	}
 

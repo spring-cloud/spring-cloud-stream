@@ -24,6 +24,7 @@ import org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.util.Assert;
 
 /**
  * Adapts an {@link org.springframework.cloud.stream.annotation.Input} annotated
@@ -33,11 +34,12 @@ import org.springframework.messaging.SubscribableChannel;
 public class MessageChannelToInputObservableArgumentAdapter
 		implements StreamListenerArgumentAdapter<Observable<?>, SubscribableChannel> {
 
-	private final MessageChannelToInputFluxArgumentAdapter messageChannelToFluxArgumentAdapter;
+	private final MessageChannelToInputFluxArgumentAdapter messageChannelToInputFluxArgumentAdapter;
 
 	public MessageChannelToInputObservableArgumentAdapter(
-			MessageChannelToInputFluxArgumentAdapter messageChannelToFluxArgumentAdapter) {
-		this.messageChannelToFluxArgumentAdapter = messageChannelToFluxArgumentAdapter;
+			MessageChannelToInputFluxArgumentAdapter messageChannelToInputFluxArgumentAdapter) {
+		Assert.notNull(messageChannelToInputFluxArgumentAdapter, "cannot be null");
+		this.messageChannelToInputFluxArgumentAdapter = messageChannelToInputFluxArgumentAdapter;
 	}
 
 	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
@@ -49,6 +51,6 @@ public class MessageChannelToInputObservableArgumentAdapter
 	@Override
 	public Observable<?> adapt(final SubscribableChannel boundElement, MethodParameter parameter) {
 		return RxJava1Adapter.publisherToObservable(
-				this.messageChannelToFluxArgumentAdapter.adapt(boundElement, parameter));
+				this.messageChannelToInputFluxArgumentAdapter.adapt(boundElement, parameter));
 	}
 }

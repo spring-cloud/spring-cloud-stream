@@ -27,6 +27,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.util.Assert;
 
 /**
  * Adapts an {@link org.springframework.cloud.stream.annotation.Input} annotated
@@ -36,9 +37,10 @@ import org.springframework.messaging.converter.CompositeMessageConverter;
 public class MessageChannelToInputFluxArgumentAdapter
 		implements StreamListenerArgumentAdapter<Flux<?>, SubscribableChannel> {
 
-	private CompositeMessageConverter messageConverter;
+	private final CompositeMessageConverter messageConverter;
 
 	public MessageChannelToInputFluxArgumentAdapter(CompositeMessageConverter messageConverter) {
+		Assert.notNull(messageConverter, "cannot not be null");
 		this.messageConverter = messageConverter;
 	}
 
