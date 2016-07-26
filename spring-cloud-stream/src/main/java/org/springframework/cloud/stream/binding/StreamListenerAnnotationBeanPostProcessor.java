@@ -192,6 +192,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 						.streamListenerResultAdapters) {
 					if (streamListenerResultAdapter.supports(result.getClass(), targetBean.getClass())) {
 						streamListenerResultAdapter.adapt(result, targetBean);
+						break;
 					}
 				}
 			}
