@@ -17,14 +17,13 @@
 package org.springframework.cloud.stream.reactive;
 
 import reactor.adapter.RxJava1Adapter;
-import reactor.core.publisher.Flux;
 import rx.Observable;
 
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * A {@link StreamListenerResultAdapter} from a {@link Flux}
+ * A {@link StreamListenerResultAdapter} from an {@link Observable}
  * return type to a bound {@link MessageChannel}.
  * @author Marius Bogoevici
  */

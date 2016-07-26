@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -30,8 +30,8 @@ public interface FluxSender {
 	 * Streams the {@link reactor.core.publisher.Flux} through the bound
 	 * element corresponding to the {@link org.springframework.cloud.stream.annotation.Output} annotation of the
 	 * argument.
-	 * @param flux a {@link Flux}
+	 * @param flux a {@link Flux} that will be streamed through the bound element
 	 * @return a {@link Mono} representing the result of sending the flux (completion or error)
 	 */
-	Mono<Void> send(Publisher<?> flux);
+	Mono<Void> send(Flux<?> flux);
 }

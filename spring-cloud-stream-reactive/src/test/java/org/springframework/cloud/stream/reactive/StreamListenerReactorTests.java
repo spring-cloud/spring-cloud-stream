@@ -108,6 +108,8 @@ public class StreamListenerReactorTests {
 		sendMessageAndValidate(context);
 		sendFailingMessage(context);
 		sendMessageAndValidate(context);
+		sendFailingMessage(context);
+		sendMessageAndValidate(context);
 		context.close();
 	}
 
@@ -139,7 +141,7 @@ public class StreamListenerReactorTests {
 	public static class TestInputOutputArgs {
 
 		@StreamListener
-		public void receive(@Input("input") Flux<String> input, @Output("output") FluxSender output) {
+		public void receive(@Input(Processor.INPUT) Flux<String> input, @Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input.map(m -> m.toUpperCase()));
 		}
 	}
@@ -149,8 +151,8 @@ public class StreamListenerReactorTests {
 	public static class TestInputOutputArgsWithMessage {
 
 		@StreamListener
-		public void receive(@Input("input") Flux<Message<String>> input,
-				@Output("output") FluxSender output) {
+		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input,
+				@Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input.map(m -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).build()));
 		}
 	}
@@ -159,7 +161,7 @@ public class StreamListenerReactorTests {
 	@EnableAutoConfiguration
 	public static class TestInputOutputArgsWithFluxSender {
 		@StreamListener
-		public void receive(@Input("input") Flux<Message<?>> input, @Output("output") FluxSender output) {
+		public void receive(@Input(Processor.INPUT) Flux<Message<?>> input, @Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString().toUpperCase())
 					.map(o -> MessageBuilder.withPayload(o).build()));
@@ -170,7 +172,7 @@ public class StreamListenerReactorTests {
 	@EnableAutoConfiguration
 	public static class TestInputOutputArgsWithFluxSenderAndFailure {
 		@StreamListener
-		public void receive(@Input("input") Flux<Message<?>> input, @Output("output") FluxSender output) {
+		public void receive(@Input(Processor.INPUT) Flux<Message<?>> input, @Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString())
 					.map(m -> {
@@ -191,8 +193,8 @@ public class StreamListenerReactorTests {
 
 		@StreamListener
 		public
-		@Output("output")
-		Flux<String> receive(@Input("input") Flux<String> input) {
+		@Output(Processor.OUTPUT)
+		Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
 			return input.map(m -> m.toUpperCase());
 		}
 	}
@@ -203,8 +205,8 @@ public class StreamListenerReactorTests {
 
 		@StreamListener
 		public
-		@Output("output")
-		Flux<String> receive(@Input("input") Flux<String> input) {
+		@Output(Processor.OUTPUT)
+		Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
@@ -222,8 +224,8 @@ public class StreamListenerReactorTests {
 
 		@StreamListener
 		public
-		@Output("output")
-		Flux<String> receive(@Input("input") Flux<Message<String>> input) {
+		@Output(Processor.OUTPUT)
+		Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
@@ -234,8 +236,8 @@ public class StreamListenerReactorTests {
 
 		@StreamListener
 		public
-		@Output("output")
-		Flux<BarPojo> receive(@Input("input") Flux<FooPojo> input) {
+		@Output(Processor.OUTPUT)
+		Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}

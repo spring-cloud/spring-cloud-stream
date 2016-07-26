@@ -130,7 +130,7 @@ public class StreamListenerRxJava1Tests {
 	public static class TestInputOutputArgs {
 
 		@StreamListener
-		public void receive(@Input("input") Observable<String> input, @Output("output") ObservableSender output) {
+		public void receive(@Input(Processor.INPUT) Observable<String> input, @Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input.map(m -> m.toUpperCase()));
 		}
 	}
@@ -140,8 +140,8 @@ public class StreamListenerRxJava1Tests {
 	public static class TestInputOutputArgsWithMessage {
 
 		@StreamListener
-		public void receive(@Input("input") Observable<Message<String>> input,
-				@Output("output") ObservableSender output) {
+		public void receive(@Input(Processor.INPUT) Observable<Message<String>> input,
+				@Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input.map(m -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).build()));
 		}
 	}
@@ -150,7 +150,7 @@ public class StreamListenerRxJava1Tests {
 	@EnableAutoConfiguration
 	public static class TestInputOutputArgsWithObservableSender {
 		@StreamListener
-		public void receive(@Input("input") Observable<Message<?>> input, @Output("output")
+		public void receive(@Input(Processor.INPUT) Observable<Message<?>> input, @Output(Processor.OUTPUT)
 				ObservableSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString().toUpperCase())
@@ -164,8 +164,8 @@ public class StreamListenerRxJava1Tests {
 
 		@StreamListener
 		public
-		@Output("output")
-		Observable<String> receive(@Input("input") Observable<String> input) {
+		@Output(Processor.OUTPUT)
+		Observable<String> receive(@Input(Processor.INPUT) Observable<String> input) {
 			return input.map(m -> m.toUpperCase());
 		}
 	}
@@ -176,8 +176,8 @@ public class StreamListenerRxJava1Tests {
 
 		@StreamListener
 		public
-		@Output("output")
-		Observable<String> receive(@Input("input") Observable<String> input) {
+		@Output(Processor.OUTPUT)
+		Observable<String> receive(@Input(Processor.INPUT) Observable<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
@@ -195,8 +195,8 @@ public class StreamListenerRxJava1Tests {
 
 		@StreamListener
 		public
-		@Output("output")
-		Observable<String> receive(@Input("input") Observable<Message<String>> input) {
+		@Output(Processor.OUTPUT)
+		Observable<String> receive(@Input(Processor.INPUT) Observable<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
@@ -207,8 +207,8 @@ public class StreamListenerRxJava1Tests {
 
 		@StreamListener
 		public
-		@Output("output")
-		Observable<BarPojo> receive(@Input("input") Observable<FooPojo> input) {
+		@Output(Processor.OUTPUT)
+		Observable<BarPojo> receive(@Input(Processor.INPUT) Observable<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}

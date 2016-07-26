@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.reactive;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.MonoProcessor;
 
 import org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter;
@@ -36,7 +35,7 @@ import org.springframework.messaging.MessageChannel;
 public class MessageChannelToFluxSenderArgumentAdapter
 		implements StreamListenerArgumentAdapter<FluxSender, MessageChannel> {
 
-	private Log log = LogFactory.getLog(FluxToMessageChannelResultAdapter.class);
+	private Log log = LogFactory.getLog(MessageChannelToFluxSenderArgumentAdapter.class);
 
 	@Override
 	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
@@ -48,22 +47,16 @@ public class MessageChannelToFluxSenderArgumentAdapter
 	@Override
 	public FluxSender adapt(MessageChannel boundElement, MethodParameter parameter) {
 		return resultPublisher -> {
-			MonoProcessor<Void> sendError = MonoProcessor.create();
-			Flux<?> outboundFlux;
-			if (resultPublisher instanceof Flux) {
-				outboundFlux = ((Flux<?>) resultPublisher);
-			}
-			else {
-				outboundFlux = (Flux.merge(resultPublisher));
-			}
-			outboundFlux
+			MonoProcessor<Void> sendResult = MonoProcessor.create();
+			// add error handling and reconnect in the event of an error
+			resultPublisher
 					.doOnError(e -> this.log.error("Error during processing: ", e))
 					.retry()
 					.subscribe(
 							result -> boundElement.send(result instanceof Message<?> ? (Message<?>) result :
-									MessageBuilder.withPayload(result).build()), e -> sendError.onError(e),
-							() -> sendError.onComplete());
-			return sendError;
+									MessageBuilder.withPayload(result).build()), e -> sendResult.onError(e),
+							() -> sendResult.onComplete());
+			return sendResult;
 		};
 	}
 }

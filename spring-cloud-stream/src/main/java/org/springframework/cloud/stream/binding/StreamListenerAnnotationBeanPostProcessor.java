@@ -70,12 +70,6 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
 
-	private int phase;
-
-	private boolean running;
-
-	private Object lifecycleMonitor = new Object();
-
 	public StreamListenerAnnotationBeanPostProcessor(DestinationResolver<MessageChannel> binderAwareChannelResolver,
 			MessageHandlerMethodFactory messageHandlerMethodFactory) {
 		Assert.notNull(binderAwareChannelResolver, "Destination resolver cannot be null");

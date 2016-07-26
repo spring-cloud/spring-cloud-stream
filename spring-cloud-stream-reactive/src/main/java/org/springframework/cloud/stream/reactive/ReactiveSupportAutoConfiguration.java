@@ -64,7 +64,7 @@ public class ReactiveSupportAutoConfiguration {
 
 		@Bean
 		ObservableToMessageChannelResultAdapter
-		observableMessageChannelObservableToMessageChannelResultAdapter(
+		observableToMessageChannelResultAdapter(
 				FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter) {
 			return new ObservableToMessageChannelResultAdapter(fluxToMessageChannelResultAdapter);
 		}

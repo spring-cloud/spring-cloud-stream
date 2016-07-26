@@ -30,8 +30,8 @@ public interface ObservableSender {
 	 * Streams the {@link Observable} through the bound
 	 * element corresponding to the {@link org.springframework.cloud.stream.annotation.Output} annotation of the
 	 * argument.
-	 * @param observable an {@link Observable} that will be red
-	 * @return a single representing the result of an operation
+	 * @param observable an {@link Observable} that will be streamed through the bound element
+	 * @return a {@link Single} representing the result of an operation
 	 */
 	Single<Void> send(Observable<?> observable);
 }
