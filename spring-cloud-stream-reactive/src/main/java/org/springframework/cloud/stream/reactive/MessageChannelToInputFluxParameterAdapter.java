@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.reactive;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter;
+import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
@@ -34,12 +34,12 @@ import org.springframework.util.Assert;
  * {@link MessageChannel} to a {@link Flux}.
  * @author Marius Bogoevici
  */
-public class MessageChannelToInputFluxArgumentAdapter
-		implements StreamListenerArgumentAdapter<Flux<?>, SubscribableChannel> {
+public class MessageChannelToInputFluxParameterAdapter
+		implements StreamListenerParameterAdapter<Flux<?>, SubscribableChannel> {
 
 	private final CompositeMessageConverter messageConverter;
 
-	public MessageChannelToInputFluxArgumentAdapter(CompositeMessageConverter messageConverter) {
+	public MessageChannelToInputFluxParameterAdapter(CompositeMessageConverter messageConverter) {
 		Assert.notNull(messageConverter, "cannot not be null");
 		this.messageConverter = messageConverter;
 	}

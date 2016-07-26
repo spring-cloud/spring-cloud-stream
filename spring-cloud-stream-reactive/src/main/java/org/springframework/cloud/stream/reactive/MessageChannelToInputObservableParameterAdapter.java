@@ -20,7 +20,7 @@ import reactor.adapter.RxJava1Adapter;
 import rx.Observable;
 
 import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter;
+import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -31,13 +31,13 @@ import org.springframework.util.Assert;
  * {@link MessageChannel} to an {@link Observable}.
  * @author Marius Bogoevici
  */
-public class MessageChannelToInputObservableArgumentAdapter
-		implements StreamListenerArgumentAdapter<Observable<?>, SubscribableChannel> {
+public class MessageChannelToInputObservableParameterAdapter
+		implements StreamListenerParameterAdapter<Observable<?>, SubscribableChannel> {
 
-	private final MessageChannelToInputFluxArgumentAdapter messageChannelToInputFluxArgumentAdapter;
+	private final MessageChannelToInputFluxParameterAdapter messageChannelToInputFluxArgumentAdapter;
 
-	public MessageChannelToInputObservableArgumentAdapter(
-			MessageChannelToInputFluxArgumentAdapter messageChannelToInputFluxArgumentAdapter) {
+	public MessageChannelToInputObservableParameterAdapter(
+			MessageChannelToInputFluxParameterAdapter messageChannelToInputFluxArgumentAdapter) {
 		Assert.notNull(messageChannelToInputFluxArgumentAdapter, "cannot be null");
 		this.messageChannelToInputFluxArgumentAdapter = messageChannelToInputFluxArgumentAdapter;
 	}

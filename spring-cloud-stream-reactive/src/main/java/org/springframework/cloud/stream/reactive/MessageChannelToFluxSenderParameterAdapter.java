@@ -20,7 +20,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.MonoProcessor;
 
-import org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter;
+import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.integration.support.MessageBuilder;
@@ -32,16 +33,17 @@ import org.springframework.messaging.MessageChannel;
  * {@link FluxSender} to an outbound {@link MessageChannel}.
  * @author Marius Bogoevici
  */
-public class MessageChannelToFluxSenderArgumentAdapter
-		implements StreamListenerArgumentAdapter<FluxSender, MessageChannel> {
+public class MessageChannelToFluxSenderParameterAdapter
+		implements StreamListenerParameterAdapter<FluxSender, MessageChannel> {
 
-	private Log log = LogFactory.getLog(MessageChannelToFluxSenderArgumentAdapter.class);
+	private Log log = LogFactory.getLog(MessageChannelToFluxSenderParameterAdapter.class);
 
 	@Override
 	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
 		ResolvableType type = ResolvableType.forMethodParameter(methodParameter);
-		return MessageChannel.class.isAssignableFrom(boundElementType) && FluxSender.class.isAssignableFrom(
-				type.getRawClass());
+		return MessageChannel.class.isAssignableFrom(boundElementType)
+				&& methodParameter.getParameterAnnotation(Output.class) != null
+				&& FluxSender.class.isAssignableFrom(type.getRawClass());
 	}
 
 	@Override

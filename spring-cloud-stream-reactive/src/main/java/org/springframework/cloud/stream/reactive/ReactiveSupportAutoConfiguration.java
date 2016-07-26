@@ -28,19 +28,19 @@ import org.springframework.context.annotation.Configuration;
 public class ReactiveSupportAutoConfiguration {
 
 	@Bean
-	public MessageChannelToInputFluxArgumentAdapter messageChannelToInputFluxArgumentAdapter(
+	public MessageChannelToInputFluxParameterAdapter messageChannelToInputFluxArgumentAdapter(
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new MessageChannelToInputFluxArgumentAdapter(
+		return new MessageChannelToInputFluxParameterAdapter(
 				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 	}
 
 	@Bean
-	public MessageChannelToFluxSenderArgumentAdapter messageChannelToFluxSenderArgumentAdapter() {
-		return new MessageChannelToFluxSenderArgumentAdapter();
+	public MessageChannelToFluxSenderParameterAdapter messageChannelToFluxSenderArgumentAdapter() {
+		return new MessageChannelToFluxSenderParameterAdapter();
 	}
 
 	@Bean
-	FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter() {
+	public FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter() {
 		return new FluxToMessageChannelResultAdapter();
 	}
 
@@ -49,19 +49,19 @@ public class ReactiveSupportAutoConfiguration {
 	public static class RxJava1SupportConfiguration {
 
 		@Bean
-		public MessageChannelToInputObservableArgumentAdapter messageChannelToInputObservableArgumentAdapter(
-				MessageChannelToInputFluxArgumentAdapter messageChannelToFluxArgumentAdapter) {
-			return new MessageChannelToInputObservableArgumentAdapter(messageChannelToFluxArgumentAdapter);
+		public MessageChannelToInputObservableParameterAdapter messageChannelToInputObservableArgumentAdapter(
+				MessageChannelToInputFluxParameterAdapter messageChannelToFluxArgumentAdapter) {
+			return new MessageChannelToInputObservableParameterAdapter(messageChannelToFluxArgumentAdapter);
 		}
 
 		@Bean
-		public MessageChannelToObservableSenderArgumentAdapter messageChannelToObservableSenderArgumentAdapter(
-				MessageChannelToFluxSenderArgumentAdapter messageChannelToFluxSenderArgumentAdapter) {
-			return new MessageChannelToObservableSenderArgumentAdapter(messageChannelToFluxSenderArgumentAdapter);
+		public MessageChannelToObservableSenderParameterAdapter messageChannelToObservableSenderArgumentAdapter(
+				MessageChannelToFluxSenderParameterAdapter messageChannelToFluxSenderArgumentAdapter) {
+			return new MessageChannelToObservableSenderParameterAdapter(messageChannelToFluxSenderArgumentAdapter);
 		}
 
 		@Bean
-		ObservableToMessageChannelResultAdapter
+		public ObservableToMessageChannelResultAdapter
 		observableToMessageChannelResultAdapter(
 				FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter) {
 			return new ObservableToMessageChannelResultAdapter(fluxToMessageChannelResultAdapter);

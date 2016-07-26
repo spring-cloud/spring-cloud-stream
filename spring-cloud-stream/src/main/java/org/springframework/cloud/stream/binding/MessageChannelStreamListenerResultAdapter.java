@@ -30,14 +30,15 @@ public class MessageChannelStreamListenerResultAdapter
 
 	@Override
 	public boolean supports(Class<?> resultType, Class<?> boundElement) {
-		return MessageChannel.class.isAssignableFrom(resultType) && MessageChannel.class.isAssignableFrom(
-				boundElement);
+		return MessageChannel.class.isAssignableFrom(resultType)
+				&& MessageChannel.class.isAssignableFrom(boundElement);
 	}
 
 	@Override
 	public void adapt(MessageChannel streamListenerResult, MessageChannel boundElement) {
 		BridgeHandler handler = new BridgeHandler();
 		handler.setOutputChannel(boundElement);
+		handler.afterPropertiesSet();
 		((SubscribableChannel) streamListenerResult).subscribe(handler);
 	}
 }

@@ -22,6 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 
 /**
@@ -58,7 +59,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * pipeline definition and will be invoked once, when the application starts.
  * All parameters must be annotated with either {@link Input} or {@link Output} and can
  * be either bound elements (e.g. channels) or conversion targets from bound elements
- * via a registered {@link org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter}.
+ * via a registered {@link StreamListenerParameterAdapter}.
  * @author Marius Bogoevici
  * @see {@link MessageMapping}
  * @see {@link EnableBinding}

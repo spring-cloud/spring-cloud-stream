@@ -22,13 +22,13 @@ import org.springframework.core.MethodParameter;
  * Strategy for adapting a method argument type annotated with
  * {@link org.springframework.cloud.stream.annotation.Input} or
  * {@link org.springframework.cloud.stream.annotation.Output} from a bound element
- * (e.g. {@link org.springframework.messaging.MessageChannel} supported by an
+ * (e.g. {@link org.springframework.messaging.MessageChannel}) supported by an
  * existing binder.
  *
  * This is a framework extension and is not primarily intended for use by end-users.
  * @author Marius Bogoevici
  */
-public interface StreamListenerArgumentAdapter<A, B> {
+public interface StreamListenerParameterAdapter<A, B> {
 
 	/**
 	 * Return true if the conversion from the bound element type to the argument type

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,7 +67,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private ConfigurableApplicationContext applicationContext;
 
-	private final List<StreamListenerArgumentAdapter<?, Object>> streamListenerArgumentAdapters = new ArrayList<>();
+	private final List<StreamListenerParameterAdapter<?, Object>> streamListenerParameterAdapters = new ArrayList<>();
 
 	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
 
@@ -81,11 +82,12 @@ public class StreamListenerAnnotationBeanPostProcessor
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-		Map<String, StreamListenerArgumentAdapter> streamListenerArgumentHandlerMap =
+		Map<String, StreamListenerParameterAdapter> streamListenerArgumentHandlerMap =
 				this.applicationContext.getBeansOfType(
-						StreamListenerArgumentAdapter.class);
-		for (Map.Entry<String, StreamListenerArgumentAdapter> entry : streamListenerArgumentHandlerMap.entrySet()) {
-			this.streamListenerArgumentAdapters.add(entry.getValue());
+						StreamListenerParameterAdapter.class);
+		for (StreamListenerParameterAdapter streamListenerParameterAdapter : streamListenerArgumentHandlerMap
+				.values()) {
+			this.streamListenerParameterAdapters.add(streamListenerParameterAdapter);
 		}
 		Map<String, StreamListenerResultAdapter> stringStreamListenerResultHandlerMap =
 				applicationContext.getBeansOfType(
@@ -109,25 +111,39 @@ public class StreamListenerAnnotationBeanPostProcessor
 			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
 				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
 				if (streamListener != null) {
-					Class<?>[] parameterTypes = method.getParameterTypes();
-					boolean hasInputOrOutputAnnotatedParameters = false;
-					for (int parameterIndex = 0; parameterIndex < parameterTypes.length; parameterIndex++) {
-						MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method,
-								parameterIndex);
-						boolean currentParameterIsAnnotated = methodParameter.getParameterAnnotation(
-								Input.class) != null || methodParameter.getParameterAnnotation(Output.class) != null;
-						if (hasInputOrOutputAnnotatedParameters) {
-							Assert.isTrue(currentParameterIsAnnotated,
-									"Either all parameters must be annotated with @Input and @Output, or none");
-						}
-						else {
-							hasInputOrOutputAnnotatedParameters = currentParameterIsAnnotated;
-						}
+					if (!method.getReturnType().equals(Void.TYPE)) {
+						Assert.isTrue(method.getAnnotation(Input.class) == null,
+								"A @StreamListener may never be annotated with @Input." +
+										"If it should listen to a specific input, use the value of @StreamListener " +
+										"instead.");
 					}
-					if (!hasInputOrOutputAnnotatedParameters) {
+					Class<?>[] parameterTypes = method.getParameterTypes();
+					if (StringUtils.hasText(streamListener.value())) {
+						for (int i = 0; i < parameterTypes.length; i++) {
+							MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, i);
+							Assert.isTrue(methodParameter.getParameterAnnotation(Input.class) == null &&
+											methodParameter.getParameterAnnotation(Output.class) == null,
+									"A message handling @StreamListener method  cannot have parameters annotated " +
+											"with @Input or @Output");
+						}
+						if (!method.getReturnType().equals(Void.TYPE)) {
+							Assert.isTrue(method.getAnnotation(Output.class) == null,
+									"A message handling @StreamListener method cannot be annotated with @Output");
+						}
 						registerHandlerMethodOnListenedChannel(method, streamListener, bean);
 					}
 					else {
+						for (int i = 0; i < parameterTypes.length; i++) {
+							MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, i);
+							Assert.isTrue(methodParameter.getParameterAnnotation(Input.class) != null ^
+											methodParameter.getParameterAnnotation(Output.class) != null,
+									"A declarative @StreamListener method must have its parameters annotated" +
+											"with @Input or @Output, but not with both.");
+						}
+						if (!method.getReturnType().equals(Void.TYPE)) {
+							Assert.isTrue(method.getAnnotation(Output.class) != null,
+									"A declarative @StreamListener method must be annotated with @Output");
+						}
 						invokeSetupMethodOnListenedChannel(method, bean);
 					}
 				}
@@ -141,48 +157,28 @@ public class StreamListenerAnnotationBeanPostProcessor
 		for (int parameterIndex = 0; parameterIndex < arguments.length; parameterIndex++) {
 			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
 			Class<?> parameterType = methodParameter.getParameterType();
-			Input input = methodParameter.getParameterAnnotation(Input.class);
-			if (input != null) {
-				Object targetBean = this.applicationContext.getBean(input.value());
-				if (parameterType.isAssignableFrom(targetBean.getClass())) {
-					arguments[parameterIndex] = targetBean;
-				}
-				else {
-					for (StreamListenerArgumentAdapter<?, Object> streamListenerArgumentAdapter :
-							this.streamListenerArgumentAdapters) {
-						if (streamListenerArgumentAdapter.supports(targetBean.getClass(), methodParameter)) {
-							arguments[parameterIndex] = streamListenerArgumentAdapter.adapt(targetBean,
-									methodParameter);
-						}
-					}
-				}
-				if (arguments[parameterIndex] == null) {
-					throw new BeanInitializationException(
-							"Cannot convert argument " + parameterIndex + " of " + method + "from " + targetBean
-									.getClass().toString() + " to " + parameterType.toString());
-				}
+			Annotation targetReferenceAnnotation = methodParameter.hasParameterAnnotation(Input.class) ?
+					methodParameter.getParameterAnnotation(Input.class) : methodParameter.getParameterAnnotation(
+					Output.class);
+			Object targetReferenceAnnotationValue = AnnotationUtils.getValue(targetReferenceAnnotation);
+			Assert.isInstanceOf(String.class, targetReferenceAnnotationValue, "Annotation value must be a String");
+			Assert.hasText((String) targetReferenceAnnotationValue, "Annotation value must not be empty");
+			Object targetBean = this.applicationContext.getBean((String) targetReferenceAnnotationValue);
+			if (parameterType.isAssignableFrom(targetBean.getClass())) {
+				arguments[parameterIndex] = targetBean;
 			}
 			else {
-				Output output = methodParameter.getParameterAnnotation(Output.class);
-				Object targetBean = this.applicationContext.getBean(output.value());
-				if (parameterType.isAssignableFrom(targetBean.getClass())) {
-					arguments[parameterIndex] = targetBean;
-				}
-				else {
-					for (StreamListenerArgumentAdapter<?, Object> streamListenerArgumentAdapter :
-							this.streamListenerArgumentAdapters) {
-						if (streamListenerArgumentAdapter.supports(targetBean.getClass(), methodParameter)) {
-							arguments[parameterIndex] = streamListenerArgumentAdapter.adapt(targetBean,
-									methodParameter);
-						}
+				for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter :
+						this.streamListenerParameterAdapters) {
+					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
+						arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean, methodParameter);
+						break;
 					}
 				}
-				if (arguments[parameterIndex] == null) {
-					throw new BeanInitializationException(
-							"Cannot convert argument " + parameterIndex + " of " + method + "from " + targetBean
-									.getClass().toString() + " to " + parameterType.toString());
-				}
 			}
+			Assert.notNull(arguments[parameterIndex],
+					"Cannot convert argument " + parameterIndex + " of " + method + "from " + targetBean.getClass()
+							.toString() + " to " + parameterType.toString());
 		}
 		try {
 			if (method.getReturnType().equals(Void.TYPE)) {
@@ -191,10 +187,6 @@ public class StreamListenerAnnotationBeanPostProcessor
 			else {
 				Object result = method.invoke(bean, arguments);
 				Output output = AnnotationUtils.getAnnotation(method, Output.class);
-				if (output == null) {
-					throw new BeanInitializationException("A method returning a result must be annotated with " +
-							"@Output");
-				}
 				Object targetBean = this.applicationContext.getBean(output.value());
 				for (StreamListenerResultAdapter streamListenerResultAdapter : this
 						.streamListenerResultAdapters) {

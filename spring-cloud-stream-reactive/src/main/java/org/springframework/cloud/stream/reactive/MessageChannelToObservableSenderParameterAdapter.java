@@ -20,7 +20,8 @@ import reactor.adapter.RxJava1Adapter;
 import rx.Observable;
 import rx.Single;
 
-import org.springframework.cloud.stream.binding.StreamListenerArgumentAdapter;
+import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.MessageChannel;
@@ -31,13 +32,13 @@ import org.springframework.util.Assert;
  * {@link ObservableSender} to an outbound {@link MessageChannel}.
  * @author Marius Bogoevici
  */
-public class MessageChannelToObservableSenderArgumentAdapter implements
-		StreamListenerArgumentAdapter<ObservableSender, MessageChannel> {
+public class MessageChannelToObservableSenderParameterAdapter implements
+		StreamListenerParameterAdapter<ObservableSender, MessageChannel> {
 
-	private final MessageChannelToFluxSenderArgumentAdapter messageChannelToFluxSenderArgumentAdapter;
+	private final MessageChannelToFluxSenderParameterAdapter messageChannelToFluxSenderArgumentAdapter;
 
-	public MessageChannelToObservableSenderArgumentAdapter(
-			MessageChannelToFluxSenderArgumentAdapter messageChannelToFluxSenderArgumentAdapter) {
+	public MessageChannelToObservableSenderParameterAdapter(
+			MessageChannelToFluxSenderParameterAdapter messageChannelToFluxSenderArgumentAdapter) {
 		Assert.notNull(messageChannelToFluxSenderArgumentAdapter, "cannot be null");
 		this.messageChannelToFluxSenderArgumentAdapter = messageChannelToFluxSenderArgumentAdapter;
 	}
@@ -45,15 +46,16 @@ public class MessageChannelToObservableSenderArgumentAdapter implements
 	@Override
 	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
 		ResolvableType type = ResolvableType.forMethodParameter(methodParameter);
-		return MessageChannel.class.isAssignableFrom(boundElementType) && ObservableSender.class.isAssignableFrom(
-				type.getRawClass());
+		return MessageChannel.class.isAssignableFrom(boundElementType)
+				&& methodParameter.getParameterAnnotation(Output.class) != null
+				&& ObservableSender.class.isAssignableFrom(type.getRawClass());
 	}
 
 	@Override
 	public ObservableSender adapt(MessageChannel boundElement, MethodParameter parameter) {
 		return new ObservableSender() {
 
-			private FluxSender fluxSender = MessageChannelToObservableSenderArgumentAdapter.this
+			private FluxSender fluxSender = MessageChannelToObservableSenderParameterAdapter.this
 					.messageChannelToFluxSenderArgumentAdapter
 					.adapt(boundElement, parameter);
 

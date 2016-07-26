@@ -41,7 +41,8 @@ public class ObservableToMessageChannelResultAdapter
 
 	@Override
 	public boolean supports(Class<?> resultType, Class<?> boundType) {
-		return Observable.class.isAssignableFrom(resultType) && MessageChannel.class.isAssignableFrom(boundType);
+		return Observable.class.isAssignableFrom(resultType)
+				&& MessageChannel.class.isAssignableFrom(boundType);
 	}
 
 	public void adapt(Observable<?> streamListenerResult, MessageChannel boundElement) {
