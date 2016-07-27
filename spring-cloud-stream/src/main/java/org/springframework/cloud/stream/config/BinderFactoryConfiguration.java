@@ -26,18 +26,15 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,9 +50,14 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  */
 @Configuration
-public class BinderFactoryConfiguration implements ApplicationContextAware {
+public class BinderFactoryConfiguration {
 
-	private ConfigurableApplicationContext applicationContext;
+	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
+
+	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".selfContained";
+
+	@Value("${" + SELF_CONTAINED_APP_PROPERTY_NAME + ":}")
+	private String selfContained;
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
@@ -106,15 +108,8 @@ public class BinderFactoryConfiguration implements ApplicationContextAware {
 			classLoader = ChannelBindingAutoConfiguration.class.getClassLoader();
 		}
 		try {
-			boolean isAggregate = false;
-			try {
-				isAggregate = this.applicationContext.getBean(SharedChannelRegistry.class) != null;
-			}
-			catch (BeansException be) {
-				//ignore
-			}
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
-			if (!isAggregate && (resources == null || !resources.hasMoreElements())) {
+			if (!Boolean.valueOf(this.selfContained) && (resources == null || !resources.hasMoreElements())) {
 				throw new BeanCreationException("Cannot create binder factory, no `META-INF/spring.binders` " +
 						"resources found on the classpath");
 			}
@@ -148,10 +143,5 @@ public class BinderFactoryConfiguration implements ApplicationContextAware {
 			parsedBinderConfigurations.add(new BinderType(binderType, binderConfigurationClasses));
 		}
 		return parsedBinderConfigurations;
-	}
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 }

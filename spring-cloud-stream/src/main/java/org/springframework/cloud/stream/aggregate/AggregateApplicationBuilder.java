@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.Assert;
@@ -46,36 +47,36 @@ public class AggregateApplicationBuilder {
 
 	private AggregateApplicationBuilder applicationBuilder = this;
 
-	ConfigurableApplicationContext parentContext;
-
-	public AggregateApplicationBuilder() {
-		this(SpringApplication.run(addAggregatorParentIfMissing(new Object[]{}), new String[]{}));
-	}
+	private ConfigurableApplicationContext parentContext;
 
 	public AggregateApplicationBuilder(Object source, String... args) {
 		this(new Object[]{source}, args);
 	}
 
 	public AggregateApplicationBuilder(Object[] sources, String[] args) {
-		this(SpringApplication.run(addAggregatorParentIfMissing(sources), args));
+		this(SpringApplication.run(addParentConfiguration(sources), args));
 	}
 
 	public AggregateApplicationBuilder(ConfigurableApplicationContext parentContext) {
 		this.parentContext = parentContext;
 	}
 
-	private static Object[] addAggregatorParentIfMissing(Object[] sources) {
-		Object[] aggregateParentSources;
-		if (!ObjectUtils.containsElement(sources, AggregatorParentConfiguration.class)) {
-			// add the AggregatorParentConfiguration first, so it can be overridden
+	/**
+	 * Adding auto configuration classes to parent sources excluding the configuration
+	 * classes related to binder/binding.
+	 */
+	private static Object[] addParentConfiguration(Object[] sources) {
+		Object[] parentSources;
+		if (!ObjectUtils.containsElement(sources, ParentConfiguration.class)) {
+			// add the ParentConfiguration first, so it can be overridden
 			List<Object> sourceList = new ArrayList<>(Arrays.asList(sources));
-			sourceList.add(0, AggregatorParentConfiguration.class);
-			aggregateParentSources = sourceList.toArray(new Object[sourceList.size()]);
+			sourceList.add(0, ParentConfiguration.class);
+			parentSources = sourceList.toArray(new Object[sourceList.size()]);
 		}
 		else {
-			aggregateParentSources = sources;
+			parentSources = sources;
 		}
-		return aggregateParentSources;
+		return parentSources;
 	}
 
 
@@ -84,7 +85,7 @@ public class AggregateApplicationBuilder {
 	}
 
 	public AggregateApplicationBuilder parent(Object[] sources, String[] args) {
-		return parent(SpringApplication.run(addAggregatorParentIfMissing(sources), args));
+		return parent(SpringApplication.run(sources, args));
 	}
 
 	public AggregateApplicationBuilder parent(ConfigurableApplicationContext parentContext) {
@@ -100,11 +101,6 @@ public class AggregateApplicationBuilder {
 	}
 
 	public ConfigurableApplicationContext run(String[] parentArgs) {
-		ConfigurableApplicationContext parentContext = this.parentContext != null
-				? this.parentContext
-				: AggregateApplication.createParentContext(parentArgs);
-		SharedChannelRegistry sharedChannelRegistry = parentContext
-				.getBean(SharedChannelRegistry.class);
 		List<AppConfigurer<?>> apps = new ArrayList<AppConfigurer<?>>();
 		if (this.sourceConfigurer != null) {
 			apps.add(sourceConfigurer);
@@ -127,12 +123,24 @@ public class AggregateApplicationBuilder {
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 		}
+		if (this.parentContext == null) {
+			this.parentContext = AggregateApplication.createParentContext(parentArgs, areAppsSelfContained());
+		}
+		// make sure to use the parent context that has aggregator parent configuration
+		else if (this.parentContext.getBeansOfType(SharedChannelRegistry.class).isEmpty()) {
+			this.parentContext = AggregateApplication.createParentContext(this.parentContext, parentArgs, areAppsSelfContained());
+		}
+		SharedChannelRegistry sharedChannelRegistry = this.parentContext.getBean(SharedChannelRegistry.class);
 		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);
 		for (int i = apps.size() - 1; i >= 0; i--) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			appConfigurer.embed();
 		}
-		return parentContext;
+		return this.parentContext;
+	}
+
+	private boolean areAppsSelfContained() {
+		return (this.sourceConfigurer != null) && (this.sinkConfigurer != null);
 	}
 
 	private ChildContextBuilder childContext(Class<?> app,
@@ -279,6 +287,10 @@ public class AggregateApplicationBuilder {
 			this.builder.run(args.toArray(new String[0]));
 		}
 
+	}
+
+	@EnableAutoConfiguration
+	public static class ParentConfiguration {
 	}
 
 }

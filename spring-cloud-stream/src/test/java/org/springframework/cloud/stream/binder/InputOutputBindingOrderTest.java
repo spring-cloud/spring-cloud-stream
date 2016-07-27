@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -38,6 +39,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class InputOutputBindingOrderTest {
 
@@ -58,7 +60,7 @@ public class InputOutputBindingOrderTest {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
+	@Import({MockBinderRegistryConfiguration.class, BinderFactoryConfiguration.class})
 	public static class TestSource {
 
 		@Bean
@@ -71,7 +73,7 @@ public class InputOutputBindingOrderTest {
 
 		@SuppressWarnings("rawtypes")
 		@Autowired
-		private Binder binder;
+		private BinderFactory binderFactory;
 
 		@Autowired
 		private Processor processor;
@@ -81,9 +83,10 @@ public class InputOutputBindingOrderTest {
 		@Override
 		@SuppressWarnings("unchecked")
 		public synchronized void start() {
-			verify(this.binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<ProducerProperties>any());
+			Binder binder = this.binderFactory.getBinder(null);
+			verify(binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<ProducerProperties>any());
 			// input was not bound yet
-			verifyNoMoreInteractions(this.binder);
+			verifyNoMoreInteractions(binder);
 			this.running = true;
 		}
 

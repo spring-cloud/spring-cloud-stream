@@ -21,9 +21,6 @@ import java.util.Map.Entry;
 
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -39,64 +36,38 @@ abstract class AggregateApplication {
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
-	public static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
+	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
+
+	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".selfContained";
 
 	public static final String INPUT_CHANNEL_NAME = "input";
 
 	public static final String OUTPUT_CHANNEL_NAME = "output";
 
-	/**
-	 * Supports the aggregation of {@link Source}, {@link Sink} and {@link Processor}
-	 * apps by instantiating and binding them directly
-	 *
-	 * @param parentArgs arguments for the parent (prefixed with '--')
-	 * @param apps a list app classes to be aggregated
-	 * @param appArgs arguments for the apps (prefixed with '--")
-	 *
-	 * @return the resulting parent context for the aggregate
-	 */
-	static ConfigurableApplicationContext run(Class<?>[] apps, String[] parentArgs, String[][] appArgs) {
-		ConfigurableApplicationContext parentContext = createParentContext(parentArgs != null ? parentArgs
-				: new String[0]);
-		runEmbedded(parentContext, apps, appArgs);
-		return parentContext;
-	}
-
-	static ConfigurableApplicationContext run(Class<?>... apps) {
-		return run(apps, null, null);
-	}
-
-	/**
-	 * Embeds a group of apps into an existing parent context
-	 *
-	 * @param parentContext the parent context
-	 * @param apps a list of classes, representing root context definitions for apps
-	 * @param args arguments for the apps
-	 */
-	static void runEmbedded(ConfigurableApplicationContext parentContext,
-			Class<?>[] apps, String[][] args) {
-		SharedChannelRegistry bean = parentContext.getBean(SharedChannelRegistry.class);
-		prepareSharedChannelRegistry(bean, apps);
-		// create child contexts first
-		createChildContexts(parentContext, apps, args);
-	}
-
-	static ConfigurableApplicationContext createParentContext(String[] args) {
+	static ConfigurableApplicationContext createParentContext(String[] args, boolean selfContained) {
 		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
 		aggregatorParentConfiguration
 				.sources(AggregatorParentConfiguration.class)
 				.web(false)
 				.headless(true)
 				.properties("spring.jmx.default-domain="
-						+ AggregatorParentConfiguration.class.getName());
+						+ AggregatorParentConfiguration.class.getName(),
+						SELF_CONTAINED_APP_PROPERTY_NAME + "=" + selfContained);
 		return aggregatorParentConfiguration.run(args);
 	}
 
-	static void createChildContexts(ConfigurableApplicationContext parentContext, Class<?>[] apps, String[][] args) {
-		for (int i = apps.length - 1; i >= 0; i--) {
-			String appClassName = apps[i].getName();
-			embedApp(parentContext, getNamespace(appClassName, i), apps[i]).run(args != null ? args[i] : new String[0]);
-		}
+	static ConfigurableApplicationContext createParentContext(ConfigurableApplicationContext parentContext, String[] args,
+			boolean selfContained) {
+		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
+		aggregatorParentConfiguration
+				.sources(AggregatorParentConfiguration.class)
+				.web(false)
+				.headless(true)
+				.properties("spring.jmx.default-domain="
+						+ AggregatorParentConfiguration.class.getName(),
+						SELF_CONTAINED_APP_PROPERTY_NAME + "=" + selfContained)
+				.parent(parentContext);
+		return aggregatorParentConfiguration.run(args);
 	}
 
 	static String getNamespace(String appClassName, int index) {
@@ -104,7 +75,7 @@ abstract class AggregateApplication {
 	}
 
 	protected static SpringApplicationBuilder embedApp(
-			ConfigurableApplicationContext applicationContext, String namespace,
+			ConfigurableApplicationContext parentContext, String namespace,
 			Class<?> app) {
 		return new SpringApplicationBuilder(app)
 				.web(false)
@@ -113,16 +84,7 @@ abstract class AggregateApplication {
 				.properties("spring.jmx.default-domain=" + app)
 				.properties(CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
 				.registerShutdownHook(false)
-				.parent(applicationContext);
-	}
-
-	static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry, Class<?>[] apps) {
-		LinkedHashMap<Class<?>, String> appsToRegister = new LinkedHashMap<>();
-		for (int i = apps.length - 1; i >= 0; i--) {
-			String appClassName = apps[i].getName();
-			appsToRegister.put(apps[i], getNamespace(appClassName, i));
-		}
-		prepareSharedChannelRegistry(sharedChannelRegistry, appsToRegister);
+				.parent(parentContext);
 	}
 
 	static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry,

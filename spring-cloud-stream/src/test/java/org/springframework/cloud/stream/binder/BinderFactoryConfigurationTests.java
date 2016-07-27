@@ -61,9 +61,25 @@ public class BinderFactoryConfigurationTests {
 	}
 
 	@Test
-	public void loadBinderTypeRegistryWithAggregatorApp() throws Exception {
+	public void loadBinderTypeRegistryWithNonSelfContainedAggregatorApp() throws Exception {
+		try {
 			createBinderTestContextWithSources(
-					new Class[] { SimpleApplication.class, AggregatorParentConfiguration.class}, new String[] {});
+					new Class[]{SimpleApplication.class, AggregatorParentConfiguration.class}, new String[]{},
+					"spring.cloud.stream.internal.selfContained=false");
+			fail();
+		}
+		catch (BeanCreationException e) {
+			assertThat(e.getMessage()).contains(
+					"Cannot create binder factory, no `META-INF/spring.binders` resources found on the classpath");
+		}
+
+	}
+
+	@Test
+	public void loadBinderTypeRegistryWithSelfContainedAggregatorApp() throws Exception {
+			createBinderTestContextWithSources(
+					new Class[] { SimpleApplication.class, AggregatorParentConfiguration.class}, new String[] {},
+					"spring.cloud.stream.internal.selfContained=true");
 	}
 
 	@Test

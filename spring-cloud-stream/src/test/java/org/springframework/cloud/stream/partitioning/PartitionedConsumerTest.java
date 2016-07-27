@@ -28,7 +28,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
@@ -43,6 +45,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = PartitionedConsumerTest.TestSink.class)
@@ -50,7 +53,7 @@ public class PartitionedConsumerTest {
 
 	@SuppressWarnings("rawtypes")
 	@Autowired
-	private Binder binder;
+	private BinderFactory binderFactory;
 
 	@Autowired
 	@Bindings(TestSink.class)
@@ -59,17 +62,18 @@ public class PartitionedConsumerTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testBindingPartitionedConsumer() {
+		Binder binder = this.binderFactory.getBinder(null);
 		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor.forClass(ConsumerProperties.class);
-		verify(this.binder).bindConsumer(eq("partIn"), anyString(), eq(this.testSink.input()),
+		verify(binder).bindConsumer(eq("partIn"), anyString(), eq(this.testSink.input()),
 				argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getInstanceIndex(), equalTo(0));
 		Assert.assertThat(argumentCaptor.getValue().getInstanceCount(), equalTo(2));
-		verifyNoMoreInteractions(this.binder);
+		verifyNoMoreInteractions(binder);
 	}
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
+	@Import({MockBinderRegistryConfiguration.class, BinderFactoryConfiguration.class})
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/partitioned-consumer-test.properties")
 	public static class TestSink {
 
