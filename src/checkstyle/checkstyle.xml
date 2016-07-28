@@ -46,7 +46,6 @@
 		<!-- Class Design -->
 		<module name="FinalClass" />
 		<module name="InterfaceIsType" />
-		<module name="HideUtilityClassConstructor" />
 		<module name="MutableException" />
 		<module name="InnerTypeLast" />
 		<module name="OneTopLevelClass" />

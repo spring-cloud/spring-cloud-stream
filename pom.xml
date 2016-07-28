@@ -44,6 +44,8 @@
 		<module>spring-cloud-stream-integration-tests</module>
 		<module>spring-cloud-stream-docs</module>
 		<module>spring-cloud-stream-reactive</module>
+		<module>spring-cloud-stream-schema</module>
+		<module>spring-cloud-stream-schema-server</module>
 	</modules>
 	<build>
 		<pluginManagement>
