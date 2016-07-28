@@ -33,9 +33,11 @@ import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.integration.support.MutableMessageBuilderFactory;
+import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
@@ -122,6 +124,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		private final MessageConverter messageConverter;
 
+		private final boolean provideHint;
+
 		private ContentTypeConvertingInterceptor(String contentType, boolean input) {
 			this.contentType = contentType;
 			this.mimeType = MessageConverterUtils.getMimeType(contentType);
@@ -144,6 +148,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			this.messageConverter =
 					MessageConverterConfigurer.this.compositeMessageConverterFactory
 							.getMessageConverterForType(this.mimeType);
+			this.provideHint = this.messageConverter instanceof AbstractMessageConverter;
 		}
 
 		@Override
@@ -162,8 +167,26 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 				}
 			}
 			else {
-				Object converted = this.input ? this.messageConverter.fromMessage(message, this.klazz)
-						: this.messageConverter.toMessage(message.getPayload(), message.getHeaders());
+				Object converted;
+				if (this.input) {
+					if (this.provideHint) {
+						converted = ((AbstractMessageConverter) this.messageConverter).fromMessage(message, this.klazz,
+								this.mimeType);
+					}
+					else {
+						converted = this.messageConverter.fromMessage(message, this.klazz);
+					}
+				}
+				else {
+					if (this.provideHint) {
+						converted = ((AbstractMessageConverter) this.messageConverter).toMessage(message.getPayload(),
+								new MutableMessageHeaders(message.getHeaders()), this.mimeType);
+					}
+					else {
+						converted = this.messageConverter.toMessage(message.getPayload(),
+								new MutableMessageHeaders(message.getHeaders()));
+					}
+				}
 				if (converted instanceof Message) {
 					sentMessage = (Message<?>) converted;
 				}

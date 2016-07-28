@@ -89,7 +89,7 @@ public class CompositeMessageConverterFactory {
 	 * @param mimeType the target MIME type
 	 * @return a converter for the target MIME type
 	 */
-	public CompositeMessageConverter getMessageConverterForType(MimeType mimeType) {
+	public MessageConverter getMessageConverterForType(MimeType mimeType) {
 		List<MessageConverter> converters = new ArrayList<>();
 		for (MessageConverter converter : this.converters) {
 			if (converter instanceof AbstractMessageConverter) {
@@ -110,7 +110,12 @@ public class CompositeMessageConverterFactory {
 			throw new ConversionException("No message converter is registered for "
 					+ mimeType.toString());
 		}
-		return new CompositeMessageConverter(converters);
+		if (converters.size() > 1) {
+			return new CompositeMessageConverter(converters);
+		}
+		else {
+			return converters.get(0);
+		}
 	}
 
 	public CompositeMessageConverter getMessageConverterForAllRegistered() {
