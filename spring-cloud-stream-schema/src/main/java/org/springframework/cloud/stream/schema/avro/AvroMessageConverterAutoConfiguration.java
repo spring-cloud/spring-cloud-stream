@@ -58,6 +58,7 @@ public class AvroMessageConverterAutoConfiguration {
 			avroSchemaRegistryClientMessageConverter.setSchemaLocations(
 					this.avroMessageConverterProperties.getSchemaLocations());
 		}
+		avroSchemaRegistryClientMessageConverter.setPrefix(this.avroMessageConverterProperties.getPrefix());
 		return avroSchemaRegistryClientMessageConverter;
 	}
 }

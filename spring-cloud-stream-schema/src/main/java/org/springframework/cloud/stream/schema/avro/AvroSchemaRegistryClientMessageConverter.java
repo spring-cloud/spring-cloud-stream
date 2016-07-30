@@ -41,8 +41,23 @@ import org.springframework.util.MimeType;
 import org.springframework.util.ObjectUtils;
 
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter} for Apache Avro
- * schemas, with the ability to publish and retrieve schemas stored in a schema server.
+ * A {@link org.springframework.messaging.converter.MessageConverter}
+ * for Apache Avro, with the ability to publish and retrieve schemas
+ * stored in a schema server, allowing for schema evolution in applications.
+ * The supported content types are in the form `application/*+avro`.
+ *
+ * During the conversion to a message, the converter will set the 'contentType'
+ * header to 'application/[prefix].[subject].v[version]+avro', where:
+ *
+ * <li>
+ * <ul><i>prefix</i> is a configurable prefix (default 'vnd');</ul>
+ * <ul><i>subject</i> is a subject derived from the type of the outgoing object - typically the class name;</ul>
+ * <ul><i>version</i> is the schema version for the given subject;</ul>
+ * </li>
+ *
+ * When converting from a message, the converter will parse the content-type
+ * and use it to fetch and cache the writer schema using the provided
+ * {@link SchemaRegistryClient}.
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
  */
@@ -50,8 +65,9 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	public static final String AVRO_FORMAT = "avro";
 
-	private static Pattern VERSIONED_SCHEMA = Pattern.compile(
-			"application/vnd\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+avro");
+	public static final Pattern PREFIX_VALIDATION_PATTERN = Pattern.compile("[\\p{Alnum}]");
+
+	private Pattern versionedSchema;
 
 	private boolean dynamicSchemaGenerationEnabled;
 
@@ -63,12 +79,24 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private SchemaRegistryClient schemaRegistryClient;
 
+	private String prefix = "vnd";
+
+	/**
+	 * Creates a new instance, configuring it with a {@link SchemaRegistryClient}.
+	 * @param schemaRegistryClient the {@link SchemaRegistryClient} used to interact with the schema registry server.
+	 */
 	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient) {
-		super(Arrays.asList(new MimeType("application", "avro"), new MimeType("application", "*+avro")));
+		super(Arrays.asList(new MimeType("application", "*+avro")));
 		Assert.notNull(schemaRegistryClient, "cannot be null");
 		this.schemaRegistryClient = schemaRegistryClient;
 	}
 
+	/**
+	 * Allows the converter to generate and register schemas automatically.
+	 * If set to false, it only allows the converter to use pre-registered schemas.
+	 * Default 'true'.
+	 * @param dynamicSchemaGenerationEnabled true if dynamic schema generation is enabled
+	 */
 	public void setDynamicSchemaGenerationEnabled(boolean dynamicSchemaGenerationEnabled) {
 		this.dynamicSchemaGenerationEnabled = dynamicSchemaGenerationEnabled;
 	}
@@ -77,13 +105,31 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		return this.dynamicSchemaGenerationEnabled;
 	}
 
+	/**
+	 * A set of locations where the converter can load schemas from.
+	 * Schemas provided at these locations will be registered automatically.
+	 *
+	 * @param schemaLocations
+	 */
 	public void setSchemaLocations(Resource[] schemaLocations) {
 		Assert.notEmpty(schemaLocations, "cannot be empty");
 		this.schemaLocations = schemaLocations;
 	}
 
+	/**
+	 * Set the prefix to be used in the publised subtype. Default 'vnd'.
+	 * @param prefix
+	 */
+	public void setPrefix(String prefix) {
+		Assert.hasText(prefix, "Prefix cannot be empty");
+		Assert.isTrue(!PREFIX_VALIDATION_PATTERN.matcher(this.prefix).matches(), "Invalid prefix:" + this.prefix);
+		this.prefix = prefix;
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
+		this.versionedSchema = Pattern.compile(
+				"application/" + this.prefix + "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+avro");
 		if (!ObjectUtils.isEmpty(this.schemaLocations)) {
 			this.logger.info("Scanning avro schema resources on classpath");
 			if (this.logger.isInfoEnabled()) {
@@ -112,7 +158,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	protected String toSubject(Schema schema) {
-		return schema.getFullName().toLowerCase();
+		return schema.getName().toLowerCase();
 	}
 
 	@Override
@@ -127,8 +173,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 			return true;
 		}
 		MimeType mimeType = getContentTypeResolver().resolve(headers);
-		return (MimeType.valueOf("application/avro").includes(mimeType)
-				|| MimeType.valueOf("application/*+avro").includes(mimeType));
+		return MimeType.valueOf("application/*+avro").includes(mimeType);
 	}
 
 	@Override
@@ -158,7 +203,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private SchemaReference extractSchemaReference(MimeType mimeType) {
 		SchemaReference schemaReference = null;
-		Matcher schemaMatcher = VERSIONED_SCHEMA.matcher(mimeType.toString());
+		Matcher schemaMatcher = this.versionedSchema.matcher(mimeType.toString());
 		if (schemaMatcher.find()) {
 			String subject = schemaMatcher.group(1);
 			Integer version = Integer.parseInt(schemaMatcher.group(2));

@@ -32,6 +32,8 @@ public class AvroMessageConverterProperties {
 
 	private Resource[] schemaLocations;
 
+	private String prefix = "vnd";
+
 	public Resource getReaderSchema() {
 		return this.readerSchema;
 	}
@@ -56,5 +58,13 @@ public class AvroMessageConverterProperties {
 
 	public void setDynamicSchemaGenerationEnabled(boolean dynamicSchemaGenerationEnabled) {
 		this.dynamicSchemaGenerationEnabled = dynamicSchemaGenerationEnabled;
+	}
+
+	public String getPrefix() {
+		return this.prefix;
+	}
+
+	public void setPrefix(String prefix) {
+		this.prefix = prefix;
 	}
 }

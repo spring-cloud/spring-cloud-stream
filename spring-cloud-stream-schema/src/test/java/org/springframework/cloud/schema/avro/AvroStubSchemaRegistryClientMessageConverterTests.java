@@ -65,7 +65,7 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 		ConfigurableApplicationContext barSourceContext = SpringApplication.run(AvroSourceApplication.class,
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.output.contentType=application/vnd.org.springframework.cloud.schema.avro.user1.v1+avro",
+				"--spring.cloud.stream.bindings.output.contentType=application/vnd.user1.v1+avro",
 				"--spring.cloud.stream.schema.avro.dynamicSchemaGenerationEnabled=true");
 		Source barSource = barSourceContext.getBean(Source.class);
 		User2 firstOutboundUser2 = new User2();
