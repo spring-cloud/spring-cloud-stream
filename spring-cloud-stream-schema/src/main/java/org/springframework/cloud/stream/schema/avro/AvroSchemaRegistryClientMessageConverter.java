@@ -27,15 +27,12 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericContainer;
 import org.apache.avro.reflect.ReflectData;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.schema.SchemaNotFoundException;
 import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.io.Resource;
 import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.MessageHeaders;
@@ -49,16 +46,12 @@ import org.springframework.util.ObjectUtils;
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
  */
-public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessageConverter
-		implements ApplicationContextAware,
-		InitializingBean {
+public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessageConverter implements InitializingBean {
 
 	public static final String AVRO_FORMAT = "avro";
 
 	private static Pattern VERSIONED_SCHEMA = Pattern.compile(
 			"application/vnd\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+avro");
-
-	private ApplicationContext applicationContext;
 
 	private boolean dynamicSchemaGenerationEnabled;
 
@@ -87,11 +80,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	public void setSchemaLocations(Resource[] schemaLocations) {
 		Assert.notEmpty(schemaLocations, "cannot be empty");
 		this.schemaLocations = schemaLocations;
-	}
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
 	}
 
 	@Override

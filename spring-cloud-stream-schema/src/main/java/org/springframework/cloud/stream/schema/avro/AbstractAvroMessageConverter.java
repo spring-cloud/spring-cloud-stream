@@ -50,6 +50,7 @@ import org.springframework.util.MimeType;
  */
 public abstract class AbstractAvroMessageConverter extends AbstractMessageConverter {
 
+
 	protected AbstractAvroMessageConverter(MimeType supportedMimeType) {
 		super(supportedMimeType);
 	}
@@ -84,16 +85,9 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			}
 			buf.get(payload);
 			Schema schema = resolveReaderSchema(mimeType);
-			if (schema != null) {
-				DatumReader<Object> reader = getDatumReader(targetClass, schema);
-				Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
-				result = reader.read(null, decoder);
-			}
-			else {
-				if (this.logger.isDebugEnabled()) {
-					this.logger.debug("Cannot extract schema reference from " + mimeType);
-				}
-			}
+			DatumReader<Object> reader = getDatumReader((Class<Object>) targetClass, schema);
+			Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
+			result = reader.read(null, decoder);
 		}
 		catch (IOException e) {
 			throw new MessageConversionException(message, "Failed to read payload", e);
@@ -101,33 +95,56 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		return result;
 	}
 
-	private DatumWriter<Object> getDatumWriter(Class<?> type, Schema schema) {
+	private DatumWriter<Object> getDatumWriter(Class<Object> type, Schema schema) {
 		DatumWriter<Object> writer;
 		this.logger.debug("Finding correct DatumWriter for type " + type.getName());
 		if (SpecificRecord.class.isAssignableFrom(type)) {
-			writer = new SpecificDatumWriter<>(schema);
+			if (schema != null) {
+				writer = new SpecificDatumWriter<>(schema);
+			}
+			else {
+				writer = new SpecificDatumWriter<>(type);
+			}
 		}
 		else if (GenericRecord.class.isAssignableFrom(type)) {
 			writer = new GenericDatumWriter<>(schema);
 		}
 		else {
-			writer = new ReflectDatumWriter<>(schema);
+			if (schema != null) {
+				writer = new ReflectDatumWriter<>(schema);
+			}
+			else {
+				writer = new ReflectDatumWriter<>(type);
+			}
 		}
-		this.logger.debug("DatumWriter of type " + writer.getClass().getName() + " selected");
 		return writer;
 	}
 
-	protected DatumReader<Object> getDatumReader(Class<?> type, Schema schema) {
+	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema schema) {
 		DatumReader<Object> reader = null;
 		if (SpecificRecord.class.isAssignableFrom(type)) {
-			reader = new SpecificDatumReader<>(schema);
+			if (schema != null) {
+				reader = new SpecificDatumReader<>(schema);
+			}
+			else {
+				reader = new SpecificDatumReader<>(type);
+			}
 		}
 		else if (GenericRecord.class.isAssignableFrom(type)) {
-			reader = new GenericDatumReader<>(schema);
+			if (schema != null) {
+				reader = new GenericDatumReader<>(schema);
+			}
 		}
 		else {
 			reader = new ReflectDatumReader(type);
-			reader.setSchema(schema);
+			if (schema != null) {
+				reader.setSchema(schema);
+			}
+		}
+		if (reader == null) {
+			throw new MessageConversionException(
+					"No schema can be inferred from type " + type
+							.getName() + " and no schema has been explicitly configured.");
 		}
 		return reader;
 	}
@@ -140,10 +157,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			if (conversionHint instanceof MimeType) {
 				hintedContentType = (MimeType) conversionHint;
 			}
-
 			Schema schema = resolveWriterSchema(payload, headers, hintedContentType);
-
-			DatumWriter<Object> writer = getDatumWriter(payload.getClass(), schema);
+			DatumWriter<Object> writer = getDatumWriter((Class<Object>) payload.getClass(), schema);
 			Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
 			writer.write(payload, encoder);
 			encoder.flush();

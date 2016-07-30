@@ -23,79 +23,67 @@ import org.apache.avro.Schema;
 
 import org.springframework.core.io.Resource;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
 /**
- * A
  * @author Marius Bogoevici
  */
 
 public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 
-	private final Schema readerSchema;
+	private Schema schema;
 
 	/**
 	 * Create a {@link AvroSchemaMessageConverter} using the provided {@link Schema}.
 	 * Uses the default {@link MimeType} of {@code "application/avro"}.
-	 * @param schema the Avro schema used by this converter
 	 */
-	public AvroSchemaMessageConverter(Schema schema) {
+	public AvroSchemaMessageConverter() {
 		super(new MimeType("application", "avro"));
-		this.readerSchema = schema;
-	}
-
-	/**
-	 * Create a {@link AvroSchemaMessageConverter} using the schema contained in the {@link Resource}.
-	 * Uses the default {@link MimeType} of {@code "application/avro"}.
-	 * @param schemaLocation the location of the schema
-	 * @throws IOException if the resource cannot be found
-	 */
-	public AvroSchemaMessageConverter(Resource schemaLocation) throws IOException {
-		this(parseSchema(schemaLocation));
 	}
 
 	/**
 	 * Create a {@link AvroSchemaMessageConverter} using the provided {@link Schema}.
 	 * The converter will be used for the provided {@link MimeType}.
-	 * @param supportedMimeType the mime type supported by this converter
-	 * @param schema            the Avro schema used by this converter
 	 */
-	public AvroSchemaMessageConverter(MimeType supportedMimeType, Schema schema) {
+	public AvroSchemaMessageConverter(MimeType supportedMimeType) {
 		super(supportedMimeType);
-		this.readerSchema = schema;
-	}
-
-	/**
-	 * Create a {@link AvroSchemaMessageConverter} using the schema contained in the {@link Resource}.
-	 * The converter will be used for the provided {@link MimeType}.
-	 * @param supportedMimeType the mime type supported by this converter
-	 * @param schemaLocation    the location of the schema
-	 * @throws IOException if the resource cannot be found
-	 */
-	public AvroSchemaMessageConverter(MimeType supportedMimeType, Resource schemaLocation) throws IOException {
-		this(supportedMimeType, parseSchema(schemaLocation));
 	}
 
 	/**
 	 * Create a {@link AvroSchemaMessageConverter} using the provided {@link Schema}.
 	 * The converter will be used for the provided {@link MimeType}s.
 	 * @param supportedMimeTypes the mime types supported by this converter
-	 * @param schema             the Avro schema used by this converter
 	 */
-	public AvroSchemaMessageConverter(Collection<MimeType> supportedMimeTypes, Schema schema) {
+	public AvroSchemaMessageConverter(Collection<MimeType> supportedMimeTypes) {
 		super(supportedMimeTypes);
-		this.readerSchema = schema;
+	}
+
+	public Schema getSchema() {
+		return this.schema;
 	}
 
 	/**
-	 * Create a {@link AvroSchemaMessageConverter} using the {@link Schema} contained in the {@link Resource}.
-	 * The converter will be used for the provided {@link MimeType}s.
-	 * @param supportedMimeTypes the mime types supported by this converter
-	 * @param schemaLocation     the Avro schema used by this converter
+	 * Sets the Apache Avro schema to be used by this converter.
+	 * @param schema schema to be used by this converter
 	 */
-	public AvroSchemaMessageConverter(Collection<MimeType> supportedMimeTypes, Resource schemaLocation)
-			throws IOException {
-		this(supportedMimeTypes, parseSchema(schemaLocation));
+	public void setSchema(Schema schema) {
+		Assert.notNull(schema, "schema cannot be null");
+		this.schema = schema;
+	}
+
+	/**
+	 * The location of the Apache Avro schema to be used by this converter.
+	 * @param schemaLocation the location of the schema used by this converter.
+	 */
+	public void setSchemaLocation(Resource schemaLocation) {
+		Assert.notNull(schemaLocation, "schema cannot be null");
+		try {
+			this.schema = parseSchema(schemaLocation);
+		}
+		catch (IOException e) {
+			throw new IllegalStateException("Schema cannot be parsed:", e);
+		}
 	}
 
 	@Override
@@ -105,12 +93,12 @@ public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 
 	@Override
 	protected Schema resolveReaderSchema(MimeType mimeType) {
-		return this.readerSchema;
+		return this.schema;
 	}
 
 	@Override
 	protected Schema resolveWriterSchema(Object payload, MessageHeaders headers,
 			MimeType hintedContentType) {
-		return this.readerSchema;
+		return this.schema;
 	}
 }
