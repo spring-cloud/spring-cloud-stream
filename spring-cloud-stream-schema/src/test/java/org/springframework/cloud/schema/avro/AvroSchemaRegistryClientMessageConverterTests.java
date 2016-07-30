@@ -49,7 +49,8 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 	@Test
 	public void testSendMessage() throws Exception {
 
-		ConfigurableApplicationContext schemaRegistryServerContext = SpringApplication.run(SchemaRegistryServerApplication.class);
+		ConfigurableApplicationContext schemaRegistryServerContext = SpringApplication.run(
+				SchemaRegistryServerApplication.class);
 
 		ConfigurableApplicationContext sourceContext = SpringApplication.run(AvroSourceApplication.class,
 				"--server.port=0",

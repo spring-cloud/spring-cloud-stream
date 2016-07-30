@@ -177,7 +177,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	@Override
-	protected Schema resolveWriterSchema(Object payload, MessageHeaders headers,
+	protected Schema resolveSchemaForWriting(Object payload, MessageHeaders headers,
 			MimeType hintedContentType) {
 		Schema schema;
 		SchemaReference schemaReference = extractSchemaReference(hintedContentType);
@@ -213,7 +213,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	@Override
-	protected Schema resolveReaderSchema(MimeType mimeType) {
+	protected Schema resolveWriterSchemaForDeserialization(MimeType mimeType) {
 		if (this.readerSchema == null) {
 			Schema schema = null;
 			SchemaReference schemaReference = extractSchemaReference(mimeType);
@@ -226,6 +226,11 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		else {
 			return this.readerSchema;
 		}
+	}
+
+	@Override
+	protected Schema resolveReaderSchemaForDeserialization(Class<?> targetClass) {
+		return this.readerSchema;
 	}
 
 	public void setReaderSchema(Resource readerSchema) {

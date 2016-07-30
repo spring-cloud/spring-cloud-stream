@@ -84,8 +84,9 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 				}
 			}
 			buf.get(payload);
-			Schema schema = resolveReaderSchema(mimeType);
-			DatumReader<Object> reader = getDatumReader((Class<Object>) targetClass, schema);
+			Schema writerSchema = resolveWriterSchemaForDeserialization(mimeType);
+			Schema readerSchema = resolveReaderSchemaForDeserialization(targetClass);
+			DatumReader<Object> reader = getDatumReader((Class<Object>) targetClass, readerSchema, writerSchema);
 			Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
 			result = reader.read(null, decoder);
 		}
@@ -120,25 +121,38 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		return writer;
 	}
 
-	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema schema) {
+	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema schema, Schema writerSchema) {
 		DatumReader<Object> reader = null;
 		if (SpecificRecord.class.isAssignableFrom(type)) {
 			if (schema != null) {
-				reader = new SpecificDatumReader<>(schema);
+				if (writerSchema != null) {
+					reader = new SpecificDatumReader<>(writerSchema, schema);
+				}
+				else {
+					reader = new SpecificDatumReader<>(schema);
+				}
 			}
 			else {
 				reader = new SpecificDatumReader<>(type);
+				if (writerSchema != null) {
+					reader.setSchema(writerSchema);
+				}
 			}
 		}
 		else if (GenericRecord.class.isAssignableFrom(type)) {
 			if (schema != null) {
-				reader = new GenericDatumReader<>(schema);
+				if (writerSchema != null) {
+					reader = new GenericDatumReader<>(writerSchema, schema);
+				}
+				else {
+					reader = new GenericDatumReader<>(schema);
+				}
 			}
 		}
 		else {
 			reader = new ReflectDatumReader(type);
-			if (schema != null) {
-				reader.setSchema(schema);
+			if (writerSchema != null) {
+				reader.setSchema(writerSchema);
 			}
 		}
 		if (reader == null) {
@@ -157,7 +171,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			if (conversionHint instanceof MimeType) {
 				hintedContentType = (MimeType) conversionHint;
 			}
-			Schema schema = resolveWriterSchema(payload, headers, hintedContentType);
+			Schema schema = resolveSchemaForWriting(payload, headers, hintedContentType);
 			DatumWriter<Object> writer = getDatumWriter((Class<Object>) payload.getClass(), schema);
 			Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
 			writer.write(payload, encoder);
@@ -169,8 +183,10 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		return baos.toByteArray();
 	}
 
-	protected abstract Schema resolveWriterSchema(Object payload, MessageHeaders headers,
+	protected abstract Schema resolveSchemaForWriting(Object payload, MessageHeaders headers,
 			MimeType hintedContentType);
 
-	protected abstract Schema resolveReaderSchema(MimeType mimeType);
+	protected abstract Schema resolveWriterSchemaForDeserialization(MimeType mimeType);
+
+	protected abstract Schema resolveReaderSchemaForDeserialization(Class<?> targetClass);
 }

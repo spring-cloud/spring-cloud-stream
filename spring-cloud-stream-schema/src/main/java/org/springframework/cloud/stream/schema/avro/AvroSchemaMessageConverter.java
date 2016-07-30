@@ -100,12 +100,17 @@ public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 	}
 
 	@Override
-	protected Schema resolveReaderSchema(MimeType mimeType) {
+	protected Schema resolveWriterSchemaForDeserialization(MimeType mimeType) {
 		return this.schema;
 	}
 
 	@Override
-	protected Schema resolveWriterSchema(Object payload, MessageHeaders headers,
+	protected Schema resolveReaderSchemaForDeserialization(Class<?> targetClass) {
+		return this.schema;
+	}
+
+	@Override
+	protected Schema resolveSchemaForWriting(Object payload, MessageHeaders headers,
 			MimeType hintedContentType) {
 		return this.schema;
 	}
