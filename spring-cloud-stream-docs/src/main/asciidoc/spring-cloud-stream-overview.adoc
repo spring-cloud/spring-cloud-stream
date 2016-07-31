@@ -486,6 +486,119 @@ In the case of RabbitMQ, content type headers can be set by external application
 Spring Cloud Stream supports them as part of an extended internal protocol used for any type of transport (including transports, such as Kafka, that do not normally support headers).
 ====
 
+==== Reactive Programming Support
+
+Spring Cloud Stream also supports the use of reactive APIs, where incoming and outgoing data is handled as continuous data flows.
+
+The programming model with reactive APIs is declarative, where instead of specifying how each individual message should be handled, you can use operators that describe functional transformations from inbound to outbound data flows.
+
+Spring Cloud Stream supports the following reactive APIs:
+
+*   Reactor
+*   RxJava 1.x
+
+In the future, it is intended to support a more generic model based on Reactive Streams.
+
+The reactive programming model is also using the `@StreamListener` annotation for setting up reactive handlers. The differences are that:
+
+* the `@StreamListener` annotation must not specify an input or output, as they are provided as arguments and return values from the method;
+* the arguments of the method must be annotated with `@Input` and `@Output` indicating which input or output will the incoming and respectively outgoing data flows connect to;
+* the return value of the method, if any, will be annotated with `@Output`, indicating the input where data shall be sent.
+
+[NOTE]
+====
+Reactive programming support requires Java 1.8.
+====
+
+[NOTE]
+====
+Reactive programming support requires the use of Reactor 3.0.0 and higher. `spring-cloud-stream-reactive` will transitively retrieve the proper version, but it is possible for the project structure to manage the version of the `io.projectreactor:reactor-core` to an earlier release. This is the case for projects generated via Spring Initializr, which will override the Reactor version to `2.0.8.RELEASE`. In such cases you must ensure that the proper version of the artifact is released. This can be simply achived by adding a direct dependency on `io.projectreactor:reactor-core` with a version of `3.0.0.RC1` or later.
+====
+
+[NOTE]
+====
+The use of term `reactive` is currently referring to the reactive APIs being used and not to the execution model being reactive (i.e. the bound endpoints are still using a 'push' rather than 'pull' model). While some backpressure support is provided by the use of Reactor, we do intend on the long run to support entirely reactive pipelines by the use of native reactive clients for the connected middleware. 
+====
+
+===== Reactor-based handlers
+
+A Reactor based handler can have the following argument types:
+
+* For arguments annotated with `@Input`, it supports the  Reactor type `Flux`.
+  The parameterization of the inbound Flux follows the same rules as in the case of individual message handling: it can be the entire `Message`, a POJO which can be the `Message` payload, or a POJO which is the result of a transformation based on the `Message` content-type header. Multiple inputs are provided;
+* For arguments annotated with `Output`, it supports the type `FluxSender` which connects a `Flux` produced by the method with an output. Generally speaking, specifying outputs as arguments is only recommended when the method can have multiple outputs;
+
+A Reactor based handler supports a return type of `Flux`, case in which it must be annotated with `@Output`. We recommend using the return value of the method when a single output flux is available.
+
+Here is an example of a simple Reactor-based Processor.
+
+[source, java]
+----
+@EnableBinding(Processor.class)
+@EnableAutoConfiguration
+public static class UppercaseTransformer {
+
+  @StreamListener
+  @Output(Processor.OUTPUT)
+  public Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
+    return input.map(s -> s.toUpperCase());
+  }
+}
+----
+
+The same processor using output arguments looks like this:
+
+[source, java]
+----
+@EnableBinding(Processor.class)
+@EnableAutoConfiguration
+public static class UppercaseTransformer {
+
+  @StreamListener
+  public void receive(@Input(Processor.INPUT) Flux<String> input,
+     @Output(Processor.OUTPUT) FluxSender output) {
+     output.send(input.map(s -> s.toUpperCase()));
+  }
+}
+----
+
+===== RxJava 1.x support
+
+RxJava 1.x handlers follow the same rules as Reactor-based one, but will use `Observable` and `ObservableSender` arguments and return types.
+
+So the first example above will become:
+
+[source, java]
+----
+@EnableBinding(Processor.class)
+@EnableAutoConfiguration
+public static class UppercaseTransformer {
+
+  @StreamListener
+  @Output(Processor.OUTPUT)
+  public Observable<String> receive(@Input(Processor.INPUT) Observable<String> input) {
+    return input.map(s -> s.toUpperCase());
+  }
+}
+----
+
+The second example above will become:
+
+
+[source, java]
+----
+@EnableBinding(Processor.class)
+@EnableAutoConfiguration
+public static class UppercaseTransformer {
+
+  @StreamListener
+  public void receive(@Input(Processor.INPUT) Observable<String> input,
+     @Output(Processor.OUTPUT) ObservableSender output) {
+     output.send(input.map(s -> s.toUpperCase()));
+  }
+}
+----
+
 ==== Aggregation
 
 Spring Cloud Stream provides support for aggregating multiple applications together, connecting their input and output channels directly and avoiding the additional cost of exchanging messages via a broker.
@@ -570,61 +683,6 @@ The ending component of the sequence is provided as argument to the `to()` metho
 Intermediate processors are provided as argument to the `via()` method.
 Multiple processors of the same type can be chained together (e.g. for pipelining transformations with different configurations).
 For each component, the builder can provide runtime arguments for Spring Boot configuration.
-
-
-==== RxJava support
-
-Spring Cloud Stream provides support for RxJava-based processors through the `RxJavaProcessor` available in `spring-cloud-stream-rxjava`.
-
-[source,java]
-----
-public interface RxJavaProcessor<I, O> {
-	Observable<O> process(Observable<I> input);
-}
-----
-
-An implementation of `RxJavaProcessor` will receive `Observable` as an input that represents the flow of inbound message payloads.
-The `process` method is invoked once at startup for setting up the data flow.
-
-You can enable the use of RxJava-based processors and use them in your processor application by using the `@EnableRxJavaProcessor` annotation.
-`@EnableRxJavaProcessor` is meta-annotated with `@EnableBinding(Processor.class)` and will create the `Processor` binding.
-Here is an example of an RxJava-based processor:
-
-[source,java]
-----
-@EnableRxJavaProcessor
-public class RxJavaTransformer {
-
-	private static Logger logger = LoggerFactory.getLogger(RxJavaTransformer.class);
-
-	@Bean
-	public RxJavaProcessor<String,String> processor() {
-		return inputStream -> inputStream.map(data -> {
-			logger.info("Got data = " + data);
-			return data;
-		})
-		.buffer(5)
-		.map(data -> String.valueOf(avg(data)));
-	}
-
-	private static Double avg(List<String> data) {
-		double sum = 0;
-		double count = 0;
-		for(String d : data) {
-			count++;
-			sum += Double.valueOf(d);
-		}
-		return sum/count;
-	}
-}
-----
-
-
-[NOTE]
-====
-When implementing an RxJava processor, it is important to handle exceptions as part of your processing flow.
-Uncaught exceptions will be treated as errors by RxJava and will cause the `Observable` to complete, disrupting the flow.
-====
 
 == Binders
 
