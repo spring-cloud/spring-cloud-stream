@@ -249,6 +249,9 @@ public class KafkaMessageChannelBinder extends
 		props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,
 				producerProperties.getExtension().getCompressionType().toString());
 
+		if (!ObjectUtils.isEmpty(producerProperties.getExtension().getConfiguration())) {
+			props.putAll(producerProperties.getExtension().getConfiguration());
+		}
 		return new DefaultKafkaProducerFactory<>(props);
 	}
 
@@ -293,10 +296,14 @@ public class KafkaMessageChannelBinder extends
 		Deserializer<byte[]> valueDecoder = new ByteArrayDeserializer();
 		Deserializer<byte[]> keyDecoder = new ByteArrayDeserializer();
 
+		if (!ObjectUtils.isEmpty(properties.getExtension().getConfiguration())) {
+			props.putAll(properties.getExtension().getConfiguration());
+		}
+
 		ConsumerFactory<byte[], byte[]> consumerFactory = new DefaultKafkaConsumerFactory<>(props, keyDecoder,
 				valueDecoder);
 
-		Collection<PartitionInfo> listenedPartitions = (Collection<PartitionInfo>) destination;
+		Collection<PartitionInfo> listenedPartitions = destination;
 		Assert.isTrue(!CollectionUtils.isEmpty(listenedPartitions), "A list of partitions must be provided");
 		final TopicPartitionInitialOffset[] topicPartitionInitialOffsets = getTopicPartitionInitialOffsets(
 				listenedPartitions);

@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.validation.constraints.NotNull;
 
 /**
@@ -30,6 +33,8 @@ public class KafkaProducerProperties {
 	private boolean sync;
 
 	private int batchTimeout;
+
+	private Map<String, String> configuration = new HashMap<>();
 
 	public int getBufferSize() {
 		return this.bufferSize;
@@ -62,6 +67,14 @@ public class KafkaProducerProperties {
 
 	public void setBatchTimeout(int batchTimeout) {
 		this.batchTimeout = batchTimeout;
+	}
+
+	public Map<String, String> getConfiguration() {
+		return this.configuration;
+	}
+
+	public void setConfiguration(Map<String, String> configuration) {
+		this.configuration = configuration;
 	}
 
 	public enum CompressionType {
