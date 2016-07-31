@@ -30,13 +30,13 @@ public class SchemaServerProperties {
 	 * in another application when you don't want to change the context path or servlet
 	 * path.
 	 */
-	private String prefix;
+	private String path;
 
-	public String getPrefix() {
-		return prefix;
+	public String getPath() {
+		return this.path;
 	}
 
-	public void setPrefix(String prefix) {
-		this.prefix = prefix;
+	public void setPath(String path) {
+		this.path = path;
 	}
 }

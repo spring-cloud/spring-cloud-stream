@@ -1333,6 +1333,205 @@ This is because the payload at the module's output channel is already a String s
 While conversion is supported for both input and output channels, it is especially recommended to be used for the conversion of outbound messages.
 For the conversion of inbound messages, especially when the target is a POJO, the `@StreamListener` support will perform the conversion automatically.
 
+=== Customizing message conversion
+
+Besides the conversions that it supports out of the box, Spring Cloud Stream also supports registering your own message conversion implementations.
+This allows you to send and receive data in a variety of custom formats, including binary, and associate them with specific `contentTypes`.
+In order to do so, you can create a class that extends `AbstractMessageConverter`
+
+=== Schema-based message converters
+
+Spring Cloud Stream provides support for schema-based message converters through its `spring-cloud-stream-schema` module.
+Currently, the only serialization format supported out of the box is Apache Avro, with more formats to be added in future versions.
+
+==== Apache Avro Message Converters
+
+The `spring-cloud-stream-schema` module contains two  types of message converters that can be used for Apache Avro serialization:
+
+*     converters using the class information of the serialized/deserialized objects, or a schema with a location known at startup;
+*     converters using a schema registry - they locate the schemas at runtime, as well as dynamically registering new schemas as domain objects evolve.
+
+===== Converters with schema support
+
+The `AvroSchemaMessageConverter` supports serializing and deserializing messages either using a predefined schema or by using the schema information available in the class (either reflectively, or contained in the `SpecificRecord`).
+If the target type of the conversion is a `GenericRecord`, then a schema must be set.
+
+For using it, you can simply add it to the application context, optionally specifying one ore more `MimeTypes` to associate it with.
+The default `MimeType` is `application/avro`.
+Here is an example of configuring it in a processor application registering the Apache Avro, without a predefined schema:
+
+[source,java]
+----
+@EnableBinding(Sink.class)
+@SpringBootApplication
+public static class SinkApplication {
+
+  ...
+
+  @Bean
+  public MessageConverter userMessageConverter() throws IOException {
+    AvroSchemaMessageConverter avroSchemaMessageConverter {
+      return new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes");
+  }
+}
+----
+
+Conversely, here is an application that registers a converter with a predefined schema, to be found on the classpath:
+
+[source,java]
+----
+@EnableBinding(Sink.class)
+@SpringBootApplication
+public static class SinkApplication {
+
+  ...
+
+  @Bean
+  public MessageConverter userMessageConverter() throws IOException {
+    AvroSchemaMessageConverter avroSchemaMessageConverter {
+      MessageConverter converter = new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes");
+      converter.setSchemaLocation("classpath:schemas/User.avro");
+      return converter;
+  }
+}
+----
+
+In order to understand the schema registry client converter, we will describe the schema registry support first.
+
+=== Schema Registry Support
+
+Most serialization models, especially the ones that aim for portability across different platforms and languages, rely on a schema that describes how the data is serialized in the binary payload.
+In order to serialize the data and then to interpret it, both the sending and receiving sides must have access to a schema that describes the binary format.
+In certain cases, the schema can be inferred from the payload type on serialization, or from the target type on deserialization, but in a lot of cases applications benefit from having access to an explicit schema that describes the binary data format.
+A schema registry allows you to store schema information in a textual format (typically JSON) and makes that information accessible to various applications that need it to receive and send data in binary format.
+A schema is referenceable as a tuple consisting of:
+
+*    a _subject_ that is the logical name of the schema;
+*    the schema _version_;
+*    the schema _format_  which describes the binary format of the data.
+
+==== Schema Registry Server
+
+Spring Cloud Stream provides a schema registry server implementation.
+In order to use it, you can simply add the `spring-cloud-stream-server` artifact to your project and use the `@EnableSchemaRegistryServer` annotation, adding the schema registry server REST controller to your application.
+This annotation is intended to be used with Spring Boot web applications, and the listening port of the server is controlled by the `server.port` setting.
+The `spring.cloud.stream.schema.server.path` setting can be used to control the root path of the schema server (especially when it is embedded in other applications).
+
+The schema registry server uses a relational database to store the schemas.
+ By default, it uses an embedded database.
+You can customize the schema storage using the http://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-sql[Spring Boot SQL database and JDBC configuration options].
+
+A Spring Boot application enabling the schema registry looks as follows:
+
+[source,java]
+----
+@SpringBootApplication
+@EnableSchemaRegistryServer
+public class SchemaRegistryServerApplication {
+	public static void main(String[] args) {
+		SpringApplication.run(SchemaRegistryServerApplication.class, args);
+	}
+}
+----
+
+===== Schema Registry Server API
+
+The Schema Registry Server API consists of the following operations:
+
+====== `POST /`
+
+Register a new schema.
+
+Accepts JSON payload  with the following fields:
+
+*   `subject` the schema subject;
+*   `format` the schema format;
+*   `definition` the schema definition.
+
+Response is a schema object in JSON format, with the following fields:
+
+*   `id` the schema id;
+*   `subject` the schema subject;
+*   `format` the schema format;
+*   `version` the schema version;
+*   `definition` the schema definition.
+
+====== `GET /{subject}/{format}/{version}`
+
+Retrieve an existing schema by its subject, format and version.
+
+Response is a schema object in JSON format, with the following fields:
+
+*   `id` the schema id;
+*   `subject` the schema subject;
+*   `format` the schema format;
+*   `version` the schema version;
+*   `definition` the schema definition.
+
+====== `GET /schemas/{id}`
+
+Retrieve an existing schema by its id.
+
+Response is a schema object in JSON format, with the following fields:
+
+*   `id` the schema id;
+*   `subject` the schema subject;
+*   `format` the schema format;
+*   `version` the schema version;
+*   `definition` the schema definition.
+
+==== Schema Registry Client
+
+The client-side abstraction for interacting with schema registry servers is the `SchemaRegistryClient` interface, with the following structure:
+
+[source,java]
+----
+public interface SchemaRegistryClient {
+
+	SchemaRegistrationResponse register(String subject, String format, String schema);
+
+	String fetch(SchemaReference schemaReference);
+
+	String fetch(Integer id);
+
+}
+----
+
+Spring Cloud Stream provides out of the box implementations for interacting with its own schema server, as well as for interacting with the Confluent Schema Registry.
+
+A client for the Spring Cloud Stream schema registry can be configured using the `@EnableSchemaRegistryClient` as follows:
+
+[source,java]
+----
+  @EnableBinding(Sink.class)
+  @SpringBootApplication
+  @EnableSchemaRegistryClient
+  public static class AvroSinkApplication {
+    ...
+  }
+----
+
+==== Avro Schema Registry Client Message Converters
+
+For Spring Boot applications that have a `SchemaRegistryClient` bean registered with the application context, Spring Cloud Stream will auto-configure an Apache Avro message converter that uses the schema registry client for schema management.
+This eases schema evolution, as applications that receive messages can get easy access to a writer schema that can be reconciled with their own reader schema.
+
+For outbound messages, the `MessageConverter` will be activated if the content type of the channel is set to `application/*+avro`, e.g.:
+
+[source,properties]
+----
+spring.cloud.stream.bindings.output.contentType=application/*+avro
+----
+
+During the outbound conversion, the message converter will try to infer the schemas of the outbound messages based on their type and register them to a subject based on the payload type using the `SchemaRegistryClient`.
+If an identical schema is already found, then a reference to it will be retrieved.
+If not, the schema will be registered and a new version number will be provided.
+The message will be sent with a `contentType` header using the scheme `application/[prefix].[subject].v[version]+avro`, where `prefix` is configurable and `subject` is deduced from the payload type.
+
+For example, a message of the type `User` may be sent as a binary payload with a content type of `application/vnd.user.v2+avro`, where `user` is the subject and `2` is the version number.
+
+When receiving messages, the converter will infer the schema reference from the header of the incoming message and will try to retrieve it. The schema will be used as the writer schema in the deserialization process.
+
 === `@StreamListener` and Message Conversion
 
 The `@StreamListener` annotation provides a convenient way for converting incoming messages without the need to specify the content type of an input channel.

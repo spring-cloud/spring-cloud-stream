@@ -17,14 +17,12 @@
 package org.springframework.cloud.stream.schema.server;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * @author Vinicius Carvalho
  */
 @SpringBootApplication
-@EnableAutoConfiguration
 @EnableSchemaRegistryServer
 public class SchemaRegistryServerApplication {
 	public static void main(String[] args) {
