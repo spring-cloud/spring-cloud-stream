@@ -914,6 +914,12 @@ The typical usage of this property is to be nested in a customized environment <
 +
 Default: false.
 
+spring.cloud.stream.autoStartContext::
+  Auto start the main application context during the application startup. This is useful when the context is
+  started based on some criteria.
++
+Default: `true`.
+
 [[binding-properties]]
 === Binding Properties
 

@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binding;
 import java.util.Map;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -37,6 +39,9 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 
 	private ConfigurableApplicationContext applicationContext;
 
+	@Autowired
+	private ChannelBindingServiceProperties channelBindingServiceProperties;
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext)
 			throws BeansException {
@@ -46,13 +51,11 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 	@Override
 	public void start() {
 		if (!running) {
-
 			// retrieve the ChannelBindingService lazily, avoiding early initialization
 			try {
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.bindOutputs(channelBindingService);
 				}
@@ -62,7 +65,9 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 						"Cannot perform binding, no proper implementation found", e);
 			}
 			this.running = true;
-			this.applicationContext.start();
+			if (channelBindingServiceProperties != null && channelBindingServiceProperties.isAutoStartContext()) {
+				this.applicationContext.start();
+			}
 		}
 	}
 

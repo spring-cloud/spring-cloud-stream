@@ -49,8 +49,7 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 			try {
 				ChannelBindingService channelBindingService = this.applicationContext
 						.getBean(ChannelBindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
+				Map<String, Bindable> bindables = this.applicationContext.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
 					bindable.bindInputs(channelBindingService);
 				}
