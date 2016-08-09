@@ -1,0 +1,175 @@
+== Introduction
+This is Kafka specific implementation for Spring Cloud Stream Binder.
+This implementation supports Kafka versions 0.9 and above. In the following sections, you can find more details
+on how you can work with Spring Cloud Stream Kafka binder,
+in what concerns mapping the Spring Cloud Stream concepts onto the middleware concepts.
+
+==== Classpath Detection
+
+By default, Spring Cloud Stream relies on Spring Boot's auto-configuration to configure the binding process.
+Following are the maven coordinates for including the Kafka binder in a Spring Cloud Stream application.
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-kafka</artifactId>
+</dependency>
+----
+
+==== Kafka Binder Overview
+
+.Kafka Binder
+image::kafka-binder.png[width=300,scaledwidth="50%"]
+
+The Kafka Binder implementation maps the destination to a Kafka topic.
+The consumer group maps directly to the same Kafka concept.
+Spring Cloud Stream does not use the high-level consumer, but implements a similar concept for the simple consumer.
+
+== Configuration Options and Properties
+
+For common configuration options and properties pertaining to binder,
+Please refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[core docs].
+
+=== Kafka-Specific Settings
+
+The following binder, consumer, and producer properties are specific to the Kafka binder implementation.
+
+==== Kafka Binder Properties
+
+spring.cloud.stream.kafka.binder.brokers::
+  A list of brokers to which the Kafka binder will connect.
++
+Default: `localhost`.
+spring.cloud.stream.kafka.binder.defaultBrokerPort::
+  `brokers` allows hosts specified with or without port information (e.g., `host1,host2:port2`).
+This sets the default port when no port is configured in the broker list.
++
+Default: `9092`.
+spring.cloud.stream.kafka.binder.zkNodes::
+  A list of ZooKeeper nodes to which the Kafka binder can connect.
++
+Default: `localhost`.
+spring.cloud.stream.kafka.binder.defaultZkPort::
+  `zkNodes` allows hosts specified with or without port information (e.g., `host1,host2:port2`).
+This sets the default port when no port is configured in the node list.
++
+Default: `2181`.
+spring.cloud.stream.kafka.binder.headers::
+  The list of custom headers that will be transported by the binder.
++
+Default: empty.
+spring.cloud.stream.kafka.binder.offsetUpdateTimeWindow::
+  The frequency, in milliseconds, with which offsets are saved.
+Ignored if `0`.
++
+Default: `10000`.
+spring.cloud.stream.kafka.binder.offsetUpdateCount::
+  The frequency, in number of updates, which which consumed offsets are persisted.
+Ignored if `0`.
+Mutually exclusive with `offsetUpdateTimeWindow`.
++
+Default: `0`.
+spring.cloud.stream.kafka.binder.requiredAcks::
+  The number of required acks on the broker.
++
+Default: `1`.
+spring.cloud.stream.kafka.binder.minPartitionCount::
+  Effective only if `autoCreateTopics` or `autoAddPartitions` is set.
+The global minimum number of partitions that the binder will configure on topics on which it produces/consumes data.
+It can be superseded by the `partitionCount` setting of the producer or by the value of `instanceCount` * `concurrency` settings of the producer (if either is larger).
++
+Default: `1`.
+spring.cloud.stream.kafka.binder.replicationFactor::
+  The replication factor of auto-created topics if `autoCreateTopics` is active.
++
+Default: `1`.
+spring.cloud.stream.kafka.binder.autoCreateTopics::
+  If set to `true`, the binder will create new topics automatically.
+If set to `false`, the binder will rely on the topics being already configured.
+In the latter case, if the topics do not exist, the binder will fail to start.
+Of note, this setting is independent of the `auto.topic.create.enable` setting of the broker and it does not influence it: if the server is set to auto-create topics, they may be created as part of the metadata retrieval request, with default broker settings.
++
+Default: `true`.
+spring.cloud.stream.kafka.binder.autoAddPartitions::
+  If set to `true`, the binder will create add new partitions if required.
+If set to `false`, the binder will rely on the partition size of the topic being already configured.
+If the partition count of the target topic is smaller than the expected value, the binder will fail to start.
++
+Default: `false`.
+spring.cloud.stream.kafka.binder.socketBufferSize::
+  Size (in bytes) of the socket buffer to be used by the Kafka consumers.
++
+Default: `2097152`.
+
+==== Kafka Consumer Properties
+
+The following properties are available for Kafka consumers only and
+must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
+
+autoCommitOffset::
+  Whether to autocommit offsets when a message has been processed.
+If set to `false`, an `Acknowledgment` header will be available in the message headers for late acknowledgment.
++
+Default: `true`.
+autoCommitOnError::
+  Effective only if `autoCommitOffset` is set to `true`.
+If set to `false` it suppresses auto-commits for messages that result in errors, and will commit only for successful messages, allows a stream to automatically replay from the last successfully processed message, in case of persistent failures.
+If set to `true`, it will always auto-commit (if auto-commit is enabled).
+If not set (default), it effectively has the same value as `enableDlq`, auto-committing erroneous messages if they are sent to a DLQ, and not committing them otherwise.
++
+Default: not set.
+recoveryInterval::
+  The interval between connection recovery attempts, in milliseconds.
++
+Default: `5000`.
+resetOffsets::
+  Whether to reset offsets on the consumer to the value provided by `startOffset`.
++
+Default: `false`.
+startOffset::
+  The starting offset for new groups, or when `resetOffsets` is `true`.
+Allowed values: `earliest`, `latest`.
++
+Default: null (equivalent to `earliest`).
+enableDlq::
+  When set to true, it will send enable DLQ behavior for the consumer.
+  Messages that result in errors will be forwarded to a topic named `error.<destination>.<group>`.
+  This provides an alternative option to the more common Kafka replay scenario for the case when the number of errors is relatively small and replaying the entire original topic may be too cumbersome.
++
+Default: `false`.
+configuration::
+  Map with a key/value pair containing generic Kafka consumer properties.
++
+Default: Empty map.
+
+==== Kafka Producer Properties
+
+The following properties are available for Kafka producers only and
+must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
+
+bufferSize::
+  Upper limit, in bytes, of how much data the Kafka producer will attempt to batch before sending.
++
+Default: `16384`.
+sync::
+  Whether the producer is synchronous.
++
+Default: `false`.
+batchTimeout::
+  How long the producer will wait before sending in order to allow more messages to accumulate in the same batch.
+(Normally the producer does not wait at all, and simply sends all the messages that accumulated while the previous send was in progress.) A non-zero value may increase throughput at the expense of latency.
++
+Default: `0`.
+configuration::
+  Map with a key/value pair containing generic Kafka producer properties.
++
+Default: Empty map.
+
+[NOTE]
+====
+The Kafka binder will use the `partitionCount` setting as a hint to create a topic with the given partition count (in conjunction with the `minPartitionCount`, the maximum of the two being the value being used).
+Exercise caution when configuring both `minPartitionCount` for a binder and `partitionCount` for an application, as the larger value will be used.
+If a topic already exists with a smaller partition count and `autoAddPartitions` is disabled (the default), then the binder will fail to start.
+If a topic already exists with a smaller partition count and `autoAddPartitions` is enabled, new partitions will be added.
+If a topic already exists with a larger number of partitions than the maximum of (`minPartitionCount` and `partitionCount`), the existing partition count will be used.
+====
