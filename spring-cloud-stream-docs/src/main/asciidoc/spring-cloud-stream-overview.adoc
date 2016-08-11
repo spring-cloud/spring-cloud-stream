@@ -98,7 +98,7 @@ To run a Spring Cloud Stream application in production, you can create an execut
 
 === The Binder Abstraction
 
-Spring Cloud Stream provides Binder implementations for https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-binders/spring-cloud-stream-binder-kafka[Kafka], https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-binders/spring-cloud-stream-binder-rabbit[Rabbit MQ], https://github.com/spring-cloud/spring-cloud-stream-binder-redis[Redis], and https://github.com/spring-cloud/spring-cloud-stream-binder-gemfire[Gemfire].
+Spring Cloud Stream provides Binder implementations for https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-binders/spring-cloud-stream-binder-kafka[Kafka] and https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-binders/spring-cloud-stream-binder-rabbit[Rabbit MQ].
 Spring Cloud Stream also includes a https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-test-support/src/main/java/org/springframework/cloud/stream/test/binder/TestSupportBinder.java[TestSupportBinder], which leaves a channel unmodified so that tests can interact with channels directly and reliably assert on what is received.
 You can use the extensible API to write your own Binder.
 
@@ -475,12 +475,6 @@ public class TransformProcessor {
 ----
 ====
 
-[NOTE]
-====
-In the case of RabbitMQ, content type headers can be set by external applications.
-Spring Cloud Stream supports them as part of an extended internal protocol used for any type of transport (including transports, such as Kafka, that do not normally support headers).
-====
-
 ==== Reactive Programming Support
 
 Spring Cloud Stream also supports the use of reactive APIs where incoming and outgoing data is handled as continuous data flows.
@@ -736,21 +730,13 @@ org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration
 
 Spring Cloud Stream relies on implementations of the Binder SPI to perform the task of connecting channels to message brokers.
 Each Binder implementation typically connects to one type of messaging system.
-Out of the box, Spring Cloud Stream provides binders for Kafka, RabbitMQ, and Redis.
 
 ==== Classpath Detection
 
 By default, Spring Cloud Stream relies on Spring Boot's auto-configuration to configure the binding process.
 If a single Binder implementation is found on the classpath, Spring Cloud Stream will use it automatically.
-For example, a Spring Cloud Stream project that aims to bind only to RabbitMQ can simply add the following dependency:
-
-[source,xml]
-----
-<dependency>
-  <groupId>org.springframework.cloud</groupId>
-  <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-</dependency>
-----
+For example, a Spring Cloud Stream project that aims to bind only to RabbitMQ can simply add that binder dependency.
+For the specific maven coordinates of the binder dependency, please refer to the docs for the binder implementation.
 
 [[multiple-binders]]
 === Multiple Binders on the Classpath
@@ -844,30 +830,6 @@ defaultCandidate::
 This allows adding binder configurations without interfering with the default processing.
 +
 Default `true`.
-
-
-=== Implementation strategies
-
-This section details the binder implementation strategies for Kafka and Rabbit MQ, in what concerns mapping the Spring Cloud Stream concepts onto the middleware concepts.
-
-==== Kafka Binder
-
-.Kafka Binder
-image::kafka-binder.png[width=300,scaledwidth="50%"]
-
-The Kafka Binder implementation maps the destination to a Kafka topic.
-The consumer group maps directly to the same Kafka concept.
-Spring Cloud Stream does not use the high-level consumer, but implements a similar concept for the simple consumer.
-
-
-==== RabbitMQ Binder
-
-.RabbitMQ Binder
-image::rabbit-binder.png[width=300,scaledwidth="50%"]
-
-The RabbitMQ Binder implementation maps the destination to a `TopicExchange`.
-For each consumer group, a `Queue` will be bound to that `TopicExchange`.
-Each consumer instance that binds will trigger creation of a corresponding RabbitMQ `Consumer` instance for its group's `Queue`.
 
 == Configuration Options
 
@@ -1024,262 +986,6 @@ Effective only for messaging middleware that does not support message headers na
 Useful when producing data for non-Spring Cloud Stream applications.
 +
 Default: `embeddedHeaders`.
-
-[[binder-specific-configuration]]
-== Binder-Specific Configuration
-
-The following binder, consumer, and producer properties are specific to binder implementations.
-
-=== Rabbit-Specific Settings
-
-==== RabbitMQ Binder Properties
-
-By default, the RabbitMQ binder uses Spring Boot's `ConnectionFactory`, and it therefore supports all Spring Boot configuration options for RabbitMQ.
-(For reference, consult the http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties[Spring Boot documentation].) RabbitMQ configuration options use the `spring.rabbitmq` prefix.
-
-In addition to the Spring Boot options, the RabbitMQ binder supports the following properties:
-
-spring.cloud.stream.rabbit.binder.adminAddresses::
-  A comma-separated list of RabbitMQ management plugin URLs.
-Only used when `nodes` contains more than one entry.
-Each entry in this list must have a corresponding entry in `spring.rabbitmq.addresses`.
-+
-Default: empty.
-spring.cloud.stream.rabbit.binder.nodes::
-  A comma-separated list of RabbitMQ node names.
-When more than one entry, used to locate the server address where a queue is located.
-Each entry in this list must have a corresponding entry in `spring.rabbitmq.addresses`.
-+
-Default: empty.
-spring.cloud.stream.rabbit.binder.compressionLevel::
-  Compression level for compressed bindings.
-See `java.util.zip.Deflater`.
-+
-Default: `1` (BEST_LEVEL).
-
-==== RabbitMQ Consumer Properties
-
-The following properties are available for Rabbit consumers only and
-must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.consumer.`.
-
-acknowledgeMode::
-  The acknowledge mode.
-+
-Default: `AUTO`.
-autoBindDlq::
-  Whether to automatically declare the DLQ and bind it to the binder DLX.
-+
-Default: `false`.
-durableSubscription::
-  Whether subscription should be durable.
-Only effective if `group` is also set.
-+
-Default: `true`.
-maxConcurrency::
-  Default: `1`.
-prefetch::
-  Prefetch count.
-+
-Default: `1`.
-prefix::
-  A prefix to be added to the name of the `destination` and queues.
-+
-Default: "".
-recoveryInterval::
-  The interval between connection recovery attempts, in milliseconds.
-+
-Default: `5000`.
-requeueRejected::
-  Whether delivery failures should be requeued.
-+
-Default: `true`.
-requestHeaderPatterns::
-  The request headers to be transported.
-+
-Default: `[STANDARD_REQUEST_HEADERS,'*']`.
-replyHeaderPatterns::
-  The reply headers to be transported.
-+
-Default: `[STANDARD_REPLY_HEADERS,'*']`.
-republishToDlq::
-  By default, messages which fail after retries are exhausted are rejected.
-If a dead-letter queue (DLQ) is configured, RabbitMQ will route the failed message (unchanged) to the DLQ.
-If set to `true`, the bus will republish failed messages to the DLQ with additional headers, including the exception message and stack trace from the cause of the final failure.
-transacted::
-  Whether to use transacted channels.
-+
-Default: `false`.
-txSize::
-  The number of deliveries between acks.
-+
-Default: `1`.
-
-==== Rabbit Producer Properties
-
-The following properties are available for Rabbit producers only and
-must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.producer.`.
-
-autoBindDlq::
-  Whether to automatically declare the DLQ and bind it to the binder DLX.
-+
-Default: `false`.
-batchingEnabled::
-  Whether to enable message batching by producers.
-+
-Default: `false`.
-batchSize::
-  The number of messages to buffer when batching is enabled.
-+
-Default: `100`.
-batchBufferLimit::
-  Default: `10000`.
-batchTimeout::
-  Default: `5000`.
-compress::
-  Whether data should be compressed when sent.
-+
-Default: `false`.
-deliveryMode::
-  Delivery mode.
-+
-Default: `PERSISTENT`.
-prefix::
-  A prefix to be added to the name of the `destination` exchange.
-+
-Default: "".
-requestHeaderPatterns::
-  The request headers to be transported.
-+
-Default: `[STANDARD_REQUEST_HEADERS,'*']`.
-replyHeaderPatterns::
-  The reply headers to be transported.
-+
-Default: `[STANDARD_REPLY_HEADERS,'*']`.
-
-=== Kafka-Specific Settings
-
-==== Kafka Binder Properties
-
-spring.cloud.stream.kafka.binder.brokers::
-  A list of brokers to which the Kafka binder will connect.
-+
-Default: `localhost`.
-spring.cloud.stream.kafka.binder.defaultBrokerPort::
-  `brokers` allows hosts specified with or without port information (e.g., `host1,host2:port2`).
-This sets the default port when no port is configured in the broker list.
-+
-Default: `9092`.
-spring.cloud.stream.kafka.binder.zkNodes::
-  A list of ZooKeeper nodes to which the Kafka binder can connect.
-+
-Default: `localhost`.
-spring.cloud.stream.kafka.binder.defaultZkPort::
-  `zkNodes` allows hosts specified with or without port information (e.g., `host1,host2:port2`).
-This sets the default port when no port is configured in the node list.
-+
-Default: `2181`.
-spring.cloud.stream.kafka.binder.headers::
-  The list of custom headers that will be transported by the binder.
-+
-Default: empty.
-spring.cloud.stream.kafka.binder.offsetUpdateTimeWindow::
-  The frequency, in milliseconds, with which offsets are saved.
-Ignored if `0`.
-+
-Default: `10000`.
-spring.cloud.stream.kafka.binder.offsetUpdateCount::
-  The frequency, in number of updates, which which consumed offsets are persisted.
-Ignored if `0`.
-Mutually exclusive with `offsetUpdateTimeWindow`.
-+
-Default: `0`.
-spring.cloud.stream.kafka.binder.requiredAcks::
-  The number of required acks on the broker.
-+
-Default: `1`.
-spring.cloud.stream.kafka.binder.minPartitionCount::
-  Effective only if `autoCreateTopics` or `autoAddPartitions` is set.
-The global minimum number of partitions that the binder will configure on topics on which it produces/consumes data.
-It can be superseded by the `partitionCount` setting of the producer or by the value of `instanceCount` * `concurrency` settings of the producer (if either is larger).
-+
-Default: `1`.
-spring.cloud.stream.kafka.binder.replicationFactor::
-  The replication factor of auto-created topics if `autoCreateTopics` is active.
-+
-Default: `1`.
-spring.cloud.stream.kafka.binder.autoCreateTopics::
-  If set to `true`, the binder will create new topics automatically.
-If set to `false`, the binder will rely on the topics being already configured.
-In the latter case, if the topics do not exist, the binder will fail to start.
-Of note, this setting is independent of the `auto.topic.create.enable` setting of the broker and it does not influence it: if the server is set to auto-create topics, they may be created as part of the metadata retrieval request, with default broker settings.
-+
-Default: `true`.
-spring.cloud.stream.kafka.binder.autoAddPartitions::
-  If set to `true`, the binder will create add new partitions if required.
-If set to `false`, the binder will rely on the partition size of the topic being already configured.
-If the partition count of the target topic is smaller than the expected value, the binder will fail to start.
-+
-Default: `false`.
-spring.cloud.stream.kafka.binder.socketBufferSize::
-  Size (in bytes) of the socket buffer to be used by the Kafka consumers.
-+
-Default: `2097152`.
-
-==== Kafka Consumer Properties
-
-The following properties are available for Kafka consumers only and
-must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
-
-autoCommitOffset::
-  Whether to autocommit offsets when a message has been processed.
-If set to `false`, an `Acknowledgment` header will be available in the message headers for late acknowledgment.
-+
-Default: `true`.
-autoCommitOnError::
-  Effective only if `autoCommitOffset` is set to `true`.
-If set to `false` it suppresses auto-commits for messages that result in errors, and will commit only for successful messages, allows a stream to automatically replay from the last successfully processed message, in case of persistent failures.
-If set to `true`, it will always auto-commit (if auto-commit is enabled).
-If not set (default), it effectively has the same value as `enableDlq`, auto-committing erroneous messages if they are sent to a DLQ, and not committing them otherwise.
-+
-Default: not set.
-recoveryInterval::
-  The interval between connection recovery attempts, in milliseconds.
-+
-Default: `5000`.
-resetOffsets::
-  Whether to reset offsets on the consumer to the value provided by `startOffset`.
-+
-Default: `false`.
-startOffset::
-  The starting offset for new groups, or when `resetOffsets` is `true`.
-Allowed values: `earliest`, `latest`.
-+
-Default: null (equivalent to `earliest`).
-enableDlq::
-  When set to true, it will send enable DLQ behavior for the consumer.
-  Messages that result in errors will be forwarded to a topic named `error.<destination>.<group>`.
-  This provides an alternative option to the more common Kafka replay scenario for the case when the number of errors is relatively small and replaying the entire original topic may be too cumbersome.
-+
-Default: `false`.
-
-==== Kafka Producer Properties
-
-The following properties are available for Kafka producers only and
-must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
-
-bufferSize::
-  Upper limit, in bytes, of how much data the Kafka producer will attempt to batch before sending.
-+
-Default: `16384`.
-sync::
-  Whether the producer is synchronous.
-+
-Default: `false`.
-batchTimeout::
-  How long the producer will wait before sending in order to allow more messages to accumulate in the same batch.
-(Normally the producer does not wait at all, and simply sends all the messages that accumulated while the previous send was in progress.) A non-zero value may increase throughput at the expense of latency.
-+
-Default: `0`.
 
 [[contenttypemanagement]]
 == Content Type and Transformation
@@ -1683,15 +1389,6 @@ The default calculation, applicable in most scenarios, is based on the formula `
 This can be customized on the binding, either by setting a SpEL expression to be evaluated against the key (via the `partitionSelectorExpression` property) or by setting a `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` implementation (via the `partitionSelectorClass` property).
 
 Additional properties can be configured for more advanced scenarios, as described in the following section.
-
-[NOTE]
-====
-The Kafka binder will use the `partitionCount` setting as a hint to create a topic with the given partition count (in conjunction with the `minPartitionCount`, the maximum of the two being the value being used).
-Exercise caution when configuring both `minPartitionCount` for a binder and `partitionCount` for an application, as the larger value will be used.
-If a topic already exists with a smaller partition count and `autoAddPartitions` is disabled (the default), then the binder will fail to start.
-If a topic already exists with a smaller partition count and `autoAddPartitions` is enabled, new partitions will be added.
-If a topic already exists with a larger number of partitions than the maximum of (`minPartitionCount` and `partitionCount`), the existing partition count will be used.
-====
 
 ===== Configuring Input Bindings for Partitioning
 
