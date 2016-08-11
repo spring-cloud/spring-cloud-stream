@@ -1,0 +1,33 @@
+[[spring-cloud-stream-binder-rabbit-reference]]
+= Spring Cloud Stream rabbit Binder Reference Guide
+Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein
+:doctype: book
+:toc:
+:toclevels: 4
+:source-highlighter: prettify
+:numbered:
+:icons: font
+:hide-uri-scheme:
+:spring-cloud-stream-binder-rabbit-repo: snapshot
+:github-tag: master
+:spring-cloud-stream-binder-rabbit-docs-version: current
+:spring-cloud-stream-binder-rabbit-docs: http://docs.spring.io/spring-cloud-stream-binder-rabbit/docs/{spring-cloud-stream-binder-rabbit-docs-version}/reference
+:spring-cloud-stream-binder-rabbit-docs-current: http://docs.spring.io/spring-cloud-stream-binder-rabbit/docs/current-SNAPSHOT/reference/html/
+:github-repo: spring-cloud/spring-cloud-stream-binder-rabbit
+:github-raw: http://raw.github.com/{github-repo}/{github-tag}
+:github-code: http://github.com/{github-repo}/tree/{github-tag}
+:github-wiki: http://github.com/{github-repo}/wiki
+:github-master-code: http://github.com/{github-repo}/tree/master
+:sc-ext: java
+// ======================================================================================
+
+= Reference Guide
+include::overview.adoc[]
+
+
+= Appendices
+[appendix]
+include::building.adoc[]
+include::contributing.adoc[]
+
+// ======================================================================================
