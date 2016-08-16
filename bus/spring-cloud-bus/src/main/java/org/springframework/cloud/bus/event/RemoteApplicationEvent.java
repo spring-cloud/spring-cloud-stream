@@ -3,6 +3,7 @@ package org.springframework.cloud.bus.event;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEvent;
+import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -31,7 +32,8 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 		if (destinationService == null) {
 			destinationService = "*";
 		}
-		if (!destinationService.contains(":")) {
+		if (StringUtils.countOccurrencesOf(destinationService, ":") <= 1
+				&& !destinationService.contains("*")) {
 			// All instances of the destination unless specifically requested
 			destinationService = destinationService + ":**";
 		}

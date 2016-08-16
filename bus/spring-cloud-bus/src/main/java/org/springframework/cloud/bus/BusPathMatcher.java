@@ -26,12 +26,14 @@ import java.lang.annotation.Target;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
+ * Qualifier annotation for components to do with matching paths in the bus.
+ * 
  * @author Dave Syer
  *
  */
 @Qualifier
-@Target({ ElementType.FIELD, ElementType.METHOD,
-		ElementType.ANNOTATION_TYPE, ElementType.PARAMETER })
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE,
+		ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
