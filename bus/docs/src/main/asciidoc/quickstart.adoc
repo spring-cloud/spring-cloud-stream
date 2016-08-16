@@ -10,6 +10,6 @@ spring:
     password: secret
 ----
 
-The bus currently supports sending messages to all nodes listening or all nodes for a particular service (as defined by Eureka).  More selector criteria may be added in the future (ie. only service X nodes in data center Y, etc...). There are also some http endpoints are under the `/bus/*` actuator namespace.  There are currently two implemented.  The first, `/bus/env`, sends key/values pairs to update each nodes Spring Environment.  The second, `/bus/refresh`, will reload each application's configuration, just as if they had all been pinged on their `/refresh` endpoint.
+The bus currently supports sending messages to all nodes listening or all nodes for a particular service (as defined by Eureka).  More selector criteria may be added in the future (ie. only service X nodes in data center Y, etc...). There are also some http endpoints under the `/bus/*` actuator namespace.  There are currently two implemented.  The first, `/bus/env`, sends key/value pairs to update each node's Spring Environment.  The second, `/bus/refresh`, will reload each application's configuration, just as if they had all been pinged on their `/refresh` endpoint.
 
-NOTE: the Bus starters cover Rabbit and Kafka, because those are the two most common implementations, but Spring Cloud Stream is quite flexible and binder will work combined with `spring-cloud-bus`.
+NOTE: The Bus starters cover Rabbit and Kafka, because those are the two most common implementations, but Spring Cloud Stream is quite flexible and binder will work combined with `spring-cloud-bus`.
