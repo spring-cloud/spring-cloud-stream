@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TypedRemoteApplicationEvent;
-import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

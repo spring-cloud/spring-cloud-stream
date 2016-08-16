@@ -14,13 +14,12 @@ import org.springframework.cloud.bus.BusAutoConfiguration;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
-import org.springframework.cloud.stream.converter.AbstractFromMessageConverter;
-import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeTypeUtils;
 
@@ -46,7 +45,7 @@ public class BusJacksonAutoConfiguration {
 
 }
 
-class BusJacksonMessageConverter extends AbstractFromMessageConverter implements InitializingBean {
+class BusJacksonMessageConverter extends AbstractMessageConverter implements InitializingBean {
 
 	private static final String DEFAULT_PACKAGE = ClassUtils
 			.getPackageName(RemoteApplicationEvent.class);
@@ -64,7 +63,9 @@ class BusJacksonMessageConverter extends AbstractFromMessageConverter implements
 	}
 
 	public BusJacksonMessageConverter() {
-		super(MimeTypeUtils.APPLICATION_JSON, MessageConverterUtils.X_JAVA_OBJECT);
+		super(MimeTypeUtils.APPLICATION_JSON);
+		this.mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		this.mapper.registerModule(new SubtypeModule(findSubTypes()));
 	}
 
 	private Class<?>[] findSubTypes() {
@@ -89,13 +90,9 @@ class BusJacksonMessageConverter extends AbstractFromMessageConverter implements
 	}
 
 	@Override
-	protected Class<?>[] supportedPayloadTypes() {
-		return new Class<?>[] { String.class, byte[].class };
-	}
-
-	@Override
-	protected Class<?>[] supportedTargetTypes() {
-		return new Class[] { RemoteApplicationEvent.class }; // any type
+	protected boolean supports(Class<?> aClass) {
+		// This converter applies only to RemoteApplicationEvent and subclasses
+		return RemoteApplicationEvent.class.isAssignableFrom(aClass);
 	}
 
 	@Override
