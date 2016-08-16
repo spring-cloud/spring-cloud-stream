@@ -1105,7 +1105,7 @@ Default: `[STANDARD_REQUEST_HEADERS,'*']`.
 replyHeaderPatterns::
   The reply headers to be transported.
 +
-Default: `[STANDARD_REQUEST_HEADERS,'*']`.
+Default: `[STANDARD_REPLY_HEADERS,'*']`.
 republishToDlq::
   By default, messages which fail after retries are exhausted are rejected.
 If a dead-letter queue (DLQ) is configured, RabbitMQ will route the failed message (unchanged) to the DLQ.
@@ -1159,7 +1159,7 @@ Default: `[STANDARD_REQUEST_HEADERS,'*']`.
 replyHeaderPatterns::
   The reply headers to be transported.
 +
-Default: `[STANDARD_REQUEST_HEADERS,'*']`.
+Default: `[STANDARD_REPLY_HEADERS,'*']`.
 
 === Kafka-Specific Settings
 
