@@ -18,6 +18,9 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.List;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
+
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
@@ -30,9 +33,6 @@ import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
 
 /**
  * Test support class for {@link KafkaMessageChannelBinder}. Creates a binder that uses a

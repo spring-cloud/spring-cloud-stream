@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binder.test.junit.kafka;
 
 import java.io.IOException;
 import java.util.Properties;
 
-import org.apache.curator.test.TestingServer;
-
-import org.springframework.util.SocketUtils;
-
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import kafka.utils.TestUtils;
+import org.apache.curator.test.TestingServer;
+
+import org.springframework.util.SocketUtils;
 
 /**
  * A test Kafka + ZooKeeper pair for testing purposes.

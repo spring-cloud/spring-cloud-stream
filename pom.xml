@@ -6,25 +6,14 @@
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-build</artifactId>
-		<version>1.1.2.BUILD-SNAPSHOT</version>
+		<artifactId>spring-cloud-stream-parent</artifactId>
+		<version>1.1.0.BUILD-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 	<properties>
 		<java.version>1.7</java.version>
 		<spring-boot.version>1.4.0.BUILD-SNAPSHOT</spring-boot.version>
 	</properties>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-dependencies</artifactId>
-				<version>1.1.0.BUILD-SNAPSHOT</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 	<modules>
 		<module>spring-cloud-stream-binder-kafka</module>
 		<module>spring-cloud-starter-stream-kafka</module>

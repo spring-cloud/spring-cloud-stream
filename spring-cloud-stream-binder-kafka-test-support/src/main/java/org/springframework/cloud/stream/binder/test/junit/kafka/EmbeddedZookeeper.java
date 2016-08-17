@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binder.test.junit.kafka;
 
 import java.io.File;
 import java.net.InetSocketAddress;
 
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.ZooKeeperServer;
-
 import kafka.utils.TestUtils$;
 import kafka.utils.Utils$;
+import org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.zookeeper.server.ZooKeeperServer;
 
 /**
  * A port of kafka.zk.EmbeddedZookeeper, compatible with Zookeeper 3.4 API
