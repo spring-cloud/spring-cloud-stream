@@ -38,6 +38,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.Assert;
@@ -157,6 +158,7 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 				defaultDomain += ".";
 			}
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
+			args.add("--spring.main.applicationContextClass=" + AnnotationConfigApplicationContext.class.getName());
 			List<Class<?>> configurationClasses =
 					new ArrayList<Class<?>>(
 							Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
