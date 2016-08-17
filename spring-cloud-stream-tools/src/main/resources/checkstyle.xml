@@ -5,7 +5,7 @@
 <module name="Checker">
 	<!-- Root Checks -->
 	<module name="RegexpHeader">
-		<property name="headerFile" value="src/checkstyle/checkstyle-header.txt" />
+		<property name="headerFile" value="${checkstyle.header.file}" />
 		<property name="fileExtensions" value="java" />
 	</module>
 	<module name="NewlineAtEndOfFile">
