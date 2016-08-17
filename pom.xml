@@ -21,6 +21,10 @@
 		</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
+
+	<modules>
+		<module>spring-cloud-stream-dependencies</module>
+	</modules>
 	
 	<build>
 		<plugins>
