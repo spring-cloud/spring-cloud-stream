@@ -20,21 +20,82 @@
 	</scm>
 	<properties>
 		<java.version>1.7</java.version>
+		<rxjava.version>1.1.5</rxjava.version>
 		<spring-boot.version>1.4.1.BUILD-SNAPSHOT</spring-boot.version>
+		<spring.tuple.version>1.0.0.RELEASE</spring.tuple.version>
+		<spring.integration.tuple.version>1.0.0.RELEASE</spring.integration.tuple.version>
+		<reactor.version>3.0.0.BUILD-SNAPSHOT</reactor.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-dependencies</artifactId>
+				<artifactId>spring-cloud-stream</artifactId>
 				<version>1.1.0.BUILD-SNAPSHOT</version>
-				<type>pom</type>
-				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-build-tools</artifactId>
+				<version>1.1.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-codec</artifactId>
+				<version>1.1.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-rxjava</artifactId>
+				<version>1.1.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-binder-test</artifactId>
+				<version>1.1.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-tuple</artifactId>
+				<version>${spring.tuple.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.integration</groupId>
+				<artifactId>spring-integration-tuple</artifactId>
+				<version>${spring.integration.tuple.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-test-support</artifactId>
+				<version>1.1.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-test-support-internal</artifactId>
+				<version>1.1.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>com.esotericsoftware</groupId>
+				<artifactId>kryo-shaded</artifactId>
+				<version>3.0.3</version>
+			</dependency>
+			<dependency>
+				<groupId>io.projectreactor</groupId>
+				<artifactId>reactor-core</artifactId>
+				<version>${reactor.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.reactivex</groupId>
+				<artifactId>rxjava</artifactId>
+				<version>${rxjava.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.objenesis</groupId>
+				<artifactId>objenesis</artifactId>
+				<version>2.1</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<modules>
-		<module>spring-cloud-stream-dependencies</module>
 		<module>spring-cloud-stream</module>
 		<module>spring-cloud-stream-binder-test</module>
 		<module>spring-cloud-stream-codec</module>
