@@ -40,12 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author Mark Fisher
  */
-public class RawModeKafkaBinderTests extends KafkaBinderTests {
+public class RawModeKafka09BinderTests extends Kafka09BinderTests {
 
 	@Test
 	@Override
 	public void testPartitionedModuleJava() throws Exception {
-		KafkaTestBinder binder = getBinder();
+		Kafka09TestBinder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setHeaderMode(HeaderMode.raw);
 		properties.setPartitionKeyExtractorClass(RawKafkaPartitionTestSupport.class);
@@ -98,7 +98,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	@Test
 	@Override
 	public void testPartitionedModuleSpEL() throws Exception {
-		KafkaTestBinder binder = getBinder();
+		Kafka09TestBinder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload[0]"));
 		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
@@ -160,7 +160,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 	@Test
 	@Override
 	public void testSendAndReceive() throws Exception {
-		KafkaTestBinder binder = getBinder();
+		Kafka09TestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -184,7 +184,7 @@ public class RawModeKafkaBinderTests extends KafkaBinderTests {
 
 	@Test
 	public void testSendAndReceiveWithExplicitConsumerGroup() {
-		KafkaTestBinder binder = getBinder();
+		Kafka09TestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		// Test pub/sub by emulating how StreamPlugin handles taps
 		QueueChannel module1InputChannel = new QueueChannel();

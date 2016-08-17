@@ -1,1 +1,1 @@
-provides: spring-cloud-starter-stream-kafka
+provides: spring-cloud-starter-stream-kafka-0.10

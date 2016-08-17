@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
-import kafka.admin.AdminUtils;
-import kafka.api.TopicMetadata;
 import kafka.common.ErrorMapping;
 import kafka.utils.ZkUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -42,7 +40,6 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.utils.Utils;
-import scala.collection.Seq;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
@@ -52,7 +49,8 @@ import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
-import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
+import org.springframework.cloud.stream.binder.kafka.configuration.KafkaBinderConfigurationProperties;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -83,6 +81,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * A {@link Binder} that uses Kafka as the underlying middleware.
+ *
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -109,6 +108,8 @@ public class KafkaMessageChannelBinder extends
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
+	private AdminUtilsOperation adminUtilsOperation;
+
 	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties) {
 		super(false, headersToMap(configurationProperties));
 		this.configurationProperties = configurationProperties;
@@ -130,8 +131,13 @@ public class KafkaMessageChannelBinder extends
 		return headersToMap;
 	}
 
+	public void setAdminUtilsOperation(AdminUtilsOperation adminUtilsOperation) {
+		this.adminUtilsOperation = adminUtilsOperation;
+	}
+
 	/**
 	 * Retry configuration for operations such as validating topic creation
+	 *
 	 * @param metadataRetryOperations the retry configuration
 	 */
 	public void setMetadataRetryOperations(RetryOperations metadataRetryOperations) {
@@ -189,7 +195,7 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	protected MessageHandler createProducerMessageHandler(final String destination,
-			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) throws Exception {
+															ExtendedProducerProperties<KafkaProducerProperties> producerProperties) throws Exception {
 
 		KafkaTopicUtils.validateTopicName(destination);
 
@@ -215,11 +221,12 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	protected String createProducerDestinationIfNecessary(String name,
-			ExtendedProducerProperties<KafkaProducerProperties> properties) {
+															ExtendedProducerProperties<KafkaProducerProperties> properties) {
 		if (this.logger.isInfoEnabled()) {
 			this.logger.info("Using kafka topic for outbound: " + name);
 		}
 		KafkaTopicUtils.validateTopicName(name);
+
 		Collection<PartitionInfo> partitions = ensureTopicCreated(name, properties.getPartitionCount());
 		if (properties.getPartitionCount() < partitions.size()) {
 			if (this.logger.isInfoEnabled()) {
@@ -259,17 +266,19 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	protected Collection<PartitionInfo> createConsumerDestinationIfNecessary(String name, String group,
-			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+																			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		KafkaTopicUtils.validateTopicName(name);
 		if (properties.getInstanceCount() == 0) {
 			throw new IllegalArgumentException("Instance count cannot be zero");
 		}
+
 		Collection<PartitionInfo> allPartitions = ensureTopicCreated(name,
 				properties.getInstanceCount() * properties.getConcurrency());
 
 		Collection<PartitionInfo> listenedPartitions;
 
-		if (properties.getInstanceCount() == 1) {
+		if (properties.getExtension().isAutoRebalanceEnabled() ||
+				properties.getInstanceCount() == 1) {
 			listenedPartitions = allPartitions;
 		}
 		else {
@@ -288,7 +297,7 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	@SuppressWarnings("unchecked")
 	protected MessageProducer createConsumerEndpoint(String name, String group, Collection<PartitionInfo> destination,
-			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+														ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		boolean anonymous = !StringUtils.hasText(group);
 		Assert.isTrue(!anonymous || !properties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
@@ -429,38 +438,38 @@ public class KafkaMessageChannelBinder extends
 				this.configurationProperties.getZkConnectionTimeout(),
 				JaasUtils.isZkSecurityEnabled());
 		try {
-			final Properties topicConfig = new Properties();
-			TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkUtils);
-			if (topicMetadata.errorCode() == ErrorMapping.NoError()) {
-				// only consider minPartitionCount for resizing if autoAddPartitions is
-				// true
+			short errorCode = adminUtilsOperation.errorCodeFromTopicMetadata(topicName, zkUtils);
+			if (errorCode == ErrorMapping.NoError()) {
+				// only consider minPartitionCount for resizing if autoAddPartitions is true
 				int effectivePartitionCount = this.configurationProperties.isAutoAddPartitions()
 						? Math.max(this.configurationProperties.getMinPartitionCount(), partitionCount)
 						: partitionCount;
-				if (topicMetadata.partitionsMetadata().size() < effectivePartitionCount) {
+				int partitionSize = adminUtilsOperation.partitionSize(topicName, zkUtils);
+
+				if (partitionSize < effectivePartitionCount) {
 					if (this.configurationProperties.isAutoAddPartitions()) {
-						AdminUtils.addPartitions(zkUtils, topicName, effectivePartitionCount, null, false);
+						adminUtilsOperation.invokeAddPartitions(zkUtils, topicName, effectivePartitionCount, null, false);
 					}
 					else {
-						int topicSize = topicMetadata.partitionsMetadata().size();
 						throw new BinderException("The number of expected partitions was: " + partitionCount + ", but "
-								+ topicSize + (topicSize > 1 ? " have " : " has ") + "been found instead."
+								+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
 								+ "Consider either increasing the partition count of the topic or enabling " +
 								"`autoAddPartitions`");
 					}
 				}
 			}
-			else if (topicMetadata.errorCode() == ErrorMapping.UnknownTopicOrPartitionCode()) {
+			else if (errorCode == ErrorMapping.UnknownTopicOrPartitionCode()) {
 				if (this.configurationProperties.isAutoCreateTopics()) {
-					Seq<Object> brokerList = zkUtils.getSortedBrokerList();
 					// always consider minPartitionCount for topic creation
 					final int effectivePartitionCount = Math.max(this.configurationProperties.getMinPartitionCount(),
 							partitionCount);
+
 					this.metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
 
 						@Override
 						public Object doWithRetry(RetryContext context) throws RuntimeException {
-							AdminUtils.createTopic(zkUtils, topicName, effectivePartitionCount,
+
+							adminUtilsOperation.invokeCreateTopic(zkUtils, topicName, effectivePartitionCount,
 									configurationProperties.getReplicationFactor(), new Properties());
 							return null;
 						}
@@ -472,7 +481,7 @@ public class KafkaMessageChannelBinder extends
 			}
 			else {
 				throw new BinderException("Error fetching Kafka topic metadata: ",
-						ErrorMapping.exceptionFor(topicMetadata.errorCode()));
+						ErrorMapping.exceptionFor(errorCode));
 			}
 			try {
 				return this.metadataRetryOperations
@@ -549,8 +558,8 @@ public class KafkaMessageChannelBinder extends
 		private final DefaultKafkaProducerFactory<byte[], byte[]> producerFactory;
 
 		private ProducerConfigurationMessageHandler(KafkaTemplate<byte[], byte[]> kafkaTemplate, String topic,
-				ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
-				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory) {
+													ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
+													DefaultKafkaProducerFactory<byte[], byte[]> producerFactory) {
 			super(kafkaTemplate);
 			setTopicExpression(new LiteralExpression(topic));
 			setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());

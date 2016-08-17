@@ -13,6 +13,12 @@
 		<version>1.1.0.BUILD-SNAPSHOT</version>
 	</parent>
 
+	<properties>
+		<kafka.version>0.9.0.1</kafka.version>
+		<spring-kafka.version>1.0.3.RELEASE</spring-kafka.version>
+		<spring-integration-kafka.version>2.0.1.RELEASE</spring-integration-kafka.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -38,12 +44,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-kafka-test-support</artifactId>
-			<scope>test</scope>
-			<version>1.1.0.BUILD-SNAPSHOT</version>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.integration</groupId>
 			<artifactId>spring-integration-kafka</artifactId>
 			<version>${spring-integration-kafka.version}</version>
@@ -58,20 +58,23 @@
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
 			<version>${spring-kafka.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.11</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-clients</artifactId>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka-test</artifactId>
 			<scope>test</scope>
 			<version>${spring-kafka.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.11</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
@@ -111,4 +114,21 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.2</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

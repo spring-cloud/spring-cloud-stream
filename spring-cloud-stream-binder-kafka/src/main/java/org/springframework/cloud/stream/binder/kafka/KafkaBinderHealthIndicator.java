@@ -29,10 +29,11 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.configuration.KafkaBinderConfigurationProperties;
 
 /**
  * Health indicator for Kafka.
+ *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
@@ -43,7 +44,7 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
 	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder,
-			KafkaBinderConfigurationProperties configurationProperties) {
+										KafkaBinderConfigurationProperties configurationProperties) {
 		this.binder = binder;
 		this.configurationProperties = configurationProperties;
 

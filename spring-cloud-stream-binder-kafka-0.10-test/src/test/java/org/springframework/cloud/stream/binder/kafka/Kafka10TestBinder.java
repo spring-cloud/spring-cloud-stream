@@ -16,20 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.util.List;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
-
-import org.springframework.cloud.stream.binder.AbstractTestBinder;
-import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
-import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
-import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.admin.Kafka10AdminUtilsOperation;
+import org.springframework.cloud.stream.binder.kafka.configuration.KafkaBinderConfigurationProperties;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.integration.codec.Codec;
-import org.springframework.integration.codec.kryo.KryoRegistrar;
-import org.springframework.integration.codec.kryo.PojoCodec;
-import org.springframework.integration.tuple.TupleKryoRegistrar;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
 
@@ -41,10 +30,9 @@ import org.springframework.kafka.support.ProducerListener;
  * @author Gary Russell
  * @author Soby Chacko
  */
-public class KafkaTestBinder extends
-		AbstractTestBinder<KafkaMessageChannelBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
+public class Kafka10TestBinder extends AbstractKafkaTestBinder {
 
-	public KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration) {
+	public Kafka10TestBinder(KafkaBinderConfigurationProperties binderConfiguration) {
 		try {
 			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(binderConfiguration);
 			binder.setCodec(getCodec());
@@ -53,34 +41,12 @@ public class KafkaTestBinder extends
 			GenericApplicationContext context = new GenericApplicationContext();
 			context.refresh();
 			binder.setApplicationContext(context);
+			binder.setAdminUtilsOperation(new Kafka10AdminUtilsOperation());
 			binder.afterPropertiesSet();
 			this.setBinder(binder);
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);
-		}
-	}
-
-	@Override
-	public void cleanup() {
-		// do nothing - the rule will take care of that
-	}
-
-	private static Codec getCodec() {
-		return new PojoCodec(new TupleRegistrar());
-	}
-
-	private static class TupleRegistrar implements KryoRegistrar {
-		private final TupleKryoRegistrar delegate = new TupleKryoRegistrar();
-
-		@Override
-		public void registerTypes(Kryo kryo) {
-			this.delegate.registerTypes(kryo);
-		}
-
-		@Override
-		public List<Registration> getRegistrations() {
-			return this.delegate.getRegistrations();
 		}
 	}
 

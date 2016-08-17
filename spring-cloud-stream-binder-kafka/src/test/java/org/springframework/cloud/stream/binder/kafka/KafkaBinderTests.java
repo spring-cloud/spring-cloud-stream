@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,18 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import kafka.admin.AdminUtils;
-import kafka.api.TopicMetadata;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.assertj.core.api.Condition;
-import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -51,27 +39,22 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
-import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.TestUtils;
-import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.configuration.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
-import org.springframework.kafka.test.core.BrokerAddress;
-import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.retry.RetryOperations;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -80,101 +63,37 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * Integration tests for the {@link KafkaMessageChannelBinder}.
- * @author Eric Bottard
- * @author Marius Bogoevici
- * @author Mark Fisher
- * @author Ilayaperumal Gopinathan
+ * @author Soby Chacko
  */
-public class KafkaBinderTests
-		extends
-		PartitionCapableBinderTests<KafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>,
-				ExtendedProducerProperties<KafkaProducerProperties>> {
+public abstract class KafkaBinderTests extends PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>,
+						ExtendedProducerProperties<KafkaProducerProperties>> {
 
-	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
+	protected abstract ExtendedConsumerProperties<KafkaConsumerProperties> createConsumerProperties();
 
-	@ClassRule
-	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 10);
+	protected abstract ExtendedProducerProperties<KafkaProducerProperties> createProducerProperties();
 
-	private KafkaTestBinder binder;
+	public abstract String getKafkaOffsetHeaderKey();
 
-	@Override
-	protected void binderBindUnbindLatency() throws InterruptedException {
-		Thread.sleep(500);
-	}
+	protected abstract Binder getBinder(KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties);
 
-	@Override
-	protected KafkaTestBinder getBinder() {
-		if (binder == null) {
-			KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
-			binder = new KafkaTestBinder(binderConfiguration);
-		}
-		return binder;
-	}
+	protected abstract KafkaBinderConfigurationProperties createConfigurationProperties();
 
-	protected KafkaBinderConfigurationProperties createConfigurationProperties() {
-		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
-		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
-		List<String> bAddresses = new ArrayList<>();
-		for (BrokerAddress bAddress : brokerAddresses) {
-			bAddresses.add(bAddress.toString());
-		}
-		String[] foo = new String[bAddresses.size()];
-		binderConfiguration.setBrokers(bAddresses.toArray(foo));
-		binderConfiguration.setZkNodes(embeddedKafka.getZookeeperConnectionString());
-		return binderConfiguration;
-	}
+	protected abstract int partitionSize(String topic);
 
-	@Override
-	protected ExtendedConsumerProperties<KafkaConsumerProperties> createConsumerProperties() {
-		return new ExtendedConsumerProperties<>(new KafkaConsumerProperties());
-	}
+	protected abstract void setMetadataRetryOperations(Binder binder, RetryOperations retryOperations);
 
-	@Override
-	protected ExtendedProducerProperties<KafkaProducerProperties> createProducerProperties() {
-		return new ExtendedProducerProperties<>(new KafkaProducerProperties());
-	}
+	protected abstract ZkUtils getZkUtils(KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties);
 
-	@Before
-	public void init() {
-		String multiplier = System.getenv("KAFKA_TIMEOUT_MULTIPLIER");
-		if (multiplier != null) {
-			timeoutMultiplier = Double.parseDouble(multiplier);
-		}
-	}
+	protected abstract void invokeCreateTopic(ZkUtils zkUtils, String topic, int partitions,
+												int replicationFactor, Properties topicConfig);
 
-	@Override
-	protected boolean usesExplicitRouting() {
-		return false;
-	}
-
-	@Override
-	protected String getClassUnderTestName() {
-		return CLASS_UNDER_TEST_NAME;
-	}
-
-	@Override
-	public Spy spyOn(final String name) {
-		throw new UnsupportedOperationException("'spyOn' is not used by Kafka tests");
-	}
-
-
-	private ConsumerFactory<byte[], byte[]> consumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, configurationProperties.getKafkaConnectionString());
-		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "TEST-CONSUMER-GROUP");
-		Deserializer<byte[]> valueDecoder = new ByteArrayDeserializer();
-		Deserializer<byte[]> keyDecoder = new ByteArrayDeserializer();
-
-		return new DefaultKafkaConsumerFactory<>(props, keyDecoder, valueDecoder);
-
-	}
+	protected abstract int invokePartitionSize(String topic,
+												ZkUtils zkUtils);
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testDlqAndRetry() throws Exception {
-		KafkaTestBinder binder = getBinder();
+		Binder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		DirectChannel moduleInputChannel = new DirectChannel();
 		QueueChannel dlqChannel = new QueueChannel();
@@ -216,8 +135,9 @@ public class KafkaBinderTests
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testDefaultAutoCommitOnErrorWithoutDlq() throws Exception {
-		KafkaTestBinder binder = getBinder();
+		Binder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		DirectChannel moduleInputChannel = new DirectChannel();
 		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
@@ -266,8 +186,9 @@ public class KafkaBinderTests
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testDefaultAutoCommitOnErrorWithDlq() throws Exception {
-		KafkaTestBinder binder = getBinder();
+		Binder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		DirectChannel moduleInputChannel = new DirectChannel();
 		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
@@ -325,19 +246,39 @@ public class KafkaBinderTests
 		producerBinding.unbind();
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAutoCreateTopicsEnabledSucceeds() throws Exception {
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setAutoCreateTopics(true);
+		Binder binder = getBinder(configurationProperties);
+		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(1000);
+		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		String testTopicName = "nonexisting" + System.currentTimeMillis();
+		Binding<?> binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void testValidateKafkaTopicName() {
 		KafkaTopicUtils.validateTopicName("foo:bar");
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testCompression() throws Exception {
-		final KafkaProducerProperties.CompressionType[] codecs = new KafkaProducerProperties.CompressionType[] {
+		final KafkaProducerProperties.CompressionType[] codecs = new KafkaProducerProperties.CompressionType[]{
 				KafkaProducerProperties.CompressionType.none, KafkaProducerProperties.CompressionType.gzip,
 				KafkaProducerProperties.CompressionType.snappy};
 		byte[] testPayload = new byte[2048];
 		Arrays.fill(testPayload, (byte) 65);
-		KafkaTestBinder binder = getBinder();
+		Binder binder = getBinder();
 		for (KafkaProducerProperties.CompressionType codec : codecs) {
 			DirectChannel moduleOutputChannel = new DirectChannel();
 			QueueChannel moduleInputChannel = new QueueChannel();
@@ -364,13 +305,14 @@ public class KafkaBinderTests
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testCustomPartitionCountOverridesDefaultIfLarger() throws Exception {
 
 		byte[] testPayload = new byte[2048];
 		Arrays.fill(testPayload, (byte) 65);
 		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 		binderConfiguration.setMinPartitionCount(10);
-		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration);
+		Binder binder = getBinder(binderConfiguration);
 		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionCount(10);
@@ -393,23 +335,20 @@ public class KafkaBinderTests
 		assertThat(inbound).isNotNull();
 		assertThat((byte[]) inbound.getPayload()).containsExactly(testPayload);
 
-
-		Collection<PartitionInfo> partitions =
-				consumerFactory().createConsumer().partitionsFor("foo" + uniqueBindingId + ".0");
-
-		assertThat(partitions).hasSize(10);
+		assertThat(partitionSize("foo" + uniqueBindingId + ".0")).isEqualTo(10);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testCustomPartitionCountDoesNotOverridePartitioningIfSmaller() throws Exception {
 
 		byte[] testPayload = new byte[2048];
 		Arrays.fill(testPayload, (byte) 65);
 		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 		binderConfiguration.setMinPartitionCount(6);
-		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration);
+		Binder binder = getBinder(binderConfiguration);
 		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionCount(5);
@@ -431,22 +370,21 @@ public class KafkaBinderTests
 		Message<?> inbound = receive(moduleInputChannel);
 		assertThat(inbound).isNotNull();
 		assertThat((byte[]) inbound.getPayload()).containsExactly(testPayload);
-		Collection<PartitionInfo> partitions =
-				consumerFactory().createConsumer().partitionsFor("foo" + uniqueBindingId + ".0");
 
-		assertThat(partitions).hasSize(6);
+		assertThat(partitionSize("foo" + uniqueBindingId + ".0")).isEqualTo(6);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testCustomPartitionCountOverridesPartitioningIfLarger() throws Exception {
 
 		byte[] testPayload = new byte[2048];
 		Arrays.fill(testPayload, (byte) 65);
 		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 		binderConfiguration.setMinPartitionCount(4);
-		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration);
+		Binder binder = getBinder(binderConfiguration);
 
 		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -468,9 +406,7 @@ public class KafkaBinderTests
 		Message<?> inbound = receive(moduleInputChannel);
 		assertThat(inbound).isNotNull();
 		assertThat((byte[]) inbound.getPayload()).containsExactly(testPayload);
-		Collection<PartitionInfo> partitions =
-				consumerFactory().createConsumer().partitionsFor("foo" + uniqueBindingId + ".0");
-		assertThat(partitions).hasSize(5);
+		assertThat(partitionSize("foo" + uniqueBindingId + ".0")).isEqualTo(5);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -478,11 +414,11 @@ public class KafkaBinderTests
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testDefaultConsumerStartsAtEarliest() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(createConfigurationProperties());
+		Binder binder = getBinder(createConfigurationProperties());
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
+		//binder.setApplicationContext(context);
+		//binder.afterPropertiesSet();
 		DirectChannel output = new DirectChannel();
 		QueueChannel input1 = new QueueChannel();
 
@@ -515,7 +451,7 @@ public class KafkaBinderTests
 		Binding<MessageChannel> consumerBinding = null;
 
 		try {
-			KafkaTestBinder binder = getBinder();
+			Binder binder = getBinder();
 			DirectChannel output = new DirectChannel();
 			QueueChannel input1 = new QueueChannel();
 
@@ -552,7 +488,7 @@ public class KafkaBinderTests
 	@Ignore("Needs further discussion")
 	@SuppressWarnings("unchecked")
 	public void testReset() throws Exception {
-		KafkaTestBinder binder = getBinder();
+		Binder binder = getBinder();
 		DirectChannel output = new DirectChannel();
 		QueueChannel input1 = new QueueChannel();
 
@@ -605,11 +541,7 @@ public class KafkaBinderTests
 
 		try {
 			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
-			GenericApplicationContext context = new GenericApplicationContext();
-			context.refresh();
-			binder.setApplicationContext(context);
-			binder.afterPropertiesSet();
+			Binder binder = getBinder(configurationProperties);
 			DirectChannel output = new DirectChannel();
 			QueueChannel input1 = new QueueChannel();
 
@@ -651,251 +583,6 @@ public class KafkaBinderTests
 				producerBinding.unbind();
 			}
 		}
-	}
-
-	@Test
-	public void testSyncProducerMetadata() throws Exception {
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(createConfigurationProperties());
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
-		DirectChannel output = new DirectChannel();
-		String testTopicName = UUID.randomUUID().toString();
-		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
-		properties.getExtension().setSync(true);
-		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output, properties);
-		DirectFieldAccessor accessor = new DirectFieldAccessor(extractEndpoint(producerBinding));
-		KafkaProducerMessageHandler wrappedInstance = (KafkaProducerMessageHandler) accessor.getWrappedInstance();
-		assertThat(new DirectFieldAccessor(wrappedInstance).getPropertyValue("sync").equals(Boolean.TRUE))
-				.withFailMessage("Kafka Sync Producer should have been enabled.");
-		producerBinding.unbind();
-	}
-
-	@Test
-	public void testAutoCreateTopicsDisabledFailsIfTopicMissing() throws Exception {
-		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-		configurationProperties.setAutoCreateTopics(false);
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
-		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
-		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
-		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-		backOffPolicy.setBackOffPeriod(1000);
-		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
-		DirectChannel output = new DirectChannel();
-		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		String testTopicName = "nonexisting" + System.currentTimeMillis();
-		try {
-			binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
-			fail();
-		}
-		catch (Exception e) {
-			assertThat(e).isInstanceOf(BinderException.class);
-			assertThat(e).hasMessageContaining("Topic " + testTopicName + " does not exist");
-		}
-	}
-
-	@Test
-	public void testAutoConfigureTopicsDisabledSucceedsIfTopicExisting() throws Exception {
-		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-
-		final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
-				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
-				ZKStringSerializer$.MODULE$);
-
-		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
-
-		String testTopicName = "existing" + System.currentTimeMillis();
-		AdminUtils.createTopic(zkUtils, testTopicName, 5, 1, new Properties());
-
-		configurationProperties.setAutoCreateTopics(false);
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
-		DirectChannel output = new DirectChannel();
-		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		Binding<MessageChannel> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
-		binding.unbind();
-	}
-
-	@Test
-	public void testAutoAddPartitionsDisabledFailsIfTopicUnderpartitioned() throws Exception {
-		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-
-		final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
-				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
-				ZKStringSerializer$.MODULE$);
-
-		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
-
-		String testTopicName = "existing" + System.currentTimeMillis();
-		AdminUtils.createTopic(zkUtils, testTopicName, 1, 1, new Properties());
-		configurationProperties.setAutoAddPartitions(false);
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
-		DirectChannel output = new DirectChannel();
-		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		// this consumer must consume from partition 2
-		consumerProperties.setInstanceCount(3);
-		consumerProperties.setInstanceIndex(2);
-		try {
-			binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
-		}
-		catch (Exception e) {
-			assertThat(e).isInstanceOf(BinderException.class);
-			assertThat(e)
-					.hasMessageContaining("The number of expected partitions was: 3, but 1 has been found instead");
-		}
-	}
-
-	@Test
-	public void testAutoAddPartitionsDisabledSucceedsIfTopicPartitionedCorrectly() throws Exception {
-		Binding<?> binding = null;
-		try {
-			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-
-			final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
-					configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
-					ZKStringSerializer$.MODULE$);
-
-			final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
-
-			String testTopicName = "existing" + System.currentTimeMillis();
-			AdminUtils.createTopic(zkUtils, testTopicName, 6, 1, new Properties());
-			configurationProperties.setAutoAddPartitions(false);
-			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
-			GenericApplicationContext context = new GenericApplicationContext();
-			RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
-			metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
-			FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-			backOffPolicy.setBackOffPeriod(1000);
-			metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-			binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
-			context.refresh();
-			binder.setApplicationContext(context);
-			binder.afterPropertiesSet();
-			DirectChannel output = new DirectChannel();
-			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-			// this consumer must consume from partition 2
-			consumerProperties.setInstanceCount(3);
-			consumerProperties.setInstanceIndex(2);
-			consumerProperties.getExtension().setAutoRebalanceEnabled(false);
-
-			binding = binder.doBindConsumer(testTopicName, "test-x", output, consumerProperties);
-
-			TopicPartitionInitialOffset[] listenedPartitions = TestUtils.getPropertyValue(binding,
-					"endpoint.messageListenerContainer.containerProperties.topicPartitions",
-					TopicPartitionInitialOffset[].class);
-			assertThat(listenedPartitions).hasSize(2);
-			assertThat(listenedPartitions).contains(new TopicPartitionInitialOffset(testTopicName, 2),
-					new TopicPartitionInitialOffset(testTopicName, 5));
-			Collection<PartitionInfo> partitions =
-					consumerFactory().createConsumer().partitionsFor(testTopicName);
-			assertThat(partitions).hasSize(6);
-		}
-		finally {
-			binding.unbind();
-		}
-	}
-
-	@Test
-	public void testAutoCreateTopicsEnabledSucceeds() throws Exception {
-		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-		configurationProperties.setAutoCreateTopics(true);
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
-		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
-		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
-		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-		backOffPolicy.setBackOffPeriod(1000);
-		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
-		DirectChannel output = new DirectChannel();
-		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		String testTopicName = "nonexisting" + System.currentTimeMillis();
-		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
-		binding.unbind();
-	}
-
-	@Test
-	public void testPartitionCountNotReduced() throws Exception {
-		String testTopicName = "existing" + System.currentTimeMillis();
-
-		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-
-		final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
-				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
-				ZKStringSerializer$.MODULE$);
-
-		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
-
-		AdminUtils.createTopic(zkUtils, testTopicName, 6, 1, new Properties());
-		configurationProperties.setAutoAddPartitions(true);
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
-		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
-		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
-		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-		backOffPolicy.setBackOffPeriod(1000);
-		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
-		DirectChannel output = new DirectChannel();
-		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
-		binding.unbind();
-		TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(testTopicName,
-				zkUtils);
-		assertThat(topicMetadata.partitionsMetadata().size()).isEqualTo(6);
-	}
-
-	@Test
-	public void testPartitionCountIncreasedIfAutoAddPartitionsSet() throws Exception {
-		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-
-		final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
-				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
-				ZKStringSerializer$.MODULE$);
-
-		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
-
-		String testTopicName = "existing" + System.currentTimeMillis();
-		AdminUtils.createTopic(zkUtils, testTopicName, 1, 1, new Properties());
-		configurationProperties.setMinPartitionCount(6);
-		configurationProperties.setAutoAddPartitions(true);
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties);
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
-		binder.setApplicationContext(context);
-		binder.afterPropertiesSet();
-		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
-		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
-		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-		backOffPolicy.setBackOffPeriod(1000);
-		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-		binder.setMetadataRetryOperations(metatadataRetrievalRetryOperations);
-		DirectChannel output = new DirectChannel();
-		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		Binding<?> binding = binder.doBindConsumer(testTopicName, "test", output, consumerProperties);
-		binding.unbind();
-		TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(testTopicName,
-				zkUtils);
-		assertThat(topicMetadata.partitionsMetadata().size()).isEqualTo(6);
 	}
 
 	@Test
@@ -1156,7 +843,6 @@ public class KafkaBinderTests
 
 		QueueChannel input1 = new QueueChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		//consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 		Binding<MessageChannel> binding1 = binder.bindConsumer("defaultGroup.0", null, input1,
 				consumerProperties);
 
@@ -1203,7 +889,216 @@ public class KafkaBinderTests
 		binding2.unbind();
 	}
 
-	private static final class FailingInvocationCountingMessageHandler implements MessageHandler {
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testSyncProducerMetadata() throws Exception {
+		Binder binder = getBinder(createConfigurationProperties());
+		DirectChannel output = new DirectChannel();
+		String testTopicName = UUID.randomUUID().toString();
+		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
+		properties.getExtension().setSync(true);
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output, properties);
+		DirectFieldAccessor accessor = new DirectFieldAccessor(extractEndpoint(producerBinding));
+		KafkaProducerMessageHandler wrappedInstance = (KafkaProducerMessageHandler) accessor.getWrappedInstance();
+		assertThat(new DirectFieldAccessor(wrappedInstance).getPropertyValue("sync").equals(Boolean.TRUE))
+				.withFailMessage("Kafka Sync Producer should have been enabled.");
+		producerBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAutoCreateTopicsDisabledFailsIfTopicMissing() throws Exception {
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+		configurationProperties.setAutoCreateTopics(false);
+		Binder binder = getBinder(configurationProperties);
+		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(1000);
+		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		String testTopicName = "nonexisting" + System.currentTimeMillis();
+		try {
+			binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+			fail();
+		}
+		catch (Exception e) {
+			assertThat(e).isInstanceOf(BinderException.class);
+			assertThat(e).hasMessageContaining("Topic " + testTopicName + " does not exist");
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAutoConfigureTopicsDisabledSucceedsIfTopicExisting() throws Exception {
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+
+		final ZkUtils zkUtils = getZkUtils(configurationProperties);
+
+		String testTopicName = "existing" + System.currentTimeMillis();
+		invokeCreateTopic(zkUtils, testTopicName, 5, 1, new Properties());
+
+		configurationProperties.setAutoCreateTopics(false);
+		Binder binder = getBinder(configurationProperties);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<MessageChannel> binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testPartitionCountIncreasedIfAutoAddPartitionsSet() throws Exception {
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+
+		final ZkUtils zkUtils = getZkUtils(configurationProperties);
+
+		String testTopicName = "existing" + System.currentTimeMillis();
+		invokeCreateTopic(zkUtils, testTopicName, 6, 1, new Properties());
+		configurationProperties.setMinPartitionCount(6);
+		configurationProperties.setAutoAddPartitions(true);
+		Binder binder = getBinder(configurationProperties);
+		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(1000);
+		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<?> binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
+		assertThat(invokePartitionSize(testTopicName, zkUtils)).isEqualTo(6);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAutoAddPartitionsDisabledFailsIfTopicUnderpartitioned() throws Exception {
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+
+		final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
+				ZKStringSerializer$.MODULE$);
+
+		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+
+		String testTopicName = "existing" + System.currentTimeMillis();
+		invokeCreateTopic(zkUtils, testTopicName, 1, 1, new Properties());
+		configurationProperties.setAutoAddPartitions(false);
+		Binder binder = getBinder(configurationProperties);
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		//		binder.setApplicationContext(context);
+		//		binder.afterPropertiesSet();
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		// this consumer must consume from partition 2
+		consumerProperties.setInstanceCount(3);
+		consumerProperties.setInstanceIndex(2);
+		Binding binding = null;
+		try {
+			binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+		}
+		catch (Exception e) {
+			assertThat(e).isInstanceOf(BinderException.class);
+			assertThat(e)
+					.hasMessageContaining("The number of expected partitions was: 3, but 1 has been found instead");
+		}
+		finally {
+			if (binding != null) {
+				binding.unbind();
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAutoAddPartitionsDisabledSucceedsIfTopicPartitionedCorrectly() throws Exception {
+		Binding<?> binding = null;
+		try {
+			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+
+			final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+					configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
+					ZKStringSerializer$.MODULE$);
+
+			final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+
+			String testTopicName = "existing" + System.currentTimeMillis();
+			invokeCreateTopic(zkUtils, testTopicName, 6, 1, new Properties());
+			configurationProperties.setAutoAddPartitions(false);
+			Binder binder = getBinder(configurationProperties);
+			RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+			metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+			FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+			backOffPolicy.setBackOffPeriod(1000);
+			metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+			setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
+			DirectChannel output = new DirectChannel();
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+			// this consumer must consume from partition 2
+			consumerProperties.setInstanceCount(3);
+			consumerProperties.setInstanceIndex(2);
+			consumerProperties.getExtension().setAutoRebalanceEnabled(false);
+
+			binding = binder.bindConsumer(testTopicName, "test-x", output, consumerProperties);
+
+			TopicPartitionInitialOffset[] listenedPartitions = TestUtils.getPropertyValue(binding,
+					"endpoint.messageListenerContainer.containerProperties.topicPartitions",
+					TopicPartitionInitialOffset[].class);
+			assertThat(listenedPartitions).hasSize(2);
+			assertThat(listenedPartitions).contains(new TopicPartitionInitialOffset(testTopicName, 2),
+					new TopicPartitionInitialOffset(testTopicName, 5));
+			int partitions = invokePartitionSize(testTopicName, zkUtils);
+			assertThat(partitions).isEqualTo(6);
+		}
+		finally {
+			if (binding != null) {
+				binding.unbind();
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testPartitionCountNotReduced() throws Exception {
+		String testTopicName = "existing" + System.currentTimeMillis();
+
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+
+		final ZkClient zkClient;
+		zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
+				ZKStringSerializer$.MODULE$);
+
+		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+		invokeCreateTopic(zkUtils, testTopicName, 6, 1, new Properties());
+		configurationProperties.setAutoAddPartitions(true);
+		Binder binder = getBinder(configurationProperties);
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		RetryTemplate metatadataRetrievalRetryOperations = new RetryTemplate();
+		metatadataRetrievalRetryOperations.setRetryPolicy(new SimpleRetryPolicy());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(1000);
+		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
+		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<?> binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
+
+		assertThat(partitionSize(testTopicName)).isEqualTo(6);
+	}
+
+	@Override
+	protected void binderBindUnbindLatency() throws InterruptedException {
+		Thread.sleep(500);
+	}
+
+	private final class FailingInvocationCountingMessageHandler implements MessageHandler {
 
 		private int invocationCount;
 
@@ -1222,7 +1117,7 @@ public class KafkaBinderTests
 		@Override
 		public void handleMessage(Message<?> message) throws MessagingException {
 			invocationCount++;
-			Long offset = message.getHeaders().get(KafkaHeaders.OFFSET, Long.class);
+			Long offset = message.getHeaders().get(KafkaBinderTests.this.getKafkaOffsetHeaderKey(), Long.class);
 			// using the offset as key allows to ensure that we don't store duplicate
 			// messages on retry
 			if (!receivedMessages.containsKey(offset)) {

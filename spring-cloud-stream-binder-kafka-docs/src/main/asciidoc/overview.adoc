@@ -120,6 +120,12 @@ Default: `2097152`.
 The following properties are available for Kafka consumers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
 
+autoRebalanceEnabled::
+  When this is enabled, topic partitions will be automatically rebalanced between various consumers by the broker.
+  If set to `false`, it will trigger partitions to be statically allocated by the binder.
+When setting false, in order for static allocation of partitions to take place, it also needs both `spring.cloud.stream.instaceCount` and
+'spring.cloud.stream.instanceIndex' properties set appropriately. The property `spring.cloud.stream.instaceCount` must be greater than 1 in this case.
+
 autoCommitOffset::
   Whether to autocommit offsets when a message has been processed.
 If set to `false`, an `Acknowledgment` header will be available in the message headers for late acknowledgment.
@@ -226,4 +232,36 @@ Here is an example of launching a Spring Cloud Stream application with SASL and 
 Exercise caution when using the `autoCreateTopics` and `autoAddPartitions` if using Kerberos.
 Usually applications may use principals that do not have administrative rights in Kafka and Zookeeper, and relying on Spring Cloud Stream to create/modify topics may fail.
 In secure environments, we strongly recommend creating topics and managing ACLs administratively using Kafka tooling.
+====
+
+[NOTE]
+====
+In addition to supporting 0.9 based clients, Kafka binder can also work with 0.10 libs. In order to support this, when you create the project that contains your application, include `spring-cloud-starter-stream-kafka` as you normally would do for 0.9 based applications.
+Then add these dependencies at the top of the dependencies section in the pom.xml file.
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.kafka</groupId>
+  <artifactId>spring-kafka</artifactId>
+  <version>1.1.0.M1</version>
+</dependency>
+<dependency>
+  <groupId>org.springframework.integration</groupId>
+  <artifactId>spring-integration-kafka</artifactId>
+  <version>2.0.1.RELEASE</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.kafka</groupId>
+  <artifactId>kafka_2.11</artifactId>
+  <version>0.10.0.0</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+----
+
 ====
