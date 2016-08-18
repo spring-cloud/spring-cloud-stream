@@ -83,7 +83,7 @@ import org.springframework.util.StringUtils;
  */
 public class RabbitMessageChannelBinder
 		extends AbstractMessageChannelBinder<ExtendedConsumerProperties<RabbitConsumerProperties>,
-		ExtendedProducerProperties<RabbitProducerProperties>, Queue>
+		ExtendedProducerProperties<RabbitProducerProperties>, Queue, TopicExchange>
 		implements ExtendedPropertiesBinder<MessageChannel, RabbitConsumerProperties, RabbitProducerProperties> {
 
 	private static final AnonymousQueue.Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR
@@ -328,21 +328,21 @@ public class RabbitMessageChannelBinder
 	}
 
 	@Override
-	protected void createProducerDestinationIfNecessary(String name,
+	protected TopicExchange createProducerDestinationIfNecessary(String name,
 			ExtendedProducerProperties<RabbitProducerProperties> producerProperties) {
 		String exchangeName = applyPrefix(producerProperties.getExtension().getPrefix(), name);
 		TopicExchange exchange = new TopicExchange(exchangeName);
 		declareExchange(exchangeName, exchange);
+		return exchange;
 	}
 
 	@Override
-	protected MessageHandler createProducerMessageHandler(final String destination,
+	protected MessageHandler createProducerMessageHandler(final TopicExchange exchange,
 			ExtendedProducerProperties<RabbitProducerProperties> properties)
 			throws Exception {
 		String prefix = properties.getExtension().getPrefix();
-		String exchangeName = applyPrefix(prefix, destination);
-		TopicExchange exchange = new TopicExchange(exchangeName);
-		declareExchange(exchangeName, exchange);
+		String exchangeName = exchange.getName();
+		String destination = StringUtils.isEmpty(prefix) ? exchangeName : exchangeName.substring(prefix.length());
 		final AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(buildRabbitTemplate(properties.getExtension()));
 		endpoint.setExchangeName(exchange.getName());
 		if (!properties.isPartitioned()) {
