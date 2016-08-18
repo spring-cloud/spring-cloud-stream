@@ -44,6 +44,10 @@ import org.springframework.util.MimeType;
  * <li>{@link #createConsumerEndpoint(String, String, CD, ConsumerProperties)}</li>
  * </ul>
  * @author Marius Bogoevici
+ * @param <C> the consumer properties type
+ * @param <P> the producer properties type
+ * @param <CD> the consumer destination type
+ * @param <PD> the producer destination type
  * @since 1.1
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, CD, PD>
