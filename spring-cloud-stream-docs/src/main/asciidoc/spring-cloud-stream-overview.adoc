@@ -15,17 +15,12 @@ The following is a simple sink application which receives external messages.
 [source,java]
 ----
 @SpringBootApplication
-public class StreamApplication {
+@EnableBinding(Sink.class)
+public class VoteRecordingSinkApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(StreamApplication.class, args);
+    SpringApplication.run(VoteRecordingSinkApplication.class, args);
   }
-}
-
-@EnableBinding(Sink.class)
-public class TimerSource {
-
-  ...
 
   @StreamListener(Sink.INPUT)
   public void processVote(Vote vote) {
@@ -38,7 +33,7 @@ The `@EnableBinding` annotation takes one or more interfaces as parameters (in t
 An interface declares input and/or output channels.
 Spring Cloud Stream provides the interfaces `Source`, `Sink`, and `Processor`; you can also define your own interfaces.
 
-The following is the definition of the `Source` interface:
+The following is the definition of the `Sink` interface:
 
 [source,java]
 ----
@@ -59,7 +54,7 @@ You can use this in the application by autowiring it, as in the following exampl
 [source,java]
 ----
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = StreamApplication.class)
+@SpringApplicationConfiguration(classes = VoteRecordingSinkApplication.class)
 @WebAppConfiguration
 @DirtiesContext
 public class StreamApplicationTests {
