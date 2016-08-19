@@ -1,13 +1,12 @@
-== Introduction
-This is Rabbitmq specific implementation for Spring Cloud Stream Binder.
-In the following sections, you can find more details
-on how you can work with Spring Cloud Stream Rabbit binder,
-in what concerns mapping the Spring Cloud Stream concepts onto the middleware concepts.
+= Introduction
 
-==== Classpath Detection
+This guide describes the RabbitMQ implementation of the Spring Cloud Stream Binder.
+It contains information about its design, usage and configuration options, as well as information on how the Stream Cloud Stream concepts map into RabbitMQ specific constructs.
 
-By default, Spring Cloud Stream relies on Spring Boot's auto-configuration to configure the binding process.
-Following are the maven coordinates for including the Rabbitmq binder in a Spring Cloud Stream application.
+= Usage
+
+For using the RabbitMQ binder, you just need to add it to your Spring Cloud Stream application, using the following Maven coordinates:
+
 [source,xml]
 ----
 <dependency>
@@ -16,30 +15,42 @@ Following are the maven coordinates for including the Rabbitmq binder in a Sprin
 </dependency>
 ----
 
-==== Rabbit Binder Overview
+Alternatively, you can also use the Spring Cloud Stream RabbitMQ Starter.
 
-.Rabbit Binder
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+</dependency>
+----
+
+= RabbitMQ Binder Overview
+
+A simplified diagram of how the RabbitMQ binder operates can be seen below.
+
+.RabbitMQ Binder
 image::rabbit-binder.png[width=300,scaledwidth="50%"]
 
-The RabbitMQ Binder implementation maps the destination to a `TopicExchange`.
+The RabbitMQ Binder implementation maps each destination to a `TopicExchange`.
 For each consumer group, a `Queue` will be bound to that `TopicExchange`.
-Each consumer instance that binds will trigger creation of a corresponding RabbitMQ `Consumer` instance for its group's `Queue`.
+Each consumer instance have a corresponding RabbitMQ `Consumer` instance for its group's `Queue`.
+For partitioned producers/consumers the queues are suffixed with the partition index and use the partition index as routing key.
 
-== Configuration Options and Properties
+= Configuration Options
 
-For common configuration options and properties pertaining to binder,
-Please refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[core docs].
+This section contains settings specific to the RabbitMQ Binder and bound channels.
 
-=== RabbitMQ Binder-Specific Settings
+For general binding configuration options and properties,
+please refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[Spring Cloud Stream core documentation].
 
-The following binder, consumer, and producer properties are specific to the RabbitMQ binder implementation.
-
-==== RabbitMQ Binder Properties
+== RabbitMQ Binder Properties
 
 By default, the RabbitMQ binder uses Spring Boot's `ConnectionFactory`, and it therefore supports all Spring Boot configuration options for RabbitMQ.
-(For reference, consult the http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties[Spring Boot documentation].) RabbitMQ configuration options use the `spring.rabbitmq` prefix.
+(For reference, consult the http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties[Spring Boot documentation].)
+RabbitMQ configuration options use the `spring.rabbitmq` prefix.
 
-In addition to the Spring Boot options, the RabbitMQ binder supports the following properties:
+In addition to Spring Boot options, the RabbitMQ binder supports the following properties:
 
 spring.cloud.stream.rabbit.binder.adminAddresses::
   A comma-separated list of RabbitMQ management plugin URLs.
@@ -59,7 +70,7 @@ See `java.util.zip.Deflater`.
 +
 Default: `1` (BEST_LEVEL).
 
-==== RabbitMQ Consumer Properties
+== RabbitMQ Consumer Properties
 
 The following properties are available for Rabbit consumers only and
 must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.consumer.`.
@@ -102,7 +113,7 @@ Default: `[STANDARD_REQUEST_HEADERS,'*']`.
 replyHeaderPatterns::
   The reply headers to be transported.
 +
-Default: `[STANDARD_REQUEST_HEADERS,'*']`.
+Default: `[STANDARD_REPLY_HEADERS,'*']`.
 republishToDlq::
   By default, messages which fail after retries are exhausted are rejected.
 If a dead-letter queue (DLQ) is configured, RabbitMQ will route the failed message (unchanged) to the DLQ.
@@ -116,7 +127,7 @@ txSize::
 +
 Default: `1`.
 
-==== Rabbit Producer Properties
+== Rabbit Producer Properties
 
 The following properties are available for Rabbit producers only and
 must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.producer.`.
@@ -156,7 +167,7 @@ Default: `[STANDARD_REQUEST_HEADERS,'*']`.
 replyHeaderPatterns::
   The reply headers to be transported.
 +
-Default: `[STANDARD_REQUEST_HEADERS,'*']`.
+Default: `[STANDARD_REPLY_HEADERS,'*']`.
 
 [NOTE]
 ====
