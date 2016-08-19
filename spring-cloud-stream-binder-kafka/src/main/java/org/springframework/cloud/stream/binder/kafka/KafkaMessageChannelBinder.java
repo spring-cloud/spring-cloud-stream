@@ -28,9 +28,7 @@ import java.util.UUID;
 import kafka.admin.AdminUtils;
 import kafka.api.TopicMetadata;
 import kafka.common.ErrorMapping;
-import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
-import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Callback;
@@ -39,6 +37,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.security.JaasUtils;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -237,6 +236,9 @@ public class KafkaMessageChannelBinder extends
 	private ProducerFactory<byte[], byte[]> getProducerFactory(
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
 		Map<String, Object> props = new HashMap<>();
+		if (!ObjectUtils.isEmpty(configurationProperties.getConfiguration())) {
+			props.putAll(configurationProperties.getConfiguration());
+		}
 		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
 		props.put(ProducerConfig.RETRIES_CONFIG, 0);
 		props.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384);
@@ -386,6 +388,9 @@ public class KafkaMessageChannelBinder extends
 
 	private Map<String, Object> getConsumerConfig(boolean anonymous, String consumerGroup) {
 		Map<String, Object> props = new HashMap<>();
+		if (!ObjectUtils.isEmpty(configurationProperties.getConfiguration())) {
+			props.putAll(configurationProperties.getConfiguration());
+		}
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
@@ -420,12 +425,10 @@ public class KafkaMessageChannelBinder extends
 	 */
 	private Collection<PartitionInfo> ensureTopicCreated(final String topicName, final int partitionCount) {
 
-		final ZkClient zkClient = new ZkClient(this.configurationProperties.getZkConnectionString(),
+		final ZkUtils zkUtils = ZkUtils.apply(this.configurationProperties.getZkConnectionString(),
 				this.configurationProperties.getZkSessionTimeout(),
 				this.configurationProperties.getZkConnectionTimeout(),
-				ZKStringSerializer$.MODULE$);
-
-		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+				JaasUtils.isZkSecurityEnabled());
 		try {
 			final Properties topicConfig = new Properties();
 			TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkUtils);
@@ -503,7 +506,7 @@ public class KafkaMessageChannelBinder extends
 
 		}
 		finally {
-			zkClient.close();
+			zkUtils.close();
 		}
 	}
 

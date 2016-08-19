@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.config;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
@@ -29,6 +32,8 @@ import org.springframework.util.StringUtils;
 public class KafkaBinderConfigurationProperties {
 
 	private String[] zkNodes = new String[] {"localhost"};
+
+	private Map<String, String> configuration = new HashMap<>();
 
 	private String defaultZkPort = "2181";
 
@@ -71,12 +76,6 @@ public class KafkaBinderConfigurationProperties {
 	private int minPartitionCount = 1;
 
 	private int queueSize = 8192;
-
-	private String consumerGroup;
-
-	public String getConsumerGroup() {
-		return this.consumerGroup;
-	}
 
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
@@ -248,8 +247,11 @@ public class KafkaBinderConfigurationProperties {
 		this.socketBufferSize = socketBufferSize;
 	}
 
-	public void setConsumerGroup(String consumerGroup) {
-		this.consumerGroup = consumerGroup;
+	public Map<String, String> getConfiguration() {
+		return configuration;
 	}
 
+	public void setConfiguration(Map<String, String> configuration) {
+		this.configuration = configuration;
+	}
 }

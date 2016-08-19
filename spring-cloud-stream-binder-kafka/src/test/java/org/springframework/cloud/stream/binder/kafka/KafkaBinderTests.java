@@ -164,7 +164,7 @@ public class KafkaBinderTests
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, configurationProperties.getKafkaConnectionString());
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, configurationProperties.getConsumerGroup());
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "TEST-CONSUMER-GROUP");
 		Deserializer<byte[]> valueDecoder = new ByteArrayDeserializer();
 		Deserializer<byte[]> keyDecoder = new ByteArrayDeserializer();
 
