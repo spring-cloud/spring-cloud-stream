@@ -100,7 +100,7 @@ public class KafkaBinderTests
 
 	@Override
 	protected void binderBindUnbindLatency() throws InterruptedException {
-		Thread.sleep(2000);
+		Thread.sleep(500);
 	}
 
 	@Override
