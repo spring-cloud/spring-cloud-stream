@@ -735,8 +735,17 @@ Each Binder implementation typically connects to one type of messaging system.
 
 By default, Spring Cloud Stream relies on Spring Boot's auto-configuration to configure the binding process.
 If a single Binder implementation is found on the classpath, Spring Cloud Stream will use it automatically.
-For example, a Spring Cloud Stream project that aims to bind only to RabbitMQ can simply add that binder dependency.
-For the specific maven coordinates of the binder dependency, please refer to the docs for the binder implementation.
+For example, a Spring Cloud Stream project that aims to bind only to RabbitMQ can simply add the following dependency:
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
+</dependency>
+----
+
+For the specific maven coordinates of other binder dependencies, please refer to the documentation of that binder implementation.
 
 [[multiple-binders]]
 === Multiple Binders on the Classpath
