@@ -1,13 +1,11 @@
-== Introduction
-This is Kafka specific implementation for Spring Cloud Stream Binder.
-This implementation supports Kafka versions 0.9 and above. In the following sections, you can find more details
-on how you can work with Spring Cloud Stream Kafka binder,
-in what concerns mapping the Spring Cloud Stream concepts onto the middleware concepts.
+= Introduction
+This guide describes the Apache Kafka implementation of the Spring Cloud Stream Binder.
+It contains information about its design, usage and configuration options, as well as information on how the Stream Cloud Stream concepts map into Apache Kafka specific constructs.
 
-==== Classpath Detection
+= Usage
 
-By default, Spring Cloud Stream relies on Spring Boot's auto-configuration to configure the binding process.
-Following are the maven coordinates for including the Kafka binder in a Spring Cloud Stream application.
+For using the Apache Kafka binder, you just need to add it to your Spring Cloud Stream application, using the following Maven coordinates:
+
 [source,xml]
 ----
 <dependency>
@@ -16,25 +14,34 @@ Following are the maven coordinates for including the Kafka binder in a Spring C
 </dependency>
 ----
 
-==== Kafka Binder Overview
+Alternatively, you can also use the Spring Cloud Stream Kafka Starter.
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+</dependency>
+----
+
+= Apache Kafka Binder Overview
+
+A simplified diagram of how the Apache Kafka binder operates can be seen below.
 
 .Kafka Binder
 image::kafka-binder.png[width=300,scaledwidth="50%"]
 
-The Kafka Binder implementation maps the destination to a Kafka topic.
-The consumer group maps directly to the same Kafka concept.
-Spring Cloud Stream does not use the high-level consumer, but implements a similar concept for the simple consumer.
+The Apache Kafka Binder implementation maps each destination to an Apache Kafka topic.
+The consumer group maps directly to the same Apache Kafka concept.
+Partitioning also maps directly to Apache Kafka partitions as well.
 
-== Configuration Options and Properties
+= Configuration Options
 
-For common configuration options and properties pertaining to binder,
-Please refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[core docs].
+This section contains the configuration options used by the Apache Kafka binder.
 
-=== Kafka-Specific Settings
+For common configuration options and properties pertaining to binder, refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[core docs].
 
-The following binder, consumer, and producer properties are specific to the Kafka binder implementation.
-
-==== Kafka Binder Properties
+== Kafka Binder Properties
 
 spring.cloud.stream.kafka.binder.brokers::
   A list of brokers to which the Kafka binder will connect.
@@ -101,7 +108,7 @@ spring.cloud.stream.kafka.binder.socketBufferSize::
 +
 Default: `2097152`.
 
-==== Kafka Consumer Properties
+== Kafka Consumer Properties
 
 The following properties are available for Kafka consumers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
@@ -142,7 +149,7 @@ configuration::
 +
 Default: Empty map.
 
-==== Kafka Producer Properties
+== Kafka Producer Properties
 
 The following properties are available for Kafka producers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
@@ -167,7 +174,7 @@ Default: Empty map.
 
 [NOTE]
 ====
-The Kafka binder will use the `partitionCount` setting as a hint to create a topic with the given partition count (in conjunction with the `minPartitionCount`, the maximum of the two being the value being used).
+The Kafka binder will use the `partitionCount` setting of the producer as a hint to create a topic with the given partition count (in conjunction with the `minPartitionCount`, the maximum of the two being the value being used).
 Exercise caution when configuring both `minPartitionCount` for a binder and `partitionCount` for an application, as the larger value will be used.
 If a topic already exists with a smaller partition count and `autoAddPartitions` is disabled (the default), then the binder will fail to start.
 If a topic already exists with a smaller partition count and `autoAddPartitions` is enabled, new partitions will be added.
