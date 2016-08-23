@@ -1,9 +1,10 @@
-= Introduction
-
+[partintro]
+--
 This guide describes the RabbitMQ implementation of the Spring Cloud Stream Binder.
 It contains information about its design, usage and configuration options, as well as information on how the Stream Cloud Stream concepts map into RabbitMQ specific constructs.
+--
 
-= Usage
+== Usage
 
 For using the RabbitMQ binder, you just need to add it to your Spring Cloud Stream application, using the following Maven coordinates:
 
@@ -25,7 +26,7 @@ Alternatively, you can also use the Spring Cloud Stream RabbitMQ Starter.
 </dependency>
 ----
 
-= RabbitMQ Binder Overview
+== RabbitMQ Binder Overview
 
 A simplified diagram of how the RabbitMQ binder operates can be seen below.
 
@@ -37,14 +38,14 @@ For each consumer group, a `Queue` will be bound to that `TopicExchange`.
 Each consumer instance have a corresponding RabbitMQ `Consumer` instance for its group's `Queue`.
 For partitioned producers/consumers the queues are suffixed with the partition index and use the partition index as routing key.
 
-= Configuration Options
+== Configuration Options
 
 This section contains settings specific to the RabbitMQ Binder and bound channels.
 
 For general binding configuration options and properties,
 please refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[Spring Cloud Stream core documentation].
 
-== RabbitMQ Binder Properties
+=== RabbitMQ Binder Properties
 
 By default, the RabbitMQ binder uses Spring Boot's `ConnectionFactory`, and it therefore supports all Spring Boot configuration options for RabbitMQ.
 (For reference, consult the http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties[Spring Boot documentation].)
@@ -70,7 +71,7 @@ See `java.util.zip.Deflater`.
 +
 Default: `1` (BEST_LEVEL).
 
-== RabbitMQ Consumer Properties
+=== RabbitMQ Consumer Properties
 
 The following properties are available for Rabbit consumers only and
 must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.consumer.`.
@@ -127,7 +128,7 @@ txSize::
 +
 Default: `1`.
 
-== Rabbit Producer Properties
+=== Rabbit Producer Properties
 
 The following properties are available for Rabbit producers only and
 must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.producer.`.
