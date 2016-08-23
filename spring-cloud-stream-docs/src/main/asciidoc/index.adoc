@@ -1,7 +1,6 @@
 [[spring-cloud-stream-reference]]
 = Spring Cloud Stream Reference Guide
 Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein
-:basedir: ../../..
 :doctype: book
 :toc:
 :toclevels: 4
@@ -23,17 +22,8 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 // ======================================================================================
 
 = Spring Cloud Stream Core
-include::{basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc[]
-
-= Binder Implementations
-
-== Apache Kafka Binder
-
-include::{basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/overview.adoc[leveloffset=+1]
-
-== RabbitMQ Binder
-
-include::{basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/overview.adoc[leveloffset=+1]
+:stream-docs-basedir: ../../..
+include::spring-cloud-stream-aggregate.adoc[]
 
 = Appendices
 [appendix]
