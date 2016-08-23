@@ -1,6 +1,6 @@
 [submodule "spring-cloud-stream-docs/kafka"]
 	path = spring-cloud-stream-docs/kafka
-	url = https://github.com/spring-cloud/spring-cloud-binder-kafka.git
+	url = https://github.com/spring-cloud/spring-cloud-stream-binder-kafka.git
 [submodule "spring-cloud-stream-docs/rabbit"]
 	path = spring-cloud-stream-docs/rabbit
 	url = https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit.git
