@@ -63,7 +63,6 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ErrorHandler;
 import org.springframework.kafka.listener.config.ContainerProperties;
@@ -206,12 +205,12 @@ public class KafkaMessageChannelBinder extends
 
 		this.topicsInUse.put(destination, partitions);
 
-		ProducerFactory<byte[], byte[]> producerFB = getProducerFactory(producerProperties);
+		DefaultKafkaProducerFactory<byte[], byte[]> producerFB = getProducerFactory(producerProperties);
 		KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFB);
 		if (this.producerListener != null) {
 			kafkaTemplate.setProducerListener(this.producerListener);
 		}
-		return new ProducerConfigurationMessageHandler(kafkaTemplate, destination, producerProperties);
+		return new ProducerConfigurationMessageHandler(kafkaTemplate, destination, producerProperties, producerFB);
 	}
 
 	@Override
@@ -233,7 +232,7 @@ public class KafkaMessageChannelBinder extends
 		return name;
 	}
 
-	private ProducerFactory<byte[], byte[]> getProducerFactory(
+	private DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
 		Map<String, Object> props = new HashMap<>();
 		if (!ObjectUtils.isEmpty(configurationProperties.getConfiguration())) {
@@ -550,8 +549,11 @@ public class KafkaMessageChannelBinder extends
 
 		private boolean running = true;
 
+		private final DefaultKafkaProducerFactory<byte[], byte[]> producerFactory;
+
 		private ProducerConfigurationMessageHandler(KafkaTemplate<byte[], byte[]> kafkaTemplate, String topic,
-				ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
+				ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
+				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory) {
 			super(kafkaTemplate);
 			setTopicExpression(new LiteralExpression(topic));
 			setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
@@ -562,6 +564,7 @@ public class KafkaMessageChannelBinder extends
 			if (producerProperties.getExtension().isSync()) {
 				setSync(true);
 			}
+			this.producerFactory = producerFactory;
 		}
 
 		@Override
@@ -577,6 +580,7 @@ public class KafkaMessageChannelBinder extends
 
 		@Override
 		public void stop() {
+			producerFactory.stop();
 			this.running = false;
 		}
 
