@@ -35,7 +35,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-build-tools</artifactId>
+				<artifactId>spring-cloud-stream-tools</artifactId>
 				<version>1.1.0.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
@@ -103,7 +103,7 @@
 		<module>spring-cloud-stream-test-support</module>
 		<module>spring-cloud-stream-test-support-internal</module>
 		<module>spring-cloud-stream-integration-tests</module>
-		<module>spring-cloud-stream-docs</module>
+		<module>spring-cloud-stream-core-docs</module>
 		<module>spring-cloud-stream-reactive</module>
 		<module>spring-cloud-stream-schema</module>
 		<module>spring-cloud-stream-schema-server</module>
@@ -153,7 +153,7 @@
 					<dependency>
 						<groupId>org.springframework.cloud</groupId>
 						<artifactId>spring-cloud-stream-tools</artifactId>
-						<version>${project.version}</version>
+						<version>1.1.0.BUILD-SNAPSHOT</version>
 					</dependency>
 				</dependencies>
 				<executions>
