@@ -1,8 +1,10 @@
-= Introduction
+[partintro]
+--
 This guide describes the Apache Kafka implementation of the Spring Cloud Stream Binder.
 It contains information about its design, usage and configuration options, as well as information on how the Stream Cloud Stream concepts map into Apache Kafka specific constructs.
+--
 
-= Usage
+== Usage
 
 For using the Apache Kafka binder, you just need to add it to your Spring Cloud Stream application, using the following Maven coordinates:
 
@@ -24,7 +26,7 @@ Alternatively, you can also use the Spring Cloud Stream Kafka Starter.
 </dependency>
 ----
 
-= Apache Kafka Binder Overview
+== Apache Kafka Binder Overview
 
 A simplified diagram of how the Apache Kafka binder operates can be seen below.
 
@@ -35,13 +37,13 @@ The Apache Kafka Binder implementation maps each destination to an Apache Kafka 
 The consumer group maps directly to the same Apache Kafka concept.
 Partitioning also maps directly to Apache Kafka partitions as well.
 
-= Configuration Options
+== Configuration Options
 
 This section contains the configuration options used by the Apache Kafka binder.
 
 For common configuration options and properties pertaining to binder, refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[core docs].
 
-== Kafka Binder Properties
+=== Kafka Binder Properties
 
 spring.cloud.stream.kafka.binder.brokers::
   A list of brokers to which the Kafka binder will connect.
@@ -108,7 +110,7 @@ spring.cloud.stream.kafka.binder.socketBufferSize::
 +
 Default: `2097152`.
 
-== Kafka Consumer Properties
+=== Kafka Consumer Properties
 
 The following properties are available for Kafka consumers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
@@ -149,7 +151,7 @@ configuration::
 +
 Default: Empty map.
 
-== Kafka Producer Properties
+=== Kafka Producer Properties
 
 The following properties are available for Kafka producers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
