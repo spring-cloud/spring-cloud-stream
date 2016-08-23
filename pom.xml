@@ -2,10 +2,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>spring-cloud-starter-build</artifactId>
+	<artifactId>spring-cloud-stream-starter-build</artifactId>
 	<packaging>pom</packaging>
-	<name>Spring Cloud Stream Starter Build</name>
-	<description>Spring Cloud Starter Build</description>
+	<name>spring-cloud-stream-starter-build</name>
+	<description>Spring Cloud Stream Starter Build</description>
 	<version>Brooklyn.BUILD-SNAPSHOT</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -24,6 +24,7 @@
 
 	<modules>
 		<module>spring-cloud-stream-dependencies</module>
+		<module>spring-cloud-stream-docs</module>
 	</modules>
 	
 	<build>

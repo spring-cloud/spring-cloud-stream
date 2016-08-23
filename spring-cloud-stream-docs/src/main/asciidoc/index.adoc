@@ -1,0 +1,43 @@
+[[spring-cloud-stream-reference]]
+= Spring Cloud Stream Reference Guide
+Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein
+:basedir: ../../..
+:doctype: book
+:toc:
+:toclevels: 4
+:source-highlighter: prettify
+:numbered:
+:icons: font
+:hide-uri-scheme:
+:spring-cloud-stream-repo: snapshot
+:github-tag: master
+:spring-cloud-stream-docs-version: current
+:spring-cloud-stream-docs: http://docs.spring.io/spring-cloud-stream/docs/{spring-cloud-stream-docs-version}/reference
+:spring-cloud-stream-docs-current: http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/html/
+:github-repo: spring-cloud/spring-cloud-stream
+:github-raw: http://raw.github.com/{github-repo}/{github-tag}
+:github-code: http://github.com/{github-repo}/tree/{github-tag}
+:github-wiki: http://github.com/{github-repo}/wiki
+:github-master-code: http://github.com/{github-repo}/tree/master
+:sc-ext: java
+// ======================================================================================
+
+= Spring Cloud Stream Core
+include::{basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc[]
+
+= Binder Implementations
+
+== Apache Kafka Binder
+
+include::{basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/overview.adoc[leveloffset=+1]
+
+== RabbitMQ Binder
+
+include::{basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/overview.adoc[leveloffset=+1]
+
+= Appendices
+[appendix]
+include::building.adoc[]
+include::contributing.adoc[]
+
+// ======================================================================================
