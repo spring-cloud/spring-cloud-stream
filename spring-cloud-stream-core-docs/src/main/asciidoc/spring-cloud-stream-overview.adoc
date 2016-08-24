@@ -387,6 +387,12 @@ public class SendingBean {
 }
 ----
 
+===== Spring application context for Spring Cloud Stream applications
+
+Spring cloud stream application will not start its application context automatically when the binding lifecycle beans
+are started.This is to avoid any undesirable effects on starting other beans inside the application context when those
+beans are intended to get started in a controlled manner.
+
 ==== Producing and Consuming Messages
 
 You can write a Spring Cloud Stream application using either Spring Integration annotations or Spring Cloud Stream's `@StreamListener` annotation.
