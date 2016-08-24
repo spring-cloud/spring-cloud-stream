@@ -82,6 +82,7 @@ public class CompositeMessageConverterFactory {
 
 		this.converters.add(new StringMessageConverter());
 		this.converters.add(new JavaSerializationMessageConverter());
+		this.converters.add(new JsonUnmarshallingConverter(this.objectMapper));
 	}
 
 	/**
