@@ -195,7 +195,8 @@ In this section, we illustrate the use of the above properties for specific scen
 ==== Example: security configuration
 
 Apache Kafka 0.9 supports secure connections between client and brokers.
-To take advantage of this feature, follow the guidelines in the http://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation], using the `spring.cloud.stream.kafka.binder.configuration` option to set security properties for all clients created by the binder.
+To take advantage of this feature, follow the guidelines in the http://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation] as well as the Kafka 0.9 http://docs.confluent.io/2.0.0/kafka/security.html[security guidelines from the Confluent documentation].
+Use the `spring.cloud.stream.kafka.binder.configuration` option to set security properties for all clients created by the binder.
 
 For example, for setting `security.protocol` to `SASL_SSL`, set:
 
@@ -218,3 +219,11 @@ Here is an example of launching a Spring Cloud Stream application with SASL and 
    --spring.cloud.stream.bindings.input.destination=stream.ticktock \\
    --spring.cloud.stream.kafka.binder.clientConfiguration.security.protocol=SASL_PLAINTEXT
 ----
+
+
+[NOTE]
+====
+Exercise caution when using the `autoCreateTopics` and `autoAddPartitions` if using Kerberos.
+Usually applications may use principals that do not have administrative rights in Kafka and Zookeeper, and relying on Spring Cloud Stream to create/modify topics may fail.
+In secure environments, we strongly recommend creating topics and managing ACLs administratively using Kafka tooling.
+====
