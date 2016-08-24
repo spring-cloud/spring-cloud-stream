@@ -454,17 +454,14 @@ public class KafkaMessageChannelBinder extends
 				if (this.configurationProperties.isAutoCreateTopics()) {
 					Seq<Object> brokerList = zkUtils.getSortedBrokerList();
 					// always consider minPartitionCount for topic creation
-					int effectivePartitionCount = Math.max(this.configurationProperties.getMinPartitionCount(),
+					final int effectivePartitionCount = Math.max(this.configurationProperties.getMinPartitionCount(),
 							partitionCount);
-					final scala.collection.Map<Object, Seq<Object>> replicaAssignment = AdminUtils
-							.assignReplicasToBrokers(brokerList, effectivePartitionCount,
-									this.configurationProperties.getReplicationFactor(), -1, -1);
 					this.metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
 
 						@Override
 						public Object doWithRetry(RetryContext context) throws RuntimeException {
-							AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(zkUtils, topicName,
-									replicaAssignment, topicConfig, true);
+							AdminUtils.createTopic(zkUtils, topicName, effectivePartitionCount,
+									configurationProperties.getReplicationFactor(), new Properties());
 							return null;
 						}
 					});
