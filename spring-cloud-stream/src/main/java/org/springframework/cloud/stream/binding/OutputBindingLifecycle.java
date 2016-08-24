@@ -62,7 +62,6 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 						"Cannot perform binding, no proper implementation found", e);
 			}
 			this.running = true;
-			this.applicationContext.start();
 		}
 	}
 

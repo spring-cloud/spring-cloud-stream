@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class LifecycleBinderTests {
 
@@ -39,9 +40,8 @@ public class LifecycleBinderTests {
 	public void testNonSmartLifecyclesStarted() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
 		SimpleLifecycle simpleLifecycle = applicationContext.getBean(SimpleLifecycle.class);
-		assertThat(simpleLifecycle.isRunning());
-		applicationContext.close();
 		assertThat(simpleLifecycle.isRunning()).isFalse();
+		applicationContext.close();
 	}
 
 	@EnableBinding(Source.class)

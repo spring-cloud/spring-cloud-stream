@@ -386,7 +386,6 @@ public class SendingBean {
     }
 }
 ----
-
 ==== Producing and Consuming Messages
 
 You can write a Spring Cloud Stream application using either Spring Integration annotations or Spring Cloud Stream's `@StreamListener` annotation.
