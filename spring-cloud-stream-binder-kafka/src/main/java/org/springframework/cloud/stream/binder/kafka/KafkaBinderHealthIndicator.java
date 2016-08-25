@@ -55,6 +55,7 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 		properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties
 				.getKafkaConnectionString());
 		properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+		properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
 		KafkaConsumer metadataConsumer = new KafkaConsumer(properties);
 		try {
 			Set<String> downMessages = new HashSet<>();
