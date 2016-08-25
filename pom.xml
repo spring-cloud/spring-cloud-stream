@@ -23,7 +23,7 @@
 		<rxjava.version>1.1.5</rxjava.version>
 		<spring.tuple.version>1.0.0.RELEASE</spring.tuple.version>
 		<spring.integration.tuple.version>1.0.0.RELEASE</spring.integration.tuple.version>
-		<reactor.version>3.0.0.BUILD-SNAPSHOT</reactor.version>
+		<reactor.version>3.0.0.RELEASE</reactor.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -162,6 +162,7 @@
 						<configuration>
 							<configLocation>checkstyle.xml</configLocation>
 							<headerLocation>checkstyle-header.txt</headerLocation>
+							<suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
 							<encoding>UTF-8</encoding>
 							<consoleOutput>true</consoleOutput>
 							<failsOnError>true</failsOnError>
