@@ -2,6 +2,18 @@
 
 This project allows a user to develop and run messaging microservices using Spring Integration and run them locally or in the cloud. Just add `@EnableBinding` and run your app as a Spring Boot app (single application context).
 
+Since version 1.1, Spring Cloud Stream follows a decentralized model where the core components and the binder implementations are developed and released separately.
+This repository contains the core components of the project and does not contain any binder implementations.
+
+Information on the Spring Cloud Stream release train can be found here: https://github.com/spring-cloud/spring-cloud-stream-starters/wiki#release-notes.
+
+=== Binder implementations
+
+The following binder implementations are currently available:
+
+* *Kafka*  https://github.com/spring-cloud/spring-cloud-stream-binder-kafka
+* *RabbitMQ*  https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit
+
 === Documentation
 
 The latest documentation for the project can be found http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/htmlsingle/[here].
@@ -11,8 +23,6 @@ The latest documentation for the project can be found http://docs.spring.io/spri
 For Spring Cloud Stream samples, take a look to the https://github.com/spring-cloud/spring-cloud-stream-samples[samples repository].
 
 === Contributing
-
-// TODO point to ref doc section
 
 We love contributions.  Follow this https://github.com/spring-cloud/spring-cloud-commons#contributing[link] for more information on how to contribute.
 
