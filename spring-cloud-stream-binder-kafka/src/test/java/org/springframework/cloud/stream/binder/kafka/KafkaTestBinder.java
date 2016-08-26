@@ -25,7 +25,6 @@ import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
-import org.springframework.cloud.stream.binder.test.junit.kafka.TestKafkaCluster;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
@@ -35,8 +34,7 @@ import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
 
 /**
- * Test support class for {@link KafkaMessageChannelBinder}. Creates a binder that uses a
- * test {@link TestKafkaCluster kafka cluster}.
+ * Test support class for {@link KafkaMessageChannelBinder}.
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author David Turanski
