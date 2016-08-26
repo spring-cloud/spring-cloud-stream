@@ -49,6 +49,10 @@ public class AggregateApplicationBuilder {
 
 	private ConfigurableApplicationContext parentContext;
 
+	public AggregateApplicationBuilder(String... args) {
+		this(new Object[]{ParentConfiguration.class}, args);
+	}
+
 	public AggregateApplicationBuilder(Object source, String... args) {
 		this(new Object[]{source}, args);
 	}
