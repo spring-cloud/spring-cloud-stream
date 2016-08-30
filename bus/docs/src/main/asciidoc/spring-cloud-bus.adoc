@@ -31,7 +31,7 @@ https://cloud.spring.io/spring-cloud-stream[Spring Cloud Stream] to
 broadcast the messages so to get messages to flow you only need to
 include the binder implementation of your choice in the
 classpath. There are convenient starters specifically for the bus with
-AMQP (RabbitMQ) and Kafka 
+AMQP (RabbitMQ) and Kafka
 (`spring-cloud-starter-bus-[amqp,kafka]`). Generally speaking
 Spring Cloud Stream relies on Spring Boot autoconfiguration
 conventions for configuring middleware, so for instance the AMQP
@@ -105,7 +105,64 @@ The Bus can carry any event of type `RemoteApplicationEvent`, but the
 default transport is JSON and the deserializer needs to know which
 types are going to be used ahead of time. To register a new type it
 needs to be in a subpackage of `org.springframework.cloud.bus.event`.
-You can use `@JsonTypeName` on your custom class or rely on the
-default strategy which is to use the simple name of the class. Note
-that both the producer and the consumer will need access to the class
+
+To customise the event name you can use `@JsonTypeName` on your custom class
+or rely on the default strategy which is to use the simple name of the class.
+Note that both the producer and the consumer will need access to the class
 definition.
+
+=== Registering events in custom packages
+
+If you cannot or don't want to use a subpackage of `org.springframework.cloud.bus.event`
+for your custom events, you must specify which packages to scan for events of
+type `RemoteApplicationEvent` using `@RemoteApplicationEventScan`. Packages
+specified with `@RemoteApplicationEventScan` include subpackages.
+
+For example, if you have a custom event called `FooEvent`:
+
+[source,java]
+----
+package com.acme;
+
+public class FooEvent extends RemoteApplicationEvent {
+    ...
+}
+----
+
+you can register this event with the deserializer in the following way:
+
+[source,java]
+----
+package com.acme;
+
+@Configuration
+@RemoteApplicationEventScan
+public class BusConfiguration {
+    ...
+}
+----
+
+Without specifying a value, the package of the class where `@RemoteApplicationEventScan`
+is used will be registered. In this example `com.acme` will be registered using the
+package of `BusConfiguration`.
+
+You can also explicitly specify the packages to scan using the `value`, `basePackages` or
+`basePackageClasses` properties on `@RemoteApplicationEventScan`. For example:
+
+[source,java]
+----
+package com.acme;
+
+@Configuration
+//@RemoteApplicationEventScan({"com.acme", "foo.bar"})
+//@RemoteApplicationEventScan(basePackages = {"com.acme", "foo.bar", "fizz.buzz"})
+@RemoteApplicationEventScan(basePackageClasses = BusConfiguration.class)
+public class BusConfiguration {
+    ...
+}
+----
+
+All examples of `@RemoteApplicationEventScan` above are equivalent,
+in that the `com.acme` package will be registered by explicitly specifying the
+packages on `@RemoteApplicationEventScan`. Note, you can specify multiple base
+packages to scan.
