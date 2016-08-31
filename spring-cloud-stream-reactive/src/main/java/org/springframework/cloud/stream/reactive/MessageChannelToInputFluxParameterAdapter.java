@@ -65,7 +65,7 @@ public class MessageChannelToInputFluxParameterAdapter
 				};
 				boundElement.subscribe(messageHandler);
 				emitter.setCancellation(() -> boundElement.unsubscribe(messageHandler));
-			});
+			}).publish().autoConnect();
 		}
 		else {
 			return Flux.create(emitter -> {
@@ -81,7 +81,7 @@ public class MessageChannelToInputFluxParameterAdapter
 				};
 				boundElement.subscribe(messageHandler);
 				emitter.setCancellation(() -> boundElement.unsubscribe(messageHandler));
-			});
+			}).publish().autoConnect();
 		}
 	}
 }
