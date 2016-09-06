@@ -25,7 +25,9 @@
         <module>docs</module>
     </modules>
 
-    <properties>
+	<properties>
+		<spring-cloud-commons.version>1.1.1.RELEASE</spring-cloud-commons.version>
+        <spring-cloud-stream.version>Brooklyn.BUILD-SNAPSHOT</spring-cloud-stream.version>
         <bintray.package>bus</bintray.package>
     </properties>
 
@@ -98,6 +100,20 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-bus-dependencies</artifactId>
 				<version>${project.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-commons-dependencies</artifactId>
+				<version>${spring-cloud-commons.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-dependencies</artifactId>
+				<version>${spring-cloud-stream.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
