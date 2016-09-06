@@ -9,7 +9,7 @@
         <relativePath/>
 	</parent>
 	<artifactId>spring-cloud-bus-dependencies</artifactId>
-	<version>1.2.0.BUILD-SNAPSHOT</version>
+	<version>1.2.0.RC1</version>
 	<packaging>pom</packaging>
 	<name>spring-cloud-bus-dependencies</name>
 	<description>Spring Cloud Bus Dependencies</description>
