@@ -1225,6 +1225,14 @@ batchTimeout::
 (Normally the producer does not wait at all, and simply sends all the messages that accumulated while the previous send was in progress.) A non-zero value may increase throughput at the expense of latency.
 +
 Default: `0`.
+maxRequestSize::
+  The maximum size of a message sending request.
++
+Default: `1048576`.
+configuration::
+  Map with a key/value pair containing generic Kafka producer properties.
++
+Default: Empty map.
 
 [[contenttypemanagement]]
 == Content Type and Transformation

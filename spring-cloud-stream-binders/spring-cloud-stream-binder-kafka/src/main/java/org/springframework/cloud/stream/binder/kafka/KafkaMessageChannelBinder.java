@@ -311,6 +311,9 @@ public class KafkaMessageChannelBinder extends
 		producerMetadata.setCompressionType(properties.getExtension().getCompressionType());
 		producerMetadata.setBatchBytes(properties.getExtension().getBufferSize());
 		Properties additionalProps = new Properties();
+		if (!ObjectUtils.isEmpty(properties.getExtension().getConfiguration())) {
+			additionalProps.putAll(properties.getExtension().getConfiguration());
+		}
 		additionalProps.put(ProducerConfig.ACKS_CONFIG, String.valueOf(configurationProperties.getRequiredAcks()));
 		additionalProps.put(ProducerConfig.LINGER_MS_CONFIG,
 				String.valueOf(properties.getExtension().getBatchTimeout()));

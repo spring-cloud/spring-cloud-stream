@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.config;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
@@ -50,6 +53,8 @@ public class KafkaBinderConfigurationProperties {
 	private boolean autoAddPartitions;
 
 	private int socketBufferSize = 2097152;
+
+	private Map<String, String> configuration = new HashMap<>();
 
 	/**
 	 * ZK session timeout in milliseconds.
@@ -239,5 +244,13 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setSocketBufferSize(int socketBufferSize) {
 		this.socketBufferSize = socketBufferSize;
+	}
+
+	public Map<String, String> getConfiguration() {
+		return configuration;
+	}
+
+	public void setConfiguration(Map<String, String> configuration) {
+		this.configuration = configuration;
 	}
 }
