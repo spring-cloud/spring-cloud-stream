@@ -43,10 +43,11 @@ abstract class AggregateApplication {
 
 	public static final String OUTPUT_CHANNEL_NAME = "output";
 
-	static ConfigurableApplicationContext createParentContext(String[] args, boolean selfContained) {
+	static ConfigurableApplicationContext createParentContext(Object[] sources, String[] args, boolean selfContained) {
 		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
 		aggregatorParentConfiguration
 				.sources(AggregatorParentConfiguration.class)
+				.sources(sources)
 				.web(false)
 				.headless(true)
 				.properties("spring.jmx.default-domain="
