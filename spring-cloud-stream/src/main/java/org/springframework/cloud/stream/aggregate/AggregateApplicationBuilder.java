@@ -25,8 +25,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -49,6 +47,10 @@ public class AggregateApplicationBuilder {
 
 	private ConfigurableApplicationContext parentContext;
 
+	private List<Object> parentSources = new ArrayList<>();
+
+	private List<String> parentArgs = new ArrayList<>();
+
 	public AggregateApplicationBuilder(String... args) {
 		this(new Object[]{ParentConfiguration.class}, args);
 	}
@@ -58,43 +60,28 @@ public class AggregateApplicationBuilder {
 	}
 
 	public AggregateApplicationBuilder(Object[] sources, String[] args) {
-		this(SpringApplication.run(addParentConfiguration(sources), args));
-	}
-
-	public AggregateApplicationBuilder(ConfigurableApplicationContext parentContext) {
-		this.parentContext = parentContext;
+		addParentSources(sources);
+		this.parentArgs.addAll(Arrays.asList(args));
 	}
 
 	/**
 	 * Adding auto configuration classes to parent sources excluding the configuration
 	 * classes related to binder/binding.
 	 */
-	private static Object[] addParentConfiguration(Object[] sources) {
-		Object[] parentSources;
-		if (!ObjectUtils.containsElement(sources, ParentConfiguration.class)) {
-			// add the ParentConfiguration first, so it can be overridden
-			List<Object> sourceList = new ArrayList<>(Arrays.asList(sources));
-			sourceList.add(0, ParentConfiguration.class);
-			parentSources = sourceList.toArray(new Object[sourceList.size()]);
+	private void addParentSources(Object[] sources) {
+		if (!this.parentSources.contains(ParentConfiguration.class)) {
+			this.parentSources.add(ParentConfiguration.class);
 		}
-		else {
-			parentSources = sources;
-		}
-		return parentSources;
+		this.parentSources.addAll(Arrays.asList(sources));
 	}
-
 
 	public AggregateApplicationBuilder parent(Object source, String... args) {
 		return parent(new Object[]{source}, args);
 	}
 
 	public AggregateApplicationBuilder parent(Object[] sources, String[] args) {
-		return parent(SpringApplication.run(sources, args));
-	}
-
-	public AggregateApplicationBuilder parent(ConfigurableApplicationContext parentContext) {
-		Assert.isNull(this.parentContext, "A parent context has already been set");
-		this.parentContext = parentContext;
+		addParentSources(sources);
+		this.parentArgs.addAll(Arrays.asList(args));
 		return this;
 	}
 
@@ -104,7 +91,10 @@ public class AggregateApplicationBuilder {
 		return sourceConfigurer;
 	}
 
-	public ConfigurableApplicationContext run(String[] parentArgs) {
+	public ConfigurableApplicationContext run(String[] parentArgsFromRun) {
+		this.parentArgs.addAll(Arrays.asList(parentArgsFromRun));
+		this.parentContext = SpringApplication.run(this.parentSources.toArray(new Object[0]),
+				this.parentArgs.toArray(new String[0]));
 		List<AppConfigurer<?>> apps = new ArrayList<AppConfigurer<?>>();
 		if (this.sourceConfigurer != null) {
 			apps.add(sourceConfigurer);
@@ -128,11 +118,11 @@ public class AggregateApplicationBuilder {
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 		}
 		if (this.parentContext == null) {
-			this.parentContext = AggregateApplication.createParentContext(parentArgs, areAppsSelfContained());
+			this.parentContext = AggregateApplication.createParentContext(parentArgsFromRun, areAppsSelfContained());
 		}
 		// make sure to use the parent context that has aggregator parent configuration
 		else if (this.parentContext.getBeansOfType(SharedChannelRegistry.class).isEmpty()) {
-			this.parentContext = AggregateApplication.createParentContext(this.parentContext, parentArgs, areAppsSelfContained());
+			this.parentContext = AggregateApplication.createParentContext(this.parentContext, parentArgsFromRun, areAppsSelfContained());
 		}
 		SharedChannelRegistry sharedChannelRegistry = this.parentContext.getBean(SharedChannelRegistry.class);
 		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);

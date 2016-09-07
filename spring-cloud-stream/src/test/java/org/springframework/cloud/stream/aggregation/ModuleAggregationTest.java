@@ -16,6 +16,11 @@
 
 package org.springframework.cloud.stream.aggregation;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -27,12 +32,15 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class ModuleAggregationTest {
 
@@ -49,6 +57,32 @@ public class ModuleAggregationTest {
 		assertThat(channelFactory).isNotNull();
 		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();
+	}
+
+	@Test
+	public void testParentArgsAndSources() {
+		List<String> argsToVerify = new ArrayList<>();
+		argsToVerify.add("--foo1=bar1");
+		argsToVerify.add("--foo2=bar2");
+		argsToVerify.add("--foo3=bar3");
+		AggregateApplicationBuilder aggregateApplicationBuilder =
+				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class,
+						"--foo1=bar1");
+		aggregateApplicationBuilder.parent(DummyConfig.class, "--foo2=bar2")
+				.from(TestSource.class)
+				.namespace("foo").to(TestProcessor.class).namespace("bar")
+				.run("--foo3=bar3");
+		Field parentArgsField = ReflectionUtils.findField(AggregateApplicationBuilder.class,"parentArgs", List.class);
+		ReflectionUtils.makeAccessible(parentArgsField);
+		Field parentSourcesField = ReflectionUtils.findField(AggregateApplicationBuilder.class,"parentSources", List.class);
+		ReflectionUtils.makeAccessible(parentSourcesField);
+		String args = ReflectionUtils.getField(parentArgsField, aggregateApplicationBuilder).toString();
+		Assert.assertEquals(args, argsToVerify.toString());
+		List<Object> sources = ((List<Object>)ReflectionUtils.getField(parentSourcesField, aggregateApplicationBuilder));
+		Assert.assertTrue(sources.size() == 3);
+		Assert.assertTrue(sources.contains(AggregateApplicationBuilder.ParentConfiguration.class));
+		Assert.assertTrue(sources.contains(MockBinderRegistryConfiguration.class));
+		Assert.assertTrue(sources.contains(DummyConfig.class));
 	}
 
 	@Test
@@ -87,4 +121,8 @@ public class ModuleAggregationTest {
 
 	}
 
+	@Configuration
+	public static class DummyConfig {
+
+	}
 }
