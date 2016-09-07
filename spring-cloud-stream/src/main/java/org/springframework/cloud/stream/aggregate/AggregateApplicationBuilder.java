@@ -18,17 +18,26 @@ package org.springframework.cloud.stream.aggregate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.boot.actuate.endpoint.MetricReaderPublicMetrics;
 import org.springframework.boot.actuate.endpoint.MetricsEndpoint;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.bind.PropertySourcesPropertyValues;
+import org.springframework.boot.bind.RelaxedDataBinder;
+import org.springframework.boot.bind.RelaxedNames;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.PropertySources;
 import org.springframework.integration.monitor.IntegrationMBeanExporter;
 import org.springframework.util.StringUtils;
 
@@ -65,7 +74,7 @@ public class AggregateApplicationBuilder {
 	}
 
 	public AggregateApplicationBuilder(Object source, String... args) {
-		this(new Object[]{ source }, args);
+		this(new Object[] { source }, args);
 	}
 
 	public AggregateApplicationBuilder(Object[] sources, String[] args) {
@@ -85,7 +94,7 @@ public class AggregateApplicationBuilder {
 	}
 
 	public AggregateApplicationBuilder parent(Object source, String... args) {
-		return parent(new Object[]{ source }, args);
+		return parent(new Object[] { source }, args);
 	}
 
 	public AggregateApplicationBuilder parent(Object[] sources, String[] args) {
@@ -139,6 +148,7 @@ public class AggregateApplicationBuilder {
 			apps.add(sinkConfigurer);
 		}
 		LinkedHashMap<Class<?>, String> appsToEmbed = new LinkedHashMap<>();
+		LinkedHashMap<AppConfigurer, String> appConfigurers = new LinkedHashMap<>();
 		for (int i = 0; i < apps.size(); i++) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			Class<?> appToEmbed = appConfigurer.getApp();
@@ -148,11 +158,53 @@ public class AggregateApplicationBuilder {
 						i);
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
+			appConfigurers.put(appConfigurer, appConfigurer.namespace);
 		}
 		this.parentContext = AggregateApplication.createParentContext(this.parentSources.toArray(new Object[0]),
 					this.parentArgs.toArray(new String[0]), selfContained(), this.webEnvironment, this.headless);
 		SharedChannelRegistry sharedChannelRegistry = this.parentContext.getBean(SharedChannelRegistry.class);
 		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);
+		PropertySources propertySources = this.parentContext.getEnvironment()
+				.getPropertySources();
+		for (Map.Entry<AppConfigurer, String> appConfigurerEntry : appConfigurers
+				.entrySet()) {
+			AppConfigurer appConfigurer = appConfigurerEntry.getKey();
+			String namespace = appConfigurerEntry.getValue().toLowerCase();
+			Set<String> argsToUpdate = new LinkedHashSet<>();
+			Set<String> argKeys = new LinkedHashSet<>();
+			final HashMap<String, String> target = new HashMap<>();
+			RelaxedDataBinder relaxedDataBinder = new RelaxedDataBinder(target, namespace);
+			relaxedDataBinder.bind(new PropertySourcesPropertyValues(propertySources));
+			if (!target.isEmpty()) {
+				for (Map.Entry<String, String> entry : target.entrySet()) {
+					// only update the values with the highest precedence level.
+					if (!relaxedNameKeyExists(entry.getKey(), argKeys)) {
+						String key = entry.getKey();
+						// in case of environment variables pass the lower-case property key
+						// as we pass the properties as command line properties
+						if (key.contains("_")) {
+							key = key.replace("_", "-").toLowerCase();
+						}
+						argKeys.add(key);
+						argsToUpdate.add("--" + key + "=" + entry.getValue());
+					}
+				}
+			}
+			// Add the args that are set at the application level if they weren't
+			// overridden above from other property sources.
+			if (appConfigurer.getArgs() != null) {
+				for (String arg: appConfigurer.getArgs()) {
+					// use the key part left to the assignment and trimming the prefix `--`
+					String key = arg.substring(0, arg.indexOf("=")).substring(2);
+					if (!relaxedNameKeyExists(key, argKeys)) {
+						argsToUpdate.add(arg);
+					}
+				}
+			}
+			if (!argsToUpdate.isEmpty()) {
+				appConfigurer.args(argsToUpdate.toArray(new String[0]));
+			}
+		}
 		for (int i = apps.size() - 1; i >= 0; i--) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			appConfigurer.embed();
@@ -164,12 +216,21 @@ public class AggregateApplicationBuilder {
 		return (this.sourceConfigurer != null) && (this.sinkConfigurer != null);
 	}
 
-	private ChildContextBuilder childContext(Class<?> app,
-			ConfigurableApplicationContext parentContext, String namespace) {
-		return new ChildContextBuilder(
-				AggregateApplication.embedApp(parentContext, namespace, app));
+	private boolean relaxedNameKeyExists(String key, Collection<String> collection) {
+		RelaxedNames relaxedNames = new RelaxedNames(key);
+		for (String name : relaxedNames) {
+			if (collection.contains(name)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
+	private ChildContextBuilder childContext(Class<?> app,
+			ConfigurableApplicationContext parentContext, String namespace) {
+		return new ChildContextBuilder(AggregateApplication.embedApp(parentContext,
+				namespace, app));
+	}
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
 
@@ -269,6 +330,14 @@ public class AggregateApplicationBuilder {
 					new MetricReaderPublicMetrics(
 							new NamespaceAwareSpringIntegrationMetricReader(this.namespace, childContext.getBean(
 									IntegrationMBeanExporter.class))));
+		}
+
+		public String[] getArgs() {
+			return this.args;
+		}
+
+		public String getNamespace() {
+			return this.namespace;
 		}
 	}
 
