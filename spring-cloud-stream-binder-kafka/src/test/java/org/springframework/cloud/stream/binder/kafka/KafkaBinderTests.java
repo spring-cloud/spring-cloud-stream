@@ -40,7 +40,7 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.TestUtils;
-import org.springframework.cloud.stream.binder.kafka.configuration.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;

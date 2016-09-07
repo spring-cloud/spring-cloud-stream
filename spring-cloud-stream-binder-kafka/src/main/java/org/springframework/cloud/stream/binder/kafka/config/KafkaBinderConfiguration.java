@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.configuration;
+package org.springframework.cloud.stream.binder.kafka.config;
 
 import java.lang.reflect.Method;
 

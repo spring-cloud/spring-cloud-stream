@@ -17,7 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import org.springframework.cloud.stream.binder.kafka.admin.Kafka09AdminUtilsOperation;
-import org.springframework.cloud.stream.binder.kafka.configuration.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
