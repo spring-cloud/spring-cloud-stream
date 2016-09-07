@@ -266,8 +266,6 @@ Then add these dependencies at the top of the `<dependencies>` section in the po
 </dependency>
 ----
 
-====
-
 [NOTE]
 ====
 The versions above are provided only for the sake of the example.
