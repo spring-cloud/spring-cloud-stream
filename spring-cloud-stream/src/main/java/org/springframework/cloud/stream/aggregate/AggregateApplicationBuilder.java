@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -93,8 +92,6 @@ public class AggregateApplicationBuilder {
 
 	public ConfigurableApplicationContext run(String[] parentArgsFromRun) {
 		this.parentArgs.addAll(Arrays.asList(parentArgsFromRun));
-		this.parentContext = SpringApplication.run(this.parentSources.toArray(new Object[0]),
-				this.parentArgs.toArray(new String[0]));
 		List<AppConfigurer<?>> apps = new ArrayList<AppConfigurer<?>>();
 		if (this.sourceConfigurer != null) {
 			apps.add(sourceConfigurer);
@@ -117,13 +114,8 @@ public class AggregateApplicationBuilder {
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 		}
-		if (this.parentContext == null) {
-			this.parentContext = AggregateApplication.createParentContext(parentArgsFromRun, areAppsSelfContained());
-		}
-		// make sure to use the parent context that has aggregator parent configuration
-		else if (this.parentContext.getBeansOfType(SharedChannelRegistry.class).isEmpty()) {
-			this.parentContext = AggregateApplication.createParentContext(this.parentContext, parentArgsFromRun, areAppsSelfContained());
-		}
+		this.parentContext = AggregateApplication.createParentContext(this.parentSources.toArray(new Object[0]),
+					this.parentArgs.toArray(new String[0]), areAppsSelfContained());
 		SharedChannelRegistry sharedChannelRegistry = this.parentContext.getBean(SharedChannelRegistry.class);
 		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);
 		for (int i = apps.size() - 1; i >= 0; i--) {
