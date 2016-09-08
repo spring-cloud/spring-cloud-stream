@@ -8,7 +8,7 @@
         <relativePath />
     </parent>
     <artifactId>spring-cloud-stream-dependencies</artifactId>
-    <version>Brooklyn.RC1</version>
+    <version>Brooklyn.BUILD-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>spring-cloud-stream-dependencies</name>
     <description>Spring Cloud Stream Dependencies</description>
