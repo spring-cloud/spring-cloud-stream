@@ -60,7 +60,6 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * @author Soby Chacko
@@ -907,7 +906,7 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testAutoCreateTopicsDisabledFailsIfTopicMissing() throws Exception {
+	public void testAutoCreateTopicsDisabledOnBinderStillWorksAsLongAsBrokerCreatesTopic() throws Exception {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 		configurationProperties.setAutoCreateTopics(false);
 		Binder binder = getBinder(configurationProperties);
@@ -919,15 +918,21 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
 		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		String testTopicName = "nonexisting" + System.currentTimeMillis();
-		try {
-			binder.bindConsumer(testTopicName, "test", output, consumerProperties);
-			fail();
-		}
-		catch (Exception e) {
-			assertThat(e).isInstanceOf(BinderException.class);
-			assertThat(e).hasMessageContaining("Topic " + testTopicName + " does not exist");
-		}
+		String testTopicName = "createdByBroker-" + System.currentTimeMillis();
+
+		QueueChannel input = new QueueChannel();
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output,
+				createProducerProperties());
+		String testPayload = "foo1-" + UUID.randomUUID().toString();
+		output.send(new GenericMessage<>(testPayload.getBytes()));
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testTopicName, "test", input, consumerProperties);
+		Message<byte[]> receivedMessage2 = (Message<byte[]>) receive(input);
+		assertThat(receivedMessage2).isNotNull();
+		assertThat(new String(receivedMessage2.getPayload())).isEqualTo(testPayload);
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test

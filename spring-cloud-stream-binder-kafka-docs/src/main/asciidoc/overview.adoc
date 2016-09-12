@@ -271,3 +271,32 @@ Then add these dependencies at the top of the `<dependencies>` section in the po
 The versions above are provided only for the sake of the example.
 For best results, we recommend using the most recent 0.10-compatible versions of the projects.
 ====
+
+==== Excluding Kafka broker jar from the classpath of the binder based application
+If the inclusion of the Kafka broker is not desired at runtime, Kafka binder allows this particular dependency to be excluded from the binder so that it will not be part of the classpath.
+However, topic creation will be disabled from the binder if this dependency is excluded.
+
+If you use Kafka 10 dependencies as advised above, all you have to do is not to include the kafka broker dependency.
+If you use Kafka 0.9, then ensure that you exclude the kafka broker jar from the `spring-cloud-starter-stream-kafka` dependency as following.
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+  <exclusions>
+    <exclusion>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_2.11</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+----
+
+If you exclude the kafka broker dependency and the topic is not present on the server, then Kafka broker will create the topic if auto topic creation is enabled on the server.
+Please keep in mind that if you are relying on this, then the Kafka server will use the default number of partitions and replication factors.
+On the other hand, if auto topic creation is disabled on the server, then care must be taken before running the application to create the topic with the desired number of partitions.
+
+If you want to have full control over how partitions are allocated, then leave the default settings as they are, i.e. do not exclude the kafka broker jar and ensure that `spring.cloud.stream.kafka.binder.autoCreateTopics` is set to `true` which is the default.
+
+

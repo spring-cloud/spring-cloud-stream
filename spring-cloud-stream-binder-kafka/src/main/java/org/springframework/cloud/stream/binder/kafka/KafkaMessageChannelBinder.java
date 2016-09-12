@@ -198,8 +198,8 @@ public class KafkaMessageChannelBinder extends
 															ExtendedProducerProperties<KafkaProducerProperties> producerProperties) throws Exception {
 
 		KafkaTopicUtils.validateTopicName(destination);
-
-		Collection<PartitionInfo> partitions = ensureTopicCreated(destination, producerProperties.getPartitionCount());
+		createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(destination, producerProperties.getPartitionCount());
+		Collection<PartitionInfo> partitions = getPartitionsForTopic(destination, producerProperties.getPartitionCount());
 
 		if (producerProperties.getPartitionCount() < partitions.size()) {
 			if (this.logger.isInfoEnabled()) {
@@ -221,13 +221,13 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	protected String createProducerDestinationIfNecessary(String name,
-															ExtendedProducerProperties<KafkaProducerProperties> properties) {
+														ExtendedProducerProperties<KafkaProducerProperties> properties) {
 		if (this.logger.isInfoEnabled()) {
 			this.logger.info("Using kafka topic for outbound: " + name);
 		}
 		KafkaTopicUtils.validateTopicName(name);
-
-		Collection<PartitionInfo> partitions = ensureTopicCreated(name, properties.getPartitionCount());
+		createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(name, properties.getPartitionCount());
+		Collection<PartitionInfo> partitions = getPartitionsForTopic(name, properties.getPartitionCount());
 		if (properties.getPartitionCount() < partitions.size()) {
 			if (this.logger.isInfoEnabled()) {
 				this.logger.info("The `partitionCount` of the producer for topic " + name + " is "
@@ -271,9 +271,9 @@ public class KafkaMessageChannelBinder extends
 		if (properties.getInstanceCount() == 0) {
 			throw new IllegalArgumentException("Instance count cannot be zero");
 		}
-
-		Collection<PartitionInfo> allPartitions = ensureTopicCreated(name,
-				properties.getInstanceCount() * properties.getConcurrency());
+		int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
+		createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(name, partitionCount);
+		Collection<PartitionInfo> allPartitions = getPartitionsForTopic(name, partitionCount);
 
 		Collection<PartitionInfo> listenedPartitions;
 
@@ -297,7 +297,7 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	@SuppressWarnings("unchecked")
 	protected MessageProducer createConsumerEndpoint(String name, String group, Collection<PartitionInfo> destination,
-														ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+													ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		boolean anonymous = !StringUtils.hasText(group);
 		Assert.isTrue(!anonymous || !properties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
@@ -427,11 +427,24 @@ public class KafkaMessageChannelBinder extends
 		return topicPartitionInitialOffsets;
 	}
 
+	private void createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(final String topicName, final int partitionCount) {
+		if (this.configurationProperties.isAutoCreateTopics() && adminUtilsOperation != null) {
+			createTopicAndPartitions(topicName, partitionCount);
+		}
+		else if (this.configurationProperties.isAutoCreateTopics() && adminUtilsOperation == null) {
+			this.logger.warn("Auto creation of topics is enabled, but Kafka AdminUtils class is not present on the classpath. " +
+					"No topic will be created by the binder");
+		}
+		else if (!this.configurationProperties.isAutoCreateTopics()) {
+			this.logger.warn("Auto creation of topics is disabled.");
+		}
+	}
+
 	/**
 	 * Creates a Kafka topic if needed, or try to increase its partition count to the
 	 * desired number.
 	 */
-	private Collection<PartitionInfo> ensureTopicCreated(final String topicName, final int partitionCount) {
+	private void createTopicAndPartitions(final String topicName, final int partitionCount) {
 
 		final ZkUtils zkUtils = ZkUtils.apply(this.configurationProperties.getZkConnectionString(),
 				this.configurationProperties.getZkSessionTimeout(),
@@ -459,59 +472,56 @@ public class KafkaMessageChannelBinder extends
 				}
 			}
 			else if (errorCode == ErrorMapping.UnknownTopicOrPartitionCode()) {
-				if (this.configurationProperties.isAutoCreateTopics()) {
-					// always consider minPartitionCount for topic creation
-					final int effectivePartitionCount = Math.max(this.configurationProperties.getMinPartitionCount(),
-							partitionCount);
+				// always consider minPartitionCount for topic creation
+				final int effectivePartitionCount = Math.max(this.configurationProperties.getMinPartitionCount(),
+						partitionCount);
 
-					this.metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
+				this.metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
 
-						@Override
-						public Object doWithRetry(RetryContext context) throws RuntimeException {
+					@Override
+					public Object doWithRetry(RetryContext context) throws RuntimeException {
 
-							adminUtilsOperation.invokeCreateTopic(zkUtils, topicName, effectivePartitionCount,
-									configurationProperties.getReplicationFactor(), new Properties());
-							return null;
-						}
-					});
-				}
-				else {
-					throw new BinderException("Topic " + topicName + " does not exist");
-				}
+						adminUtilsOperation.invokeCreateTopic(zkUtils, topicName, effectivePartitionCount,
+								configurationProperties.getReplicationFactor(), new Properties());
+						return null;
+					}
+				});
 			}
 			else {
 				throw new BinderException("Error fetching Kafka topic metadata: ",
 						ErrorMapping.exceptionFor(errorCode));
 			}
-			try {
-				return this.metadataRetryOperations
-						.execute(new RetryCallback<Collection<PartitionInfo>, Exception>() {
-
-							@Override
-							public Collection<PartitionInfo> doWithRetry(RetryContext context) throws Exception {
-								Collection<PartitionInfo> partitions =
-										getProducerFactory(
-												new ExtendedProducerProperties<>(new KafkaProducerProperties()))
-												.createProducer().partitionsFor(topicName);
-
-								// do a sanity check on the partition set
-								if (partitions.size() < partitionCount) {
-									throw new IllegalStateException("The number of expected partitions was: "
-											+ partitionCount + ", but " + partitions.size()
-											+ (partitions.size() > 1 ? " have " : " has ") + "been found instead");
-								}
-								return partitions;
-							}
-						});
-			}
-			catch (Exception e) {
-				this.logger.error("Cannot initialize Binder", e);
-				throw new BinderException("Cannot initialize binder:", e);
-			}
-
 		}
 		finally {
 			zkUtils.close();
+		}
+	}
+
+	private Collection<PartitionInfo> getPartitionsForTopic(final String topicName, final int partitionCount) {
+		try {
+			return this.metadataRetryOperations
+					.execute(new RetryCallback<Collection<PartitionInfo>, Exception>() {
+
+						@Override
+						public Collection<PartitionInfo> doWithRetry(RetryContext context) throws Exception {
+							Collection<PartitionInfo> partitions =
+									getProducerFactory(
+											new ExtendedProducerProperties<>(new KafkaProducerProperties()))
+											.createProducer().partitionsFor(topicName);
+
+							// do a sanity check on the partition set
+							if (partitions.size() < partitionCount) {
+								throw new IllegalStateException("The number of expected partitions was: "
+										+ partitionCount + ", but " + partitions.size()
+										+ (partitions.size() > 1 ? " have " : " has ") + "been found instead");
+							}
+							return partitions;
+						}
+					});
+		}
+		catch (Exception e) {
+			this.logger.error("Cannot initialize Binder", e);
+			throw new BinderException("Cannot initialize binder:", e);
 		}
 	}
 

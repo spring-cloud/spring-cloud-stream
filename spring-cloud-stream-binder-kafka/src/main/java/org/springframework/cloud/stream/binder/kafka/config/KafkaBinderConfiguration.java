@@ -16,13 +16,14 @@
 
 package org.springframework.cloud.stream.binder.kafka.config;
 
-import java.lang.reflect.Method;
-
+import kafka.admin.AdminUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.common.utils.AppInfoParser;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
@@ -58,7 +59,7 @@ import org.springframework.kafka.support.ProducerListener;
 @EnableConfigurationProperties({KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class})
 public class KafkaBinderConfiguration {
 
-	protected final Log logger = LogFactory.getLog(getClass());
+	protected static final Log logger = LogFactory.getLog(KafkaBinderConfiguration.class);
 
 	@Autowired
 	private Codec codec;
@@ -75,6 +76,9 @@ public class KafkaBinderConfiguration {
 	@Autowired
 	private ApplicationContext context;
 
+	@Autowired (required = false)
+	private AdminUtilsOperation adminUtilsOperation;
+
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder() {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
@@ -82,7 +86,6 @@ public class KafkaBinderConfiguration {
 		kafkaMessageChannelBinder.setCodec(this.codec);
 		//kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
-		AdminUtilsOperation adminUtilsOperation = context.getBean(AdminUtilsOperation.class);
 		kafkaMessageChannelBinder.setAdminUtilsOperation(adminUtilsOperation);
 		return kafkaMessageChannelBinder;
 	}
@@ -112,54 +115,21 @@ public class KafkaBinderConfiguration {
 		return new Kafka10AdminUtilsOperation();
 	}
 
-	private static Method getMethod(ClassLoader classLoader, String methodName) {
-		try {
-			Class<?> adminUtilClass = classLoader.loadClass("kafka.admin.AdminUtils");
-			Method[] declaredMethods = adminUtilClass.getDeclaredMethods();
-			for (Method m : declaredMethods) {
-				if (m.getName().equals(methodName)) {
-					return m;
-				}
-			}
-		}
-		catch (ClassNotFoundException e) {
-			throw new IllegalStateException("AdminUtils not found", e);
-		}
-		return null;
-	}
-
+	@ConditionalOnClass(AdminUtils.class)
 	static class Kafka10Condition implements Condition {
 
 		@Override
 		public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
-			ClassLoader classLoader = Kafka10Condition.class.getClassLoader();
-			Method addPartitions = getMethod(classLoader, "addPartitions");
-			if (addPartitions != null) {
-				Class<?>[] parameterTypes = addPartitions.getParameterTypes();
-				Class clazz = parameterTypes[parameterTypes.length - 1];
-				if (clazz.getName().equals("kafka.admin.RackAwareMode")) {
-					return true;
-				}
-			}
-			return false;
+			return AppInfoParser.getVersion().startsWith("0.10");
 		}
 	}
 
+	@ConditionalOnClass(AdminUtils.class)
 	static class Kafka09Condition implements Condition {
 
 		@Override
 		public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
-
-			ClassLoader classLoader = Kafka09Condition.class.getClassLoader();
-			Method addPartitions = getMethod(classLoader, "addPartitions");
-			if (addPartitions != null) {
-				Class<?>[] parameterTypes = addPartitions.getParameterTypes();
-				Class clazz = parameterTypes[parameterTypes.length - 1];
-				if (!clazz.getName().equals("kafka.admin.RackAwareMode")) {
-					return true;
-				}
-			}
-			return false;
+			return AppInfoParser.getVersion().startsWith("0.9");
 		}
 	}
 }

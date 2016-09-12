@@ -24,6 +24,7 @@ import java.util.Properties;
 import kafka.api.PartitionMetadata;
 import kafka.utils.ZkUtils;
 
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -31,13 +32,11 @@ import org.springframework.util.ReflectionUtils;
  */
 public class Kafka10AdminUtilsOperation implements AdminUtilsOperation {
 
-	private static ClassLoader CLASS_LOADER =  Kafka10AdminUtilsOperation.class.getClassLoader();
-
 	private static Class<?> ADMIN_UTIL_CLASS;
 
 	static {
 		try {
-			ADMIN_UTIL_CLASS = CLASS_LOADER.loadClass("kafka.admin.AdminUtils");
+			ADMIN_UTIL_CLASS = ClassUtils.forName("kafka.admin.AdminUtils", null);
 		}
 		catch (ClassNotFoundException e) {
 			throw new IllegalStateException("AdminUtils class not found", e);
@@ -77,7 +76,7 @@ public class Kafka10AdminUtilsOperation implements AdminUtilsOperation {
 			Method fetchTopicMetadataFromZk = ReflectionUtils.findMethod(ADMIN_UTIL_CLASS, "fetchTopicMetadataFromZk", String.class, ZkUtils.class);
 
 			Object result = fetchTopicMetadataFromZk.invoke(null, topic, zkUtils);
-			Class<?> topicMetadataClass = CLASS_LOADER.loadClass("org.apache.kafka.common.requests.MetadataResponse$TopicMetadata");
+			Class<?> topicMetadataClass = ClassUtils.forName("org.apache.kafka.common.requests.MetadataResponse$TopicMetadata", null);
 
 			Method errorCodeMethod = ReflectionUtils.findMethod(topicMetadataClass, "error");
 			Object obj = errorCodeMethod.invoke(result);
@@ -103,7 +102,7 @@ public class Kafka10AdminUtilsOperation implements AdminUtilsOperation {
 		try {
 			Method fetchTopicMetadataFromZk = ReflectionUtils.findMethod(ADMIN_UTIL_CLASS, "fetchTopicMetadataFromZk", String.class, ZkUtils.class);
 			Object result = fetchTopicMetadataFromZk.invoke(null, topic, zkUtils);
-			Class<?> topicMetadataClass = CLASS_LOADER.loadClass("org.apache.kafka.common.requests.MetadataResponse$TopicMetadata");
+			Class<?> topicMetadataClass = ClassUtils.forName("org.apache.kafka.common.requests.MetadataResponse$TopicMetadata", null);
 
 			Method partitionsMetadata = ReflectionUtils.findMethod(topicMetadataClass, "partitionMetadata");
 			List<PartitionMetadata> foo = (List<PartitionMetadata>) partitionsMetadata.invoke(result);
