@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.config;
 
-import kafka.admin.AdminUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.utils.AppInfoParser;
@@ -102,30 +101,30 @@ public class KafkaBinderConfiguration {
 	}
 
 	@Bean(name = "adminUtilsOperation")
-	@Conditional(Kafka09Condition.class)
+	@Conditional(Kafka09Present.class)
+	@ConditionalOnClass(name = "kafka.admin.AdminUtils")
 	public AdminUtilsOperation kafka09AdminUtilsOperation() {
 		logger.info("AdminUtils selected: Kafka 0.9 AdminUtils");
 		return new Kafka09AdminUtilsOperation();
 	}
 
 	@Bean(name = "adminUtilsOperation")
-	@Conditional(Kafka10Condition.class)
+	@Conditional(Kafka10Present.class)
+	@ConditionalOnClass(name = "kafka.admin.AdminUtils")
 	public AdminUtilsOperation kafka10AdminUtilsOperation() {
 		logger.info("AdminUtils selected: Kafka 0.10 AdminUtils");
 		return new Kafka10AdminUtilsOperation();
 	}
 
-	@ConditionalOnClass(AdminUtils.class)
-	static class Kafka10Condition implements Condition {
+	static class Kafka10Present implements Condition {
 
 		@Override
 		public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
 			return AppInfoParser.getVersion().startsWith("0.10");
 		}
 	}
-
-	@ConditionalOnClass(AdminUtils.class)
-	static class Kafka09Condition implements Condition {
+	
+	static class Kafka09Present implements Condition {
 
 		@Override
 		public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
