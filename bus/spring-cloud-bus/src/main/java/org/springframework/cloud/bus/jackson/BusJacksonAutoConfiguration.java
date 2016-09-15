@@ -64,8 +64,6 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 
 	public BusJacksonMessageConverter() {
 		super(MimeTypeUtils.APPLICATION_JSON);
-		this.mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		this.mapper.registerModule(new SubtypeModule(findSubTypes()));
 	}
 
 	private Class<?>[] findSubTypes() {
