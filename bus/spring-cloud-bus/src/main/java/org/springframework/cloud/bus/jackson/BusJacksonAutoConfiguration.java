@@ -38,14 +38,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 public class BusJacksonAutoConfiguration {
 
 	@Bean
-	@ConditionalOnMissingBean(name="busJsonConverter")
+	@ConditionalOnMissingBean(name = "busJsonConverter")
 	public BusJacksonMessageConverter busJsonConverter() {
 		return new BusJacksonMessageConverter();
 	}
 
 }
 
-class BusJacksonMessageConverter extends AbstractMessageConverter implements InitializingBean {
+class BusJacksonMessageConverter extends AbstractMessageConverter
+		implements InitializingBean {
 
 	private static final String DEFAULT_PACKAGE = ClassUtils
 			.getPackageName(RemoteApplicationEvent.class);
@@ -70,14 +71,17 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 		List<Class<?>> types = new ArrayList<>();
 		if (this.packagesToScan != null) {
 			for (String pkg : this.packagesToScan) {
-				ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
-				provider.addIncludeFilter(new AssignableTypeFilter(RemoteApplicationEvent.class));
+				ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(
+						false);
+				provider.addIncludeFilter(
+						new AssignableTypeFilter(RemoteApplicationEvent.class));
 
 				Set<BeanDefinition> components = provider.findCandidateComponents(pkg);
 				for (BeanDefinition component : components) {
 					try {
 						types.add(Class.forName(component.getBeanClassName()));
-					} catch (ClassNotFoundException e) {
+					}
+					catch (ClassNotFoundException e) {
 						throw new IllegalStateException(
 								"Failed to scan classpath for remote event classes", e);
 					}

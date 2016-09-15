@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package foo.bar;
+package test.foo.bar;
 
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 
