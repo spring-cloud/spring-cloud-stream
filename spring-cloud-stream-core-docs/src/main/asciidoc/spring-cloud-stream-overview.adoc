@@ -1007,7 +1007,7 @@ Spring Cloud Stream can handle messages based on this information in two ways:
 * Through its `contentType` settings on inbound and outbound channels
 * Through its argument mapping performed for methods annotated with `@StreamListener`
 
-Spring Cloud Stream allows you to declaratively configure type conversion for inputs and outputs using the `content-type` property of a binding.
+Spring Cloud Stream allows you to declaratively configure type conversion for inputs and outputs using the `spring.cloud.stream.bindngs.<channelName>.content-type` property of a binding.
 Note that general type conversion may also be accomplished easily by using a transformer inside your application.
 Currently, Spring Cloud Stream natively supports the following type conversions commonly used in streams:
 
@@ -1106,8 +1106,24 @@ For the conversion of inbound messages, especially when the target is a POJO, th
 
 Besides the conversions that it supports out of the box, Spring Cloud Stream also supports registering your own message conversion implementations.
 This allows you to send and receive data in a variety of custom formats, including binary, and associate them with specific `contentTypes`.
-In order to do so, you can create a class that extends `AbstractMessageConverter`
+In order to do so, you can create a class of type `org.springframework.messaging.converter.MessageConverter` and make it available in the application context.
+Spring Cloud Stream registers all the beans of type `org.springframework.messaging.converter.MessageConverter` as custom message converters along with the out of the box message converters.
 
+Here is an example of creating message converter bean inside the application:
+
+[source,java]
+----
+@EnableBinding(Sink.class)
+@SpringBootApplication
+public static class SinkApplication {
+
+  ...
+
+  @Bean
+  public MessageConverter customMessageConverter() {
+    return new MyCustomMessageConverter();
+  }
+----
 === Schema-based message converters
 
 Spring Cloud Stream provides support for schema-based message converters through its `spring-cloud-stream-schema` module.
@@ -1127,7 +1143,7 @@ If the target type of the conversion is a `GenericRecord`, then a schema must be
 
 For using it, you can simply add it to the application context, optionally specifying one ore more `MimeTypes` to associate it with.
 The default `MimeType` is `application/avro`.
-Here is an example of configuring it in a processor application registering the Apache Avro, without a predefined schema:
+Here is an example of configuring it in a sink application registering the Apache Avro, without a predefined schema:
 
 [source,java]
 ----
