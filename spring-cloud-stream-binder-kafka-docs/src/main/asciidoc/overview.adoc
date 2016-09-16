@@ -215,18 +215,78 @@ spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_SSL
 All the other security properties can be set in a similar manner.
 
 When using Kerberos, follow the instructions in the http://kafka.apache.org/090/documentation.html#security_sasl_clientconfig[reference documentation] for creating and referencing the JAAS configuration.
-At the time of this release, the JAAS, and (optionally) krb5 file locations must be set for Spring Cloud Stream applications by using system properties.
-Here is an example of launching a Spring Cloud Stream application with SASL and Kerberos.
+
+Spring Cloud Stream supports passing JAAS configuration information to the application using a JAAS configuration file and using Spring Boot properties.
+
+===== Using JAAS configuration files
+
+The JAAS, and (optionally) krb5 file locations can be set for Spring Cloud Stream applications by using system properties.
+Here is an example of launching a Spring Cloud Stream application with SASL and Kerberos using a JAAS configuration file:
 
 [source]
 ----
- java -Djava.security.auth.login.config=/path.to/kafka_client_jaas.conf -jar log.jar \\
-   --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \\
-   --spring.cloud.stream.kafka.binder.zkNodes=secure.zookeeper:2181 \\
-   --spring.cloud.stream.bindings.input.destination=stream.ticktock \\
-   --spring.cloud.stream.kafka.binder.clientConfiguration.security.protocol=SASL_PLAINTEXT
+ java -Djava.security.auth.login.config=/path.to/kafka_client_jaas.conf -jar log.jar \
+   --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \
+   --spring.cloud.stream.kafka.binder.zkNodes=secure.zookeeper:2181 \
+   --spring.cloud.stream.bindings.input.destination=stream.ticktock \
+   --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT
 ----
 
+===== Using Spring Boot properties
+
+As an alternative to having a JAAS configuration file, Spring Cloud Stream provides a mechanism for setting up the JAAS configuration for Spring Cloud Stream applications using Spring Boot properties.
+
+The following properties can be used for configuring the login context of the Kafka client.
+
+spring.cloud.stream.kafka.binder.jaas.loginModule::
+  The login module name. Not necessary to be set in normal cases.
++
+Default: `com.sun.security.auth.module.Krb5LoginModule`.
+spring.cloud.stream.kafka.binder.jaas.controlFlag::
+  The control flag of the login module.
++
+Default: `required`.
+spring.cloud.stream.kafka.binder.jaas.options::
+  Map with a key/value pair containing the login module options.
++
+Default: Empty map.
+
+Here is an example of launching a Spring Cloud Stream application with SASL and Kerberos using Spring Boot configuration properties:
+
+[source]
+----
+ java --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \
+   --spring.cloud.stream.kafka.binder.zkNodes=secure.zookeeper:2181 \
+   --spring.cloud.stream.bindings.input.destination=stream.ticktock \
+   --spring.cloud.stream.kafka.binder.autoCreateTopics=false \
+   --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT \
+   --spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true \
+   --spring.cloud.stream.kafka.binder.jaas.options.storeKey=true \
+   --spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab \
+   --spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM
+----
+
+This represents the equivalent of the following JAAS file:
+
+[source]
+----
+KafkaClient {
+    com.sun.security.auth.module.Krb5LoginModule required
+    useKeyTab=true
+    storeKey=true
+    keyTab="/etc/security/keytabs/kafka_client.keytab"
+    principal="kafka-client-1@EXAMPLE.COM";
+};
+----
+
+If the topics required already exist on the broker, or will be created by an administrator, autocreation can be turned off and only client JAAS properties need to be sent. As an alternative to setting `spring.cloud.stream.kafka.binder.autoCreateTopics` you can simply remove the broker dependency from the application. See <<exclude-admin-utils>> for details.
+
+[NOTE]
+====
+Do not mix JAAS configuration files and Spring Boot properties in the same application.
+If the `-Djava.security.auth.login.config` system property is already present, Spring Cloud Stream will ignore the Spring Boot properties.
+
+====
 
 [NOTE]
 ====
@@ -272,6 +332,7 @@ The versions above are provided only for the sake of the example.
 For best results, we recommend using the most recent 0.10-compatible versions of the projects.
 ====
 
+[[exclude-admin-utils]]
 ==== Excluding Kafka broker jar from the classpath of the binder based application
 
 The Apache Kafka Binder uses the administrative utilities which are part of the Apache Kafka server library to create and reconfigure topics.

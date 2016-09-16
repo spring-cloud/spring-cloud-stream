@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.config;
 
+import java.io.IOException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.utils.AppInfoParser;
@@ -27,6 +29,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
+import org.springframework.cloud.stream.binder.kafka.KafkaBinderJaasInitializerListener;
 import org.springframework.cloud.stream.binder.kafka.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
@@ -34,6 +37,7 @@ import org.springframework.cloud.stream.binder.kafka.admin.Kafka09AdminUtilsOper
 import org.springframework.cloud.stream.binder.kafka.admin.Kafka10AdminUtilsOperation;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -116,6 +120,11 @@ public class KafkaBinderConfiguration {
 		return new Kafka10AdminUtilsOperation();
 	}
 
+	@Bean
+	public ApplicationListener<?> jaasInitializer() throws IOException {
+		return new KafkaBinderJaasInitializerListener();
+	}
+
 	static class Kafka10Present implements Condition {
 
 		@Override
@@ -130,5 +139,12 @@ public class KafkaBinderConfiguration {
 		public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
 			return AppInfoParser.getVersion().startsWith("0.9");
 		}
+	}
+
+	public static class JaasConfigurationProperties {
+
+		private JaasLoginModuleConfiguration kafka;
+
+		private JaasLoginModuleConfiguration zookeeper;
 	}
 }

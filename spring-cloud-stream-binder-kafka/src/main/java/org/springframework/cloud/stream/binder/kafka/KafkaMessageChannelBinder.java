@@ -436,7 +436,7 @@ public class KafkaMessageChannelBinder extends
 					"No topic will be created by the binder");
 		}
 		else if (!this.configurationProperties.isAutoCreateTopics()) {
-			this.logger.warn("Auto creation of topics is disabled.");
+			this.logger.info("Auto creation of topics is disabled.");
 		}
 	}
 
