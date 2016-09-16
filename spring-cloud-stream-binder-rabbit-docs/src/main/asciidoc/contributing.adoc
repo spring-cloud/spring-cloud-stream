@@ -1,4 +1,4 @@
-[[contributing]
+[[contributing]]
 == Contributing
 
 Spring Cloud is released under the non-restrictive Apache 2.0 license,
