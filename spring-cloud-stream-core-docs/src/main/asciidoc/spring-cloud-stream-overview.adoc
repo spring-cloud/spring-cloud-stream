@@ -1109,10 +1109,9 @@ This allows you to send and receive data in a variety of custom formats, includi
 Spring Cloud Stream registers all the beans of type `org.springframework.messaging.converter.MessageConverter` as custom message converters along with the out of the box message converters.
 
 If your message converter needs to work with specific `content-type` and the target class (for both input and output), then the message converter needs to extend `org.springframework.messaging.converter.AbstractMessageConverter`.
-As an example, You can refer link:https://github.com/spring-projects/spring-framework/blob/master/spring-messaging/src/main/java/org/springframework/messaging/converter/StringMessageConverter.java[String message converter].
 For the conversion using @StreamListener, the message converter that implements `org.springframework.messaging.converter.MessageConverter` would be suffice.
 
-Here is an example of creating a message converter bean inside the application:
+Here is an example of creating a message converter bean (with the content-type application/bar) inside the Spring Cloud Stream application:
 
 [source,java]
 ----
@@ -1123,9 +1122,31 @@ public static class SinkApplication {
   ...
 
   @Bean
-  public AbstractMessageConverter customMessageConverter() {
+  public MessageConverter customMessageConverter() {
     return new MyCustomMessageConverter();
   }
+----
+
+[source,java]
+----
+
+public class MyCustomMessageConverter extends AbstractMessageConverter {
+
+	public MyCustomMessageConverter() {
+		super(new MimeType("application", "bar"));
+	}
+
+	@Override
+    protected boolean supports(Class<?> clazz) {
+        return (Bar.class == clazz);
+    }
+
+	@Override
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		Object payload = message.getPayload();
+		return (payload instanceof Bar ? payload : new Bar((byte[]) payload));
+	}
+}
 ----
 
 === Schema-based message converters
