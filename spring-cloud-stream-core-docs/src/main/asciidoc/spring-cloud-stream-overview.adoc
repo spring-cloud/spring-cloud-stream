@@ -1106,10 +1106,13 @@ For the conversion of inbound messages, especially when the target is a POJO, th
 
 Besides the conversions that it supports out of the box, Spring Cloud Stream also supports registering your own message conversion implementations.
 This allows you to send and receive data in a variety of custom formats, including binary, and associate them with specific `contentTypes`.
-In order to do so, you can create a class of type `org.springframework.messaging.converter.MessageConverter` and make it available in the application context.
 Spring Cloud Stream registers all the beans of type `org.springframework.messaging.converter.MessageConverter` as custom message converters along with the out of the box message converters.
 
-Here is an example of creating message converter bean inside the application:
+If your message converter needs to work with specific `content-type` and the target class (for both input and output), then the message converter needs to extend `org.springframework.messaging.converter.AbstractMessageConverter`.
+As an example, You can refer link:https://github.com/spring-projects/spring-framework/blob/master/spring-messaging/src/main/java/org/springframework/messaging/converter/StringMessageConverter.java[String message converter].
+For the conversion using @StreamListener, the message converter that implements `org.springframework.messaging.converter.MessageConverter` would be suffice.
+
+Here is an example of creating a message converter bean inside the application:
 
 [source,java]
 ----
@@ -1120,10 +1123,11 @@ public static class SinkApplication {
   ...
 
   @Bean
-  public MessageConverter customMessageConverter() {
+  public AbstractMessageConverter customMessageConverter() {
     return new MyCustomMessageConverter();
   }
 ----
+
 === Schema-based message converters
 
 Spring Cloud Stream provides support for schema-based message converters through its `spring-cloud-stream-schema` module.
@@ -1143,7 +1147,7 @@ If the target type of the conversion is a `GenericRecord`, then a schema must be
 
 For using it, you can simply add it to the application context, optionally specifying one ore more `MimeTypes` to associate it with.
 The default `MimeType` is `application/avro`.
-Here is an example of configuring it in a sink application registering the Apache Avro, without a predefined schema:
+Here is an example of configuring it in a sink application registering the Apache Avro MessageConverter, without a predefined schema:
 
 [source,java]
 ----
