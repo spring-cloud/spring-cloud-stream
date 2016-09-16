@@ -20,8 +20,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Envelope;
 import org.aopalliance.aop.Advice;
 
 import org.springframework.amqp.AmqpConnectException;
@@ -70,6 +68,9 @@ import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Envelope;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
@@ -220,7 +221,7 @@ public class RabbitMessageChannelBinder
 		listenerContainer.setRecoveryInterval(properties.getExtension().getRecoveryInterval());
 		listenerContainer.setTxSize(properties.getExtension().getTxSize());
 		listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(destination.getName() + "-"));
-		listenerContainer.setQueues((Queue) destination);
+		listenerContainer.setQueues(destination);
 		if (properties.getMaxAttempts() > 1 || properties.getExtension().isRepublishToDlq()) {
 			RetryOperationsInterceptor retryInterceptor = RetryInterceptorBuilder.stateless()
 					.retryOperations(buildRetryTemplate(properties))
@@ -417,23 +418,25 @@ public class RabbitMessageChannelBinder
 	/**
 	 * If so requested, declare the DLX/DLQ and bind it. The DLQ is bound to the DLX with a routing key of the original
 	 * queue name because we use default exchange routing by queue name for the original message.
-	 * @param queueName   The base name for the queue (including the binder prefix, if any).
+	 * @param baseQueueName   The base name for the queue (including the binder prefix, if any).
 	 * @param routingKey  The routing key for the queue.
 	 * @param autoBindDlq true if the DLQ should be bound.
 	 */
-	private void autoBindDLQ(final String queueName, String routingKey, String prefix, boolean autoBindDlq) {
+	private void autoBindDLQ(final String baseQueueName, String routingKey, String prefix, boolean autoBindDlq) {
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("autoBindDLQ=" + autoBindDlq
-					+ " for: " + queueName);
+					+ " for: " + baseQueueName);
 		}
 		if (autoBindDlq) {
-			String dlqName = constructDLQName(queueName);
+			String dlqName = constructDLQName(baseQueueName);
 			Queue dlq = new Queue(dlqName);
 			declareQueue(dlqName, dlq);
 			final String dlxName = deadLetterExchangeName(prefix);
 			final DirectExchange dlx = new DirectExchange(dlxName);
 			declareExchange(dlxName, dlx);
 			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(routingKey));
+			// Also bind with the base queue name in case republishToDlq is used, which does not know about partitioning
+			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(baseQueueName));
 		}
 	}
 

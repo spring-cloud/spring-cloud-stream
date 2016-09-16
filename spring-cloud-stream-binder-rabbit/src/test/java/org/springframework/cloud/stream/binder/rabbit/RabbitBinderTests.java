@@ -16,6 +16,11 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,11 +68,6 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.GenericMessage;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Mark Fisher
@@ -421,6 +421,94 @@ public class RabbitBinderTests extends
 		template.setReceiveTimeout(10000);
 
 		String streamDLQName = "bindertest.partDLQ.0.dlqPartGrp.dlq";
+
+		org.springframework.amqp.core.Message received = template.receive(streamDLQName);
+		assertThat(received).isNotNull();
+		assertThat(received.getMessageProperties().getHeaders()).containsEntry("partition", 1);
+
+		output.send(new GenericMessage<>(0));
+		received = template.receive(streamDLQName);
+		assertThat(received).isNotNull();
+		assertThat(received.getMessageProperties().getHeaders()).containsEntry("partition", 0);
+
+		input0Binding.unbind();
+		input1Binding.unbind();
+		defaultConsumerBinding1.unbind();
+		defaultConsumerBinding2.unbind();
+		outputBinding.unbind();
+	}
+
+	@Test
+	public void testAutoBindDLQPartionedConsumerFirstWithRepublish() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.getExtension().setPrefix("bindertest.");
+		properties.getExtension().setAutoBindDlq(true);
+		properties.getExtension().setRepublishToDlq(true);
+		properties.setMaxAttempts(1); // disable retry
+		properties.setPartitioned(true);
+		properties.setInstanceIndex(0);
+		DirectChannel input0 = createBindableChannel("input", createConsumerBindingProperties(properties));
+		input0.setBeanName("test.input0DLQ");
+		Binding<MessageChannel> input0Binding = binder.bindConsumer("partPubDLQ.0", "dlqPartGrp", input0, properties);
+		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partPubDLQ.0", "default",
+				new QueueChannel(), properties);
+		properties.setInstanceIndex(1);
+		DirectChannel input1 = createBindableChannel("input1", createConsumerBindingProperties(properties));
+		input1.setBeanName("test.input1DLQ");
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("partPubDLQ.0", "dlqPartGrp", input1, properties);
+		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partPubDLQ.0", "default",
+				new QueueChannel(), properties);
+
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension().setPrefix("bindertest.");
+		producerProperties.getExtension().setAutoBindDlq(true);
+		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
+		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
+		producerProperties.setPartitionCount(2);
+		BindingProperties bindingProperties = createProducerBindingProperties(producerProperties);
+		DirectChannel output = createBindableChannel("output", bindingProperties);
+		output.setBeanName("test.output");
+		Binding<MessageChannel> outputBinding = binder.bindProducer("partPubDLQ.0", output, producerProperties);
+
+		final CountDownLatch latch0 = new CountDownLatch(1);
+		input0.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				if (latch0.getCount() <= 0) {
+					throw new RuntimeException("dlq");
+				}
+				latch0.countDown();
+			}
+
+		});
+
+		final CountDownLatch latch1 = new CountDownLatch(1);
+		input1.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				if (latch1.getCount() <= 0) {
+					throw new RuntimeException("dlq");
+				}
+				latch1.countDown();
+			}
+
+		});
+
+		output.send(new GenericMessage<>(1));
+		assertThat(latch1.await(10, TimeUnit.SECONDS)).isTrue();
+
+		output.send(new GenericMessage<>(0));
+		assertThat(latch0.await(10, TimeUnit.SECONDS)).isTrue();
+
+		output.send(new GenericMessage<>(1));
+
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.setReceiveTimeout(10000);
+
+		String streamDLQName = "bindertest.partPubDLQ.0.dlqPartGrp.dlq";
 
 		org.springframework.amqp.core.Message received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
