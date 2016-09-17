@@ -2,9 +2,9 @@
 
 This is the repository for the Spring Cloud Stream Release Train.
 
-It contains projects for maintaining;
+It contains projects for maintaining the following components:
 
-* the curated dependencies list of the release train;
+* the curated dependencies list of the release train, i.e. `spring-cloud-stream-dependencies`
 * the aggregated documentation of the release train;
 
 == Release Train Contents
