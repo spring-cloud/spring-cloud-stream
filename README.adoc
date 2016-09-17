@@ -1,9 +1,25 @@
-Spring Cloud Stream Starters are curated sets of dependencies focused on a particular type of workload.
-Including a starter on your classpath is really just a shorthand for including its dependencies, but it makes it easier to organize your code and easier to remember what the dependencies are for.
-(See also http://github.com/spring-projects/spring-boot/tree/master/spring-boot-starters[Spring Boot starter projects].) Starters provided include:
+== What is this?
 
-* spring-cloud-starter-stream-kafka
-* spring-cloud-starter-stream-rabbit
+This is the repository for the Spring Cloud Stream Release Train.
+
+It contains projects for maintaining;
+
+* the curated dependencies list of the release train;
+* the aggregated documentation of the release train;
+
+== Release Train Contents
+
+The release train contains:
+
+* the Spring Cloud Stream core;
+* supported binder implementations;
+
+=== Binder implementations
+
+The following binder implementations are currently available:
+
+* *Kafka*  https://github.com/spring-cloud/spring-cloud-stream-binder-kafka
+* *RabbitMQ*  https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit
 
 == Contributing
 
