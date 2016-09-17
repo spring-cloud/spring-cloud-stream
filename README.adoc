@@ -5,6 +5,8 @@ This project allows a user to develop and run messaging microservices using Spri
 Since version 1.1, Spring Cloud Stream follows a decentralized model where the core components and the binder implementations are developed and released separately.
 This repository contains the core components of the project and does not contain any binder implementations.
 
+The repository for the Spring Cloud Stream Release Train is here: https://github.com/spring-cloud/spring-cloud-stream-starters
+
 Information on the Spring Cloud Stream release train can be found here: https://github.com/spring-cloud/spring-cloud-stream-starters/wiki#release-notes.
 
 === Binder implementations
