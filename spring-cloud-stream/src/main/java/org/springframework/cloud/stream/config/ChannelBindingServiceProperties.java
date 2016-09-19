@@ -189,8 +189,13 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 		if (consumerProperties == null) {
 			consumerProperties = new ConsumerProperties();
 		}
-		consumerProperties.setInstanceCount(this.instanceCount);
-		consumerProperties.setInstanceIndex(this.instanceIndex);
+		// propagate instance count and instance index if not already set
+		if (consumerProperties.getInstanceCount() < 0) {
+			consumerProperties.setInstanceCount(this.instanceCount);
+		}
+		if (consumerProperties.getInstanceIndex() < 0) {
+			consumerProperties.setInstanceIndex(this.instanceIndex);
+		}
 		return consumerProperties;
 	}
 

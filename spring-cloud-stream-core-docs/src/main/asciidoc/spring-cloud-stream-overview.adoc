@@ -947,6 +947,16 @@ backOffMultiplier::
   The backoff multiplier.
 +
 Default: `2.0`.
+instanceIndex::
+  When set to a value greater than equal to zero, allows customizing the instance index of this consumer (if different from `spring.cloud.stream.instanceIndex`).
+When set to a negative value, it will default to `spring.cloud.stream.instanceIndex`.
++
+Default: `-1`.
+instanceCount::
+  When set to a value greater than equal to zero, allows customizing the instance count of this consumer (if different from `spring.cloud.stream.instanceCount`).
+When set to a negative value, it will default to `spring.cloud.stream.instanceCount`.
++
+Default: `-1`.
 
 ==== Producer Properties
 
