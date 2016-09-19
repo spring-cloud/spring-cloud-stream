@@ -13,7 +13,7 @@
 	<properties>
 		<java.version>1.7</java.version>
 		<kafka.version>0.9.0.1</kafka.version>
-		<spring-kafka.version>1.0.3.RELEASE</spring-kafka.version>
+		<spring-kafka.version>1.0.4.RELEASE</spring-kafka.version>
 		<spring-integration-kafka.version>2.0.1.RELEASE</spring-integration-kafka.version>
 	</properties>
 	<modules>

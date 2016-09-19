@@ -20,8 +20,8 @@
 		   Spring Integration Kafka versions
 		-->
 		<kafka.version>0.10.0.0</kafka.version>
-		<spring-kafka.version>1.1.0.M1</spring-kafka.version>
-		<spring-integration-kafka.version>2.0.1.RELEASE</spring-integration-kafka.version>
+		<spring-kafka.version>1.1.1.RELEASE</spring-kafka.version>
+		<spring-integration-kafka.version>2.1.0.RELEASE</spring-integration-kafka.version>
 	</properties>
 
 	<dependencies>

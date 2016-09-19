@@ -306,12 +306,12 @@ Then add these dependencies at the top of the `<dependencies>` section in the po
 <dependency>
   <groupId>org.springframework.kafka</groupId>
   <artifactId>spring-kafka</artifactId>
-  <version>1.1.0.M1</version>
+  <version>1.1.1.RELEASE</version>
 </dependency>
 <dependency>
   <groupId>org.springframework.integration</groupId>
   <artifactId>spring-integration-kafka</artifactId>
-  <version>2.0.1.RELEASE</version>
+  <version>2.1.0.RELEASE</version>
 </dependency>
 <dependency>
   <groupId>org.apache.kafka</groupId>
