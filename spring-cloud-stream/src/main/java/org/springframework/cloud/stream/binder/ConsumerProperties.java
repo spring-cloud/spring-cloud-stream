@@ -33,9 +33,9 @@ public class ConsumerProperties {
 
 	private boolean partitioned;
 
-	private int instanceCount = 1;
+	private int instanceCount = -1;
 
-	private int instanceIndex;
+	private int instanceIndex = -1;
 
 	private int maxAttempts = 3;
 
