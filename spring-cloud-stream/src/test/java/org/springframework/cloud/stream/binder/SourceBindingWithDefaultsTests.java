@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,12 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -39,37 +37,28 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ArbitraryInterfaceBindingTestsWithBindingTargets.TestFooChannels.class)
-public class ArbitraryInterfaceBindingTestsWithBindingTargets {
-
-	@Autowired
-	@Bindings(ArbitraryInterfaceBindingTestsWithBindingTargets.TestFooChannels.class)
-	public FooChannels fooChannels;
+@SpringBootTest(classes = SourceBindingWithDefaultsTests.TestSource.class)
+public class SourceBindingWithDefaultsTests {
 
 	@SuppressWarnings("rawtypes")
 	@Autowired
-	private Binder binder;
+	private BinderFactory binderFactory;
+
+	@Autowired
+	private Source testSource;
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void testArbitraryInterfaceChannelsBound() {
-		verify(this.binder).bindConsumer(eq("someQueue.0"), anyString(), eq(this.fooChannels.foo()),
-				Mockito.<ConsumerProperties>any());
-		verify(this.binder).bindConsumer(eq("someQueue.1"), anyString(), eq(this.fooChannels.bar()),
-				Mockito.<ConsumerProperties>any());
-		verify(this.binder).bindProducer(eq("someQueue.2"), eq(this.fooChannels.baz()),
-				Mockito.<ProducerProperties>any());
-		verify(this.binder).bindProducer(eq("someQueue.3"), eq(this.fooChannels.qux()),
-				Mockito.<ProducerProperties>any());
-		verifyNoMoreInteractions(this.binder);
+	public void testSourceOutputChannelBound() {
+		Binder binder = binderFactory.getBinder(null);
+		verify(binder).bindProducer(eq("output"), eq(this.testSource.output()), Mockito.<ProducerProperties>any());
+		verifyNoMoreInteractions(binder);
 	}
 
-	@EnableBinding(FooChannels.class)
+	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderRegistryConfiguration.class)
-	@PropertySource("classpath:/org/springframework/cloud/stream/binder/arbitrary-binding-test.properties")
-	public static class TestFooChannels {
+	public static class TestSource {
 
 	}
-
 }
