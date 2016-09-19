@@ -23,7 +23,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
@@ -38,29 +37,29 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ArbitraryInterfaceBindingTestsWithDefaults.TestFooChannels.class)
-public class ArbitraryInterfaceBindingTestsWithDefaults {
+@SpringBootTest(classes = ArbitraryInterfaceWithDefaultsTests.TestFooChannels.class)
+public class ArbitraryInterfaceWithDefaultsTests {
 
 	@Autowired
-	@Bindings(ArbitraryInterfaceBindingTestsWithDefaults.TestFooChannels.class)
 	public FooChannels fooChannels;
 
 	@SuppressWarnings("rawtypes")
 	@Autowired
-	private Binder binder;
+	private BinderFactory binderFactory;
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
-		verify(this.binder).bindConsumer(eq("foo"), anyString(), eq(this.fooChannels.foo()),
+		final Binder binder = this.binderFactory.getBinder(null);
+		verify(binder).bindConsumer(eq("foo"), anyString(), eq(this.fooChannels.foo()),
 				Mockito.<ConsumerProperties>any());
-		verify(this.binder).bindConsumer(eq("bar"), anyString(), eq(this.fooChannels.bar()),
+		verify(binder).bindConsumer(eq("bar"), anyString(), eq(this.fooChannels.bar()),
 				Mockito.<ConsumerProperties>any());
-		verify(this.binder).bindProducer(eq("baz"), eq(this.fooChannels.baz()),
+		verify(binder).bindProducer(eq("baz"), eq(this.fooChannels.baz()),
 				Mockito.<ProducerProperties>any());
-		verify(this.binder).bindProducer(eq("qux"), eq(this.fooChannels.qux()),
+		verify(binder).bindProducer(eq("qux"), eq(this.fooChannels.qux()),
 				Mockito.<ProducerProperties>any());
-		verifyNoMoreInteractions(this.binder);
+		verifyNoMoreInteractions(binder);
 	}
 
 	@EnableBinding(FooChannels.class)

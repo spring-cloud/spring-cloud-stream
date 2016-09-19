@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,43 +23,45 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = SourceBindingTestsWithDefaults.TestSource.class)
-public class SourceBindingTestsWithDefaults {
+@SpringBootTest(classes = ProcessorBindingsWithDefaultsTests.TestProcessor.class)
+public class ProcessorBindingsWithDefaultsTests {
 
 	@SuppressWarnings("rawtypes")
 	@Autowired
-	private Binder binder;
+	private BinderFactory binderFactory;
 
 	@Autowired
-	@Bindings(TestSource.class)
-	private Source testSource;
+	private Processor processor;
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		verify(this.binder).bindProducer(eq("output"), eq(this.testSource.output()), Mockito.<ProducerProperties>any());
-		verifyNoMoreInteractions(this.binder);
+		Binder binder = this.binderFactory.getBinder(null);
+		Mockito.verify(binder).bindConsumer(eq("input"), anyString(), eq(this.processor.input()),
+				Mockito.<ConsumerProperties>any());
+		Mockito.verify(binder).bindProducer(eq("output"), eq(this.processor.output()),
+				Mockito.<ProducerProperties>any());
+		verifyNoMoreInteractions(binder);
 	}
 
-	@EnableBinding(Source.class)
+	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderRegistryConfiguration.class)
-	public static class TestSource {
+	public static class TestProcessor {
 
 	}
 }

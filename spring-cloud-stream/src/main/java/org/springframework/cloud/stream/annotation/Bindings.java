@@ -31,6 +31,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
  *
  * @author Dave Syer
  * @author Marius Bogoevici
+ * @deprecated As of 1.1 for being redundant (beans qualified by it are already
+ *             uniquely identified by their type)
  */
 
 @Qualifier
@@ -38,6 +40,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
+@Deprecated
 public @interface Bindings {
 
 	Class<?> value();
