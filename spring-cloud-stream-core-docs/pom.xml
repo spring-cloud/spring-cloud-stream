@@ -86,7 +86,7 @@
 					<plugin>
 						<groupId>org.asciidoctor</groupId>
 						<artifactId>asciidoctor-maven-plugin</artifactId>
-						<version>1.5.0</version>
+						<version>1.5.3</version>
 						<executions>
 							<execution>
 								<id>generate-docbook</id>
@@ -114,13 +114,21 @@
 						<version>2.0.15</version>
 						<configuration>
 							<sourceDirectory>${basedir}/target/generated-docs</sourceDirectory>
+							<imgSrcPath />
+							<graphicsize.extension>0</graphicsize.extension>
 							<includes>index.xml</includes>
 							<xincludeSupported>true</xincludeSupported>
 							<chunkedOutput>false</chunkedOutput>
 							<foCustomization>${basedir}/src/main/docbook/xsl/pdf.xsl</foCustomization>
 							<useExtensions>1</useExtensions>
+							<admonGraphics>1</admonGraphics>
 							<highlightSource>1</highlightSource>
 							<highlightXslthlConfig>${basedir}/src/main/docbook/xsl/xslthl-config.xml</highlightXslthlConfig>
+							<preProcess>
+								<copy todir="${basedir}/target/generated-docs/images">
+									<fileset dir="${basedir}/src/main/docbook/images" />
+								</copy>
+							</preProcess>
 						</configuration>
 						<dependencies>
 							<dependency>

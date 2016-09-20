@@ -99,7 +99,9 @@ under the License.
 									<xsl:if test="position() > 1">
 										<xsl:text>, </xsl:text>
 									</xsl:if>
-									<xsl:value-of select="."/>
+									<xsl:value-of select="d:personname/d:firstname"/>
+									<xsl:text> </xsl:text>
+									<xsl:value-of select="d:personname/d:surname"/>
 								</xsl:for-each>
 							</fo:block>
 
@@ -108,7 +110,10 @@ under the License.
 							</fo:block>
 
 							<fo:block font-family="Helvetica" font-size="10pt" padding="5mm" padding-before="25em">
-								<xsl:text>Copyright &#xA9; </xsl:text><xsl:value-of select="d:info/d:copyright"/>
+								<xsl:text>Copyright &#xA9; </xsl:text>
+								<xsl:value-of select="d:info/d:copyright/d:year"/>
+								<xsl:text> </xsl:text>
+								<xsl:value-of select="d:info/d:copyright/d:holder"/>
 							</fo:block>
 
 							<fo:block font-family="Helvetica" font-size="8pt" padding="1mm">
@@ -508,6 +513,10 @@ under the License.
 
 	<!-- admon -->
 	<xsl:param name="admon.graphics" select="0"/>
+
+	<xsl:template match="*" mode="admon.graphic.width">
+		<xsl:text>18pt</xsl:text>
+	</xsl:template>
 
 	<xsl:attribute-set name="nongraphical.admonition.properties">
 		<xsl:attribute name="margin-left">0.1em</xsl:attribute>
