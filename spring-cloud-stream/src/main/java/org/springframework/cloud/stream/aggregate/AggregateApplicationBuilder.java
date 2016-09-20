@@ -181,8 +181,14 @@ public class AggregateApplicationBuilder {
 				for (Map.Entry<String, String> entry : target.entrySet()) {
 					// only update the values with the highest precedence level.
 					if (!relaxedNameKeyExists(entry.getKey(), argKeys)) {
-						argKeys.add(entry.getKey());
-						argsToUpdate.add("--" + entry.getKey() + "=" + entry.getValue());
+						String key = entry.getKey();
+						// in case of environment variables pass the lower-case property key
+						// as we pass the properties as command line properties
+						if (key.contains("_")) {
+							key = key.replace("_", "-").toLowerCase();
+						}
+						argKeys.add(key);
+						argsToUpdate.add("--" + key + "=" + entry.getValue());
 					}
 				}
 			}
