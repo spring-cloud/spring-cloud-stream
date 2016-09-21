@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>1.2.0.RELEASE</version>
+		<version>1.2.1.RELEASE</version>
 		<relativePath />
 	</parent>
 	<scm>
@@ -19,10 +19,12 @@
 	</scm>
 	<properties>
 		<java.version>1.7</java.version>
-		<rxjava.version>1.1.5</rxjava.version>
+		<rxjava.version>1.1.10</rxjava.version>
 		<spring.tuple.version>1.0.0.RELEASE</spring.tuple.version>
 		<spring.integration.tuple.version>1.0.0.RELEASE</spring.integration.tuple.version>
-		<reactor.version>3.0.0.RELEASE</reactor.version>
+		<reactor.version>3.0.2.RELEASE</reactor.version>
+		<kryo-shaded.version>3.0.3</kryo-shaded.version>
+		<objenesis.version>2.1</objenesis.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -74,7 +76,7 @@
 			<dependency>
 				<groupId>com.esotericsoftware</groupId>
 				<artifactId>kryo-shaded</artifactId>
-				<version>3.0.3</version>
+				<version>${kryo-shaded.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.projectreactor</groupId>
@@ -89,7 +91,7 @@
 			<dependency>
 				<groupId>org.objenesis</groupId>
 				<artifactId>objenesis</artifactId>
-				<version>2.1</version>
+				<version>${objenesis.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
