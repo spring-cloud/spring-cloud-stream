@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.aggregate.AggregatorParentConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.stub1.StubBinder1;
 import org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration;
@@ -64,7 +63,7 @@ public class BinderFactoryConfigurationTests {
 	public void loadBinderTypeRegistryWithNonSelfContainedAggregatorApp() throws Exception {
 		try {
 			createBinderTestContextWithSources(
-					new Class[]{SimpleApplication.class, AggregatorParentConfiguration.class}, new String[]{},
+					new Class[]{SimpleApplication.class}, new String[]{},
 					"spring.cloud.stream.internal.selfContained=false");
 			fail();
 		}
@@ -78,7 +77,7 @@ public class BinderFactoryConfigurationTests {
 	@Test
 	public void loadBinderTypeRegistryWithSelfContainedAggregatorApp() throws Exception {
 			createBinderTestContextWithSources(
-					new Class[] { SimpleApplication.class, AggregatorParentConfiguration.class}, new String[] {},
+					new Class[] { SimpleApplication.class}, new String[] {},
 					"spring.cloud.stream.internal.selfContained=true");
 	}
 

@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LifecycleBinderTests {
 
 	@Test
-	public void testNonSmartLifecyclesStarted() {
+	public void testOnlySmartLifecyclesStarted() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
 		SimpleLifecycle simpleLifecycle = applicationContext.getBean(SimpleLifecycle.class);
 		assertThat(simpleLifecycle.isRunning()).isFalse();

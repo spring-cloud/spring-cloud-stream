@@ -27,6 +27,7 @@ import org.springframework.messaging.SubscribableChannel;
 
 /**
  * Class that is responsible for embedding apps using shared channel registry.
+ *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Venil Noronha
@@ -35,44 +36,34 @@ abstract class AggregateApplication {
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
-	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
+	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME =
+			SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
 
-	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".selfContained";
+	private static final String SELF_CONTAINED_APP_PROPERTY_NAME =
+			SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".selfContained";
 
 	public static final String INPUT_CHANNEL_NAME = "input";
 
 	public static final String OUTPUT_CHANNEL_NAME = "output";
 
-	static ConfigurableApplicationContext createParentContext(Object[] sources, String[] args, boolean selfContained) {
+	static ConfigurableApplicationContext createParentContext(Object[] sources, String[] args, final
+			boolean selfContained, boolean webEnvironment,
+			boolean headless) {
 		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
 		aggregatorParentConfiguration
-				.sources(AggregatorParentConfiguration.class)
 				.sources(sources)
-				.web(false)
-				.headless(true)
+				.web(webEnvironment)
+				.headless(headless)
 				.properties("spring.jmx.default-domain="
-						+ AggregatorParentConfiguration.class.getName(),
+									+ AggregateApplicationBuilder.ParentConfiguration.class.getName(),
 						SELF_CONTAINED_APP_PROPERTY_NAME + "=" + selfContained);
 		return aggregatorParentConfiguration.run(args);
 	}
 
-	static ConfigurableApplicationContext createParentContext(ConfigurableApplicationContext parentContext, String[] args,
-			boolean selfContained) {
-		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
-		aggregatorParentConfiguration
-				.sources(AggregatorParentConfiguration.class)
-				.web(false)
-				.headless(true)
-				.properties("spring.jmx.default-domain="
-						+ AggregatorParentConfiguration.class.getName(),
-						SELF_CONTAINED_APP_PROPERTY_NAME + "=" + selfContained)
-				.parent(parentContext);
-		return aggregatorParentConfiguration.run(args);
-	}
-
-	static String getNamespace(String appClassName, int index) {
+	static String getDefaultNamespace(String appClassName, int index) {
 		return appClassName + "_" + index;
 	}
+
 
 	protected static SpringApplicationBuilder embedApp(
 			ConfigurableApplicationContext parentContext, String namespace,
@@ -81,7 +72,7 @@ abstract class AggregateApplication {
 				.web(false)
 				.main(app)
 				.bannerMode(Mode.OFF)
-				.properties("spring.jmx.default-domain=" + app)
+				.properties("spring.jmx.default-domain=" + namespace)
 				.properties(CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
 				.registerShutdownHook(false)
 				.parent(parentContext);
