@@ -47,6 +47,8 @@ import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -60,6 +62,7 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Soby Chacko
@@ -636,6 +639,81 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 
 		consumerBinding1.unbind();
 		consumerBinding2.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testManualAckSucceedsWhenAutoCommitOffsetIsTurnedOff() throws Exception {
+		Binder binder = getBinder();
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				createProducerBindingProperties(createProducerProperties()));
+		QueueChannel moduleInputChannel = new QueueChannel();
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.x", moduleOutputChannel,
+				createProducerProperties());
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().setAutoCommitOffset(false);
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.x", "test", moduleInputChannel,
+				consumerProperties);
+
+		String testPayload1 = "foo" + UUID.randomUUID().toString();
+		Message<?> message1 = org.springframework.integration.support.MessageBuilder.withPayload(
+				testPayload1.getBytes()).build();
+
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+		moduleOutputChannel.send(message1);
+
+		Message<?> receivedMessage = receive(moduleInputChannel);
+		assertThat(receivedMessage).isNotNull();
+		assertThat(receivedMessage.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT)).isNotNull();
+		Acknowledgment acknowledgment = receivedMessage.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
+		try {
+			acknowledgment.acknowledge();
+		}
+		catch (Exception e) {
+			fail("Acknowledge must not throw an exception");
+		}
+		finally {
+			producerBinding.unbind();
+			consumerBinding.unbind();
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testManualAckIsNotPossibleWhenAutoCommitOffsetIsEnabledOnTheBinder() throws Exception {
+		Binder binder = getBinder();
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				createProducerBindingProperties(createProducerProperties()));
+		QueueChannel moduleInputChannel = new QueueChannel();
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.x", moduleOutputChannel,
+				createProducerProperties());
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.x", "test", moduleInputChannel,
+				consumerProperties);
+
+		String testPayload1 = "foo" + UUID.randomUUID().toString();
+		Message<?> message1 = org.springframework.integration.support.MessageBuilder.withPayload(
+				testPayload1.getBytes()).build();
+
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+		moduleOutputChannel.send(message1);
+
+		Message<?> receivedMessage = receive(moduleInputChannel);
+		assertThat(receivedMessage).isNotNull();
+		assertThat(receivedMessage.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT)).isNull();
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
 	}
 
 	@Test

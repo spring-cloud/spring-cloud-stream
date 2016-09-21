@@ -129,7 +129,10 @@ The property `spring.cloud.stream.instanceCount` must typically be greater than 
 Default: `true`.
 autoCommitOffset::
   Whether to autocommit offsets when a message has been processed.
-If set to `false`, an `Acknowledgment` header will be available in the message headers for late acknowledgment.
+If set to `false`, a header with the key `kafka_acknowledgment` of the type `org.springframework.kafka.support.Acknowledgment` header will be present in the inbound message.
+Applications may use this header for acknowledging messages.
+See the examples section for details.
+When this property is set to `false`, Kafka binder will set the ack mode to `org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode.MANUAL`.
 +
 Default: `true`.
 autoCommitOnError::
@@ -198,6 +201,34 @@ If a topic already exists with a larger number of partitions than the maximum of
 === Usage examples
 
 In this section, we illustrate the use of the above properties for specific scenarios.
+
+==== Example: Setting `autoCommitOffset` false and relying on manual acking.
+
+This example illustrates how one may manually acknowledge offsets in a consumer application.
+
+This example requires that `spring.cloud.stream.kafka.bindings.input.consumer.autoCommitOffset` is set to false.
+Use the corresponding input channel name for your example.
+
+[source]
+----
+@SpringBootApplication
+@EnableBinding(Sink.class)
+public class ManuallyAcknowdledgingConsumer {
+
+ public static void main(String[] args) {
+     SpringApplication.run(ManuallyAcknowdledgingConsumer.class, args);
+ }
+
+ @StreamListener(Sink.INPUT)
+ public void process(Message<?> message) {
+     Acknowledgment acknowledgment = message.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
+     if (acknowledgment != null) {
+         System.out.println("Acknowledgment provided");
+         acknowledgment.acknowledge();
+     }
+ }
+}
+----
 
 ==== Example: security configuration
 
