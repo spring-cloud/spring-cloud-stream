@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-stream-binder-rabbit-parent</artifactId>
-        <version>1.1.0.RELEASE</version>
+        <version>1.1.0.BUILD-SNAPSHOT</version>
     </parent>
 
     <artifactId>spring-cloud-stream-binder-rabbit-docs</artifactId>
@@ -18,7 +18,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-            <version>1.1.0.RELEASE</version>
+            <version>1.1.0.BUILD-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <profiles>
