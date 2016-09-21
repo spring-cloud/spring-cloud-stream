@@ -71,6 +71,7 @@ public class HealthIndicatorsConfigurationTests {
 		assertThat(healthIndicators.get("binder1").health().getStatus()).isEqualTo(Status.UP);
 		assertThat(healthIndicators).containsKey("binder2");
 		assertThat(healthIndicators.get("binder2").health().getStatus()).isEqualTo(Status.UNKNOWN);
+		context.close();
 	}
 
 	@Test
@@ -92,6 +93,7 @@ public class HealthIndicatorsConfigurationTests {
 		}
 		assertThat(context.getBean("testHealthIndicator1", CompositeHealthIndicator.class)).isNotNull();
 		assertThat(context.getBean("testHealthIndicator2", CompositeHealthIndicator.class)).isNotNull();
+		context.close();
 	}
 
 	public static ConfigurableApplicationContext createBinderTestContext(

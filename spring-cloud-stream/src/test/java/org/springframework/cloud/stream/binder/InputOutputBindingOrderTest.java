@@ -56,6 +56,7 @@ public class InputOutputBindingOrderTest {
 		assertThat(someLifecycle.isRunning());
 		applicationContext.close();
 		assertThat(someLifecycle.isRunning()).isFalse();
+		applicationContext.close();
 	}
 
 	@EnableBinding(Processor.class)

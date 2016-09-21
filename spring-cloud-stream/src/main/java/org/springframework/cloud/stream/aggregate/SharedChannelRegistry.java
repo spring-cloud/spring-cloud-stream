@@ -38,10 +38,10 @@ public class SharedChannelRegistry {
 	}
 
 	public void register(String id, MessageChannel messageChannel) {
-		sharedChannels.put(id, messageChannel);
+		this.sharedChannels.put(id, messageChannel);
 	}
 
 	public Map<String, MessageChannel> getAll() {
-		return Collections.unmodifiableMap(sharedChannels);
+		return Collections.unmodifiableMap(this.sharedChannels);
 	}
 }
