@@ -98,11 +98,11 @@
 					<plugin>
 						<groupId>org.asciidoctor</groupId>
 						<artifactId>asciidoctor-maven-plugin</artifactId>
-						<version>1.5.0</version>
+						<version>1.5.3</version>
 						<executions>
 							<execution>
 								<id>generate-docbook</id>
-								<phase>generate-resources</phase>
+								<phase>prepare-package</phase>
 								<goals>
 									<goal>process-asciidoc</goal>
 								</goals>
@@ -112,6 +112,8 @@
 									<doctype>book</doctype>
 									<attributes>
 										<docinfo>true</docinfo>
+										<allow-uri-read>true</allow-uri-read>
+										<attribute-missing>warn</attribute-missing>
 										<spring-cloud-stream-version>${project.version}</spring-cloud-stream-version>
 										<spring-cloud-stream-docs-version>${project.version}</spring-cloud-stream-docs-version>
 										<github-tag>${github-tag}</github-tag>
@@ -126,13 +128,24 @@
 						<version>2.0.15</version>
 						<configuration>
 							<sourceDirectory>${basedir}/target/generated-docs</sourceDirectory>
+							<imgSrcPath />
+							<graphicsize.extension>0</graphicsize.extension>
 							<includes>index.xml</includes>
 							<xincludeSupported>true</xincludeSupported>
 							<chunkedOutput>false</chunkedOutput>
 							<foCustomization>${basedir}/src/main/docbook/xsl/pdf.xsl</foCustomization>
 							<useExtensions>1</useExtensions>
+							<admonGraphics>1</admonGraphics>
 							<highlightSource>1</highlightSource>
 							<highlightXslthlConfig>${basedir}/src/main/docbook/xsl/xslthl-config.xml</highlightXslthlConfig>
+							<preProcess>
+								<copy todir="${basedir}/target/generated-docs/images">
+									<fileset dir="${basedir}/src/main/docbook/images" />
+									<fileset dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/images"/>
+									<fileset dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/images"/>
+									<fileset dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/images"/>
+								</copy>
+							</preProcess>
 						</configuration>
 						<dependencies>
 							<dependency>
@@ -155,7 +168,7 @@
 								<goals>
 									<goal>generate-html</goal>
 								</goals>
-								<phase>generate-resources</phase>
+								<phase>prepare-package</phase>
 								<configuration>
 									<htmlCustomization>${basedir}/src/main/docbook/xsl/html-singlepage.xsl</htmlCustomization>
 									<targetDirectory>${basedir}/target/docbook/htmlsingle</targetDirectory>
@@ -165,69 +178,11 @@
 												<include name="**/*.html" />
 											</fileset>
 										</copy>
-										<copy todir="${basedir}/target/contents/reference/htmlsingle">
-											<fileset dir="${basedir}/src/main/docbook">
-												<include name="**/*.css" />
-												<include name="**/*.png" />
-												<include name="**/*.gif" />
-												<include name="**/*.jpg" />
-											</fileset>
+										<copy todir="${basedir}/target/contents/reference/htmlsingle/images">
+											<fileset dir="${basedir}/target/generated-docs/images" />
 										</copy>
-										<copy todir="${basedir}/target/contents/reference/htmlsingle">
-											<fileset dir="${basedir}/src/main/asciidoc">
-												<include name="images/*.css" />
-												<include name="images/*.png" />
-												<include name="images/*.gif" />
-												<include name="images/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/htmlsingle">
-											<fileset dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/docbook">
-												<include name="**/*.css" />
-												<include name="**/*.png" />
-												<include name="**/*.gif" />
-												<include name="**/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/htmlsingle">
-											<fileset dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc">
-												<include name="images/*.css" />
-												<include name="images/*.png" />
-												<include name="images/*.gif" />
-												<include name="images/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/htmlsingle">
-											<fileset dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/docbook">
-												<include name="**/*.css" />
-												<include name="**/*.png" />
-												<include name="**/*.gif" />
-												<include name="**/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/htmlsingle">
-											<fileset dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc">
-												<include name="images/*.css" />
-												<include name="images/*.png" />
-												<include name="images/*.gif" />
-												<include name="images/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/htmlsingle">
-											<fileset dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/docbook">
-												<include name="**/*.css" />
-												<include name="**/*.png" />
-												<include name="**/*.gif" />
-												<include name="**/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/htmlsingle">
-											<fileset dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc">
-												<include name="images/*.css" />
-												<include name="images/*.png" />
-												<include name="images/*.gif" />
-												<include name="images/*.jpg" />
-											</fileset>
+										<copy todir="${basedir}/target/contents/reference/htmlsingle/css">
+											<fileset dir="${basedir}/src/main/docbook/css" />
 										</copy>
 									</postProcess>
 								</configuration>
@@ -237,7 +192,7 @@
 								<goals>
 									<goal>generate-html</goal>
 								</goals>
-								<phase>generate-resources</phase>
+								<phase>prepare-package</phase>
 								<configuration>
 									<htmlCustomization>${basedir}/src/main/docbook/xsl/html-multipage.xsl</htmlCustomization>
 									<targetDirectory>${basedir}/target/docbook/html</targetDirectory>
@@ -248,69 +203,11 @@
 												<include name="**/*.html" />
 											</fileset>
 										</copy>
-										<copy todir="${basedir}/target/contents/reference/html">
-											<fileset dir="${basedir}/src/main/docbook">
-												<include name="**/*.css" />
-												<include name="**/*.png" />
-												<include name="**/*.gif" />
-												<include name="**/*.jpg" />
-											</fileset>
+										<copy todir="${basedir}/target/contents/reference/html/images">
+											<fileset dir="${basedir}/target/generated-docs/images" />
 										</copy>
-										<copy todir="${basedir}/target/contents/reference/html">
-											<fileset dir="${basedir}/src/main/asciidoc">
-												<include name="images/*.css" />
-												<include name="images/*.png" />
-												<include name="images/*.gif" />
-												<include name="images/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/html">
-											<fileset dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/docbook">
-												<include name="**/*.css" />
-												<include name="**/*.png" />
-												<include name="**/*.gif" />
-												<include name="**/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/html">
-											<fileset dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc">
-												<include name="images/*.css" />
-												<include name="images/*.png" />
-												<include name="images/*.gif" />
-												<include name="images/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/html">
-											<fileset dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/docbook">
-												<include name="**/*.css" />
-												<include name="**/*.png" />
-												<include name="**/*.gif" />
-												<include name="**/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/html">
-											<fileset dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc">
-												<include name="images/*.css" />
-												<include name="images/*.png" />
-												<include name="images/*.gif" />
-												<include name="images/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/html">
-											<fileset dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/docbook">
-												<include name="**/*.css" />
-												<include name="**/*.png" />
-												<include name="**/*.gif" />
-												<include name="**/*.jpg" />
-											</fileset>
-										</copy>
-										<copy todir="${basedir}/target/contents/reference/html">
-											<fileset dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc">
-												<include name="images/*.css" />
-												<include name="images/*.png" />
-												<include name="images/*.gif" />
-												<include name="images/*.jpg" />
-											</fileset>
+										<copy todir="${basedir}/target/contents/reference/html/css">
+											<fileset dir="${basedir}/src/main/docbook/css" />
 										</copy>
 									</postProcess>
 								</configuration>
@@ -320,7 +217,7 @@
 								<goals>
 									<goal>generate-pdf</goal>
 								</goals>
-								<phase>generate-resources</phase>
+								<phase>prepare-package</phase>
 								<configuration>
 									<foCustomization>${basedir}/src/main/docbook/xsl/pdf.xsl</foCustomization>
 									<targetDirectory>${basedir}/target/docbook/pdf</targetDirectory>
@@ -339,10 +236,15 @@
 								<goals>
 									<goal>generate-epub3</goal>
 								</goals>
-								<phase>generate-resources</phase>
+								<phase>prepare-package</phase>
 								<configuration>
 									<epubCustomization>${basedir}/src/main/docbook/xsl/epub.xsl</epubCustomization>
 									<targetDirectory>${basedir}/target/docbook/epub</targetDirectory>
+									<preProcess>
+										<copy todir="${basedir}/target/docbook/epub/images">
+											<fileset dir="${basedir}/target/generated-docs/images" />
+										</copy>
+									</preProcess>
 									<postProcess>
 										<copy todir="${basedir}/target/contents/reference/epub">
 											<fileset dir="${basedir}/target/docbook">
