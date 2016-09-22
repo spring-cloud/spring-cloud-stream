@@ -4,7 +4,7 @@
     <parent>
         <artifactId>spring-cloud-dependencies-parent</artifactId>
         <groupId>org.springframework.cloud</groupId>
-        <version>1.2.0.RELEASE</version>
+        <version>1.2.1.RELEASE</version>
         <relativePath />
     </parent>
     <artifactId>spring-cloud-stream-dependencies</artifactId>
@@ -13,9 +13,9 @@
     <name>spring-cloud-stream-dependencies</name>
     <description>Spring Cloud Stream Dependencies</description>
     <properties>
-        <spring.cloud.stream.version>1.1.0.BUILD-SNAPSHOT</spring.cloud.stream.version>
-        <spring.cloud.stream.binder.kafka.version>1.1.0.BUILD-SNAPSHOT</spring.cloud.stream.binder.kafka.version>
-        <spring.cloud.stream.binder.rabbit.version>1.1.0.BUILD-SNAPSHOT</spring.cloud.stream.binder.rabbit.version>
+        <spring.cloud.stream.version>1.1.0.RELEASE</spring.cloud.stream.version>
+        <spring.cloud.stream.binder.kafka.version>1.1.0.RELEASE</spring.cloud.stream.binder.kafka.version>
+        <spring.cloud.stream.binder.rabbit.version>1.1.0.RELEASE</spring.cloud.stream.binder.rabbit.version>
     </properties>
     <dependencyManagement>
         <dependencies>
