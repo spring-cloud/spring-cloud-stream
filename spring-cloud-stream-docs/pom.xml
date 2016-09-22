@@ -10,7 +10,7 @@
 	<artifactId>spring-cloud-stream-docs</artifactId>
 	<name>spring-cloud-stream-docs</name>
 	<description>Spring Cloud Stream Docs</description>
-	<version>Brooklyn.BUILD-SNAPSHOT</version>
+	<version>Brooklyn.RELEASE</version>
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
 	</properties>
@@ -141,9 +141,9 @@
 							<preProcess>
 								<copy todir="${basedir}/target/generated-docs/images">
 									<fileset dir="${basedir}/src/main/docbook/images" />
-									<fileset dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/images"/>
-									<fileset dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/images"/>
-									<fileset dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/images"/>
+									<fileset dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/images" />
+									<fileset dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/images" />
+									<fileset dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/images" />
 								</copy>
 							</preProcess>
 						</configuration>
