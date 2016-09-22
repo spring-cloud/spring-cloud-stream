@@ -70,9 +70,20 @@ import static org.assertj.core.api.Assertions.fail;
 public abstract class KafkaBinderTests extends PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>,
 						ExtendedProducerProperties<KafkaProducerProperties>> {
 
-	protected abstract ExtendedConsumerProperties<KafkaConsumerProperties> createConsumerProperties();
+	@Override
+	protected ExtendedConsumerProperties<KafkaConsumerProperties> createConsumerProperties() {
+		final ExtendedConsumerProperties<KafkaConsumerProperties> kafkaConsumerProperties =
+				new ExtendedConsumerProperties<>(new KafkaConsumerProperties());
+		// set the default values that would normally be propagated by Spring Cloud Stream
+		kafkaConsumerProperties.setInstanceCount(1);
+		kafkaConsumerProperties.setInstanceIndex(0);
+		return kafkaConsumerProperties;
+	}
 
-	protected abstract ExtendedProducerProperties<KafkaProducerProperties> createProducerProperties();
+	@Override
+	protected ExtendedProducerProperties<KafkaProducerProperties> createProducerProperties() {
+		return new ExtendedProducerProperties<>(new KafkaProducerProperties());
+	}
 
 	public abstract String getKafkaOffsetHeaderKey();
 

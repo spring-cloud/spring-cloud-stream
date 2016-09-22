@@ -32,8 +32,6 @@ import org.junit.Before;
 import org.junit.ClassRule;
 
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
-import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.kafka.admin.Kafka09AdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
@@ -117,16 +115,6 @@ public class Kafka09BinderTests extends KafkaBinderTests {
 	@Override
 	protected int invokePartitionSize(String topic, ZkUtils zkUtils) {
 		return adminUtilsOperation.partitionSize(topic, zkUtils);
-	}
-
-	@Override
-	protected ExtendedConsumerProperties<KafkaConsumerProperties> createConsumerProperties() {
-		return new ExtendedConsumerProperties<>(new KafkaConsumerProperties());
-	}
-
-	@Override
-	protected ExtendedProducerProperties<KafkaProducerProperties> createProducerProperties() {
-		return new ExtendedProducerProperties<>(new KafkaProducerProperties());
 	}
 
 	@Override
