@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>1.1.0.RELEASE</version>
+		<version>1.1.1.BUILD-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 	<artifactId>spring-cloud-stream-docs</artifactId>
@@ -30,12 +30,12 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-kafka</artifactId>
-			<version>1.1.0.RELEASE</version>
+			<version>1.1.1.BUILD-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-			<version>1.1.0.RELEASE</version>
+			<version>1.1.1.BUILD-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 	<profiles>
