@@ -87,7 +87,7 @@ public class KafkaBinderConfiguration {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
 				this.configurationProperties);
 		kafkaMessageChannelBinder.setCodec(this.codec);
-		//kafkaMessageChannelBinder.setProducerListener(producerListener);
+		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
 		kafkaMessageChannelBinder.setAdminUtilsOperation(adminUtilsOperation);
 		return kafkaMessageChannelBinder;
