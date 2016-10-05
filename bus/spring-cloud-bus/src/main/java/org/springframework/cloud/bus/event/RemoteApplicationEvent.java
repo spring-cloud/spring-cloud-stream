@@ -30,12 +30,16 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 		super(source);
 		this.originService = originService;
 		if (destinationService == null) {
-			destinationService = "*";
+			destinationService = "**";
 		}
-		if (StringUtils.countOccurrencesOf(destinationService, ":") <= 1
-				&& !destinationService.contains("*")) {
-			// All instances of the destination unless specifically requested
-			destinationService = destinationService + ":**";
+		// If the destinationService is not already a wildcard, match everything that follows
+		// if there at most two path elements, and last element is not a global wildcard already
+		if (!"**".equals(destinationService)) {
+			if (StringUtils.countOccurrencesOf(destinationService, ":") <= 1
+					&& !StringUtils.endsWithIgnoreCase(destinationService, ":**")) {
+				// All instances of the destination unless specifically requested
+				destinationService = destinationService + ":**";
+			}
 		}
 		this.destinationService = destinationService;
 		this.id = UUID.randomUUID().toString();

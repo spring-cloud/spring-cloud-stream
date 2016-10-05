@@ -72,6 +72,51 @@ public class ServiceMatcherTests {
 	}
 
 	@Test
+	public void forSelfWithGlobalWildcard() {
+		assertThat(
+				matcher.isForSelf(
+						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
+								"**", Collections.<String, String>emptyMap())),
+				is(true));
+	}
+
+	@Test
+	public void forSelfWithWildcardName() {
+		assertThat(
+				matcher.isForSelf(
+						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
+								"o*", Collections.<String, String>emptyMap())),
+				is(true));
+	}
+
+	@Test
+	public void forSelfWithWildcardNameAndProfile() {
+		assertThat(
+				matcher.isForSelf(
+						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
+								"o*:t*", Collections.<String, String>emptyMap())),
+				is(true));
+	}
+
+	@Test
+	public void forSelfWithWildcardString() {
+		assertThat(
+				matcher.isForSelf(
+						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
+								"o*", Collections.<String, String>emptyMap())),
+				is(true));
+	}
+
+	@Test
+	public void notForSelfWithWildCardNameAndMismatchingProfile() {
+		assertThat(
+				matcher.isForSelf(
+						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
+								"o*:f*", Collections.<String, String>emptyMap())),
+				is(false));
+	}
+
+	@Test
 	public void forSelfWithDoubleWildcard() {
 		assertThat(
 				matcher.isForSelf(
