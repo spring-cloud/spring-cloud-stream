@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class StreamListenerReactorTests {
 
@@ -68,6 +69,22 @@ public class StreamListenerReactorTests {
 	@Test
 	public void testInputOutputArgsWithMessage() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestInputOutputArgsWithMessage.class,
+				"--server.port=0");
+		sendMessageAndValidate(context);
+		context.close();
+	}
+
+	@Test
+	public void testWildCardFluxInputOutputArgsWithMessage() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage.class,
+				"--server.port=0");
+		sendMessageAndValidate(context);
+		context.close();
+	}
+
+	@Test
+	public void testGenericFluxInputOutputArgsWithMessage() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestGenericStringFluxInputOutputArgsWithMessage.class,
 				"--server.port=0");
 		sendMessageAndValidate(context);
 		context.close();
@@ -151,9 +168,35 @@ public class StreamListenerReactorTests {
 	public static class TestInputOutputArgsWithMessage {
 
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input,
+		public void receive(@Input(Processor.INPUT) Flux<Message<?>> input,
 				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).build()));
+			output.send(input.map(m -> MessageBuilder
+					.withPayload(m.getPayload().toString().toUpperCase()).build()));
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class TestWildCardFluxInputOutputArgsWithMessage {
+
+		@StreamListener
+		public void receive(@Input(Processor.INPUT) Flux<?> input,
+				@Output(Processor.OUTPUT) FluxSender output) {
+			output.send(input.map(m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
+		}
+	}
+
+	public static class TestGenericStringFluxInputOutputArgsWithMessage extends TestGenericFluxInputOutputArgsWithMessage<String> {
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class TestGenericFluxInputOutputArgsWithMessage<A> {
+
+		@StreamListener
+		public void receive(@Input(Processor.INPUT) Flux<A> input,
+				@Output(Processor.OUTPUT) FluxSender output) {
+			output.send(input.map(m -> MessageBuilder.withPayload((A)m.toString().toUpperCase()).build()));
 		}
 	}
 
@@ -161,7 +204,7 @@ public class StreamListenerReactorTests {
 	@EnableAutoConfiguration
 	public static class TestInputOutputArgsWithFluxSender {
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) Flux<Message<?>> input, @Output(Processor.OUTPUT) FluxSender output) {
+		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input, @Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString().toUpperCase())
 					.map(o -> MessageBuilder.withPayload(o).build()));
