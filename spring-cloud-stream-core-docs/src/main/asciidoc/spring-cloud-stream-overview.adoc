@@ -1539,7 +1539,7 @@ For Spring Cloud Stream samples, please refer to the https://github.com/spring-c
 == Getting Started
 
 To get started with creating Spring Cloud Stream applications, visit the https://start.spring.io[Spring Initializr] and create a new Maven project named "GreetingSource".
-Select Spring Boot version 1.3.4 SNAPSHOT and search or tick the checkbox for Stream Kafka (we will be using Kafka for messaging).
+Select the Spring Boot version that works for you and search or tick the checkbox for Stream Kafka (we will be using Kafka for messaging).
 
 Next, create a new class, `GreetingSource`, in the same package as the `GreetingSourceApplication` class.
 Give it the following code:
