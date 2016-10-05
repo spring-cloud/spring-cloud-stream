@@ -33,6 +33,7 @@ import org.springframework.util.Assert;
  * Adapts an {@link org.springframework.cloud.stream.annotation.Input} annotated
  * {@link MessageChannel} to a {@link Flux}.
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class MessageChannelToInputFluxParameterAdapter
 		implements StreamListenerParameterAdapter<Flux<?>, SubscribableChannel> {
@@ -54,7 +55,8 @@ public class MessageChannelToInputFluxParameterAdapter
 	@Override
 	public Flux<?> adapt(final SubscribableChannel boundElement, MethodParameter parameter) {
 		ResolvableType resolvableType = ResolvableType.forMethodParameter(parameter);
-		Class<?> argumentClass = resolvableType.getGeneric(0).getRawClass();
+		final Class<?> argumentClass = (resolvableType.getGeneric(0).getRawClass() != null) ? (resolvableType
+				.getGeneric(0).getRawClass()) : Object.class;
 		final Object monitor = new Object();
 		if (Message.class.isAssignableFrom(argumentClass)) {
 			return Flux.create(emitter -> {
@@ -71,7 +73,8 @@ public class MessageChannelToInputFluxParameterAdapter
 			return Flux.create(emitter -> {
 				MessageHandler messageHandler = message -> {
 					synchronized (monitor) {
-						if (argumentClass.isAssignableFrom(message.getPayload().getClass())) {
+						if (argumentClass.isAssignableFrom(message
+								.getPayload().getClass())) {
 							emitter.next(message.getPayload());
 						}
 						else {
