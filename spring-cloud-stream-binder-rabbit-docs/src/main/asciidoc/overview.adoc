@@ -41,9 +41,13 @@ For partitioned producers/consumers the queues are suffixed with the partition i
 Using the `autoBindDlq` option, you can optionally configure the binder to create and configure dead-letter queues (DLQs) (and a dead-letter exchange `DLX`).
 The dead letter queue has the name of the destination, appended with `.dlq`.
 If retry is enabled (`maxAttempts > 1`) failed messages will be delivered to the DLQ.
-If retry is disabled (`maxAttempts = 1`), you should set `requeueRejected` to false so the failed message will be routed to the DLQ, instead of being requeued.
+If retry is disabled (`maxAttempts = 1`), you should set `requeueRejected` to `false` (default) so that a failed message will be routed to the DLQ, instead of being requeued.
 In addition, `republishToDlq` causes the binder to publish a failed message to the DLQ (instead of rejecting it); this enables additional information to be added to the message in headers, such as the stack trace in the `x-exception-stacktrace` header.
-This option does not need retry enabled or the `requeueRejected` property set to `true`.
+This option does not need retry enabled; you can republish a failed message after just one attempt.
+
+IMPORTANT: Setting `requeueRejected` to `true` will cause the message to be requeued and redelivered continually, which is likely not what you want unless the failure issue is transient.
+In general, it's better to enable retry within the binder by setting `maxAttempts` to greater than one, or set `republishToDlq` to `true`.
+
 See <<rabbit-binder-properties>> for more information about these properties.
 
 The framework does not provide any standard mechanism to consume dead-letter messages (or to re-route them back to the primary queue).
@@ -116,9 +120,9 @@ recoveryInterval::
 +
 Default: `5000`.
 requeueRejected::
-  Whether delivery failures should be requeued.
+  Whether delivery failures should be requeued when retry is disabled or republishToDlq is false.
 +
-Default: `true`.
+Default: `false`.
 requestHeaderPatterns::
   The request headers to be transported.
 +
@@ -130,7 +134,9 @@ Default: `[STANDARD_REPLY_HEADERS,'*']`.
 republishToDlq::
   By default, messages which fail after retries are exhausted are rejected.
 If a dead-letter queue (DLQ) is configured, RabbitMQ will route the failed message (unchanged) to the DLQ.
-If set to `true`, the bus will republish failed messages to the DLQ with additional headers, including the exception message and stack trace from the cause of the final failure.
+If set to `true`, the binder will republish failed messages to the DLQ with additional headers, including the exception message and stack trace from the cause of the final failure.
++
+Default: false
 transacted::
   Whether to use transacted channels.
 +

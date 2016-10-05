@@ -137,6 +137,7 @@ public class RabbitBinderTests extends
 	public void testConsumerProperties() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.getExtension().setRequeueRejected(true);
 		properties.getExtension().setTransacted(true);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("props.0", null,
 				createBindableChannel("input", new BindingProperties()), properties);
@@ -170,7 +171,6 @@ public class RabbitBinderTests extends
 		properties.getExtension().setPrefix("foo.");
 		properties.getExtension().setPrefetch(20);
 		properties.getExtension().setRequestHeaderPatterns(new String[] { "foo" });
-		properties.getExtension().setRequeueRejected(false);
 		properties.getExtension().setTxSize(10);
 		properties.setInstanceIndex(0);
 		consumerBinding = binder.bindConsumer("props.0", "test", createBindableChannel("input", new BindingProperties()),
@@ -242,7 +242,6 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setAutoBindDlq(true);
 		consumerProperties.getExtension().setDurableSubscription(true);
 		consumerProperties.setMaxAttempts(1); // disable retry
-		consumerProperties.getExtension().setRequeueRejected(false);
 		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
 		moduleInputChannel.setBeanName("durableTest");
 		moduleInputChannel.subscribe(new MessageHandler() {
@@ -284,7 +283,6 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setAutoBindDlq(true);
 		consumerProperties.getExtension().setDurableSubscription(false);
 		consumerProperties.setMaxAttempts(1); // disable retry
-		consumerProperties.getExtension().setRequeueRejected(false);
 		BindingProperties bindingProperties = createConsumerBindingProperties(consumerProperties);
 		DirectChannel moduleInputChannel = createBindableChannel("input", bindingProperties);
 		moduleInputChannel.setBeanName("nondurabletest");
@@ -310,7 +308,6 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setPrefix(TEST_PREFIX);
 		consumerProperties.getExtension().setAutoBindDlq(true);
 		consumerProperties.setMaxAttempts(1); // disable retry
-		consumerProperties.getExtension().setRequeueRejected(false);
 		consumerProperties.getExtension().setDurableSubscription(true);
 		BindingProperties bindingProperties = createConsumerBindingProperties(consumerProperties);
 		DirectChannel moduleInputChannel = createBindableChannel("input", bindingProperties);
@@ -357,7 +354,6 @@ public class RabbitBinderTests extends
 		properties.getExtension().setPrefix("bindertest.");
 		properties.getExtension().setAutoBindDlq(true);
 		properties.setMaxAttempts(1); // disable retry
-		properties.getExtension().setRequeueRejected(false);
 		properties.setPartitioned(true);
 		properties.setInstanceIndex(0);
 		DirectChannel input0 = createBindableChannel("input", createConsumerBindingProperties(properties));
@@ -545,7 +541,6 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setPrefix("bindertest.");
 		consumerProperties.getExtension().setAutoBindDlq(true);
 		consumerProperties.setMaxAttempts(1); // disable retry
-		consumerProperties.getExtension().setRequeueRejected(false);
 		consumerProperties.setPartitioned(true);
 		consumerProperties.setInstanceIndex(0);
 		DirectChannel input0 = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
@@ -633,7 +628,6 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setAutoBindDlq(true);
 		consumerProperties.getExtension().setRepublishToDlq(true);
 		consumerProperties.setMaxAttempts(1); // disable retry
-		consumerProperties.getExtension().setRequeueRejected(false);
 		consumerProperties.getExtension().setDurableSubscription(true);
 		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
 		moduleInputChannel.setBeanName("dlqPubTest");

@@ -46,7 +46,7 @@ public class RabbitConsumerProperties {
 
 	private boolean republishToDlq;
 
-	private boolean requeueRejected = true;
+	private boolean requeueRejected = false;
 
 	private String[] replyHeaderPatterns = new String[] {"STANDARD_REPLY_HEADERS", "*"};
 
