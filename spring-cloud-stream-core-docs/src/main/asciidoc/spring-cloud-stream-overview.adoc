@@ -1538,7 +1538,7 @@ For Spring Cloud Stream samples, please refer to the https://github.com/spring-c
 
 == Getting Started
 
-To get started with creating Spring Cloud Stream applications, visit the https://start.spring.io[Spring Initializr] and create a new Maven project named "GreetingSource".  Note that Spring Cloud Stream applications are known to work with Spring Boot versions 1.3.x and 1.4.x. In the _Search for dependencies_ text box type `Stream Rabbit` or `Stream Kafka` depending on what binder you want to use.  
+To get started with creating Spring Cloud Stream applications, visit the https://start.spring.io[Spring Initializr] and create a new Maven project named "GreetingSource".  Note that Spring Cloud Stream applications are known to work with Spring Boot versions from 1.3.x to {supported-spring-boot-version}. In the _Search for dependencies_ text box type `Stream Rabbit` or `Stream Kafka` depending on what binder you want to use.
 
 Next, create a new class, `GreetingSource`, in the same package as the `GreetingSourceApplication` class.
 Give it the following code:
