@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.reactive;
 
 import reactor.core.publisher.Flux;
 
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
@@ -48,7 +47,6 @@ public class MessageChannelToInputFluxParameterAdapter
 	@Override
 	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
 		return SubscribableChannel.class.isAssignableFrom(boundElementType)
-				&& methodParameter.getParameterAnnotation(Input.class) != null
 				&& Flux.class.isAssignableFrom(methodParameter.getParameterType());
 	}
 
