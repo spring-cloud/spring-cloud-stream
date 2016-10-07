@@ -1017,7 +1017,7 @@ Spring Cloud Stream can handle messages based on this information in two ways:
 * Through its `contentType` settings on inbound and outbound channels
 * Through its argument mapping performed for methods annotated with `@StreamListener`
 
-Spring Cloud Stream allows you to declaratively configure type conversion for inputs and outputs using the `spring.cloud.stream.bindngs.<channelName>.content-type` property of a binding.
+Spring Cloud Stream allows you to declaratively configure type conversion for inputs and outputs using the `spring.cloud.stream.bindings.<channelName>.content-type` property of a binding.
 Note that general type conversion may also be accomplished easily by using a transformer inside your application.
 Currently, Spring Cloud Stream natively supports the following type conversions commonly used in streams:
 
