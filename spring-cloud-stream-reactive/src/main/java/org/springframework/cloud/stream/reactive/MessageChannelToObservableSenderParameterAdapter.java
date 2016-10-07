@@ -20,7 +20,6 @@ import reactor.adapter.RxJava1Adapter;
 import rx.Observable;
 import rx.Single;
 
-import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
@@ -47,7 +46,6 @@ public class MessageChannelToObservableSenderParameterAdapter implements
 	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
 		ResolvableType type = ResolvableType.forMethodParameter(methodParameter);
 		return MessageChannel.class.isAssignableFrom(boundElementType)
-				&& methodParameter.getParameterAnnotation(Output.class) != null
 				&& ObservableSender.class.isAssignableFrom(type.getRawClass());
 	}
 
