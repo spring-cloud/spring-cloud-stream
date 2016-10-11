@@ -73,8 +73,7 @@ public class MessageChannelToInputFluxParameterAdapter
 			return Flux.create(emitter -> {
 				MessageHandler messageHandler = message -> {
 					synchronized (monitor) {
-						if (argumentClass.equals(Object.class)
-								|| argumentClass.isAssignableFrom(message
+						if (argumentClass.isAssignableFrom(message
 								.getPayload().getClass())) {
 							emitter.next(message.getPayload());
 						}
