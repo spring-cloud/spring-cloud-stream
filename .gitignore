@@ -18,6 +18,7 @@ _site/
 *.ipr
 *.iws
 .idea/*
+*/.idea
 .factorypath
 dump.rdb
 .apt_generated

@@ -38,7 +38,6 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.security.JaasUtils;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.utils.Utils;
 
 import org.springframework.beans.factory.DisposableBean;
@@ -258,7 +257,6 @@ public class KafkaMessageChannelBinder extends
 				String.valueOf(producerProperties.getExtension().getBatchTimeout()));
 		props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,
 				producerProperties.getExtension().getCompressionType().toString());
-
 		if (!ObjectUtils.isEmpty(producerProperties.getExtension().getConfiguration())) {
 			props.putAll(producerProperties.getExtension().getConfiguration());
 		}
@@ -303,29 +301,20 @@ public class KafkaMessageChannelBinder extends
 		Assert.isTrue(!anonymous || !properties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
 		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
-
 		Map<String, Object> props = getConsumerConfig(anonymous, consumerGroup);
-		Deserializer<byte[]> valueDecoder = new ByteArrayDeserializer();
-		Deserializer<byte[]> keyDecoder = new ByteArrayDeserializer();
-
 		if (!ObjectUtils.isEmpty(properties.getExtension().getConfiguration())) {
 			props.putAll(properties.getExtension().getConfiguration());
 		}
-
-		ConsumerFactory<byte[], byte[]> consumerFactory = new DefaultKafkaConsumerFactory<>(props, keyDecoder,
-				valueDecoder);
-
+		ConsumerFactory<?, ?> consumerFactory = new DefaultKafkaConsumerFactory<>(props);
 		Collection<PartitionInfo> listenedPartitions = destination;
 		Assert.isTrue(!CollectionUtils.isEmpty(listenedPartitions), "A list of partitions must be provided");
 		final TopicPartitionInitialOffset[] topicPartitionInitialOffsets = getTopicPartitionInitialOffsets(
 				listenedPartitions);
-
 		final ContainerProperties containerProperties =
 				anonymous || properties.getExtension().isAutoRebalanceEnabled() ? new ContainerProperties(name)
 						: new ContainerProperties(topicPartitionInitialOffsets);
-
 		int concurrency = Math.min(properties.getConcurrency(), listenedPartitions.size());
-		final ConcurrentMessageListenerContainer<byte[], byte[]> messageListenerContainer =
+		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
 				new ConcurrentMessageListenerContainer(
 						consumerFactory, containerProperties) {
 
@@ -339,25 +328,20 @@ public class KafkaMessageChannelBinder extends
 		if (!properties.getExtension().isAutoCommitOffset()) {
 			messageListenerContainer.getContainerProperties().setAckMode(AbstractMessageListenerContainer.AckMode.MANUAL);
 		}
-
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug(
 					"Listened partitions: " + StringUtils.collectionToCommaDelimitedString(listenedPartitions));
 		}
-
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug(
 					"Listened partitions: " + StringUtils.collectionToCommaDelimitedString(listenedPartitions));
 		}
-
-		final KafkaMessageDrivenChannelAdapter<byte[], byte[]> kafkaMessageDrivenChannelAdapter =
+		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter =
 				new KafkaMessageDrivenChannelAdapter<>(
 						messageListenerContainer);
-
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
 		final RetryTemplate retryTemplate = buildRetryTemplate(properties);
 		kafkaMessageDrivenChannelAdapter.setRetryTemplate(retryTemplate);
-
 		if (properties.getExtension().isEnableDlq()) {
 			final String dlqTopic = "error." + name + "." + group;
 			initDlqProducer();
@@ -400,6 +384,8 @@ public class KafkaMessageChannelBinder extends
 
 	private Map<String, Object> getConsumerConfig(boolean anonymous, String consumerGroup) {
 		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		if (!ObjectUtils.isEmpty(configurationProperties.getConfiguration())) {
 			props.putAll(configurationProperties.getConfiguration());
 		}

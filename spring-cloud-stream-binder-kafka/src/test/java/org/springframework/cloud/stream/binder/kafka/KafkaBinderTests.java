@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -27,6 +28,10 @@ import java.util.concurrent.TimeUnit;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.LongDeserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.assertj.core.api.Condition;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,6 +40,7 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
@@ -46,7 +52,10 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
@@ -54,6 +63,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.RetryOperations;
@@ -63,9 +73,11 @@ import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Soby Chacko
+ * @author Ilayaperumal Gopinathan
  */
 public abstract class KafkaBinderTests extends PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>,
 						ExtendedProducerProperties<KafkaProducerProperties>> {
@@ -1183,6 +1195,159 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		binding.unbind();
 
 		assertThat(partitionSize(testTopicName)).isEqualTo(6);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testConsumerDefaultDeserializer() throws Exception {
+		Binding<?> binding = null;
+		try {
+			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+			final ZkUtils zkUtils = getZkUtils(configurationProperties);
+			String testTopicName = "existing" + System.currentTimeMillis();
+			invokeCreateTopic(zkUtils, testTopicName, 5, 1, new Properties());
+			configurationProperties.setAutoCreateTopics(false);
+			Binder binder = getBinder(configurationProperties);
+			DirectChannel output = new DirectChannel();
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+			binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+			DirectFieldAccessor consumerAccessor = new DirectFieldAccessor(getKafkaConsumer(binding));
+			assertTrue(consumerAccessor.getPropertyValue("keyDeserializer") instanceof ByteArrayDeserializer);
+			assertTrue(consumerAccessor.getPropertyValue("valueDeserializer") instanceof ByteArrayDeserializer);
+		}
+		finally {
+			if (binding != null) {
+				binding.unbind();
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testConsumerCustomDeserializer() throws Exception {
+		Binding<?> binding = null;
+		try {
+			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+			Map<String, String> propertiesToOverride = configurationProperties.getConfiguration();
+			propertiesToOverride.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+			propertiesToOverride.put("value.deserializer", "org.apache.kafka.common.serialization.LongDeserializer");
+			configurationProperties.setConfiguration(propertiesToOverride);
+			final ZkUtils zkUtils = getZkUtils(configurationProperties);
+			String testTopicName = "existing" + System.currentTimeMillis();
+			invokeCreateTopic(zkUtils, testTopicName, 5, 1, new Properties());
+			configurationProperties.setAutoCreateTopics(false);
+			Binder binder = getBinder(configurationProperties);
+			DirectChannel output = new DirectChannel();
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+			binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+			DirectFieldAccessor consumerAccessor = new DirectFieldAccessor(getKafkaConsumer(binding));
+			assertTrue("Expected StringDeserializer as a custom key deserializer", consumerAccessor.getPropertyValue("keyDeserializer") instanceof StringDeserializer);
+			assertTrue("Expected LongDeserializer as a custom value deserializer", consumerAccessor.getPropertyValue("valueDeserializer") instanceof LongDeserializer);
+		}
+		finally {
+			if (binding != null) {
+				binding.unbind();
+			}
+		}
+	}
+
+	private KafkaConsumer getKafkaConsumer(Binding binding) {
+		DirectFieldAccessor bindingAccessor = new DirectFieldAccessor((DefaultBinding)binding);
+		KafkaMessageDrivenChannelAdapter adapter = (KafkaMessageDrivenChannelAdapter) bindingAccessor.getPropertyValue("endpoint");
+		DirectFieldAccessor adapterAccessor = new DirectFieldAccessor(adapter);
+		ConcurrentMessageListenerContainer messageListenerContainer = (ConcurrentMessageListenerContainer) adapterAccessor.getPropertyValue("messageListenerContainer");
+		DirectFieldAccessor containerAccessor = new DirectFieldAccessor((ConcurrentMessageListenerContainer)messageListenerContainer);
+		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) containerAccessor.getPropertyValue("consumerFactory");
+		return (KafkaConsumer) consumerFactory.createConsumer();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testNativeSerializationWithCustomSerializerDeserializer() throws Exception {
+		Binding<?> producerBinding = null;
+		Binding<?> consumerBinding = null;
+		try {
+			Integer testPayload = new Integer(10);
+			Message<?> message = MessageBuilder.withPayload(testPayload).build();
+			SubscribableChannel moduleOutputChannel = new DirectChannel();
+			String testTopicName = "existing" + System.currentTimeMillis();
+			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+			final ZkClient zkClient;
+			zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+					configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
+					ZKStringSerializer$.MODULE$);
+			final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+			invokeCreateTopic(zkUtils, testTopicName, 6, 1, new Properties());
+			configurationProperties.setAutoAddPartitions(true);
+			Binder binder = getBinder(configurationProperties);
+			QueueChannel moduleInputChannel = new QueueChannel();
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+			producerProperties.setUseNativeEncoding(true);
+			producerProperties.getExtension().getConfiguration().put("value.serializer", "org.apache.kafka.common.serialization.IntegerSerializer");
+			producerBinding = binder.bindProducer(testTopicName, moduleOutputChannel, producerProperties);
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+			consumerProperties.getExtension().setAutoRebalanceEnabled(false);
+			consumerProperties.getExtension().getConfiguration().put("value.deserializer", "org.apache.kafka.common.serialization.IntegerDeserializer");
+			consumerBinding = binder.bindConsumer(testTopicName, "test", moduleInputChannel, consumerProperties);
+			// Let the consumer actually bind to the producer before sending a msg
+			binderBindUnbindLatency();
+			moduleOutputChannel.send(message);
+			Message<?> inbound = receive(moduleInputChannel, 500);
+			assertThat(inbound).isNotNull();
+			assertThat(inbound.getPayload()).isEqualTo(10);
+			assertThat(inbound.getHeaders()).doesNotContainKey("contentType");
+		}
+		finally {
+			if (producerBinding != null) {
+				producerBinding.unbind();
+			}
+			if (consumerBinding != null) {
+				consumerBinding.unbind();
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testBuiltinSerialization() throws Exception {
+		Binding<?> producerBinding = null;
+		Binding<?> consumerBinding = null;
+		try {
+			String testPayload = new String("test");
+			Message<?> message = MessageBuilder.withPayload(testPayload).build();
+			SubscribableChannel moduleOutputChannel = new DirectChannel();
+			String testTopicName = "existing" + System.currentTimeMillis();
+			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+			final ZkClient zkClient;
+			zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+					configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
+					ZKStringSerializer$.MODULE$);
+			final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+			invokeCreateTopic(zkUtils, testTopicName, 6, 1, new Properties());
+			configurationProperties.setAutoAddPartitions(true);
+			Binder binder = getBinder(configurationProperties);
+			QueueChannel moduleInputChannel = new QueueChannel();
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+			producerBinding = binder.bindProducer(testTopicName, moduleOutputChannel, producerProperties);
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+			consumerProperties.getExtension().setAutoRebalanceEnabled(false);
+			consumerBinding = binder.bindConsumer(testTopicName, "test", moduleInputChannel, consumerProperties);
+			// Let the consumer actually bind to the producer before sending a msg
+			binderBindUnbindLatency();
+			moduleOutputChannel.send(message);
+			Message<?> inbound = receive(moduleInputChannel, 5);
+			assertThat(inbound).isNotNull();
+			assertThat(inbound.getPayload()).isEqualTo("test");
+			assertThat(inbound.getHeaders()).containsEntry("contentType", "text/plain");
+		}
+		finally {
+			if (producerBinding != null) {
+				producerBinding.unbind();
+			}
+			if (consumerBinding != null) {
+				consumerBinding.unbind();
+			}
+		}
 	}
 
 	@Override
