@@ -50,6 +50,7 @@ import static org.junit.Assert.fail;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class StreamListenerWithHandlerTests {
 
@@ -199,15 +200,59 @@ public class StreamListenerWithHandlerTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testDuplicateMapping() throws Exception {
+	public void testDuplicateMapping1() throws Exception {
 		try {
-			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping.class,
+			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping1.class,
 					"--server.port=0");
 			fail("Exception expected on duplicate mapping");
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).startsWith("Duplicate @StreamListener mapping");
 		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testDuplicateMapping2() throws Exception {
+		try {
+			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping2.class,
+					"--server.port=0");
+			fail("Exception expected on duplicate mapping");
+		}
+		catch (BeanCreationException e) {
+			assertThat(e.getCause().getMessage()).startsWith("Duplicate @StreamListener mapping");
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testDuplicateMapping3() throws Exception {
+		try {
+			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping3.class,
+					"--server.port=0");
+			fail("Exception expected on duplicate mapping");
+		}
+		catch (BeanCreationException e) {
+			assertThat(e.getCause().getMessage()).startsWith("Duplicate @StreamListener mapping");
+		}
+	}
+
+	@Test
+	public void testMultipleMapping1() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestMultipleMapping1.class, "--server.port=0");
+		@SuppressWarnings("unchecked")
+		TestMultipleMapping1 testMultipleMapping2 = context.getBean(TestMultipleMapping1.class);
+		Processor processor = context.getBean(Processor.class);
+		String id = UUID.randomUUID().toString();
+		processor.input().send(MessageBuilder.withPayload("{\"bar\":\"foobar" + id + "\"}")
+				.setHeader("contentType", "application/json").build());
+		processor.input().send(MessageBuilder.withPayload("{\"qux\":\"bazbar" + id + "\"}")
+				.setHeader("contentType", "application/json").build());
+		assertThat(testMultipleMapping2.receivedBaz).hasSize(1);
+		assertThat(testMultipleMapping2.receivedFoo).hasSize(1);
+		assertThat(testMultipleMapping2.receivedFoo.get(0)).hasFieldOrPropertyWithValue("bar", "foobar" + id);
+		assertThat(testMultipleMapping2.receivedBaz.get(0)).hasFieldOrPropertyWithValue("qux", "bazbar" + id);
+		context.close();
 	}
 
 	@Test
@@ -325,7 +370,7 @@ public class StreamListenerWithHandlerTests {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestDuplicateMapping {
+	public static class TestDuplicateMapping1 {
 
 		@StreamListener(Processor.INPUT)
 		public void receive(Message<String> fooMessage) {
@@ -333,6 +378,63 @@ public class StreamListenerWithHandlerTests {
 
 		@StreamListener(Processor.INPUT)
 		public void receive2(Message<String> fooMessage) {
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class TestDuplicateMapping2 {
+
+		List<String> receivedString = new ArrayList<>();
+
+		List<String> receivedMessage = new ArrayList<>();
+
+		@StreamListener(Processor.INPUT)
+		public void receiveAndUpperCase(String fooMessage) {
+			receivedString.add(fooMessage.toUpperCase());
+		}
+
+		@StreamListener(Processor.INPUT)
+		public void receiveAndLowerCase(Message<String> fooMessage) {
+			receivedMessage.add(fooMessage.getPayload().toLowerCase());
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class TestDuplicateMapping3 {
+
+		List<String> receivedString = new ArrayList<>();
+
+		List<String> receivedMessage = new ArrayList<>();
+
+		@StreamListener(Processor.INPUT)
+		public void receiveAndUpperCase(Message<String> fooMessage) {
+			receivedMessage.add(fooMessage.getPayload().toLowerCase());
+		}
+
+		@StreamListener(Processor.INPUT)
+		public void receiveAndLowerCase(String fooMessage) {
+			receivedString.add(fooMessage.toUpperCase());
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class TestMultipleMapping1 {
+
+		List<FooPojo> receivedFoo = new ArrayList<>();
+
+		List<BazPojo> receivedBaz = new ArrayList<>();
+
+		@StreamListener(Processor.INPUT)
+		public void receiveAndUpperCase(FooPojo fooMessage) {
+			receivedFoo.add(fooMessage);
+		}
+
+		@StreamListener(Processor.INPUT)
+		public void receiveAndLowerCase(BazPojo fooMessage) {
+			receivedBaz.add(fooMessage);
 		}
 	}
 
