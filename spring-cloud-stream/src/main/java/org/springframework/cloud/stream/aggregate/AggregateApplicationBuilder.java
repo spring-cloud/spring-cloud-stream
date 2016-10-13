@@ -228,30 +228,6 @@ public class AggregateApplicationBuilder {
 		return false;
 	}
 
-	private void extractFromCommandLine(CommandLinePropertySource propertySource,
-			String namespace, Set<String> argsList) {
-		for (String propertyName : propertySource.getPropertyNames()) {
-			if (propertyName.toLowerCase().startsWith(namespace + '.')) {
-				argsList.add("--"
-						+ propertyName.toLowerCase()
-								.substring((namespace + ".").length()) + "="
-						+ propertySource.getProperty(propertyName));
-			}
-		}
-	}
-
-	private void extractFromEnvironment(SystemEnvironmentPropertySource propertySource,
-			String namespace, Set<String> argsList) {
-		for (String propertyName : propertySource.getPropertyNames()) {
-			if (propertyName.toLowerCase().startsWith(namespace + '_')) {
-				argsList.add("--"
-						+ propertyName.toLowerCase()
-						.substring((namespace + '_').length()).replace('_', '-')
-						+ "=" + propertySource.getProperty(propertyName));
-			}
-		}
-	}
-
 	private ChildContextBuilder childContext(Class<?> app,
 			ConfigurableApplicationContext parentContext, String namespace) {
 		return new ChildContextBuilder(AggregateApplication.embedApp(parentContext,
