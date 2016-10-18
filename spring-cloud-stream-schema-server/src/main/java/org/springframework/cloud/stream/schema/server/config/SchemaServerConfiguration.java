@@ -16,17 +16,29 @@
 
 package org.springframework.cloud.stream.schema.server.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.boot.autoconfigure.domain.EntityScanPackages;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.schema.server.controllers.ServerController;
+import org.springframework.cloud.stream.schema.server.model.Schema;
 import org.springframework.cloud.stream.schema.server.repository.SchemaRepository;
 import org.springframework.cloud.stream.schema.server.support.AvroSchemaValidator;
 import org.springframework.cloud.stream.schema.server.support.SchemaValidator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author Vinicius Carvalho
@@ -47,4 +59,24 @@ public class SchemaServerConfiguration {
 		validatorMap.put("avro", new AvroSchemaValidator());
 		return validatorMap;
 	}
+
+	@Bean
+	public static BeanFactoryPostProcessor entityScanPackagesPostProcessor() {
+		return new BeanFactoryPostProcessor() {
+
+			@Override
+			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws
+					BeansException {
+				EntityScanPackages entityScanPackages = EntityScanPackages.get(beanFactory);
+				if (entityScanPackages != null) {
+					final List<String> packageNames = new ArrayList<>(entityScanPackages.getPackageNames());
+					packageNames.add(Schema.class.getPackage().getName());
+					if (beanFactory instanceof BeanDefinitionRegistry) {
+						EntityScanPackages.register((BeanDefinitionRegistry) beanFactory, packageNames);
+					}
+				}
+			}
+		};
+	}
+
 }

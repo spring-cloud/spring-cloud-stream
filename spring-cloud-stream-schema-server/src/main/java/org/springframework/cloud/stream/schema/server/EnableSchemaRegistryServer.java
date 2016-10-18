@@ -22,7 +22,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cloud.stream.schema.server.config.SchemaServerConfiguration;
+import org.springframework.cloud.stream.schema.server.model.Schema;
+import org.springframework.cloud.stream.schema.server.repository.SchemaRepository;
 import org.springframework.context.annotation.Import;
 
 /**
