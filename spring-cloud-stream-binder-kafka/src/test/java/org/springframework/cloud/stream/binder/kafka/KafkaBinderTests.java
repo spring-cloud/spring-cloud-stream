@@ -1013,8 +1013,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName, output,
 				createProducerProperties());
 
-		waitUntilTopicCreated(getZkUtils(configurationProperties), testTopicName, 5000);
-
 		String testPayload = "foo1-" + UUID.randomUUID().toString();
 		output.send(new GenericMessage<>(testPayload.getBytes()));
 
@@ -1025,21 +1023,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 
 		producerBinding.unbind();
 		consumerBinding.unbind();
-	}
-
-	private void waitUntilTopicCreated(ZkUtils zkUtils, String testTopicName, int timeoutInMillis) throws Exception {
-		int partitionSize = 0;
-		long currentTimeMillis = System.currentTimeMillis();
-		do {
-			try {
-				partitionSize = invokePartitionSize(testTopicName, zkUtils);
-				Thread.sleep(100);
-			}
-			catch (Exception e) {
-				//falls through
-			}
-		}
-		while (partitionSize == 0 &&  (currentTimeMillis + timeoutInMillis) > System.currentTimeMillis());
 	}
 
 	@Test
