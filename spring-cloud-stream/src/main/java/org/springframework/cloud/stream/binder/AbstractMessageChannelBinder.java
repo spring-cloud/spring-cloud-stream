@@ -44,6 +44,7 @@ import org.springframework.util.MimeType;
  * <li>{@link #createConsumerEndpoint(String, String, CD, ConsumerProperties)}</li>
  * </ul>
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  * @param <C> the consumer properties type
  * @param <P> the producer properties type
  * @param <CD> the consumer destination type
@@ -116,7 +117,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, !this.supportsHeadersNatively && HeaderMode.embeddedHeaders
-						.equals(producerProperties.getHeaderMode()), this.headersToEmbed));
+						.equals(producerProperties.getHeaderMode()), this.headersToEmbed, producerProperties.isSupportSerializationNatively()));
 
 		return new DefaultBinding<MessageChannel>(destination, null, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
@@ -188,7 +189,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			CD destination = createConsumerDestinationIfNecessary(name, group, properties);
 			final boolean extractEmbeddedHeaders = HeaderMode.embeddedHeaders.equals(
 					properties.getHeaderMode()) && !this.supportsHeadersNatively;
-			ReceivingHandler rh = new ReceivingHandler(extractEmbeddedHeaders);
+			ReceivingHandler rh = new ReceivingHandler(extractEmbeddedHeaders, properties.isSupportDeserializationNatively());
 			rh.setOutputChannel(inputChannel);
 			final FixedSubscriberChannel bridge = new FixedSubscriberChannel(rh);
 			bridge.setBeanName("bridge." + name);
@@ -261,31 +262,36 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		private final boolean extractEmbeddedHeaders;
 
-		private ReceivingHandler(boolean extractEmbeddedHeaders) {
+		private final boolean supportDeserializationNatively;
+
+		private ReceivingHandler(boolean extractEmbeddedHeaders, boolean supportDeserializationNatively) {
 			this.extractEmbeddedHeaders = extractEmbeddedHeaders;
+			this.supportDeserializationNatively = supportDeserializationNatively;
 		}
 
 		@Override
 		@SuppressWarnings("unchecked")
 		protected Object handleRequestMessage(Message<?> requestMessage) {
-			MessageValues messageValues;
-			if (this.extractEmbeddedHeaders) {
-				try {
-					messageValues = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.extractHeaders(
+			MessageValues messageValues = (this.extractEmbeddedHeaders) ? extractEmbeddedHeaders(requestMessage) :
+					new MessageValues(requestMessage);
+			return (this.supportDeserializationNatively) ? messageValues.toMessage() :
+					deserializePayloadIfNecessary(messageValues).toMessage();
+		}
+
+		private MessageValues extractEmbeddedHeaders(Message<?> requestMessage) {
+			try {
+				if (requestMessage.getPayload() instanceof byte[]) {
+					return AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.extractHeaders(
 							(Message<byte[]>) requestMessage, true);
 				}
-				catch (Exception e) {
-					AbstractMessageChannelBinder.this.logger.error(
-							EmbeddedHeadersMessageConverter.decodeExceptionMessage(
-									requestMessage), e);
-					messageValues = new MessageValues(requestMessage);
-				}
-				messageValues = deserializePayloadIfNecessary(messageValues);
 			}
-			else {
-				messageValues = deserializePayloadIfNecessary(requestMessage);
+			catch (Exception e) {
+				AbstractMessageChannelBinder.this.logger.error(
+						EmbeddedHeadersMessageConverter.decodeExceptionMessage(
+								requestMessage), e);
+				return new MessageValues(requestMessage);
 			}
-			return messageValues.toMessage();
+			return new MessageValues(requestMessage);
 		}
 
 		@Override
@@ -303,52 +309,71 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		private final MessageHandler delegate;
 
+		private final boolean supportsSerializationNatively;
+
 		private SendingHandler(MessageHandler delegate, boolean embedHeaders,
-				String[] headersToEmbed) {
+				String[] headersToEmbed, boolean supportsSerializationNatively) {
 			this.delegate = delegate;
 			this.setBeanFactory(AbstractMessageChannelBinder.this.getBeanFactory());
 			this.embedHeaders = embedHeaders;
 			this.embeddedHeaders = headersToEmbed;
+			this.supportsSerializationNatively = supportsSerializationNatively;
 		}
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) throws Exception {
-			MessageValues transformed = serializePayloadIfNecessary(message);
-			byte[] payload;
+			MessageValues messageToSend = (this.supportsSerializationNatively) ? new MessageValues(message) :
+					serializePayloadIfNecessary(message);
+			this.delegate.handleMessage(embedHeadersIfApplicable(messageToSend));
+		}
+
+		private Message<?> embedHeadersIfApplicable(MessageValues messageValues) throws Exception {
+			Object payload;
 			if (this.embedHeaders) {
-				Object contentType = transformed.get(MessageHeaders.CONTENT_TYPE);
-				// transform content type headers to String, so that they can be properly embedded in JSON
-				if (contentType instanceof MimeType) {
-					transformed.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
+				updateContentTypeHeaders(messageValues);
+				if (messageValues.getPayload() instanceof byte[]) {
+					payload = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.embedHeaders(messageValues,
+							this.embeddedHeaders);
 				}
-				Object originalContentType = transformed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-				if (originalContentType instanceof MimeType) {
-					transformed.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
+				else if (this.supportsSerializationNatively) {
+					payload = messageValues.getPayload();
 				}
-				payload = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.embedHeaders(transformed,
-						this.embeddedHeaders);
+				else {
+					throw new BinderException("Embedding headers is supported only for byte[] payloads but value" +
+							"sent was of type " + messageValues.getPayload().getClass());
+				}
 			}
 			else {
-				payload = (byte[]) transformed.getPayload();
+				payload = messageValues.getPayload();
 			}
 			if (!this.embedHeaders && !AbstractMessageChannelBinder.this.supportsHeadersNatively) {
-				Object contentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+				Object contentType = messageValues.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 				if (contentType != null && !contentType.toString().equals(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {
 					this.logger.error(
 							"Raw mode supports only " + MediaType.APPLICATION_OCTET_STREAM_VALUE + " content type"
-									+ message.getPayload().getClass());
+									+ messageValues.getPayload().getClass());
 				}
-				if (message.getPayload() instanceof byte[]) {
-					payload = (byte[]) message.getPayload();
+				if (messageValues.getPayload() instanceof byte[]) {
+					payload = (byte[]) messageValues.getPayload();
 				}
 				else {
 					throw new BinderException("Raw mode supports only byte[] payloads but value sent was of type "
-							+ message.getPayload().getClass());
+							+ messageValues.getPayload().getClass());
 				}
 			}
-			this.delegate.handleMessage(getMessageBuilderFactory().withPayload(payload)
-					.copyHeaders(transformed.getHeaders())
-					.build());
+			return getMessageBuilderFactory().withPayload(payload).copyHeaders(messageValues.getHeaders()).build();
+		}
+
+		private void updateContentTypeHeaders(MessageValues messageValues) {
+			Object contentType = messageValues.get(MessageHeaders.CONTENT_TYPE);
+			// transform content type headers to String, so that they can be properly embedded in JSON
+			if (contentType instanceof MimeType) {
+				messageValues.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
+			}
+			Object originalContentType = messageValues.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			if (originalContentType instanceof MimeType) {
+				messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
+			}
 		}
 
 		@Override

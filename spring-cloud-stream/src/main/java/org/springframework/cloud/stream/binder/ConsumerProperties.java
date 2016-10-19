@@ -47,6 +47,8 @@ public class ConsumerProperties {
 
 	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
 
+	private boolean supportDeserializationNatively = false;
+
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
 		return concurrency;
@@ -124,6 +126,14 @@ public class ConsumerProperties {
 
 	public void setHeaderMode(HeaderMode headerMode) {
 		this.headerMode = headerMode;
+	}
+
+	public boolean isSupportDeserializationNatively() {
+		return this.supportDeserializationNatively;
+	}
+
+	public void setSupportDeserializationNatively(boolean supportDeserializationNatively) {
+		this.supportDeserializationNatively = supportDeserializationNatively;
 	}
 }
 

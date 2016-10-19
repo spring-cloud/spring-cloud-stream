@@ -122,7 +122,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = receive(moduleInputChannel);
+		Message<?> inbound = receive(moduleInputChannel, 5);
 		assertThat(inbound).isNotNull();
 		assertThat(inbound.getPayload()).isEqualTo("foo");
 		assertThat(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
@@ -164,8 +164,8 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 
 		Message<?>[] messages = new Message[2];
-		messages[0] = receive(moduleInputChannel);
-		messages[1] = receive(moduleInputChannel);
+		messages[0] = receive(moduleInputChannel, 5);
+		messages[1] = receive(moduleInputChannel, 5);
 
 		assertThat(messages[0]).isNotNull();
 		assertThat(messages[1]).isNotNull();
@@ -194,7 +194,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		Message<?> message = MessageBuilder.withPayload("foo").build();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = receive(moduleInputChannel);
+		Message<?> inbound = receive(moduleInputChannel, 5);
 		assertThat(inbound).isNotNull();
 		assertThat(inbound.getPayload()).isEqualTo("foo");
 		assertThat(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();

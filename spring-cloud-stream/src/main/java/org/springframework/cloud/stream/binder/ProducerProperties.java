@@ -50,6 +50,8 @@ public class ProducerProperties {
 
 	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
 
+	private boolean supportSerializationNatively = false;
+
 	public Expression getPartitionKeyExpression() {
 		return partitionKeyExpression;
 	}
@@ -119,6 +121,14 @@ public class ProducerProperties {
 
 	public void setHeaderMode(HeaderMode headerMode) {
 		this.headerMode = headerMode;
+	}
+
+	public boolean isSupportSerializationNatively() {
+		return this.supportSerializationNatively;
+	}
+
+	public void setSupportSerializationNatively(boolean supportSerializationNatively) {
+		this.supportSerializationNatively = supportSerializationNatively;
 	}
 
 }
