@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.UUID;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.After;
 import org.junit.Test;
 
@@ -50,6 +52,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SuppressWarnings("unchecked")
 public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> {
 
+	protected final Log logger = LogFactory.getLog(this.getClass());
+
 	protected B testBinder;
 
 	/**
@@ -74,7 +78,11 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	 * Allows accomodating tests which are slower than normal (e.g. retry).
 	 */
 	protected Message<?> receive(PollableChannel channel, int additionalMultiplier) {
-		return channel.receive((int) (1000 * timeoutMultiplier * additionalMultiplier));
+		long startTime = System.currentTimeMillis();
+		Message<?> receive = channel.receive((int) (1000 * timeoutMultiplier * additionalMultiplier));
+		long elapsed = System.currentTimeMillis() - startTime;
+		logger.debug("receive() took " + elapsed / 1000 + " seconds");
+		return receive;
 	}
 
 	@Test
