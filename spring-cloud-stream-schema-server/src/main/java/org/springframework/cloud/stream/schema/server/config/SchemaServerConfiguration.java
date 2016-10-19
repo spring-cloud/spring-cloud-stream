@@ -22,12 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.autoconfigure.domain.EntityScanPackages;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.schema.server.controllers.ServerController;
@@ -38,7 +35,6 @@ import org.springframework.cloud.stream.schema.server.support.SchemaValidator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.util.CollectionUtils;
 
 /**
  * @author Vinicius Carvalho
