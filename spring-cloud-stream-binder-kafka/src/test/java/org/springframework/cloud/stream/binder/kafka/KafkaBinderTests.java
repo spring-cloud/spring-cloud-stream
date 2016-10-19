@@ -82,7 +82,9 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 
 	@Override
 	protected ExtendedProducerProperties<KafkaProducerProperties> createProducerProperties() {
-		return new ExtendedProducerProperties<>(new KafkaProducerProperties());
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = new ExtendedProducerProperties<>(new KafkaProducerProperties());
+		producerProperties.getExtension().setSync(true);
+		return producerProperties;
 	}
 
 	public abstract String getKafkaOffsetHeaderKey();
