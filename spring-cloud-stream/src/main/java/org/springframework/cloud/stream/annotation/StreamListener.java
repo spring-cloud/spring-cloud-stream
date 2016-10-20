@@ -35,13 +35,13 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  *
  * <h3>Declarative mode</h3>
  *
- * Method is considered as declarative if at least one of the method parameters is annotated with {@link Input}
- * or {@link Output} with either bound elements (e.g. channels) or conversion targets from bound elements via a registered
+ * A method is considered as declarative if its method parameters are annotated with {@link Input} and/or {@link Output}
+ * which have either bound elements (e.g. channels) or conversion targets from bound elements via a registered
  * {@link StreamListenerParameterAdapter}. In this case, the method is invoked once when the application starts.
  *
  * <h3>Individual message handler mode</h3>
  *
- * Non declarative method is treated as message handler, and is invoked for each
+ * Non declarative method is treated as message handler based, and is invoked for each
  * incoming message received from that target. In this case, the
  * method can have a flexible signature, as described by {@link MessageMapping}.
  *
