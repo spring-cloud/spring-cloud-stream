@@ -303,7 +303,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 			Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel,
 					producerProperties);
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-			consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 			Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel,
 					consumerProperties);
 			Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload(testPayload)
