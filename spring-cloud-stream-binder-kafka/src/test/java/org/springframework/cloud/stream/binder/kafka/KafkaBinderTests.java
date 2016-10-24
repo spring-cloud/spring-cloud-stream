@@ -565,7 +565,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 			String testPayload1 = "foo1-" + UUID.randomUUID().toString();
 			output.send(new GenericMessage<>(testPayload1.getBytes()));
 			ExtendedConsumerProperties<KafkaConsumerProperties> firstConsumerProperties = createConsumerProperties();
-			firstConsumerProperties.getExtension().setAutoRebalanceEnabled(false);
 			consumerBinding = binder.bindConsumer(testTopicName, "startOffsets", input1,
 					firstConsumerProperties);
 			Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
@@ -582,7 +581,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 			consumerBinding = binder.bindConsumer(testTopicName, "startOffsets", input1, consumerProperties);
-			consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 			Message<byte[]> receivedMessage3 = (Message<byte[]>) receive(input1);
 			assertThat(receivedMessage3).isNotNull();
 			assertThat(new String(receivedMessage3.getPayload())).isEqualTo(testPayload3);
