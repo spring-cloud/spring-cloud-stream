@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
@@ -41,6 +38,9 @@ import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Marius Bogoevici
@@ -74,8 +74,8 @@ public class StreamListenerReactiveTestInputOutputArgs {
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("@Input annotation should be specified as method parameter instead of " +
-					"StreamListener value when specifying @Output/@SendTo annotation");
+			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
+					"Use @Input method parameter annotation to specify inbound value instead");
 		}
 	}
 
@@ -86,8 +86,8 @@ public class StreamListenerReactiveTestInputOutputArgs {
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("@Input annotation should be specified as method parameter instead of " +
-					"StreamListener value when specifying @Output/@SendTo annotation");
+			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
+					"Use @Input method parameter annotation to specify inbound value instead");
 		}
 	}
 

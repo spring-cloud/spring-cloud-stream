@@ -15,19 +15,14 @@
  */
 package org.springframework.cloud.stream.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -42,39 +37,30 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-@RunWith(Parameterized.class)
-public class StreamListenerTestAnnotatedArguments {
-
-	private Class<?> configClass;
-
-	public StreamListenerTestAnnotatedArguments(Class<?> configClass) {
-		this.configClass = configClass;
-	}
-
-	@Parameterized.Parameters
-	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {TestPojoWithAnnotatedArguments1.class, TestPojoWithAnnotatedArguments2.class});
-	}
+public class StreamListenerAnnotatedMethodArgumentsTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testAnnotatedArguments() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments1.class,
 				"--server.port=0");
 
 		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context
 				.getBean(TestPojoWithAnnotatedArguments.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
-		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments).hasSize(3);
-		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).isInstanceOf(FooPojo.class);
-		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).hasFieldOrPropertyWithValue("bar",
+		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).isInstanceOf(StreamListenerTestInterfaces.FooPojo.class);
+		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).hasFieldOrPropertyWithValue("foo",
 				"barbar" + id);
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(1)).isInstanceOf(Map.class);
 		assertThat((Map<String, String>) testPojoWithAnnotatedArguments.receivedArguments.get(1))
@@ -85,12 +71,24 @@ public class StreamListenerTestAnnotatedArguments {
 		context.close();
 	}
 
+	@Test
+	public void testInputAnnotationAtMethodParameter() throws Exception {
+		try {
+			SpringApplication.run(TestPojoWithAnnotatedArguments2.class, "--server.port=0");
+			fail("Exception expected on using @Input annotation as method parameter for StreamListener message handler mapping.");
+		}
+		catch (BeanCreationException e) {
+			assertThat(e.getCause().getMessage()).contains("@Input or @Output annotation is not supported as method parameter in StreamListener " +
+					"method with message handler mapping");
+		}
+	}
+
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestPojoWithAnnotatedArguments1 extends TestPojoWithAnnotatedArguments {
 
 		@StreamListener(Processor.INPUT)
-		public void receive(@Payload FooPojo fooPojo,
+		public void receive(@Payload StreamListenerTestInterfaces.FooPojo fooPojo,
 				@Headers Map<String, Object> headers,
 				@Header(MessageHeaders.CONTENT_TYPE) String contentType) {
 			this.receivedArguments.add(fooPojo);
@@ -104,7 +102,7 @@ public class StreamListenerTestAnnotatedArguments {
 	public static class TestPojoWithAnnotatedArguments2 extends TestPojoWithAnnotatedArguments {
 
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) @Payload FooPojo fooPojo,
+		public void receive(@Input(Processor.INPUT) @Payload StreamListenerTestInterfaces.FooPojo fooPojo,
 				@Headers Map<String, Object> headers,
 				@Header(MessageHeaders.CONTENT_TYPE) String contentType) {
 			this.receivedArguments.add(fooPojo);
@@ -116,18 +114,4 @@ public class StreamListenerTestAnnotatedArguments {
 	public static class TestPojoWithAnnotatedArguments {
 		List<Object> receivedArguments = new ArrayList<>();
 	}
-
-	public static class FooPojo {
-
-		private String bar;
-
-		public String getBar() {
-			return this.bar;
-		}
-
-		public void setBar(String bar) {
-			this.bar = bar;
-		}
-	}
-
 }

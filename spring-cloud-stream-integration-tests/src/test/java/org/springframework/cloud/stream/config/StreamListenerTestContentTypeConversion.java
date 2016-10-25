@@ -15,103 +15,59 @@
  */
 package org.springframework.cloud.stream.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.support.MessageBuilder;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-@RunWith(Parameterized.class)
 public class StreamListenerTestContentTypeConversion {
-
-	private Class<?> configClass;
-
-	public StreamListenerTestContentTypeConversion(Class<?> configClass) {
-		this.configClass = configClass;
-	}
-
-	@Parameterized.Parameters
-	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] { TestSink1.class, TestSink2.class });
-	}
 
 	@Test
 	public void testContentTypeConversion() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+		ConfigurableApplicationContext context = SpringApplication.run(TestSink1.class,
 				"--server.port=0");
 		@SuppressWarnings("unchecked")
-		TestSink testSink = context.getBean(TestSink.class);
+		TestSink1 testSink = context.getBean(TestSink1.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(
-				MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+				MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
 		assertThat(testSink.latch.await(10, TimeUnit.SECONDS));
 		assertThat(testSink.receivedArguments).hasSize(1);
-		assertThat(testSink.receivedArguments.get(0)).hasFieldOrPropertyWithValue("bar",
+		assertThat(testSink.receivedArguments.get(0)).hasFieldOrPropertyWithValue("foo",
 				"barbar" + id);
 		context.close();
 	}
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	public static class TestSink1 extends TestSink {
+	public static class TestSink1 {
+
+		List<StreamListenerTestInterfaces.FooPojo> receivedArguments = new ArrayList<>();
+		CountDownLatch latch = new CountDownLatch(1);
 
 		@StreamListener(Sink.INPUT)
-		public void receive(FooPojo fooPojo) {
+		public void receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
 			this.receivedArguments.add(fooPojo);
 			this.latch.countDown();
-		}
-	}
-
-	@EnableBinding(Sink.class)
-	@EnableAutoConfiguration
-	public static class TestSink2 extends TestSink {
-
-		@StreamListener
-		public void receive(@Input(Processor.INPUT) FooPojo fooPojo) {
-			this.receivedArguments.add(fooPojo);
-			this.latch.countDown();
-		}
-	}
-
-	public static class TestSink {
-		List<FooPojo> receivedArguments = new ArrayList<>();
-		CountDownLatch latch = new CountDownLatch(1);
-	}
-
-	public static class FooPojo {
-
-		private String bar;
-
-		public String getBar() {
-			return this.bar;
-		}
-
-		public void setBar(String bar) {
-			this.bar = bar;
 		}
 	}
 

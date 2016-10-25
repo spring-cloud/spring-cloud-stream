@@ -15,8 +15,6 @@
  */
 package org.springframework.cloud.stream.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,7 +29,6 @@ import org.junit.runners.Parameterized;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -44,6 +41,8 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
@@ -60,8 +59,7 @@ public class StreamListenerTestHandlerBean {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] { TestHandlerBean1.class,
-				TestHandlerBean2.class, TestHandlerBean3.class, TestHandlerBean4.class });
+		return Arrays.asList(new Class[] { TestHandlerBean1.class, TestHandlerBean2.class });
 	}
 
 	@Test
@@ -74,16 +72,16 @@ public class StreamListenerTestHandlerBean {
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input().send(
-				MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+				MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
 		HandlerBean handlerBean = context.getBean(HandlerBean.class);
 		assertThat(handlerBean.receivedPojos).hasSize(1);
-		assertThat(handlerBean.receivedPojos.get(0)).hasFieldOrPropertyWithValue("bar",
+		assertThat(handlerBean.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo",
 				"barbar" + id);
 		Message<String> message = (Message<String>) collector.forChannel(
 				processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("{\"qux\":\"barbar" + id + "\"}");
+		assertThat(message.getPayload()).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
 		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 				.includes(MimeTypeUtils.APPLICATION_JSON));
 		context.close();
@@ -109,104 +107,34 @@ public class StreamListenerTestHandlerBean {
 		}
 	}
 
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestHandlerBean3 {
-
-		@Bean
-		public HandlerBean3 handlerBean() {
-			return new HandlerBean3();
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestHandlerBean4 {
-
-		@Bean
-		public HandlerBean4 handlerBean() {
-			return new HandlerBean4();
-		}
-	}
-
 	public static class HandlerBean1 extends HandlerBean {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public BazPojo receive(FooPojo fooMessage) {
+		public StreamListenerTestInterfaces.BarPojo receive(StreamListenerTestInterfaces.FooPojo fooMessage) {
 			this.receivedPojos.add(fooMessage);
-			BazPojo bazPojo = new BazPojo();
-			bazPojo.setQux(fooMessage.getBar());
-			return bazPojo;
+			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			barPojo.setBar(fooMessage.getFoo());
+			return barPojo;
 		}
 	}
 
 	public static class HandlerBean2 extends HandlerBean {
 
-		@StreamListener
-		@SendTo(Processor.OUTPUT)
-		public BazPojo receive(@Input(Processor.INPUT) FooPojo fooMessage) {
-			this.receivedPojos.add(fooMessage);
-			BazPojo bazPojo = new BazPojo();
-			bazPojo.setQux(fooMessage.getBar());
-			return bazPojo;
-		}
-	}
-
-	public static class HandlerBean3 extends HandlerBean {
-
-		@StreamListener
-		@Output(Processor.OUTPUT)
-		public BazPojo receive(@Input(Processor.INPUT) FooPojo fooMessage) {
-			this.receivedPojos.add(fooMessage);
-			BazPojo bazPojo = new BazPojo();
-			bazPojo.setQux(fooMessage.getBar());
-			return bazPojo;
-		}
-	}
-
-	public static class HandlerBean4 extends HandlerBean {
-
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public BazPojo receive(FooPojo fooMessage) {
+		public StreamListenerTestInterfaces.BarPojo receive(StreamListenerTestInterfaces.FooPojo fooMessage) {
 			this.receivedPojos.add(fooMessage);
-			BazPojo bazPojo = new BazPojo();
-			bazPojo.setQux(fooMessage.getBar());
-			return bazPojo;
+			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			barPojo.setBar(fooMessage.getFoo());
+			return barPojo;
 		}
 	}
 
 	public static class HandlerBean {
 
-		List<FooPojo> receivedPojos = new ArrayList<>();
+		List<StreamListenerTestInterfaces.FooPojo> receivedPojos = new ArrayList<>();
 
-	}
-
-	public static class FooPojo {
-
-		private String bar;
-
-		public String getBar() {
-			return this.bar;
-		}
-
-		public void setBar(String bar) {
-			this.bar = bar;
-		}
-	}
-
-	public static class BazPojo {
-
-		private String qux;
-
-		public String getQux() {
-			return this.qux;
-		}
-
-		public void setQux(String qux) {
-			this.qux = qux;
-		}
 	}
 
 }

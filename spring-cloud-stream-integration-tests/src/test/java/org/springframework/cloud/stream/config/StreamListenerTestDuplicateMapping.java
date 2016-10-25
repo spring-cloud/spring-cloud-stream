@@ -15,50 +15,31 @@
  */
 package org.springframework.cloud.stream.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
-
-import java.util.Arrays;
-import java.util.Collection;
-
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-@RunWith(Parameterized.class)
 public class StreamListenerTestDuplicateMapping {
-
-	private Class<?> configClass;
-
-	public StreamListenerTestDuplicateMapping(Class<?> configClass) {
-		this.configClass = configClass;
-	}
-
-	@Parameterized.Parameters
-	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {TestDuplicateMapping1.class, TestDuplicateMapping2.class,
-				TestDuplicateMapping3.class, TestDuplicateMapping4.class});
-	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testDuplicateMapping() throws Exception {
 		try {
-			ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping1.class,
 					"--server.port=0");
 			fail("Exception expected on duplicate mapping");
 		}
@@ -77,45 +58,6 @@ public class StreamListenerTestDuplicateMapping {
 
 		@StreamListener(Processor.INPUT)
 		public void receive2(Message<String> fooMessage) {
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestDuplicateMapping2 {
-
-		@StreamListener
-		public void receive(@Input(Processor.INPUT) Message<String> fooMessage) {
-		}
-
-		@StreamListener(Processor.INPUT)
-		public void receive2(Message<String> fooMessage) {
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestDuplicateMapping3 {
-
-		@StreamListener
-		public void receive(@Input(Processor.INPUT) Message<String> fooMessage) {
-		}
-
-		@StreamListener
-		public void receive2(@Input(Processor.INPUT) Message<String> fooMessage) {
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestDuplicateMapping4 {
-
-		@StreamListener(Processor.INPUT)
-		public void receive(Message<String> fooMessage) {
-		}
-
-		@StreamListener
-		public void receive2(@Input(Processor.INPUT) Message<String> fooMessage) {
 		}
 	}
 }

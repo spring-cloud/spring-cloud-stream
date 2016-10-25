@@ -74,8 +74,8 @@ public class StreamListenerReactiveTestInputOutputArgsWithMessage {
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("@Input annotation should be specified as method parameter instead of " +
-					"StreamListener value when specifying @Output/@SendTo annotation");
+			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
+					"Use @Input method parameter annotation to specify inbound value instead");
 		}
 	}
 
@@ -86,8 +86,8 @@ public class StreamListenerReactiveTestInputOutputArgsWithMessage {
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("@Input annotation should be specified as method parameter instead of " +
-					"StreamListener value when specifying @Output/@SendTo annotation");
+			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
+					"Use @Input method parameter annotation to specify inbound value instead");
 		}
 	}
 

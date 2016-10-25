@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -33,11 +32,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,7 +43,7 @@ import static org.assertj.core.api.Assertions.fail;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public class StreamListenerWithAnnotatedArgsTests {
+public class StreamListenerWithAnnotatedInputOutputArgsTests {
 
 	@Test
 	public void testInputOutputArgs() throws Exception {
@@ -71,10 +67,10 @@ public class StreamListenerWithAnnotatedArgsTests {
 	public void testInputOutputArgsWithInvalidBindableTarget() throws Exception {
 		try {
 			SpringApplication.run(TestInputOutputArgsWithInvalidBindableTarget.class, "--server.port=0");
-			fail("StreamListener method should throw IllegalStateException for invalid bindable target as method parameter");
+			fail("Exception expected on using invalid bindable target as method parameter");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Bindable target is not found for the name:");
+			assertThat(e.getMessage()).contains("Target bean doesn't exist for the bound element name: invalid");
 		}
 	}
 
@@ -117,8 +113,7 @@ public class StreamListenerWithAnnotatedArgsTests {
 
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) SubscribableChannel input, @Output(Processor.OUTPUT) final MessageChannel output,
-				@Headers final Map<String, Object> headers,
-				@Header(MessageHeaders.CONTENT_TYPE) final String contentType) {
+				String someArg) {
 			input.subscribe(new MessageHandler() {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {

@@ -15,8 +15,6 @@
  */
 package org.springframework.cloud.stream.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,7 +29,6 @@ import org.junit.runners.Parameterized;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -40,6 +37,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.SendTo;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
@@ -56,8 +55,7 @@ public class StreamListenerTestMethodWithReturnValue {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {TestStringProcessor1.class, TestStringProcessor2.class,
-				TestStringProcessor3.class, TestStringProcessor4.class});
+		return Arrays.asList(new Class[]{TestStringProcessor1.class, TestStringProcessor2.class});
 	}
 
 	@Test
@@ -69,14 +67,14 @@ public class StreamListenerTestMethodWithReturnValue {
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input()
-				.send(MessageBuilder.withPayload("{\"bar\":\"barbar" + id + "\"}")
+				.send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
 		Message<String> message = (Message<String>) collector
 				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		TestStringProcessor testStringProcessor = context
 				.getBean(TestStringProcessor.class);
 		assertThat(testStringProcessor.receivedPojos).hasSize(1);
-		assertThat(testStringProcessor.receivedPojos.get(0)).hasFieldOrPropertyWithValue("bar", "barbar" + id);
+		assertThat(testStringProcessor.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isEqualTo("barbar" + id);
 		context.close();
@@ -88,9 +86,9 @@ public class StreamListenerTestMethodWithReturnValue {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public String receive(FooPojo fooPojo) {
+		public String receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
-			return fooPojo.getBar();
+			return fooPojo.getFoo();
 		}
 	}
 
@@ -100,52 +98,14 @@ public class StreamListenerTestMethodWithReturnValue {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public String receive(FooPojo fooPojo) {
+		public String receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
-			return fooPojo.getBar();
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestStringProcessor3 extends TestStringProcessor {
-
-		@StreamListener
-		@SendTo(Processor.OUTPUT)
-		public String receive(@Input(Processor.INPUT) FooPojo fooPojo) {
-			this.receivedPojos.add(fooPojo);
-			return fooPojo.getBar();
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestStringProcessor4 extends TestStringProcessor {
-
-		@StreamListener
-		@Output(Processor.OUTPUT)
-		public String receive(@Input(Processor.INPUT) FooPojo fooPojo) {
-			this.receivedPojos.add(fooPojo);
-			return fooPojo.getBar();
+			return fooPojo.getFoo();
 		}
 	}
 
 	public static class TestStringProcessor {
-
-		List<FooPojo> receivedPojos = new ArrayList<>();
-	}
-
-	public static class FooPojo {
-
-		private String bar;
-
-		public String getBar() {
-			return this.bar;
-		}
-
-		public void setBar(String bar) {
-			this.bar = bar;
-		}
+		List<StreamListenerTestInterfaces.FooPojo> receivedPojos = new ArrayList<>();
 	}
 
 }

@@ -46,6 +46,7 @@ import org.springframework.messaging.support.MessageBuilder;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
+@SuppressWarnings("unchecked")
 public class StreamListenerTestGenericFluxInputOutputArgsWithMessage {
 
 	private Class<?> configClass;
@@ -73,8 +74,8 @@ public class StreamListenerTestGenericFluxInputOutputArgsWithMessage {
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("@Input annotation should be specified as method parameter instead of " +
-					"StreamListener value when specifying @Output/@SendTo annotation");
+			assertThat(e.getMessage()).contains(" Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
+					"Use @Input method parameter annotation to specify inbound value instead");
 		}
 	}
 
@@ -85,8 +86,7 @@ public class StreamListenerTestGenericFluxInputOutputArgsWithMessage {
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("The StreamListener method with declarative inbound and outbound values " +
-					"should have @Input and @Output annotations specified as method parameters");
+			assertThat(e.getMessage()).contains("Declarative StreamListener method should only have inbound or outbound targets as method parameters");
 		}
 	}
 
@@ -97,13 +97,13 @@ public class StreamListenerTestGenericFluxInputOutputArgsWithMessage {
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Declarative StreamListener method with both " +
-					"inbound and outbound values should have @Input and @Output annotations specified as method parameters");
+			assertThat(e.getMessage()).contains("Declarative StreamListener method should only have " +
+					"inbound or outbound targets as method parameters");
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
-		@SuppressWarnings("unchecked")
 		Processor processor = context.getBean(Processor.class);
 		String sentPayload = "hello " + UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
