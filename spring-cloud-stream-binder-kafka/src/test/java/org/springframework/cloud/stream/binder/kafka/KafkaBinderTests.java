@@ -576,16 +576,14 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 			assertThat(new String(receivedMessage2.getPayload())).isNotNull();
 			consumerBinding.unbind();
 
+			Thread.sleep(2000);
 			String testPayload3 = "foo3-" + UUID.randomUUID().toString();
 			output.send(new GenericMessage<>(testPayload3.getBytes()));
-
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 			consumerBinding = binder.bindConsumer(testTopicName, "startOffsets", input1, consumerProperties);
 			Message<byte[]> receivedMessage3 = (Message<byte[]>) receive(input1);
 			assertThat(receivedMessage3).isNotNull();
 			assertThat(new String(receivedMessage3.getPayload())).isEqualTo(testPayload3);
-
-			Thread.sleep(2000);
 		}
 		finally {
 			if (consumerBinding != null) {
