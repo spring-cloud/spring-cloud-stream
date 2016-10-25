@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.aggregation;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,6 +36,9 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Marius Bogoevici
@@ -81,16 +81,17 @@ public class ModuleAggregationTest {
 		argsToVerify.add("--foo3=bar3");
 		argsToVerify.add("--server.port=0");
 		AggregateApplicationBuilder aggregateApplicationBuilder =
-				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class,
-						"--foo1=bar1");
+				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context =
 				aggregateApplicationBuilder.parent(DummyConfig.class, "--foo2=bar2")
 						.from(TestSource.class)
 						.namespace("foo").to(TestProcessor.class).namespace("bar")
 						.run("--foo3=bar3", "--server.port=0");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		assertThat((List<String>) aggregateApplicationBuilderAccessor.getPropertyValue(
-				"parentArgs")).containsExactlyInAnyOrder(argsToVerify.toArray(new String[argsToVerify.size()]));
+		@SuppressWarnings("unchecked")
+		final List<String> parentArgs = (List<String>) aggregateApplicationBuilderAccessor.getPropertyValue(
+				"parentArgs");
+		assertThat(parentArgs).containsExactlyInAnyOrder(argsToVerify.toArray(new String[argsToVerify.size()]));
 		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
 		assertThat(sources).containsExactlyInAnyOrder(AggregateApplicationBuilder.ParentConfiguration.class,
 				MockBinderRegistryConfiguration.class, DummyConfig.class);
@@ -98,6 +99,7 @@ public class ModuleAggregationTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLine() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
@@ -106,22 +108,28 @@ public class ModuleAggregationTest {
 				.via(TestProcessor.class).namespace("c")
 				.run("--a.foo1=bar1", "--b.foo1=bar2", "--c.foo1=bar3");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		assertTrue(Arrays.equals(((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] {"--foo1=bar1"}));
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers"))) {
+		assertTrue(Arrays.equals(
+				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
+						.getArgs(),
+				new String[]{ "--foo1=bar1" }));
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
+						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=bar2" }));
+						new String[]{ "--foo1=bar2" }));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=bar3" }));
+						new String[]{ "--foo1=bar3" }));
 			}
 		}
 		aggregatedApplicationContext.close();
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineVsArgs() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
@@ -131,22 +139,28 @@ public class ModuleAggregationTest {
 				.via(TestProcessor.class).namespace("c")
 				.run("--a.fooValue=bara", "--c.foo1=barc");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		assertTrue(Arrays.equals(((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] {"--fooValue=bara"}));
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers"))) {
+		assertTrue(Arrays.equals(
+				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
+						.getArgs(),
+				new String[]{ "--fooValue=bara" }));
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
+						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=argbarb" }));
+						new String[]{ "--foo1=argbarb" }));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=barc" }));
+						new String[]{ "--foo1=barc" }));
 			}
 		}
 		aggregatedApplicationContext.close();
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineWithRelaxedNames() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
@@ -156,22 +170,28 @@ public class ModuleAggregationTest {
 				.via(TestProcessor.class).namespace("c")
 				.run("--a.fooValue=bara", "--b.foo-value=barb", "--c.foo1=barc");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		assertTrue(Arrays.equals(((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] {"--fooValue=bara"}));
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers"))) {
+		assertTrue(Arrays.equals(
+				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
+						.getArgs(),
+				new String[]{ "--fooValue=bara" }));
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
+						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo-value=barb" }));
+						new String[]{ "--foo-value=barb" }));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=barc" }));
+						new String[]{ "--foo1=barc" }));
 			}
 		}
 		aggregatedApplicationContext.close();
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineWithRelaxedNamesAndMorePropertySources() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
@@ -183,22 +203,28 @@ public class ModuleAggregationTest {
 				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
 				.run("--a.fooValue=bara");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		assertTrue(Arrays.equals(((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] {"--fooValue=bara"}));
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers"))) {
+		assertTrue(Arrays.equals(
+				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
+						.getArgs(),
+				new String[]{ "--fooValue=bara" }));
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
+						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=argbarb" }));
+						new String[]{ "--fooValue=argbarb" }));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=sysbarc" }));
+						new String[]{ "--fooValue=sysbarc" }));
 			}
 		}
 		aggregatedApplicationContext.close();
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesWithoutCmdLinePropertySource() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
@@ -210,22 +236,30 @@ public class ModuleAggregationTest {
 				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
 				.run();
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		assertTrue(Arrays.equals(((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] {"--foo-value=sysbara"}));
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers"))) {
+		assertTrue(Arrays.equals(
+				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
+						.getArgs(),
+				new String[]{ "--foo-value=sysbara" }));
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
+						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder
+				.ProcessorConfigurer>) aggregateApplicationBuilderAccessor.getPropertyValue(
+				"processorConfigurers"))) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=argbarb" }));
+						new String[]{ "--fooValue=argbarb" }));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=sysbarc" }));
+						new String[]{ "--fooValue=sysbarc" }));
 			}
 		}
 		aggregatedApplicationContext.close();
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesWithCAPSProperties() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
@@ -237,16 +271,21 @@ public class ModuleAggregationTest {
 				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
 				.run("--a.fooValue=highest");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		assertTrue(Arrays.equals(((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] {"--fooValue=highest"}));
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers"))) {
+		assertTrue(Arrays.equals(
+				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
+						.getArgs(),
+				new String[]{ "--fooValue=highest" }));
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
+						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=argbarb" }));
+						new String[]{ "--fooValue=argbarb" }));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo-value=sysbarc" }));
+						new String[]{ "--foo-value=sysbarc" }));
 			}
 		}
 		aggregatedApplicationContext.close();
