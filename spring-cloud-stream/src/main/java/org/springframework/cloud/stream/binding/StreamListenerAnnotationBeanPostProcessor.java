@@ -18,10 +18,13 @@ package org.springframework.cloud.stream.binding;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
@@ -43,6 +46,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.core.DestinationResolver;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
@@ -55,6 +59,7 @@ import org.springframework.util.StringUtils;
  * {@link BeanPostProcessor} that handles {@link StreamListener} annotations found on bean methods.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class StreamListenerAnnotationBeanPostProcessor
 		implements BeanPostProcessor, ApplicationContextAware, SmartInitializingSingleton {
@@ -63,7 +68,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private final MessageHandlerMethodFactory messageHandlerMethodFactory;
 
-	private final Map<String, InvocableHandlerMethod> mappedBindings = new HashMap<>();
+	private final Map<String, Map<String, InvocableHandlerMethod>> mappedBindings = new HashMap<>();
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -209,12 +214,48 @@ public class StreamListenerAnnotationBeanPostProcessor
 		if (!StringUtils.hasText(streamListener.value())) {
 			throw new BeanInitializationException("A bound component name must be specified");
 		}
+		HashMap<String, InvocableHandlerMethod> handlerMethods = (HashMap<String, InvocableHandlerMethod>) ((this.mappedBindings.get(streamListener.value()) != null) ?
+						(this.mappedBindings.get(streamListener.value())) : new HashMap<>());
 		if (this.mappedBindings.containsKey(streamListener.value())) {
-			throw new BeanInitializationException("Duplicate @" + StreamListener.class.getSimpleName() +
-					" mapping for '" + streamListener.value() + "' on " + invocableHandlerMethod.getShortLogMessage() +
-					" already existing for " + this.mappedBindings.get(streamListener.value()).getShortLogMessage());
+			boolean duplicateMapping = false;
+			for (InvocableHandlerMethod existingHandlerMethod : handlerMethods.values()) {
+				for (MethodParameter existingMethodParameter : existingHandlerMethod.getMethodParameters()) {
+					// Exclude method parameters that use MessageMapping annotations
+					// and only include the target payload
+					if (isValidParameterForPayloadTarget(existingMethodParameter)) {
+						for (MethodParameter currentMethodParameter : invocableHandlerMethod.getMethodParameters()) {
+							if (isValidParameterForPayloadTarget(currentMethodParameter)) {
+								if (existingMethodParameter.getParameterType().isAssignableFrom(currentMethodParameter.getParameterType())) {
+									duplicateMapping = true;
+									break;
+								}
+								else if (currentMethodParameter.getParameterType().isAssignableFrom(existingMethodParameter.getParameterType())) {
+									duplicateMapping = true;
+									break;
+								}
+								else if (currentMethodParameter.getGenericParameterType() instanceof ParameterizedType &&
+										currentMethodParameter.getParameterType().isAssignableFrom(Message.class)) {
+									duplicateMapping = isDuplicate(currentMethodParameter, existingMethodParameter);
+									break;
+								}
+								else if (existingMethodParameter.getGenericParameterType() instanceof ParameterizedType &&
+										existingMethodParameter.getParameterType().isAssignableFrom(Message.class)) {
+									duplicateMapping = isDuplicate(existingMethodParameter, currentMethodParameter);
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (duplicateMapping) {
+					throw new BeanInitializationException("Duplicate @" + StreamListener.class.getSimpleName() +
+							" mapping for '" + streamListener.value() + "' on " + invocableHandlerMethod.getShortLogMessage() +
+							" already existing for " + existingHandlerMethod.getShortLogMessage());
+				}
+			}
 		}
-		this.mappedBindings.put(streamListener.value(), invocableHandlerMethod);
+		handlerMethods.put(invocableHandlerMethod.getMethod().getName() + "-" + new Random().nextInt(), invocableHandlerMethod);
+		this.mappedBindings.put(streamListener.value(), handlerMethods);
 		SubscribableChannel channel = this.applicationContext.getBean(streamListener.value(),
 				SubscribableChannel.class);
 		final String defaultOutputChannel = extractDefaultOutput(method);
@@ -236,6 +277,23 @@ public class StreamListenerAnnotationBeanPostProcessor
 		}
 		handler.afterPropertiesSet();
 		channel.subscribe(handler);
+	}
+
+	private boolean isValidParameterForPayloadTarget(MethodParameter methodParameter) {
+		return !methodParameter.hasParameterAnnotations() ||
+				methodParameter.hasParameterAnnotation(Input.class) ||
+				methodParameter.hasParameterAnnotation(Payload.class);
+	}
+
+	private boolean isDuplicate(MethodParameter methodParameter1, MethodParameter methodParameter2) {
+		Type[] genericTypes = ((ParameterizedType) methodParameter1.getGenericParameterType()).getActualTypeArguments();
+		if (genericTypes.length > 0) {
+			Class<?> genericType = (Class<?>) genericTypes[0];
+			if (methodParameter2.getParameterType().isAssignableFrom(genericType)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
