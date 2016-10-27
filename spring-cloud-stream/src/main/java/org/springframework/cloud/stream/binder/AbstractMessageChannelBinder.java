@@ -43,12 +43,13 @@ import org.springframework.util.MimeType;
  * <li>{@link #createConsumerDestinationIfNecessary(String, String, ConsumerProperties)} </li>
  * <li>{@link #createConsumerEndpoint(String, String, CD, ConsumerProperties)}</li>
  * </ul>
- * @author Marius Bogoevici
- * @author Ilayaperumal Gopinathan
- * @param <C> the consumer properties type
- * @param <P> the producer properties type
+ *
+ * @param <C>  the consumer properties type
+ * @param <P>  the producer properties type
  * @param <CD> the consumer destination type
  * @param <PD> the producer destination type
+ * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  * @since 1.1
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, CD, PD>
@@ -85,6 +86,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * {@link InitializingBean} then {@link InitializingBean#afterPropertiesSet()} will be
 	 * called on it. Similarly, if the returned producer message handler endpoint is a
 	 * {@link Lifecycle}, then {@link Lifecycle#start()} will be called on it.
+	 *
 	 * @param destination        the name of the destination
 	 * @param outputChannel      the channel to be bound
 	 * @param producerProperties the {@link ProducerProperties} of the binding
@@ -117,7 +119,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, !this.supportsHeadersNatively && HeaderMode.embeddedHeaders
-						.equals(producerProperties.getHeaderMode()), this.headersToEmbed, producerProperties.isSupportSerializationNatively()));
+						.equals(producerProperties.getHeaderMode()), this.headersToEmbed, producerProperties.isUseNativeEncoding()));
 
 		return new DefaultBinding<MessageChannel>(destination, null, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
@@ -132,6 +134,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Creates target destinations for outbound channels. The implementation
 	 * is middleware-specific.
+	 *
 	 * @param name       the name of the producer destination
 	 * @param properties producer properties
 	 */
@@ -149,6 +152,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * partition where the message must be sent</li>
 	 * </ul>
 	 * <p>
+	 *
 	 * @param destination        the name of the target destination
 	 * @param producerProperties the producer properties
 	 * @return the message handler for sending data to the target middleware
@@ -160,6 +164,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Invoked after the unbinding of a producer. Subclasses may override this to provide
 	 * their own logic for dealing with unbinding.
+	 *
 	 * @param destination        the bound destination
 	 * @param producerProperties the producer properties
 	 */
@@ -174,6 +179,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * {@link InitializingBean} then {@link InitializingBean#afterPropertiesSet()} will be
 	 * called on it. Similarly, if the returned consumer endpoint is a {@link Lifecycle},
 	 * then {@link Lifecycle#start()} will be called on it.
+	 *
 	 * @param name         the name of the destination
 	 * @param group        the consumer group
 	 * @param inputChannel the channel to be bound
@@ -189,7 +195,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			CD destination = createConsumerDestinationIfNecessary(name, group, properties);
 			final boolean extractEmbeddedHeaders = HeaderMode.embeddedHeaders.equals(
 					properties.getHeaderMode()) && !this.supportsHeadersNatively;
-			ReceivingHandler rh = new ReceivingHandler(extractEmbeddedHeaders, properties.isSupportDeserializationNatively());
+			ReceivingHandler rh = new ReceivingHandler(extractEmbeddedHeaders);
 			rh.setOutputChannel(inputChannel);
 			final FixedSubscriberChannel bridge = new FixedSubscriberChannel(rh);
 			bridge.setBeanName("bridge." + name);
@@ -229,6 +235,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	/**
 	 * Creates the middleware destination the consumer will start to consume data from.
+	 *
 	 * @param name       the name of the destination
 	 * @param group      the consumer group
 	 * @param properties consumer properties
@@ -239,6 +246,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Creates {@link MessageProducer} that receives data from the consumer destination.
 	 * will be started and stopped by the binder.
+	 *
 	 * @param name        the name of the target destination
 	 * @param group       the consumer group
 	 * @param destination reference to the consumer destination
@@ -251,6 +259,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Invoked after the unbinding of a consumer. The binder implementation can override
 	 * this method to provide their own logic (e.g. for cleaning up destinations).
+	 *
 	 * @param destination        the consumer destination
 	 * @param group              the consumer group
 	 * @param consumerProperties the consumer properties
@@ -262,36 +271,34 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		private final boolean extractEmbeddedHeaders;
 
-		private final boolean supportDeserializationNatively;
-
-		private ReceivingHandler(boolean extractEmbeddedHeaders, boolean supportDeserializationNatively) {
+		private ReceivingHandler(boolean extractEmbeddedHeaders) {
 			this.extractEmbeddedHeaders = extractEmbeddedHeaders;
-			this.supportDeserializationNatively = supportDeserializationNatively;
 		}
 
 		@Override
 		@SuppressWarnings("unchecked")
 		protected Object handleRequestMessage(Message<?> requestMessage) {
-			MessageValues messageValues = (this.extractEmbeddedHeaders) ? extractEmbeddedHeaders(requestMessage) :
-					new MessageValues(requestMessage);
-			return (this.supportDeserializationNatively) ? messageValues.toMessage() :
-					deserializePayloadIfNecessary(messageValues).toMessage();
-		}
-
-		private MessageValues extractEmbeddedHeaders(Message<?> requestMessage) {
-			try {
-				if (requestMessage.getPayload() instanceof byte[]) {
-					return AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.extractHeaders(
+			if (!(requestMessage.getPayload() instanceof byte[])) {
+				return requestMessage;
+			}
+			MessageValues messageValues;
+			if (this.extractEmbeddedHeaders) {
+				try {
+					messageValues = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.extractHeaders(
 							(Message<byte[]>) requestMessage, true);
 				}
+				catch (Exception e) {
+					AbstractMessageChannelBinder.this.logger.error(
+							EmbeddedHeadersMessageConverter.decodeExceptionMessage(
+									requestMessage), e);
+					messageValues = new MessageValues(requestMessage);
+				}
+				messageValues = deserializePayloadIfNecessary(messageValues);
 			}
-			catch (Exception e) {
-				AbstractMessageChannelBinder.this.logger.error(
-						EmbeddedHeadersMessageConverter.decodeExceptionMessage(
-								requestMessage), e);
-				return new MessageValues(requestMessage);
+			else {
+				messageValues = deserializePayloadIfNecessary(requestMessage);
 			}
-			return new MessageValues(requestMessage);
+			return messageValues.toMessage();
 		}
 
 		@Override
@@ -309,71 +316,59 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		private final MessageHandler delegate;
 
-		private final boolean supportsSerializationNatively;
+		private final boolean useNativeEncoding;
 
 		private SendingHandler(MessageHandler delegate, boolean embedHeaders,
-				String[] headersToEmbed, boolean supportsSerializationNatively) {
+				String[] headersToEmbed, boolean useNativeEncoding) {
 			this.delegate = delegate;
 			this.setBeanFactory(AbstractMessageChannelBinder.this.getBeanFactory());
 			this.embedHeaders = embedHeaders;
 			this.embeddedHeaders = headersToEmbed;
-			this.supportsSerializationNatively = supportsSerializationNatively;
+			this.useNativeEncoding = useNativeEncoding;
 		}
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) throws Exception {
-			MessageValues messageToSend = (this.supportsSerializationNatively) ? new MessageValues(message) :
-					serializePayloadIfNecessary(message);
-			this.delegate.handleMessage(embedHeadersIfApplicable(messageToSend));
+			Message<?> messageToSend = (this.useNativeEncoding) ? getMessageBuilderFactory().withPayload(message.getPayload()).build() :
+					serializeAndEmbedHeadersIfApplicable(message);
+			this.delegate.handleMessage(messageToSend);
 		}
 
-		private Message<?> embedHeadersIfApplicable(MessageValues messageValues) throws Exception {
-			Object payload;
+		private Message<?> serializeAndEmbedHeadersIfApplicable(Message<?> message) throws Exception {
+			MessageValues transformed = serializePayloadIfNecessary(message);
+			byte[] payload;
 			if (this.embedHeaders) {
-				updateContentTypeHeaders(messageValues);
-				if (messageValues.getPayload() instanceof byte[]) {
-					payload = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.embedHeaders(messageValues,
-							this.embeddedHeaders);
+				Object contentType = transformed.get(MessageHeaders.CONTENT_TYPE);
+				// transform content type headers to String, so that they can be properly embedded in JSON
+				if (contentType instanceof MimeType) {
+					transformed.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
 				}
-				else if (this.supportsSerializationNatively) {
-					payload = messageValues.getPayload();
+				Object originalContentType = transformed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+				if (originalContentType instanceof MimeType) {
+					transformed.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
 				}
-				else {
-					throw new BinderException("Embedding headers is supported only for byte[] payloads but value" +
-							"sent was of type " + messageValues.getPayload().getClass());
-				}
+				payload = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.embedHeaders(transformed,
+						this.embeddedHeaders);
 			}
 			else {
-				payload = messageValues.getPayload();
+				payload = (byte[]) transformed.getPayload();
 			}
 			if (!this.embedHeaders && !AbstractMessageChannelBinder.this.supportsHeadersNatively) {
-				Object contentType = messageValues.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+				Object contentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 				if (contentType != null && !contentType.toString().equals(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {
 					this.logger.error(
 							"Raw mode supports only " + MediaType.APPLICATION_OCTET_STREAM_VALUE + " content type"
-									+ messageValues.getPayload().getClass());
+									+ message.getPayload().getClass());
 				}
-				if (messageValues.getPayload() instanceof byte[]) {
-					payload = (byte[]) messageValues.getPayload();
+				if (message.getPayload() instanceof byte[]) {
+					payload = (byte[]) message.getPayload();
 				}
 				else {
 					throw new BinderException("Raw mode supports only byte[] payloads but value sent was of type "
-							+ messageValues.getPayload().getClass());
+							+ message.getPayload().getClass());
 				}
 			}
-			return getMessageBuilderFactory().withPayload(payload).copyHeaders(messageValues.getHeaders()).build();
-		}
-
-		private void updateContentTypeHeaders(MessageValues messageValues) {
-			Object contentType = messageValues.get(MessageHeaders.CONTENT_TYPE);
-			// transform content type headers to String, so that they can be properly embedded in JSON
-			if (contentType instanceof MimeType) {
-				messageValues.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
-			}
-			Object originalContentType = messageValues.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			if (originalContentType instanceof MimeType) {
-				messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
-			}
+			return getMessageBuilderFactory().withPayload(payload).copyHeaders(transformed.getHeaders()).build();
 		}
 
 		@Override
