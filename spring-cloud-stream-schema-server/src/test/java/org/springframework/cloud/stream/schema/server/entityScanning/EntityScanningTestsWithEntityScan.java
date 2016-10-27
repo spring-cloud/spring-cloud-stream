@@ -20,13 +20,14 @@ import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cloud.stream.schema.server.EnableSchemaRegistryServer;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * @author Marius Bogoevici
  */
-public class EntityScanningTests {
+public class EntityScanningTestsWithEntityScan {
 
 	@Test
 	public void testApplicationWithEmbeddedSchemaRegistryServerOutsideOfRootPackage() throws Exception {
@@ -36,6 +37,7 @@ public class EntityScanningTests {
 
 	@EnableAutoConfiguration
 	@EnableSchemaRegistryServer
+	@EntityScan(basePackages = "org.springframework.cloud.stream.schema.server.entityScanning.domain")
 	public static class CustomApplicationEmbeddingSchemaServer {
 	}
 }

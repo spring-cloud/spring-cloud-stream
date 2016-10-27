@@ -16,9 +16,8 @@
 
 package org.springframework.cloud.stream.schema.server.config;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.BeansException;
@@ -63,13 +62,8 @@ public class SchemaServerConfiguration {
 			@Override
 			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws
 					BeansException {
-				EntityScanPackages entityScanPackages = EntityScanPackages.get(beanFactory);
-				if (entityScanPackages != null) {
-					final List<String> packageNames = new ArrayList<>(entityScanPackages.getPackageNames());
-					packageNames.add(Schema.class.getPackage().getName());
-					if (beanFactory instanceof BeanDefinitionRegistry) {
-						EntityScanPackages.register((BeanDefinitionRegistry) beanFactory, packageNames);
-					}
+				if (beanFactory instanceof BeanDefinitionRegistry) {
+					EntityScanPackages.register((BeanDefinitionRegistry) beanFactory, Collections.singletonList(Schema.class.getPackage().getName()));
 				}
 			}
 		};
