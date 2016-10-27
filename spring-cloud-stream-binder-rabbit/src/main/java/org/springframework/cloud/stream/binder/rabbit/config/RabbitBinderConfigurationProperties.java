@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,18 +24,33 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "spring.cloud.stream.rabbit.binder")
 class RabbitBinderConfigurationProperties {
 
-	private String[] adminAdresses = new String[0];
+	private String[] adminAddresses = new String[0];
 
 	private String[] nodes = new String[0];
 
 	private int compressionLevel;
 
-	public String[] getAdminAdresses() {
-		return adminAdresses;
+	public String[] getAdminAddresses() {
+		return adminAddresses;
 	}
 
-	public void setAdminAdresses(String[] adminAdresses) {
-		this.adminAdresses = adminAdresses;
+	public void setAdminAddresses(String[] adminAddresses) {
+		this.adminAddresses = adminAddresses;
+	}
+
+	/**
+	 * @param adminAddresses A comma-separated list of RabbitMQ management plugin URLs.
+	 * @deprecated in favor of {@link #setAdminAddresses(String[])}. Will be removed in a
+	 * future release.
+	 */
+	@Deprecated
+	public void setAdminAdresses(String[] adminAddresses) {
+		setAdminAddresses(adminAddresses);
+	}
+
+	@Deprecated
+	public String[] getAdminAdresses() {
+		return this.adminAddresses;
 	}
 
 	public String[] getNodes() {
