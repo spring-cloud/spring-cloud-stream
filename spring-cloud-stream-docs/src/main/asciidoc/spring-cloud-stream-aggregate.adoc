@@ -9,3 +9,4 @@ include::{stream-docs-basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/m
 == RabbitMQ Binder
 
 include::{stream-docs-basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/overview.adoc[leveloffset=+1]
+include::{stream-docs-basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/dlq.adoc[leveloffset=+1]
