@@ -5,11 +5,11 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-starter-build</name>
 	<description>Spring Cloud Stream Starter Build</description>
-	<version>Brooklyn.SR1</version>
+	<version>Brooklyn.BUILD-SNAPSHOT</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>1.2.1.RELEASE</version>
+		<version>1.2.2.BUILD-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 
