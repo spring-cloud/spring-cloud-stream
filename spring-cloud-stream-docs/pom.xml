@@ -10,7 +10,7 @@
 	<artifactId>spring-cloud-stream-docs</artifactId>
 	<name>spring-cloud-stream-docs</name>
 	<description>Spring Cloud Stream Docs</description>
-	<version>Brooklyn.BUILD-SNAPSHOT</version>
+	<version>Brooklyn.SR1</version>
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
 		<spring.cloud.stream.version>1.1.0.RELEASE</spring.cloud.stream.version>
