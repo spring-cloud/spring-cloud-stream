@@ -15,7 +15,7 @@
 		<main.basedir>${basedir}/..</main.basedir>
 		<spring.cloud.stream.version>1.1.0.RELEASE</spring.cloud.stream.version>
 		<spring.cloud.stream.binder.kafka.version>1.1.0.RELEASE</spring.cloud.stream.binder.kafka.version>
-		<spring.cloud.stream.binder.rabbit.version>1.1.1.BUILD-SNAPSHOT</spring.cloud.stream.binder.rabbit.version>
+		<spring.cloud.stream.binder.rabbit.version>1.1.1.RELEASE</spring.cloud.stream.binder.rabbit.version>
 	</properties>
 	<dependencies>
 		<dependency>
