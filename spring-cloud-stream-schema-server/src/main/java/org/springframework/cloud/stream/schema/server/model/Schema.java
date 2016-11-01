@@ -21,6 +21,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Lob;
+import javax.persistence.Table;
 
 /**
  * @author Vinicius Carvalho
@@ -28,6 +29,7 @@ import javax.persistence.Lob;
  * Represents a persisted schema entity.
  */
 @Entity
+@Table(name = "SCHEMA_REPOSITORY")
 public class Schema {
 
 	@Id

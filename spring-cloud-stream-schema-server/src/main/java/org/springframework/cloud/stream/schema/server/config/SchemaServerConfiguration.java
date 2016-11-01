@@ -19,8 +19,10 @@ package org.springframework.cloud.stream.schema.server.config;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.schema.server.controllers.ServerController;
+import org.springframework.cloud.stream.schema.server.model.Schema;
 import org.springframework.cloud.stream.schema.server.repository.SchemaRepository;
 import org.springframework.cloud.stream.schema.server.support.AvroSchemaValidator;
 import org.springframework.cloud.stream.schema.server.support.SchemaValidator;
@@ -34,6 +36,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @Configuration
 @EnableJpaRepositories(basePackageClasses = SchemaRepository.class)
 @EnableConfigurationProperties(SchemaServerProperties.class)
+@EntityScan(basePackageClasses = Schema.class)
 public class SchemaServerConfiguration {
 
 	@Bean
