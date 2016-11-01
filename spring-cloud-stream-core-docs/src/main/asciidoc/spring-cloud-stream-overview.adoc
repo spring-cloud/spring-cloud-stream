@@ -1004,7 +1004,12 @@ Effective only for messaging middleware that does not support message headers na
 Useful when producing data for non-Spring Cloud Stream applications.
 +
 Default: `embeddedHeaders`.
-
+useNativeEncoding::
+  When set to `true`, the serialization of the outbound message is handled natively using broker specific encoding (ex: Kafka producer value serializer).
+When native encoding is used, it is the responsibility of the consumer to use appropriate decoder (ex: Kafka consumer value de-serializer) to de-serialize the inbound message.
+Also, when native encoding/decoding is used the `headerMode` property is ignored as both the native encoding and embedding headers are mutually exclusive.
++
+Default: `false`.
 [[contenttypemanagement]]
 == Content Type and Transformation
 

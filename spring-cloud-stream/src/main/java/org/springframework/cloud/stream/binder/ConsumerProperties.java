@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * Common consumer properties.
  *
  * @author Marius Bogoevici
- * @author Ilayaperumal Gopinathan
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class ConsumerProperties {
