@@ -20,15 +20,17 @@ import java.util.List;
 
 import org.springframework.cloud.stream.schema.server.model.Schema;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author Vinicius Carvalho
  */
 public interface SchemaRepository extends PagingAndSortingRepository<Schema, Integer> {
 
+	@Transactional
 	List<Schema> findBySubjectAndFormatOrderByVersion(String subject,
 			String format);
-
+	@Transactional
 	Schema findOneBySubjectAndFormatAndVersion(String subject, String format,
 			Integer version);
 }

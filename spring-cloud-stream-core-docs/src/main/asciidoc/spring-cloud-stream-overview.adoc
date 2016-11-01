@@ -1307,6 +1307,15 @@ Response is a schema object in JSON format, with the following fields:
 *   `version` the schema version;
 *   `definition` the schema definition.
 
+[NOTE]
+====
+This note applies to users of Spring Cloud Stream 1.1.0.RELEASE only.
+Spring Cloud Stream 1.1.0.RELEASE used the table name `schema` for storing `Schema` objects, which is a keyword in a number of database implementations.
+To avoid any conflicts in the future, starting with 1.1.1.RELEASE we have opted for the name `SCHEMA_REPOSITORY` for the storage table.
+Any Spring Cloud Stream 1.1.0.RELEASE users that are upgrading are advised to migrate their existing schemas to the new table before upgrading.
+For some binder implementations (e.g., RabbitMQ), it is possible to have non-durable group subscriptions.
+====
+
 ==== Schema Registry Client
 
 The client-side abstraction for interacting with schema registry servers is the `SchemaRegistryClient` interface, with the following structure:
