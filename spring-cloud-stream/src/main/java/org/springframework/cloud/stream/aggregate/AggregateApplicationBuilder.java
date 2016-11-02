@@ -70,11 +70,11 @@ public class AggregateApplicationBuilder {
 	private boolean webEnvironment = true;
 
 	public AggregateApplicationBuilder(String... args) {
-		this(new Object[]{ ParentConfiguration.class }, args);
+		this(new Object[]{ParentConfiguration.class}, args);
 	}
 
 	public AggregateApplicationBuilder(Object source, String... args) {
-		this(new Object[] { source }, args);
+		this(new Object[]{source}, args);
 	}
 
 	public AggregateApplicationBuilder(Object[] sources, String[] args) {
@@ -94,7 +94,7 @@ public class AggregateApplicationBuilder {
 	}
 
 	public AggregateApplicationBuilder parent(Object source, String... args) {
-		return parent(new Object[] { source }, args);
+		return parent(new Object[]{source}, args);
 	}
 
 	public AggregateApplicationBuilder parent(Object[] sources, String[] args) {
@@ -149,9 +149,13 @@ public class AggregateApplicationBuilder {
 		}
 		LinkedHashMap<Class<?>, String> appsToEmbed = new LinkedHashMap<>();
 		LinkedHashMap<AppConfigurer, String> appConfigurers = new LinkedHashMap<>();
+		boolean childContextWebEnabled = false;
 		for (int i = 0; i < apps.size(); i++) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			Class<?> appToEmbed = appConfigurer.getApp();
+			if (appConfigurer.isWeb()) {
+				childContextWebEnabled = true;
+			}
 			// Always update namespace before preparing SharedChannelRegistry
 			if (appConfigurer.namespace == null) {
 				appConfigurer.namespace = AggregateApplication.getDefaultNamespace(appConfigurer.getApp().getName(),
@@ -160,8 +164,12 @@ public class AggregateApplicationBuilder {
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 			appConfigurers.put(appConfigurer, appConfigurer.namespace);
 		}
+		if (this.webEnvironment && childContextWebEnabled) {
+			throw new IllegalStateException("Aggregate application parent web context should be " +
+					"disabled if any of the child application has web enabled. Use web(false) for the parent context.");
+		}
 		this.parentContext = AggregateApplication.createParentContext(this.parentSources.toArray(new Object[0]),
-					this.parentArgs.toArray(new String[0]), selfContained(), this.webEnvironment, this.headless);
+				this.parentArgs.toArray(new String[0]), selfContained(), this.webEnvironment, this.headless);
 		SharedChannelRegistry sharedChannelRegistry = this.parentContext.getBean(SharedChannelRegistry.class);
 		AggregateApplication.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);
 		PropertySources propertySources = this.parentContext.getEnvironment()
@@ -193,7 +201,7 @@ public class AggregateApplicationBuilder {
 			// Add the args that are set at the application level if they weren't
 			// overridden above from other property sources.
 			if (appConfigurer.getArgs() != null) {
-				for (String arg: appConfigurer.getArgs()) {
+				for (String arg : appConfigurer.getArgs()) {
 					// use the key part left to the assignment and trimming the prefix `--`
 					String key = arg.substring(0, arg.indexOf("=")).substring(2);
 					if (!relaxedNameKeyExists(key, argKeys)) {
@@ -227,9 +235,9 @@ public class AggregateApplicationBuilder {
 	}
 
 	private ChildContextBuilder childContext(Class<?> app,
-			ConfigurableApplicationContext parentContext, String namespace) {
+			ConfigurableApplicationContext parentContext, String namespace, boolean webEnvironment) {
 		return new ChildContextBuilder(AggregateApplication.embedApp(parentContext,
-				namespace, app));
+				namespace, webEnvironment, app));
 	}
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
@@ -287,6 +295,8 @@ public class AggregateApplicationBuilder {
 
 		String namespace;
 
+		boolean web = false;
+
 		Class<?> getApp() {
 			return this.app;
 		}
@@ -323,7 +333,7 @@ public class AggregateApplicationBuilder {
 		void embed() {
 			final ConfigurableApplicationContext childContext =
 					childContext(this.app, AggregateApplicationBuilder.this.parentContext,
-							this.namespace).args(this.args).config(this.names)
+							this.namespace, this.isWeb()).args(this.args).config(this.names)
 							.profiles(this.profiles).run();
 			AggregateApplicationBuilder.this.parentContext.getBeanFactory().getBean(
 					MetricsEndpoint.class).registerPublicMetrics(
@@ -338,6 +348,15 @@ public class AggregateApplicationBuilder {
 
 		public String getNamespace() {
 			return this.namespace;
+		}
+
+		public boolean isWeb() {
+			return web;
+		}
+
+		public T web(boolean web) {
+			this.web = web;
+			return (T) this;
 		}
 	}
 

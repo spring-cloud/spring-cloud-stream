@@ -66,10 +66,10 @@ abstract class AggregateApplication {
 
 
 	protected static SpringApplicationBuilder embedApp(
-			ConfigurableApplicationContext parentContext, String namespace,
+			ConfigurableApplicationContext parentContext, String namespace, boolean webEnvironment,
 			Class<?> app) {
 		return new SpringApplicationBuilder(app)
-				.web(false)
+				.web(webEnvironment)
 				.main(app)
 				.bannerMode(Mode.OFF)
 				.properties("spring.jmx.default-domain=" + namespace)
