@@ -16,10 +16,15 @@
 
 package org.springframework.cloud.stream.schema.server.config;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.boot.autoconfigure.domain.EntityScanPackages;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.schema.server.controllers.ServerController;
 import org.springframework.cloud.stream.schema.server.model.Schema;
@@ -36,7 +41,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @Configuration
 @EnableJpaRepositories(basePackageClasses = SchemaRepository.class)
 @EnableConfigurationProperties(SchemaServerProperties.class)
-@EntityScan(basePackageClasses = Schema.class)
 public class SchemaServerConfiguration {
 
 	@Bean
@@ -50,4 +54,19 @@ public class SchemaServerConfiguration {
 		validatorMap.put("avro", new AvroSchemaValidator());
 		return validatorMap;
 	}
+
+	@Bean
+	public static BeanFactoryPostProcessor entityScanPackagesPostProcessor() {
+		return new BeanFactoryPostProcessor() {
+
+			@Override
+			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws
+					BeansException {
+				if (beanFactory instanceof BeanDefinitionRegistry) {
+					EntityScanPackages.register((BeanDefinitionRegistry) beanFactory, Collections.singletonList(Schema.class.getPackage().getName()));
+				}
+			}
+		};
+	}
+
 }
