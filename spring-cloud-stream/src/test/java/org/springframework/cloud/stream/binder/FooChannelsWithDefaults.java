@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.cloud.stream.binder;
 
 import org.springframework.cloud.stream.annotation.Input;
@@ -22,9 +21,9 @@ import org.springframework.cloud.stream.annotation.Outputs;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * @author Marius Bogoevici
+ * @author Laabidi RAISSI
  */
-public interface FooChannels {
+public interface FooChannelsWithDefaults {
 
 	@Input
 	MessageChannel foo();
@@ -38,6 +37,6 @@ public interface FooChannels {
 	@Output
 	MessageChannel qux();
 	
-	@Outputs("${my.list.of.strings}")
+	@Outputs
 	MessageChannel multiple(String name);
 }

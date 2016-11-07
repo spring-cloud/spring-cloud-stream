@@ -60,6 +60,12 @@ public class ArbitraryInterfaceWithBindingTargetsTests {
 				Mockito.<ProducerProperties>any());
 		verify(binder).bindProducer(eq("someQueue.3"), eq(this.fooChannels.qux()),
 				Mockito.<ProducerProperties>any());
+		
+		verify(binder).bindProducer(eq("someQueue.4"), eq(this.fooChannels.multiple("test1")),
+				Mockito.<ProducerProperties>any());
+		verify(binder).bindProducer(eq("someQueue.5"), eq(this.fooChannels.multiple("test2")),
+				Mockito.<ProducerProperties>any());
+		
 		verifyNoMoreInteractions(binder);
 	}
 

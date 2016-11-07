@@ -19,10 +19,12 @@ package org.springframework.cloud.stream.config;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binding.BindingBeanDefinitionRegistryUtils;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
 
@@ -31,8 +33,10 @@ import org.springframework.util.ClassUtils;
  * @author Dave Syer
  */
 
-public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
-
+public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
+	
+	Environment environment;
+	
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata,
 			BeanDefinitionRegistry registry) {
@@ -41,7 +45,7 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 				EnableBinding.class);
 		for (Class<?> type : collectClasses(attrs, metadata.getClassName())) {
 			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type,
-					type.getName(), registry);
+					type.getName(), registry, environment);
 			BindingBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
 					ClassUtils.resolveClassName(metadata.getClassName(), null), type,
 					registry);
@@ -53,5 +57,11 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 				EnableBinding.class, ClassUtils.resolveClassName(className, null));
 		return enableBinding.value();
 	}
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.environment = environment;
+	}
+
 
 }

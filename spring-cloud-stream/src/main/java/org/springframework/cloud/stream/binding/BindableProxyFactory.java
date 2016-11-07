@@ -25,21 +25,26 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.annotation.Outputs;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
@@ -51,7 +56,7 @@ import org.springframework.util.ReflectionUtils;
  *
  * @see EnableBinding
  */
-public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>, Bindable, InitializingBean {
+public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>, Bindable, InitializingBean, BeanFactoryAware {
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
@@ -64,10 +69,12 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Autowired
 	private BindableChannelFactory channelFactory;
+	
+	private DefaultListableBeanFactory beanFactory;
 
 	@Autowired(required = false)
 	private SharedChannelRegistry sharedChannelRegistry;
-
+	
 	private Class<?> type;
 
 	private Object proxy;
@@ -95,6 +102,16 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
 				messageChannel =  this.outputHolders.get(name).getMessageChannel();
 			}
+			
+			Outputs outputs = AnnotationUtils.findAnnotation(method, Outputs.class);
+			if(outputs != null){
+				Object[] args = invocation.getArguments();
+				if(args != null && args.length > 0 && args[0] instanceof String){
+					String name = (String)args[0];
+					messageChannel =  this.outputHolders.get(name).getMessageChannel();
+				}
+			}
+			
 		}
 		//ignore
 		return messageChannel;
@@ -136,6 +153,33 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 					else {
 						BindableProxyFactory.this.outputHolders.put(name, new ChannelHolder(sharedChannel, false));
 					}
+				}
+			}
+
+		});
+		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
+			@Override
+			public void doWith(Method method) throws IllegalArgumentException {
+				Outputs outputs = AnnotationUtils.findAnnotation(method, Outputs.class);
+				if (outputs != null) {
+					validateChannelType(method.getReturnType());
+					String values = BindingBeanDefinitionRegistryUtils.getChannelName(outputs, method);
+					String resolvedNames = BindableProxyFactory.this.beanFactory.resolveEmbeddedValue(values);
+					String[] channelBindingTargets = StringUtils.commaDelimitedListToStringArray(resolvedNames);
+					for (String name : channelBindingTargets) {
+						addOutputHolder(name);
+					}
+				}
+			}
+
+			private void addOutputHolder(String name) {
+				MessageChannel sharedChannel = locateSharedChannel(name);
+				if (sharedChannel == null) {
+					BindableProxyFactory.this.outputHolders.put(name, new ChannelHolder(
+							BindableProxyFactory.this.channelFactory.createOutputChannel(name), true));
+				}
+				else {
+					BindableProxyFactory.this.outputHolders.put(name, new ChannelHolder(sharedChannel, false));
 				}
 			}
 
@@ -248,6 +292,11 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public Set<String> getOutputs() {
 		return this.outputHolders.keySet();
+	}
+	
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = (DefaultListableBeanFactory) beanFactory;
 	}
 
 	/**
