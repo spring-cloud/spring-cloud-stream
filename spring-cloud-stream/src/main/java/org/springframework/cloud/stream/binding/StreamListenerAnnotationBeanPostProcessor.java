@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -105,6 +106,73 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return bean;
 	}
 
+//	@Override
+//	public Object postProcessAfterInitialization(final Object bean, String beanName) throws BeansException {
+//		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
+//		ReflectionUtils.doWithMethods(targetClass, new ReflectionUtils.MethodCallback() {
+//			@Override
+//			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
+//				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
+//				if (streamListener != null) {
+//					Assert.isTrue(method.getAnnotation(Input.class) == null,
+//							"A @StreamListener may never be annotated with @Input. If it should listen to a specific input, " +
+//									"use the value of @StreamListener instead.");
+//					String methodAnnotatedInboundName = getInboundElementNameFromMethodAnnotation(streamListener);
+//					String methodAnnotatedOutboundName = getOutboundElementNameFromMethodAnnotation(method);
+//					int inputAnnotationCount = inputAnnotationCount(method);
+//					int outputAnnotationCount = outputAnnotationCount(method);
+//					boolean isDeclarative = isDeclarativeStreamListenerMethod(method, methodAnnotatedInboundName, methodAnnotatedOutboundName);
+//					assertStreamListenerMethod(inputAnnotationCount, outputAnnotationCount, methodAnnotatedInboundName, methodAnnotatedOutboundName, isDeclarative);
+//					Object outboundTargetBean = null;
+//					if (StringUtils.hasText(methodAnnotatedOutboundName)) {
+//						outboundTargetBean = getBindableBean(methodAnnotatedOutboundName);
+//					}
+//					if (!method.getReturnType().equals(Void.TYPE)) {
+//						Assert.isTrue((outputAnnotationCount <= 1),
+//								"StreamListener method with return type should have only one outbound target specified");
+//						Assert.notNull(outboundTargetBean, "StreamListener method with return type should have outbound target specified");
+//					}
+//					int methodArgumentsLength = method.getParameterTypes().length;
+//					if (!isDeclarative) {
+//						assertStreamListenerMessageHandlerMethod(method, methodAnnotatedInboundName);
+//						registerHandlerMethodOnListenedChannel(method, methodAnnotatedInboundName, methodAnnotatedOutboundName, bean);
+//					}
+//					else {
+//						Object[] declarativeArguments = new Object[methodArgumentsLength];
+//						for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
+//							MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+//							Object targetBean = null;
+//							if (methodParameter.hasParameterAnnotation(Input.class)) {
+//								String inboundElementName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Input.class));
+//								Assert.isTrue(StringUtils.hasText(inboundElementName), "@Input annotation should always be associated with a valid inbound name");
+//								targetBean = getBindableBean(inboundElementName);
+//								declarativeArguments[parameterIndex] = getDeclarativeArgument(targetBean, methodParameter);
+//							}
+//							else if (methodParameter.hasParameterAnnotation(Output.class)) {
+//								String outboundElementName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Output.class));
+//								Assert.isTrue(StringUtils.hasText(outboundElementName), "@Output annotation should always be associated with a valid outbound name");
+//								targetBean = getBindableBean(outboundElementName);
+//								declarativeArguments[parameterIndex] = getDeclarativeArgument(targetBean, methodParameter);
+//							}
+//							else if (declarativeArguments.length == 1 && StringUtils.hasText(methodAnnotatedInboundName)) {
+//								targetBean = getBindableBean(methodAnnotatedInboundName);
+//								declarativeArguments[parameterIndex] = getDeclarativeArgument(targetBean, methodParameter);
+//							}
+//							Assert.isTrue(declarativeArguments[parameterIndex] != null, "Declarative StreamListener method should only have " +
+//									"inbound or outbound targets as method parameters");
+//							Assert.notNull(declarativeArguments[parameterIndex],
+//									"Cannot convert argument " + parameterIndex + " of " + method + "from " + targetBean.getClass()
+//											.toString() + " to " + methodParameter.getParameterType().toString());
+//						}
+//						assertDeclarativeArguments(declarativeArguments);
+//						invokeSetupMethodOnListenedChannel(method, bean, declarativeArguments, outboundTargetBean);
+//					}
+//				}
+//			}
+//		});
+//		return bean;
+//	}
+
 	@Override
 	public Object postProcessAfterInitialization(final Object bean, String beanName) throws BeansException {
 		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
@@ -122,50 +190,59 @@ public class StreamListenerAnnotationBeanPostProcessor
 					int outputAnnotationCount = outputAnnotationCount(method);
 					boolean isDeclarative = isDeclarativeStreamListenerMethod(method, methodAnnotatedInboundName, methodAnnotatedOutboundName);
 					assertStreamListenerMethod(inputAnnotationCount, outputAnnotationCount, methodAnnotatedInboundName, methodAnnotatedOutboundName, isDeclarative);
-					Object outboundTargetBean = null;
-					if (StringUtils.hasText(methodAnnotatedOutboundName)) {
-						outboundTargetBean = getBindableBean(methodAnnotatedOutboundName);
-					}
 					if (!method.getReturnType().equals(Void.TYPE)) {
+						Assert.isTrue(method.getAnnotation(Input.class) == null,
+								"A @StreamListener may never be annotated with @Input." +
+										"If it should listen to a specific input, use the value of @StreamListener " +
+										"instead.");
 						Assert.isTrue((outputAnnotationCount <= 1),
 								"StreamListener method with return type should have only one outbound target specified");
-						Assert.notNull(outboundTargetBean, "StreamListener method with return type should have outbound target specified");
 					}
-					int methodArgumentsLength = method.getParameterTypes().length;
-					if (!isDeclarative) {
-						assertStreamListenerMessageHandlerMethod(method, methodAnnotatedInboundName);
-						registerHandlerMethodOnListenedChannel(method, methodAnnotatedInboundName, methodAnnotatedOutboundName, bean);
+					Class<?>[] parameterTypes = method.getParameterTypes();
+					if (!StringUtils.hasText(streamListener.value()) && isDeclarative) {
+						invokeSetupMethodOnListenedChannel(method, bean);
 					}
 					else {
-						Object[] declarativeArguments = new Object[methodArgumentsLength];
-						for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
-							MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
-							Object targetBean = null;
-							if (methodParameter.hasParameterAnnotation(Input.class)) {
-								String inboundElementName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Input.class));
-								Assert.isTrue(StringUtils.hasText(inboundElementName), "@Input annotation should always be associated with a valid inbound name");
-								targetBean = getBindableBean(inboundElementName);
-								declarativeArguments[parameterIndex] = getDeclarativeArgument(targetBean, methodParameter);
+						if (parameterTypes.length == 1) {
+							if (isDeclarative) {
+								invokeSetupMethodOnListenedChannel(method, bean);
 							}
-							else if (methodParameter.hasParameterAnnotation(Output.class)) {
-								String outboundElementName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Output.class));
-								Assert.isTrue(StringUtils.hasText(outboundElementName), "@Output annotation should always be associated with a valid outbound name");
-								targetBean = getBindableBean(outboundElementName);
-								declarativeArguments[parameterIndex] = getDeclarativeArgument(targetBean, methodParameter);
+							else {
+								registerHandlerMethodOnListenedChannel(method, streamListener, bean);
 							}
-							else if (declarativeArguments.length == 1 && StringUtils.hasText(methodAnnotatedInboundName)) {
-								targetBean = getBindableBean(methodAnnotatedInboundName);
-								declarativeArguments[parameterIndex] = getDeclarativeArgument(targetBean, methodParameter);
-							}
-							Assert.isTrue(declarativeArguments[parameterIndex] != null, "Declarative StreamListener method should only have " +
-									"inbound or outbound targets as method parameters");
-							Assert.notNull(declarativeArguments[parameterIndex],
-									"Cannot convert argument " + parameterIndex + " of " + method + "from " + targetBean.getClass()
-											.toString() + " to " + methodParameter.getParameterType().toString());
 						}
-						assertDeclarativeArguments(declarativeArguments);
-						invokeSetupMethodOnListenedChannel(method, bean, declarativeArguments, outboundTargetBean);
+						else {
+							registerHandlerMethodOnListenedChannel(method, streamListener, bean);
+						}
 					}
+//					if (StringUtils.hasText(streamListener.value())) {
+//						for (int i = 0; i < parameterTypes.length; i++) {
+//							MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, i);
+//							Assert.isTrue(methodParameter.getParameterAnnotation(Input.class) == null &&
+//											methodParameter.getParameterAnnotation(Output.class) == null,
+//									"A message handling @StreamListener method cannot have parameters annotated " +
+//											"with @Input or @Output");
+//						}
+//						if (!method.getReturnType().equals(Void.TYPE)) {
+//							Assert.isTrue(method.getAnnotation(Output.class) == null,
+//									"A message handling @StreamListener method cannot be annotated with @Output");
+//						}
+//						registerHandlerMethodOnListenedChannel(method, streamListener, bean);
+//					}
+//					else {
+//						for (int i = 0; i < parameterTypes.length; i++) {
+//							MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, i);
+//							Assert.isTrue(methodParameter.getParameterAnnotation(Input.class) != null ^
+//											methodParameter.getParameterAnnotation(Output.class) != null,
+//									"A declarative @StreamListener method must have its parameters annotated" +
+//											"with @Input or @Output, but not with both.");
+//						}
+//						if (!method.getReturnType().equals(Void.TYPE)) {
+//							Assert.isTrue(method.getAnnotation(Output.class) != null,
+//									"A declarative @StreamListener method must be annotated with @Output");
+//						}
+//						invokeSetupMethodOnListenedChannel(method, bean);
+//					}
 				}
 			}
 		});
@@ -203,15 +280,15 @@ public class StreamListenerAnnotationBeanPostProcessor
 				Assert.isTrue(StringUtils.hasText(inboundName), "@Input annotation should always be associated with a valid inbound name");
 				return isDeclarativeMethodParameter(getBindableBean(inboundName), methodParameter);
 			}
-			else if (methodParameter.hasParameterAnnotation(Output.class)) {
+			if (methodParameter.hasParameterAnnotation(Output.class)) {
 				String outboundName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Output.class));
 				Assert.isTrue(StringUtils.hasText(outboundName), "@Output annotation should always be associated with a valid outbound name");
 				return isDeclarativeMethodParameter(getBindableBean(outboundName), methodParameter);
 			}
-			else if (StringUtils.hasText(methodAnnotatedOutboundName)) {
+			if (StringUtils.hasText(methodAnnotatedOutboundName)) {
 				return isDeclarativeMethodParameter(getBindableBean(methodAnnotatedOutboundName), methodParameter);
 			}
-			else if (StringUtils.hasText(methodAnnotatedinboundName)) {
+			if (StringUtils.hasText(methodAnnotatedinboundName)) {
 				return isDeclarativeMethodParameter(getBindableBean(methodAnnotatedinboundName), methodParameter);
 			}
 		}
@@ -345,19 +422,58 @@ public class StreamListenerAnnotationBeanPostProcessor
 		}
 	}
 
-	private void invokeSetupMethodOnListenedChannel(Method method, Object bean, Object[] arguments, Object outputAnnotatedBean) {
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private void invokeSetupMethodOnListenedChannel(Method method, Object bean) {
+		Object[] arguments = new Object[method.getParameterTypes().length];
+		for (int parameterIndex = 0; parameterIndex < arguments.length; parameterIndex++) {
+			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+			Class<?> parameterType = methodParameter.getParameterType();
+			Annotation targetReferenceAnnotation = methodParameter.hasParameterAnnotation(Input.class) ?
+					methodParameter.getParameterAnnotation(Input.class) : methodParameter.getParameterAnnotation(
+					Output.class);
+			Object targetReferenceAnnotationValue = AnnotationUtils.getValue(targetReferenceAnnotation);
+			Assert.isInstanceOf(String.class, targetReferenceAnnotationValue, "Annotation value must be a String");
+			if (methodParameter.hasParameterAnnotation(Output.class)) {
+				Assert.isTrue(StringUtils.hasText((String) targetReferenceAnnotationValue), "@Output annotation should always be associated with a valid outbound name");
+			}
+			Object targetBean = getBindableBean((String) targetReferenceAnnotationValue);
+			Assert.notNull(targetBean, "StreamListener method with return type should have outbound target specified");
+			if (parameterType.isAssignableFrom(targetBean.getClass())) {
+				arguments[parameterIndex] = targetBean;
+			}
+			else {
+				for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter :
+						this.streamListenerParameterAdapters) {
+					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
+						arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean, methodParameter);
+						break;
+					}
+				}
+			}
+			Assert.notNull(arguments[parameterIndex],
+					"Cannot convert argument " + parameterIndex + " of " + method + "from " + targetBean.getClass()
+							.toString() + " to " + parameterType.toString());
+		}
+		assertDeclarativeArguments(arguments);
 		try {
 			if (method.getReturnType().equals(Void.TYPE)) {
 				method.invoke(bean, arguments);
 			}
 			else {
 				Object result = method.invoke(bean, arguments);
-				for (StreamListenerResultAdapter streamListenerResultAdapter : streamListenerResultAdapters) {
-					if (outputAnnotatedBean != null) {
-						if (streamListenerResultAdapter.supports(result.getClass(), outputAnnotatedBean.getClass())) {
-							streamListenerResultAdapter.adapt(result, outputAnnotatedBean);
-							break;
-						}
+				String outputValue = getOutboundElementNameFromMethodAnnotation(method);
+				if (!StringUtils.hasText(outputValue)) {
+					Output output = AnnotationUtils.getAnnotation(method, Output.class);
+					outputValue = output.value();
+					Assert.isTrue(StringUtils.hasText(outputValue), "@Output annotation should always be associated with a valid outbound name");
+				}
+				Object targetBean = this.applicationContext.getBean(outputValue);
+				Assert.notNull(targetBean, "StreamListener method with return type should have outbound target specified");
+				for (StreamListenerResultAdapter streamListenerResultAdapter : this
+						.streamListenerResultAdapters) {
+					if (streamListenerResultAdapter.supports(result.getClass(), targetBean.getClass())) {
+						streamListenerResultAdapter.adapt(result, targetBean);
+						break;
 					}
 				}
 			}
@@ -366,6 +482,66 @@ public class StreamListenerAnnotationBeanPostProcessor
 			throw new BeanInitializationException("Cannot setup StreamListener for " + method, e);
 		}
 	}
+
+	protected void registerHandlerMethodOnListenedChannel(Method method, StreamListener streamListener, Object bean) {
+		Method targetMethod = checkProxy(method, bean);
+		Assert.hasText(streamListener.value(), "The binding name cannot be null");
+		final InvocableHandlerMethod invocableHandlerMethod =
+				this.messageHandlerMethodFactory.createInvocableHandlerMethod(bean, targetMethod);
+		if (!StringUtils.hasText(streamListener.value())) {
+			throw new BeanInitializationException("A bound component name must be specified");
+		}
+		if (this.mappedBindings.containsKey(streamListener.value())) {
+			throw new BeanInitializationException("Duplicate @" + StreamListener.class.getSimpleName() +
+					" mapping for '" + streamListener.value() + "' on " + invocableHandlerMethod.getShortLogMessage() +
+					" already existing for " + this.mappedBindings.get(streamListener.value()).getShortLogMessage());
+		}
+		this.mappedBindings.put(streamListener.value(), invocableHandlerMethod);
+		SubscribableChannel channel = this.applicationContext.getBean(streamListener.value(),
+				SubscribableChannel.class);
+		final String defaultOutputChannel = getOutboundElementNameFromMethodAnnotation(method);
+		if (invocableHandlerMethod.isVoid()) {
+			Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
+					"An output channel cannot be specified for a method that " +
+							"does not return a value");
+		}
+		else {
+			Assert.isTrue(!StringUtils.isEmpty(defaultOutputChannel),
+					"An output channel must be specified for a method that " +
+							"can return a value");
+		}
+		assertStreamListenerMessageHandlerMethod(method, streamListener.value());
+		StreamListenerMessageHandler handler = new StreamListenerMessageHandler(invocableHandlerMethod);
+		handler.setApplicationContext(this.applicationContext);
+		handler.setChannelResolver(this.binderAwareChannelResolver);
+		if (!StringUtils.isEmpty(defaultOutputChannel)) {
+			handler.setOutputChannelName(defaultOutputChannel);
+		}
+		handler.afterPropertiesSet();
+		channel.subscribe(handler);
+	}
+
+//	private void invokeSetupMethodOnListenedChannel(Method method, Object bean, Object[] arguments, Object outputAnnotatedBean) {
+//		try {
+//			if (method.getReturnType().equals(Void.TYPE)) {
+//				method.invoke(bean, arguments);
+//			}
+//			else {
+//				Object result = method.invoke(bean, arguments);
+//				for (StreamListenerResultAdapter streamListenerResultAdapter : streamListenerResultAdapters) {
+//					if (outputAnnotatedBean != null) {
+//						if (streamListenerResultAdapter.supports(result.getClass(), outputAnnotatedBean.getClass())) {
+//							streamListenerResultAdapter.adapt(result, outputAnnotatedBean);
+//							break;
+//						}
+//					}
+//				}
+//			}
+//		}
+//		catch (Exception e) {
+//			throw new BeanInitializationException("Cannot setup StreamListener for " + method, e);
+//		}
+//	}
 
 	protected void registerHandlerMethodOnListenedChannel(Method method, String inboundBindingName,
 			String outboundBindingName, Object bean) {
