@@ -382,7 +382,7 @@ public class SendingBean {
     }
 
     public void sayHello(String name) {
-         customOutput.send(MessageBuilder.withPayload(body).build());
+         output.send(MessageBuilder.withPayload(body).build());
     }
 }
 ----
