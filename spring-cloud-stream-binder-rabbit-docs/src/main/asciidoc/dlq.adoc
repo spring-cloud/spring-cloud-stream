@@ -11,7 +11,7 @@ These examples use a `@RabbitListener` to receive messages from the DLQ, you cou
 
 The examples assume the original destination is `so8400in` and the consumer group is `so8400`.
 
-=== Non-Partioned Destinations
+=== Non-Partitioned Destinations
 
 The first two examples are when the destination is **not** partitioned.
 
