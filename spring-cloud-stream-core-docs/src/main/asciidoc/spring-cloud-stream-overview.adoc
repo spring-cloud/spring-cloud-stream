@@ -327,7 +327,7 @@ public class SendingBean {
     }
 
     public void sayHello(String name) {
-         source.output().send(MessageBuilder.withPayload(body).build());
+         source.output().send(MessageBuilder.withPayload(name).build());
     }
 }
 ----
@@ -349,7 +349,7 @@ public class SendingBean {
     }
 
     public void sayHello(String name) {
-         output.send(MessageBuilder.withPayload(body).build());
+         output.send(MessageBuilder.withPayload(name).build());
     }
 }
 ----
@@ -373,16 +373,16 @@ The channel will be injected as shown in the following example:
 @Component
 public class SendingBean {
 
-    @Autowired
+    @Autowired @Qualifier("customOutput")
     private MessageChannel output;
 
-    @Autowired @Qualifier("customOutput")
+    @Autowired
     public SendingBean(MessageChannel output) {
         this.output = output;
     }
 
     public void sayHello(String name) {
-         output.send(MessageBuilder.withPayload(body).build());
+         this.output.send(MessageBuilder.withPayload(name).build());
     }
 }
 ----
