@@ -38,6 +38,8 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.TARGET_BEAN_NOT_EXISTS;
 
 /**
  * @author Marius Bogoevici
@@ -52,25 +54,24 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 	}
 
 	@Test
-	public void testInputOutputArgsWithMoreParameters() throws Exception {
+	public void testInputOutputArgsWithMoreParameters() {
 		try {
 			SpringApplication.run(TestInputOutputArgsWithMoreParameters.class, "--server.port=0");
-			fail("Declarative StreamListener method should throw IllegalStateException for invalid method parameters");
+			fail("Expected exception: "+ INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Declarative StreamListener method should only have " +
-					"inbound or outbound targets as method parameters");
+			assertThat(e.getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
 	@Test
-	public void testInputOutputArgsWithInvalidBindableTarget() throws Exception {
+	public void testInputOutputArgsWithInvalidBindableTarget() {
 		try {
 			SpringApplication.run(TestInputOutputArgsWithInvalidBindableTarget.class, "--server.port=0");
 			fail("Exception expected on using invalid bindable target as method parameter");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Target bean doesn't exist for the bound element name: invalid");
+			assertThat(e.getMessage()).contains(TARGET_BEAN_NOT_EXISTS + ": invalid");
 		}
 	}
 

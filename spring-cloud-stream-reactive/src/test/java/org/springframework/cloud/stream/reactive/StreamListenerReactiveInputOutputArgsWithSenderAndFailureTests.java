@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
@@ -28,6 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import reactor.core.publisher.Flux;
+import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -41,22 +39,24 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerReactiveTestInputOutputArgsWIthSenderAndFailure {
+public class StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerReactiveTestInputOutputArgsWIthSenderAndFailure(Class<?> configClass) {
+	public StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {TestInputOutputArgsWithFluxSenderAndFailure1.class});
+		return Arrays.asList(new Class[]{TestInputOutputArgsWithFluxSenderAndFailure.class, TestInputOutputArgsWithObservableSenderAndFailure.class});
 	}
 
 	@Test
@@ -66,18 +66,6 @@ public class StreamListenerReactiveTestInputOutputArgsWIthSenderAndFailure {
 		sendFailingMessage(context);
 		sendMessageAndValidate(context);
 		context.close();
-	}
-
-	@Test
-	public void testIncorrectUsage() {
-		try {
-			SpringApplication.run(TestInputOutputArgsWithFluxSenderAndFailure2.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
-					"Use @Input method parameter annotation to specify inbound value instead");
-		}
 	}
 
 
@@ -100,7 +88,7 @@ public class StreamListenerReactiveTestInputOutputArgsWIthSenderAndFailure {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestInputOutputArgsWithFluxSenderAndFailure1 {
+	public static class TestInputOutputArgsWithFluxSenderAndFailure {
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input, @Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input
@@ -119,9 +107,9 @@ public class StreamListenerReactiveTestInputOutputArgsWIthSenderAndFailure {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestInputOutputArgsWithFluxSenderAndFailure2 {
-		@StreamListener(Processor.INPUT)
-		public void receive(Flux<Message<?>> input, @Output(Processor.OUTPUT) FluxSender output) {
+	public static class TestInputOutputArgsWithObservableSenderAndFailure {
+		@StreamListener
+		public void receive(@Input(Processor.INPUT) Observable<Message<String>> input, @Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString())
 					.map(m -> {

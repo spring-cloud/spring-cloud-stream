@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -47,140 +46,159 @@ import org.springframework.messaging.support.MessageBuilder;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerReactiveTestReturnWithMessage {
+public class StreamListenerReactiveReturnWithPojoTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerReactiveTestReturnWithMessage(Class<?> configClass) {
+	public StreamListenerReactiveReturnWithPojoTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {ReactorTestReturnWithMessage1.class, ReactorTestReturnWithMessage2.class,
-				ReactorTestReturnWithMessage3.class, ReactorTestReturnWithMessage4.class, RxJava1TestReturnWithMessage1.class,
-				RxJava1TestReturnWithMessage2.class, RxJava1TestReturnWithMessage3.class, RxJava1TestReturnWithMessage4.class});
+		return Arrays.asList(new Class[] {ReactorTestReturnWithPojo1.class, ReactorTestReturnWithPojo2.class,
+				ReactorTestReturnWithPojo3.class, ReactorTestReturnWithPojo4.class, RxJava1TestReturnWithPojo1.class,
+				RxJava1TestReturnWithPojo2.class, RxJava1TestReturnWithPojo3.class, RxJava1TestReturnWithPojo4.class});
 	}
 
 	@Test
-	public void testReturnWithMessage() throws Exception {
+	public void testReturnWithPojo() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
-		sendMessageAndValidate(context);
-		context.close();
-	}
-
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
 		@SuppressWarnings("unchecked")
 		Processor processor = context.getBean(Processor.class);
-		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		processor.input().send(MessageBuilder.withPayload("{\"message\":\"helloPojo\"}")
+				.setHeader("contentType", "application/json").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
 		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
-	}
-
-	private static void sendFailingMessage(ConfigurableApplicationContext context) throws InterruptedException {
-		@SuppressWarnings("unchecked")
-		Processor processor = context.getBean(Processor.class);
-		processor.input().send(MessageBuilder.withPayload("fail").setHeader("contentType", "text/plain").build());
+		assertThat(result.getPayload()).isInstanceOf(BarPojo.class);
+		assertThat(((BarPojo) result.getPayload()).getBarMessage()).isEqualTo("helloPojo");
+		context.close();
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestReturnWithMessage1 {
+	public static class ReactorTestReturnWithPojo1 {
 
 		@StreamListener
 		public
 		@Output(Processor.OUTPUT)
-		Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
+		Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
+			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestReturnWithMessage2 {
+	public static class ReactorTestReturnWithPojo2 {
 
 		@StreamListener(Processor.INPUT)
 		public
 		@Output(Processor.OUTPUT)
-		Flux<String> receive(Flux<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
+		Flux<BarPojo> receive(Flux<FooPojo> input) {
+			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestReturnWithMessage3 {
+	public static class ReactorTestReturnWithPojo3 {
 
 		@StreamListener(Processor.INPUT)
 		public
 		@SendTo(Processor.OUTPUT)
-		Flux<String> receive(Flux<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
+		Flux<BarPojo> receive(Flux<FooPojo> input) {
+			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
 
-
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestReturnWithMessage4 {
+	public static class ReactorTestReturnWithPojo4 {
 
 		@StreamListener
 		public
 		@SendTo(Processor.OUTPUT)
-		Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
+		Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
+			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithMessage1 {
+	public static class RxJava1TestReturnWithPojo1 {
 
 		@StreamListener
 		public
 		@Output(Processor.OUTPUT)
-		Observable<String> receive(@Input(Processor.INPUT) Observable<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
+		Observable<BarPojo> receive(@Input(Processor.INPUT) Observable<FooPojo> input) {
+			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithMessage2 {
+	public static class RxJava1TestReturnWithPojo2 {
 
 		@StreamListener
 		public
 		@SendTo(Processor.OUTPUT)
-		Observable<String> receive(@Input(Processor.INPUT) Observable<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
+		Observable<BarPojo> receive(@Input(Processor.INPUT) Observable<FooPojo> input) {
+			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithMessage3 {
+	public static class RxJava1TestReturnWithPojo3 {
 
 		@StreamListener(Processor.INPUT)
 		public
 		@Output(Processor.OUTPUT)
-		Observable<String> receive(Observable<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
+		Observable<BarPojo> receive(Observable<FooPojo> input) {
+			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithMessage4 {
+	public static class RxJava1TestReturnWithPojo4 {
 
 		@StreamListener(Processor.INPUT)
 		public
 		@SendTo(Processor.OUTPUT)
-		Observable<String> receive(Observable<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
+		Observable<BarPojo> receive(Observable<FooPojo> input) {
+			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
 
+	public static class FooPojo {
+
+		private String message;
+
+		public String getMessage() {
+			return message;
+		}
+
+		public void setMessage(String message) {
+			this.message = message;
+		}
+	}
+
+	public static class BarPojo {
+
+		private String barMessage;
+
+		public BarPojo(String barMessage) {
+			this.barMessage = barMessage;
+		}
+
+		public String getBarMessage() {
+			return barMessage;
+		}
+
+		public void setBarMessage(String barMessage) {
+			this.barMessage = barMessage;
+		}
+	}
 }

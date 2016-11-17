@@ -40,24 +40,23 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerReactiveTestInputOutputArgs {
+public class StreamListenerReactiveInputOutputArgsTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerReactiveTestInputOutputArgs(Class<?> configClass) {
+	public StreamListenerReactiveInputOutputArgsTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {ReactorTestInputOutputArgs1.class, RxJava1TestInputOutputArgs1.class});
+		return Arrays.asList(new Class[]{ReactorTestInputOutputArgs.class, RxJava1TestInputOutputArgs.class});
 	}
 
 	@Test
@@ -65,30 +64,6 @@ public class StreamListenerReactiveTestInputOutputArgs {
 		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
 		sendMessageAndValidate(context);
 		context.close();
-	}
-
-	@Test
-	public void testIncorrectUsage1() {
-		try {
-			SpringApplication.run(ReactorTestInputOutputArgs2.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
-					"Use @Input method parameter annotation to specify inbound value instead");
-		}
-	}
-
-	@Test
-	public void testIncorrectUsage2() {
-		try {
-			SpringApplication.run(RxJava1TestInputOutputArgs2.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
-					"Use @Input method parameter annotation to specify inbound value instead");
-		}
 	}
 
 	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
@@ -104,7 +79,7 @@ public class StreamListenerReactiveTestInputOutputArgs {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestInputOutputArgs1 {
+	public static class ReactorTestInputOutputArgs {
 
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<String> input, @Output(Processor.OUTPUT) FluxSender output) {
@@ -114,30 +89,10 @@ public class StreamListenerReactiveTestInputOutputArgs {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestInputOutputArgs2 {
-
-		@StreamListener(Processor.INPUT)
-		public void receive(Flux<String> input, @Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> m.toUpperCase()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestInputOutputArgs1 {
+	public static class RxJava1TestInputOutputArgs {
 
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Observable<String> input, @Output(Processor.OUTPUT) ObservableSender output) {
-			output.send(input.map(m -> m.toUpperCase()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestInputOutputArgs2 {
-
-		@StreamListener(Processor.INPUT)
-		public void receive(Observable<String> input, @Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input.map(m -> m.toUpperCase()));
 		}
 	}

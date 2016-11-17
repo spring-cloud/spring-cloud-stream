@@ -37,11 +37,13 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM;
 
 /**
  * @author Ilayaperumal Gopinathan
  */
-public class StreamListenerTestWildCardFluxInputOutputArgsWithMessage {
+public class StreamListenerWildCardFluxInputOutputArgsWithMessageTests {
 
 	@Test
 	public void testWildCardFluxInputOutputArgsWithMessage() throws Exception {
@@ -54,11 +56,10 @@ public class StreamListenerTestWildCardFluxInputOutputArgsWithMessage {
 	public void testInputAsStreamListenerAndOutputAsParameterUsage() {
 		try {
 			SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage2.class, "--server.port=0");
-			fail("IllegalStateException should have been thrown");
+			fail("Expected exception: " + INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
-					"Use @Input method parameter annotation to specify inbound value instead");
+			assertThat(e.getMessage()).contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 	}
 
@@ -66,22 +67,10 @@ public class StreamListenerTestWildCardFluxInputOutputArgsWithMessage {
 	public void testIncorrectUsage1() throws Exception {
 		try {
 			SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage3.class, "--server.port=0");
-			fail("IllegalStateException should have been thrown");
+			fail("Expected exception: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Declarative StreamListener method should only have inbound or outbound targets as method parameters");
-		}
-	}
-
-	@Test
-	public void testIncorrectUsage2() throws Exception {
-		try {
-			SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage4.class, "--server.port=0");
-			fail("IllegalStateException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Declarative StreamListener method should only " +
-					"have inbound or outbound targets as method parameters");
+			assertThat(e.getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
@@ -124,17 +113,6 @@ public class StreamListenerTestWildCardFluxInputOutputArgsWithMessage {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public void receive(Flux<?> input, FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestWildCardFluxInputOutputArgsWithMessage4 {
-
-		@StreamListener
-		@SendTo(Processor.OUTPUT)
-		public void receive(@Input(Processor.INPUT) Flux<?> input, FluxSender output) {
 			output.send(input.map(m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
 		}
 	}

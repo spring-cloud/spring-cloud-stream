@@ -34,13 +34,9 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,92 +45,67 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerTestHandlerBean {
+public class StreamListenerMethodWithReturnValueTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerTestHandlerBean(Class<?> configClass) {
+	public StreamListenerMethodWithReturnValueTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] { TestHandlerBean1.class, TestHandlerBean2.class });
+		return Arrays.asList(new Class[]{TestStringProcessor1.class, TestStringProcessor2.class});
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testHandlerBean() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
-				"--spring.cloud.stream.bindings.output.contentType=application/json",
-				"--server.port=0");
+	public void testReturn() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication
+				.run(this.configClass, "--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		processor.input().send(
-				MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
-		HandlerBean handlerBean = context.getBean(HandlerBean.class);
-		assertThat(handlerBean.receivedPojos).hasSize(1);
-		assertThat(handlerBean.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo",
-				"barbar" + id);
-		Message<String> message = (Message<String>) collector.forChannel(
-				processor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> message = (Message<String>) collector
+				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+		TestStringProcessor testStringProcessor = context
+				.getBean(TestStringProcessor.class);
+		assertThat(testStringProcessor.receivedPojos).hasSize(1);
+		assertThat(testStringProcessor.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
-		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
-				.includes(MimeTypeUtils.APPLICATION_JSON));
+		assertThat(message.getPayload()).isEqualTo("barbar" + id);
 		context.close();
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestHandlerBean1 {
+	public static class TestStringProcessor1 extends TestStringProcessor {
 
-		@Bean
-		public HandlerBean1 handlerBean() {
-			return new HandlerBean1();
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public String receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+			this.receivedPojos.add(fooPojo);
+			return fooPojo.getFoo();
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestHandlerBean2 {
-
-		@Bean
-		public HandlerBean2 handlerBean() {
-			return new HandlerBean2();
-		}
-	}
-
-	public static class HandlerBean1 extends HandlerBean {
-
-		@StreamListener(Processor.INPUT)
-		@SendTo(Processor.OUTPUT)
-		public StreamListenerTestInterfaces.BarPojo receive(StreamListenerTestInterfaces.FooPojo fooMessage) {
-			this.receivedPojos.add(fooMessage);
-			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
-			barPojo.setBar(fooMessage.getFoo());
-			return barPojo;
-		}
-	}
-
-	public static class HandlerBean2 extends HandlerBean {
+	public static class TestStringProcessor2 extends TestStringProcessor {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public StreamListenerTestInterfaces.BarPojo receive(StreamListenerTestInterfaces.FooPojo fooMessage) {
-			this.receivedPojos.add(fooMessage);
-			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
-			barPojo.setBar(fooMessage.getFoo());
-			return barPojo;
+		public String receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+			this.receivedPojos.add(fooPojo);
+			return fooPojo.getFoo();
 		}
 	}
 
-	public static class HandlerBean {
-
+	public static class TestStringProcessor {
 		List<StreamListenerTestInterfaces.FooPojo> receivedPojos = new ArrayList<>();
-
 	}
 
 }

@@ -47,11 +47,11 @@ import org.springframework.messaging.support.MessageBuilder;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerReactiveTestReturnWithFailure {
+public class StreamListenerReactiveReturnWithFailureTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerReactiveTestReturnWithFailure(Class<?> configClass) {
+	public StreamListenerReactiveReturnWithFailureTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 

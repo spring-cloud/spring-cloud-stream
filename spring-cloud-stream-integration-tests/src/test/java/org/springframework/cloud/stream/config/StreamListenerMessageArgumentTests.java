@@ -45,11 +45,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerTestMessageArgument {
+public class StreamListenerMessageArgumentTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerTestMessageArgument(Class<?> configClass) {
+	public StreamListenerMessageArgumentTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 

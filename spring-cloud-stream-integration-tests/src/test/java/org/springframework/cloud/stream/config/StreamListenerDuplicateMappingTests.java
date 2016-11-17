@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public class StreamListenerTestDuplicateMapping {
+public class StreamListenerDuplicateMappingTests {
 
 	@Test
 	@SuppressWarnings("unchecked")

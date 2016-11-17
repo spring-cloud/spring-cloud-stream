@@ -16,17 +16,10 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.SpringApplication;
@@ -39,66 +32,33 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.support.MessageBuilder;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM;
 
 /**
  * @author Ilayaperumal Gopinathan
  */
-@RunWith(Parameterized.class)
 @SuppressWarnings("unchecked")
-public class StreamListenerTestGenericFluxInputOutputArgsWithMessage {
-
-	private Class<?> configClass;
-
-	public StreamListenerTestGenericFluxInputOutputArgsWithMessage(Class<?> configClass) {
-		this.configClass = configClass;
-	}
-
-	@Parameterized.Parameters
-	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {TestGenericStringFluxInputOutputArgsWithMessageImpl1.class});
-	}
+public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 
 	@Test
 	public void testGenericFluxInputOutputArgsWithMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication.run(TestGenericStringFluxInputOutputArgsWithMessageImpl1.class, "--server.port=0");
 		sendMessageAndValidate(context);
 		context.close();
 	}
 
 	@Test
-	public void testIncorrectUsage1() {
+	public void testInvalidInputValueWithOutputMethodParameters() {
 		try {
 			SpringApplication.run(TestGenericStringFluxInputOutputArgsWithMessageImpl2.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
+			fail("Expected exception: " + INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains(" Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
-					"Use @Input method parameter annotation to specify inbound value instead");
-		}
-	}
-
-	@Test
-	public void testIncorrectUsage2() {
-		try {
-			SpringApplication.run(TestGenericStringFluxInputOutputArgsWithMessageImpl3.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Declarative StreamListener method should only have inbound or outbound targets as method parameters");
-		}
-	}
-
-	@Test
-	public void testIncorrectUsage3() {
-		try {
-			SpringApplication.run(TestGenericStringFluxInputOutputArgsWithMessageImpl4.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Declarative StreamListener method should only have " +
-					"inbound or outbound targets as method parameters");
+			assertThat(e.getMessage()).contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 	}
 
@@ -119,12 +79,6 @@ public class StreamListenerTestGenericFluxInputOutputArgsWithMessage {
 	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl2 extends TestGenericFluxInputOutputArgsWithMessage2<String> {
 	}
 
-	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl3 extends TestGenericFluxInputOutputArgsWithMessage3<String> {
-	}
-
-	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl4 extends TestGenericFluxInputOutputArgsWithMessage4<String> {
-	}
-
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestGenericFluxInputOutputArgsWithMessage1<A> {
@@ -132,7 +86,7 @@ public class StreamListenerTestGenericFluxInputOutputArgsWithMessage {
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<A> input,
 				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload((A)m.toString().toUpperCase()).build()));
+			output.send(input.map(m -> MessageBuilder.withPayload((A) m.toString().toUpperCase()).build()));
 		}
 	}
 
@@ -143,29 +97,7 @@ public class StreamListenerTestGenericFluxInputOutputArgsWithMessage {
 		@StreamListener(Processor.INPUT)
 		public void receive(Flux<A> input,
 				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload((A)m.toString().toUpperCase()).build()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestGenericFluxInputOutputArgsWithMessage3<A> {
-
-		@StreamListener(Processor.INPUT)
-		@SendTo(Processor.OUTPUT)
-		public void receive(Flux<A> input, FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload((A)m.toString().toUpperCase()).build()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestGenericFluxInputOutputArgsWithMessage4<A> {
-
-		@StreamListener
-		@SendTo(Processor.OUTPUT)
-		public void receive(@Input(Processor.INPUT) Flux<A> input, FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload((A)m.toString().toUpperCase()).build()));
+			output.send(input.map(m -> MessageBuilder.withPayload((A) m.toString().toUpperCase()).build()));
 		}
 	}
 }

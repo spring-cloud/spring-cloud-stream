@@ -43,22 +43,31 @@ import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_INBOUND_NAME;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_MESSAGE_HANDLER_METHOD_PARAMS;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_OUTBOUND_NAME;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_OUTPUT_VALUES;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.NO_INPUT_DESTINATION;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.TARGET_BEAN_NOT_EXISTS;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public class StreamListenerMethodTests {
+public class StreamListenerHandlerMethodTests {
 
 	@Test
 	public void testMethodWIthInputOnStreamListener() throws Exception {
 		try {
 			SpringApplication.run(TestMethodWIthInputOnStreamListener.class, "--server.port=0");
-			fail("Exception expected on using @Input element as method and method parameter");
+			fail("Exception expected: "+ INPUT_AT_STREAM_LISTENER);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("A @StreamListener may never be annotated with @Input. If it should listen to a specific input, " +
-					"use the value of @StreamListener instead.");
+			assertThat(e.getCause().getMessage()).contains(INPUT_AT_STREAM_LISTENER);
 		}
 	}
 
@@ -66,10 +75,10 @@ public class StreamListenerMethodTests {
 	public void testReturnTypeWithMultipleOutput() throws Exception {
 		try {
 			SpringApplication.run(TestReturnTypeWithMultipleOutput.class, "--server.port=0");
-			fail("Exception expected on using return type with multiple output");
+			fail("Exception expected: "+ RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("StreamListener method with return type should have only one outbound target specified");
+			assertThat(e.getCause().getMessage()).contains(RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 		}
 	}
 
@@ -77,10 +86,10 @@ public class StreamListenerMethodTests {
 	public void testReturnTypeWithNoOutput() throws Exception {
 		try {
 			SpringApplication.run(TestReturnTypeWithNoOutput.class, "--server.port=0");
-			fail("Exception expected on using return type with no output");
+			fail("Exception expected: " + RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("StreamListener method with return type should have outbound target specified");
+			assertThat(e.getCause().getMessage()).contains(RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
 	}
 
@@ -88,10 +97,10 @@ public class StreamListenerMethodTests {
 	public void testMethodInputAnnotationWithNoValue() throws Exception {
 		try {
 			SpringApplication.run(TestMethodInputAnnotationWithNoValue.class, "--server.port=0");
-			fail("Exception expected on using @Input annotation without inbound value specified");
+			fail("Exception expected: "+ INVALID_INBOUND_NAME);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("@Input annotation should always be associated with a valid inbound name");
+			assertThat(e.getCause().getMessage()).contains(INVALID_INBOUND_NAME);
 		}
 	}
 
@@ -99,10 +108,10 @@ public class StreamListenerMethodTests {
 	public void testMethodOutputAnnotationWithNoValue() throws Exception {
 		try {
 			SpringApplication.run(TestMethodOutputAnnotationWithNoValue.class, "--server.port=0");
-			fail("Exception expected on using @Output annotation without outbound value specified");
+			fail("Exception expected: "+ INVALID_OUTBOUND_NAME);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("@Output annotation should always be associated with a valid outbound name");
+			assertThat(e.getCause().getMessage()).contains(INVALID_OUTBOUND_NAME);
 		}
 	}
 
@@ -113,7 +122,7 @@ public class StreamListenerMethodTests {
 			fail("Exception expected on using invalid inbound name");
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("Target bean doesn't exist for the bound element name: invalid");
+			assertThat(e.getCause().getMessage()).contains(TARGET_BEAN_NOT_EXISTS + ": invalid");
 		}
 	}
 
@@ -124,7 +133,7 @@ public class StreamListenerMethodTests {
 			fail("Exception expected on using invalid outbound name");
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("Target bean doesn't exist for the bound element name: invalid");
+			assertThat(e.getCause().getMessage()).contains(TARGET_BEAN_NOT_EXISTS + ": invalid");
 		}
 	}
 
@@ -132,10 +141,10 @@ public class StreamListenerMethodTests {
 	public void testAmbiguousMethodArguments1() throws Exception {
 		try {
 			SpringApplication.run(TestAmbiguousMethodArguments1.class, "--server.port=0");
-			fail("Exception expected on using ambiguous method arguments");
+			fail("Exception expected: "+ AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("Ambiguous method arguments for the StreamListener method");
+			assertThat(e.getCause().getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 	}
 
@@ -143,10 +152,10 @@ public class StreamListenerMethodTests {
 	public void testAmbiguousMethodArguments2() throws Exception {
 		try {
 			SpringApplication.run(TestAmbiguousMethodArguments2.class, "--server.port=0");
-			fail("Exception expected on using ambiguous method arguments");
+			fail("Exception expected:" + AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("Ambiguous method arguments for the StreamListener method");
+			assertThat(e.getCause().getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 	}
 
@@ -154,11 +163,10 @@ public class StreamListenerMethodTests {
 	public void testMethodWithInputAsMethodAndParameter() throws Exception {
 		try {
 			SpringApplication.run(TestMethodWithInputAsMethodAndParameter.class, "--server.port=0");
-			fail("Exception expected on using Input element as method and parameter");
+			fail("Exception expected: " + INVALID_MESSAGE_HANDLER_METHOD_PARAMS);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("@Input or @Output annotation is not supported as method " +
-					"parameter in StreamListener method with message handler mapping");
+			assertThat(e.getCause().getMessage()).contains(INVALID_MESSAGE_HANDLER_METHOD_PARAMS);
 		}
 	}
 
@@ -166,11 +174,10 @@ public class StreamListenerMethodTests {
 	public void testMethodWithOutputAsMethodAndParameter() throws Exception {
 		try {
 			SpringApplication.run(TestMethodWithOutputAsMethodAndParameter.class, "--server.port=0");
-			fail("Exception expected on using Output element as method and parameter");
+			fail("Exception expected:" +  INVALID_OUTPUT_VALUES);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).startsWith("Cannot set both Output (@Output/@SendTo) method annotation value " +
-					"'"+ StreamListenerTestInterfaces.FooOutboundChannel1.OUTPUT +"' and @Output annotation as a method parameter");
+			assertThat(e.getCause().getMessage()).startsWith(INVALID_OUTPUT_VALUES);
 		}
 	}
 
@@ -181,8 +188,7 @@ public class StreamListenerMethodTests {
 			fail("Exception expected when inbound target is not set");
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("No input destination is configured. Use either a @StreamListener" +
-					" argument or @Input");
+			assertThat(e.getCause().getMessage()).contains(NO_INPUT_DESTINATION);
 		}
 	}
 
@@ -219,6 +225,7 @@ public class StreamListenerMethodTests {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				Assert.isTrue(message.getPayload().equals("testing"));
+				Assert.isTrue(message.getHeaders().get("output").equals("output2"));
 				latch.countDown();
 			}
 		});
@@ -226,6 +233,7 @@ public class StreamListenerMethodTests {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				Assert.isTrue(message.getPayload().equals("TESTING"));
+				Assert.isTrue(message.getHeaders().get("output").equals("output1"));
 				latch.countDown();
 			}
 		});

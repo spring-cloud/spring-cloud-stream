@@ -50,12 +50,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-@RunWith(StreamListenerTestMethodReturnWithConversion.class)
-@Suite.SuiteClasses({StreamListenerTestMethodReturnWithConversion.TestReturnConversion.class,
-		StreamListenerTestMethodReturnWithConversion.TestReturnNoConversion.class})
-public class StreamListenerTestMethodReturnWithConversion extends Suite {
+@RunWith(StreamListenerMethodReturnWithConversionTests.class)
+@Suite.SuiteClasses({StreamListenerMethodReturnWithConversionTests.TestReturnConversion.class,
+		StreamListenerMethodReturnWithConversionTests.TestReturnNoConversion.class})
+public class StreamListenerMethodReturnWithConversionTests extends Suite {
 
-	public StreamListenerTestMethodReturnWithConversion(Class<?> klass, RunnerBuilder builder) throws InitializationError {
+	public StreamListenerMethodReturnWithConversionTests(Class<?> klass, RunnerBuilder builder) throws InitializationError {
 		super(klass, builder);
 	}
 
@@ -124,6 +124,7 @@ public class StreamListenerTestMethodReturnWithConversion extends Suite {
 					TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
 			assertThat(message.getPayload().getBar()).isEqualTo("barbar" + id);
+			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class) == null);
 			context.close();
 		}
 	}

@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.reactive;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,38 +47,26 @@ import org.springframework.messaging.support.MessageBuilder;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerReactiveTestReturn {
+public class StreamListenerReactiveReturnWithMessageTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerReactiveTestReturn(Class<?> configClass) {
+	public StreamListenerReactiveReturnWithMessageTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {ReactorTestReturn1.class, ReactorTestReturn2.class, ReactorTestReturn3.class, ReactorTestReturn4.class,
-				RxJava1TestReturn1.class, RxJava1TestReturn2.class, RxJava1TestReturn3.class, RxJava1TestReturn4.class});
+		return Arrays.asList(new Class[] {ReactorTestReturnWithMessage1.class, ReactorTestReturnWithMessage2.class,
+				ReactorTestReturnWithMessage3.class, ReactorTestReturnWithMessage4.class, RxJava1TestReturnWithMessage1.class,
+				RxJava1TestReturnWithMessage2.class, RxJava1TestReturnWithMessage3.class, RxJava1TestReturnWithMessage4.class});
 	}
 
 	@Test
-	public void testReturn() throws Exception {
+	public void testReturnWithMessage() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
 		sendMessageAndValidate(context);
-		sendMessageAndValidate(context);
-		sendMessageAndValidate(context);
 		context.close();
-	}
-
-	@Test
-	public void testIncorrectUsage1() {
-		try {
-			SpringApplication.run(ReactorTestReturn5.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("StreamListener method with return type should have outbound target specified");
-		}
 	}
 
 	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
@@ -95,104 +82,99 @@ public class StreamListenerReactiveTestReturn {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestReturn1 {
+	public static class ReactorTestReturnWithMessage1 {
 
 		@StreamListener
 		public
 		@Output(Processor.OUTPUT)
-		Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
-			return input.map(m -> m.toUpperCase());
+		Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
+			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestReturn2 {
-
-		@StreamListener(Processor.INPUT)
-		@Output(Processor.OUTPUT)
-		public Flux<String> receive(Flux<String> input) {
-			return input.map(m -> m.toUpperCase());
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class ReactorTestReturn3 {
-
-		@StreamListener(Processor.INPUT)
-		@SendTo(Processor.OUTPUT)
-		public Flux<String> receive(Flux<String> input) {
-			return input.map(m -> m.toUpperCase());
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class ReactorTestReturn4 {
-
-		@StreamListener
-		@SendTo(Processor.OUTPUT)
-		public Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
-			return input.map(m -> m.toUpperCase());
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class ReactorTestReturn5 {
-
-		@StreamListener
-		public Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
-			return input.map(m -> m.toUpperCase());
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturn1 {
-
-		@StreamListener
-		public
-		@Output(Processor.OUTPUT)
-		Observable<String> receive(@Input(Processor.INPUT) Observable<String> input) {
-			return input.map(m -> m.toUpperCase());
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturn2 {
+	public static class ReactorTestReturnWithMessage2 {
 
 		@StreamListener(Processor.INPUT)
 		public
 		@Output(Processor.OUTPUT)
-		Observable<String> receive(Observable<String> input) {
-			return input.map(m -> m.toUpperCase());
+		Flux<String> receive(Flux<Message<String>> input) {
+			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class RxJava1TestReturn3 {
+	public static class ReactorTestReturnWithMessage3 {
 
 		@StreamListener(Processor.INPUT)
 		public
 		@SendTo(Processor.OUTPUT)
-		Observable<String> receive(Observable<String> input) {
-			return input.map(m -> m.toUpperCase());
+		Flux<String> receive(Flux<Message<String>> input) {
+			return input.map(m -> m.getPayload().toUpperCase());
+		}
+	}
+
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class ReactorTestReturnWithMessage4 {
+
+		@StreamListener
+		public
+		@SendTo(Processor.OUTPUT)
+		Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
+			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class RxJava1TestReturn4 {
+	public static class RxJava1TestReturnWithMessage1 {
+
+		@StreamListener
+		public
+		@Output(Processor.OUTPUT)
+		Observable<String> receive(@Input(Processor.INPUT) Observable<Message<String>> input) {
+			return input.map(m -> m.getPayload().toUpperCase());
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class RxJava1TestReturnWithMessage2 {
 
 		@StreamListener
 		public
 		@SendTo(Processor.OUTPUT)
-		Observable<String> receive(@Input(Processor.INPUT) Observable<String> input) {
-			return input.map(m -> m.toUpperCase());
+		Observable<String> receive(@Input(Processor.INPUT) Observable<Message<String>> input) {
+			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class RxJava1TestReturnWithMessage3 {
+
+		@StreamListener(Processor.INPUT)
+		public
+		@Output(Processor.OUTPUT)
+		Observable<String> receive(Observable<Message<String>> input) {
+			return input.map(m -> m.getPayload().toUpperCase());
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class RxJava1TestReturnWithMessage4 {
+
+		@StreamListener(Processor.INPUT)
+		public
+		@SendTo(Processor.OUTPUT)
+		Observable<String> receive(Observable<Message<String>> input) {
+			return input.map(m -> m.getPayload().toUpperCase());
+		}
+	}
+
 }

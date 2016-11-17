@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
@@ -42,22 +39,24 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerReactiveTestInputOutputArgsWithSender {
+public class StreamListenerReactiveInputOutputArgsWithSenderTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerReactiveTestInputOutputArgsWithSender(Class<?> configClass) {
+	public StreamListenerReactiveInputOutputArgsWithSenderTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {ReactorTestInputOutputArgsWithFluxSender1.class, RxJava1TestInputOutputArgsWithObservableSender1.class});
+		return Arrays.asList(new Class[]{ReactorTestInputOutputArgsWithFluxSender.class, RxJava1TestInputOutputArgsWithObservableSender.class});
 	}
 
 	@Test
@@ -69,30 +68,6 @@ public class StreamListenerReactiveTestInputOutputArgsWithSender {
 		sendMessageAndValidate(context);
 		sendMessageAndValidate(context);
 		context.close();
-	}
-
-	@Test
-	public void testIncorrectUsage() {
-		try {
-			SpringApplication.run(ReactorTestInputOutputArgsWithFluxSender2.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
-					"Use @Input method parameter annotation to specify inbound value instead");
-		}
-	}
-
-	@Test
-	public void testIncorrectUsage1() {
-		try {
-			SpringApplication.run(RxJava1TestInputOutputArgsWithObservableSender2.class, "--server.port=0");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains("Cannot set StreamListener value 'input' when using @Output annotation as method parameter. " +
-					"Use @Input method parameter annotation to specify inbound value instead");
-		}
 	}
 
 
@@ -109,7 +84,7 @@ public class StreamListenerReactiveTestInputOutputArgsWithSender {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestInputOutputArgsWithFluxSender1 {
+	public static class ReactorTestInputOutputArgsWithFluxSender {
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input, @Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input
@@ -120,33 +95,10 @@ public class StreamListenerReactiveTestInputOutputArgsWithSender {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class ReactorTestInputOutputArgsWithFluxSender2 {
-		@StreamListener(Processor.INPUT)
-		public void receive(Flux<Message<String>> input, @Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input
-					.map(m -> m.getPayload().toString().toUpperCase())
-					.map(o -> MessageBuilder.withPayload(o).build()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestInputOutputArgsWithObservableSender1 {
+	public static class RxJava1TestInputOutputArgsWithObservableSender {
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Observable<Message<?>> input, @Output(Processor.OUTPUT)
-		ObservableSender output) {
-			output.send(input
-					.map(m -> m.getPayload().toString().toUpperCase())
-					.map(o -> MessageBuilder.withPayload(o).build()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestInputOutputArgsWithObservableSender2 {
-		@StreamListener(Processor.INPUT)
-		public void receive(Observable<Message<?>> input, @Output(Processor.OUTPUT)
-		ObservableSender output) {
+				ObservableSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString().toUpperCase())
 					.map(o -> MessageBuilder.withPayload(o).build()));

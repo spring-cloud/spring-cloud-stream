@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public class StreamListenerTestContentTypeConversion {
+public class StreamListenerContentTypeConversionTests {
 
 	@Test
 	public void testContentTypeConversion() throws Exception {

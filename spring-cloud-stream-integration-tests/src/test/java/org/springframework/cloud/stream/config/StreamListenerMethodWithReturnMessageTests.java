@@ -45,22 +45,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerTestMethodWithReturnValue {
+public class StreamListenerMethodWithReturnMessageTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerTestMethodWithReturnValue(Class<?> configClass) {
+	public StreamListenerMethodWithReturnMessageTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[]{TestStringProcessor1.class, TestStringProcessor2.class});
+		return Arrays.asList(new Class[]{TestPojoWithMessageReturn1.class, TestPojoWithMessageReturn2.class});
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testReturn() throws Exception {
+	public void testReturnMessage() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
 				.run(this.configClass, "--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
@@ -69,42 +69,46 @@ public class StreamListenerTestMethodWithReturnValue {
 		processor.input()
 				.send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
-		Message<String> message = (Message<String>) collector
+		TestPojoWithMessageReturn testPojoWithMessageReturn = context
+				.getBean(TestPojoWithMessageReturn.class);
+		assertThat(testPojoWithMessageReturn.receivedPojos).hasSize(1);
+		assertThat(testPojoWithMessageReturn.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
+		Message<StreamListenerTestInterfaces.BarPojo> message = (Message<StreamListenerTestInterfaces.BarPojo>) collector
 				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
-		TestStringProcessor testStringProcessor = context
-				.getBean(TestStringProcessor.class);
-		assertThat(testStringProcessor.receivedPojos).hasSize(1);
-		assertThat(testStringProcessor.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("barbar" + id);
+		assertThat(message.getPayload().getBar()).isEqualTo("barbar" + id);
 		context.close();
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestStringProcessor1 extends TestStringProcessor {
+	public static class TestPojoWithMessageReturn1 extends TestPojoWithMessageReturn {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public String receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public Message<?> receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
-			return fooPojo.getFoo();
+			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			barPojo.setBar(fooPojo.getFoo());
+			return MessageBuilder.withPayload(barPojo).setHeader("foo", "bar").build();
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestStringProcessor2 extends TestStringProcessor {
+	public static class TestPojoWithMessageReturn2 extends TestPojoWithMessageReturn {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public String receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public Message<?> receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
-			return fooPojo.getFoo();
+			StreamListenerTestInterfaces.BarPojo bazPojo = new StreamListenerTestInterfaces.BarPojo();
+			bazPojo.setBar(fooPojo.getFoo());
+			return MessageBuilder.withPayload(bazPojo).setHeader("foo", "bar").build();
 		}
 	}
 
-	public static class TestStringProcessor {
+	public static class TestPojoWithMessageReturn {
 		List<StreamListenerTestInterfaces.FooPojo> receivedPojos = new ArrayList<>();
 	}
 

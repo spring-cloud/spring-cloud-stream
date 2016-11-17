@@ -39,6 +39,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_MESSAGE_HANDLER_METHOD_PARAMS;
 
 /**
  * @author Marius Bogoevici
@@ -75,11 +76,10 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 	public void testInputAnnotationAtMethodParameter() throws Exception {
 		try {
 			SpringApplication.run(TestPojoWithAnnotatedArguments2.class, "--server.port=0");
-			fail("Exception expected on using @Input annotation as method parameter for StreamListener message handler mapping.");
+			fail("Exception expected: "+ INVALID_MESSAGE_HANDLER_METHOD_PARAMS);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains("@Input or @Output annotation is not supported as method parameter in StreamListener " +
-					"method with message handler mapping");
+			assertThat(e.getCause().getMessage()).contains(INVALID_MESSAGE_HANDLER_METHOD_PARAMS);
 		}
 	}
 
