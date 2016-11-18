@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -45,14 +46,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_INBOUND_NAME;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_MESSAGE_HANDLER_METHOD_PARAMS;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_OUTBOUND_NAME;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_OUTPUT_VALUES;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.NO_INPUT_DESTINATION;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.TARGET_BEAN_NOT_EXISTS;
 
 /**
  * @author Marius Bogoevici
@@ -61,9 +61,9 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
 public class StreamListenerHandlerMethodTests {
 
 	@Test
-	public void testMethodWIthInputOnStreamListener() throws Exception {
+	public void testInvalidInputOnMethod() throws Exception {
 		try {
-			SpringApplication.run(TestMethodWIthInputOnStreamListener.class, "--server.port=0");
+			SpringApplication.run(TestInvalidInputOnMethod.class, "--server.port=0");
 			fail("Exception expected: "+ INPUT_AT_STREAM_LISTENER);
 		}
 		catch (BeanCreationException e) {
@@ -72,7 +72,7 @@ public class StreamListenerHandlerMethodTests {
 	}
 
 	@Test
-	public void testReturnTypeWithMultipleOutput() throws Exception {
+	public void testInvalidReturnTypeWithSendToAndOutput() throws Exception {
 		try {
 			SpringApplication.run(TestReturnTypeWithMultipleOutput.class, "--server.port=0");
 			fail("Exception expected: "+ RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
@@ -83,9 +83,9 @@ public class StreamListenerHandlerMethodTests {
 	}
 
 	@Test
-	public void testReturnTypeWithNoOutput() throws Exception {
+	public void testInvalidReturnTypeWithNoOutput() throws Exception {
 		try {
-			SpringApplication.run(TestReturnTypeWithNoOutput.class, "--server.port=0");
+			SpringApplication.run(TestInvalidReturnTypeWithNoOutput.class, "--server.port=0");
 			fail("Exception expected: " + RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
 		catch (BeanCreationException e) {
@@ -94,9 +94,9 @@ public class StreamListenerHandlerMethodTests {
 	}
 
 	@Test
-	public void testMethodInputAnnotationWithNoValue() throws Exception {
+	public void testInvalidInputAnnotationWithNoValue() throws Exception {
 		try {
-			SpringApplication.run(TestMethodInputAnnotationWithNoValue.class, "--server.port=0");
+			SpringApplication.run(TestInvalidInputAnnotationWithNoValue.class, "--server.port=0");
 			fail("Exception expected: "+ INVALID_INBOUND_NAME);
 		}
 		catch (BeanCreationException e) {
@@ -105,9 +105,9 @@ public class StreamListenerHandlerMethodTests {
 	}
 
 	@Test
-	public void testMethodOutputAnnotationWithNoValue() throws Exception {
+	public void testInvalidOutputAnnotationWithNoValue() throws Exception {
 		try {
-			SpringApplication.run(TestMethodOutputAnnotationWithNoValue.class, "--server.port=0");
+			SpringApplication.run(TestInvalidOutputAnnotationWithNoValue.class, "--server.port=0");
 			fail("Exception expected: "+ INVALID_OUTBOUND_NAME);
 		}
 		catch (BeanCreationException e) {
@@ -122,7 +122,8 @@ public class StreamListenerHandlerMethodTests {
 			fail("Exception expected on using invalid inbound name");
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(TARGET_BEAN_NOT_EXISTS + ": invalid");
+			assertThat(e.getCause()).isInstanceOf(NoSuchBeanDefinitionException.class);
+			assertThat(e.getCause()).hasMessageContaining("'invalid'");
 		}
 	}
 
@@ -133,7 +134,8 @@ public class StreamListenerHandlerMethodTests {
 			fail("Exception expected on using invalid outbound name");
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(TARGET_BEAN_NOT_EXISTS + ": invalid");
+			assertThat(e.getCause()).isInstanceOf(NoSuchBeanDefinitionException.class);
+			assertThat(e.getCause()).hasMessageContaining("'invalid'");
 		}
 	}
 
@@ -163,10 +165,10 @@ public class StreamListenerHandlerMethodTests {
 	public void testMethodWithInputAsMethodAndParameter() throws Exception {
 		try {
 			SpringApplication.run(TestMethodWithInputAsMethodAndParameter.class, "--server.port=0");
-			fail("Exception expected: " + INVALID_MESSAGE_HANDLER_METHOD_PARAMS);
+			fail("Exception expected: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(INVALID_MESSAGE_HANDLER_METHOD_PARAMS);
+			assertThat(e.getCause().getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
@@ -196,7 +198,7 @@ public class StreamListenerHandlerMethodTests {
 	public void testMethodWithMultipleInputParameters() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithMultipleInputParameters.class, "--server.port=0");
 		Processor processor = context.getBean(Processor.class);
-		StreamListenerTestInterfaces.FooInboundChannel1 inboundChannel2 = context.getBean(StreamListenerTestInterfaces.FooInboundChannel1.class);
+		StreamListenerTestUtils.FooInboundChannel1 inboundChannel2 = context.getBean(StreamListenerTestUtils.FooInboundChannel1.class);
 		String id = UUID.randomUUID().toString();
 		final CountDownLatch latch = new CountDownLatch(2);
 		((SubscribableChannel) processor.output()).subscribe(new MessageHandler() {
@@ -219,7 +221,7 @@ public class StreamListenerHandlerMethodTests {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithMultipleOutputParameters.class, "--server.port=0");
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		StreamListenerTestInterfaces.FooOutboundChannel1 source2 = context.getBean(StreamListenerTestInterfaces.FooOutboundChannel1.class);
+		StreamListenerTestUtils.FooOutboundChannel1 source2 = context.getBean(StreamListenerTestUtils.FooOutboundChannel1.class);
 		final CountDownLatch latch = new CountDownLatch(2);
 		((SubscribableChannel) processor.output()).subscribe(new MessageHandler() {
 			@Override
@@ -243,13 +245,13 @@ public class StreamListenerHandlerMethodTests {
 		context.close();
 	}
 
-	@EnableBinding({Processor.class, StreamListenerTestInterfaces.FooOutboundChannel1.class})
+	@EnableBinding({Processor.class, StreamListenerTestUtils.FooOutboundChannel1.class})
 	@EnableAutoConfiguration
 	public static class TestMethodWithMultipleOutputParameters {
 
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) SubscribableChannel input, @Output(Processor.OUTPUT) final MessageChannel output1,
-				@Output(StreamListenerTestInterfaces.FooOutboundChannel1.OUTPUT) final MessageChannel output2) {
+				@Output(StreamListenerTestUtils.FooOutboundChannel1.OUTPUT) final MessageChannel output2) {
 			input.subscribe(new MessageHandler() {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {
@@ -269,17 +271,17 @@ public class StreamListenerHandlerMethodTests {
 	public static class TestMethodWithoutInput {
 
 		@StreamListener
-		public void receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public void receive(StreamListenerTestUtils.FooPojo fooPojo) {
 		}
 	}
 
 	@EnableBinding({Sink.class})
 	@EnableAutoConfiguration
-	public static class TestMethodWIthInputOnStreamListener {
+	public static class TestInvalidInputOnMethod {
 
 		@StreamListener
 		@Input(Sink.INPUT)
-		public void receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public void receive(StreamListenerTestUtils.FooPojo fooPojo) {
 		}
 	}
 
@@ -288,7 +290,7 @@ public class StreamListenerHandlerMethodTests {
 	public static class TestAmbiguousMethodArguments1 {
 
 		@StreamListener(Processor.INPUT)
-		public void receive(@Payload StreamListenerTestInterfaces.FooPojo fooPojo, String value) {
+		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo, String value) {
 		}
 	}
 
@@ -297,24 +299,24 @@ public class StreamListenerHandlerMethodTests {
 	public static class TestAmbiguousMethodArguments2 {
 
 		@StreamListener(Processor.INPUT)
-		public void receive(@Payload StreamListenerTestInterfaces.FooPojo fooPojo, @Payload StreamListenerTestInterfaces.BarPojo barPojo) {
+		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo, @Payload StreamListenerTestUtils.BarPojo barPojo) {
 		}
 	}
 
-	@EnableBinding({Processor.class, StreamListenerTestInterfaces.FooOutboundChannel1.class})
+	@EnableBinding({Processor.class, StreamListenerTestUtils.FooOutboundChannel1.class})
 	@EnableAutoConfiguration
 	public static class TestReturnTypeWithMultipleOutput {
 
 		@StreamListener
 		public String receive(@Input(Processor.INPUT) SubscribableChannel input1, @Output(Processor.OUTPUT) MessageChannel output1,
-				@Output(StreamListenerTestInterfaces.FooOutboundChannel1.OUTPUT) MessageChannel output2) {
+				@Output(StreamListenerTestUtils.FooOutboundChannel1.OUTPUT) MessageChannel output2) {
 			return "foo";
 		}
 	}
 
-	@EnableBinding({Processor.class, StreamListenerTestInterfaces.FooOutboundChannel1.class})
+	@EnableBinding({Processor.class, StreamListenerTestUtils.FooOutboundChannel1.class})
 	@EnableAutoConfiguration
-	public static class TestReturnTypeWithNoOutput {
+	public static class TestInvalidReturnTypeWithNoOutput {
 
 		@StreamListener
 		public String receive(@Input(Processor.INPUT) SubscribableChannel input1) {
@@ -324,7 +326,7 @@ public class StreamListenerHandlerMethodTests {
 
 	@EnableBinding({Processor.class})
 	@EnableAutoConfiguration
-	public static class TestMethodInputAnnotationWithNoValue {
+	public static class TestInvalidInputAnnotationWithNoValue {
 
 		@StreamListener
 		public void receive(@Input SubscribableChannel input) {
@@ -333,7 +335,7 @@ public class StreamListenerHandlerMethodTests {
 
 	@EnableBinding({Processor.class})
 	@EnableAutoConfiguration
-	public static class TestMethodOutputAnnotationWithNoValue {
+	public static class TestInvalidOutputAnnotationWithNoValue {
 
 		@StreamListener
 		public void receive(@Input(Processor.OUTPUT) SubscribableChannel input, @Output MessageChannel output) {
@@ -363,16 +365,16 @@ public class StreamListenerHandlerMethodTests {
 	public static class TestMethodWithInputAsMethodAndParameter {
 
 		@StreamListener
-		public void receive(@Input(Sink.INPUT) StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public void receive(@Input(Sink.INPUT) StreamListenerTestUtils.FooPojo fooPojo) {
 		}
 	}
 
-	@EnableBinding({Processor.class, StreamListenerTestInterfaces.FooOutboundChannel1.class})
+	@EnableBinding({Processor.class, StreamListenerTestUtils.FooOutboundChannel1.class})
 	@EnableAutoConfiguration
 	public static class TestMethodWithOutputAsMethodAndParameter {
 
 		@StreamListener
-		@Output(StreamListenerTestInterfaces.FooOutboundChannel1.OUTPUT)
+		@Output(StreamListenerTestUtils.FooOutboundChannel1.OUTPUT)
 		public void receive(@Input(Processor.INPUT) SubscribableChannel input, @Output(Processor.OUTPUT) final MessageChannel output1) {
 			input.subscribe(new MessageHandler() {
 				@Override
@@ -383,12 +385,12 @@ public class StreamListenerHandlerMethodTests {
 		}
 	}
 
-	@EnableBinding({Processor.class, StreamListenerTestInterfaces.FooInboundChannel1.class})
+	@EnableBinding({Processor.class, StreamListenerTestUtils.FooInboundChannel1.class})
 	@EnableAutoConfiguration
 	public static class TestMethodWithMultipleInputParameters {
 
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) SubscribableChannel input1, @Input(StreamListenerTestInterfaces.FooInboundChannel1.INPUT) SubscribableChannel input2,
+		public void receive(@Input(Processor.INPUT) SubscribableChannel input1, @Input(StreamListenerTestUtils.FooInboundChannel1.INPUT) SubscribableChannel input2,
 				final @Output(Processor.OUTPUT) MessageChannel output) {
 			input1.subscribe(new MessageHandler() {
 				@Override

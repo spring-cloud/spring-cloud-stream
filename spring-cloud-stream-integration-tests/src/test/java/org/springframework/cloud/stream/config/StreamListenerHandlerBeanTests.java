@@ -59,7 +59,7 @@ public class StreamListenerHandlerBeanTests {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] { TestHandlerBean1.class, TestHandlerBean2.class });
+		return Arrays.asList(TestHandlerBeanWithSendTo.class, TestHandlerBean2.class);
 	}
 
 	@Test
@@ -89,11 +89,11 @@ public class StreamListenerHandlerBeanTests {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestHandlerBean1 {
+	public static class TestHandlerBeanWithSendTo {
 
 		@Bean
-		public HandlerBean1 handlerBean() {
-			return new HandlerBean1();
+		public HandlerBeanWithSendTo handlerBean() {
+			return new HandlerBeanWithSendTo();
 		}
 	}
 
@@ -102,30 +102,30 @@ public class StreamListenerHandlerBeanTests {
 	public static class TestHandlerBean2 {
 
 		@Bean
-		public HandlerBean2 handlerBean() {
-			return new HandlerBean2();
+		public HandlerBeanWithOutput handlerBean() {
+			return new HandlerBeanWithOutput();
 		}
 	}
 
-	public static class HandlerBean1 extends HandlerBean {
+	public static class HandlerBeanWithSendTo extends HandlerBean {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public StreamListenerTestInterfaces.BarPojo receive(StreamListenerTestInterfaces.FooPojo fooMessage) {
+		public StreamListenerTestUtils.BarPojo receive(StreamListenerTestUtils.FooPojo fooMessage) {
 			this.receivedPojos.add(fooMessage);
-			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
 			barPojo.setBar(fooMessage.getFoo());
 			return barPojo;
 		}
 	}
 
-	public static class HandlerBean2 extends HandlerBean {
+	public static class HandlerBeanWithOutput extends HandlerBean {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public StreamListenerTestInterfaces.BarPojo receive(StreamListenerTestInterfaces.FooPojo fooMessage) {
+		public StreamListenerTestUtils.BarPojo receive(StreamListenerTestUtils.FooPojo fooMessage) {
 			this.receivedPojos.add(fooMessage);
-			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
 			barPojo.setBar(fooMessage.getFoo());
 			return barPojo;
 		}
@@ -133,7 +133,7 @@ public class StreamListenerHandlerBeanTests {
 
 	public static class HandlerBean {
 
-		List<StreamListenerTestInterfaces.FooPojo> receivedPojos = new ArrayList<>();
+		List<StreamListenerTestUtils.FooPojo> receivedPojos = new ArrayList<>();
 
 	}
 

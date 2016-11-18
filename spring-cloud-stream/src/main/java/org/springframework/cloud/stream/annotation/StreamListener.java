@@ -26,39 +26,98 @@ import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 
 /**
- * Annotation that marks a method to be a listener to the inputs declared through {@link EnableBinding}
- * (e.g. channels).
+ * Annotation that marks a method to be a listener to inputs declared via
+ * {@link EnableBinding} (e.g. channels).
  *
- * Annotated methods are allowed to have flexible signatures, which determine how
- * the method is invoked and how their return results are processed. This annotation
- * can be applied for two separate classes of methods.
+ * Annotated methods are allowed to have flexible signatures, which determine how the
+ * method is invoked and how their return results are processed. This annotation can be
+ * applied for two separate classes of methods.
  *
  * <h3>Declarative mode</h3>
  *
- * A method is considered as declarative if its method parameters are annotated with {@link Input} and/or {@link Output}
- * which have either bound elements (e.g. channels) or conversion targets from bound elements via a registered
- * {@link StreamListenerParameterAdapter}. In this case, the method is invoked once when the application starts.
+ * A method is considered declarative if all its method parameter types and return type
+ * (if not void) are bound elements or conversion targets from bound elements via a
+ * registered {@link StreamListenerParameterAdapter}.
+ * 
+ * Only declarative methods can have bound elements or conversion targets as arguments and
+ * return type.
+ * 
+ * Declarative methods must specify what inputs and outputs correspond to their arguments
+ * and return type, and can do this in one of the following ways.
+ *
+ * <ul>
+ * <li>By using either the {@link Input} or {@link Output} annotation for each of the
+ * parameters and the {@link Output} annotation on the method for the return type (if applicable). The use
+ * of annotations in this case is mandatory. In this case the {@link StreamListener}
+ * annotation must not specify a value.</li>
+ * <li>By setting an {@link Input} bound target as the annotation value of {@link StreamListener}
+ * and using {@link org.springframework.messaging.handler.annotation.SendTo}</li> on the method
+ * for the return type (if applicable). In this case the method must have exactly one parameter, corresponding
+ * to an input.</li>
+ * </ul>
+ *
+ * An example of declarative method signature using the former idiom is as follows:
+ *
+ * <pre>
+ * {@code
+ * @StreamListener
+ * public @Output("joined") Flux<String> join(
+ *       @Input("input1") Flux<String> input1,
+ *       @Input("input2") Flux<String> input2) {
+ *   // ... join the two input streams via functional operators
+ * }
+ * }
+ * </pre>
+ *
+ * An example of declarative method signature using the latter idiom is as follows:
+ *
+ * <pre>
+ * {@code
+ * @StreamListener(Processor.INPUT)
+ * @SendTo(Processor.OUTPUT)
+ * public Flux<String> convert(Flux<String> input) {
+ *     return input.map(String::toUppercase);
+ * }
+ * }
+ * </pre>
+ *
+ * Declarative methods are invoked only once, when the context is refreshed.
  *
  * <h3>Individual message handler mode</h3>
  *
- * Non declarative method is treated as message handler based, and is invoked for each
- * incoming message received from that target. In this case, the
- * method can have a flexible signature, as described by {@link MessageMapping}.
+ * Non declarative methods are treated as message handler based, and are invoked for each
+ * incoming message received from that target. In this case, the method can have a
+ * flexible signature, as described by {@link MessageMapping}.
  *
- * If the method returns a {@link org.springframework.messaging.Message}, the result will be automatically sent
- * to a channel, as follows:
+ * If the method returns a {@link org.springframework.messaging.Message}, the result will
+ * be automatically sent to a channel, as follows:
  * <ul>
- * <li>A result of the type {@link org.springframework.messaging.Message} will be sent as-is</li>
- * <li>All other results will become the payload of a {@link org.springframework.messaging.Message}</li>
+ * <li>A result of the type {@link org.springframework.messaging.Message} will be sent
+ * as-is</li>
+ * <li>All other results will become the payload of a
+ * {@link org.springframework.messaging.Message}</li>
  * </ul>
  *
- * The target channel of the return message is determined by consulting in the following order:
+ * The target channel of the return message is determined by consulting in the following
+ * order:
  * <ul>
- * <li>The {@link org.springframework.messaging.MessageHeaders} of the resulting message.</li>
- * <li>The value set on the {@link org.springframework.messaging.handler.annotation.SendTo} annotation, if present</li>
+ * <li>The {@link org.springframework.messaging.MessageHeaders} of the resulting
+ * message.</li>
+ * <li>The value set on the
+ * {@link org.springframework.messaging.handler.annotation.SendTo} annotation, if
+ * present</li>
  * </ul>
  *
- * In both the modes, the StreamListener annotation value must be the name of an {@link Input} bound target.
+ * An example of individual message handler signature is as follows:
+ *
+ * <pre>
+ * {@code
+ * @StreamListener(Processor.INPUT)
+ * @SendTo(Processor.OUTPUT)
+ * public String convert(String input) {
+ *     return input.toUppercase();
+ * }
+ * }
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -66,7 +125,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * @see {@link EnableBinding}
  * @see {@link org.springframework.messaging.handler.annotation.SendTo}
  */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @MessageMapping
 @Documented

@@ -41,10 +41,10 @@ public class StreamListenerContentTypeConversionTests {
 
 	@Test
 	public void testContentTypeConversion() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestSink1.class,
+		ConfigurableApplicationContext context = SpringApplication.run(TestSinkWithContentTypeConversion.class,
 				"--server.port=0");
 		@SuppressWarnings("unchecked")
-		TestSink1 testSink = context.getBean(TestSink1.class);
+		TestSinkWithContentTypeConversion testSink = context.getBean(TestSinkWithContentTypeConversion.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(
@@ -59,13 +59,13 @@ public class StreamListenerContentTypeConversionTests {
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	public static class TestSink1 {
+	public static class TestSinkWithContentTypeConversion {
 
-		List<StreamListenerTestInterfaces.FooPojo> receivedArguments = new ArrayList<>();
+		List<StreamListenerTestUtils.FooPojo> receivedArguments = new ArrayList<>();
 		CountDownLatch latch = new CountDownLatch(1);
 
 		@StreamListener(Sink.INPUT)
-		public void receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public void receive(StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedArguments.add(fooPojo);
 			this.latch.countDown();
 		}

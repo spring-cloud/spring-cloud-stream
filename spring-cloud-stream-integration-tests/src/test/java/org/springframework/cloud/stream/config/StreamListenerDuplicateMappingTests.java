@@ -39,7 +39,7 @@ public class StreamListenerDuplicateMappingTests {
 	@SuppressWarnings("unchecked")
 	public void testDuplicateMapping() throws Exception {
 		try {
-			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping1.class,
+			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping.class,
 					"--server.port=0");
 			fail("Exception expected on duplicate mapping");
 		}
@@ -50,14 +50,14 @@ public class StreamListenerDuplicateMappingTests {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestDuplicateMapping1 {
+	public static class TestDuplicateMapping {
 
 		@StreamListener(Processor.INPUT)
 		public void receive(Message<String> fooMessage) {
 		}
 
 		@StreamListener(Processor.INPUT)
-		public void receive2(Message<String> fooMessage) {
+		public void receiveDuplicateMapping(Message<String> fooMessage) {
 		}
 	}
 }

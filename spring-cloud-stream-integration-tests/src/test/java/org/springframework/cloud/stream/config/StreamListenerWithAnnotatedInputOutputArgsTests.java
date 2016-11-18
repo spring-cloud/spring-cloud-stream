@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -39,7 +40,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.TARGET_BEAN_NOT_EXISTS;
 
 /**
  * @author Marius Bogoevici
@@ -71,7 +71,8 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 			fail("Exception expected on using invalid bindable target as method parameter");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains(TARGET_BEAN_NOT_EXISTS + ": invalid");
+			assertThat(e.getCause()).isInstanceOf(NoSuchBeanDefinitionException.class);
+			assertThat(e.getCause()).hasMessageContaining("'invalid'");
 		}
 	}
 

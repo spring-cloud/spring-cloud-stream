@@ -86,7 +86,7 @@ public class StreamListenerMethodWithReturnValueTests {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public String receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public String receive(StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
 			return fooPojo.getFoo();
 		}
@@ -98,14 +98,14 @@ public class StreamListenerMethodWithReturnValueTests {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public String receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public String receive(StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
 			return fooPojo.getFoo();
 		}
 	}
 
 	public static class TestStringProcessor {
-		List<StreamListenerTestInterfaces.FooPojo> receivedPojos = new ArrayList<>();
+		List<StreamListenerTestUtils.FooPojo> receivedPojos = new ArrayList<>();
 	}
 
 }

@@ -39,7 +39,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_MESSAGE_HANDLER_METHOD_PARAMS;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS;
 
 /**
  * @author Marius Bogoevici
@@ -50,7 +50,7 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testAnnotatedArguments() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments1.class,
+		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class,
 				"--server.port=0");
 
 		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context
@@ -60,7 +60,7 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments).hasSize(3);
-		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).isInstanceOf(StreamListenerTestInterfaces.FooPojo.class);
+		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).isInstanceOf(StreamListenerTestUtils.FooPojo.class);
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).hasFieldOrPropertyWithValue("foo",
 				"barbar" + id);
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(1)).isInstanceOf(Map.class);
@@ -75,20 +75,22 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 	@Test
 	public void testInputAnnotationAtMethodParameter() throws Exception {
 		try {
-			SpringApplication.run(TestPojoWithAnnotatedArguments2.class, "--server.port=0");
-			fail("Exception expected: "+ INVALID_MESSAGE_HANDLER_METHOD_PARAMS);
+			SpringApplication.run(TestPojoWithInvalidInputAnnotatedArgument.class, "--server.port=0");
+			fail("Exception expected: "+ INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(INVALID_MESSAGE_HANDLER_METHOD_PARAMS);
+			assertThat(e.getCause().getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestPojoWithAnnotatedArguments1 extends TestPojoWithAnnotatedArguments {
+	public static class TestPojoWithAnnotatedArguments {
+
+		List<Object> receivedArguments = new ArrayList<>();
 
 		@StreamListener(Processor.INPUT)
-		public void receive(@Payload StreamListenerTestInterfaces.FooPojo fooPojo,
+		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo,
 				@Headers Map<String, Object> headers,
 				@Header(MessageHeaders.CONTENT_TYPE) String contentType) {
 			this.receivedArguments.add(fooPojo);
@@ -99,19 +101,18 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestPojoWithAnnotatedArguments2 extends TestPojoWithAnnotatedArguments {
+	public static class TestPojoWithInvalidInputAnnotatedArgument {
+
+		List<Object> receivedArguments = new ArrayList<>();
 
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) @Payload StreamListenerTestInterfaces.FooPojo fooPojo,
+		public void receive(
+				@Input(Processor.INPUT) @Payload StreamListenerTestUtils.FooPojo fooPojo,
 				@Headers Map<String, Object> headers,
 				@Header(MessageHeaders.CONTENT_TYPE) String contentType) {
 			this.receivedArguments.add(fooPojo);
 			this.receivedArguments.add(headers);
 			this.receivedArguments.add(contentType);
 		}
-	}
-
-	public static class TestPojoWithAnnotatedArguments {
-		List<Object> receivedArguments = new ArrayList<>();
 	}
 }

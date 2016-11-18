@@ -72,7 +72,7 @@ public class StreamListenerMessageArgumentTests {
 				.getBean(TestPojoWithMessageArgument.class);
 		assertThat(testPojoWithMessageArgument.receivedMessages).hasSize(1);
 		assertThat(testPojoWithMessageArgument.receivedMessages.get(0).getPayload()).isEqualTo("barbar" + id);
-		Message<StreamListenerTestInterfaces.BarPojo> message = (Message<StreamListenerTestInterfaces.BarPojo>) collector
+		Message<StreamListenerTestUtils.BarPojo> message = (Message<StreamListenerTestUtils.BarPojo>) collector
 				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload().getBar()).isEqualTo("barbar" + id);
@@ -85,9 +85,9 @@ public class StreamListenerMessageArgumentTests {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public StreamListenerTestInterfaces.BarPojo receive(Message<String> fooMessage) {
+		public StreamListenerTestUtils.BarPojo receive(Message<String> fooMessage) {
 			this.receivedMessages.add(fooMessage);
-			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
 			barPojo.setBar(fooMessage.getPayload());
 			return barPojo;
 		}
@@ -99,9 +99,9 @@ public class StreamListenerMessageArgumentTests {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public StreamListenerTestInterfaces.BarPojo receive(Message<String> fooMessage) {
+		public StreamListenerTestUtils.BarPojo receive(Message<String> fooMessage) {
 			this.receivedMessages.add(fooMessage);
-			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
 			barPojo.setBar(fooMessage.getPayload());
 			return barPojo;
 		}

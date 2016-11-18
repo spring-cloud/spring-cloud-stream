@@ -23,7 +23,7 @@ import org.springframework.messaging.SubscribableChannel;
 /**
  * @author Ilayaperumal Gopinathan
  */
-public class StreamListenerTestInterfaces {
+public class StreamListenerTestUtils {
 
 	public static class FooPojo {
 

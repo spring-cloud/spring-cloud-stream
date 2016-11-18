@@ -120,7 +120,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 			assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
 			assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
-			Message<StreamListenerTestInterfaces.BarPojo> message = (Message<StreamListenerTestInterfaces.BarPojo>) collector.forChannel(processor.output()).poll(1,
+			Message<StreamListenerTestUtils.BarPojo> message = (Message<StreamListenerTestUtils.BarPojo>) collector.forChannel(processor.output()).poll(1,
 					TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
 			assertThat(message.getPayload().getBar()).isEqualTo("barbar" + id);
@@ -135,9 +135,9 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public StreamListenerTestInterfaces.BarPojo receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public StreamListenerTestUtils.BarPojo receive(StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
-			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
 			barPojo.setBar(fooPojo.getFoo());
 			return barPojo;
 		}
@@ -149,16 +149,16 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public StreamListenerTestInterfaces.BarPojo receive(StreamListenerTestInterfaces.FooPojo fooPojo) {
+		public StreamListenerTestUtils.BarPojo receive(StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
-			StreamListenerTestInterfaces.BarPojo barPojo = new StreamListenerTestInterfaces.BarPojo();
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
 			barPojo.setBar(fooPojo.getFoo());
 			return barPojo;
 		}
 	}
 
 	public static class TestPojoWithMimeType {
-		List<StreamListenerTestInterfaces.FooPojo> receivedPojos = new ArrayList<>();
+		List<StreamListenerTestUtils.FooPojo> receivedPojos = new ArrayList<>();
 	}
 
 }

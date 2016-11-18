@@ -26,7 +26,6 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.cloud.stream.annotation.Input;
@@ -49,18 +48,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMS;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_INBOUND_NAME;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_OUTBOUND_NAME;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED;
-import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.TARGET_BEAN_NOT_EXISTS;
-import static org.springframework.cloud.stream.binding.StreamListenerMethodUtils.getInboundElementNameFromMethod;
-import static org.springframework.cloud.stream.binding.StreamListenerMethodUtils.getOutboundElementNameFromMethod;
-
 /**
- * {@link BeanPostProcessor} that handles {@link StreamListener} annotations found on bean methods.
+ * {@link BeanPostProcessor} that handles {@link StreamListener} annotations found on bean
+ * methods.
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -73,8 +63,6 @@ public class StreamListenerAnnotationBeanPostProcessor
 	private final MessageHandlerMethodFactory messageHandlerMethodFactory;
 
 	private final Map<String, InvocableHandlerMethod> mappedBindings = new HashMap<>();
-
-	private final Map<String, Object> boundElements = new HashMap<>();
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -120,23 +108,23 @@ public class StreamListenerAnnotationBeanPostProcessor
 			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
 				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
 				if (streamListener != null) {
-					Assert.isTrue(method.getAnnotation(Input.class) == null, INPUT_AT_STREAM_LISTENER);
-					String methodAnnotatedInboundName = getInboundElementNameFromMethod(streamListener);
-					String methodAnnotatedOutboundName = getOutboundElementNameFromMethod(method);
+					Assert.isTrue(method.getAnnotation(Input.class) == null, StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
+					String methodAnnotatedInboundName = streamListener.value();
+					String methodAnnotatedOutboundName = StreamListenerMethodUtils.getOutboundElementNameFromMethod(method);
 					int inputAnnotationCount = StreamListenerMethodUtils.inputAnnotationCount(method);
 					int outputAnnotationCount = StreamListenerMethodUtils.outputAnnotationCount(method);
-					boolean isDeclarative = isDeclarativeStreamListenerMethod(method, methodAnnotatedInboundName, methodAnnotatedOutboundName);
-					StreamListenerMethodUtils.assertStreamListenerMethod(method, inputAnnotationCount, outputAnnotationCount, methodAnnotatedInboundName, methodAnnotatedOutboundName, isDeclarative);
-					Class<?>[] parameterTypes = method.getParameterTypes();
+					boolean isDeclarative = checkDeclarativeMethod(method, methodAnnotatedInboundName, methodAnnotatedOutboundName);
+					StreamListenerMethodUtils.validateStreamListenerMethod(method, inputAnnotationCount, outputAnnotationCount,
+							methodAnnotatedInboundName, methodAnnotatedOutboundName, isDeclarative);
 					if (!method.getReturnType().equals(Void.TYPE)) {
 						if (!StringUtils.hasText(methodAnnotatedOutboundName)) {
 							if (outputAnnotationCount == 0) {
-								throw new IllegalArgumentException(RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
+								throw new IllegalArgumentException(StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 							}
-							Assert.isTrue((outputAnnotationCount == 1), RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
+							Assert.isTrue((outputAnnotationCount == 1), StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 						}
 					}
-					if (isDeclarative && (!StringUtils.hasText(methodAnnotatedInboundName) || parameterTypes.length == 1)) {
+					if (isDeclarative) {
 						invokeSetupMethodOnListenedChannel(method, bean, methodAnnotatedInboundName, methodAnnotatedOutboundName);
 					}
 					else {
@@ -148,25 +136,34 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return bean;
 	}
 
-	private boolean isDeclarativeStreamListenerMethod(Method method, String methodAnnotatedInboundName, String methodAnnotatedOutboundName) {
+	private boolean checkDeclarativeMethod(Method method, String methodAnnotatedInboundName, String methodAnnotatedOutboundName) {
 		int methodArgumentsLength = method.getParameterTypes().length;
 		for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+			MethodParameter methodParameter = MethodParameter
+					.forMethodOrConstructor(method, parameterIndex);
 			if (methodParameter.hasParameterAnnotation(Input.class)) {
-				String inboundName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Input.class));
-				Assert.isTrue(StringUtils.hasText(inboundName), INVALID_INBOUND_NAME);
-				return isDeclarativeMethodParameter(getBindableBean(inboundName), methodParameter);
+				String inboundName = (String) AnnotationUtils
+						.getValue(methodParameter.getParameterAnnotation(Input.class));
+				Assert.isTrue(StringUtils.hasText(inboundName), StreamListenerErrorMessages.INVALID_INBOUND_NAME);
+				Assert.isTrue(isDeclarativeMethodParameter(this.applicationContext.getBean(inboundName),
+						methodParameter), StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+				return true;
 			}
 			if (methodParameter.hasParameterAnnotation(Output.class)) {
-				String outboundName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Output.class));
-				Assert.isTrue(StringUtils.hasText(outboundName), INVALID_OUTBOUND_NAME);
-				return isDeclarativeMethodParameter(getBindableBean(outboundName), methodParameter);
+				String outboundName = (String) AnnotationUtils
+						.getValue(methodParameter.getParameterAnnotation(Output.class));
+				Assert.isTrue(StringUtils.hasText(outboundName), StreamListenerErrorMessages.INVALID_OUTBOUND_NAME);
+				Assert.isTrue(isDeclarativeMethodParameter(this.applicationContext.getBean(outboundName),
+						methodParameter), StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+				return true;
 			}
 			if (StringUtils.hasText(methodAnnotatedOutboundName)) {
-				return isDeclarativeMethodParameter(getBindableBean(methodAnnotatedOutboundName), methodParameter);
+				return isDeclarativeMethodParameter(
+						this.applicationContext.getBean(methodAnnotatedOutboundName), methodParameter);
 			}
 			if (StringUtils.hasText(methodAnnotatedInboundName)) {
-				return isDeclarativeMethodParameter(getBindableBean(methodAnnotatedInboundName), methodParameter);
+				return isDeclarativeMethodParameter(
+						this.applicationContext.getBean(methodAnnotatedInboundName), methodParameter);
 			}
 		}
 		return false;
@@ -184,18 +181,6 @@ public class StreamListenerAnnotationBeanPostProcessor
 			}
 		}
 		return false;
-	}
-
-	private Object getBindableBean(String boundElementName) {
-		try {
-			if (!this.boundElements.containsKey(boundElementName)) {
-				this.boundElements.put(boundElementName, this.applicationContext.getBean(boundElementName));
-			}
-			return this.boundElements.get(boundElementName);
-		}
-		catch (NoSuchBeanDefinitionException e) {
-			throw new IllegalStateException(TARGET_BEAN_NOT_EXISTS + ": " + boundElementName, e);
-		}
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
@@ -216,7 +201,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 			}
 			if (targetReferenceValue != null) {
 				Assert.isInstanceOf(String.class, targetReferenceValue, "Annotation value must be a String");
-				Object targetBean = getBindableBean((String) targetReferenceValue);
+				Object targetBean = this.applicationContext.getBean((String) targetReferenceValue);
 				if (parameterType.isAssignableFrom(targetBean.getClass())) {
 					arguments[parameterIndex] = targetBean;
 				}
@@ -234,7 +219,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 								+ " to " + parameterType);
 			}
 			else {
-				throw new IllegalStateException(INVALID_DECLARATIVE_METHOD_PARAMS);
+				throw new IllegalStateException(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 			}
 		}
 		try {
@@ -282,7 +267,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		this.mappedBindings.put(streamListener.value(), invocableHandlerMethod);
 		SubscribableChannel channel = this.applicationContext.getBean(streamListener.value(),
 				SubscribableChannel.class);
-		final String defaultOutputChannel = getOutboundElementNameFromMethod(method);
+		final String defaultOutputChannel = StreamListenerMethodUtils.getOutboundElementNameFromMethod(method);
 		if (invocableHandlerMethod.isVoid()) {
 			Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
 					"An output channel cannot be specified for a method that " +
@@ -309,7 +294,6 @@ public class StreamListenerAnnotationBeanPostProcessor
 		// Dump the mappings after the context has been created, ensuring that beans can be processed correctly
 		// again.
 		this.mappedBindings.clear();
-		this.boundElements.clear();
 	}
 
 	private Method checkProxy(Method methodArg, Object bean) {
