@@ -20,7 +20,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.MonoProcessor;
 
-import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
@@ -42,7 +41,6 @@ public class MessageChannelToFluxSenderParameterAdapter
 	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
 		ResolvableType type = ResolvableType.forMethodParameter(methodParameter);
 		return MessageChannel.class.isAssignableFrom(boundElementType)
-				&& methodParameter.getParameterAnnotation(Output.class) != null
 				&& FluxSender.class.isAssignableFrom(type.getRawClass());
 	}
 

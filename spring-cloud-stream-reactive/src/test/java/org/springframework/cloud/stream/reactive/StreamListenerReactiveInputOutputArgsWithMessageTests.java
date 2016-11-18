@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.reactive;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import reactor.core.publisher.Flux;
+import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -30,50 +37,66 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
-import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
-public class StreamListenerWithAnnotatedArgsTests {
+@RunWith(Parameterized.class)
+public class StreamListenerReactiveInputOutputArgsWithMessageTests {
+
+	private Class<?> configClass;
+
+	public StreamListenerReactiveInputOutputArgsWithMessageTests(Class<?> configClass) {
+		this.configClass = configClass;
+	}
+
+	@Parameterized.Parameters
+	public static Collection InputConfigs() {
+		return Arrays.asList(new Class[]{ReactorTestInputOutputArgsWithMessage.class, RxJava1TestInputOutputArgsWithMessage.class});
+	}
 
 	@Test
 	public void testInputOutputArgs() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestInputOutputArgs.class, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
 		sendMessageAndValidate(context);
-	}
-
-	private void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
-		@SuppressWarnings("unchecked")
-		Processor processor = context.getBean(Processor.class);
-		processor.input().send(MessageBuilder.withPayload("hello").setHeader("contentType", "text/plain").build());
-		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
-		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo("HELLO");
 		context.close();
 	}
 
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+		@SuppressWarnings("unchecked")
+		Processor processor = context.getBean(Processor.class);
+		String sentPayload = "hello " + UUID.randomUUID().toString();
+		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		assertThat(result).isNotNull();
+		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
+	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestInputOutputArgs {
+	public static class ReactorTestInputOutputArgsWithMessage {
 
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) SubscribableChannel input, @Output(Processor.OUTPUT) final MessageChannel output) {
-			input.subscribe(new MessageHandler() {
-				@Override
-				public void handleMessage(Message<?> message) throws MessagingException {
-					output.send(MessageBuilder.withPayload(message.getPayload().toString().toUpperCase()).build());
-				}
-			});
+		public void receive(@Input(Processor.INPUT) Flux<Message<?>> input,
+				@Output(Processor.OUTPUT) FluxSender output) {
+			output.send(input.map(m -> MessageBuilder
+					.withPayload(m.getPayload().toString().toUpperCase()).build()));
 		}
 	}
 
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class RxJava1TestInputOutputArgsWithMessage {
+
+		@StreamListener
+		public void receive(@Input(Processor.INPUT) Observable<Message<String>> input,
+				@Output(Processor.OUTPUT) ObservableSender output) {
+			output.send(input.map(m -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).build()));
+		}
+	}
 }

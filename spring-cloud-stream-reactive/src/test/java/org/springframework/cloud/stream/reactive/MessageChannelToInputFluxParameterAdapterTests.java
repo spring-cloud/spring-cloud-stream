@@ -40,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Marius Bogoevici
  */
+@SuppressWarnings("unchecked")
 public class MessageChannelToInputFluxParameterAdapterTests {
 
 	@Test
