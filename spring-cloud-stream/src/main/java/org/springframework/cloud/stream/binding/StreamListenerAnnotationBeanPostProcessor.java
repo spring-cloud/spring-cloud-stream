@@ -79,16 +79,16 @@ public class StreamListenerAnnotationBeanPostProcessor
 	}
 
 	@Override
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-		Map<String, StreamListenerParameterAdapter> parameterAdapterMap =
-				this.applicationContext.getBeansOfType(StreamListenerParameterAdapter.class);
+		Map<String, StreamListenerParameterAdapter> parameterAdapterMap = this.applicationContext
+				.getBeansOfType(StreamListenerParameterAdapter.class);
 		for (StreamListenerParameterAdapter parameterAdapter : parameterAdapterMap.values()) {
 			this.streamListenerParameterAdapters.add(parameterAdapter);
 		}
-		Map<String, StreamListenerResultAdapter> resultAdapterMap =
-				this.applicationContext.getBeansOfType(StreamListenerResultAdapter.class);
+		Map<String, StreamListenerResultAdapter> resultAdapterMap = this.applicationContext
+				.getBeansOfType(StreamListenerResultAdapter.class);
 		this.streamListenerResultAdapters.add(new MessageChannelStreamListenerResultAdapter());
 		for (StreamListenerResultAdapter resultAdapter : resultAdapterMap.values()) {
 			this.streamListenerResultAdapters.add(resultAdapter);
@@ -108,24 +108,30 @@ public class StreamListenerAnnotationBeanPostProcessor
 			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
 				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
 				if (streamListener != null) {
-					Assert.isTrue(method.getAnnotation(Input.class) == null, StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
+					Assert.isTrue(method.getAnnotation(Input.class) == null,
+							StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
 					String methodAnnotatedInboundName = streamListener.value();
-					String methodAnnotatedOutboundName = StreamListenerMethodUtils.getOutboundElementNameFromMethod(method);
+					String methodAnnotatedOutboundName = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
 					int inputAnnotationCount = StreamListenerMethodUtils.inputAnnotationCount(method);
 					int outputAnnotationCount = StreamListenerMethodUtils.outputAnnotationCount(method);
-					boolean isDeclarative = checkDeclarativeMethod(method, methodAnnotatedInboundName, methodAnnotatedOutboundName);
-					StreamListenerMethodUtils.validateStreamListenerMethod(method, inputAnnotationCount, outputAnnotationCount,
-							methodAnnotatedInboundName, methodAnnotatedOutboundName, isDeclarative);
+					boolean isDeclarative = checkDeclarativeMethod(method, methodAnnotatedInboundName,
+							methodAnnotatedOutboundName);
+					StreamListenerMethodUtils.validateStreamListenerMethod(method, inputAnnotationCount,
+							outputAnnotationCount, methodAnnotatedInboundName, methodAnnotatedOutboundName,
+							isDeclarative);
 					if (!method.getReturnType().equals(Void.TYPE)) {
 						if (!StringUtils.hasText(methodAnnotatedOutboundName)) {
 							if (outputAnnotationCount == 0) {
-								throw new IllegalArgumentException(StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
+								throw new IllegalArgumentException(
+										StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 							}
-							Assert.isTrue((outputAnnotationCount == 1), StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
+							Assert.isTrue((outputAnnotationCount == 1),
+									StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 						}
 					}
 					if (isDeclarative) {
-						invokeSetupMethodOnListenedChannel(method, bean, methodAnnotatedInboundName, methodAnnotatedOutboundName);
+						invokeSetupMethodOnListenedChannel(method, bean, methodAnnotatedInboundName,
+								methodAnnotatedOutboundName);
 					}
 					else {
 						registerHandlerMethodOnListenedChannel(method, streamListener, bean);
@@ -136,34 +142,36 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return bean;
 	}
 
-	private boolean checkDeclarativeMethod(Method method, String methodAnnotatedInboundName, String methodAnnotatedOutboundName) {
+	private boolean checkDeclarativeMethod(Method method, String methodAnnotatedInboundName,
+			String methodAnnotatedOutboundName) {
 		int methodArgumentsLength = method.getParameterTypes().length;
 		for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter
-					.forMethodOrConstructor(method, parameterIndex);
+			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
 			if (methodParameter.hasParameterAnnotation(Input.class)) {
 				String inboundName = (String) AnnotationUtils
 						.getValue(methodParameter.getParameterAnnotation(Input.class));
 				Assert.isTrue(StringUtils.hasText(inboundName), StreamListenerErrorMessages.INVALID_INBOUND_NAME);
-				Assert.isTrue(isDeclarativeMethodParameter(this.applicationContext.getBean(inboundName),
-						methodParameter), StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+				Assert.isTrue(
+						isDeclarativeMethodParameter(this.applicationContext.getBean(inboundName), methodParameter),
+						StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 				return true;
 			}
 			if (methodParameter.hasParameterAnnotation(Output.class)) {
 				String outboundName = (String) AnnotationUtils
 						.getValue(methodParameter.getParameterAnnotation(Output.class));
 				Assert.isTrue(StringUtils.hasText(outboundName), StreamListenerErrorMessages.INVALID_OUTBOUND_NAME);
-				Assert.isTrue(isDeclarativeMethodParameter(this.applicationContext.getBean(outboundName),
-						methodParameter), StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+				Assert.isTrue(
+						isDeclarativeMethodParameter(this.applicationContext.getBean(outboundName), methodParameter),
+						StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 				return true;
 			}
 			if (StringUtils.hasText(methodAnnotatedOutboundName)) {
-				return isDeclarativeMethodParameter(
-						this.applicationContext.getBean(methodAnnotatedOutboundName), methodParameter);
+				return isDeclarativeMethodParameter(this.applicationContext.getBean(methodAnnotatedOutboundName),
+						methodParameter);
 			}
 			if (StringUtils.hasText(methodAnnotatedInboundName)) {
-				return isDeclarativeMethodParameter(
-						this.applicationContext.getBean(methodAnnotatedInboundName), methodParameter);
+				return isDeclarativeMethodParameter(this.applicationContext.getBean(methodAnnotatedInboundName),
+						methodParameter);
 			}
 		}
 		return false;
@@ -183,8 +191,9 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return false;
 	}
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
-	private void invokeSetupMethodOnListenedChannel(Method method, Object bean, String inboundName, String outboundName) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void invokeSetupMethodOnListenedChannel(Method method, Object bean, String inboundName,
+			String outboundName) {
 		Object[] arguments = new Object[method.getParameterTypes().length];
 		for (int parameterIndex = 0; parameterIndex < arguments.length; parameterIndex++) {
 			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
@@ -206,17 +215,16 @@ public class StreamListenerAnnotationBeanPostProcessor
 					arguments[parameterIndex] = targetBean;
 				}
 				else {
-					for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter :
-							this.streamListenerParameterAdapters) {
+					for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
 						if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
-							arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean, methodParameter);
+							arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean,
+									methodParameter);
 							break;
 						}
 					}
 				}
-				Assert.notNull(arguments[parameterIndex],
-						"Cannot convert argument " + parameterIndex + " of " + method + "from " + targetBean.getClass()
-								+ " to " + parameterType);
+				Assert.notNull(arguments[parameterIndex], "Cannot convert argument " + parameterIndex + " of " + method
+						+ "from " + targetBean.getClass() + " to " + parameterType);
 			}
 			else {
 				throw new IllegalStateException(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
@@ -230,15 +238,15 @@ public class StreamListenerAnnotationBeanPostProcessor
 				Object result = method.invoke(bean, arguments);
 				if (!StringUtils.hasText(outboundName)) {
 					for (int parameterIndex = 0; parameterIndex < method.getParameterTypes().length; parameterIndex++) {
-						MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+						MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method,
+								parameterIndex);
 						if (methodParameter.hasParameterAnnotation(Output.class)) {
 							outboundName = methodParameter.getParameterAnnotation(Output.class).value();
 						}
 					}
 				}
 				Object targetBean = this.applicationContext.getBean(outboundName);
-				for (StreamListenerResultAdapter streamListenerResultAdapter : this
-						.streamListenerResultAdapters) {
+				for (StreamListenerResultAdapter streamListenerResultAdapter : this.streamListenerResultAdapters) {
 					if (streamListenerResultAdapter.supports(result.getClass(), targetBean.getClass())) {
 						streamListenerResultAdapter.adapt(result, targetBean);
 						break;
@@ -254,31 +262,29 @@ public class StreamListenerAnnotationBeanPostProcessor
 	protected void registerHandlerMethodOnListenedChannel(Method method, StreamListener streamListener, Object bean) {
 		Method targetMethod = checkProxy(method, bean);
 		Assert.hasText(streamListener.value(), "The binding name cannot be null");
-		final InvocableHandlerMethod invocableHandlerMethod =
-				this.messageHandlerMethodFactory.createInvocableHandlerMethod(bean, targetMethod);
+		final InvocableHandlerMethod invocableHandlerMethod = this.messageHandlerMethodFactory
+				.createInvocableHandlerMethod(bean, targetMethod);
 		if (!StringUtils.hasText(streamListener.value())) {
 			throw new BeanInitializationException("A bound component name must be specified");
 		}
 		if (this.mappedBindings.containsKey(streamListener.value())) {
-			throw new BeanInitializationException("Duplicate @" + StreamListener.class.getSimpleName() +
-					" mapping for '" + streamListener.value() + "' on " + invocableHandlerMethod.getShortLogMessage() +
-					" already existing for " + this.mappedBindings.get(streamListener.value()).getShortLogMessage());
+			throw new BeanInitializationException("Duplicate @" + StreamListener.class.getSimpleName()
+					+ " mapping for '" + streamListener.value() + "' on " + invocableHandlerMethod.getShortLogMessage()
+					+ " already existing for " + this.mappedBindings.get(streamListener.value()).getShortLogMessage());
 		}
 		this.mappedBindings.put(streamListener.value(), invocableHandlerMethod);
 		SubscribableChannel channel = this.applicationContext.getBean(streamListener.value(),
 				SubscribableChannel.class);
-		final String defaultOutputChannel = StreamListenerMethodUtils.getOutboundElementNameFromMethod(method);
+		final String defaultOutputChannel = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
 		if (invocableHandlerMethod.isVoid()) {
 			Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
-					"An output channel cannot be specified for a method that " +
-							"does not return a value");
+					"An output channel cannot be specified for a method that " + "does not return a value");
 		}
 		else {
 			Assert.isTrue(!StringUtils.isEmpty(defaultOutputChannel),
-					"An output channel must be specified for a method that " +
-							"can return a value");
+					"An output channel must be specified for a method that " + "can return a value");
 		}
-		StreamListenerMethodUtils.assertStreamListenerMessageHandlerMethod(method);
+		StreamListenerMethodUtils.validateStreamListenerMessageHandler(method);
 		StreamListenerMessageHandler handler = new StreamListenerMessageHandler(invocableHandlerMethod);
 		handler.setApplicationContext(this.applicationContext);
 		handler.setChannelResolver(this.binderAwareChannelResolver);
@@ -291,7 +297,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	@Override
 	public void afterSingletonsInstantiated() {
-		// Dump the mappings after the context has been created, ensuring that beans can be processed correctly
+		// Dump the mappings after the context has been created, ensuring that beans can
+		// be processed correctly
 		// again.
 		this.mappedBindings.clear();
 	}
@@ -300,7 +307,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 		Method method = methodArg;
 		if (AopUtils.isJdkDynamicProxy(bean)) {
 			try {
-				// Found a @StreamListener method on the target class for this JDK proxy ->
+				// Found a @StreamListener method on the target class for this JDK proxy
+				// ->
 				// is it also present on the proxy itself?
 				method = bean.getClass().getMethod(method.getName(), method.getParameterTypes());
 				Class<?>[] proxiedInterfaces = ((Advised) bean).getProxiedInterfaces();
@@ -318,11 +326,11 @@ public class StreamListenerAnnotationBeanPostProcessor
 			}
 			catch (NoSuchMethodException ex) {
 				throw new IllegalStateException(String.format(
-						"@StreamListener method '%s' found on bean target class '%s', " +
-								"but not found in any interface(s) for bean JDK proxy. Either " +
-								"pull the method up to an interface or switch to subclass (CGLIB) " +
-								"proxies by setting proxy-target-class/proxyTargetClass " +
-								"attribute to 'true'", method.getName(), method.getDeclaringClass().getSimpleName()), ex);
+						"@StreamListener method '%s' found on bean target class '%s', "
+								+ "but not found in any interface(s) for bean JDK proxy. Either "
+								+ "pull the method up to an interface or switch to subclass (CGLIB) "
+								+ "proxies by setting proxy-target-class/proxyTargetClass " + "attribute to 'true'",
+						method.getName(), method.getDeclaringClass().getSimpleName()), ex);
 			}
 		}
 		return method;
@@ -351,9 +359,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 					throw (MessagingException) e;
 				}
 				else {
-					throw new MessagingException(requestMessage, "Exception thrown while invoking " + this
-							.invocableHandlerMethod
-							.getShortLogMessage(), e);
+					throw new MessagingException(requestMessage,
+							"Exception thrown while invoking " + this.invocableHandlerMethod.getShortLogMessage(), e);
 				}
 			}
 		}

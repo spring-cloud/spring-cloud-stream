@@ -37,6 +37,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.support.converter.DefaultDatatypeChannelMessageConverter;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
@@ -70,7 +71,7 @@ public class CustomMessageConverterTests {
 				BarConverter.class, DefaultDatatypeChannelMessageConverter.class);
 		testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null))
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
 		Assert.assertThat(received, notNullValue());
 		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("test/foo"));

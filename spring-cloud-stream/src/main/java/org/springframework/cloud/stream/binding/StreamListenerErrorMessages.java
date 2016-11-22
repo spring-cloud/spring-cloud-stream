@@ -48,7 +48,7 @@ public abstract class StreamListenerErrorMessages {
 	public static final String NO_INPUT_DESTINATION = "No input destination is configured. Use either the @StreamListener value or @Input";
 
 	public static final String INVALID_DECLARATIVE_METHOD_PARAMETERS = PREFIX
-			+ "may use @Input or @Output annotations only in declarative mode and for parameters that are bound elements or convertible from bound elements.";
+			+ "may use @Input or @Output annotations only in declarative mode and for parameters that are binding targets or convertible from binding targets.";
 
 	public static final String AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS = "Ambiguous method arguments for the StreamListener method";
 
@@ -59,6 +59,4 @@ public abstract class StreamListenerErrorMessages {
 
 	public static final String INVALID_OUTPUT_VALUES = "Cannot set both output (@Output/@SendTo) method annotation value"
 			+ " and @Output annotation as a method parameter";
-
-	public static final String TARGET_BEAN_NOT_EXISTS = "Target bean doesn't exist for the bound element name";
 }

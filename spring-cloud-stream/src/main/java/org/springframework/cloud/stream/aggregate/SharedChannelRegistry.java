@@ -17,31 +17,45 @@
 package org.springframework.cloud.stream.aggregate;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.springframework.messaging.MessageChannel;
 
 /**
- * A registry for channels that can be shared between modules, used for module aggregation.
+ * Wraps the {@link SharedBindingTargetRegistry} for access to {@link MessageChannel}
+ * instances. This class is provided as a convenience for users of
+ * {@link SharedChannelRegistry} in previous versions and will be removed in the future.
+ *
  * @author Marius Bogoevici
+ * @deprecated in favour of {@link SharedBindingTargetRegistry}
  */
+@Deprecated
 public class SharedChannelRegistry {
 
-	/**
-	 * A {@link Map} of channels, indexed by name. A channel's name may be prefixed by a namespace.
-	 */
-	private Map<String, MessageChannel> sharedChannels = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
+	private final SharedBindingTargetRegistry sharedBindingTargetRegistry;
 
-	public MessageChannel get(String id) {
-		return sharedChannels.get(id);
+	public SharedChannelRegistry(SharedBindingTargetRegistry sharedBindingTargetRegistry) {
+		this.sharedBindingTargetRegistry = sharedBindingTargetRegistry;
 	}
 
-	public void register(String id, MessageChannel messageChannel) {
-		this.sharedChannels.put(id, messageChannel);
+	public MessageChannel get(String id) {
+		return this.sharedBindingTargetRegistry.get(id, MessageChannel.class);
+	}
+
+	public void register(String id, MessageChannel bindingTarget) {
+		this.sharedBindingTargetRegistry.register(id, bindingTarget);
 	}
 
 	public Map<String, MessageChannel> getAll() {
-		return Collections.unmodifiableMap(this.sharedChannels);
+		Map<String, Object> sharedBindingTargets = this.sharedBindingTargetRegistry.getAll();
+		Map<String, MessageChannel> sharedMessageChannels = new HashMap<>();
+		for (Map.Entry<String, Object> sharedBindingTargetEntry : sharedBindingTargets.entrySet()) {
+			if (MessageChannel.class.isAssignableFrom(sharedBindingTargetEntry.getValue().getClass())) {
+				sharedMessageChannels.put(sharedBindingTargetEntry.getKey(),
+						(MessageChannel) sharedBindingTargetEntry.getValue());
+			}
+		}
+		return Collections.unmodifiableMap(sharedMessageChannels);
 	}
 }

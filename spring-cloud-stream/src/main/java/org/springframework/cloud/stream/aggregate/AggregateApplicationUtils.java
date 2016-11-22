@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.internal.InternalPropertyNames;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -33,30 +34,20 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Venil Noronha
  */
 abstract class AggregateApplicationUtils {
-
-	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
-
-	private static final String CHANNEL_NAMESPACE_PROPERTY_NAME =
-			SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".channelNamespace";
-
-	private static final String SELF_CONTAINED_APP_PROPERTY_NAME =
-			SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".selfContained";
-
 	public static final String INPUT_CHANNEL_NAME = "input";
 
 	public static final String OUTPUT_CHANNEL_NAME = "output";
 
-	static ConfigurableApplicationContext createParentContext(Object[] sources, String[] args, final
-			boolean selfContained, boolean webEnvironment,
+	static ConfigurableApplicationContext createParentContext(Object[] sources,
+			String[] args, final boolean selfContained, boolean webEnvironment,
 			boolean headless) {
 		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
-		aggregatorParentConfiguration
-				.sources(sources)
-				.web(webEnvironment)
+		aggregatorParentConfiguration.sources(sources).web(webEnvironment)
 				.headless(headless)
 				.properties("spring.jmx.default-domain="
-									+ AggregateApplicationBuilder.ParentConfiguration.class.getName(),
-						SELF_CONTAINED_APP_PROPERTY_NAME + "=" + selfContained);
+						+ AggregateApplicationBuilder.ParentConfiguration.class.getName(),
+						InternalPropertyNames.SELF_CONTAINED_APP_PROPERTY_NAME + "="
+								+ selfContained);
 		return aggregatorParentConfiguration.run(args);
 	}
 
@@ -64,32 +55,31 @@ abstract class AggregateApplicationUtils {
 		return appClassName + "_" + index;
 	}
 
-
 	protected static SpringApplicationBuilder embedApp(
 			ConfigurableApplicationContext parentContext, String namespace,
 			Class<?> app) {
-		return new SpringApplicationBuilder(app)
-				.web(false)
-				.main(app)
-				.bannerMode(Mode.OFF)
+		return new SpringApplicationBuilder(app).web(false).main(app).bannerMode(Mode.OFF)
 				.properties("spring.jmx.default-domain=" + namespace)
-				.properties(CHANNEL_NAMESPACE_PROPERTY_NAME + "=" + namespace)
-				.registerShutdownHook(false)
-				.parent(parentContext);
+				.properties(
+						InternalPropertyNames.NAMESPACE_PROPERTY_NAME + "=" + namespace)
+				.registerShutdownHook(false).parent(parentContext);
 	}
 
-	static void prepareSharedChannelRegistry(SharedChannelRegistry sharedChannelRegistry,
+	static void prepareSharedBindingTargetRegistry(
+			SharedBindingTargetRegistry sharedChannelRegistry,
 			LinkedHashMap<Class<?>, String> appsWithNamespace) {
 		int i = 0;
 		SubscribableChannel sharedChannel = null;
 		for (Entry<Class<?>, String> appEntry : appsWithNamespace.entrySet()) {
 			String namespace = appEntry.getValue();
 			if (i > 0) {
-				sharedChannelRegistry.register(namespace + "." + INPUT_CHANNEL_NAME, sharedChannel);
+				sharedChannelRegistry.register(namespace + "." + INPUT_CHANNEL_NAME,
+						sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
 			if (i < appsWithNamespace.size() - 1) {
-				sharedChannelRegistry.register(namespace + "." + OUTPUT_CHANNEL_NAME, sharedChannel);
+				sharedChannelRegistry.register(namespace + "." + OUTPUT_CHANNEL_NAME,
+						sharedChannel);
 			}
 			i++;
 		}

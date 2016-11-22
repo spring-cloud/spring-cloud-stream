@@ -20,18 +20,19 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Used for {@link org.springframework.cloud.stream.annotation.StreamListener} arguments annotated with {@link
- * org.springframework.cloud.stream.annotation.Output}.
+ * Used for {@link org.springframework.cloud.stream.annotation.StreamListener} arguments
+ * annotated with {@link org.springframework.cloud.stream.annotation.Output}.
  * @author Marius Bogoevici
  */
 public interface FluxSender {
 
 	/**
-	 * Streams the {@link reactor.core.publisher.Flux} through the bound
-	 * element corresponding to the {@link org.springframework.cloud.stream.annotation.Output} annotation of the
-	 * argument.
-	 * @param flux a {@link Flux} that will be streamed through the bound element
-	 * @return a {@link Mono} representing the result of sending the flux (completion or error)
+	 * Streams the {@link reactor.core.publisher.Flux} through the binding target
+	 * corresponding to the {@link org.springframework.cloud.stream.annotation.Output}
+	 * annotation of the argument.
+	 * @param flux a {@link Flux} that will be streamed through the binding target
+	 * @return a {@link Mono} representing the result of sending the flux (completion or
+	 * error)
 	 */
 	Mono<Void> send(Flux<?> flux);
 }

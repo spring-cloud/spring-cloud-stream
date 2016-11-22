@@ -41,14 +41,14 @@ public class MessageChannelToInputObservableParameterAdapter
 		this.messageChannelToInputFluxArgumentAdapter = messageChannelToInputFluxArgumentAdapter;
 	}
 
-	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
-		return SubscribableChannel.class.isAssignableFrom(boundElementType)
+	public boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter) {
+		return SubscribableChannel.class.isAssignableFrom(bindingTargetType)
 				&& Observable.class.isAssignableFrom(methodParameter.getParameterType());
 	}
 
 	@Override
-	public Observable<?> adapt(final SubscribableChannel boundElement, MethodParameter parameter) {
+	public Observable<?> adapt(final SubscribableChannel bindingTarget, MethodParameter parameter) {
 		return RxJava1Adapter.publisherToObservable(
-				this.messageChannelToInputFluxArgumentAdapter.adapt(boundElement, parameter));
+				this.messageChannelToInputFluxArgumentAdapter.adapt(bindingTarget, parameter));
 	}
 }

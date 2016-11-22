@@ -34,6 +34,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -59,7 +60,7 @@ public class DeserializeJSONToJavaTypeTests {
 	public void testMessageDeserialized() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").setHeader("contentType", "application/json").build());
 		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null))
+		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isInstanceOf(Foo.class);

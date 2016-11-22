@@ -25,7 +25,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.expression.EvaluationContext;
@@ -63,12 +63,12 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	private final CompositeMessageConverterFactory compositeMessageConverterFactory;
 
-	private final ChannelBindingServiceProperties channelBindingServiceProperties;
+	private final BindingServiceProperties bindingServiceProperties;
 
-	public MessageConverterConfigurer(ChannelBindingServiceProperties channelBindingServiceProperties,
+	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		Assert.notNull(compositeMessageConverterFactory, "The message converter factory cannot be null");
-		this.channelBindingServiceProperties = channelBindingServiceProperties;
+		this.bindingServiceProperties = bindingServiceProperties;
 		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
 	}
 
@@ -100,7 +100,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	private void configureMessageChannel(MessageChannel channel, String channelName, boolean input) {
 		Assert.isAssignable(AbstractMessageChannel.class, channel.getClass());
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
-		final BindingProperties bindingProperties = this.channelBindingServiceProperties.getBindingProperties(
+		final BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(
 				channelName);
 		final String contentType = bindingProperties.getContentType();
 		if (!input && bindingProperties.getProducer() != null && bindingProperties.getProducer().isPartitioned()) {

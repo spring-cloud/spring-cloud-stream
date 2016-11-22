@@ -43,19 +43,19 @@ public class MessageChannelToObservableSenderParameterAdapter implements
 	}
 
 	@Override
-	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
+	public boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter) {
 		ResolvableType type = ResolvableType.forMethodParameter(methodParameter);
-		return MessageChannel.class.isAssignableFrom(boundElementType)
+		return MessageChannel.class.isAssignableFrom(bindingTargetType)
 				&& ObservableSender.class.isAssignableFrom(type.getRawClass());
 	}
 
 	@Override
-	public ObservableSender adapt(MessageChannel boundElement, MethodParameter parameter) {
+	public ObservableSender adapt(MessageChannel bindingTarget, MethodParameter parameter) {
 		return new ObservableSender() {
 
 			private FluxSender fluxSender = MessageChannelToObservableSenderParameterAdapter.this
 					.messageChannelToFluxSenderArgumentAdapter
-					.adapt(boundElement, parameter);
+					.adapt(bindingTarget, parameter);
 
 			@Override
 			public Single<Void> send(Observable<?> observable) {

@@ -49,6 +49,8 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * Base class for {@link Binder} implementations.
+ *
  * @author David Turanski
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
@@ -59,7 +61,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
 
 	/**
-	 * The delimiter between a group and index when constructing a binder consumer/producer.
+	 * The delimiter between a group and index when constructing a binder
+	 * consumer/producer.
 	 */
 	private static final String GROUP_INDEX_DELIMITER = ".";
 
@@ -78,15 +81,15 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
 	 * @param prefix the prefix.
-	 * @param name   the name.
+	 * @param name the name.
 	 */
 	public static String applyPrefix(String prefix, String name) {
 		return prefix + name;
 	}
 
 	/**
-	 * For binder implementations that support dead lettering, construct the name of the dead letter entity for the
-	 * underlying pipe name.
+	 * For binder implementations that support dead lettering, construct the name of the
+	 * dead letter entity for the underlying pipe name.
 	 * @param name the name.
 	 */
 	public static String constructDLQName(String name) {
@@ -125,8 +128,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	/**
-	 * Subclasses may implement this method to perform any necessary initialization.
-	 * It will be invoked from {@link #afterPropertiesSet()} which is itself {@code final}.
+	 * Subclasses may implement this method to perform any necessary initialization. It
+	 * will be invoked from {@link #afterPropertiesSet()} which is itself {@code final}.
 	 */
 	protected void onInit() throws Exception {
 		// no-op default
@@ -135,8 +138,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	@Override
 	public final Binding<T> bindConsumer(String name, String group, T target, C properties) {
 		if (StringUtils.isEmpty(group)) {
-			Assert.isTrue(!properties.isPartitioned(),
-					"A consumer group is required for a partitioned subscription");
+			Assert.isTrue(!properties.isPartitioned(), "A consumer group is required for a partitioned subscription");
 		}
 		return doBindConsumer(name, group, target, properties);
 	}
@@ -152,7 +154,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	/**
 	 * Construct a name comprised of the name and group.
-	 * @param name  the name.
+	 * @param name the name.
 	 * @param group the group.
 	 * @return the constructed name.
 	 */
@@ -164,7 +166,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		Object originalPayload = message.getPayload();
 		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 
-		//Pass content type as String since some transport adapters will exclude CONTENT_TYPE Header otherwise
+		// Pass content type as String since some transport adapters will exclude
+		// CONTENT_TYPE Header otherwise
 		Object contentType = JavaClassMimeTypeConversion
 				.mimeTypeFromObject(originalPayload, ObjectUtils.nullSafeToString(originalContentType)).toString();
 		Object payload = serializePayloadIfNecessary(originalPayload);
@@ -191,8 +194,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 				return bos.toByteArray();
 			}
 			catch (IOException e) {
-				throw new SerializationFailedException("unable to serialize payload ["
-						+ originalPayload.getClass().getName() + "]", e);
+				throw new SerializationFailedException(
+						"unable to serialize payload [" + originalPayload.getClass().getName() + "]", e);
 			}
 		}
 	}
@@ -208,7 +211,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		if (payload != null) {
 			messageValues.setPayload(payload);
 			Object originalContentType = messageValues.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			// Reset content-type only if the original content type is not null (when receiving messages from
+			// Reset content-type only if the original content type is not null (when
+			// receiving messages from
 			// non-SCSt applications).
 			if (originalContentType != null) {
 				messageValues.put(MessageHeaders.CONTENT_TYPE, originalContentType);
@@ -236,8 +240,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 				return new String(bytes, "UTF-8");
 			}
 			catch (UnsupportedEncodingException e) {
-				throw new SerializationFailedException("unable to deserialize [java.lang.String]. Encoding not supported.",
-						e);
+				throw new SerializationFailedException(
+						"unable to deserialize [java.lang.String]. Encoding not supported.", e);
 			}
 		}
 		else {
@@ -253,7 +257,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			}
 			catch (ClassNotFoundException e) {
 				throw new SerializationFailedException("unable to deserialize [" + className + "]. Class not found.",
-						e); //NOSONAR
+						e); // NOSONAR
 			}
 			catch (IOException e) {
 				throw new SerializationFailedException("unable to deserialize [" + className + "]", e);
@@ -307,7 +311,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			if (mimeType == null) {
 				String modifiedClassName = className;
 				if (payload.getClass().isArray()) {
-					// Need to remove trailing ';' for an object array, e.g. "[Ljava.lang.String;" or multi-dimensional
+					// Need to remove trailing ';' for an object array, e.g.
+					// "[Ljava.lang.String;" or multi-dimensional
 					// "[[[Ljava.lang.String;"
 					if (modifiedClassName.endsWith(";")) {
 						modifiedClassName = modifiedClassName.substring(0, modifiedClassName.length() - 1);
@@ -327,7 +332,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			if (className == null) {
 				return null;
 			}
-			//unwrap quotes if any
+			// unwrap quotes if any
 			className = className.replace("\"", "");
 
 			// restore trailing ';'

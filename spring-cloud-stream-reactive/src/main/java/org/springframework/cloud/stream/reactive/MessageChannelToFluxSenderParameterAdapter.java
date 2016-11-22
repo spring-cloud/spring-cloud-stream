@@ -38,14 +38,14 @@ public class MessageChannelToFluxSenderParameterAdapter
 	private Log log = LogFactory.getLog(MessageChannelToFluxSenderParameterAdapter.class);
 
 	@Override
-	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
+	public boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter) {
 		ResolvableType type = ResolvableType.forMethodParameter(methodParameter);
-		return MessageChannel.class.isAssignableFrom(boundElementType)
+		return MessageChannel.class.isAssignableFrom(bindingTargetType)
 				&& FluxSender.class.isAssignableFrom(type.getRawClass());
 	}
 
 	@Override
-	public FluxSender adapt(MessageChannel boundElement, MethodParameter parameter) {
+	public FluxSender adapt(MessageChannel bindingTarget, MethodParameter parameter) {
 		return resultPublisher -> {
 			MonoProcessor<Void> sendResult = MonoProcessor.create();
 			// add error handling and reconnect in the event of an error
@@ -53,7 +53,7 @@ public class MessageChannelToFluxSenderParameterAdapter
 					.doOnError(e -> this.log.error("Error during processing: ", e))
 					.retry()
 					.subscribe(
-							result -> boundElement.send(result instanceof Message<?> ? (Message<?>) result :
+							result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result :
 									MessageBuilder.withPayload(result).build()), e -> sendResult.onError(e),
 							() -> sendResult.onComplete());
 			return sendResult;

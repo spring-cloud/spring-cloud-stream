@@ -34,20 +34,20 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binding.BindableChannelFactory;
+import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
-import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
-import org.springframework.cloud.stream.binding.SingleChannelBindable;
+import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
+import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -76,8 +76,8 @@ import org.springframework.util.CollectionUtils;
  * @author Gary Russell
  */
 @Configuration
-@EnableConfigurationProperties(ChannelBindingServiceProperties.class)
-public class ChannelBindingServiceConfiguration {
+@EnableConfigurationProperties(BindingServiceProperties.class)
+public class BindingServiceConfiguration {
 
 	private static final String ERROR_CHANNEL_NAME = "error";
 
@@ -92,25 +92,24 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
-	// it is used to detect a ChannelBindingService in the parent context (which we know
+	// it is used to detect a BindingService in the parent context (which we know
 	// already exists).
-	@ConditionalOnMissingBean(ChannelBindingService.class)
-	public ChannelBindingService bindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
-			BinderFactory<MessageChannel> binderFactory) {
-		return new ChannelBindingService(channelBindingServiceProperties, binderFactory);
+	@ConditionalOnMissingBean(BindingService.class)
+	public BindingService bindingService(BindingServiceProperties bindingServiceProperties,
+			BinderFactory binderFactory) {
+		return new BindingService(bindingServiceProperties, binderFactory);
 	}
 
 	@Bean
-	public MessageConverterConfigurer messageConverterConfigurer(
-			ChannelBindingServiceProperties channelBindingServiceProperties,
+	public MessageConverterConfigurer messageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new MessageConverterConfigurer(channelBindingServiceProperties,
-				compositeMessageConverterFactory);
+		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory);
 	}
 
 	@Bean
-	public BindableChannelFactory channelFactory(CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new DefaultBindableChannelFactory(compositeMessageChannelConfigurer);
+	public SubscribableChannelBindingTargetFactory channelFactory(
+			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new SubscribableChannelBindingTargetFactory(compositeMessageChannelConfigurer);
 	}
 
 	@Bean
@@ -140,17 +139,17 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver(ChannelBindingService channelBindingService,
-			BindableChannelFactory bindableChannelFactory, DynamicDestinationsBindable dynamicDestinationsBindable) {
-		return new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory,
-				dynamicDestinationsBindable);
+	public BinderAwareChannelResolver binderAwareChannelResolver(BindingService bindingService,
+			AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory,
+			DynamicDestinationsBindable dynamicDestinationsBindable) {
+		return new BinderAwareChannelResolver(bindingService, boundElementFactory, dynamicDestinationsBindable);
 	}
 
 	@Bean
 	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
-	public SingleChannelBindable errorChannelBindable(
+	public SingleBindingTargetBindable<MessageChannel> errorChannelBindable(
 			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
-		return new SingleChannelBindable(ERROR_CHANNEL_NAME, errorChannel);
+		return new SingleBindingTargetBindable<MessageChannel>(ERROR_CHANNEL_NAME, errorChannel);
 	}
 
 	@Bean
@@ -171,8 +170,8 @@ public class ChannelBindingServiceConfiguration {
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory.setMessageConverter(
-				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		messageHandlerMethodFactory
+				.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 		return messageHandlerMethodFactory;
 	}
 
@@ -180,8 +179,14 @@ public class ChannelBindingServiceConfiguration {
 	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(
 			@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
 			@Lazy MessageHandlerMethodFactory messageHandlerMethodFactory) {
-		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver,
-				messageHandlerMethodFactory);
+		return new StreamListenerAnnotationBeanPostProcessor(binderAwareChannelResolver, messageHandlerMethodFactory);
+	}
+
+	@Bean
+	// provided for backwards compatibility scenarios w
+	public ChannelBindingServiceProperties channelBindingServiceProperties(
+			BindingServiceProperties bindingServiceProperties) {
+		return new ChannelBindingServiceProperties(bindingServiceProperties);
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
@@ -194,22 +199,18 @@ public class ChannelBindingServiceConfiguration {
 		public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
 				final ConfigurableListableBeanFactory beanFactory) {
 			// IMPORTANT: Lazy delegate to avoid instantiating all of the above early
-			return new BinderAwareRouterBeanPostProcessor(
-					new DestinationResolver<MessageChannel>() {
+			return new BinderAwareRouterBeanPostProcessor(new DestinationResolver<MessageChannel>() {
 
-						@Override
-						public MessageChannel resolveDestination(String name)
-								throws DestinationResolutionException {
-							if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
-								PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils
-										.beanOfType(beanFactory,
-												BinderAwareChannelResolver.class);
-							}
-							return PostProcessorConfiguration.this.binderAwareChannelResolver
-									.resolveDestination(name);
-						}
+				@Override
+				public MessageChannel resolveDestination(String name) throws DestinationResolutionException {
+					if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
+						PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils
+								.beanOfType(beanFactory, BinderAwareChannelResolver.class);
+					}
+					return PostProcessorConfiguration.this.binderAwareChannelResolver.resolveDestination(name);
+				}
 
-					});
+			});
 		}
 
 		/**
@@ -225,8 +226,7 @@ public class ChannelBindingServiceConfiguration {
 				@Override
 				public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 					if (IntegrationContextUtils.INTEGRATION_EVALUATION_CONTEXT_BEAN_NAME.equals(beanName)) {
-						IntegrationEvaluationContextFactoryBean factoryBean =
-								(IntegrationEvaluationContextFactoryBean) bean;
+						IntegrationEvaluationContextFactoryBean factoryBean = (IntegrationEvaluationContextFactoryBean) bean;
 						Map<String, PropertyAccessor> factoryBeanAccessors = factoryBean.getPropertyAccessors();
 						for (Map.Entry<String, PropertyAccessor> entry : accessors.entrySet()) {
 							if (!factoryBeanAccessors.containsKey(entry.getKey())) {

@@ -45,13 +45,13 @@ public class MessageChannelToInputFluxParameterAdapter
 	}
 
 	@Override
-	public boolean supports(Class<?> boundElementType, MethodParameter methodParameter) {
-		return SubscribableChannel.class.isAssignableFrom(boundElementType)
+	public boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter) {
+		return SubscribableChannel.class.isAssignableFrom(bindingTargetType)
 				&& Flux.class.isAssignableFrom(methodParameter.getParameterType());
 	}
 
 	@Override
-	public Flux<?> adapt(final SubscribableChannel boundElement, MethodParameter parameter) {
+	public Flux<?> adapt(final SubscribableChannel bindingTarget, MethodParameter parameter) {
 		ResolvableType resolvableType = ResolvableType.forMethodParameter(parameter);
 		final Class<?> argumentClass = (resolvableType.getGeneric(0).getRawClass() != null) ? (resolvableType
 				.getGeneric(0).getRawClass()) : Object.class;
@@ -63,8 +63,8 @@ public class MessageChannelToInputFluxParameterAdapter
 						emitter.next(message);
 					}
 				};
-				boundElement.subscribe(messageHandler);
-				emitter.setCancellation(() -> boundElement.unsubscribe(messageHandler));
+				bindingTarget.subscribe(messageHandler);
+				emitter.setCancellation(() -> bindingTarget.unsubscribe(messageHandler));
 			}).publish().autoConnect();
 		}
 		else {
@@ -80,8 +80,8 @@ public class MessageChannelToInputFluxParameterAdapter
 						}
 					}
 				};
-				boundElement.subscribe(messageHandler);
-				emitter.setCancellation(() -> boundElement.unsubscribe(messageHandler));
+				bindingTarget.subscribe(messageHandler);
+				emitter.setCancellation(() -> bindingTarget.unsubscribe(messageHandler));
 			}).publish().autoConnect();
 		}
 	}

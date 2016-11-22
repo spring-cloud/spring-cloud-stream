@@ -61,10 +61,10 @@ public class BinderFactoryConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
-	public BinderFactory<?> binderFactory(BinderTypeRegistry binderTypeRegistry,
-			ChannelBindingServiceProperties channelBindingServiceProperties) {
+	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
+			BindingServiceProperties bindingServiceProperties) {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
-		Map<String, BinderProperties> declaredBinders = channelBindingServiceProperties.getBinders();
+		Map<String, BinderProperties> declaredBinders = bindingServiceProperties.getBinders();
 		boolean defaultCandidatesExist = false;
 		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders.entrySet().iterator();
 		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
@@ -94,8 +94,8 @@ public class BinderFactoryConfiguration {
 						new BinderConfiguration(entry.getValue(), new Properties(), true, true));
 			}
 		}
-		DefaultBinderFactory<?> binderFactory = new DefaultBinderFactory<>(binderConfigurations);
-		binderFactory.setDefaultBinder(channelBindingServiceProperties.getDefaultBinder());
+		DefaultBinderFactory binderFactory = new DefaultBinderFactory(binderConfigurations);
+		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
 		return binderFactory;
 	}
 
@@ -105,7 +105,7 @@ public class BinderFactoryConfiguration {
 		Map<String, BinderType> binderTypes = new HashMap<>();
 		ClassLoader classLoader = configurableApplicationContext.getClassLoader();
 		if (classLoader == null) {
-			classLoader = ChannelBindingAutoConfiguration.class.getClassLoader();
+			classLoader = BindingAutoConfiguration.class.getClassLoader();
 		}
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");

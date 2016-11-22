@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binding;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
 import org.springframework.messaging.core.DestinationResolutionException;
@@ -37,22 +37,23 @@ import org.springframework.util.ObjectUtils;
  */
 public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
 
-	private final ChannelBindingService channelBindingService;
+	private final BindingService bindingService;
 
-	private final BindableChannelFactory bindableChannelFactory;
+	private final AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory;
 
 	private final DynamicDestinationsBindable dynamicDestinationsBindable;
 
 	private ConfigurableListableBeanFactory beanFactory;
 
 	@SuppressWarnings("unchecked")
-	public BinderAwareChannelResolver(ChannelBindingService channelBindingService,
-			BindableChannelFactory bindableChannelFactory, DynamicDestinationsBindable dynamicDestinationsBindable) {
+	public BinderAwareChannelResolver(BindingService bindingService,
+			AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory,
+			DynamicDestinationsBindable dynamicDestinationsBindable) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
-		Assert.notNull(channelBindingService, "'channelBindingService' cannot be null");
-		Assert.notNull(bindableChannelFactory, "'bindableChannelFactory' cannot be null");
-		this.channelBindingService = channelBindingService;
-		this.bindableChannelFactory = bindableChannelFactory;
+		Assert.notNull(bindingService, "'bindingService' cannot be null");
+		Assert.notNull(boundElementFactory, "'boundElementFactory' cannot be null");
+		this.bindingService = bindingService;
+		this.boundElementFactory = boundElementFactory;
 	}
 
 	@Override
@@ -76,18 +77,18 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		synchronized (this) {
 			if (this.beanFactory != null) {
 				String[] dynamicDestinations = null;
-				ChannelBindingServiceProperties channelBindingServiceProperties =
-						this.channelBindingService.getChannelBindingServiceProperties();
-				if (channelBindingServiceProperties != null) {
-					dynamicDestinations = channelBindingServiceProperties.getDynamicDestinations();
+				BindingServiceProperties bindingServiceProperties = this.bindingService
+						.getBindingServiceProperties();
+				if (bindingServiceProperties != null) {
+					dynamicDestinations = bindingServiceProperties.getDynamicDestinations();
 				}
 				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
 						|| ObjectUtils.containsElement(dynamicDestinations, channelName);
 				if (dynamicAllowed) {
-					channel = this.bindableChannelFactory.createOutputChannel(channelName);
+					channel = this.boundElementFactory.createOutput(channelName);
 					this.beanFactory.registerSingleton(channelName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
-					Binding<MessageChannel> binding = this.channelBindingService.bindProducer(channel, channelName);
+					Binding<MessageChannel> binding = this.bindingService.bindProducer(channel, channelName);
 					this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
 				}
 				else {

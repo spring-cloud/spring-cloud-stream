@@ -77,7 +77,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 	private boolean webEnvironment = true;
 
 	public AggregateApplicationBuilder(String... args) {
-		this(new Object[]{ ParentConfiguration.class }, args);
+		this(new Object[] { ParentConfiguration.class }, args);
 	}
 
 	public AggregateApplicationBuilder(Object source, String... args) {
@@ -162,7 +162,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		this.sourceConfigurer = sourceConfigurer;
 		return sourceConfigurer;
 	}
-
+	
 	public ConfigurableApplicationContext run(String... parentArgs) {
 		this.parentArgs.addAll(Arrays.asList(parentArgs));
 		List<AppConfigurer<?>> apps = new ArrayList<>();
@@ -184,8 +184,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			Class<?> appToEmbed = appConfigurer.getApp();
 			// Always update namespace before preparing SharedChannelRegistry
 			if (appConfigurer.namespace == null) {
-				appConfigurer.namespace = AggregateApplicationUtils.getDefaultNamespace(appConfigurer.getApp().getName(),
-						i);
+				appConfigurer.namespace = AggregateApplicationUtils.getDefaultNamespace(appConfigurer.getApp().getName(), i);
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 			appConfigurers.put(appConfigurer, appConfigurer.namespace);
@@ -195,18 +194,21 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 					this.parentArgs.toArray(new String[0]), selfContained(), this.webEnvironment, this.headless);
 		}
 		else {
-			if (BeanFactoryUtils.beansOfTypeIncludingAncestors(this.parentContext, SharedChannelRegistry.class)
+			if (BeanFactoryUtils.beansOfTypeIncludingAncestors(this.parentContext, SharedBindingTargetRegistry.class)
 					.size() == 0) {
+				SharedBindingTargetRegistry sharedBindingTargetRegistry = new SharedBindingTargetRegistry();
+				this.parentContext.getBeanFactory().registerSingleton("sharedBindingTargetRegistry",
+						sharedBindingTargetRegistry);
 				this.parentContext.getBeanFactory().registerSingleton("sharedChannelRegistry",
-						new SharedChannelRegistry());
+						new SharedChannelRegistry(sharedBindingTargetRegistry));
 			}
 		}
-		SharedChannelRegistry sharedChannelRegistry = this.parentContext.getBean(SharedChannelRegistry.class);
-		AggregateApplicationUtils.prepareSharedChannelRegistry(sharedChannelRegistry, appsToEmbed);
+		SharedBindingTargetRegistry sharedBindingTargetRegistry = this.parentContext.getBean(SharedBindingTargetRegistry.class);
+		AggregateApplicationUtils.prepareSharedBindingTargetRegistry(sharedBindingTargetRegistry, appsToEmbed);
 		PropertySources propertySources = this.parentContext.getEnvironment()
 				.getPropertySources();
-		for (Map.Entry<AppConfigurer, String> appConfigurerEntry : appConfigurers
-				.entrySet()) {
+		for (Map.Entry<AppConfigurer, String> appConfigurerEntry : appConfigurers.entrySet()) {
+
 			AppConfigurer appConfigurer = appConfigurerEntry.getKey();
 			String namespace = appConfigurerEntry.getValue().toLowerCase();
 			Set<String> argsToUpdate = new LinkedHashSet<>();
@@ -219,7 +221,8 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 					// only update the values with the highest precedence level.
 					if (!relaxedNameKeyExists(entry.getKey(), argKeys)) {
 						String key = entry.getKey();
-						// in case of environment variables pass the lower-case property key
+						// in case of environment variables pass the lower-case property
+						// key
 						// as we pass the properties as command line properties
 						if (key.contains("_")) {
 							key = key.replace("_", "-").toLowerCase();
@@ -232,8 +235,9 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			// Add the args that are set at the application level if they weren't
 			// overridden above from other property sources.
 			if (appConfigurer.getArgs() != null) {
-				for (String arg: appConfigurer.getArgs()) {
-					// use the key part left to the assignment and trimming the prefix `--`
+				for (String arg : appConfigurer.getArgs()) {
+					// use the key part left to the assignment and trimming the prefix
+					// `--`
 					String key = arg.substring(0, arg.indexOf("=")).substring(2);
 					if (!relaxedNameKeyExists(key, argKeys)) {
 						argsToUpdate.add(arg);
@@ -269,10 +273,9 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		return false;
 	}
 
-	private ChildContextBuilder childContext(Class<?> app,
-			ConfigurableApplicationContext parentContext, String namespace) {
-		return new ChildContextBuilder(AggregateApplicationUtils.embedApp(parentContext,
-				namespace, app));
+	private ChildContextBuilder childContext(Class<?> app, ConfigurableApplicationContext parentContext,
+			String namespace) {
+		return new ChildContextBuilder(AggregateApplicationUtils.embedApp(parentContext, namespace, app));
 	}
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
@@ -364,9 +367,8 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		}
 
 		void embed() {
-			final ConfigurableApplicationContext childContext =
-					childContext(this.app, AggregateApplicationBuilder.this.parentContext,
-							this.namespace).args(this.args).config(this.names)
+			final ConfigurableApplicationContext childContext = childContext(this.app,
+					AggregateApplicationBuilder.this.parentContext, this.namespace).args(this.args).config(this.names)
 							.profiles(this.profiles).run();
 			// Register bindable proxies as beans so they can be queried for later
 			Map<String, BindableProxyFactory> bindableProxies = BeanFactoryUtils
@@ -457,9 +459,15 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 	@EnableBinding
 	public static class ParentConfiguration {
 		@Bean
+		@ConditionalOnMissingBean(SharedBindingTargetRegistry.class)
+		public SharedBindingTargetRegistry sharedBindingTargetRegistry() {
+			return new SharedBindingTargetRegistry();
+		}
+
+		@Bean
 		@ConditionalOnMissingBean(SharedChannelRegistry.class)
-		public SharedChannelRegistry sharedChannelRegistry() {
-			return new SharedChannelRegistry();
+		public SharedChannelRegistry sharedChannelRegistry(SharedBindingTargetRegistry sharedBindingTargetRegistry) {
+			return new SharedChannelRegistry(sharedBindingTargetRegistry);
 		}
 	}
 

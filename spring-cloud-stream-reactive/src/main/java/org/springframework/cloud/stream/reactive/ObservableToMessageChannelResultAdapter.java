@@ -40,13 +40,13 @@ public class ObservableToMessageChannelResultAdapter
 	}
 
 	@Override
-	public boolean supports(Class<?> resultType, Class<?> boundType) {
+	public boolean supports(Class<?> resultType, Class<?> bindingTarget) {
 		return Observable.class.isAssignableFrom(resultType)
-				&& MessageChannel.class.isAssignableFrom(boundType);
+				&& MessageChannel.class.isAssignableFrom(bindingTarget);
 	}
 
-	public void adapt(Observable<?> streamListenerResult, MessageChannel boundElement) {
+	public void adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
 		this.fluxToMessageChannelResultAdapter.adapt(RxJava1Adapter.observableToFlux(streamListenerResult),
-				boundElement);
+				bindingTarget);
 	}
 }

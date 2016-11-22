@@ -29,15 +29,15 @@ public class MessageChannelStreamListenerResultAdapter
 		implements StreamListenerResultAdapter<MessageChannel, MessageChannel> {
 
 	@Override
-	public boolean supports(Class<?> resultType, Class<?> boundElement) {
+	public boolean supports(Class<?> resultType, Class<?> bindingTarget) {
 		return MessageChannel.class.isAssignableFrom(resultType)
-				&& MessageChannel.class.isAssignableFrom(boundElement);
+				&& MessageChannel.class.isAssignableFrom(bindingTarget);
 	}
 
 	@Override
-	public void adapt(MessageChannel streamListenerResult, MessageChannel boundElement) {
+	public void adapt(MessageChannel streamListenerResult, MessageChannel bindingTarget) {
 		BridgeHandler handler = new BridgeHandler();
-		handler.setOutputChannel(boundElement);
+		handler.setOutputChannel(bindingTarget);
 		handler.afterPropertiesSet();
 		((SubscribableChannel) streamListenerResult).subscribe(handler);
 	}

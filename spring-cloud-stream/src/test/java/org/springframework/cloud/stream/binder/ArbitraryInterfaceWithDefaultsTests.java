@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.Matchers.anyString;
@@ -50,7 +51,7 @@ public class ArbitraryInterfaceWithDefaultsTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
-		final Binder binder = this.binderFactory.getBinder(null);
+		final Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("foo"), anyString(), eq(this.fooChannels.foo()),
 				Mockito.<ConsumerProperties>any());
 		verify(binder).bindConsumer(eq("bar"), anyString(), eq(this.fooChannels.bar()),
