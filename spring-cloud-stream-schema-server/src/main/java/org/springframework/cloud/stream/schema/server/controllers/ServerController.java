@@ -44,7 +44,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @author Vinicius Carvalho
  */
 @RestController
-@RequestMapping(path = "${spring.cloud.stream.schema.server.prefix:}")
+@RequestMapping(path = "${spring.cloud.stream.schema.server.path:}")
 public class ServerController {
 
 	private final SchemaRepository repository;
