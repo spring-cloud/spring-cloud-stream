@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
@@ -29,7 +30,8 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * This class contains utility methods for handling {@link StreamListener} annotated bean methods.
+ * This class contains utility methods for handling {@link StreamListener} annotated bean
+ * methods.
  *
  * @author Ilayaperumal Gopinathan
  */
@@ -57,17 +59,22 @@ public class StreamListenerMethodUtils {
 		return outputAnnotationCount;
 	}
 
-	protected static void validateStreamListenerMethod(Method method, int inputAnnotationCount, int outputAnnotationCount, String methodAnnotatedInboundName, String methodAnnotatedOutboundName, boolean isDeclarative) {
+	protected static void validateStreamListenerMethod(Method method, int inputAnnotationCount,
+			int outputAnnotationCount, String methodAnnotatedInboundName, String methodAnnotatedOutboundName,
+			boolean isDeclarative) {
 		int methodArgumentsLength = method.getParameterTypes().length;
 		if (!isDeclarative) {
-			Assert.isTrue(inputAnnotationCount == 0 && outputAnnotationCount == 0, StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+			Assert.isTrue(inputAnnotationCount == 0 && outputAnnotationCount == 0,
+					StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		if (StringUtils.hasText(methodAnnotatedInboundName) && StringUtils.hasText(methodAnnotatedOutboundName)) {
-			Assert.isTrue(inputAnnotationCount == 0 && outputAnnotationCount == 0, StreamListenerErrorMessages.INVALID_INPUT_OUTPUT_METHOD_PARAMETERS);
+			Assert.isTrue(inputAnnotationCount == 0 && outputAnnotationCount == 0,
+					StreamListenerErrorMessages.INVALID_INPUT_OUTPUT_METHOD_PARAMETERS);
 		}
 		if (StringUtils.hasText(methodAnnotatedInboundName)) {
 			Assert.isTrue(inputAnnotationCount == 0, StreamListenerErrorMessages.INVALID_INPUT_VALUES);
-			Assert.isTrue(outputAnnotationCount == 0, StreamListenerErrorMessages.INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
+			Assert.isTrue(outputAnnotationCount == 0,
+					StreamListenerErrorMessages.INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 		else {
 			Assert.isTrue(inputAnnotationCount >= 1, StreamListenerErrorMessages.NO_INPUT_DESTINATION);
@@ -79,21 +86,24 @@ public class StreamListenerMethodUtils {
 			for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
 				MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
 				if (methodParameter.hasParameterAnnotation(Input.class)) {
-					String inboundName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Input.class));
+					String inboundName = (String) AnnotationUtils
+							.getValue(methodParameter.getParameterAnnotation(Input.class));
 					Assert.isTrue(StringUtils.hasText(inboundName), StreamListenerErrorMessages.INVALID_INBOUND_NAME);
 				}
 				if (methodParameter.hasParameterAnnotation(Output.class)) {
-					String outboundName = (String) AnnotationUtils.getValue(methodParameter.getParameterAnnotation(Output.class));
+					String outboundName = (String) AnnotationUtils
+							.getValue(methodParameter.getParameterAnnotation(Output.class));
 					Assert.isTrue(StringUtils.hasText(outboundName), StreamListenerErrorMessages.INVALID_OUTBOUND_NAME);
 				}
 			}
-			if (methodArgumentsLength > 1){
-				Assert.isTrue(inputAnnotationCount + outputAnnotationCount == methodArgumentsLength, StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+			if (methodArgumentsLength > 1) {
+				Assert.isTrue(inputAnnotationCount + outputAnnotationCount == methodArgumentsLength,
+						StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 			}
 		}
 	}
 
-	protected static void assertStreamListenerMessageHandlerMethod(Method method) {
+	protected static void validateStreamListenerMessageHandler(Method method) {
 		int methodArgumentsLength = method.getParameterTypes().length;
 		if (methodArgumentsLength > 1) {
 			int numAnnotatedMethodParameters = 0;
@@ -114,7 +124,7 @@ public class StreamListenerMethodUtils {
 		}
 	}
 
-	protected static String getOutboundElementNameFromMethod(Method method) {
+	protected static String getOutboundBindingTargetName(Method method) {
 		SendTo sendTo = AnnotationUtils.findAnnotation(method, SendTo.class);
 		if (sendTo != null) {
 			Assert.isTrue(!ObjectUtils.isEmpty(sendTo.value()), StreamListenerErrorMessages.ATLEAST_ONE_OUTPUT);

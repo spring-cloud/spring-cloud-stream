@@ -25,33 +25,33 @@ import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.config.BindingBeansRegistrar;
-import org.springframework.cloud.stream.config.ChannelBindingServiceConfiguration;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.config.EnableIntegration;
 
 /**
- * Enables the binding of components annotated with {@link Input} and {@link Output} to a broker, according to the list
- * of interfaces passed as value to the annotation.
+ * Enables the binding of targets annotated with {@link Input} and {@link Output} to a
+ * broker, according to the list of interfaces passed as value to the annotation.
  *
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author David Turanski
  */
-@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
 @Configuration
-@Import({ChannelBindingServiceConfiguration.class, BindingBeansRegistrar.class, BinderFactoryConfiguration.class,
-		SpelExpressionConverterConfiguration.class})
+@Import({ BindingServiceConfiguration.class, BindingBeansRegistrar.class, BinderFactoryConfiguration.class,
+		SpelExpressionConverterConfiguration.class })
 @EnableIntegration
 public @interface EnableBinding {
 
 	/**
 	 * A list of interfaces having methods annotated with {@link Input} and/or
-	 * {@link Output} to indicate bindable components.
+	 * {@link Output} to indicate binding targets.
 	 */
 	Class<?>[] value() default {};
 

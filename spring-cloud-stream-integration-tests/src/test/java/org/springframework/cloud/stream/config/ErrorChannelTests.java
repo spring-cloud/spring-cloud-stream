@@ -35,6 +35,7 @@ import org.springframework.integration.annotation.Poller;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -55,7 +56,7 @@ public class ErrorChannelTests {
 
 	@Test
 	public void testErrorChannelBinding() throws Exception {
-		Message<?> message = ((TestSupportBinder) binderFactory.getBinder(null)).messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
+		Message<?> message = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class)).messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
 		Assert.isTrue(message instanceof ErrorMessage, "Message should be an instance of ErrorMessage");
 		Assert.isTrue(message.getPayload() instanceof MessagingException, "Message payload should be an instance" +
 				"of MessagingException");

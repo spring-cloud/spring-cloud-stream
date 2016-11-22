@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.Matchers.eq;
@@ -59,7 +60,7 @@ public class SourceBindingWithBindingTargetsTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		Binder binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindProducer(eq("testtock"), eq(this.testSource.output()),
 				Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);

@@ -29,10 +29,11 @@ import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
 import org.springframework.boot.actuate.endpoint.Endpoint;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 
 /**
- * An {@link Endpoint} that has the binding information on all the {@link Bindable} message channels.
+ * An {@link Endpoint} that has the binding information on all the {@link Bindable}
+ * message channels.
  *
  * @author Dave Syer
  * @author Ilayaperumal Gopinathan
@@ -41,9 +42,9 @@ public class ChannelsEndpoint extends AbstractEndpoint<Map<String, Object>> {
 
 	private List<Bindable> adapters;
 
-	private ChannelBindingServiceProperties properties;
+	private BindingServiceProperties properties;
 
-	public ChannelsEndpoint(List<Bindable> adapters, ChannelBindingServiceProperties properties) {
+	public ChannelsEndpoint(List<Bindable> adapters, BindingServiceProperties properties) {
 		super("channels");
 		this.adapters = adapters;
 		this.properties = properties;

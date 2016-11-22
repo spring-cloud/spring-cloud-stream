@@ -21,9 +21,8 @@ import org.springframework.core.MethodParameter;
 /**
  * Strategy for adapting a method argument type annotated with
  * {@link org.springframework.cloud.stream.annotation.Input} or
- * {@link org.springframework.cloud.stream.annotation.Output} from a bound element
- * (e.g. {@link org.springframework.messaging.MessageChannel}) supported by an
- * existing binder.
+ * {@link org.springframework.cloud.stream.annotation.Output} from a binding type (e.g.
+ * {@link org.springframework.messaging.MessageChannel}) supported by an existing binder.
  *
  * This is a framework extension and is not primarily intended for use by end-users.
  * @author Marius Bogoevici
@@ -31,21 +30,22 @@ import org.springframework.core.MethodParameter;
 public interface StreamListenerParameterAdapter<A, B> {
 
 	/**
-	 * Return true if the conversion from the bound element type to the argument type
-	 * is supported.
-	 * @param boundElementType the bound element type
-	 * @param methodParameter  the method parameter for which the conversion is performed
+	 * Return true if the conversion from the binding target type to the argument type is
+	 * supported.
+	 * @param bindingTargetType the binding target type
+	 * @param methodParameter the method parameter for which the conversion is performed
 	 * @return true if the conversion is supported
 	 */
-	boolean supports(Class<?> boundElementType, MethodParameter methodParameter);
+	boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter);
 
 	/**
-	 * Adapts the bound element to the argument type. The result will be passed
-	 * as argument to a method annotated with {@link org.springframework.cloud.stream.annotation.StreamListener}
-	 * when used for setting up a pipeline.
-	 * @param boundElement the bound element
-	 * @param parameter    the method parameter for which the conversion is performed
+	 * Adapts the binding target to the argument type. The result will be passed as
+	 * argument to a method annotated with
+	 * {@link org.springframework.cloud.stream.annotation.StreamListener} when used for
+	 * setting up a pipeline.
+	 * @param bindingTarget the binding target
+	 * @param parameter the method parameter for which the conversion is performed
 	 * @return an instance of the parameter type, which will be passed to the method
 	 */
-	A adapt(B boundElement, MethodParameter parameter);
+	A adapt(B bindingTarget, MethodParameter parameter);
 }

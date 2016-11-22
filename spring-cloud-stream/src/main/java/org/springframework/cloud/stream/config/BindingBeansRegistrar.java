@@ -40,9 +40,9 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 				ClassUtils.resolveClassName(metadata.getClassName(), null),
 				EnableBinding.class);
 		for (Class<?> type : collectClasses(attrs, metadata.getClassName())) {
-			BindingBeanDefinitionRegistryUtils.registerChannelBeanDefinitions(type,
+			BindingBeanDefinitionRegistryUtils.registerBindingTargetBeanDefinitions(type,
 					type.getName(), registry);
-			BindingBeanDefinitionRegistryUtils.registerChannelsQualifiedBeanDefinitions(
+			BindingBeanDefinitionRegistryUtils.registerBindingTargetsQualifiedBeanDefinitions(
 					ClassUtils.resolveClassName(metadata.getClassName(), null), type,
 					registry);
 		}

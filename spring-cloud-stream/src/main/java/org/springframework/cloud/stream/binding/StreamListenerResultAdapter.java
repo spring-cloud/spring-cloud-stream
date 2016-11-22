@@ -17,28 +17,30 @@
 package org.springframework.cloud.stream.binding;
 
 /**
- * A strategy for adapting the result of a {@link org.springframework.cloud.stream.annotation.StreamListener}
- * annotated method to a bound element annotated with {@link org.springframework.cloud.stream.annotation.Output}.
+ * A strategy for adapting the result of a
+ * {@link org.springframework.cloud.stream.annotation.StreamListener} annotated method to
+ * a binding target annotated with
+ * {@link org.springframework.cloud.stream.annotation.Output}.
  *
- * Used when the {@link org.springframework.cloud.stream.annotation.StreamListener} annotated method is operating in
- * declarative mode.
+ * Used when the {@link org.springframework.cloud.stream.annotation.StreamListener}
+ * annotated method is operating in declarative mode.
  * @author Marius Bogoevici
  */
 public interface StreamListenerResultAdapter<R, B> {
 
 	/**
-	 * Return true if the result type can be converted to the bound element.
-	 * @param resultType   the result type.
-	 * @param boundElement the bound element.
+	 * Return true if the result type can be converted to the binding target.
+	 * @param resultType the result type.
+	 * @param bindingTarget the binding target.
 	 * @return true if the conversion can take place.
 	 */
-	boolean supports(Class<?> resultType, Class<?> boundElement);
+	boolean supports(Class<?> resultType, Class<?> bindingTarget);
 
 	/**
-	 * Adapts the result to the bound element.
+	 * Adapts the result to the binding target.
 	 * @param streamListenerResult the result of invoking the method.
-	 * @param boundElement         the bound element
+	 * @param bindingTarget the binding target.
 	 */
-	void adapt(R streamListenerResult, B boundElement);
+	void adapt(R streamListenerResult, B bindingTarget);
 
 }

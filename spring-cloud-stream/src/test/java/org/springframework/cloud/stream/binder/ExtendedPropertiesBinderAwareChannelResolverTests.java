@@ -30,14 +30,14 @@ import org.mockito.Mockito;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
-import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
+import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.support.DefaultMessageBuilderFactory;
@@ -68,29 +68,29 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 	public void setupContext() throws Exception {
 		producerBindings = new ArrayList<>();
 		this.binder = new TestBinder();
-		BinderFactory binderFactory = new BinderFactory<MessageChannel>() {
+		BinderFactory binderFactory = new BinderFactory() {
 
 			@Override
-			public ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> getBinder(String configurationName) {
-				return binder;
+			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(String configurationName, Class<? extends T> bindableType) {
+				return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) binder;
 			}
 		};
-		this.channelBindingServiceProperties = new ChannelBindingServiceProperties();
+		this.bindingServiceProperties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindings = new HashMap<String, BindingProperties>();
 		BindingProperties bindingProperties = new BindingProperties();
 		bindingProperties.setContentType("text/plain");
 		bindings.put("foo", bindingProperties);
-		this.channelBindingServiceProperties.setBindings(bindings);
+		this.bindingServiceProperties.setBindings(bindings);
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
-				this.channelBindingServiceProperties,
+				this.bindingServiceProperties,
 				new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
-		this.bindableChannelFactory = new DefaultBindableChannelFactory(messageConverterConfigurer);
+		this.bindingTargetFactory = new SubscribableChannelBindingTargetFactory(messageConverterConfigurer);
 		dynamicDestinationsBindable = new DynamicDestinationsBindable();
-		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
+		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory);
-		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory,
+		this.resolver = new BinderAwareChannelResolver(bindingService, this.bindingTargetFactory,
 				dynamicDestinationsBindable);
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);
@@ -98,7 +98,7 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		context.registerSingleton("other", DirectChannel.class);
 		context.registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				DefaultMessageBuilderFactory.class);
-		context.getBeanFactory().registerSingleton("channelBindingService", channelBindingService);
+		context.getBeanFactory().registerSingleton("bindingService", bindingService);
 		context.registerSingleton("inputBindingLifecycle", InputBindingLifecycle.class);
 		context.registerSingleton("outputBindingLifecycle", OutputBindingLifecycle.class);
 		context.refresh();

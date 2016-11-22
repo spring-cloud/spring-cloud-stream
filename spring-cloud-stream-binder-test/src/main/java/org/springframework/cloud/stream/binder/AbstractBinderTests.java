@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
@@ -233,17 +233,17 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	protected DirectChannel createBindableChannel(String channelName, BindingProperties bindingProperties) throws
 			Exception {
-		ChannelBindingServiceProperties channelBindingServiceProperties = new ChannelBindingServiceProperties();
-		channelBindingServiceProperties.getBindings().put(channelName, bindingProperties);
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		bindingServiceProperties.getBindings().put(channelName, bindingProperties);
 		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
 		applicationContext.refresh();
-		channelBindingServiceProperties.setApplicationContext(applicationContext);
-		channelBindingServiceProperties.setConversionService(new DefaultConversionService());
-		channelBindingServiceProperties.afterPropertiesSet();
+		bindingServiceProperties.setApplicationContext(applicationContext);
+		bindingServiceProperties.setConversionService(new DefaultConversionService());
+		bindingServiceProperties.afterPropertiesSet();
 		DirectChannel channel = new DirectChannel();
 		channel.setBeanName(channelName);
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
-				channelBindingServiceProperties,
+				bindingServiceProperties,
 				new CompositeMessageConverterFactory(null, null));
 		messageConverterConfigurer.setBeanFactory(applicationContext.getBeanFactory());
 		messageConverterConfigurer.afterPropertiesSet();

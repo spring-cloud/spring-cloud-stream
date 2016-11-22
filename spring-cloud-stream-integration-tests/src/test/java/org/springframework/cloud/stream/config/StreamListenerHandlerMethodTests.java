@@ -208,9 +208,9 @@ public class StreamListenerHandlerMethodTests {
 				latch.countDown();
 			}
 		});
-		processor.input().send(MessageBuilder.withPayload("{\"foo\":\"fooTESTing" + "\"}")
+		processor.input().send(MessageBuilder.withPayload("{\"foo\":\"fooTESTing\"}")
 				.setHeader("contentType", "application/json").build());
-		inboundChannel2.input().send(MessageBuilder.withPayload("{\"bar\":\"bartestING" + "\"}")
+		inboundChannel2.input().send(MessageBuilder.withPayload("{\"bar\":\"bartestING\"}")
 				.setHeader("contentType", "application/json").build());
 		assertThat(latch.await(1, TimeUnit.SECONDS));
 		context.close();

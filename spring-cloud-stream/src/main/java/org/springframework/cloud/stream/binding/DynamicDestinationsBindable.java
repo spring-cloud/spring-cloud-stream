@@ -47,7 +47,7 @@ public final class DynamicDestinationsBindable extends BindableAdapter {
 	}
 
 	@Override
-	public void unbindOutputs(ChannelBindingService adapter) {
+	public void unbindOutputs(BindingService adapter) {
 		for (Map.Entry<String, Binding> entry: outputBindings.entrySet()) {
 			entry.getValue().unbind();
 		}
