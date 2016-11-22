@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.test.binder;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -45,15 +47,15 @@ public class TestSupportBinderAutoConfiguration {
 	public BinderFactory binderFactory() {
 		return new BinderFactory() {
 			@Override
-			public Binder getBinder(String configurationName) {
-				return messageChannelBinder;
+			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(String configurationName, Class<? extends T> bindableType) {
+				return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) messageChannelBinder;
 			}
 		};
 	}
 
 	@Bean
-	public MessageCollector messageCollector(BinderFactory<MessageChannel> binderFactory) {
-		return ((TestSupportBinder) binderFactory.getBinder(null)).messageCollector();
+	public MessageCollector messageCollector(BinderFactory binderFactory) {
+		return ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class)).messageCollector();
 	}
 
 }

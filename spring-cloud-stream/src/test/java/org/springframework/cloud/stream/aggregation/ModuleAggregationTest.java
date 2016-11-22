@@ -29,7 +29,7 @@ import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder.SourceConfigurer;
 import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binding.BindableChannelFactory;
+import org.springframework.cloud.stream.binding.BoundElementFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
@@ -66,8 +66,8 @@ public class ModuleAggregationTest {
 				.from(TestSource.class).to(TestProcessor.class).run();
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext
 				.getBean(SharedChannelRegistry.class);
-		BindableChannelFactory channelFactory = aggregatedApplicationContext
-				.getBean(BindableChannelFactory.class);
+		BoundElementFactory channelFactory = aggregatedApplicationContext
+				.getBean(BoundElementFactory.class);
 		assertThat(channelFactory).isNotNull();
 		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();
@@ -299,8 +299,8 @@ public class ModuleAggregationTest {
 				.namespace("bar").run();
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext
 				.getBean(SharedChannelRegistry.class);
-		BindableChannelFactory channelFactory = aggregatedApplicationContext
-				.getBean(BindableChannelFactory.class);
+		BoundElementFactory channelFactory = aggregatedApplicationContext
+				.getBean(BoundElementFactory.class);
 		Object fooOutput = sharedChannelRegistry.get("foo.output");
 		assertThat(fooOutput).isNotNull();
 		assertThat(fooOutput).isInstanceOf(MessageChannel.class);

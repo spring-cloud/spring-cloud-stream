@@ -31,7 +31,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
-import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
+import org.springframework.cloud.stream.binding.BoundSubscribableChannelFactory;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
@@ -68,11 +68,11 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 	public void setupContext() throws Exception {
 		producerBindings = new ArrayList<>();
 		this.binder = new TestBinder();
-		BinderFactory binderFactory = new BinderFactory<MessageChannel>() {
+		BinderFactory binderFactory = new BinderFactory() {
 
 			@Override
-			public ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> getBinder(String configurationName) {
-				return binder;
+			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(String configurationName, Class<? extends T> bindableType) {
+				return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) binder;
 			}
 		};
 		this.channelBindingServiceProperties = new ChannelBindingServiceProperties();
@@ -86,11 +86,11 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 				new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
-		this.bindableChannelFactory = new DefaultBindableChannelFactory(messageConverterConfigurer);
+		this.boundElementFactory = new BoundSubscribableChannelFactory(messageConverterConfigurer);
 		dynamicDestinationsBindable = new DynamicDestinationsBindable();
 		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
 				binderFactory);
-		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.bindableChannelFactory,
+		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.boundElementFactory,
 				dynamicDestinationsBindable);
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);

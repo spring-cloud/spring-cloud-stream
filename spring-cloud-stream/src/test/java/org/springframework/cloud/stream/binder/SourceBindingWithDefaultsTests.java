@@ -27,6 +27,7 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.Matchers.eq;
@@ -50,7 +51,7 @@ public class SourceBindingWithDefaultsTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		Binder binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindProducer(eq("output"), eq(this.testSource.output()), Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}

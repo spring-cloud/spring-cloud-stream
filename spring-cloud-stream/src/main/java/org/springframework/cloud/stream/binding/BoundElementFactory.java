@@ -19,26 +19,35 @@ package org.springframework.cloud.stream.binding;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * Defines methods to create/configure the {@link org.springframework.messaging.MessageChannel}s defined
- * in {@link org.springframework.cloud.stream.annotation.EnableBinding}.
+ * Defines methods to create/configure the bound elements defined by
+ * {@link org.springframework.cloud.stream.annotation.EnableBinding}.
+ *
+ * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public interface BindableChannelFactory {
+public interface BoundElementFactory {
 
 	/**
-	 * Create an input {@link SubscribableChannel} that will be bound via
-	 * the message channel {@link org.springframework.cloud.stream.binder.Binder}.
+	 * Checks whether a specific type bound element can be created by this factory.
+	 * @param clazz the type of the bound element
+	 * @return true if the bound element can be created
+	 */
+	boolean canCreate(Class<?> clazz);
+
+	/**
+	 * Create an input bindable element that will be bound via a corresponding binder
+	 * {@link org.springframework.cloud.stream.binder.Binder}.
+	 * @param name name of the bindable element
+	 * @return bindable element
+	 */
+	Object createInput(String name);
+
+	/**
+	 * Create an output {@link SubscribableChannel} that will be bound via the message
+	 * channel {@link org.springframework.cloud.stream.binder.Binder}.
 	 * @param name name of the message channel
 	 * @return subscribable message channel
 	 */
-	SubscribableChannel createInputChannel(String name);
-
-	/**
-	 * Create an output {@link SubscribableChannel} that will be bound via
-	 * the message channel {@link org.springframework.cloud.stream.binder.Binder}.
-	 * @param name name of the message channel
-	 * @return subscribable message channel
-	 */
-	SubscribableChannel createOutputChannel(String name);
+	Object createOutput(String name);
 
 }

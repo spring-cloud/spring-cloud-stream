@@ -43,10 +43,10 @@ public class ErrorBindingTests {
 	public void testErrorChannelNotBoundByDefault() {
 
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class, "--server.port=0");
-		BinderFactory<?> binderFactory = applicationContext.getBean(BinderFactory.class);
+		BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
 
 		@SuppressWarnings("unchecked")
-		Binder binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 
 		Mockito.verify(binder).bindConsumer(eq("input"), isNull(String.class), any(MessageChannel.class), any(ConsumerProperties.class));
 		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class), any(ProducerProperties.class));
@@ -59,10 +59,10 @@ public class ErrorBindingTests {
 
 		ConfigurableApplicationContext applicationContext =
 				SpringApplication.run(TestProcessor.class, "--spring.cloud.stream.bindings.error.destination=foo", "--server.port=0");
-		BinderFactory<?> binderFactory = applicationContext.getBean(BinderFactory.class);
+		BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class, MessageChannel.class);
 
 		@SuppressWarnings("unchecked")
-		Binder binder =  binderFactory.getBinder(null);
+		Binder binder =  binderFactory.getBinder(null, MessageChannel.class);
 
 		MessageChannel errorChannel = applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
 				MessageChannel.class);

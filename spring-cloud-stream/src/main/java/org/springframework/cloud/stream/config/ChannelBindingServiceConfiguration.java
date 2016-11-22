@@ -34,13 +34,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binding.BindableChannelFactory;
+import org.springframework.cloud.stream.binding.AbstractBoundElementFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
+import org.springframework.cloud.stream.binding.BoundSubscribableChannelFactory;
 import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
-import org.springframework.cloud.stream.binding.DefaultBindableChannelFactory;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
@@ -96,7 +96,7 @@ public class ChannelBindingServiceConfiguration {
 	// already exists).
 	@ConditionalOnMissingBean(ChannelBindingService.class)
 	public ChannelBindingService bindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
-			BinderFactory<MessageChannel> binderFactory) {
+			BinderFactory binderFactory) {
 		return new ChannelBindingService(channelBindingServiceProperties, binderFactory);
 	}
 
@@ -109,8 +109,8 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public BindableChannelFactory channelFactory(CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new DefaultBindableChannelFactory(compositeMessageChannelConfigurer);
+	public BoundSubscribableChannelFactory channelFactory(CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new BoundSubscribableChannelFactory(compositeMessageChannelConfigurer);
 	}
 
 	@Bean
@@ -140,10 +140,12 @@ public class ChannelBindingServiceConfiguration {
 	}
 
 	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver(ChannelBindingService channelBindingService,
-			BindableChannelFactory bindableChannelFactory, DynamicDestinationsBindable dynamicDestinationsBindable) {
-		return new BinderAwareChannelResolver(channelBindingService, bindableChannelFactory,
-				dynamicDestinationsBindable);
+	public BinderAwareChannelResolver binderAwareChannelResolver(
+			ChannelBindingService channelBindingService,
+			AbstractBoundElementFactory<? extends MessageChannel> boundElementFactory,
+			DynamicDestinationsBindable dynamicDestinationsBindable) {
+		return new BinderAwareChannelResolver(channelBindingService,
+				boundElementFactory, dynamicDestinationsBindable);
 	}
 
 	@Bean

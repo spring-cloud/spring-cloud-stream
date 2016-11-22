@@ -30,6 +30,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
@@ -48,7 +49,7 @@ public class InputOutputBindingOrderTest {
 	public void testInputOutputBindingOrder() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
 		@SuppressWarnings("rawtypes")
-		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null);
+		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
 		verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<ConsumerProperties>any());
@@ -84,7 +85,7 @@ public class InputOutputBindingOrderTest {
 		@Override
 		@SuppressWarnings("unchecked")
 		public synchronized void start() {
-			Binder binder = this.binderFactory.getBinder(null);
+			Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 			verify(binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<ProducerProperties>any());
 			// input was not bound yet
 			verifyNoMoreInteractions(binder);

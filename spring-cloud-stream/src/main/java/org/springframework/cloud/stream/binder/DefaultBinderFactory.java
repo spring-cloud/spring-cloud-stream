@@ -35,6 +35,7 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -48,13 +49,15 @@ import org.springframework.util.StringUtils;
  * Default {@link BinderFactory} implementation.
  * @author Marius Bogoevici
  */
-public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean, ApplicationContextAware {
+public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
 	private final Map<String, BinderConfiguration> binderConfigurations;
 
-	private final Map<String, BinderInstanceHolder<T>> binderInstanceCache = new HashMap<>();
+	private final Map<String, BinderInstanceHolder> binderInstanceCache = new HashMap<>();
 
 	private volatile ConfigurableApplicationContext context;
+
+	private Map<String, String> defaultBindersPerBoundType = new HashMap<>();
 
 	private volatile String defaultBinder;
 
@@ -82,14 +85,15 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 
 	@Override
 	public void destroy() throws Exception {
-		for (Map.Entry<String, BinderInstanceHolder<T>> entry : this.binderInstanceCache.entrySet()) {
-			BinderInstanceHolder<T> binderInstanceHolder = entry.getValue();
+		for (Map.Entry<String, BinderInstanceHolder> entry : this.binderInstanceCache.entrySet()) {
+			BinderInstanceHolder binderInstanceHolder = entry.getValue();
 			binderInstanceHolder.getBinderContext().close();
 		}
+		this.defaultBindersPerBoundType.clear();
 	}
 
 	@Override
-	public synchronized Binder<T, ?, ?> getBinder(String name) {
+	public synchronized <T> Binder<T, ?, ?> getBinder(String name, Class<? extends T> boundElementType) {
 		String configurationName;
 		// Fall back to a default if no argument is provided
 		if (StringUtils.isEmpty(name)) {
@@ -106,37 +110,59 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 					}
 				}
 				if (defaultCandidateConfigurations.size() == 1) {
-					this.defaultBinder = defaultCandidateConfigurations.iterator().next();
-					configurationName = this.defaultBinder;
+					this.defaultBindersPerBoundType.put(boundElementType.getName(),
+							defaultCandidateConfigurations.iterator().next());
+					configurationName = this.defaultBindersPerBoundType.get(boundElementType.getName());
 				}
 				else {
 					if (defaultCandidateConfigurations.size() > 1) {
-						throw new IllegalStateException(
-								"A default binder has been requested, but there is more than one binder available: "
-										+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations)
-										+ ", and no default binder has been set.");
+						List<String> candidatesForBindableType = new ArrayList<>();
+						for (String defaultCandidateConfiguration : defaultCandidateConfigurations) {
+							Binder<Object, ?, ?> binderInstance = getBinderInstance(defaultCandidateConfiguration);
+							Class<?> binderType = GenericsUtils.getParameter(binderInstance.getClass(), Binder.class, 0);
+							if (binderType.isAssignableFrom(boundElementType)) {
+								candidatesForBindableType.add(defaultCandidateConfiguration);
+							}
+						}
+						if (candidatesForBindableType.size() == 1) {
+							this.defaultBindersPerBoundType.put(boundElementType.getName(),
+									candidatesForBindableType.iterator().next());
+							configurationName = this.defaultBindersPerBoundType.get(boundElementType.getName());
+						} else if (candidatesForBindableType.size() > 1) {
+							throw new IllegalStateException(
+									"A default binder has been requested, but there is more than one binder available for '"
+											+ boundElementType.getName() + "' : "
+											+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations)
+											+ ", and no default binder has been set.");
+						} else {
+							throw new IllegalStateException("A default binder has been requested, but none of the" +
+									"registered binders can bind a '" + boundElementType + "': "
+									+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations));
+						}
 					}
 					else {
-						throw new IllegalStateException(
-								"A default binder has been requested, but there there is no binder available");
+						throw new IllegalArgumentException(
+								"A default binder has been requested, but there is no default available");
 					}
 				}
 			}
 			else {
-				if (StringUtils.hasText(this.defaultBinder)) {
-					configurationName = this.defaultBinder;
-				}
-				else {
-					throw new IllegalStateException(
-							"A default binder has been requested, but there is more than one binder available: "
-									+ StringUtils.collectionToCommaDelimitedString(this.binderConfigurations.keySet())
-									+ ", and no default binder has been set.");
-				}
+				configurationName = this.defaultBinder;
 			}
 		}
 		else {
 			configurationName = name;
 		}
+		Binder<T, ?, ?> binderInstance = getBinderInstance(configurationName);
+		if (!(GenericsUtils.getParameter(binderInstance.getClass(), Binder.class, 0)
+				.isAssignableFrom(boundElementType))) {
+			throw new IllegalStateException(
+					"The binder '" + configurationName + "' cannot bind a " + boundElementType.getName());
+		}
+		return binderInstance;
+	}
+
+	private <T> Binder<T, ?, ?> getBinderInstance(String configurationName) {
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
 			BinderConfiguration binderConfiguration = this.binderConfigurations.get(configurationName);
 			if (binderConfiguration == null) {
@@ -196,28 +222,27 @@ public class DefaultBinderFactory<T> implements BinderFactory<T>, DisposableBean
 								healthAggregator, indicators);
 				this.bindersHealthIndicator.addHealthIndicator(configurationName, binderHealthIndicator);
 			}
-			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder<>(binder,
+			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder(binder,
 					binderProducingContext));
 		}
-		return this.binderInstanceCache.get(configurationName).getBinderInstance();
+		return (Binder<T, ?, ?>) this.binderInstanceCache.get(configurationName).getBinderInstance();
 	}
 
 	/**
 	 * Utility class for storing {@link Binder} instances, along with their associated contexts.
-	 * @param <T>
 	 */
-	private static final class BinderInstanceHolder<T> {
+	private static final class BinderInstanceHolder {
 
-		private final Binder<T, ?, ?> binderInstance;
+		private final Binder<?, ?, ?> binderInstance;
 
 		private final ConfigurableApplicationContext binderContext;
 
-		private BinderInstanceHolder(Binder<T, ?, ?> binderInstance, ConfigurableApplicationContext binderContext) {
+		private BinderInstanceHolder(Binder<?, ?, ?> binderInstance, ConfigurableApplicationContext binderContext) {
 			this.binderInstance = binderInstance;
 			this.binderContext = binderContext;
 		}
 
-		public Binder<T, ?, ?> getBinderInstance() {
+		public Binder<?, ?, ?> getBinderInstance() {
 			return this.binderInstance;
 		}
 

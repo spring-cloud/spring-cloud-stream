@@ -36,6 +36,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.util.ObjectUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -95,10 +96,10 @@ public class BinderFactoryConfigurationTests {
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
-		Binder binder1 = binderFactory.getBinder("binder1");
+		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
 
-		Binder defaultBinder = binderFactory.getBinder(null);
+		Binder defaultBinder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(defaultBinder).isSameAs(binder1);
 	}
 
@@ -109,7 +110,7 @@ public class BinderFactoryConfigurationTests {
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
-		Binder binder1 = binderFactory.getBinder("binder1");
+		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
 	}
 
@@ -122,10 +123,10 @@ public class BinderFactoryConfigurationTests {
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
-		Binder binder1 = binderFactory.getBinder("custom");
+		Binder binder1 = binderFactory.getBinder("custom", MessageChannel.class);
 		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
 
-		assertThat(binderFactory.getBinder(null)).isSameAs(binder1);
+		assertThat(binderFactory.getBinder(null, MessageChannel.class)).isSameAs(binder1);
 	}
 
 	@Test
@@ -138,7 +139,7 @@ public class BinderFactoryConfigurationTests {
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
-		Binder binder1 = binderFactory.getBinder("custom");
+		Binder binder1 = binderFactory.getBinder("custom", MessageChannel.class);
 		assertThat(binder1).hasFieldOrPropertyWithValue("name", null);
 	}
 
@@ -157,18 +158,18 @@ public class BinderFactoryConfigurationTests {
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
 		try {
-			binderFactory.getBinder(null);
+			binderFactory.getBinder(null, MessageChannel.class);
 			fail();
 		}
 		catch (Exception e) {
 			assertThat(e).isInstanceOf(IllegalStateException.class);
 			assertThat(e.getMessage()).contains(
-					"A default binder has been requested, but there is more than one binder available:");
+					"A default binder has been requested, but there is more than one binder available");
 		}
 
-		Binder binder1 = binderFactory.getBinder("binder1");
+		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
-		Binder binder2 = binderFactory.getBinder("binder2");
+		Binder binder2 = binderFactory.getBinder("binder2", MessageChannel.class);
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
 	}
 
@@ -190,15 +191,15 @@ public class BinderFactoryConfigurationTests {
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
-		Binder defaultBinder = binderFactory.getBinder(null);
+		Binder defaultBinder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(defaultBinder).isInstanceOf(StubBinder1.class);
 		assertThat(((StubBinder1) defaultBinder).getName()).isNullOrEmpty();
 
-		Binder binder1 = binderFactory.getBinder("binder1");
+		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
 		assertThat(binder1).isSameAs(defaultBinder);
 
-		Binder custom = binderFactory.getBinder("custom");
+		Binder custom = binderFactory.getBinder("custom", MessageChannel.class);
 		assertThat(custom).isInstanceOf(StubBinder1.class);
 		assertThat(custom).isNotSameAs(defaultBinder);
 		assertThat(((StubBinder1) custom).getName()).isEqualTo("foo");
@@ -222,12 +223,12 @@ public class BinderFactoryConfigurationTests {
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
-		Binder binder1 = binderFactory.getBinder("binder1");
+		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
-		Binder binder2 = binderFactory.getBinder("binder2");
+		Binder binder2 = binderFactory.getBinder("binder2", MessageChannel.class);
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
 
-		Binder defaultBinder = binderFactory.getBinder(null);
+		Binder defaultBinder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(defaultBinder).isSameAs(binder2);
 	}
 

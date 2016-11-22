@@ -20,29 +20,30 @@ import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * Class that {@link BindableProxyFactory} uses to create and configure message channels.
+ * An implementation of {@link BoundElementFactory} for creating {@link SubscribableChannel}s.
  *
  * @author Marius Bogoevici
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  */
-public class DefaultBindableChannelFactory implements BindableChannelFactory {
+public class BoundSubscribableChannelFactory extends AbstractBoundElementFactory<SubscribableChannel> {
 
 	private final MessageChannelConfigurer messageChannelConfigurer;
 
-	public DefaultBindableChannelFactory(MessageChannelConfigurer messageChannelConfigurer) {
+	public BoundSubscribableChannelFactory(MessageChannelConfigurer messageChannelConfigurer) {
+		super(SubscribableChannel.class);
 		this.messageChannelConfigurer = messageChannelConfigurer;
 	}
 
 	@Override
-	public SubscribableChannel createInputChannel(String name) {
+	public SubscribableChannel createInput(String name) {
 		SubscribableChannel subscribableChannel = new DirectChannel();
 		this.messageChannelConfigurer.configureInputChannel(subscribableChannel, name);
 		return subscribableChannel;
 	}
 
 	@Override
-	public SubscribableChannel createOutputChannel(String name) {
+	public SubscribableChannel createOutput(String name) {
 		SubscribableChannel subscribableChannel = new DirectChannel();
 		this.messageChannelConfigurer.configureOutputChannel(subscribableChannel, name);
 		return subscribableChannel;

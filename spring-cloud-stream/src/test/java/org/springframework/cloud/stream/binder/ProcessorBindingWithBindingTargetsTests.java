@@ -28,6 +28,7 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.Matchers.anyString;
@@ -51,7 +52,7 @@ public class ProcessorBindingWithBindingTargetsTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		final Binder binder = binderFactory.getBinder(null);
+		final Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("testtock.0"), anyString(),
 				eq(this.testProcessor.input()), Mockito.<ConsumerProperties>any());
 		verify(binder).bindProducer(eq("testtock.1"), eq(this.testProcessor.output()),
