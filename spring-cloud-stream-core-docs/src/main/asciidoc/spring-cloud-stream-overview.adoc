@@ -1196,9 +1196,8 @@ public static class SinkApplication {
   ...
 
   @Bean
-  public MessageConverter userMessageConverter() throws IOException {
-    AvroSchemaMessageConverter avroSchemaMessageConverter {
-      return new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes");
+  public MessageConverter userMessageConverter() {
+      return new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes"));
   }
 }
 ----
@@ -1214,10 +1213,9 @@ public static class SinkApplication {
   ...
 
   @Bean
-  public MessageConverter userMessageConverter() throws IOException {
-    AvroSchemaMessageConverter avroSchemaMessageConverter {
-      MessageConverter converter = new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes");
-      converter.setSchemaLocation("classpath:schemas/User.avro");
+  public MessageConverter userMessageConverter() {
+      AvroSchemaMessageConverter converter = new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes"));
+      converter.setSchemaLocation(new ClassPathResource("schemas/User.avro"));
       return converter;
   }
 }
