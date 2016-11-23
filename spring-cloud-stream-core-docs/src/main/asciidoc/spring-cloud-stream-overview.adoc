@@ -1215,7 +1215,7 @@ public static class SinkApplication {
   @Bean
   public MessageConverter userMessageConverter() {
       AvroSchemaMessageConverter converter = new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes"));
-      converter.setSchemaLocation("classpath:schemas/User.avro");
+      converter.setSchemaLocation(new ClassPathResource("schemas/User.avro"));
       return converter;
   }
 }
