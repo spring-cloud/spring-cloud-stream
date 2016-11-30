@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public class ModuleAggregationTest {
+public class AggregationTest {
 
 	private ConfigurableApplicationContext aggregatedApplicationContext;
 
@@ -60,10 +60,12 @@ public class ModuleAggregationTest {
 	}
 
 	@Test
-	public void testModuleAggregation() {
+	public void aggregation() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--server.port=0")
-				.from(TestSource.class).to(TestProcessor.class).run();
+				.from(TestSource.class)
+				.to(TestProcessor.class)
+				.run();
 		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext
 				.getBean(SharedChannelRegistry.class);
 		BindableChannelFactory channelFactory = aggregatedApplicationContext

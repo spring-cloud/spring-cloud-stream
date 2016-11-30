@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.test;
+package org.springframework.cloud.stream.test.example;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
