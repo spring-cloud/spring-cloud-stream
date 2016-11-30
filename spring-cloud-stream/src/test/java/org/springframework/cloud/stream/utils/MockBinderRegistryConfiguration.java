@@ -25,7 +25,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * A simple configuration that creates mock {@link org.springframework.cloud.stream.binder.Binder}s.
+ * A simple configuration that creates mock
+ * {@link org.springframework.cloud.stream.binder.Binder}s.
  * @author Marius Bogoevici
  */
 @Configuration
