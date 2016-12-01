@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.config;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -28,6 +27,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.bind.PropertySourcesPropertyValues;
+import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -59,15 +60,9 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	private Map<String, BinderProperties> binders = new HashMap<>();
 
-	private Properties consumerDefaults = new Properties();
-
-	private Properties producerDefaults = new Properties();
-
 	private String defaultBinder;
 
 	private String[] dynamicDestinations = new String[0];
-
-	private boolean ignoreUnknownProperties = true;
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -117,30 +112,6 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	public void setDynamicDestinations(String[] dynamicDestinations) {
 		this.dynamicDestinations = dynamicDestinations;
-	}
-
-	public Properties getConsumerDefaults() {
-		return this.consumerDefaults;
-	}
-
-	public void setConsumerDefaults(Properties consumerDefaults) {
-		this.consumerDefaults = consumerDefaults;
-	}
-
-	public Properties getProducerDefaults() {
-		return this.producerDefaults;
-	}
-
-	public void setProducerDefaults(Properties producerDefaults) {
-		this.producerDefaults = producerDefaults;
-	}
-
-	public boolean isIgnoreUnknownProperties() {
-		return this.ignoreUnknownProperties;
-	}
-
-	public void setIgnoreUnknownProperties(boolean ignoreUnknownProperties) {
-		this.ignoreUnknownProperties = ignoreUnknownProperties;
 	}
 
 	@Override
@@ -210,6 +181,13 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	public BindingProperties getBindingProperties(String channelName) {
 		BindingProperties bindingProperties = new BindingProperties();
+		if (applicationContext != null) {
+			RelaxedDataBinder defaultsDataBinder = new RelaxedDataBinder(bindingProperties,
+					"spring.cloud.stream.default");
+			defaultsDataBinder.setDisallowedFields("destination");
+			defaultsDataBinder
+					.bind(new PropertySourcesPropertyValues(applicationContext.getEnvironment().getPropertySources()));
+		}
 		if (this.bindings.containsKey(channelName)) {
 			BeanUtils.copyProperties(this.bindings.get(channelName), bindingProperties);
 		}
