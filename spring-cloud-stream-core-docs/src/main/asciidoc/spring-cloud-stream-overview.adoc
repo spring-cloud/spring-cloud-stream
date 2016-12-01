@@ -885,17 +885,21 @@ Default: false.
 Binding properties are supplied using the format `spring.cloud.stream.bindings.<channelName>.<property>=<value>`.
 The `<channelName>` represents the name of the channel being configured (e.g., `output` for a `Source`).
 
+To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format `spring.cloud.stream.default.<property>=<value>`.
+
 In what follows, we indicate where we have omitted the `spring.cloud.stream.bindings.<channelName>.` prefix and focus just on the property name, with the understanding that the prefix will be included at runtime.
 
 ==== Properties for Use of Spring Cloud Stream
 
-The following binding properties are available for both input and output bindings and
-must be prefixed with `spring.cloud.stream.bindings.<channelName>.`.
+The following binding properties are available for both input and output bindings and must be prefixed with `spring.cloud.stream.bindings.<channelName>.`, e.g. `spring.cloud.stream.bindings.input.destination=ticktock`.
+
+Default values can be set by using the prefix `spring.cloud.stream.default`, e.g. `spring.cloud.stream.default.contentType=application/json`.
 
 destination::
     The target destination of a channel on the bound middleware (e.g., the RabbitMQ exchange or Kafka topic).
     If the channel is bound as a consumer, it could be bound to multiple destinations and the destination names can be specified as comma separated String values.
     If not set, the channel name is used instead.
+    The default value of this property cannot be overridden.
 group::
     The consumer group of the channel.
 Applies only to inbound bindings.
@@ -915,7 +919,9 @@ Default: null (the default binder will be used, if one exists).
 
 ==== Consumer properties
 
-The following binding properties are available for input bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.consumer.`.
+The following binding properties are available for input bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.consumer.`, e.g. `spring.cloud.stream.bindings.input.consumer.concurrency=3`.
+
+Default values can be set by using the prefix `spring.cloud.stream.default.consumer`, e.g. `spring.cloud.stream.default.consumer.headerMode=raw`.
 
 concurrency::
   The concurrency of the inbound consumer.
@@ -960,7 +966,9 @@ Default: `-1`.
 
 ==== Producer Properties
 
-The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.producer.`.
+The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.producer.`, e.g. `spring.cloud.stream.bindings.input.producer.partitionKeyExpression=payload.id`.
+
+Default values can be set by using the prefix `spring.cloud.stream.default.producer`, e.g. `spring.cloud.stream.default.producer.partitionKeyExpression=payload.id`.
 
 partitionKeyExpression::
   A SpEL expression that determines how to partition outbound data.
