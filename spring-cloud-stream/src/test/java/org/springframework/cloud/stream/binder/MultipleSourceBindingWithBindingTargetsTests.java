@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,62 +13,64 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.cloud.stream.binder;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.messaging.MultipleSources;
+import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
 /**
- * @author Marius Bogoevici
+ * @author Laabidi RAISSI
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ArbitraryInterfaceWithDefaultsTests.TestFooChannels.class)
-public class ArbitraryInterfaceWithDefaultsTests {
+@SpringBootTest(classes = MultipleSourceBindingWithBindingTargetsTests.TestSource.class)
+public class MultipleSourceBindingWithBindingTargetsTests {
 
-	@Autowired
-	public FooChannelsWithDefaults fooChannels;
-
+	
 	@SuppressWarnings("rawtypes")
 	@Autowired
 	private BinderFactory binderFactory;
 
+	@Autowired
+	private MultipleSources testSource;
+
+	@Autowired
+	@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)
+	private PublishSubscribeChannel errorChannel;
+
 	@SuppressWarnings("unchecked")
 	@Test
-	public void testArbitraryInterfaceChannelsBound() {
-		final Binder binder = this.binderFactory.getBinder(null);
-		verify(binder).bindConsumer(eq("foo"), anyString(), eq(this.fooChannels.foo()),
-				Mockito.<ConsumerProperties>any());
-		verify(binder).bindConsumer(eq("bar"), anyString(), eq(this.fooChannels.bar()),
-				Mockito.<ConsumerProperties>any());
-		verify(binder).bindProducer(eq("baz"), eq(this.fooChannels.baz()),
+	public void testSourceOutputChannelBound() {
+		Binder binder = binderFactory.getBinder(null);
+		verify(binder).bindProducer(eq("testtock1"), eq(this.testSource.output("output1")),
 				Mockito.<ProducerProperties>any());
-		verify(binder).bindProducer(eq("qux"), eq(this.fooChannels.qux()),
-				Mockito.<ProducerProperties>any());
-		verify(binder).bindProducer(eq("multiple"), eq(this.fooChannels.multiple("multiple")),
+		verify(binder).bindProducer(eq("testtock2"), eq(this.testSource.output("output2")),
 				Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);
 	}
 
-	@EnableBinding(FooChannelsWithDefaults.class)
+	@EnableBinding(MultipleSources.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderRegistryConfiguration.class)
-	public static class TestFooChannels {
+	@PropertySource("classpath:/org/springframework/cloud/stream/binder/source-multiple-binding-test.properties")
+	public static class TestSource {
 
 	}
-
+	
 }

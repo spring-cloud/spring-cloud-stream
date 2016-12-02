@@ -20,13 +20,16 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.annotation.Outputs;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.ReflectionUtils.MethodCallback;
 import org.springframework.util.StringUtils;
@@ -65,9 +68,28 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 				qualifierValue));
 		registry.registerBeanDefinition(name, rootBeanDefinition);
 	}
+	
+	static void registerMultipleChannelBeanDefinitions(String qualifierValue, String name,
+			String channelInterfaceBeanName, String channelInterfaceMethodName,
+			BeanDefinitionRegistry registry) {
+
+		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
+		rootBeanDefinition.setFactoryBeanName(channelInterfaceBeanName);
+		rootBeanDefinition.setUniqueFactoryMethodName(channelInterfaceMethodName);
+		rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(Outputs.class,
+				qualifierValue));
+		
+		rootBeanDefinition.setConstructorArgumentValues(new ConstructorArgumentValues());
+		rootBeanDefinition.getConstructorArgumentValues().addIndexedArgumentValue(0, name);
+		
+		
+		//rootBeanDefinition.getConstructorArgumentValues().addGenericArgumentValue(new ValueHolder(name));
+		
+		registry.registerBeanDefinition(name, rootBeanDefinition);
+	}
 
 	public static void registerChannelBeanDefinitions(Class<?> type,
-			final String channelInterfaceBeanName, final BeanDefinitionRegistry registry) {
+			final String channelInterfaceBeanName, final BeanDefinitionRegistry registry, final Environment environment) {
 		ReflectionUtils.doWithMethods(type, new MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException,
@@ -83,6 +105,16 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 					String name = getChannelName(output, method);
 					registerOutputChannelBeanDefinition(output.value(), name,
 							channelInterfaceBeanName, method.getName(), registry);
+				}
+				Outputs outputs = AnnotationUtils.findAnnotation(method, Outputs.class);
+				if (outputs != null) {
+					String name = getChannelName(outputs, method);
+					String resolvedChannelNames = environment.resolvePlaceholders(name);
+					String[] channelNames = StringUtils.commaDelimitedListToStringArray(resolvedChannelNames);
+					for(String channelName: channelNames){
+						registerMultipleChannelBeanDefinitions(channelName, channelName,
+								channelInterfaceBeanName, method.getName(), registry);
+					}
 				}
 			}
 
@@ -118,5 +150,5 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		}
 		return method.getName();
 	}
-
+	
 }
