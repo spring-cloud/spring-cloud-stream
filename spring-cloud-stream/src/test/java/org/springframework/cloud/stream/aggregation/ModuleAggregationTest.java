@@ -39,6 +39,7 @@ import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Marius Bogoevici
@@ -111,18 +112,18 @@ public class ModuleAggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[]{ "--foo1=bar1" }));
+				new String[]{"--foo1=bar1"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
 				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
 						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo1=bar2" }));
+						new String[]{"--foo1=bar2"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo1=bar3" }));
+						new String[]{"--foo1=bar3"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -142,18 +143,18 @@ public class ModuleAggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[]{ "--fooValue=bara" }));
+				new String[]{"--fooValue=bara"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
 				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
 						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo1=argbarb" }));
+						new String[]{"--foo1=argbarb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo1=barc" }));
+						new String[]{"--foo1=barc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -173,18 +174,18 @@ public class ModuleAggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[]{ "--fooValue=bara" }));
+				new String[]{"--fooValue=bara"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
 				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
 						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo-value=barb" }));
+						new String[]{"--foo-value=barb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo1=barc" }));
+						new String[]{"--foo1=barc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -206,18 +207,18 @@ public class ModuleAggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[]{ "--fooValue=bara" }));
+				new String[]{"--fooValue=bara"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
 				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
 						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--fooValue=argbarb" }));
+						new String[]{"--fooValue=argbarb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--fooValue=sysbarc" }));
+						new String[]{"--fooValue=sysbarc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -239,7 +240,7 @@ public class ModuleAggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[]{ "--foo-value=sysbara" }));
+				new String[]{"--foo-value=sysbara"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
 				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
 						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
@@ -248,11 +249,11 @@ public class ModuleAggregationTest {
 				"processorConfigurers"))) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--fooValue=argbarb" }));
+						new String[]{"--fooValue=argbarb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--fooValue=sysbarc" }));
+						new String[]{"--fooValue=sysbarc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -274,18 +275,18 @@ public class ModuleAggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[]{ "--fooValue=highest" }));
+				new String[]{"--fooValue=highest"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
 				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
 						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--fooValue=argbarb" }));
+						new String[]{"--fooValue=argbarb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo-value=sysbarc" }));
+						new String[]{"--foo-value=sysbarc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -310,6 +311,36 @@ public class ModuleAggregationTest {
 		assertThat(channelFactory).isNotNull();
 		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();
+	}
+
+	@Test
+	public void testAggregateWebContextInBothParentAndChild() {
+		try {
+			aggregatedApplicationContext = new AggregateApplicationBuilder(
+					MockBinderRegistryConfiguration.class, "--server.port=0")
+					.from(TestSource.class).namespace("foo").to(TestProcessor.class).web(true)
+					.namespace("bar").run();
+			fail("IllegalStateException should have been thrown when the parent as well as any of the child applications" +
+					"have web context enabled.");
+		}
+		catch (IllegalStateException e) {
+			assertThat(e.getMessage()).contains("Aggregate application parent web context should be " +
+					"disabled if any of the child application has web enabled. Use web(false) for the parent context.");
+		}
+	}
+
+	@Test
+	public void testAggregateChildWebContext() {
+		try {
+			aggregatedApplicationContext = new AggregateApplicationBuilder(
+					MockBinderRegistryConfiguration.class).web(false)
+					.from(TestSource.class).namespace("foo").to(TestProcessor.class).web(true)
+					.namespace("bar").run();
+			aggregatedApplicationContext.close();
+		}
+		catch (Exception e) {
+			fail("Aggregate application should start fine when only the child applications have web contexts enabled.");
+		}
 	}
 
 	@EnableBinding(Source.class)
