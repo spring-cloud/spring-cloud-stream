@@ -893,7 +893,7 @@ In what follows, we indicate where we have omitted the `spring.cloud.stream.bind
 
 The following binding properties are available for both input and output bindings and must be prefixed with `spring.cloud.stream.bindings.<channelName>.`, e.g. `spring.cloud.stream.bindings.input.destination=ticktock`.
 
-Default values can be overridden by using the prefix `spring.cloud.stream.default`, e.g. `spring.cloud.stream.default.contentType=application/json`.
+Default values can be set by using the prefix `spring.cloud.stream.default`, e.g. `spring.cloud.stream.default.contentType=application/json`.
 
 destination::
     The target destination of a channel on the bound middleware (e.g., the RabbitMQ exchange or Kafka topic).
@@ -921,7 +921,7 @@ Default: null (the default binder will be used, if one exists).
 
 The following binding properties are available for input bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.consumer.`, e.g. `spring.cloud.stream.bindings.input.consumer.concurrency=3`.
 
-Default values can be overridden by using the prefix `spring.cloud.stream.default.consumer`, e.g. `spring.cloud.stream.default.consumer.headerMode=raw`.
+Default values can be set by using the prefix `spring.cloud.stream.default.consumer`, e.g. `spring.cloud.stream.default.consumer.headerMode=raw`.
 
 concurrency::
   The concurrency of the inbound consumer.
@@ -968,7 +968,7 @@ Default: `-1`.
 
 The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.producer.`, e.g. `spring.cloud.stream.bindings.input.producer.partitionKeyExpression=payload.id`.
 
-Default values can be overridden by using the prefix `spring.cloud.stream.default.producer`, e.g. `spring.cloud.stream.default.producer.contentType=payload.id`.
+Default values can be set by using the prefix `spring.cloud.stream.default.producer`, e.g. `spring.cloud.stream.default.producer.partitionKeyExpression=payload.id`.
 
 partitionKeyExpression::
   A SpEL expression that determines how to partition outbound data.
