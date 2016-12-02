@@ -38,15 +38,22 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	protected final T target;
 
-	protected final Lifecycle endpoint;
+	protected final Lifecycle runningComponent;
 
-	public DefaultBinding(String name, String group, T target, Lifecycle endpoint) {
+	/**
+	 * Creates a new instance.
+	 * @param name the name of the binding target
+	 * @param group the group (only for input targets)
+	 * @param target the binding target
+	 * @param runningComponent a {@link Lifecycle} object that is running while the binding is active
+	 *                         and will be stopped during unbinding
+	 */
+	public DefaultBinding(String name, String group, T target, Lifecycle runningComponent) {
 		Assert.notNull(target, "target must not be null");
-		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
 		this.group = group;
 		this.target = target;
-		this.endpoint = endpoint;
+		this.runningComponent = runningComponent;
 	}
 
 
@@ -61,8 +68,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public final void unbind() {
-		if (this.endpoint != null) {
-			this.endpoint.stop();
+		if (this.runningComponent != null) {
+			this.runningComponent.stop();
 		}
 		afterUnbind();
 	}
@@ -72,9 +79,9 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public String toString() {
-		return " Binding [name=" + this.name + ", target=" + this.target + ", endpoint=" +
-				((this.endpoint instanceof NamedComponent) ? ((NamedComponent) this.endpoint).getComponentName() :
-						ObjectUtils.nullSafeToString(this.endpoint))
+		return " Binding [name=" + this.name + ", target=" + this.target + ", runningComponent=" +
+				((this.runningComponent instanceof NamedComponent) ? ((NamedComponent) this.runningComponent).getComponentName() :
+						ObjectUtils.nullSafeToString(this.runningComponent))
 				+ "]";
 	}
 }
