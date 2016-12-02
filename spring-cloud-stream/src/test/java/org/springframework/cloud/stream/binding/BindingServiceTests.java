@@ -65,7 +65,7 @@ import static org.mockito.Mockito.when;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public class ChannelBindingServiceTests {
+public class BindingServiceTests {
 
 	@Test
 	public void testDefaultGroup() throws Exception {
