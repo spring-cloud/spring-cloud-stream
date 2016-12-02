@@ -34,11 +34,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binding.AbstractBoundElementFactory;
+import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.BoundSubscribableChannelFactory;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
@@ -77,7 +77,7 @@ import org.springframework.util.CollectionUtils;
  */
 @Configuration
 @EnableConfigurationProperties(ChannelBindingServiceProperties.class)
-public class ChannelBindingServiceConfiguration {
+public class BindingServiceConfiguration {
 
 	private static final String ERROR_CHANNEL_NAME = "error";
 
@@ -92,12 +92,12 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
-	// it is used to detect a ChannelBindingService in the parent context (which we know
+	// it is used to detect a BindingService in the parent context (which we know
 	// already exists).
-	@ConditionalOnMissingBean(ChannelBindingService.class)
-	public ChannelBindingService bindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
+	@ConditionalOnMissingBean(BindingService.class)
+	public BindingService bindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
 			BinderFactory binderFactory) {
-		return new ChannelBindingService(channelBindingServiceProperties, binderFactory);
+		return new BindingService(channelBindingServiceProperties, binderFactory);
 	}
 
 	@Bean
@@ -141,10 +141,10 @@ public class ChannelBindingServiceConfiguration {
 
 	@Bean
 	public BinderAwareChannelResolver binderAwareChannelResolver(
-			ChannelBindingService channelBindingService,
-			AbstractBoundElementFactory<? extends MessageChannel> boundElementFactory,
+			BindingService bindingService,
+			AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
-		return new BinderAwareChannelResolver(channelBindingService,
+		return new BinderAwareChannelResolver(bindingService,
 				boundElementFactory, dynamicDestinationsBindable);
 	}
 

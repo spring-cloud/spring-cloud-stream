@@ -37,22 +37,22 @@ import org.springframework.util.ObjectUtils;
  */
 public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
 
-	private final ChannelBindingService channelBindingService;
+	private final BindingService bindingService;
 
-	private final AbstractBoundElementFactory<? extends MessageChannel> boundElementFactory;
+	private final AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory;
 
 	private final DynamicDestinationsBindable dynamicDestinationsBindable;
 
 	private ConfigurableListableBeanFactory beanFactory;
 
 	@SuppressWarnings("unchecked")
-	public BinderAwareChannelResolver(ChannelBindingService channelBindingService,
-			AbstractBoundElementFactory<? extends MessageChannel> boundElementFactory,
+	public BinderAwareChannelResolver(BindingService bindingService,
+			AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
-		Assert.notNull(channelBindingService, "'channelBindingService' cannot be null");
+		Assert.notNull(bindingService, "'bindingService' cannot be null");
 		Assert.notNull(boundElementFactory, "'boundElementFactory' cannot be null");
-		this.channelBindingService = channelBindingService;
+		this.bindingService = bindingService;
 		this.boundElementFactory = boundElementFactory;
 	}
 
@@ -77,7 +77,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		synchronized (this) {
 			if (this.beanFactory != null) {
 				String[] dynamicDestinations = null;
-				ChannelBindingServiceProperties channelBindingServiceProperties = this.channelBindingService
+				ChannelBindingServiceProperties channelBindingServiceProperties = this.bindingService
 						.getChannelBindingServiceProperties();
 				if (channelBindingServiceProperties != null) {
 					dynamicDestinations = channelBindingServiceProperties.getDynamicDestinations();
@@ -88,7 +88,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					channel = this.boundElementFactory.createOutput(channelName);
 					this.beanFactory.registerSingleton(channelName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
-					Binding<MessageChannel> binding = this.channelBindingService.bindProducer(channel, channelName);
+					Binding<MessageChannel> binding = this.bindingService.bindProducer(channel, channelName);
 					this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
 				}
 				else {

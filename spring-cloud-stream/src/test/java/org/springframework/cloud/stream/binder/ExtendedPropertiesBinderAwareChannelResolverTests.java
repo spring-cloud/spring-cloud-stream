@@ -30,7 +30,7 @@ import org.mockito.Mockito;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.BoundSubscribableChannelFactory;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
@@ -88,9 +88,9 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		messageConverterConfigurer.afterPropertiesSet();
 		this.boundElementFactory = new BoundSubscribableChannelFactory(messageConverterConfigurer);
 		dynamicDestinationsBindable = new DynamicDestinationsBindable();
-		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
+		BindingService bindingService = new BindingService(channelBindingServiceProperties,
 				binderFactory);
-		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.boundElementFactory,
+		this.resolver = new BinderAwareChannelResolver(bindingService, this.boundElementFactory,
 				dynamicDestinationsBindable);
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);
@@ -98,7 +98,7 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		context.registerSingleton("other", DirectChannel.class);
 		context.registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				DefaultMessageBuilderFactory.class);
-		context.getBeanFactory().registerSingleton("channelBindingService", channelBindingService);
+		context.getBeanFactory().registerSingleton("bindingService", bindingService);
 		context.registerSingleton("inputBindingLifecycle", InputBindingLifecycle.class);
 		context.registerSingleton("outputBindingLifecycle", OutputBindingLifecycle.class);
 		context.refresh();

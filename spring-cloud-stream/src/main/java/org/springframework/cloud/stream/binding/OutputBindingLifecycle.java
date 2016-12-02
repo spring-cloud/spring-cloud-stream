@@ -25,7 +25,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 
 /**
- * Coordinates binding/unbinding of output channels in accordance to the lifecycle
+ * Coordinates binding/unbinding of output binding targets in accordance to the lifecycle
  * of the host context.
  *
  * @author Marius Bogoevici
@@ -47,14 +47,14 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 	public void start() {
 		if (!running) {
 
-			// retrieve the ChannelBindingService lazily, avoiding early initialization
+			// retrieve the BindingService lazily, avoiding early initialization
 			try {
-				ChannelBindingService channelBindingService = this.applicationContext
-						.getBean(ChannelBindingService.class);
+				BindingService bindingService = this.applicationContext
+						.getBean(BindingService.class);
 				Map<String, Bindable> bindables = this.applicationContext
 						.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
-					bindable.bindOutputs(channelBindingService);
+					bindable.bindOutputs(bindingService);
 				}
 			}
 			catch (BeansException e) {
@@ -69,14 +69,14 @@ public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContex
 	public void stop() {
 		if (running) {
 			try {
-				// retrieve the ChannelBindingService lazily, avoiding early
+				// retrieve the BindingService lazily, avoiding early
 				// initialization
-				ChannelBindingService channelBindingService = this.applicationContext
-						.getBean(ChannelBindingService.class);
+				BindingService bindingService = this.applicationContext
+						.getBean(BindingService.class);
 				Map<String, Bindable> bindables = this.applicationContext
 						.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
-					bindable.unbindOutputs(channelBindingService);
+					bindable.unbindOutputs(bindingService);
 				}
 			}
 			catch (BeansException e) {

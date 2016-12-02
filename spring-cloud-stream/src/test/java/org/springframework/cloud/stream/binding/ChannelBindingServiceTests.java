@@ -81,7 +81,7 @@ public class ChannelBindingServiceTests {
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true, true)));
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		ChannelBindingService service = new ChannelBindingService(properties, binderFactory);
+		BindingService service = new BindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
@@ -115,7 +115,7 @@ public class ChannelBindingServiceTests {
 						new Properties(), true, true)));
 
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		ChannelBindingService service = new ChannelBindingService(properties,
+		BindingService service = new BindingService(properties,
 				binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
 
@@ -171,7 +171,7 @@ public class ChannelBindingServiceTests {
 														MockBinderConfiguration.class }),
 										new Properties(), true, true)));
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		ChannelBindingService service = new ChannelBindingService(properties,
+		BindingService service = new BindingService(properties,
 				binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
 		@SuppressWarnings("unchecked")
@@ -209,12 +209,12 @@ public class ChannelBindingServiceTests {
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
 		when(binder.bindProducer(matches("foo"), any(DirectChannel.class),
 				any(ProducerProperties.class))).thenReturn(mockBinding);
-		ChannelBindingService channelBindingService = new ChannelBindingService(properties, binderFactory);
+		BindingService bindingService = new BindingService(properties, binderFactory);
 		BoundSubscribableChannelFactory bindableSubscribableChannelFactory = new BoundSubscribableChannelFactory(
 				new MessageConverterConfigurer(properties,
 						new CompositeMessageConverterFactory()));
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(
-				channelBindingService, bindableSubscribableChannelFactory,
+				bindingService, bindableSubscribableChannelFactory,
 				new DynamicDestinationsBindable());
 		ConfigurableListableBeanFactory beanFactory = mock(
 				ConfigurableListableBeanFactory.class);
@@ -273,7 +273,7 @@ public class ChannelBindingServiceTests {
 				new DefaultBinderFactory(Collections.singletonMap("mock",
 						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
 								new Properties(), true, true)));
-		ChannelBindingService service = new ChannelBindingService(serviceProperties, binderFactory);
+		BindingService service = new BindingService(serviceProperties, binderFactory);
 		MessageChannel outputChannel = new DirectChannel();
 		try {
 			service.bindProducer(outputChannel, outputChannelName);
@@ -299,7 +299,7 @@ public class ChannelBindingServiceTests {
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory(Collections.singletonMap("mock",
 				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
 						new Properties(), true, true)));
-		ChannelBindingService service = new ChannelBindingService(serviceProperties,
+		BindingService service = new BindingService(serviceProperties,
 				binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
 		try {

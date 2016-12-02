@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Indicates that an output channel will be created by the framework.
+ * Indicates that an output binding target will be created by the framework.
  *
  * @author Dave Syer
  * @author Marius Bogoevici

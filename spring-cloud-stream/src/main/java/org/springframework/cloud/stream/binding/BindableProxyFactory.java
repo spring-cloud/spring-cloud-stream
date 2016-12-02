@@ -67,7 +67,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	private SharedChannelRegistry sharedChannelRegistry;
 
 	@Autowired
-	private List<BoundElementFactory> boundElementFactories;
+	private List<BindingTargetFactory> boundElementFactories;
 
 	private Class<?> type;
 
@@ -143,8 +143,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		});
 	}
 
-	private BoundElementFactory getBoundElementFactory(Class<?> boundElementType) {
-		for (BoundElementFactory factory : boundElementFactories) {
+	private BindingTargetFactory getBoundElementFactory(Class<?> boundElementType) {
+		for (BindingTargetFactory factory : boundElementFactories) {
 			if (factory.canCreate(boundElementType)) {
 				return factory;
 			}
@@ -181,7 +181,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	@Override
-	public void bindInputs(ChannelBindingService channelBindingService) {
+	public void bindInputs(BindingService bindingService) {
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace, this.type));
 		}
@@ -192,13 +192,13 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, inputChannelName));
 				}
-				channelBindingService.bindConsumer(boundElementHolder.getBoundElement(), inputChannelName);
+				bindingService.bindConsumer(boundElementHolder.getBoundElement(), inputChannelName);
 			}
 		}
 	}
 
 	@Override
-	public void bindOutputs(ChannelBindingService channelBindingService) {
+	public void bindOutputs(BindingService bindingService) {
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
 		}
@@ -209,13 +209,13 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, outputChannelName));
 				}
-				channelBindingService.bindProducer(boundElementHolder.getBoundElement(), outputChannelName);
+				bindingService.bindProducer(boundElementHolder.getBoundElement(), outputChannelName);
 			}
 		}
 	}
 
 	@Override
-	public void unbindInputs(ChannelBindingService channelBindingService) {
+	public void unbindInputs(BindingService bindingService) {
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace, this.type));
 		}
@@ -225,13 +225,13 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace, this.type,
 							channelHolderEntry.getKey()));
 				}
-				channelBindingService.unbindConsumers(channelHolderEntry.getKey());
+				bindingService.unbindConsumers(channelHolderEntry.getKey());
 			}
 		}
 	}
 
 	@Override
-	public void unbindOutputs(ChannelBindingService channelBindingService) {
+	public void unbindOutputs(BindingService bindingService) {
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace, this.type));
 		}
@@ -241,7 +241,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type,
 							channelHolderEntry.getKey()));
 				}
-				channelBindingService.unbindProducers(channelHolderEntry.getKey());
+				bindingService.unbindProducers(channelHolderEntry.getKey());
 			}
 		}
 	}

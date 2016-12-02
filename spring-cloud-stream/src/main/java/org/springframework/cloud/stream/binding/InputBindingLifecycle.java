@@ -25,7 +25,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 
 /**
- * Coordinates binding/unbinding of input channels in accordance to the lifecycle
+ * Coordinates binding/unbinding of input binding targets in accordance to the lifecycle
  * of the host context.
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -45,14 +45,14 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 	@Override
 	public void start() {
 		if (!running) {
-			// retrieve the ChannelBindingService lazily, avoiding early initialization
+			// retrieve the BindingService lazily, avoiding early initialization
 			try {
-				ChannelBindingService channelBindingService = this.applicationContext
-						.getBean(ChannelBindingService.class);
+				BindingService bindingService = this.applicationContext
+						.getBean(BindingService.class);
 				Map<String, Bindable> bindables = this.applicationContext
 						.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
-					bindable.bindInputs(channelBindingService);
+					bindable.bindInputs(bindingService);
 				}
 			}
 			catch (BeansException e) {
@@ -67,14 +67,14 @@ public class InputBindingLifecycle implements SmartLifecycle, ApplicationContext
 	public void stop() {
 		if (running) {
 			try {
-				// retrieve the ChannelBindingService lazily, avoiding early
+				// retrieve the BindingService lazily, avoiding early
 				// initialization
-				ChannelBindingService channelBindingService = this.applicationContext
-						.getBean(ChannelBindingService.class);
+				BindingService bindingService = this.applicationContext
+						.getBean(BindingService.class);
 				Map<String, Bindable> bindables = this.applicationContext
 						.getBeansOfType(Bindable.class);
 				for (Bindable bindable : bindables.values()) {
-					bindable.unbindInputs(channelBindingService);
+					bindable.unbindInputs(bindingService);
 				}
 			}
 			catch (BeansException e) {

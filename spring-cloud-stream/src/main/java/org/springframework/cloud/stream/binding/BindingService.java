@@ -42,20 +42,20 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.beanvalidation.CustomValidatorBean;
 
 /**
- * Handles the operations related to channel binding including binding of input/output
- * channels by delegating to an underlying {@link Binder}, setting up data type conversion
- * for binding channel.
+ * Handles binding of input/output targets by delegating to an underlying
+ * {@link Binder}.
+ *
  * @author Mark Fisher
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  */
-public class ChannelBindingService {
+public class BindingService {
 
 	private final CustomValidatorBean validator;
 
-	private final Log log = LogFactory.getLog(ChannelBindingService.class);
+	private final Log log = LogFactory.getLog(BindingService.class);
 
 	private BinderFactory binderFactory;
 
@@ -65,7 +65,7 @@ public class ChannelBindingService {
 
 	private final Map<String, List<Binding<?>>> consumerBindings = new HashMap<>();
 
-	public ChannelBindingService(
+	public BindingService(
 			ChannelBindingServiceProperties channelBindingServiceProperties,
 			BinderFactory binderFactory) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;

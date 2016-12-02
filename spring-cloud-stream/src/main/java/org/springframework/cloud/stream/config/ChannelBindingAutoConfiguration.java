@@ -28,7 +28,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binding.Bindable;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,7 +43,7 @@ import org.springframework.messaging.MessageChannel;
  * @author Marius Bogoevici
  */
 @Configuration
-@ConditionalOnBean(ChannelBindingService.class)
+@ConditionalOnBean(BindingService.class)
 @EnableConfigurationProperties(DefaultPollerProperties.class)
 @AutoConfigureBefore(EndpointAutoConfiguration.class)
 public class ChannelBindingAutoConfiguration {

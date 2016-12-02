@@ -42,12 +42,12 @@ public class SingleChannelBindable extends BindableAdapter {
 	}
 
 	@Override
-	public void bindOutputs(ChannelBindingService adapter) {
+	public void bindOutputs(BindingService adapter) {
 		adapter.bindProducer(messageChannel, name);
 	}
 
 	@Override
-	public void unbindOutputs(ChannelBindingService adapter) {
+	public void unbindOutputs(BindingService adapter) {
 		adapter.unbindProducers(name);
 	}
 

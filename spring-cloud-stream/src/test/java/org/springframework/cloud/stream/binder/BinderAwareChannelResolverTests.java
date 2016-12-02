@@ -31,10 +31,10 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.cloud.stream.binding.AbstractBoundElementFactory;
+import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BoundSubscribableChannelFactory;
-import org.springframework.cloud.stream.binding.ChannelBindingService;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
@@ -75,7 +75,7 @@ public class BinderAwareChannelResolverTests {
 
 	protected volatile Binder<MessageChannel, ConsumerProperties, ProducerProperties> binder;
 
-	protected volatile AbstractBoundElementFactory<? extends MessageChannel> boundElementFactory;
+	protected volatile AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory;
 
 	protected volatile ChannelBindingServiceProperties channelBindingServiceProperties;
 
@@ -100,7 +100,7 @@ public class BinderAwareChannelResolverTests {
 		bindingProperties.setContentType("text/plain");
 		bindings.put("foo", bindingProperties);
 		this.channelBindingServiceProperties.setBindings(bindings);
-		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
+		BindingService bindingService = new BindingService(channelBindingServiceProperties,
 				binderFactory);
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
 				this.channelBindingServiceProperties,
@@ -109,7 +109,7 @@ public class BinderAwareChannelResolverTests {
 		messageConverterConfigurer.afterPropertiesSet();
 		this.boundElementFactory = new BoundSubscribableChannelFactory(messageConverterConfigurer);
 		dynamicDestinationsBindable = new DynamicDestinationsBindable();
-		this.resolver = new BinderAwareChannelResolver(channelBindingService, this.boundElementFactory,
+		this.resolver = new BinderAwareChannelResolver(bindingService, this.boundElementFactory,
 				dynamicDestinationsBindable);
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);
@@ -117,7 +117,7 @@ public class BinderAwareChannelResolverTests {
 		context.registerSingleton("other", DirectChannel.class);
 		context.registerSingleton(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				DefaultMessageBuilderFactory.class);
-		context.getBeanFactory().registerSingleton("channelBindingService", channelBindingService);
+		context.getBeanFactory().registerSingleton("bindingService", bindingService);
 		context.registerSingleton("inputBindingLifecycle", InputBindingLifecycle.class);
 		context.registerSingleton("outputBindingLifecycle", OutputBindingLifecycle.class);
 		context.refresh();
@@ -184,11 +184,11 @@ public class BinderAwareChannelResolverTests {
 				matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(barBinding);
 		when(mockBinderFactory.getBinder(null, DirectChannel.class)).thenReturn(binder);
 		when(mockBinderFactory.getBinder("someTransport", DirectChannel.class)).thenReturn(binder2);
-		ChannelBindingService channelBindingService = new ChannelBindingService(channelBindingServiceProperties,
+		BindingService bindingService = new BindingService(channelBindingServiceProperties,
 				mockBinderFactory);
 		@SuppressWarnings("unchecked")
 		BinderAwareChannelResolver resolver =
-				new BinderAwareChannelResolver(channelBindingService, this.boundElementFactory,
+				new BinderAwareChannelResolver(bindingService, this.boundElementFactory,
 						new DynamicDestinationsBindable());
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);

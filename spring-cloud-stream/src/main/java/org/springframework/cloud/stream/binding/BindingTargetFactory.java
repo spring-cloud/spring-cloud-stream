@@ -25,7 +25,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-public interface BoundElementFactory {
+public interface BindingTargetFactory {
 
 	/**
 	 * Checks whether a specific type bound element can be created by this factory.
