@@ -27,8 +27,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.bind.PropertySourcesPropertyValues;
-import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -117,6 +115,9 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+		// override the bindings store with the environment-initializing version if in a Spring context
+		this.bindings = new EnvironmentEntryInitializingTreeMap<>(this.applicationContext, BindingProperties.class,
+				"spring.cloud.stream.default", new TreeMap<String, BindingProperties>(String.CASE_INSENSITIVE_ORDER));
 	}
 
 	public void setConversionService(ConversionService conversionService) {
@@ -181,13 +182,6 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 
 	public BindingProperties getBindingProperties(String channelName) {
 		BindingProperties bindingProperties = new BindingProperties();
-		if (applicationContext != null) {
-			RelaxedDataBinder defaultsDataBinder = new RelaxedDataBinder(bindingProperties,
-					"spring.cloud.stream.default");
-			defaultsDataBinder.setDisallowedFields("destination");
-			defaultsDataBinder
-					.bind(new PropertySourcesPropertyValues(applicationContext.getEnvironment().getPropertySources()));
-		}
 		if (this.bindings.containsKey(channelName)) {
 			BeanUtils.copyProperties(this.bindings.get(channelName), bindingProperties);
 		}
@@ -204,4 +198,5 @@ public class ChannelBindingServiceProperties implements ApplicationContextAware,
 	public String getBindingDestination(String channelName) {
 		return getBindingProperties(channelName).getDestination();
 	}
+
 }

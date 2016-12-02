@@ -21,7 +21,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -30,8 +29,6 @@ import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
-import org.springframework.integration.channel.PublishSubscribeChannel;
-import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
@@ -41,19 +38,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SourceBindingWithGlobalPropertiesTest.TestSource.class, properties = {
 		"spring.cloud.stream.default.contentType=application/json",
-		"spring.cloud.stream.default.producer.requiredGroups=someGroup" })
+		"spring.cloud.stream.bindings.output.destination=ticktock",
+		"spring.cloud.stream.default.producer.requiredGroups=someGroup",
+		"spring.cloud.stream.bindings.output.producer.headerMode=raw"})
 public class SourceBindingWithGlobalPropertiesTest {
-
-	@SuppressWarnings("rawtypes")
-	@Autowired
-	private BinderFactory binderFactory;
-
-	@Autowired
-	private Source testSource;
-
-	@Autowired
-	@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)
-	private PublishSubscribeChannel errorChannel;
 
 	@Autowired
 	private ChannelBindingServiceProperties channelBindingServiceProperties;
@@ -63,7 +51,9 @@ public class SourceBindingWithGlobalPropertiesTest {
 	public void testGlobalPropertiesSet() {
 		BindingProperties bindingProperties = channelBindingServiceProperties.getBindingProperties(Source.OUTPUT);
 		Assertions.assertThat(bindingProperties.getContentType()).isEqualTo("application/json");
+		Assertions.assertThat(bindingProperties.getDestination()).isEqualTo("ticktock");
 		Assertions.assertThat(bindingProperties.getProducer().getRequiredGroups()).containsExactly("someGroup");
+		Assertions.assertThat(bindingProperties.getProducer().getHeaderMode()).isEqualTo(HeaderMode.raw);
 	}
 
 	@EnableBinding(Source.class)
