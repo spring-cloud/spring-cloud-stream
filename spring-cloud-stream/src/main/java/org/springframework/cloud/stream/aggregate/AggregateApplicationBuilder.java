@@ -48,7 +48,7 @@ import org.springframework.integration.monitor.IntegrationMBeanExporter;
 import org.springframework.util.StringUtils;
 
 /**
- * Application builder for {@link AggregateApplicationUtils}.
+ * Application builder for {@link AggregateApplication}.
  *
  * @author Dave Syer
  * @author Ilayaperumal Gopinathan
