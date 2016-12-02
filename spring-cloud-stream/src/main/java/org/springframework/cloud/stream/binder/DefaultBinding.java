@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.util.Assert;
@@ -38,17 +37,25 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	protected final T target;
 
-	protected final Lifecycle endpoint;
+	protected final Lifecycle lifecycle;
 
-	public DefaultBinding(String name, String group, T target, Lifecycle endpoint) {
+	/**
+	 * Creates an instance that associates a given name, group and binding target with an
+	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
+	 * 
+	 * @param name the name of the binding target
+	 * @param group the group (only for input targets)
+	 * @param target the binding target
+	 * @param lifecycle {@link Lifecycle} that runs while the
+	 * binding is active and will be stopped during unbinding
+	 */
+	public DefaultBinding(String name, String group, T target, Lifecycle lifecycle) {
 		Assert.notNull(target, "target must not be null");
-		Assert.notNull(endpoint, "endpoint must not be null");
 		this.name = name;
 		this.group = group;
 		this.target = target;
-		this.endpoint = endpoint;
+		this.lifecycle = lifecycle;
 	}
-
 
 	public String getName() {
 		return this.name;
@@ -58,23 +65,27 @@ public class DefaultBinding<T> implements Binding<T> {
 		return this.group;
 	}
 
-
 	@Override
 	public final void unbind() {
-		if (this.endpoint != null) {
-			this.endpoint.stop();
+		if (this.lifecycle != null) {
+			this.lifecycle.stop();
 		}
 		afterUnbind();
 	}
 
+	/**
+	 * Listener method that executes after unbinding. Subclasses can implement their own
+	 * behaviour on unbinding by overriding this method.
+	 */
 	protected void afterUnbind() {
 	}
 
 	@Override
 	public String toString() {
-		return " Binding [name=" + this.name + ", target=" + this.target + ", endpoint=" +
-				((this.endpoint instanceof NamedComponent) ? ((NamedComponent) this.endpoint).getComponentName() :
-						ObjectUtils.nullSafeToString(this.endpoint))
+		return " Binding [name=" + this.name + ", target=" + this.target + ", lifecycle="
+				+ ((this.lifecycle instanceof NamedComponent)
+						? ((NamedComponent) this.lifecycle).getComponentName()
+						: ObjectUtils.nullSafeToString(this.lifecycle))
 				+ "]";
 	}
 }
