@@ -34,7 +34,8 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 	private final Map<String, T> delegate;
 
 	/**
-	 * Constructs the map
+	 * Constructs the map.
+	 * 
 	 * @param applicationContext the application context that supplies the property values
 	 * @param entryClass the entry class
 	 * @param defaultsPrefix the prefix for initializing the properties
