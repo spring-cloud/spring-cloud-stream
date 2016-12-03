@@ -37,22 +37,23 @@ import org.springframework.util.ObjectUtils;
  */
 public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
 
-	private final ChannelBindingService channelBindingService;
+	private final BindingService bindingService;
 
-	private final BindableChannelFactory bindableChannelFactory;
+	private final AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory;
 
 	private final DynamicDestinationsBindable dynamicDestinationsBindable;
 
 	private ConfigurableListableBeanFactory beanFactory;
 
 	@SuppressWarnings("unchecked")
-	public BinderAwareChannelResolver(ChannelBindingService channelBindingService,
-			BindableChannelFactory bindableChannelFactory, DynamicDestinationsBindable dynamicDestinationsBindable) {
+	public BinderAwareChannelResolver(BindingService bindingService,
+			AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory,
+			DynamicDestinationsBindable dynamicDestinationsBindable) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
-		Assert.notNull(channelBindingService, "'channelBindingService' cannot be null");
-		Assert.notNull(bindableChannelFactory, "'bindableChannelFactory' cannot be null");
-		this.channelBindingService = channelBindingService;
-		this.bindableChannelFactory = bindableChannelFactory;
+		Assert.notNull(bindingService, "'bindingService' cannot be null");
+		Assert.notNull(boundElementFactory, "'boundElementFactory' cannot be null");
+		this.bindingService = bindingService;
+		this.boundElementFactory = boundElementFactory;
 	}
 
 	@Override
@@ -76,18 +77,18 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		synchronized (this) {
 			if (this.beanFactory != null) {
 				String[] dynamicDestinations = null;
-				ChannelBindingServiceProperties channelBindingServiceProperties =
-						this.channelBindingService.getChannelBindingServiceProperties();
+				ChannelBindingServiceProperties channelBindingServiceProperties = this.bindingService
+						.getChannelBindingServiceProperties();
 				if (channelBindingServiceProperties != null) {
 					dynamicDestinations = channelBindingServiceProperties.getDynamicDestinations();
 				}
 				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
 						|| ObjectUtils.containsElement(dynamicDestinations, channelName);
 				if (dynamicAllowed) {
-					channel = this.bindableChannelFactory.createOutputChannel(channelName);
+					channel = this.boundElementFactory.createOutput(channelName);
 					this.beanFactory.registerSingleton(channelName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
-					Binding<MessageChannel> binding = this.channelBindingService.bindProducer(channel, channelName);
+					Binding<MessageChannel> binding = this.bindingService.bindProducer(channel, channelName);
 					this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
 				}
 				else {

@@ -29,7 +29,6 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.integration.annotation.Transformer;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -46,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ExampleTest {
 
 	@Autowired
-	private BinderFactory<MessageChannel> binderFactory;
+	private BinderFactory binderFactory;
 
 	@Autowired
 	private MessageCollector messageCollector;

@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,110 +37,123 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.beanvalidation.CustomValidatorBean;
 
 /**
- * Handles the operations related to channel binding including binding of input/output channels by delegating
- * to an underlying {@link Binder}, setting up data type conversion for binding channel.
+ * Handles binding of input/output targets by delegating to an underlying
+ * {@link Binder}.
+ *
  * @author Mark Fisher
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  */
-public class ChannelBindingService {
+public class BindingService {
 
 	private final CustomValidatorBean validator;
 
-	private final Log log = LogFactory.getLog(ChannelBindingService.class);
+	private final Log log = LogFactory.getLog(BindingService.class);
 
-	private BinderFactory<MessageChannel> binderFactory;
+	private BinderFactory binderFactory;
 
 	private final ChannelBindingServiceProperties channelBindingServiceProperties;
 
-	private final Map<String, Binding<MessageChannel>> producerBindings = new HashMap<>();
+	private final Map<String, Binding<?>> producerBindings = new HashMap<>();
 
-	private final Map<String, List<Binding<MessageChannel>>> consumerBindings = new HashMap<>();
+	private final Map<String, List<Binding<?>>> consumerBindings = new HashMap<>();
 
-	public ChannelBindingService(ChannelBindingServiceProperties channelBindingServiceProperties,
-			BinderFactory<MessageChannel> binderFactory) {
+	public BindingService(
+			ChannelBindingServiceProperties channelBindingServiceProperties,
+			BinderFactory binderFactory) {
 		this.channelBindingServiceProperties = channelBindingServiceProperties;
 		this.binderFactory = binderFactory;
 		this.validator = new CustomValidatorBean();
 		this.validator.afterPropertiesSet();
 	}
 
-
 	@SuppressWarnings("unchecked")
-	public Collection<Binding<MessageChannel>> bindConsumer(MessageChannel inputChannel, String inputChannelName) {
-		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(inputChannelName);
-		String[] channelBindingTargets = StringUtils.commaDelimitedListToStringArray(channelBindingTarget);
-		List<Binding<MessageChannel>> bindings = new ArrayList<>();
-		Binder<MessageChannel, ConsumerProperties, ?> binder =
-				(Binder<MessageChannel, ConsumerProperties, ?>) getBinderForChannel(inputChannelName);
-		ConsumerProperties consumerProperties =
-				this.channelBindingServiceProperties.getConsumerProperties(inputChannelName);
+	public <T> Collection<Binding<T>> bindConsumer(T input, String inputName) {
+		String bindingTarget = this.channelBindingServiceProperties
+				.getBindingDestination(inputName);
+		String[] bindingTargets = StringUtils
+				.commaDelimitedListToStringArray(bindingTarget);
+		Collection<Binding<T>> bindings = new ArrayList<>();
+		Binder<T, ConsumerProperties, ?> binder = (Binder<T, ConsumerProperties, ?>) getBinder(
+				inputName, input.getClass());
+		ConsumerProperties consumerProperties = this.channelBindingServiceProperties
+				.getConsumerProperties(inputName);
 		if (binder instanceof ExtendedPropertiesBinder) {
-			Object extension = ((ExtendedPropertiesBinder) binder).getExtendedConsumerProperties(inputChannelName);
-			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(extension);
+			Object extension = ((ExtendedPropertiesBinder) binder)
+					.getExtendedConsumerProperties(inputName);
+			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(
+					extension);
 			BeanUtils.copyProperties(consumerProperties, extendedConsumerProperties);
 			consumerProperties = extendedConsumerProperties;
 		}
 		validate(consumerProperties);
-		for (String target : channelBindingTargets) {
-			Binding<MessageChannel> binding = binder.bindConsumer(target, channelBindingServiceProperties.getGroup(inputChannelName), inputChannel, consumerProperties);
+		for (String target : bindingTargets) {
+			Binding<T> binding = binder.bindConsumer(target,
+					channelBindingServiceProperties.getGroup(inputName), input,
+					consumerProperties);
 			bindings.add(binding);
 		}
-		this.consumerBindings.put(inputChannelName, bindings);
+		bindings = Collections.unmodifiableCollection(bindings);
+		this.consumerBindings.put(inputName, new ArrayList<Binding<?>>(bindings));
 		return bindings;
 	}
 
 	@SuppressWarnings("unchecked")
-	public Binding<MessageChannel> bindProducer(MessageChannel outputChannel, String outputChannelName) {
-		String channelBindingTarget = this.channelBindingServiceProperties.getBindingDestination(outputChannelName);
-		Binder<MessageChannel, ?, ProducerProperties> binder =
-				(Binder<MessageChannel, ?, ProducerProperties>) getBinderForChannel(outputChannelName);
-		ProducerProperties producerProperties = this.channelBindingServiceProperties.getProducerProperties(outputChannelName);
+	public <T> Binding<T> bindProducer(T output, String outputName) {
+		String bindingTarget = this.channelBindingServiceProperties
+				.getBindingDestination(outputName);
+		Binder<T, ?, ProducerProperties> binder = (Binder<T, ?, ProducerProperties>) getBinder(
+				outputName, output.getClass());
+		ProducerProperties producerProperties = this.channelBindingServiceProperties
+				.getProducerProperties(outputName);
 		if (binder instanceof ExtendedPropertiesBinder) {
-			Object extension = ((ExtendedPropertiesBinder) binder).getExtendedProducerProperties(outputChannelName);
-			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(extension);
+			Object extension = ((ExtendedPropertiesBinder) binder)
+					.getExtendedProducerProperties(outputName);
+			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(
+					extension);
 			BeanUtils.copyProperties(producerProperties, extendedProducerProperties);
 			producerProperties = extendedProducerProperties;
 		}
 		validate(producerProperties);
-		Binding<MessageChannel> binding = binder.bindProducer(channelBindingTarget, outputChannel, producerProperties);
-		this.producerBindings.put(outputChannelName, binding);
+		Binding<T> binding = binder.bindProducer(bindingTarget, output,
+				producerProperties);
+		this.producerBindings.put(outputName, binding);
 		return binding;
 	}
 
-	public void unbindConsumers(String inputChannelName) {
-		List<Binding<MessageChannel>> bindings = this.consumerBindings.remove(inputChannelName);
+	public void unbindConsumers(String inputName) {
+		List<Binding<?>> bindings = this.consumerBindings.remove(inputName);
 		if (bindings != null && !CollectionUtils.isEmpty(bindings)) {
-			for (Binding<MessageChannel> binding : bindings) {
+			for (Binding<?> binding : bindings) {
 				binding.unbind();
 			}
 		}
 		else if (log.isWarnEnabled()) {
-			log.warn("Trying to unbind channel '" + inputChannelName + "', but no binding found.");
+			log.warn("Trying to unbind '" + inputName + "', but no binding found.");
 		}
 	}
 
-	public void unbindProducers(String outputChannelName) {
-		Binding<MessageChannel> binding = this.producerBindings.remove(outputChannelName);
+	public void unbindProducers(String outputName) {
+		Binding<?> binding = this.producerBindings.remove(outputName);
 		if (binding != null) {
 			binding.unbind();
 		}
 		else if (log.isWarnEnabled()) {
-			log.warn("Trying to unbind channel '" + outputChannelName + "', but no binding found.");
+			log.warn("Trying to unbind '" + outputName + "', but no binding found.");
 		}
 	}
 
-	private Binder<MessageChannel, ?, ?> getBinderForChannel(String channelName) {
+	@SuppressWarnings("unchecked")
+	private <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
 		String transport = this.channelBindingServiceProperties.getBinder(channelName);
-		return binderFactory.getBinder(transport);
+		return binderFactory.getBinder(transport, bindableType);
 	}
 
 	public ChannelBindingServiceProperties getChannelBindingServiceProperties() {

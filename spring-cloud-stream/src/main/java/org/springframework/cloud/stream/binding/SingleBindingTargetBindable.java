@@ -21,38 +21,36 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.messaging.MessageChannel;
-
 /**
- * A {@link Bindable} component that wraps a generic channel. Useful for binding channels outside the
- * {@link org.springframework.cloud.stream.annotation.Input} and {@link org.springframework.cloud.stream.annotation.Output}
- * annotated interfaces.
+ * A {@link Bindable} component that wraps a generic channel. Useful for binding channels
+ * outside the {@link org.springframework.cloud.stream.annotation.Input} and
+ * {@link org.springframework.cloud.stream.annotation.Output} annotated interfaces.
  *
  * @author Ilayaperumal Gopinathan
  */
-public class SingleChannelBindable extends BindableAdapter {
+public class SingleBindingTargetBindable<T> extends BindableAdapter {
 
 	private final String name;
 
-	private final MessageChannel messageChannel;
+	private final T bindingTarget;
 
-	public SingleChannelBindable(String name, MessageChannel messageChannel) {
+	public SingleBindingTargetBindable(String name, T bindingTarget) {
 		this.name = name;
-		this.messageChannel = messageChannel;
+		this.bindingTarget = bindingTarget;
 	}
 
 	@Override
-	public void bindOutputs(ChannelBindingService adapter) {
-		adapter.bindProducer(messageChannel, name);
+	public void bindOutputs(BindingService bindingService) {
+		bindingService.bindProducer(bindingTarget, name);
 	}
 
 	@Override
-	public void unbindOutputs(ChannelBindingService adapter) {
-		adapter.unbindProducers(name);
+	public void unbindOutputs(BindingService bindingService) {
+		bindingService.unbindProducers(name);
 	}
 
 	@Override
 	public Set<String> getOutputs() {
-		return Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(name)));
+		return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(name)));
 	}
 }

@@ -39,6 +39,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.util.ObjectUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,9 +55,9 @@ public class HealthIndicatorsConfigurationTests {
 	public void healthIndicatorsCheck() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" },
 				"spring.cloud.stream.defaultBinder:binder2");
-		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1");
+		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
-		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2");
+		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2", MessageChannel.class);
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
 		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
 				CompositeHealthIndicator.class);
@@ -81,9 +82,9 @@ public class HealthIndicatorsConfigurationTests {
 				"spring.cloud.stream.defaultBinder:binder2",
 				"management.health.binders.enabled:false");
 
-		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1");
+		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
-		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2");
+		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2", MessageChannel.class);
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
 		try {
 			context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);

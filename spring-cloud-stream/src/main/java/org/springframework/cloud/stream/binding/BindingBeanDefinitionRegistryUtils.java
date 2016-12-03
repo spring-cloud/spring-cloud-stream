@@ -74,13 +74,13 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 					IllegalAccessException {
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
-					String name = getChannelName(input, method);
+					String name = getBindingTargetName(input, method);
 					registerInputChannelBeanDefinition(input.value(), name,
 							channelInterfaceBeanName, method.getName(), registry);
 				}
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
-					String name = getChannelName(output, method);
+					String name = getBindingTargetName(output, method);
 					registerOutputChannelBeanDefinition(output.value(), name,
 							channelInterfaceBeanName, method.getName(), registry);
 				}
@@ -109,7 +109,7 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		}
 	}
 
-	public static String getChannelName(Annotation annotation, Method method) {
+	public static String getBindingTargetName(Annotation annotation, Method method) {
 		Map<String, Object> attrs = AnnotationUtils.getAnnotationAttributes(annotation,
 				false);
 		if (attrs.containsKey("value")

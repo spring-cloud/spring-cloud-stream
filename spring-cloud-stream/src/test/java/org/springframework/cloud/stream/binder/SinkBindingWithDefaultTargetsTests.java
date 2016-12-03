@@ -28,6 +28,7 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.Matchers.anyString;
@@ -52,7 +53,7 @@ public class SinkBindingWithDefaultTargetsTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
-		Binder binder = binderFactory.getBinder(null);
+		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("testtock"), anyString(), eq(this.testSink.input()),
 				Mockito.<ConsumerProperties>any());
 		verifyNoMoreInteractions(binder);
