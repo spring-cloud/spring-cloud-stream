@@ -210,7 +210,7 @@ public class BindingServiceTests {
 		when(binder.bindProducer(matches("foo"), any(DirectChannel.class),
 				any(ProducerProperties.class))).thenReturn(mockBinding);
 		BindingService bindingService = new BindingService(properties, binderFactory);
-		BoundSubscribableChannelFactory bindableSubscribableChannelFactory = new BoundSubscribableChannelFactory(
+		SubscribableChannelBindingTargetFactory bindableSubscribableChannelFactory = new SubscribableChannelBindingTargetFactory(
 				new MessageConverterConfigurer(properties,
 						new CompositeMessageConverterFactory()));
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(

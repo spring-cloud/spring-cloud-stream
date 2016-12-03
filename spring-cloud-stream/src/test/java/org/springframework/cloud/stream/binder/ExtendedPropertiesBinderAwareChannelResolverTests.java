@@ -31,7 +31,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.binding.BoundSubscribableChannelFactory;
+import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
@@ -86,7 +86,7 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 				new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
-		this.boundElementFactory = new BoundSubscribableChannelFactory(messageConverterConfigurer);
+		this.boundElementFactory = new SubscribableChannelBindingTargetFactory(messageConverterConfigurer);
 		dynamicDestinationsBindable = new DynamicDestinationsBindable();
 		BindingService bindingService = new BindingService(channelBindingServiceProperties,
 				binderFactory);

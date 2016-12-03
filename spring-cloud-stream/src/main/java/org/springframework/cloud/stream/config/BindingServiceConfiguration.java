@@ -38,7 +38,6 @@ import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.binding.BoundSubscribableChannelFactory;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
@@ -46,8 +45,9 @@ import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
-import org.springframework.cloud.stream.binding.SingleChannelBindable;
+import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
+import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -109,8 +109,8 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	public BoundSubscribableChannelFactory channelFactory(CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new BoundSubscribableChannelFactory(compositeMessageChannelConfigurer);
+	public SubscribableChannelBindingTargetFactory channelFactory(CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new SubscribableChannelBindingTargetFactory(compositeMessageChannelConfigurer);
 	}
 
 	@Bean
@@ -150,9 +150,9 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
-	public SingleChannelBindable errorChannelBindable(
+	public SingleBindingTargetBindable<MessageChannel> errorChannelBindable(
 			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
-		return new SingleChannelBindable(ERROR_CHANNEL_NAME, errorChannel);
+		return new SingleBindingTargetBindable<MessageChannel>(ERROR_CHANNEL_NAME, errorChannel);
 	}
 
 	@Bean
