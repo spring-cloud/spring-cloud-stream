@@ -16,10 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.messaging.SubscribableChannel;
-
 /**
- * Defines methods to create/configure the bound elements defined by
+ * Defines methods to create/configure the bound targets defined by
  * {@link org.springframework.cloud.stream.annotation.EnableBinding}.
  *
  * @author Marius Bogoevici
@@ -28,25 +26,25 @@ import org.springframework.messaging.SubscribableChannel;
 public interface BindingTargetFactory {
 
 	/**
-	 * Checks whether a specific type bound element can be created by this factory.
-	 * @param clazz the type of the bound element
+	 * Checks whether a specific binding target type can be created by this factory.
+	 * @param clazz the binding target type
 	 * @return true if the bound element can be created
 	 */
 	boolean canCreate(Class<?> clazz);
 
 	/**
-	 * Create an input bindable element that will be bound via a corresponding binder
+	 * Create an input binding target that will be bound via a corresponding binder
 	 * {@link org.springframework.cloud.stream.binder.Binder}.
-	 * @param name name of the bindable element
-	 * @return bindable element
+	 * @param name name of the binding target
+	 * @return binding target
 	 */
 	Object createInput(String name);
 
 	/**
-	 * Create an output {@link SubscribableChannel} that will be bound via the message
+	 * Create an output binding target that will be bound via the message
 	 * channel {@link org.springframework.cloud.stream.binder.Binder}.
-	 * @param name name of the message channel
-	 * @return subscribable message channel
+	 * @param name name of the binding target
+	 * @return binding target
 	 */
 	Object createOutput(String name);
 

@@ -313,7 +313,7 @@ public class BindingServiceTests {
 	
 	@Test
 	public void testResolveBindableType() {
-		Class<?> bindableType = GenericsUtils.getParameter(FooBinder.class, Binder.class, 0);
+		Class<?> bindableType = GenericsUtils.getParameterType(FooBinder.class, Binder.class, 0);
 		assertThat(bindableType).isSameAs(SomeBindableType.class);
 	}
 	

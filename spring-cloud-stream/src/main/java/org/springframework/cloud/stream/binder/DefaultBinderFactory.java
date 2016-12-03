@@ -57,7 +57,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private volatile ConfigurableApplicationContext context;
 
-	private Map<String, String> defaultBindersPerBoundType = new HashMap<>();
+	private Map<String, String> defaultBinderForBindingTargetType = new HashMap<>();
 
 	private volatile String defaultBinder;
 
@@ -89,7 +89,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			BinderInstanceHolder binderInstanceHolder = entry.getValue();
 			binderInstanceHolder.getBinderContext().close();
 		}
-		this.defaultBindersPerBoundType.clear();
+		this.defaultBinderForBindingTargetType.clear();
 	}
 
 	@Override
@@ -110,32 +110,30 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					}
 				}
 				if (defaultCandidateConfigurations.size() == 1) {
-					this.defaultBindersPerBoundType.put(boundElementType.getName(),
-							defaultCandidateConfigurations.iterator().next());
-					configurationName = this.defaultBindersPerBoundType.get(boundElementType.getName());
+					configurationName = defaultCandidateConfigurations.iterator().next();
+					this.defaultBinderForBindingTargetType.put(boundElementType.getName(), configurationName);
 				}
 				else {
 					if (defaultCandidateConfigurations.size() > 1) {
 						List<String> candidatesForBindableType = new ArrayList<>();
 						for (String defaultCandidateConfiguration : defaultCandidateConfigurations) {
 							Binder<Object, ?, ?> binderInstance = getBinderInstance(defaultCandidateConfiguration);
-							Class<?> binderType = GenericsUtils.getParameter(binderInstance.getClass(), Binder.class, 0);
+							Class<?> binderType = GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0);
 							if (binderType.isAssignableFrom(boundElementType)) {
 								candidatesForBindableType.add(defaultCandidateConfiguration);
 							}
 						}
 						if (candidatesForBindableType.size() == 1) {
-							this.defaultBindersPerBoundType.put(boundElementType.getName(),
-									candidatesForBindableType.iterator().next());
-							configurationName = this.defaultBindersPerBoundType.get(boundElementType.getName());
+							configurationName = candidatesForBindableType.iterator().next();
+							this.defaultBinderForBindingTargetType.put(boundElementType.getName(), configurationName);
 						} else if (candidatesForBindableType.size() > 1) {
 							throw new IllegalStateException(
 									"A default binder has been requested, but there is more than one binder available for '"
 											+ boundElementType.getName() + "' : "
-											+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations)
+											+ StringUtils.collectionToCommaDelimitedString(candidatesForBindableType)
 											+ ", and no default binder has been set.");
 						} else {
-							throw new IllegalStateException("A default binder has been requested, but none of the" +
+							throw new IllegalStateException("A default binder has been requested, but none of the " +
 									"registered binders can bind a '" + boundElementType + "': "
 									+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations));
 						}
@@ -154,7 +152,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			configurationName = name;
 		}
 		Binder<T, ?, ?> binderInstance = getBinderInstance(configurationName);
-		if (!(GenericsUtils.getParameter(binderInstance.getClass(), Binder.class, 0)
+		if (!(GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0)
 				.isAssignableFrom(boundElementType))) {
 			throw new IllegalStateException(
 					"The binder '" + configurationName + "' cannot bind a " + boundElementType.getName());

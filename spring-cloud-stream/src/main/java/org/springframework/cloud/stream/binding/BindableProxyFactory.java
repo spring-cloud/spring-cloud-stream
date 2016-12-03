@@ -73,9 +73,9 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private Object proxy;
 
-	private Map<String, BoundElementHolder> inputHolders = new HashMap<>();
+	private Map<String, BoundTargetHolder> inputHolders = new HashMap<>();
 
-	private Map<String, BoundElementHolder> outputHolders = new HashMap<>();
+	private Map<String, BoundTargetHolder> outputHolders = new HashMap<>();
 
 	public BindableProxyFactory(Class<?> type) {
 		this.type = type;
@@ -86,14 +86,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		Method method = invocation.getMethod();
 		Input input = AnnotationUtils.findAnnotation(method, Input.class);
 		if (input != null) {
-			String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
-			return this.inputHolders.get(name).getBoundElement();
+			String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input, method);
+			return this.inputHolders.get(name).getBoundTarget();
 		}
 		else {
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
-				String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
-				return this.outputHolders.get(name).getBoundElement();
+				String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(output, method);
+				return this.outputHolders.get(name).getBoundTarget();
 			}
 		}
 		return null;
@@ -101,23 +101,22 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Assert.notNull(BindableProxyFactory.this.boundElementFactories, "'boundElementFactories' cannot be null");
 		Assert.notEmpty(BindableProxyFactory.this.boundElementFactories, "'boundElementFactories' cannot be empty");
 		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getChannelName(input, method);
+					String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input, method);
 					Class<?> returnType = method.getReturnType();
 					Object sharedBoundElement = locateSharedBoundElement(name, returnType);
 					if (sharedBoundElement != null) {
 						BindableProxyFactory.this.inputHolders.put(name,
-								new BoundElementHolder(sharedBoundElement, false));
+								new BoundTargetHolder(sharedBoundElement, false));
 					}
 					else {
 						BindableProxyFactory.this.inputHolders.put(name,
-								new BoundElementHolder(getBoundElementFactory(returnType).createInput(name), true));
+								new BoundTargetHolder(getBoundElementFactory(returnType).createInput(name), true));
 					}
 				}
 			}
@@ -127,16 +126,16 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			public void doWith(Method method) throws IllegalArgumentException {
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getChannelName(output, method);
+					String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(output, method);
 					Class<?> returnType = method.getReturnType();
 					Object sharedBoundElement = locateSharedBoundElement(name, returnType);
 					if (sharedBoundElement != null) {
 						BindableProxyFactory.this.outputHolders.put(name,
-								new BoundElementHolder(sharedBoundElement, false));
+								new BoundTargetHolder(sharedBoundElement, false));
 					}
 					else {
 						BindableProxyFactory.this.outputHolders.put(name,
-								new BoundElementHolder(getBoundElementFactory(returnType).createOutput(name), true));
+								new BoundTargetHolder(getBoundElementFactory(returnType).createOutput(name), true));
 					}
 				}
 			}
@@ -185,14 +184,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding inputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, BoundElementHolder> channelHolderEntry : this.inputHolders.entrySet()) {
-			String inputChannelName = channelHolderEntry.getKey();
-			BoundElementHolder boundElementHolder = channelHolderEntry.getValue();
-			if (boundElementHolder.isBindable()) {
+		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders.entrySet()) {
+			String inputTargetName = boundTargetHolderEntry.getKey();
+			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
+			if (boundTargetHolder.isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, inputChannelName));
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, inputTargetName));
 				}
-				bindingService.bindConsumer(boundElementHolder.getBoundElement(), inputChannelName);
+				bindingService.bindConsumer(boundTargetHolder.getBoundTarget(), inputTargetName);
 			}
 		}
 	}
@@ -202,14 +201,14 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding outputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, BoundElementHolder> channelHolderEntry : this.outputHolders.entrySet()) {
-			BoundElementHolder boundElementHolder = channelHolderEntry.getValue();
-			String outputChannelName = channelHolderEntry.getKey();
-			if (channelHolderEntry.getValue().isBindable()) {
+		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders.entrySet()) {
+			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
+			String outputTargetName = boundTargetHolderEntry.getKey();
+			if (boundTargetHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, outputChannelName));
+					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type, outputTargetName));
 				}
-				bindingService.bindProducer(boundElementHolder.getBoundElement(), outputChannelName);
+				bindingService.bindProducer(boundTargetHolder.getBoundTarget(), outputTargetName);
 			}
 		}
 	}
@@ -219,7 +218,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding inputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, BoundElementHolder> channelHolderEntry : this.inputHolders.entrySet()) {
+		for (Map.Entry<String, BoundTargetHolder> channelHolderEntry : this.inputHolders.entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Unbinding %s:%s:%s", this.channelNamespace, this.type,
@@ -235,7 +234,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Unbinding outputs for %s:%s", this.channelNamespace, this.type));
 		}
-		for (Map.Entry<String, BoundElementHolder> channelHolderEntry : this.outputHolders.entrySet()) {
+		for (Map.Entry<String, BoundTargetHolder> channelHolderEntry : this.outputHolders.entrySet()) {
 			if (channelHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.channelNamespace, this.type,
@@ -260,18 +259,18 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	 * Holds information about the channels exposed by the interface proxy, as well as
 	 * their status.
 	 */
-	private final class BoundElementHolder {
+	private final class BoundTargetHolder {
 
 		private Object boundElement;
 
 		private boolean bindable;
 
-		private BoundElementHolder(Object boundElement, boolean bindable) {
+		private BoundTargetHolder(Object boundElement, boolean bindable) {
 			this.boundElement = boundElement;
 			this.bindable = bindable;
 		}
 
-		public Object getBoundElement() {
+		public Object getBoundTarget() {
 			return this.boundElement;
 		}
 

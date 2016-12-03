@@ -102,12 +102,12 @@ public class BindingService {
 		}
 		bindings = Collections.unmodifiableCollection(bindings);
 		this.consumerBindings.put(inputName, new ArrayList<Binding<?>>(bindings));
-		return Collections.unmodifiableCollection(bindings);
+		return bindings;
 	}
 
 	@SuppressWarnings("unchecked")
 	public <T> Binding<T> bindProducer(T output, String outputName) {
-		String channelBindingTarget = this.channelBindingServiceProperties
+		String bindingTarget = this.channelBindingServiceProperties
 				.getBindingDestination(outputName);
 		Binder<T, ?, ProducerProperties> binder = (Binder<T, ?, ProducerProperties>) getBinder(
 				outputName, output.getClass());
@@ -122,7 +122,7 @@ public class BindingService {
 			producerProperties = extendedProducerProperties;
 		}
 		validate(producerProperties);
-		Binding<T> binding = binder.bindProducer(channelBindingTarget, output,
+		Binding<T> binding = binder.bindProducer(bindingTarget, output,
 				producerProperties);
 		this.producerBindings.put(outputName, binding);
 		return binding;
@@ -136,8 +136,7 @@ public class BindingService {
 			}
 		}
 		else if (log.isWarnEnabled()) {
-			log.warn("Trying to unbind channel '" + inputName
-					+ "', but no binding found.");
+			log.warn("Trying to unbind '" + inputName + "', but no binding found.");
 		}
 	}
 
@@ -147,8 +146,7 @@ public class BindingService {
 			binding.unbind();
 		}
 		else if (log.isWarnEnabled()) {
-			log.warn("Trying to unbind channel '" + outputName
-					+ "', but no binding found.");
+			log.warn("Trying to unbind '" + outputName + "', but no binding found.");
 		}
 	}
 
