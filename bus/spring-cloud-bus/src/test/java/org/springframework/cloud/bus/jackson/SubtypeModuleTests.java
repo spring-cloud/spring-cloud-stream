@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
+import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TypedRemoteApplicationEvent;
 import org.springframework.messaging.support.MessageBuilder;
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author Spencer Gibb
+ * @author Stefan Pfeiffer
  */
 public class SubtypeModuleTests {
 
@@ -49,6 +51,18 @@ public class SubtypeModuleTests {
 				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
 				RemoteApplicationEvent.class);
 		assertTrue("event is wrong type", event instanceof TestRemoteApplicationEvent);
+	}
+
+	@Test
+	public void testDeserializeUnknownTypeWithMessageConverter() throws Exception {
+		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		converter.afterPropertiesSet();
+		Object event = converter.fromMessage(
+				MessageBuilder.withPayload("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}").build(),
+				RemoteApplicationEvent.class);
+		assertTrue("event is wrong type", event instanceof UnknownRemoteApplicationEvent);
+		assertEquals("type information is wrong", "NotDefinedTestRemoteApplicationEvent", ((UnknownRemoteApplicationEvent)event).getTypeInfo());
+		assertEquals("payload is wrong", "{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}", ((UnknownRemoteApplicationEvent)event).getPayloadAsString());
 	}
 
 	@Test

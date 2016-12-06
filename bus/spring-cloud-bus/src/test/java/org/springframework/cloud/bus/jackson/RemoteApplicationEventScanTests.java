@@ -11,6 +11,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.EnvironmentChangeRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
+import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TypedRemoteApplicationEvent;
 import org.springframework.cloud.bus.jackson.SubtypeModuleTests.AnotherRemoteApplicationEvent;
@@ -116,6 +117,7 @@ public class RemoteApplicationEventScanTests {
 		expectedRegisterdClassesAsList.add(AckRemoteApplicationEvent.class);
 		expectedRegisterdClassesAsList.add(EnvironmentChangeRemoteApplicationEvent.class);
 		expectedRegisterdClassesAsList.add(RefreshRemoteApplicationEvent.class);
+		expectedRegisterdClassesAsList.add(UnknownRemoteApplicationEvent.class);
 	}
 
 	@Configuration

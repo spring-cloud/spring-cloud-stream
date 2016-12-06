@@ -14,6 +14,7 @@ import org.springframework.cloud.bus.BusAutoConfiguration;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
+import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
@@ -25,11 +26,13 @@ import org.springframework.util.MimeTypeUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 
 /**
  * @author Spencer Gibb
  * @author Dave Syer
  * @author Donovan Muller
+ * @author Stefan Pfeiffer
  */
 @Configuration
 @ConditionalOnBusEnabled
@@ -105,10 +108,17 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 			Object payload = message.getPayload();
 
 			if (payload instanceof byte[]) {
-				result = this.mapper.readValue((byte[]) payload, targetClass);
-			}
-			else if (payload instanceof String) {
-				result = this.mapper.readValue((String) payload, targetClass);
+				try {
+					result = this.mapper.readValue((byte[]) payload, targetClass);
+				} catch (InvalidTypeIdException e) {
+					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(), (byte[]) payload);
+				}
+			} else if (payload instanceof String) {
+				try {
+					result = this.mapper.readValue((String) payload, targetClass);
+				} catch (InvalidTypeIdException e) {
+					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(), ((String) payload).getBytes());
+				}
 			}
 		}
 		catch (Exception e) {
