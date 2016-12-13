@@ -99,19 +99,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer("foo.2", new DirectChannel(),
 				createProducerProperties());
 		foo0ProducerBinding.unbind();
-		assertThat(TestUtils.getPropertyValue(foo0ProducerBinding, "runningComponent", Lifecycle.class).isRunning())
+		assertThat(TestUtils.getPropertyValue(foo0ProducerBinding, "lifecycle", Lifecycle.class).isRunning())
 				.isFalse();
 		foo0ConsumerBinding.unbind();
 		foo1ProducerBinding.unbind();
-		assertThat(TestUtils.getPropertyValue(foo0ConsumerBinding, "runningComponent", Lifecycle.class).isRunning())
+		assertThat(TestUtils.getPropertyValue(foo0ConsumerBinding, "lifecycle", Lifecycle.class).isRunning())
 				.isFalse();
-		assertThat(TestUtils.getPropertyValue(foo1ProducerBinding, "runningComponent", Lifecycle.class).isRunning())
+		assertThat(TestUtils.getPropertyValue(foo1ProducerBinding, "lifecycle", Lifecycle.class).isRunning())
 				.isFalse();
 		foo1ConsumerBinding.unbind();
 		foo2ProducerBinding.unbind();
-		assertThat(TestUtils.getPropertyValue(foo1ConsumerBinding, "runningComponent", Lifecycle.class).isRunning())
+		assertThat(TestUtils.getPropertyValue(foo1ConsumerBinding, "lifecycle", Lifecycle.class).isRunning())
 				.isFalse();
-		assertThat(TestUtils.getPropertyValue(foo2ProducerBinding, "runningComponent", Lifecycle.class).isRunning())
+		assertThat(TestUtils.getPropertyValue(foo2ProducerBinding, "lifecycle", Lifecycle.class).isRunning())
 				.isFalse();
 	}
 

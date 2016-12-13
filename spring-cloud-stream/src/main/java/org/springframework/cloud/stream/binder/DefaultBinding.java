@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.util.Assert;
@@ -38,24 +37,25 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	protected final T target;
 
-	protected final Lifecycle runningComponent;
+	protected final Lifecycle lifecycle;
 
 	/**
-	 * Creates a new instance.
+	 * Creates an instance that associates a given name, group and binding target with an
+	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
+	 * 
 	 * @param name the name of the binding target
 	 * @param group the group (only for input targets)
 	 * @param target the binding target
-	 * @param runningComponent a {@link Lifecycle} object that is running while the binding is active
-	 *                         and will be stopped during unbinding
+	 * @param lifecycle {@link Lifecycle} that runs while the
+	 * binding is active and will be stopped during unbinding
 	 */
-	public DefaultBinding(String name, String group, T target, Lifecycle runningComponent) {
+	public DefaultBinding(String name, String group, T target, Lifecycle lifecycle) {
 		Assert.notNull(target, "target must not be null");
 		this.name = name;
 		this.group = group;
 		this.target = target;
-		this.runningComponent = runningComponent;
+		this.lifecycle = lifecycle;
 	}
-
 
 	public String getName() {
 		return this.name;
@@ -65,23 +65,27 @@ public class DefaultBinding<T> implements Binding<T> {
 		return this.group;
 	}
 
-
 	@Override
 	public final void unbind() {
-		if (this.runningComponent != null) {
-			this.runningComponent.stop();
+		if (this.lifecycle != null) {
+			this.lifecycle.stop();
 		}
 		afterUnbind();
 	}
 
+	/**
+	 * Listener method that executes after unbinding. Subclasses can implement their own
+	 * behaviour on unbinding by overriding this method.
+	 */
 	protected void afterUnbind() {
 	}
 
 	@Override
 	public String toString() {
-		return " Binding [name=" + this.name + ", target=" + this.target + ", runningComponent=" +
-				((this.runningComponent instanceof NamedComponent) ? ((NamedComponent) this.runningComponent).getComponentName() :
-						ObjectUtils.nullSafeToString(this.runningComponent))
+		return " Binding [name=" + this.name + ", target=" + this.target + ", lifecycle="
+				+ ((this.lifecycle instanceof NamedComponent)
+						? ((NamedComponent) this.lifecycle).getComponentName()
+						: ObjectUtils.nullSafeToString(this.lifecycle))
 				+ "]";
 	}
 }

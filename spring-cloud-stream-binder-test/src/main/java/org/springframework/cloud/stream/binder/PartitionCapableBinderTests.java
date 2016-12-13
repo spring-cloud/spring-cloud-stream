@@ -339,6 +339,6 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 	protected Lifecycle extractEndpoint(Binding<MessageChannel> binding) {
 		DirectFieldAccessor accessor = new DirectFieldAccessor(binding);
-		return (Lifecycle) accessor.getPropertyValue("runningComponent");
+		return (Lifecycle) accessor.getPropertyValue("lifecycle");
 	}
 }
