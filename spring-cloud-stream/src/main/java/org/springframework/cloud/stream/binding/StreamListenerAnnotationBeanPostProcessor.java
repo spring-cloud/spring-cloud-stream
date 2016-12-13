@@ -278,11 +278,11 @@ public class StreamListenerAnnotationBeanPostProcessor
 		final String defaultOutputChannel = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
 		if (invocableHandlerMethod.isVoid()) {
 			Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
-					"An output channel cannot be specified for a method that " + "does not return a value");
+					"An output channel cannot be specified for a method that does not return a value");
 		}
 		else {
 			Assert.isTrue(!StringUtils.isEmpty(defaultOutputChannel),
-					"An output channel must be specified for a method that " + "can return a value");
+					"An output channel must be specified for a method that can return a value");
 		}
 		StreamListenerMethodUtils.validateStreamListenerMessageHandler(method);
 		StreamListenerMessageHandler handler = new StreamListenerMessageHandler(invocableHandlerMethod);
