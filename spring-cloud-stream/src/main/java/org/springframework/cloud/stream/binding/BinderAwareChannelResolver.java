@@ -39,7 +39,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private final BindingService bindingService;
 
-	private final AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory;
+	private final AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory;
 
 	private final DynamicDestinationsBindable dynamicDestinationsBindable;
 
@@ -47,13 +47,13 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	@SuppressWarnings("unchecked")
 	public BinderAwareChannelResolver(BindingService bindingService,
-			AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory,
+			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 		Assert.notNull(bindingService, "'bindingService' cannot be null");
-		Assert.notNull(boundElementFactory, "'boundElementFactory' cannot be null");
+		Assert.notNull(bindingTargetFactory, "'bindingTargetFactory' cannot be null");
 		this.bindingService = bindingService;
-		this.boundElementFactory = boundElementFactory;
+		this.bindingTargetFactory = bindingTargetFactory;
 	}
 
 	@Override
@@ -85,7 +85,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
 						|| ObjectUtils.containsElement(dynamicDestinations, channelName);
 				if (dynamicAllowed) {
-					channel = this.boundElementFactory.createOutput(channelName);
+					channel = this.bindingTargetFactory.createOutput(channelName);
 					this.beanFactory.registerSingleton(channelName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
 					Binding<MessageChannel> binding = this.bindingService.bindProducer(channel, channelName);

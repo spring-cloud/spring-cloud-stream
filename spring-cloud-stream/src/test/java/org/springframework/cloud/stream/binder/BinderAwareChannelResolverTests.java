@@ -75,7 +75,7 @@ public class BinderAwareChannelResolverTests {
 
 	protected volatile Binder<MessageChannel, ConsumerProperties, ProducerProperties> binder;
 
-	protected volatile AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory;
+	protected volatile AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory;
 
 	protected volatile BindingServiceProperties bindingServiceProperties;
 
@@ -107,9 +107,9 @@ public class BinderAwareChannelResolverTests {
 				new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
-		this.boundElementFactory = new SubscribableChannelBindingTargetFactory(messageConverterConfigurer);
+		this.bindingTargetFactory = new SubscribableChannelBindingTargetFactory(messageConverterConfigurer);
 		dynamicDestinationsBindable = new DynamicDestinationsBindable();
-		this.resolver = new BinderAwareChannelResolver(bindingService, this.boundElementFactory,
+		this.resolver = new BinderAwareChannelResolver(bindingService, this.bindingTargetFactory,
 				dynamicDestinationsBindable);
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);
@@ -188,7 +188,7 @@ public class BinderAwareChannelResolverTests {
 				mockBinderFactory);
 		@SuppressWarnings("unchecked")
 		BinderAwareChannelResolver resolver =
-				new BinderAwareChannelResolver(bindingService, this.boundElementFactory,
+				new BinderAwareChannelResolver(bindingService, this.bindingTargetFactory,
 						new DynamicDestinationsBindable());
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);

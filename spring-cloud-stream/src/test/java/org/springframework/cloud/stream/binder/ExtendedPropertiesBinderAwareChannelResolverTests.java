@@ -86,11 +86,11 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 				new CompositeMessageConverterFactory());
 		messageConverterConfigurer.setBeanFactory(Mockito.mock(ConfigurableListableBeanFactory.class));
 		messageConverterConfigurer.afterPropertiesSet();
-		this.boundElementFactory = new SubscribableChannelBindingTargetFactory(messageConverterConfigurer);
+		this.bindingTargetFactory = new SubscribableChannelBindingTargetFactory(messageConverterConfigurer);
 		dynamicDestinationsBindable = new DynamicDestinationsBindable();
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory);
-		this.resolver = new BinderAwareChannelResolver(bindingService, this.boundElementFactory,
+		this.resolver = new BinderAwareChannelResolver(bindingService, this.bindingTargetFactory,
 				dynamicDestinationsBindable);
 		this.resolver.setBeanFactory(context.getBeanFactory());
 		context.getBeanFactory().registerSingleton("channelResolver", this.resolver);

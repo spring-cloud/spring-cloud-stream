@@ -140,9 +140,9 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	public BinderAwareChannelResolver binderAwareChannelResolver(BindingService bindingService,
-			AbstractBindingTargetFactory<? extends MessageChannel> boundElementFactory,
+			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
-		return new BinderAwareChannelResolver(bindingService, boundElementFactory, dynamicDestinationsBindable);
+		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory, dynamicDestinationsBindable);
 	}
 
 	@Bean

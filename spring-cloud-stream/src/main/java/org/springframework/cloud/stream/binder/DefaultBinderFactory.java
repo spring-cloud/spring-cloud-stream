@@ -93,7 +93,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	}
 
 	@Override
-	public synchronized <T> Binder<T, ?, ?> getBinder(String name, Class<? extends T> boundElementType) {
+	public synchronized <T> Binder<T, ?, ?> getBinder(String name, Class<? extends T> bindingTargetType) {
 		String configurationName;
 		// Fall back to a default if no argument is provided
 		if (StringUtils.isEmpty(name)) {
@@ -111,7 +111,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				}
 				if (defaultCandidateConfigurations.size() == 1) {
 					configurationName = defaultCandidateConfigurations.iterator().next();
-					this.defaultBinderForBindingTargetType.put(boundElementType.getName(), configurationName);
+					this.defaultBinderForBindingTargetType.put(bindingTargetType.getName(), configurationName);
 				}
 				else {
 					if (defaultCandidateConfigurations.size() > 1) {
@@ -119,22 +119,22 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 						for (String defaultCandidateConfiguration : defaultCandidateConfigurations) {
 							Binder<Object, ?, ?> binderInstance = getBinderInstance(defaultCandidateConfiguration);
 							Class<?> binderType = GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0);
-							if (binderType.isAssignableFrom(boundElementType)) {
+							if (binderType.isAssignableFrom(bindingTargetType)) {
 								candidatesForBindableType.add(defaultCandidateConfiguration);
 							}
 						}
 						if (candidatesForBindableType.size() == 1) {
 							configurationName = candidatesForBindableType.iterator().next();
-							this.defaultBinderForBindingTargetType.put(boundElementType.getName(), configurationName);
+							this.defaultBinderForBindingTargetType.put(bindingTargetType.getName(), configurationName);
 						} else if (candidatesForBindableType.size() > 1) {
 							throw new IllegalStateException(
 									"A default binder has been requested, but there is more than one binder available for '"
-											+ boundElementType.getName() + "' : "
+											+ bindingTargetType.getName() + "' : "
 											+ StringUtils.collectionToCommaDelimitedString(candidatesForBindableType)
 											+ ", and no default binder has been set.");
 						} else {
 							throw new IllegalStateException("A default binder has been requested, but none of the " +
-									"registered binders can bind a '" + boundElementType + "': "
+									"registered binders can bind a '" + bindingTargetType + "': "
 									+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations));
 						}
 					}
@@ -153,9 +153,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		}
 		Binder<T, ?, ?> binderInstance = getBinderInstance(configurationName);
 		if (!(GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0)
-				.isAssignableFrom(boundElementType))) {
+				.isAssignableFrom(bindingTargetType))) {
 			throw new IllegalStateException(
-					"The binder '" + configurationName + "' cannot bind a " + boundElementType.getName());
+					"The binder '" + configurationName + "' cannot bind a " + bindingTargetType.getName());
 		}
 		return binderInstance;
 	}
