@@ -138,13 +138,13 @@ public class BindingServiceProperties
 		}
 	}
 
-	public String getBinder(String channelName) {
-		return getBindingProperties(channelName).getBinder();
+	public String getBinder(String bindingName) {
+		return getBindingProperties(bindingName).getBinder();
 	}
 
 	/**
 	 * Return configuration properties as Map.
-	 * @return map of channel binding configuration properties.
+	 * @return map of binding configuration properties.
 	 */
 	public Map<String, Object> asMapProperties() {
 		Map<String, Object> properties = new HashMap<>();
@@ -161,9 +161,9 @@ public class BindingServiceProperties
 		return properties;
 	}
 
-	public ConsumerProperties getConsumerProperties(String inputChannelName) {
-		Assert.notNull(inputChannelName, "The input channel name cannot be null");
-		ConsumerProperties consumerProperties = getBindingProperties(inputChannelName)
+	public ConsumerProperties getConsumerProperties(String inputBindingName) {
+		Assert.notNull(inputBindingName, "The input binding name cannot be null");
+		ConsumerProperties consumerProperties = getBindingProperties(inputBindingName)
 				.getConsumer();
 		if (consumerProperties == null) {
 			consumerProperties = new ConsumerProperties();
@@ -178,9 +178,9 @@ public class BindingServiceProperties
 		return consumerProperties;
 	}
 
-	public ProducerProperties getProducerProperties(String outputChannelName) {
-		Assert.notNull(outputChannelName, "The output channel name cannot be null");
-		ProducerProperties producerProperties = getBindingProperties(outputChannelName)
+	public ProducerProperties getProducerProperties(String outputBindingName) {
+		Assert.notNull(outputBindingName, "The output binding name cannot be null");
+		ProducerProperties producerProperties = getBindingProperties(outputBindingName)
 				.getProducer();
 		if (producerProperties == null) {
 			producerProperties = new ProducerProperties();
@@ -188,22 +188,22 @@ public class BindingServiceProperties
 		return producerProperties;
 	}
 
-	public BindingProperties getBindingProperties(String channelName) {
+	public BindingProperties getBindingProperties(String bindingName) {
 		BindingProperties bindingProperties = new BindingProperties();
-		if (this.bindings.containsKey(channelName)) {
-			BeanUtils.copyProperties(this.bindings.get(channelName), bindingProperties);
+		if (this.bindings.containsKey(bindingName)) {
+			BeanUtils.copyProperties(this.bindings.get(bindingName), bindingProperties);
 		}
 		if (bindingProperties.getDestination() == null) {
-			bindingProperties.setDestination(channelName);
+			bindingProperties.setDestination(bindingName);
 		}
 		return bindingProperties;
 	}
 
-	public String getGroup(String channelName) {
-		return getBindingProperties(channelName).getGroup();
+	public String getGroup(String bindingName) {
+		return getBindingProperties(bindingName).getGroup();
 	}
 
-	public String getBindingDestination(String channelName) {
-		return getBindingProperties(channelName).getDestination();
+	public String getBindingDestination(String bindingName) {
+		return getBindingProperties(bindingName).getDestination();
 	}
 }
