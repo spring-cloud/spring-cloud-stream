@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public interface BindingTargetFactory {
 	boolean canCreate(Class<?> clazz);
 
 	/**
-	 * Create an input binding target that will be bound via a corresponding binder
+	 * Create an input binding target that will be bound via a corresponding
 	 * {@link org.springframework.cloud.stream.binder.Binder}.
 	 * @param name name of the binding target
 	 * @return binding target
@@ -41,8 +41,8 @@ public interface BindingTargetFactory {
 	Object createInput(String name);
 
 	/**
-	 * Create an output binding target that will be bound via the message
-	 * channel {@link org.springframework.cloud.stream.binder.Binder}.
+	 * Create an output binding target that will be bound via a corresponding
+	 * {@link org.springframework.cloud.stream.binder.Binder}.
 	 * @param name name of the binding target
 	 * @return binding target
 	 */

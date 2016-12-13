@@ -34,9 +34,10 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Venil Noronha
  */
 abstract class AggregateApplicationUtils {
-	public static final String INPUT_CHANNEL_NAME = "input";
 
-	public static final String OUTPUT_CHANNEL_NAME = "output";
+	public static final String INPUT_BINDING_NAME = "input";
+
+	public static final String OUTPUT_BINDING_NAME = "output";
 
 	static ConfigurableApplicationContext createParentContext(Object[] sources,
 			String[] args, final boolean selfContained, boolean webEnvironment,
@@ -66,19 +67,19 @@ abstract class AggregateApplicationUtils {
 	}
 
 	static void prepareSharedBindingTargetRegistry(
-			SharedBindingTargetRegistry sharedChannelRegistry,
+			SharedBindingTargetRegistry sharedBindingTargetRegistry,
 			LinkedHashMap<Class<?>, String> appsWithNamespace) {
 		int i = 0;
 		SubscribableChannel sharedChannel = null;
 		for (Entry<Class<?>, String> appEntry : appsWithNamespace.entrySet()) {
 			String namespace = appEntry.getValue();
 			if (i > 0) {
-				sharedChannelRegistry.register(namespace + "." + INPUT_CHANNEL_NAME,
+				sharedBindingTargetRegistry.register(namespace + "." + INPUT_BINDING_NAME,
 						sharedChannel);
 			}
 			sharedChannel = new DirectChannel();
 			if (i < appsWithNamespace.size() - 1) {
-				sharedChannelRegistry.register(namespace + "." + OUTPUT_CHANNEL_NAME,
+				sharedBindingTargetRegistry.register(namespace + "." + OUTPUT_BINDING_NAME,
 						sharedChannel);
 			}
 			i++;

@@ -183,7 +183,7 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	// provided for backwards compatibility scenarios w
+	// provided for backwards compatibility scenarios
 	public ChannelBindingServiceProperties channelBindingServiceProperties(
 			BindingServiceProperties bindingServiceProperties) {
 		return new ChannelBindingServiceProperties(bindingServiceProperties);

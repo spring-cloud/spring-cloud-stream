@@ -162,7 +162,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		this.sourceConfigurer = sourceConfigurer;
 		return sourceConfigurer;
 	}
-	
+
 	public ConfigurableApplicationContext run(String... parentArgs) {
 		this.parentArgs.addAll(Arrays.asList(parentArgs));
 		List<AppConfigurer<?>> apps = new ArrayList<>();
