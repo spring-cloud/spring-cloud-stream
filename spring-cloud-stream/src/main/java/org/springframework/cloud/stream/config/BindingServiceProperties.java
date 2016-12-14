@@ -33,7 +33,10 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
 
@@ -45,8 +48,7 @@ import org.springframework.util.Assert;
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
-public class BindingServiceProperties
-		implements ApplicationContextAware, InitializingBean {
+public class BindingServiceProperties implements ApplicationContextAware, EnvironmentAware, InitializingBean {
 
 	private ConversionService conversionService;
 
@@ -118,11 +120,17 @@ public class BindingServiceProperties
 	public void setApplicationContext(ApplicationContext applicationContext)
 			throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-		// override the bindings store with the environment-initializing version if in a
-		// Spring context
-		this.bindings = new EnvironmentEntryInitializingTreeMap<>(this.applicationContext,
-				BindingProperties.class, "spring.cloud.stream.default",
-				new TreeMap<String, BindingProperties>(String.CASE_INSENSITIVE_ORDER));
+	}
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		if (environment instanceof ConfigurableEnvironment) {
+			// override the bindings store with the environment-initializing version if in
+			// a Spring context
+			this.bindings = new EnvironmentEntryInitializingTreeMap<>((ConfigurableEnvironment) environment,
+					BindingProperties.class, "spring.cloud.stream.default",
+					new TreeMap<String, BindingProperties>(String.CASE_INSENSITIVE_ORDER));
+		}
 	}
 
 	public void setConversionService(ConversionService conversionService) {
