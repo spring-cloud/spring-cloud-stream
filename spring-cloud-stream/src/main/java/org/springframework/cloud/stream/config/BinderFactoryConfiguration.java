@@ -105,7 +105,7 @@ public class BinderFactoryConfiguration {
 		Map<String, BinderType> binderTypes = new HashMap<>();
 		ClassLoader classLoader = configurableApplicationContext.getClassLoader();
 		if (classLoader == null) {
-			classLoader = BindingAutoConfiguration.class.getClassLoader();
+			classLoader = BinderFactoryConfiguration.class.getClassLoader();
 		}
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");

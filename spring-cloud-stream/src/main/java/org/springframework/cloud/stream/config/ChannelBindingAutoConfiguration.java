@@ -46,7 +46,7 @@ import org.springframework.messaging.MessageChannel;
 @ConditionalOnBean(BindingService.class)
 @EnableConfigurationProperties(DefaultPollerProperties.class)
 @AutoConfigureBefore(EndpointAutoConfiguration.class)
-public class BindingAutoConfiguration {
+public class ChannelBindingAutoConfiguration {
 
 	@Autowired
 	private DefaultPollerProperties poller;
