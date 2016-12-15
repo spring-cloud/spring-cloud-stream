@@ -25,6 +25,7 @@ import java.util.Map;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -82,13 +83,13 @@ public class StreamListenerAnnotationBeanPostProcessor
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-		Map<String, StreamListenerParameterAdapter> parameterAdapterMap = this.applicationContext
-				.getBeansOfType(StreamListenerParameterAdapter.class);
+		Map<String, StreamListenerParameterAdapter> parameterAdapterMap =
+				BeanFactoryUtils.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerParameterAdapter.class);
 		for (StreamListenerParameterAdapter parameterAdapter : parameterAdapterMap.values()) {
 			this.streamListenerParameterAdapters.add(parameterAdapter);
 		}
-		Map<String, StreamListenerResultAdapter> resultAdapterMap = this.applicationContext
-				.getBeansOfType(StreamListenerResultAdapter.class);
+		Map<String, StreamListenerResultAdapter> resultAdapterMap =
+				BeanFactoryUtils.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerResultAdapter.class);
 		this.streamListenerResultAdapters.add(new MessageChannelStreamListenerResultAdapter());
 		for (StreamListenerResultAdapter resultAdapter : resultAdapterMap.values()) {
 			this.streamListenerResultAdapters.add(resultAdapter);
