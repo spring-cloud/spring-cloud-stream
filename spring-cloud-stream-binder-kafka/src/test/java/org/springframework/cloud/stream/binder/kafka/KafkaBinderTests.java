@@ -1150,7 +1150,7 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 			binding = binder.bindConsumer(testTopicName, "test-x", output, consumerProperties);
 
 			TopicPartitionInitialOffset[] listenedPartitions = TestUtils.getPropertyValue(binding,
-					"endpoint.messageListenerContainer.containerProperties.topicPartitions",
+					"lifecycle.messageListenerContainer.containerProperties.topicPartitions",
 					TopicPartitionInitialOffset[].class);
 			assertThat(listenedPartitions).hasSize(2);
 			assertThat(listenedPartitions).contains(new TopicPartitionInitialOffset(testTopicName, 2),
@@ -1253,7 +1253,7 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 
 	private KafkaConsumer getKafkaConsumer(Binding binding) {
 		DirectFieldAccessor bindingAccessor = new DirectFieldAccessor((DefaultBinding)binding);
-		KafkaMessageDrivenChannelAdapter adapter = (KafkaMessageDrivenChannelAdapter) bindingAccessor.getPropertyValue("endpoint");
+		KafkaMessageDrivenChannelAdapter adapter = (KafkaMessageDrivenChannelAdapter) bindingAccessor.getPropertyValue("lifecycle");
 		DirectFieldAccessor adapterAccessor = new DirectFieldAccessor(adapter);
 		ConcurrentMessageListenerContainer messageListenerContainer = (ConcurrentMessageListenerContainer) adapterAccessor.getPropertyValue("messageListenerContainer");
 		DirectFieldAccessor containerAccessor = new DirectFieldAccessor((ConcurrentMessageListenerContainer)messageListenerContainer);
