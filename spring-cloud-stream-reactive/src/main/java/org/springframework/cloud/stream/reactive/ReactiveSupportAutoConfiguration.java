@@ -22,7 +22,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import reactor.core.scheduler.Schedulers;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.reactive.reactor.core.scheduler.NoInterruptOnCancelSchedulerFactory;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +35,7 @@ import org.springframework.util.ClassUtils;
  * @author Marius Bogoevici
  */
 @Configuration
+@ConditionalOnBean(BindingService.class)
 public class ReactiveSupportAutoConfiguration {
 
 	private static Log log = LogFactory.getLog(ReactiveSupportAutoConfiguration.class);
