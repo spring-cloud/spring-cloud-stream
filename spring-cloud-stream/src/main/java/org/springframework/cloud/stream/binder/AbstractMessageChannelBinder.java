@@ -278,7 +278,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		@Override
 		@SuppressWarnings("unchecked")
 		protected Object handleRequestMessage(Message<?> requestMessage) {
-			if (!(requestMessage.getPayload() instanceof byte[])) {
+			if (!(requestMessage.getPayload() instanceof byte[])
+					&& !requestMessage.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
 				return requestMessage;
 			}
 			MessageValues messageValues;
