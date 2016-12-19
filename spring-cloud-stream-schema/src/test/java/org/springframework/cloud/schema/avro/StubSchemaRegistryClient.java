@@ -81,7 +81,7 @@ public class StubSchemaRegistryClient implements SchemaRegistryClient {
 	}
 
 	@Override
-	public String fetch(Integer id) {
+	public String fetch(int id) {
 		return this.schemasById.get(id);
 	}
 
