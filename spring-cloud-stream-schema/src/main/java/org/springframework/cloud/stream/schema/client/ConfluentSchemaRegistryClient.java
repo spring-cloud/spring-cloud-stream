@@ -94,7 +94,7 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	}
 
 	@Override
-	public String fetch(Integer id) {
+	public String fetch(int id) {
 		String path = String.format("/schemas/ids/%d", id);
 		HttpHeaders headers = new HttpHeaders();
 		headers.put("Accept",

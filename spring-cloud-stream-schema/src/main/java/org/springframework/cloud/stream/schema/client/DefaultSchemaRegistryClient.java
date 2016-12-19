@@ -76,7 +76,7 @@ public class DefaultSchemaRegistryClient implements SchemaRegistryClient {
 	}
 
 	@Override
-	public String fetch(Integer id) {
+	public String fetch(int id) {
 		ResponseEntity<Map> responseEntity = this.template.getForEntity(
 				this.endpoint + "/schemas/" + id, Map.class);
 		if (!responseEntity.getStatusCode().is2xxSuccessful()) {
