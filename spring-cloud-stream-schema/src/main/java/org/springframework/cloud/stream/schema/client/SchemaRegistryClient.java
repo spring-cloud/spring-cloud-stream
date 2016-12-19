@@ -45,6 +45,6 @@ public interface SchemaRegistryClient {
 	 * @param id the id of the target schema.
 	 * @return
 	 */
-	String fetch(Integer id);
+	String fetch(int id);
 
 }
