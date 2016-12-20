@@ -674,6 +674,37 @@ Intermediate processors are provided as argument to the `via()` method.
 Multiple processors of the same type can be chained together (e.g. for pipelining transformations with different configurations).
 For each component, the builder can provide runtime arguments for Spring Boot configuration.
 
+===== Configuring aggregate application
+
+Spring Cloud Stream supports passing properties for the individual applications inside the aggregate application using 'namespace' as prefix.
+
+The namespace can be set for applications as follows:
+
+[source,java]
+----
+@SpringBootApplication
+public class SampleAggregateApplication {
+
+	public static void main(String[] args) {
+		new AggregateApplicationBuilder()
+			.from(SourceApplication.class).namespace("source").args("--fixedDelay=5000")
+			.via(ProcessorApplication.class).namespace("processor1")
+			.to(SinkApplication.class).namespace("sink").args("--debug=true").run(args);
+	}
+}
+----
+
+Once the 'namespace' is set for the individual applications, the application properties with the `namespace` as prefix can be passed to the aggregate application using any supported property source (commandline, environment properties etc.,)
+
+For instance, to override the default `fixedDelay` and `debug` properties of 'source' and 'sink' applications:
+
+[source]
+----
+java -jar target/MyAggregateApplication-0.0.1-SNAPSHOT.jar --source.fixedDelay=10000 --sink.debug=false
+
+----
+
+
 == Binders
 
 Spring Cloud Stream provides a Binder abstraction for use in connecting to physical destinations at the external middleware.
