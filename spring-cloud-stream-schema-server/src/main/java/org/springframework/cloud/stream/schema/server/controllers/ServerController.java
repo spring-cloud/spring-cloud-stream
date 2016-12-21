@@ -20,9 +20,11 @@ package org.springframework.cloud.stream.schema.server.controllers;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.cloud.stream.schema.server.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.server.model.Schema;
 import org.springframework.cloud.stream.schema.server.repository.SchemaRepository;
 import org.springframework.cloud.stream.schema.server.support.InvalidSchemaException;
+import org.springframework.cloud.stream.schema.server.support.SchemaDeletionNotAllowedException;
 import org.springframework.cloud.stream.schema.server.support.SchemaNotFoundException;
 import org.springframework.cloud.stream.schema.server.support.SchemaValidator;
 import org.springframework.cloud.stream.schema.server.support.UnsupportedFormatException;
@@ -42,6 +44,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * @author Vinicius Carvalho
+ * @author Ilayaperumal Gopinathan
  */
 @RestController
 @RequestMapping(path = "${spring.cloud.stream.schema.server.path:}")
@@ -51,12 +54,16 @@ public class ServerController {
 
 	private final Map<String, SchemaValidator> validators;
 
+	private final SchemaServerProperties schemaServerProperties;
+
 	public ServerController(SchemaRepository repository,
-			Map<String, SchemaValidator> validators) {
+			Map<String, SchemaValidator> validators,
+			SchemaServerProperties schemaServerProperties) {
 		Assert.notNull(repository, "cannot be null");
 		Assert.notEmpty(validators, "cannot be empty");
 		this.repository = repository;
 		this.validators = validators;
+		this.schemaServerProperties = schemaServerProperties;
 	}
 
 	@RequestMapping(method = RequestMethod.POST, path = "/", consumes = "application/json", produces = "application/json")
@@ -124,6 +131,49 @@ public class ServerController {
 			throw new SchemaNotFoundException("Could not find Schema");
 		}
 		return new ResponseEntity<>(schema, HttpStatus.OK);
+	}
+
+	@RequestMapping(value = "/{subject}/{format}/v{version}", method = RequestMethod.DELETE)
+	public void delete(@PathVariable("subject") String subject,
+			@PathVariable("format") String format,
+			@PathVariable("version") Integer version) {
+		if (this.schemaServerProperties.isAlllowSchemaDeletion()) {
+			Schema schema = this.repository.findOneBySubjectAndFormatAndVersion(subject, format,
+					version);
+			deleteSchema(schema);
+		}
+		else {
+			throw new SchemaDeletionNotAllowedException();
+		}
+	}
+
+	@RequestMapping(value = "/schemas/{id}", method = RequestMethod.DELETE)
+	public void delete(@PathVariable("id") Integer id) {
+		if (this.schemaServerProperties.isAlllowSchemaDeletion()) {
+			Schema schema = this.repository.findOne(id);
+			deleteSchema(schema);
+		}
+		else {
+			throw new SchemaDeletionNotAllowedException();
+		}
+	}
+
+	@RequestMapping(value = "/{subject}", method = RequestMethod.DELETE)
+	public void delete(@PathVariable("subject") String subject) {
+		if (this.schemaServerProperties.isAlllowSchemaDeletion()) {
+			for (Schema schema : this.repository.findAll()) {
+				if (schema.getSubject().equals(subject)) {
+					deleteSchema(schema);
+				}
+			}
+		}
+	}
+
+	private void deleteSchema(Schema schema) {
+		if (schema == null) {
+			throw new SchemaNotFoundException("Could not find Schema");
+		}
+		this.repository.delete(schema);
 	}
 
 	@ExceptionHandler(UnsupportedFormatException.class)
