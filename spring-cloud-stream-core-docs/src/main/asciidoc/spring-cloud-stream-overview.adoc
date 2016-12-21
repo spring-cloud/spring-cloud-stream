@@ -1280,7 +1280,7 @@ Spring Cloud Stream provides a schema registry server implementation.
 In order to use it, you can simply add the `spring-cloud-stream-schema-server` artifact to your project and use the `@EnableSchemaRegistryServer` annotation, adding the schema registry server REST controller to your application.
 This annotation is intended to be used with Spring Boot web applications, and the listening port of the server is controlled by the `server.port` setting.
 The `spring.cloud.stream.schema.server.path` setting can be used to control the root path of the schema server (especially when it is embedded in other applications).
-The `spring.cloud.stream.schema.server.alllowSchemaDeletion` boolean setting enables the deletion of schema. By default this is disabled.
+The `spring.cloud.stream.schema.server.allowSchemaDeletion` boolean setting enables the deletion of schema. By default this is disabled.
 
 The schema registry server uses a relational database to store the schemas.
  By default, it uses an embedded database.

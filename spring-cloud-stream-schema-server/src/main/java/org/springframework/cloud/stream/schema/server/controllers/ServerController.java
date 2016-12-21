@@ -137,7 +137,7 @@ public class ServerController {
 	public void delete(@PathVariable("subject") String subject,
 			@PathVariable("format") String format,
 			@PathVariable("version") Integer version) {
-		if (this.schemaServerProperties.isAlllowSchemaDeletion()) {
+		if (this.schemaServerProperties.isAllowSchemaDeletion()) {
 			Schema schema = this.repository.findOneBySubjectAndFormatAndVersion(subject, format,
 					version);
 			deleteSchema(schema);
@@ -149,7 +149,7 @@ public class ServerController {
 
 	@RequestMapping(value = "/schemas/{id}", method = RequestMethod.DELETE)
 	public void delete(@PathVariable("id") Integer id) {
-		if (this.schemaServerProperties.isAlllowSchemaDeletion()) {
+		if (this.schemaServerProperties.isAllowSchemaDeletion()) {
 			Schema schema = this.repository.findOne(id);
 			deleteSchema(schema);
 		}
@@ -160,13 +160,17 @@ public class ServerController {
 
 	@RequestMapping(value = "/{subject}", method = RequestMethod.DELETE)
 	public void delete(@PathVariable("subject") String subject) {
-		if (this.schemaServerProperties.isAlllowSchemaDeletion()) {
+		if (this.schemaServerProperties.isAllowSchemaDeletion()) {
 			for (Schema schema : this.repository.findAll()) {
 				if (schema.getSubject().equals(subject)) {
 					deleteSchema(schema);
 				}
 			}
 		}
+		else {
+			throw new SchemaDeletionNotAllowedException();
+		}
+
 	}
 
 	private void deleteSchema(Schema schema) {
@@ -189,6 +193,11 @@ public class ServerController {
 	@ExceptionHandler(SchemaNotFoundException.class)
 	@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "Schema not found")
 	public void schemaNotFound(SchemaNotFoundException ex) {
+	}
+
+	@ExceptionHandler(SchemaDeletionNotAllowedException.class)
+	@ResponseStatus(value = HttpStatus.METHOD_NOT_ALLOWED, reason = "Schema deletion is not permitted")
+	public void schemaDeletionNotPermitted(SchemaDeletionNotAllowedException ex) {
 	}
 
 }

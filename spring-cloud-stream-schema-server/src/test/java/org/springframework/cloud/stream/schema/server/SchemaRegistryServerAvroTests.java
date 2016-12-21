@@ -28,19 +28,17 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.stream.schema.server.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.server.model.Schema;
-import org.springframework.cloud.stream.schema.server.support.SchemaDeletionNotAllowedException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 
 /**
  * @author Vinicius Carvalho
@@ -48,6 +46,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 public class SchemaRegistryServerAvroTests {
 
 	final String USER_SCHEMA_V1 = "{\"namespace\": \"example.avro\",\n"
@@ -174,7 +173,7 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
 				schema, Schema.class);
 		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-		schemaServerProperties.setAlllowSchemaDeletion(true);
+		schemaServerProperties.setAllowSchemaDeletion(true);
 		client.delete("http://localhost:8990/test/avro/v1");
 		ResponseEntity<Schema> response2 = client
 				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
@@ -193,7 +192,7 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Schema> response2 = client
 				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
 		Assert.assertEquals(HttpStatus.OK, response2.getStatusCode());
-		schemaServerProperties.setAlllowSchemaDeletion(true);
+		schemaServerProperties.setAllowSchemaDeletion(true);
 		client.delete("http://localhost:8990/schemas/1");
 		ResponseEntity<Schema> response3 = client
 				.getForEntity("http://localhost:8990/test/avro/1", Schema.class);
@@ -219,7 +218,7 @@ public class SchemaRegistryServerAvroTests {
 				schema2, Schema.class);
 		Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
 		Assert.assertEquals(HttpStatus.OK, client.getForEntity("http://localhost:8990/test/avro/v2", Schema.class).getStatusCode());
-		schemaServerProperties.setAlllowSchemaDeletion(true);
+		schemaServerProperties.setAllowSchemaDeletion(true);
 		client.delete("http://localhost:8990/test");
 		ResponseEntity<Schema> response4 = client
 				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
@@ -238,14 +237,15 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
 				schema, Schema.class);
 		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-		MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(wac).defaultRequest(
-				get("/").accept(MediaType.APPLICATION_JSON)).build();
-		try {
-			mockMvc.perform(delete("http://localhost:8990/test/avro/v1"));
-		}
-		catch (Exception e) {
-			Assert.assertTrue(e.getCause() instanceof SchemaDeletionNotAllowedException);
-		}
+		ResponseEntity<Object> deleteBySubjectFormatVersion = client.exchange("http://localhost:8990/test/avro/v1", HttpMethod.DELETE,
+				null, Object.class);
+		assertThat(deleteBySubjectFormatVersion.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+		ResponseEntity<Object> deleteBySubject = client.exchange("http://localhost:8990/test", HttpMethod.DELETE,
+				null, Object.class);
+		assertThat(deleteBySubject.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+		ResponseEntity<Object> deleteById = client.exchange("http://localhost:8990/schemas/1", HttpMethod.DELETE,
+				null, Object.class);
+		assertThat(deleteById.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
 	@TestConfiguration

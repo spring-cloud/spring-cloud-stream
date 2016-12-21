@@ -36,7 +36,7 @@ public class SchemaServerProperties {
 	/**
 	 * Boolean flag to enable/disable schema deletion.
 	 */
-	private boolean alllowSchemaDeletion;
+	private boolean allowSchemaDeletion;
 
 	public String getPath() {
 		return this.path;
@@ -46,11 +46,11 @@ public class SchemaServerProperties {
 		this.path = path;
 	}
 
-	public boolean isAlllowSchemaDeletion() {
-		return alllowSchemaDeletion;
+	public boolean isAllowSchemaDeletion() {
+		return allowSchemaDeletion;
 	}
 
-	public void setAlllowSchemaDeletion(boolean alllowSchemaDeletion) {
-		this.alllowSchemaDeletion = alllowSchemaDeletion;
+	public void setAllowSchemaDeletion(boolean allowSchemaDeletion) {
+		this.allowSchemaDeletion = allowSchemaDeletion;
 	}
 }
