@@ -26,15 +26,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cloud.stream.schema.server.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.server.model.Schema;
+import org.springframework.cloud.stream.schema.server.support.SchemaDeletionNotAllowedException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 /**
  * @author Vinicius Carvalho
+ * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -55,6 +65,12 @@ public class SchemaRegistryServerAvroTests {
 
 	@Autowired
 	private TestRestTemplate client;
+
+	@Autowired
+	private SchemaServerProperties schemaServerProperties;
+
+	@Autowired
+	private WebApplicationContext wac;
 
 	@Test
 	public void testUnsupportedFormat() throws Exception {
@@ -147,6 +163,89 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Schema> response = client
 				.getForEntity("http://localhost:8990/foo/avro/v42", Schema.class);
 		Assert.assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+	}
+
+	@Test
+	public void testSchemaDeletionBySubjectFormatVersion() throws Exception {
+		Schema schema = new Schema();
+		schema.setFormat("avro");
+		schema.setSubject("test");
+		schema.setDefinition(USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
+				schema, Schema.class);
+		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
+		schemaServerProperties.setAlllowSchemaDeletion(true);
+		client.delete("http://localhost:8990/test/avro/v1");
+		ResponseEntity<Schema> response2 = client
+				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
+		Assert.assertEquals(HttpStatus.NOT_FOUND, response2.getStatusCode());
+	}
+
+	@Test
+	public void testSchemaDeletionById() throws Exception {
+		Schema schema = new Schema();
+		schema.setFormat("avro");
+		schema.setSubject("test");
+		schema.setDefinition(USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
+				schema, Schema.class);
+		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
+		ResponseEntity<Schema> response2 = client
+				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
+		Assert.assertEquals(HttpStatus.OK, response2.getStatusCode());
+		schemaServerProperties.setAlllowSchemaDeletion(true);
+		client.delete("http://localhost:8990/schemas/1");
+		ResponseEntity<Schema> response3 = client
+				.getForEntity("http://localhost:8990/test/avro/1", Schema.class);
+		Assert.assertEquals(HttpStatus.NOT_FOUND, response3.getStatusCode());
+	}
+
+	@Test
+	public void testSchemaDeletionBySubject() throws Exception {
+		Schema schema1 = new Schema();
+		schema1.setFormat("avro");
+		schema1.setSubject("test");
+		schema1.setDefinition(USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
+				schema1, Schema.class);
+		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
+		Assert.assertEquals(HttpStatus.OK, client.getForEntity("http://localhost:8990/test/avro/v1", Schema.class).getStatusCode());
+		client.getForEntity("http://localhost:8990/test/avro/1", Schema.class);
+		Schema schema2 = new Schema();
+		schema2.setFormat("avro");
+		schema2.setSubject("test");
+		schema2.setDefinition(USER_SCHEMA_V2);
+		ResponseEntity<Schema> response2 = client.postForEntity("http://localhost:8990/",
+				schema2, Schema.class);
+		Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
+		Assert.assertEquals(HttpStatus.OK, client.getForEntity("http://localhost:8990/test/avro/v2", Schema.class).getStatusCode());
+		schemaServerProperties.setAlllowSchemaDeletion(true);
+		client.delete("http://localhost:8990/test");
+		ResponseEntity<Schema> response4 = client
+				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
+		Assert.assertEquals(HttpStatus.NOT_FOUND, response4.getStatusCode());
+		ResponseEntity<Schema> response5 = client
+				.getForEntity("http://localhost:8990/test/avro/v2", Schema.class);
+		Assert.assertEquals(HttpStatus.NOT_FOUND, response5.getStatusCode());
+	}
+
+	@Test
+	public void testSchemaDeletionNotAllowed() throws Exception {
+		Schema schema = new Schema();
+		schema.setFormat("avro");
+		schema.setSubject("test");
+		schema.setDefinition(USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
+				schema, Schema.class);
+		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
+		MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(wac).defaultRequest(
+				get("/").accept(MediaType.APPLICATION_JSON)).build();
+		try {
+			mockMvc.perform(delete("http://localhost:8990/test/avro/v1"));
+		}
+		catch (Exception e) {
+			Assert.assertTrue(e.getCause() instanceof SchemaDeletionNotAllowedException);
+		}
 	}
 
 	@TestConfiguration
