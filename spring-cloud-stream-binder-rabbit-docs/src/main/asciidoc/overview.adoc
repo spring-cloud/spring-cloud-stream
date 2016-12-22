@@ -171,6 +171,10 @@ compress::
   Whether data should be compressed when sent.
 +
 Default: `false`.
+transacted::
+  Whether to use transacted channels.
++
+Default: `false`.
 deliveryMode::
   Delivery mode.
 +
