@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import reactor.adapter.RxJava1Adapter;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import rx.Observable;
+import rx.RxReactiveStreams;
 import rx.Single;
 
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
@@ -59,8 +61,9 @@ public class MessageChannelToObservableSenderParameterAdapter implements
 
 			@Override
 			public Single<Void> send(Observable<?> observable) {
-				return RxJava1Adapter.publisherToSingle(
-						this.fluxSender.send(RxJava1Adapter.observableToFlux(observable)));
+				Publisher<?> adaptedPublisher = RxReactiveStreams.toPublisher(observable);
+				return RxReactiveStreams.toSingle(
+						this.fluxSender.send(Flux.from(adaptedPublisher)));
 			}
 		};
 	}
