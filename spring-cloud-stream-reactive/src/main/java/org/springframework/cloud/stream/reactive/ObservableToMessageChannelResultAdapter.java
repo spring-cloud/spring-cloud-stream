@@ -16,8 +16,9 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import reactor.adapter.RxJava1Adapter;
+import reactor.core.publisher.Flux;
 import rx.Observable;
+import rx.RxReactiveStreams;
 
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.messaging.MessageChannel;
@@ -46,7 +47,7 @@ public class ObservableToMessageChannelResultAdapter
 	}
 
 	public void adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
-		this.fluxToMessageChannelResultAdapter.adapt(RxJava1Adapter.observableToFlux(streamListenerResult),
+		this.fluxToMessageChannelResultAdapter.adapt(Flux.from(RxReactiveStreams.toPublisher(streamListenerResult)),
 				bindingTarget);
 	}
 }

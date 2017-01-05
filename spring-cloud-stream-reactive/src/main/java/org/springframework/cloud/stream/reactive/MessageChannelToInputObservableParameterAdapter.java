@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import reactor.adapter.RxJava1Adapter;
 import rx.Observable;
+import rx.RxReactiveStreams;
 
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
@@ -48,7 +48,7 @@ public class MessageChannelToInputObservableParameterAdapter
 
 	@Override
 	public Observable<?> adapt(final SubscribableChannel bindingTarget, MethodParameter parameter) {
-		return RxJava1Adapter.publisherToObservable(
+		return RxReactiveStreams.toObservable(
 				this.messageChannelToInputFluxArgumentAdapter.adapt(bindingTarget, parameter));
 	}
 }
