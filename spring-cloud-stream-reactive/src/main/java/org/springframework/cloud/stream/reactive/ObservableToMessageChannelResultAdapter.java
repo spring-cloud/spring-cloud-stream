@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import rx.Observable;
 import rx.RxReactiveStreams;
@@ -27,6 +28,7 @@ import org.springframework.util.Assert;
 /**
  * A {@link StreamListenerResultAdapter} from an {@link Observable}
  * return type to a bound {@link MessageChannel}.
+ *
  * @author Marius Bogoevici
  */
 public class ObservableToMessageChannelResultAdapter
@@ -47,7 +49,7 @@ public class ObservableToMessageChannelResultAdapter
 	}
 
 	public void adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
-		this.fluxToMessageChannelResultAdapter.adapt(Flux.from(RxReactiveStreams.toPublisher(streamListenerResult)),
-				bindingTarget);
+		Publisher<?> adaptedPublisher = RxReactiveStreams.toPublisher(streamListenerResult);
+		this.fluxToMessageChannelResultAdapter.adapt(Flux.from(adaptedPublisher), bindingTarget);
 	}
 }
