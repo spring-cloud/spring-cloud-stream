@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 	}
 
 	@Override
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 		Map<String, StreamListenerParameterAdapter> parameterAdapterMap =
@@ -108,7 +108,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 			@Override
 			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
 				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
-				if (streamListener != null) {
+				if (streamListener != null && !method.isBridge()) {
 					Assert.isTrue(method.getAnnotation(Input.class) == null,
 							StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
 					String methodAnnotatedInboundName = streamListener.value();
@@ -192,7 +192,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return false;
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	private void invokeSetupMethodOnListenedChannel(Method method, Object bean, String inboundName,
 			String outboundName) {
 		Object[] arguments = new Object[method.getParameterTypes().length];
