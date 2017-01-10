@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 
@@ -38,22 +39,45 @@ public class StreamListenerDuplicateMappingTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testDuplicateMapping() throws Exception {
+	public void testDuplicateMapping() {
+		ConfigurableApplicationContext context = null;
 		try {
-			ConfigurableApplicationContext context = SpringApplication.run(TestDuplicateMapping.class,
-					"--server.port=0");
+			context = SpringApplication.run(TestDuplicateMapping.class, "--server.port=0");
 			fail("Exception expected on duplicate mapping");
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).startsWith("Duplicate @StreamListener mapping");
 		}
+		finally {
+			if (context != null) {
+				context.close();
+			}
+		}
 	}
 
-	@EnableBinding(Processor.class)
+	@Test
+	public void testDuplicateMappingFromAbstractMethod() {
+		ConfigurableApplicationContext context = null;
+		try {
+			context = SpringApplication.run(TestDuplicateMappingFromAbstractMethod.class, "--server.port=0");
+		}
+		catch (BeanCreationException e) {
+			String errorMessage = e.getCause().getMessage().startsWith("Duplicate @StreamListener mapping") ?
+					"Duplicate mapping exception is not expected" : "Test failed with exception";
+			fail(errorMessage + ": " + e.getMessage());
+		}
+		finally {
+			if (context != null) {
+				context.close();
+			}
+		}
+	}
+
+	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	public static class TestDuplicateMapping {
 
-		@StreamListener(Processor.INPUT)
+		@StreamListener(Sink.INPUT)
 		public void receive(Message<String> fooMessage) {
 		}
 
@@ -61,4 +85,27 @@ public class StreamListenerDuplicateMappingTests {
 		public void receiveDuplicateMapping(Message<String> fooMessage) {
 		}
 	}
+
+	@EnableBinding(Sink.class)
+	@EnableAutoConfiguration
+	public static class TestDuplicateMappingFromAbstractMethod implements ISink<TestBase> {
+
+		@Override
+		@StreamListener(Sink.INPUT)
+		public void testMethod(TestBase msg) {
+		}
+	}
+
+	public interface ISink<T extends Base> {
+		void testMethod(T msg);
+	}
+
+	public interface Base {
+
+	}
+
+	public class TestBase implements Base {
+
+	}
+
 }
