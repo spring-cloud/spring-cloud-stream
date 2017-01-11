@@ -16,20 +16,16 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.kafka.core.ConsumerFactory;
 
 /**
  * Health indicator for Kafka.
@@ -41,24 +37,18 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 	private final KafkaMessageChannelBinder binder;
 
-	private final KafkaBinderConfigurationProperties configurationProperties;
+	private final ConsumerFactory<?, ?> consumerFactory;
 
 	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder,
-										KafkaBinderConfigurationProperties configurationProperties) {
+			ConsumerFactory<?, ?> consumerFactory) {
 		this.binder = binder;
-		this.configurationProperties = configurationProperties;
+		this.consumerFactory = consumerFactory;
 
 	}
 
 	@Override
 	public Health health() {
-		Map<String, String> properties = new HashMap<>();
-		properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties
-				.getKafkaConnectionString());
-		properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-		properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-		KafkaConsumer metadataConsumer = new KafkaConsumer(properties);
-		try {
+		try (Consumer<?, ?> metadataConsumer = consumerFactory.createConsumer()) {
 			Set<String> downMessages = new HashSet<>();
 			for (String topic : this.binder.getTopicsInUse().keySet()) {
 				List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
@@ -77,9 +67,6 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 		}
 		catch (Exception e) {
 			return Health.down(e).build();
-		}
-		finally {
-			metadataConsumer.close();
 		}
 	}
 }
