@@ -1519,6 +1519,22 @@ This can be customized on the binding, either by setting a SpEL expression to be
 
 Additional properties can be configured for more advanced scenarios, as described in the following section.
 
+===== Accessing application context for PartitionKeyExtractorClass
+
+In cases where 'PartitionKeyExtractorClass' needs to access the underlying application context (to resolve application properties etc.,) the following can be done:
+
+You can configure your strategy implementation as a @Bean in the application context with a bean name of the fully qualified class name, that bean will be fully initialized by Spring and used by the binder.
+If the binder doesn't find a bean with that name, it will create one (and add it to the context), but it won't get a full Spring initialization.
+
+----
+@Bean(name="com.example.MyKeyExtractor")
+public MyKeyExtractor extractor() {
+    return new MyKeyExtractor();
+}
+----
+
+Alternatively, you can implement 'ApplicationContextAware' and the application context will be injected and you can get values from its environment (as well as beans etc).
+
 ===== Configuring Input Bindings for Partitioning
 
 An input binding (with the channel name `input`) is configured to receive partitioned data by setting its `partitioned` property, as well as the `instanceIndex` and `instanceCount` properties on the application itself, as in the following example:
