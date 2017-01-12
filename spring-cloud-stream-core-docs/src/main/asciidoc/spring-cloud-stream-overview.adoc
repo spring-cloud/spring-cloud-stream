@@ -1508,17 +1508,38 @@ Based on the above example configuration, data will be sent to the target partit
 A partition key's value is calculated for each message sent to a partitioned output channel based on the `partitionKeyExpression`.
 The `partitionKeyExpression` is a SpEL expression which is evaluated against the outbound message for extracting the partitioning key.
 
-[TIP]
-====
+
 If a SpEL expression is not sufficient for your needs, you can instead calculate the partition key value by setting the property `partitionKeyExtractorClass` to a class which implements the `org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy` interface.
 While the SpEL expression should usually suffice, more complex cases may use the custom implementation strategy.
-====
+In that case, the property 'partitionKeyExtractorClass' can be set as follows:
+
+----
+spring.cloud.stream.bindings.output.producer.partitionKeyExtractorClass=com.example.MyKeyExtractor
+spring.cloud.stream.bindings.output.producer.partitionCount=5
+----
 
 Once the message key is calculated, the partition selection process will determine the target partition as a value between `0` and `partitionCount - 1`.
 The default calculation, applicable in most scenarios, is based on the formula `key.hashCode() % partitionCount`.
-This can be customized on the binding, either by setting a SpEL expression to be evaluated against the key (via the `partitionSelectorExpression` property) or by setting a `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` implementation (via the `partitionSelectorClass` property).
+This can be customized on the binding, either by setting a SpEL expression to be evaluated against the 'key' (via the `partitionSelectorExpression` property) or by setting a `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` implementation (via the `partitionSelectorClass` property).
 
+The binding level properties for 'partitionSelectorExpression' and 'partitionSelectorClass' can be specified similar to the way 'partitionKeyExpression' and 'partitionKeyExtractorClass' properties are specified in the above examples.
 Additional properties can be configured for more advanced scenarios, as described in the following section.
+
+===== Spring-managed custom `PartitionKeyExtractorClass` implementations
+
+In the example above, a custom strategy such as `MyKeyExtractor` is instantiated by the Spring Cloud Stream directly.
+In some cases, it is necessary for such a custom strategy implementation to be created as a Spring bean, for being able to be managed by Spring, so that it can perform dependency injection, property binding, etc.
+This can be done by configuring it as a @Bean in the application context and using the fully qualified class name as the bean's name, as in the following example.
+
+----
+@Bean(name="com.example.MyKeyExtractor")
+public MyKeyExtractor extractor() {
+    return new MyKeyExtractor();
+}
+----
+
+As a Spring bean, the custom strategy benefits from the full lifecycle of a Spring bean.
+For example, if the implementation need access to the application context directly, it can make implement 'ApplicationContextAware'.
 
 ===== Configuring Input Bindings for Partitioning
 
