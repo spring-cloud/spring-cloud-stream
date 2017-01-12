@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private Map<String, BoundTargetHolder> outputHolders = new HashMap<>();
 
+	private final Map<Method, Object> targetCache = new HashMap<>(2);
+
 	public BindableProxyFactory(Class<?> type) {
 		this.type = type;
 	}
@@ -81,16 +83,27 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public synchronized Object invoke(MethodInvocation invocation) throws Throwable {
 		Method method = invocation.getMethod();
+
+		// try to use cached target
+		Object boundTarget = targetCache.get(method);
+		if (boundTarget != null) {
+			return boundTarget;
+		}
+
 		Input input = AnnotationUtils.findAnnotation(method, Input.class);
 		if (input != null) {
 			String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input, method);
-			return this.inputHolders.get(name).getBoundTarget();
+			boundTarget =  this.inputHolders.get(name).getBoundTarget();
+			targetCache.put(method, boundTarget);
+			return boundTarget;
 		}
 		else {
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
 				String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(output, method);
-				return this.outputHolders.get(name).getBoundTarget();
+				boundTarget = this.outputHolders.get(name).getBoundTarget();
+				targetCache.put(method, boundTarget);
+				return boundTarget;
 			}
 		}
 		return null;
