@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,15 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Exchange;
+import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitManagementTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.AmqpHeaders;
@@ -82,7 +87,7 @@ public class RabbitBinderTests extends
 	public static final String TEST_PREFIX = "bindertest.";
 
 	@Rule
-	public RabbitTestSupport rabbitAvailableRule = new RabbitTestSupport();
+	public RabbitTestSupport rabbitAvailableRule = new RabbitTestSupport(true);
 
 	@Override
 	protected RabbitTestBinder getBinder() {
@@ -186,12 +191,80 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
+	public void testConsumerPropertiesWithUserInfrastructureNoBind() throws Exception {
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		Queue queue = new Queue("propsUser1.infra");
+		admin.declareQueue(queue);
+		DirectExchange exchange = new DirectExchange("propsUser1");
+		admin.declareExchange(exchange);
+		admin.declareBinding(BindingBuilder.bind(queue).to(exchange).with("foo"));
+
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.getExtension().setDeclareExchange(false);
+		properties.getExtension().setBindQueue(false);
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser1", "infra",
+				createBindableChannel("input", new BindingProperties()), properties);
+		Lifecycle endpoint = extractEndpoint(consumerBinding);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
+				SimpleMessageListenerContainer.class);
+		assertThat(container.isRunning()).isTrue();
+		consumerBinding.unbind();
+		assertThat(container.isRunning()).isFalse();
+		RabbitManagementTemplate rmt = new RabbitManagementTemplate();
+		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", exchange.getName());
+		assertThat(bindings.size()).isEqualTo(1);
+	}
+
+	@Test
+	public void testConsumerPropertiesWithUserInfrastructureCustomExchangeAndRK() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.getExtension().setExchangeType(ExchangeTypes.DIRECT);
+		properties.getExtension().setBindingRoutingKey("foo");
+//		properties.getExtension().setDelayedExchange(true); // requires delayed message exchange plugin; tested locally
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser2", "infra",
+				createBindableChannel("input", new BindingProperties()), properties);
+		Lifecycle endpoint = extractEndpoint(consumerBinding);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
+				SimpleMessageListenerContainer.class);
+		assertThat(container.isRunning()).isTrue();
+		consumerBinding.unbind();
+		assertThat(container.isRunning()).isFalse();
+		RabbitManagementTemplate rmt = new RabbitManagementTemplate();
+		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", "propsUser2");
+		int n = 0;
+		while (n++ < 100 && bindings == null || bindings.size() < 1) {
+			Thread.sleep(100);
+			bindings = rmt.getBindingsForExchange("/", "propsUser2");
+		}
+		assertThat(bindings.size()).isEqualTo(1);
+		assertThat(bindings.get(0).getExchange()).isEqualTo("propsUser2");
+		assertThat(bindings.get(0).getDestination()).isEqualTo("propsUser2.infra");
+		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
+
+//		// TODO: AMQP-696
+//		// Exchange exchange = rmt.getExchange("propsUser2");
+//		ExchangeInfo ei = rmt.getClient().getExchange("/", "propsUser2"); // requires delayed message exchange plugin
+//		assertThat(ei.getType()).isEqualTo("x-delayed-message");
+//		assertThat(ei.getArguments().get("x-delayed-type")).isEqualTo("direct");
+
+		Exchange exchange = rmt.getExchange("propsUser2");
+		while (n++ < 100 && exchange == null) {
+			Thread.sleep(100);
+			exchange = rmt.getExchange("propsUser2");
+		}
+		assertThat(exchange).isInstanceOf(DirectExchange.class);
+	}
+
+	@Test
 	public void testProducerProperties() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("props.0",
 				createBindableChannel("input", new BindingProperties()),
 				createProducerProperties());
-		@SuppressWarnings("unchecked")
 		Lifecycle endpoint = extractEndpoint(producerBinding);
 		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "defaultDeliveryMode",
 				MessageDeliveryMode.class);
@@ -214,18 +287,28 @@ public class RabbitBinderTests extends
 		producerProperties.setPartitionSelectorClass(TestPartitionSelectorClass.class);
 		producerProperties.setPartitionCount(1);
 		producerProperties.getExtension().setTransacted(true);
+		producerProperties.getExtension().setDelayExpression("42");
+		producerProperties.setRequiredGroups("prodPropsRequired");
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
-		producerBinding = binder.bindProducer("props.0", createBindableChannel("output", producerBindingProperties),
+		DirectChannel channel = createBindableChannel("output", producerBindingProperties);
+		producerBinding = binder.bindProducer("props.0", channel,
 				producerProperties);
 		endpoint = extractEndpoint(producerBinding);
 		assertThat(TestUtils.getPropertyValue(endpoint, "routingKeyExpression", SpelExpression.class)
 				.getExpressionString()).isEqualTo("'props.0-' + headers['partition']");
+		assertThat(TestUtils.getPropertyValue(endpoint, "delayExpression", SpelExpression.class)
+				.getExpressionString()).isEqualTo("42");
 		mode = TestUtils.getPropertyValue(endpoint, "defaultDeliveryMode", MessageDeliveryMode.class);
 		assertThat(mode).isEqualTo(MessageDeliveryMode.NON_PERSISTENT);
 		assertThat(TestUtils.getPropertyValue(endpoint, "amqpTemplate.transactional", Boolean.class))
 				.isTrue();
 		verifyFooRequestProducer(endpoint);
+		channel.send(new GenericMessage<>("foo"));
+		org.springframework.amqp.core.Message received = new RabbitTemplate(this.rabbitAvailableRule.getResource())
+				.receive("foo.props.0.prodPropsRequired-0", 10_000);
+		assertThat(received).isNotNull();
+		assertThat(received.getMessageProperties().getReceivedDelay()).isEqualTo(42);
 
 		producerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
@@ -663,7 +746,6 @@ public class RabbitBinderTests extends
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testBatchingAndCompression() throws Exception {
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
@@ -910,20 +992,22 @@ public class RabbitBinderTests extends
 		};
 	}
 
-	private static class TestPartitionKeyExtractorClass implements PartitionKeyExtractorStrategy {
+	public static class TestPartitionKeyExtractorClass implements PartitionKeyExtractorStrategy {
 
 		@Override
 		public Object extractKey(Message<?> message) {
-			return null;
+			return 0;
 		}
+
 	}
 
-	private static class TestPartitionSelectorClass implements PartitionSelectorStrategy {
+	public static class TestPartitionSelectorClass implements PartitionSelectorStrategy {
 
 		@Override
 		public int selectPartition(Object key, int partitionCount) {
 			return 0;
 		}
+
 	}
 
 }

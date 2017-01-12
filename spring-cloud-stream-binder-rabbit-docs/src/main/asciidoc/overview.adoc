@@ -100,11 +100,33 @@ autoBindDlq::
   Whether to automatically declare the DLQ and bind it to the binder DLX.
 +
 Default: `false`.
+bindQueue::
+  Whether to bind the queue to the destination exchange; set to `false` if you have set up your own infrastructure and have previously created/bound the queue.
++
+Default: `true`.
+declareExchange::
+  Whether to declare the exchange for the destination.
++
+Default: `true`.
+delayedExchange::
+  Whether to declare the exchange as a `Delayed Message Exchange` - requires the delayed message exchange plugin on the broker.
+  The `x-delayed-type` argument is set to the `exchangeType`.
++
+Default: `false`.
 durableSubscription::
   Whether subscription should be durable.
 Only effective if `group` is also set.
 +
 Default: `true`.
+bindingRoutingKey::
+  The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
+  for partitioned destinations `-<instanceIndex>` will be appended.
++
+Default: `#`.
+exchangeType::
+  The exchange type; `direct`, `fanout` or `topic` for non-partitioned destinations; `direct` or `topic` for partitioned destinations.
++
+Default: `topic`.
 maxConcurrency::
   Default: `1`.
 prefetch::
@@ -167,18 +189,42 @@ batchBufferLimit::
   Default: `10000`.
 batchTimeout::
   Default: `5000`.
+bindQueue::
+  Whether to bind the queue to the destination exchange; set to `false` if you have set up your own infrastructure and have previously created/bound the queue.
+  Only applies if `requiredGroups` are provided and then only to those groups.
++
+Default: `true`.
 compress::
   Whether data should be compressed when sent.
 +
 Default: `false`.
-transacted::
-  Whether to use transacted channels.
+declareExchange::
+  Whether to declare the exchange for the destination.
++
+Default: `true`.
+delay::
+  A SpEL expression to evaluate the delay to apply to the message (`x-delay` header) - has no effect if the exchange is not a delayed message exchange.
++
+Default: No `x-delay` header is set.
+delayedExchange::
+  Whether to declare the exchange as a `Delayed Message Exchange` - requires the delayed message exchange plugin on the broker.
+  The `x-delayed-type` argument is set to the `exchangeType`.
 +
 Default: `false`.
 deliveryMode::
   Delivery mode.
 +
 Default: `PERSISTENT`.
+exchangeRoutingKey::
+  The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
+  Only applies to non-partitioned destinations.
+  Only applies if `requiredGroups` are provided.
++
+Default: `#`.
+exchangeType::
+  The exchange type; `direct`, `fanout` or `topic` for non-partitioned destinations; `direct` or `topic` for partitioned destinations.
++
+Default: `topic`.
 prefix::
   A prefix to be added to the name of the `destination` exchange.
 +
@@ -191,6 +237,14 @@ replyHeaderPatterns::
   The reply headers to be transported.
 +
 Default: `[STANDARD_REPLY_HEADERS,'*']`.
+routingKeyExpression::
+  A SpEL expression to determine the routing key to use when publishing messages.
++
+Default: `destination` or `destination-<partition>` for partitioned destinations.
+transacted::
+  Whether to use transacted channels.
++
+Default: `false`.
 
 [NOTE]
 ====

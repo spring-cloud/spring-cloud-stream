@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.springframework.amqp.core.MessageDeliveryMode;
  * @author Marius Bogoevici
  * @author Gary Russell
  */
-public class RabbitProducerProperties {
+public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	private String prefix = "";
 
@@ -47,6 +47,16 @@ public class RabbitProducerProperties {
 	private MessageDeliveryMode deliveryMode = MessageDeliveryMode.PERSISTENT;
 
 	private String[] replyHeaderPatterns = new String[] {"STANDARD_REPLY_HEADERS", "*"};
+
+	/**
+	 * When using a delayed message exchange, a SpEL expression to determine the delay to apply to messages
+	 */
+	private String delayExpression;
+
+	/**
+	 * A custom routing key when publishing messages; default is the destination name; suffixed by "-partition" when partitioned
+	 */
+	private String routingKeyExpression;
 
 	public String getPrefix() {
 		return prefix;
@@ -137,6 +147,22 @@ public class RabbitProducerProperties {
 
 	public void setTransacted(boolean transacted) {
 		this.transacted = transacted;
+	}
+
+	public String getDelayExpression() {
+		return this.delayExpression;
+	}
+
+	public void setDelayExpression(String delayExpression) {
+		this.delayExpression = delayExpression;
+	}
+
+	public String getRoutingKeyExpression() {
+		return this.routingKeyExpression;
+	}
+
+	public void setRoutingKeyExpression(String routingKeyExpression) {
+		this.routingKeyExpression = routingKeyExpression;
 	}
 
 }

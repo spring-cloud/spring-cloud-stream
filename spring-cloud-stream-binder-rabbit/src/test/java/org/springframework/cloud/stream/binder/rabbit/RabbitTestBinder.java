@@ -74,6 +74,7 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 			this.queues.add(properties.getExtension().getPrefix() + name + ("." + group));
 		}
 		this.exchanges.add(properties.getExtension().getPrefix() + name);
+		this.prefixes.add(properties.getExtension().getPrefix());
 		return super.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
@@ -82,6 +83,12 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 			ExtendedProducerProperties<RabbitProducerProperties> properties) {
 		this.queues.add(properties.getExtension().getPrefix() + name + ".default");
 		this.exchanges.add(properties.getExtension().getPrefix() + name);
+		if (properties.getRequiredGroups() != null) {
+			for (String group : properties.getRequiredGroups()) {
+				this.queues.add(properties.getExtension().getPrefix() + name + "." + group);
+			}
+		}
+		this.prefixes.add(properties.getExtension().getPrefix());
 		return super.bindProducer(name, moduleOutputChannel, properties);
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.aopalliance.aop.Advice;
 
 import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
+import org.springframework.amqp.core.ExchangeBuilder;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.core.Queue;
@@ -67,6 +68,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import com.rabbitmq.client.AMQP;
@@ -84,7 +86,7 @@ import com.rabbitmq.client.Envelope;
  */
 public class RabbitMessageChannelBinder
 		extends AbstractMessageChannelBinder<ExtendedConsumerProperties<RabbitConsumerProperties>,
-		ExtendedProducerProperties<RabbitProducerProperties>, Queue, TopicExchange>
+		ExtendedProducerProperties<RabbitProducerProperties>, Queue, Exchange>
 		implements ExtendedPropertiesBinder<MessageChannel, RabbitConsumerProperties, RabbitProducerProperties> {
 
 	private static final AnonymousQueue.Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR
@@ -228,7 +230,7 @@ public class RabbitMessageChannelBinder
 					.recoverer(determineRecoverer(baseQueueName, properties.getExtension().getPrefix(),
 							properties.getExtension().isRepublishToDlq()))
 					.build();
-			listenerContainer.setAdviceChain(new Advice[] {retryInterceptor});
+			listenerContainer.setAdviceChain(retryInterceptor);
 		}
 		listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
 		listenerContainer.setMessagePropertiesConverter(RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
@@ -262,9 +264,10 @@ public class RabbitMessageChannelBinder
 		}
 		String prefix = properties.getExtension().getPrefix();
 		String exchangeName = applyPrefix(prefix, name);
-		TopicExchange exchange = new TopicExchange(exchangeName);
-		declareExchange(exchangeName, exchange);
-
+		Exchange exchange = buildExchange(properties.getExtension(), exchangeName);
+		if (properties.getExtension().isDeclareExchange()) {
+			declareExchange(exchangeName, exchange);
+		}
 		String queueName = applyPrefix(prefix, baseQueueName);
 		boolean partitioned = !anonymous && properties.isPartitioned();
 		boolean durable = !anonymous && properties.getExtension().isDurableSubscription();
@@ -288,12 +291,8 @@ public class RabbitMessageChannelBinder
 			}
 		}
 		declareQueue(queueName, queue);
-		if (partitioned) {
-			String bindingKey = String.format("%s-%d", name, properties.getInstanceIndex());
-			declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with(bindingKey));
-		}
-		else {
-			declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange).with("#"));
+		if (properties.getExtension().isBindQueue()) {
+			declareConsumerBindings(name, properties, exchange, partitioned, queue);
 		}
 		if (durable) {
 			autoBindDLQ(applyPrefix(properties.getExtension().getPrefix(), baseQueueName), queueName,
@@ -329,16 +328,18 @@ public class RabbitMessageChannelBinder
 	}
 
 	@Override
-	protected TopicExchange createProducerDestinationIfNecessary(String name,
+	protected Exchange createProducerDestinationIfNecessary(String name,
 			ExtendedProducerProperties<RabbitProducerProperties> producerProperties) {
 		String exchangeName = applyPrefix(producerProperties.getExtension().getPrefix(), name);
-		TopicExchange exchange = new TopicExchange(exchangeName);
-		declareExchange(exchangeName, exchange);
+		Exchange exchange = buildExchange(producerProperties.getExtension(), exchangeName);
+		if (producerProperties.getExtension().isDeclareExchange()) {
+			declareExchange(exchangeName, exchange);
+		}
 		return exchange;
 	}
 
 	@Override
-	protected MessageHandler createProducerMessageHandler(final TopicExchange exchange,
+	protected MessageHandler createProducerMessageHandler(final Exchange exchange,
 			ExtendedProducerProperties<RabbitProducerProperties> properties)
 			throws Exception {
 		String prefix = properties.getExtension().getPrefix();
@@ -346,24 +347,38 @@ public class RabbitMessageChannelBinder
 		String destination = StringUtils.isEmpty(prefix) ? exchangeName : exchangeName.substring(prefix.length());
 		final AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(buildRabbitTemplate(properties.getExtension()));
 		endpoint.setExchangeName(exchange.getName());
+		RabbitProducerProperties extendedProperties = properties.getExtension();
+		String routingKeyExpression = extendedProperties.getRoutingKeyExpression();
 		if (!properties.isPartitioned()) {
-			endpoint.setRoutingKey(destination);
+			if (routingKeyExpression == null) {
+				endpoint.setRoutingKey(destination);
+			}
+			else {
+				endpoint.setRoutingKeyExpressionString(routingKeyExpression);
+			}
 		}
 		else {
-			endpoint.setRoutingKeyExpression(EXPRESSION_PARSER.parseExpression(buildPartitionRoutingExpression(
-					destination)));
+			if (routingKeyExpression == null) {
+				endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(destination));
+			}
+			else {
+				endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(routingKeyExpression));
+			}
+		}
+		if (extendedProperties.getDelayExpression() != null) {
+			endpoint.setDelayExpressionString(extendedProperties.getDelayExpression());
 		}
 		for (String requiredGroupName : properties.getRequiredGroups()) {
 			String baseQueueName = exchangeName + "." + requiredGroupName;
 			if (!properties.isPartitioned()) {
 				Queue queue = new Queue(baseQueueName, true, false, false,
-						queueArgs(baseQueueName, prefix, properties.getExtension().isAutoBindDlq()));
+						queueArgs(baseQueueName, prefix, extendedProperties.isAutoBindDlq()));
 				declareQueue(baseQueueName, queue);
-				autoBindDLQ(baseQueueName, baseQueueName, properties.getExtension().getPrefix(),
-						properties.getExtension().isAutoBindDlq());
-				org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with(
-						destination);
-				declareBinding(baseQueueName, binding);
+				autoBindDLQ(baseQueueName, baseQueueName, extendedProperties.getPrefix(),
+						extendedProperties.isAutoBindDlq());
+				if (extendedProperties.isBindQueue()) {
+					notPartitionedBinding(exchange, queue, extendedProperties);
+				}
 			}
 			else {
 				// if the stream is partitioned, create one queue for each target partition for the default group
@@ -371,21 +386,22 @@ public class RabbitMessageChannelBinder
 					String partitionSuffix = "-" + i;
 					String partitionQueueName = baseQueueName + partitionSuffix;
 					Queue queue = new Queue(partitionQueueName, true, false, false,
-							queueArgs(partitionQueueName, properties.getExtension().getPrefix(),
-									properties.getExtension().isAutoBindDlq()));
+							queueArgs(partitionQueueName, extendedProperties.getPrefix(),
+									extendedProperties.isAutoBindDlq()));
 					declareQueue(queue.getName(), queue);
-					autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, properties.getExtension().getPrefix(),
-							properties.getExtension().isAutoBindDlq());
-					declareBinding(queue.getName(), BindingBuilder.bind(queue).to(exchange)
-							.with(destination + partitionSuffix));
+					autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, extendedProperties.getPrefix(),
+							extendedProperties.isAutoBindDlq());
+					if (extendedProperties.isBindQueue()) {
+						partitionedBinding(destination, exchange, queue, extendedProperties, i);
+					}
 				}
 			}
 		}
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.outboundMapper();
-		mapper.setRequestHeaderNames(properties.getExtension().getRequestHeaderPatterns());
-		mapper.setReplyHeaderNames(properties.getExtension().getReplyHeaderPatterns());
+		mapper.setRequestHeaderNames(extendedProperties.getRequestHeaderPatterns());
+		mapper.setReplyHeaderNames(extendedProperties.getReplyHeaderPatterns());
 		endpoint.setHeaderMapper(mapper);
-		endpoint.setDefaultDeliveryMode(properties.getExtension().getDeliveryMode());
+		endpoint.setDefaultDeliveryMode(extendedProperties.getDeliveryMode());
 		endpoint.setBeanFactory(this.getBeanFactory());
 		endpoint.afterPropertiesSet();
 		return endpoint;
@@ -452,6 +468,22 @@ public class RabbitMessageChannelBinder
 		addToAutoDeclareContext(beanName, queue);
 	}
 
+	private Exchange buildExchange(RabbitCommonProperties properties, String exchangeName) {
+		try {
+			// TODO Make the ctor public in Spring-AMQP - AMQP-695
+			Constructor<ExchangeBuilder> ctor = ExchangeBuilder.class.getDeclaredConstructor(String.class, String.class);
+			ReflectionUtils.makeAccessible(ctor);
+			ExchangeBuilder builder = ctor.newInstance(exchangeName, properties.getExchangeType());
+			if (properties.isDelayedExchange()) {
+				builder.delayed();
+			}
+			return builder.build();
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Failed to create exchange object", e);
+		}
+	}
+
 	private void declareExchange(final String rootName, final Exchange exchange) {
 		try {
 			this.rabbitAdmin.declareExchange(exchange);
@@ -463,6 +495,65 @@ public class RabbitMessageChannelBinder
 			}
 		}
 		addToAutoDeclareContext(rootName + ".exchange", exchange);
+	}
+
+	private void declareConsumerBindings(String name, ExtendedConsumerProperties<RabbitConsumerProperties> properties,
+			Exchange exchange, boolean partitioned, Queue queue) {
+		if (partitioned) {
+			partitionedBinding(name, exchange, queue, properties.getExtension(), properties.getInstanceIndex());
+		}
+		else {
+			notPartitionedBinding(exchange, queue, properties.getExtension());
+		}
+	}
+
+	private void partitionedBinding(String destination, Exchange exchange, Queue queue,
+			RabbitCommonProperties extendedProperties, int index) {
+		String bindingKey = extendedProperties.getBindingRoutingKey();
+		if (bindingKey == null) {
+			bindingKey = destination;
+		}
+		bindingKey += "-" + index;
+		if (exchange instanceof TopicExchange) {
+			declareBinding(queue.getName(), BindingBuilder.bind(queue)
+								.to((TopicExchange) exchange)
+								.with(bindingKey));
+		}
+		else if (exchange instanceof DirectExchange) {
+			declareBinding(queue.getName(), BindingBuilder.bind(queue)
+					.to((DirectExchange) exchange)
+					.with(bindingKey));
+		}
+		else if (exchange instanceof FanoutExchange) {
+			throw new IllegalStateException("A fanout exchange is not appropriate for partitioned apps");
+		}
+		else {
+			throw new IllegalStateException("Cannot bind to a " + exchange.getType() + " exchange");
+		}
+	}
+
+	private void notPartitionedBinding(Exchange exchange, Queue queue, RabbitCommonProperties extendedProperties) {
+		String routingKey = extendedProperties.getBindingRoutingKey();
+		if (routingKey == null) {
+			routingKey = "#";
+		}
+		if (exchange instanceof TopicExchange) {
+			declareBinding(queue.getName(), BindingBuilder.bind(queue)
+								.to((TopicExchange) exchange)
+								.with(routingKey));
+		}
+		else if (exchange instanceof DirectExchange) {
+			declareBinding(queue.getName(), BindingBuilder.bind(queue)
+					.to((DirectExchange) exchange)
+					.with(routingKey));
+		}
+		else if (exchange instanceof FanoutExchange) {
+			declareBinding(queue.getName(), BindingBuilder.bind(queue)
+					.to((FanoutExchange) exchange));
+		}
+		else {
+			throw new IllegalStateException("Cannot bind to a " + exchange.getType() + " exchange");
+		}
 	}
 
 	private void declareBinding(String rootName, org.springframework.amqp.core.Binding binding) {
