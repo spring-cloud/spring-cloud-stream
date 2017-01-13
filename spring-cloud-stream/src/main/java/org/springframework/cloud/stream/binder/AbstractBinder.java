@@ -80,8 +80,9 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
+	 *
 	 * @param prefix the prefix.
-	 * @param name the name.
+	 * @param name   the name.
 	 */
 	public static String applyPrefix(String prefix, String name) {
 		return prefix + name;
@@ -90,6 +91,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	/**
 	 * For binder implementations that support dead lettering, construct the name of the
 	 * dead letter entity for the underlying pipe name.
+	 *
 	 * @param name the name.
 	 */
 	public static String constructDLQName(String name) {
@@ -154,7 +156,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	/**
 	 * Construct a name comprised of the name and group.
-	 * @param name the name.
+	 *
+	 * @param name  the name.
 	 * @param group the group.
 	 * @return the constructed name.
 	 */
@@ -240,8 +243,9 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 				return new String(bytes, "UTF-8");
 			}
 			catch (UnsupportedEncodingException e) {
-				throw new SerializationFailedException(
-						"unable to deserialize [java.lang.String]. Encoding not supported.", e);
+				String errorMessage = "unable to deserialize [java.lang.String]. Encoding not supported. " + e.getMessage();
+				logger.error(errorMessage);
+				throw new SerializationFailedException(errorMessage, e);
 			}
 		}
 		else {
@@ -254,13 +258,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 					this.payloadTypeCache.put(className, targetType);
 				}
 				return this.codec.decode(bytes, targetType);
-			}
-			catch (ClassNotFoundException e) {
-				throw new SerializationFailedException("unable to deserialize [" + className + "]. Class not found.",
-						e); // NOSONAR
-			}
-			catch (IOException e) {
-				throw new SerializationFailedException("unable to deserialize [" + className + "]", e);
+			}// catch all exceptions that could occur during de-serialization
+			catch (Exception e) {
+				String errorMessage = "Unable to deserialize [" + className + "] using the contentType [" + contentType + "] " + e.getMessage();
+				logger.error(errorMessage);
+				throw new SerializationFailedException(errorMessage, e);
 			}
 		}
 	}
@@ -271,6 +273,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	/**
 	 * Create and configure a retry template.
+	 *
 	 * @param properties The properties.
 	 * @return The retry template
 	 */
