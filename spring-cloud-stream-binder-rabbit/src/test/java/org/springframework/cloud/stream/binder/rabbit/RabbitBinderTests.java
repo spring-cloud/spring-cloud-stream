@@ -74,6 +74,8 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.GenericMessage;
 
+import com.rabbitmq.http.client.domain.QueueInfo;
+
 /**
  * @author Mark Fisher
  * @author Gary Russell
@@ -257,6 +259,93 @@ public class RabbitBinderTests extends
 			exchange = rmt.getExchange("propsUser2");
 		}
 		assertThat(exchange).isInstanceOf(DirectExchange.class);
+	}
+
+	@Test
+	public void testConsumerPropertiesWithUserInfrastructureCustomQueueArgs() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		RabbitConsumerProperties extProps = properties.getExtension();
+		extProps.setExchangeType(ExchangeTypes.DIRECT);
+		extProps.setBindingRoutingKey("foo");
+		extProps.setExpires(30_000);
+		extProps.setMaxLength(10_000);
+		extProps.setMaxLengthBytes(100_000);
+		extProps.setMaxPriority(10);
+		extProps.setTtl(2_000);
+		extProps.setAutoBindDlq(true);
+		extProps.setDeadLetterQueueName("customDLQ");
+		extProps.setDeadLetterExchange("customDLX");
+		extProps.setDeadLetterRoutingKey("customDLRK");
+		extProps.setDlqDeadLetterExchange("propsUser3");
+		extProps.setDlqDeadLetterRoutingKey("propsUser3");
+		extProps.setDlqExpires(60_000);
+		extProps.setDlqMaxLength(20_000);
+		extProps.setDlqMaxLengthBytes(40_000);
+		extProps.setDlqMaxPriority(8);
+		extProps.setDlqTtl(1_000);
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser3", "infra",
+				createBindableChannel("input", new BindingProperties()), properties);
+		Lifecycle endpoint = extractEndpoint(consumerBinding);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
+				SimpleMessageListenerContainer.class);
+		assertThat(container.isRunning()).isTrue();
+		consumerBinding.unbind();
+		assertThat(container.isRunning()).isFalse();
+		RabbitManagementTemplate rmt = new RabbitManagementTemplate();
+		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", "propsUser3");
+		int n = 0;
+		while (n++ < 100 && bindings == null || bindings.size() < 1) {
+			Thread.sleep(100);
+			bindings = rmt.getBindingsForExchange("/", "propsUser3");
+		}
+		assertThat(bindings.size()).isEqualTo(1);
+		assertThat(bindings.get(0).getExchange()).isEqualTo("propsUser3");
+		assertThat(bindings.get(0).getDestination()).isEqualTo("propsUser3.infra");
+		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
+
+		Exchange exchange = rmt.getExchange("propsUser3");
+		n = 0;
+		while (n++ < 100 && exchange == null) {
+			Thread.sleep(100);
+			exchange = rmt.getExchange("propsUser3");
+		}
+		assertThat(exchange).isInstanceOf(DirectExchange.class);
+
+//		Queue queue = rmt.getQueue("propsUser3"); AMQP-698
+		QueueInfo queue = rmt.getClient().getQueue("/", "propsUser3.infra");
+		n = 0;
+		while (n++ < 100 && queue == null) {
+			Thread.sleep(100);
+			queue = rmt.getClient().getQueue("/", "propsUser3.infra");
+		}
+		assertThat(queue).isNotNull();
+		Map<String, Object> args = queue.getArguments();
+		assertThat(args.get("x-expires")).isEqualTo(30_000);
+		assertThat(args.get("x-max-length")).isEqualTo(10_000);
+		assertThat(args.get("x-max-length-bytes")).isEqualTo(100_000);
+		assertThat(args.get("x-max-priority")).isEqualTo(10);
+		assertThat(args.get("x-message-ttl")).isEqualTo(2_000);
+		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("customDLX");
+		assertThat(args.get("x-dead-letter-routing-key")).isEqualTo("customDLRK");
+
+		queue = rmt.getClient().getQueue("/", "customDLQ");
+
+		n = 0;
+		while (n++ < 100 && queue == null) {
+			Thread.sleep(100);
+			queue = rmt.getClient().getQueue("/", "customDLQ");
+		}
+		assertThat(queue).isNotNull();
+		args = queue.getArguments();
+		assertThat(args.get("x-expires")).isEqualTo(60_000);
+		assertThat(args.get("x-max-length")).isEqualTo(20_000);
+		assertThat(args.get("x-max-length-bytes")).isEqualTo(40_000);
+		assertThat(args.get("x-max-priority")).isEqualTo(8);
+		assertThat(args.get("x-message-ttl")).isEqualTo(1_000);
+		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("propsUser3");
+		assertThat(args.get("x-dead-letter-routing-key")).isEqualTo("propsUser3");
 	}
 
 	@Test

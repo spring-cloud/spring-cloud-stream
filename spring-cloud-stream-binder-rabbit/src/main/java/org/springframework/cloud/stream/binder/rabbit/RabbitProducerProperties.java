@@ -26,11 +26,7 @@ import org.springframework.amqp.core.MessageDeliveryMode;
  */
 public class RabbitProducerProperties extends RabbitCommonProperties {
 
-	private String prefix = "";
-
 	private String[] requestHeaderPatterns = new String[] {"STANDARD_REQUEST_HEADERS", "*"};
-
-	private boolean autoBindDlq;
 
 	private boolean compress;
 
@@ -58,28 +54,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	 */
 	private String routingKeyExpression;
 
-	public String getPrefix() {
-		return prefix;
-	}
-
-	public void setPrefix(String prefix) {
-		this.prefix = prefix;
-	}
-
 	public void setRequestHeaderPatterns(String[] requestHeaderPatterns) {
 		this.requestHeaderPatterns = requestHeaderPatterns;
 	}
 
 	public String[] getRequestHeaderPatterns() {
 		return requestHeaderPatterns;
-	}
-
-	public void setAutoBindDlq(boolean autoBindDlq) {
-		this.autoBindDlq = autoBindDlq;
-	}
-
-	public boolean isAutoBindDlq() {
-		return autoBindDlq;
 	}
 
 	public void setCompress(boolean compress) {

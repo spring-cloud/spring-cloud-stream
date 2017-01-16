@@ -23,7 +23,9 @@ import java.util.Map;
 
 import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.core.AnonymousQueue;
+import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.BindingBuilder.DirectExchangeRoutingKeyConfigurer;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeBuilder;
@@ -227,7 +229,7 @@ public class RabbitMessageChannelBinder
 		if (properties.getMaxAttempts() > 1 || properties.getExtension().isRepublishToDlq()) {
 			RetryOperationsInterceptor retryInterceptor = RetryInterceptorBuilder.stateless()
 					.retryOperations(buildRetryTemplate(properties))
-					.recoverer(determineRecoverer(baseQueueName, properties.getExtension().getPrefix(),
+					.recoverer(determineRecoverer(baseQueueName, properties.getExtension(),
 							properties.getExtension().isRepublishToDlq()))
 					.build();
 			listenerContainer.setAdviceChain(retryInterceptor);
@@ -274,7 +276,7 @@ public class RabbitMessageChannelBinder
 		Queue queue;
 
 		if (anonymous) {
-			queue = new Queue(queueName, false, true, true);
+			queue = new Queue(queueName, false, true, true, queueArgs(queueName, properties.getExtension(), false));
 		}
 		else {
 			if (partitioned) {
@@ -283,11 +285,11 @@ public class RabbitMessageChannelBinder
 			}
 			if (durable) {
 				queue = new Queue(queueName, true, false, false,
-						queueArgs(queueName, properties.getExtension().getPrefix(),
-								properties.getExtension().isAutoBindDlq()));
+						queueArgs(queueName, properties.getExtension(), false));
 			}
 			else {
-				queue = new Queue(queueName, false, false, true);
+				queue = new Queue(queueName, false, false, true,
+						queueArgs(queueName, properties.getExtension(), false));
 			}
 		}
 		declareQueue(queueName, queue);
@@ -296,7 +298,7 @@ public class RabbitMessageChannelBinder
 		}
 		if (durable) {
 			autoBindDLQ(applyPrefix(properties.getExtension().getPrefix(), baseQueueName), queueName,
-					properties.getExtension().getPrefix(), properties.getExtension().isAutoBindDlq());
+					properties.getExtension());
 		}
 		return queue;
 	}
@@ -306,21 +308,12 @@ public class RabbitMessageChannelBinder
 				: groupedName(name, group);
 	}
 
-	private Map<String, Object> queueArgs(String queueName, String prefix, boolean bindDlq) {
-		Map<String, Object> args = new HashMap<>();
-		if (bindDlq) {
-			args.put("x-dead-letter-exchange", applyPrefix(prefix, "DLX"));
-			args.put("x-dead-letter-routing-key", queueName);
-		}
-		return args;
-	}
-
-	private MessageRecoverer determineRecoverer(String name, String prefix, boolean republish) {
+	private MessageRecoverer determineRecoverer(String name, RabbitCommonProperties properties, boolean republish) {
 		if (republish) {
 			RabbitTemplate errorTemplate = new RabbitTemplate(this.connectionFactory);
 			return new RepublishMessageRecoverer(errorTemplate,
-					deadLetterExchangeName(prefix),
-					applyPrefix(prefix, name));
+					deadLetterExchangeName(properties),
+					applyPrefix(properties.getPrefix(), name));
 		}
 		else {
 			return new RejectAndDontRequeueRecoverer();
@@ -372,10 +365,9 @@ public class RabbitMessageChannelBinder
 			String baseQueueName = exchangeName + "." + requiredGroupName;
 			if (!properties.isPartitioned()) {
 				Queue queue = new Queue(baseQueueName, true, false, false,
-						queueArgs(baseQueueName, prefix, extendedProperties.isAutoBindDlq()));
+						queueArgs(baseQueueName, extendedProperties, false));
 				declareQueue(baseQueueName, queue);
-				autoBindDLQ(baseQueueName, baseQueueName, extendedProperties.getPrefix(),
-						extendedProperties.isAutoBindDlq());
+				autoBindDLQ(baseQueueName, baseQueueName, extendedProperties);
 				if (extendedProperties.isBindQueue()) {
 					notPartitionedBinding(exchange, queue, extendedProperties);
 				}
@@ -386,11 +378,9 @@ public class RabbitMessageChannelBinder
 					String partitionSuffix = "-" + i;
 					String partitionQueueName = baseQueueName + partitionSuffix;
 					Queue queue = new Queue(partitionQueueName, true, false, false,
-							queueArgs(partitionQueueName, extendedProperties.getPrefix(),
-									extendedProperties.isAutoBindDlq()));
+							queueArgs(partitionQueueName, extendedProperties, false));
 					declareQueue(queue.getName(), queue);
-					autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, extendedProperties.getPrefix(),
-							extendedProperties.isAutoBindDlq());
+					autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, extendedProperties);
 					if (extendedProperties.isBindQueue()) {
 						partitionedBinding(destination, exchange, queue, extendedProperties, i);
 					}
@@ -407,6 +397,61 @@ public class RabbitMessageChannelBinder
 		return endpoint;
 	}
 
+	private Map<String, Object> queueArgs(String queueName, RabbitCommonProperties properties, boolean isDlq) {
+		Map<String, Object> args = new HashMap<>();
+		if (!isDlq) {
+			if (properties.isAutoBindDlq()) {
+				String dlx;
+				if (properties.getDeadLetterExchange() != null) {
+					dlx = properties.getDeadLetterExchange();
+				}
+				else {
+					dlx = applyPrefix(properties.getPrefix(), "DLX");
+				}
+				args.put("x-dead-letter-exchange", dlx);
+				String dlRk;
+				if (properties.getDeadLetterRoutingKey() != null) {
+					dlRk = properties.getDeadLetterRoutingKey();
+				}
+				else {
+					dlRk = queueName;
+				}
+				args.put("x-dead-letter-routing-key", dlRk);
+			}
+			additionalArgs(args, properties.getExpires(), properties.getMaxLength(), properties.getMaxLengthBytes(),
+					properties.getMaxPriority(), properties.getTtl());
+		}
+		else {
+			if (properties.getDlqDeadLetterExchange() != null) {
+				args.put("x-dead-letter-exchange", properties.getDlqDeadLetterExchange());
+			}
+			if (properties.getDlqDeadLetterRoutingKey() != null) {
+				args.put("x-dead-letter-routing-key", properties.getDlqDeadLetterRoutingKey());
+			}
+			additionalArgs(args, properties.getDlqExpires(), properties.getDlqMaxLength(),
+					properties.getDlqMaxLengthBytes(), properties.getDlqMaxPriority(), properties.getDlqTtl());
+		}
+		return args;
+	}
+
+	private void additionalArgs(Map<String, Object> args, Integer expires, Integer maxLength, Integer maxLengthBytes,
+			Integer maxPriority, Integer ttl) {
+		if (expires != null) {
+			args.put("x-expires", expires);
+		}
+		if (maxLength != null) {
+			args.put("x-max-length", maxLength);
+		}
+		if (maxLengthBytes != null) {
+			args.put("x-max-length-bytes", maxLengthBytes);
+		}
+		if (maxPriority != null) {
+			args.put("x-max-priority", maxPriority);
+		}
+		if (ttl != null) {
+			args.put("x-message-ttl", ttl);
+		}
+	}
 
 	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties) {
 		RabbitTemplate rabbitTemplate;
@@ -436,23 +481,44 @@ public class RabbitMessageChannelBinder
 	 * queue name because we use default exchange routing by queue name for the original message.
 	 * @param baseQueueName   The base name for the queue (including the binder prefix, if any).
 	 * @param routingKey  The routing key for the queue.
-	 * @param autoBindDlq true if the DLQ should be bound.
+	 * @param properties the properties.
 	 */
-	private void autoBindDLQ(final String baseQueueName, String routingKey, String prefix, boolean autoBindDlq) {
+	private void autoBindDLQ(final String baseQueueName, String routingKey, RabbitCommonProperties properties) {
+		boolean autoBindDlq = properties.isAutoBindDlq();
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("autoBindDLQ=" + autoBindDlq
 					+ " for: " + baseQueueName);
 		}
 		if (autoBindDlq) {
-			String dlqName = constructDLQName(baseQueueName);
-			Queue dlq = new Queue(dlqName);
+			String dlqName;
+			if (properties.getDeadLetterQueueName() == null) {
+				dlqName = constructDLQName(baseQueueName);
+			}
+			else {
+				dlqName = properties.getDeadLetterQueueName();
+			}
+			Queue dlq = new Queue(dlqName, true, false, false, queueArgs(dlqName, properties, true));
 			declareQueue(dlqName, dlq);
-			final String dlxName = deadLetterExchangeName(prefix);
+			String dlxName = deadLetterExchangeName(properties);
 			final DirectExchange dlx = new DirectExchange(dlxName);
 			declareExchange(dlxName, dlx);
-			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(routingKey));
-			// Also bind with the base queue name in case republishToDlq is used, which does not know about partitioning
-			declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(baseQueueName));
+			DirectExchangeRoutingKeyConfigurer bindingBuilder = BindingBuilder.bind(dlq).to(dlx);
+			Binding dlqBinding;
+			if (properties.getDeadLetterRoutingKey() == null) {
+				dlqBinding = bindingBuilder.with(routingKey);
+			}
+			else {
+				dlqBinding = bindingBuilder.with(properties.getDeadLetterRoutingKey());
+			}
+			declareBinding(dlqName, dlqBinding);
+			if (properties instanceof RabbitConsumerProperties &&
+					((RabbitConsumerProperties) properties).isRepublishToDlq()) {
+				/*
+				 *  Also bind with the base queue name when republishToDlq is used, which does not know about
+				 * partitioning
+				 */
+				declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(baseQueueName));
+			}
 		}
 	}
 
@@ -569,8 +635,13 @@ public class RabbitMessageChannelBinder
 		addToAutoDeclareContext(rootName + ".binding", binding);
 	}
 
-	private String deadLetterExchangeName(String prefix) {
-		return prefix + DEAD_LETTER_EXCHANGE;
+	private String deadLetterExchangeName(RabbitCommonProperties properties) {
+		if (properties.getDeadLetterExchange() == null) {
+			return properties.getPrefix() + DEAD_LETTER_EXCHANGE;
+		}
+		else {
+			return properties.getDeadLetterExchange();
+		}
 	}
 
 	private void addToAutoDeclareContext(String name, Object bean) {

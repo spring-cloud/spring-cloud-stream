@@ -27,8 +27,6 @@ import org.springframework.util.Assert;
  */
 public class RabbitConsumerProperties extends RabbitCommonProperties {
 
-	private String prefix = "";
-
 	private boolean transacted;
 
 	private AcknowledgeMode acknowledgeMode = AcknowledgeMode.AUTO;
@@ -41,8 +39,6 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	private int txSize = 1;
 
-	private boolean autoBindDlq;
-
 	private boolean durableSubscription = true;
 
 	private boolean republishToDlq;
@@ -52,14 +48,6 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	private String[] replyHeaderPatterns = new String[] {"STANDARD_REPLY_HEADERS", "*"};
 
 	private long recoveryInterval = 5000;
-
-	public String getPrefix() {
-		return prefix;
-	}
-
-	public void setPrefix(String prefix) {
-		this.prefix = prefix;
-	}
 
 	public boolean isTransacted() {
 		return transacted;
@@ -111,14 +99,6 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setTxSize(int txSize) {
 		this.txSize = txSize;
-	}
-
-	public boolean isAutoBindDlq() {
-		return autoBindDlq;
-	}
-
-	public void setAutoBindDlq(boolean autoBindDlq) {
-		this.autoBindDlq = autoBindDlq;
 	}
 
 	public boolean isDurableSubscription() {

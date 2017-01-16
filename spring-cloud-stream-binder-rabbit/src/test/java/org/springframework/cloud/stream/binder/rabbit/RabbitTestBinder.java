@@ -75,6 +75,7 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 		}
 		this.exchanges.add(properties.getExtension().getPrefix() + name);
 		this.prefixes.add(properties.getExtension().getPrefix());
+		deadLetters(properties.getExtension());
 		return super.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
@@ -89,7 +90,17 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 			}
 		}
 		this.prefixes.add(properties.getExtension().getPrefix());
+		deadLetters(properties.getExtension());
 		return super.bindProducer(name, moduleOutputChannel, properties);
+	}
+
+	private void deadLetters(RabbitCommonProperties properties) {
+		if (properties.getDeadLetterExchange() != null) {
+			this.exchanges.add(properties.getDeadLetterQueueName());
+		}
+		if (properties.getDeadLetterQueueName() != null) {
+			this.queues.add(properties.getDeadLetterQueueName());
+		}
 	}
 
 	@Override
