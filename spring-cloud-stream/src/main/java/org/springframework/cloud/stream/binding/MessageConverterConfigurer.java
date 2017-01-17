@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
-import org.springframework.expression.EvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
@@ -52,8 +51,10 @@ import org.springframework.util.StringUtils;
  * {@link org.springframework.messaging.support.ChannelInterceptor} to
  * the message channel to set the `ContentType` header for the message (if not already set) based on the `ContentType`
  * binding property of the channel.
+ *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Maxim Kirilov
  */
 public class MessageConverterConfigurer implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
 
@@ -208,21 +209,26 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		private final BindingProperties bindingProperties;
 
-		private PartitioningInterceptor(BindingProperties bindingProperties) {
+		private final PartitionHandler partitionHandler;
+
+		PartitioningInterceptor(BindingProperties bindingProperties) {
 			this.bindingProperties = bindingProperties;
+			this.partitionHandler = new PartitionHandler(MessageConverterConfigurer.this.beanFactory,
+					ExpressionUtils.createStandardEvaluationContext(MessageConverterConfigurer.this.beanFactory),
+					null,
+					this.bindingProperties.getProducer());
 		}
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			EvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(
-					MessageConverterConfigurer.this.beanFactory);
-			PartitionHandler partitionHandler = new PartitionHandler(MessageConverterConfigurer.this
-					.beanFactory, evaluationContext, null,
-					this.bindingProperties.getProducer());
-			int partition = partitionHandler.determinePartition(message);
-			return new MutableMessageBuilderFactory().fromMessage(message)
-					.setHeader(BinderHeaders.PARTITION_HEADER, partition).build();
+			int partition = this.partitionHandler.determinePartition(message);
+			return MessageConverterConfigurer.this.messageBuilderFactory
+					.fromMessage(message)
+					.setHeader(BinderHeaders.PARTITION_HEADER, partition)
+					.build();
 
 		}
+
 	}
+
 }
