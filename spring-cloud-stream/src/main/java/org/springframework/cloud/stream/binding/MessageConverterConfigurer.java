@@ -28,7 +28,6 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
-import org.springframework.expression.EvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
@@ -54,6 +53,7 @@ import org.springframework.util.StringUtils;
  * binding property of the channel.
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Maxim Kirilov
  */
 public class MessageConverterConfigurer implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
 
@@ -207,19 +207,20 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	private final class PartitioningInterceptor extends ChannelInterceptorAdapter {
 
 		private final BindingProperties bindingProperties;
+		private final PartitionHandler partitionHandler;
 
 		private PartitioningInterceptor(BindingProperties bindingProperties) {
 			this.bindingProperties = bindingProperties;
+			this.partitionHandler = new PartitionHandler(
+					MessageConverterConfigurer.this.beanFactory,
+					ExpressionUtils.createStandardEvaluationContext(
+							MessageConverterConfigurer.this.beanFactory),
+					null, this.bindingProperties.getProducer());
 		}
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			EvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(
-					MessageConverterConfigurer.this.beanFactory);
-			PartitionHandler partitionHandler = new PartitionHandler(MessageConverterConfigurer.this
-					.beanFactory, evaluationContext, null,
-					this.bindingProperties.getProducer());
-			int partition = partitionHandler.determinePartition(message);
+			int partition = this.partitionHandler.determinePartition(message);
 			return new MutableMessageBuilderFactory().fromMessage(message)
 					.setHeader(BinderHeaders.PARTITION_HEADER, partition).build();
 
