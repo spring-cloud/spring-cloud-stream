@@ -29,7 +29,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 
 /**
  * Health indicator for Kafka.

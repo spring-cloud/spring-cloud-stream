@@ -34,13 +34,12 @@ import org.junit.ClassRule;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.kafka.admin.Kafka09AdminUtilsOperation;
-import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
-import org.springframework.retry.RetryOperations;
 
 /**
  * Integration tests for the {@link KafkaMessageChannelBinder}.
@@ -91,11 +90,6 @@ public class Kafka_09_BinderTests extends KafkaBinderTests {
 	@Override
 	protected int partitionSize(String topic) {
 		return consumerFactory().createConsumer().partitionsFor(topic).size();
-	}
-
-	@Override
-	protected void setMetadataRetryOperations(Binder binder, RetryOperations retryOperations) {
-		((Kafka09TestBinder) binder).getBinder().setMetadataRetryOperations(retryOperations);
 	}
 
 	@Override

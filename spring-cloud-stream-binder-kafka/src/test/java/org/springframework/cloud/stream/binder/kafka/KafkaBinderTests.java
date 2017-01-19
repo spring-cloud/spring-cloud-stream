@@ -38,7 +38,6 @@ import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -46,8 +45,12 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.TestUtils;
-import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.utils.KafkaTopicUtils;
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
@@ -66,7 +69,6 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.retry.RetryOperations;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -106,8 +108,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 	protected abstract KafkaBinderConfigurationProperties createConfigurationProperties();
 
 	protected abstract int partitionSize(String topic);
-
-	protected abstract void setMetadataRetryOperations(Binder binder, RetryOperations retryOperations);
 
 	protected abstract ZkUtils getZkUtils(KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties);
 
@@ -284,7 +284,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
 		backOffPolicy.setBackOffPeriod(1000);
 		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
 		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		String testTopicName = "nonexisting" + System.currentTimeMillis();
@@ -1013,7 +1012,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
 		backOffPolicy.setBackOffPeriod(1000);
 		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
 		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		String testTopicName = "createdByBroker-" + System.currentTimeMillis();
@@ -1069,7 +1067,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
 		backOffPolicy.setBackOffPeriod(1000);
 		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
 		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		Binding<?> binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
@@ -1106,7 +1103,7 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 			binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
 		}
 		catch (Exception e) {
-			assertThat(e).isInstanceOf(BinderException.class);
+			assertThat(e).isInstanceOf(ProvisioningException.class);
 			assertThat(e)
 					.hasMessageContaining("The number of expected partitions was: 3, but 1 has been found instead");
 		}
@@ -1139,7 +1136,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 			FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
 			backOffPolicy.setBackOffPeriod(1000);
 			metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-			setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
 			DirectChannel output = new DirectChannel();
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 			// this consumer must consume from partition 2
@@ -1188,7 +1184,6 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
 		backOffPolicy.setBackOffPeriod(1000);
 		metatadataRetrievalRetryOperations.setBackOffPolicy(backOffPolicy);
-		setMetadataRetryOperations(binder, metatadataRetrievalRetryOperations);
 		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		Binding<?> binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);

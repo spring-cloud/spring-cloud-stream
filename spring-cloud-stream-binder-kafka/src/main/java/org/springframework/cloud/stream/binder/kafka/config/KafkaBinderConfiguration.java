@@ -30,11 +30,14 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderJaasInitializerListener;
-import org.springframework.cloud.stream.binder.kafka.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.admin.Kafka09AdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.admin.Kafka10AdminUtilsOperation;
+import org.springframework.cloud.stream.binder.kafka.properties.JaasLoginModuleConfiguration;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
+import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
@@ -83,13 +86,17 @@ public class KafkaBinderConfiguration {
 	private AdminUtilsOperation adminUtilsOperation;
 
 	@Bean
+	KafkaTopicProvisioner provisioningProvider() {
+		return new KafkaTopicProvisioner(this.configurationProperties, this.adminUtilsOperation);
+	}
+
+	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder() {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
-				this.configurationProperties);
+				this.configurationProperties, provisioningProvider());
 		kafkaMessageChannelBinder.setCodec(this.codec);
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
-		kafkaMessageChannelBinder.setAdminUtilsOperation(adminUtilsOperation);
 		return kafkaMessageChannelBinder;
 	}
 

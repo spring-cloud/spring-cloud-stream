@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.admin.Kafka10AdminUtilsOperation;
-import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
@@ -34,14 +36,19 @@ public class Kafka10TestBinder extends AbstractKafkaTestBinder {
 
 	public Kafka10TestBinder(KafkaBinderConfigurationProperties binderConfiguration) {
 		try {
-			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(binderConfiguration);
+			AdminUtilsOperation adminUtilsOperation = new Kafka10AdminUtilsOperation();
+			KafkaTopicProvisioner provisioningProvider =
+					new KafkaTopicProvisioner(binderConfiguration, adminUtilsOperation);
+			provisioningProvider.afterPropertiesSet();
+
+			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(binderConfiguration, provisioningProvider);
+
 			binder.setCodec(getCodec());
 			ProducerListener producerListener = new LoggingProducerListener();
 			binder.setProducerListener(producerListener);
 			GenericApplicationContext context = new GenericApplicationContext();
 			context.refresh();
 			binder.setApplicationContext(context);
-			binder.setAdminUtilsOperation(new Kafka10AdminUtilsOperation());
 			binder.afterPropertiesSet();
 			this.setBinder(binder);
 		}
