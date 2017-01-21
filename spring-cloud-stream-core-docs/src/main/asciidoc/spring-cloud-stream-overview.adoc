@@ -974,7 +974,8 @@ Useful when inbound data is coming from outside Spring Cloud Stream applications
 +
 Default: `embeddedHeaders`.
 maxAttempts::
-  The number of attempts of re-processing an inbound message.
+  If processing fails, the number of attempts to process the message (including the first).
+  Set to 1 to disable retry.
 +
 Default: `3`.
 backOffInitialInterval::
