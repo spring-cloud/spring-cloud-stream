@@ -1519,22 +1519,9 @@ spring.cloud.stream.bindings.output.producer.partitionCount=5
 
 Once the message key is calculated, the partition selection process will determine the target partition as a value between `0` and `partitionCount - 1`.
 The default calculation, applicable in most scenarios, is based on the formula `key.hashCode() % partitionCount`.
-This can be customized on the binding, either by setting a SpEL expression to be evaluated against the key (via the `partitionSelectorExpression` property) or by setting a `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` implementation (via the `partitionSelectorClass` property).
+This can be customized on the binding, either by setting a SpEL expression to be evaluated against the 'key' (via the `partitionSelectorExpression` property) or by setting a `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` implementation (via the `partitionSelectorClass` property).
 
-Using the specific 'partitionSelectorExpression':
-
-----
-spring.cloud.stream.bindings.output.producer.partitionKeyExpression=payload.id
-spring.cloud.stream.bindings.output.producer.partitionSelectorExpression=payload.group
-----
-
-or using the 'partitionSelectorClass':
-
-----
-spring.cloud.stream.bindings.output.producer.partitionKeyExpression=payload.id
-spring.cloud.stream.bindings.output.producer.partitionSelectorClass=com.example.MySelector
-----
-
+The binding level properties for 'partitionSelectorExpression' and 'partitionSelectorClass' can be specified similar to the way 'partitionKeyExpression' and 'partitionKeyExtractorClass' properties are specified in the above examples.
 Additional properties can be configured for more advanced scenarios, as described in the following section.
 
 ===== Accessing application context for PartitionKeyExtractorClass
