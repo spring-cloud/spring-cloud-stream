@@ -470,8 +470,22 @@ public class KafkaMessageChannelBinder extends
 					@Override
 					public Object doWithRetry(RetryContext context) throws RuntimeException {
 
-						adminUtilsOperation.invokeCreateTopic(zkUtils, topicName, effectivePartitionCount,
-								configurationProperties.getReplicationFactor(), new Properties());
+						try {
+							adminUtilsOperation.invokeCreateTopic(zkUtils, topicName, effectivePartitionCount,
+									configurationProperties.getReplicationFactor(), new Properties());
+						}
+						catch (Exception e) {
+							String exceptionClass = e.getClass().getName();
+							if (exceptionClass.equals("kafka.common.TopicExistsException") ||
+									exceptionClass.equals("org.apache.kafka.common.errors.TopicExistsException")){
+								if (logger.isWarnEnabled()) {
+									logger.warn("Attempt to create topic: " + topicName + ". Topic already exists.");
+								}
+							}
+							else {
+								throw e;
+							}
+						}
 						return null;
 					}
 				});
