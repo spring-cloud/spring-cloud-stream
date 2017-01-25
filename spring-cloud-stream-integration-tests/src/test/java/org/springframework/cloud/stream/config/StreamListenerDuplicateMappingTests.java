@@ -23,9 +23,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.handler.annotation.SendTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -38,14 +41,14 @@ public class StreamListenerDuplicateMappingTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testDuplicateMapping() {
+	public void testMultipleMappingsWithReturnValue() {
 		ConfigurableApplicationContext context = null;
 		try {
-			context = SpringApplication.run(TestDuplicateMapping.class, "--server.port=0");
+			context = SpringApplication.run(TestMultipleMappingsWithReturnValue.class, "--server.port=0");
 			fail("Exception expected on duplicate mapping");
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).startsWith("Duplicate @StreamListener mapping");
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).startsWith(StreamListenerErrorMessages.MULTIPLE_VALUE_RETURNING_METHODS);
 		}
 		finally {
 			if (context != null) {
@@ -72,16 +75,20 @@ public class StreamListenerDuplicateMappingTests {
 		}
 	}
 
-	@EnableBinding(Sink.class)
+	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestDuplicateMapping {
+	public static class TestMultipleMappingsWithReturnValue {
 
-		@StreamListener(Sink.INPUT)
-		public void receive(Message<String> fooMessage) {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public String receive(Message<String> fooMessage) {
+			return null;
 		}
 
-		@StreamListener(Sink.INPUT)
-		public void receiveDuplicateMapping(Message<String> fooMessage) {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public String receiveDuplicateMapping(Message<String> fooMessage) {
+			return null;
 		}
 	}
 
