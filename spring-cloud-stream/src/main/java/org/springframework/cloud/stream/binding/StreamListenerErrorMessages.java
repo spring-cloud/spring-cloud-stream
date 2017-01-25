@@ -60,4 +60,6 @@ public abstract class StreamListenerErrorMessages {
 
 	public static final String INVALID_OUTPUT_VALUES = "Cannot set both output (@Output/@SendTo) method annotation value"
 			+ " and @Output annotation as a method parameter";
+
+	public static final String CONDITION_ON_DECLARATIVE_METHOD = "Cannot set a condition when using @StreamListener in declarative mode";
 }

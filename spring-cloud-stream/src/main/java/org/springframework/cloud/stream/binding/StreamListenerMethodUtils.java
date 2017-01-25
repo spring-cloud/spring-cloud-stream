@@ -61,7 +61,7 @@ public class StreamListenerMethodUtils {
 
 	protected static void validateStreamListenerMethod(Method method, int inputAnnotationCount,
 			int outputAnnotationCount, String methodAnnotatedInboundName, String methodAnnotatedOutboundName,
-			boolean isDeclarative) {
+			boolean isDeclarative, StreamListener streamListener) {
 		int methodArgumentsLength = method.getParameterTypes().length;
 		if (!isDeclarative) {
 			Assert.isTrue(inputAnnotationCount == 0 && outputAnnotationCount == 0,
@@ -83,6 +83,8 @@ public class StreamListenerMethodUtils {
 			Assert.isTrue(outputAnnotationCount == 0, StreamListenerErrorMessages.INVALID_OUTPUT_VALUES);
 		}
 		if (isDeclarative) {
+			Assert.isTrue(!StringUtils.hasText(streamListener.condition()),
+					StreamListenerErrorMessages.CONDITION_ON_DECLARATIVE_METHOD);
 			for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
 				MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
 				if (methodParameter.hasParameterAnnotation(Input.class)) {

@@ -18,7 +18,7 @@ package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +28,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
@@ -35,17 +36,21 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
-import org.springframework.messaging.Message;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.util.Assert;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -59,11 +64,15 @@ import org.springframework.util.StringUtils;
 public class StreamListenerAnnotationBeanPostProcessor
 		implements BeanPostProcessor, ApplicationContextAware, SmartInitializingSingleton {
 
-	private final DestinationResolver<MessageChannel> binderAwareChannelResolver;
+	@Autowired
+	@Lazy
+	private DestinationResolver<MessageChannel> binderAwareChannelResolver;
 
-	private final MessageHandlerMethodFactory messageHandlerMethodFactory;
+	@Autowired
+	@Lazy
+	private MessageHandlerMethodFactory messageHandlerMethodFactory;
 
-	private final Map<String, InvocableHandlerMethod> mappedBindings = new HashMap<>();
+	private final MultiValueMap<String, StreamListenerHandlerMethodMapping> mappedListenerMethods = new LinkedMultiValueMap<>();
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -71,44 +80,40 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
 
-	public StreamListenerAnnotationBeanPostProcessor(DestinationResolver<MessageChannel> binderAwareChannelResolver,
-			MessageHandlerMethodFactory messageHandlerMethodFactory) {
-		Assert.notNull(binderAwareChannelResolver, "Destination resolver cannot be null");
-		Assert.notNull(messageHandlerMethodFactory, "Message handler method factory cannot be null");
-		this.binderAwareChannelResolver = binderAwareChannelResolver;
-		this.messageHandlerMethodFactory = messageHandlerMethodFactory;
-	}
+	private EvaluationContext evaluationContext;
 
 	@Override
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public final void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-		Map<String, StreamListenerParameterAdapter> parameterAdapterMap =
-				BeanFactoryUtils.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerParameterAdapter.class);
+		Map<String, StreamListenerParameterAdapter> parameterAdapterMap = BeanFactoryUtils
+				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerParameterAdapter.class);
 		for (StreamListenerParameterAdapter parameterAdapter : parameterAdapterMap.values()) {
 			this.streamListenerParameterAdapters.add(parameterAdapter);
 		}
-		Map<String, StreamListenerResultAdapter> resultAdapterMap =
-				BeanFactoryUtils.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerResultAdapter.class);
+		Map<String, StreamListenerResultAdapter> resultAdapterMap = BeanFactoryUtils
+				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerResultAdapter.class);
 		this.streamListenerResultAdapters.add(new MessageChannelStreamListenerResultAdapter());
 		for (StreamListenerResultAdapter resultAdapter : resultAdapterMap.values()) {
 			this.streamListenerResultAdapters.add(resultAdapter);
 		}
+		this.evaluationContext = new StandardEvaluationContext();
 	}
 
 	@Override
-	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+	public final Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 		return bean;
 	}
 
 	@Override
-	public Object postProcessAfterInitialization(final Object bean, String beanName) throws BeansException {
+	public final Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
 		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
 		ReflectionUtils.doWithMethods(targetClass, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
 				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
 				if (streamListener != null && !method.isBridge()) {
+					streamListener = postProcessAnnotation(streamListener, method);
 					Assert.isTrue(method.getAnnotation(Input.class) == null,
 							StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
 					String methodAnnotatedInboundName = streamListener.value();
@@ -119,7 +124,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 							methodAnnotatedOutboundName);
 					StreamListenerMethodUtils.validateStreamListenerMethod(method, inputAnnotationCount,
 							outputAnnotationCount, methodAnnotatedInboundName, methodAnnotatedOutboundName,
-							isDeclarative);
+							isDeclarative, streamListener);
 					if (!method.getReturnType().equals(Void.TYPE)) {
 						if (!StringUtils.hasText(methodAnnotatedOutboundName)) {
 							if (outputAnnotationCount == 0) {
@@ -141,6 +146,18 @@ public class StreamListenerAnnotationBeanPostProcessor
 			}
 		});
 		return bean;
+	}
+
+	/**
+	 * Extension point, allowing subclasses to customize the {@link StreamListener} annotation detected by
+	 * the postprocessor.
+	 *
+	 * @param originalAnnotation the original annotation
+	 * @param annotatedMethod the method on which the annotation has been found
+	 * @return the postprocessed {@link StreamListener} annotation
+	 */
+	protected StreamListener postProcessAnnotation(StreamListener originalAnnotation, Method annotatedMethod) {
+		return originalAnnotation;
 	}
 
 	private boolean checkDeclarativeMethod(Method method, String methodAnnotatedInboundName,
@@ -232,7 +249,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 			}
 		}
 		try {
-			if (method.getReturnType().equals(Void.TYPE)) {
+			if (Void.TYPE.equals(method.getReturnType())) {
 				method.invoke(bean, arguments);
 			}
 			else {
@@ -260,24 +277,13 @@ public class StreamListenerAnnotationBeanPostProcessor
 		}
 	}
 
-	protected void registerHandlerMethodOnListenedChannel(Method method, StreamListener streamListener, Object bean) {
-		Method targetMethod = checkProxy(method, bean);
+	protected final void registerHandlerMethodOnListenedChannel(Method method, StreamListener streamListener, Object bean) {
 		Assert.hasText(streamListener.value(), "The binding name cannot be null");
-		final InvocableHandlerMethod invocableHandlerMethod = this.messageHandlerMethodFactory
-				.createInvocableHandlerMethod(bean, targetMethod);
 		if (!StringUtils.hasText(streamListener.value())) {
 			throw new BeanInitializationException("A bound component name must be specified");
 		}
-		if (this.mappedBindings.containsKey(streamListener.value())) {
-			throw new BeanInitializationException("Duplicate @" + StreamListener.class.getSimpleName()
-					+ " mapping for '" + streamListener.value() + "' on " + invocableHandlerMethod.getShortLogMessage()
-					+ " already existing for " + this.mappedBindings.get(streamListener.value()).getShortLogMessage());
-		}
-		this.mappedBindings.put(streamListener.value(), invocableHandlerMethod);
-		SubscribableChannel channel = this.applicationContext.getBean(streamListener.value(),
-				SubscribableChannel.class);
 		final String defaultOutputChannel = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
-		if (invocableHandlerMethod.isVoid()) {
+		if (Void.TYPE.equals(method.getReturnType())) {
 			Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
 					"An output channel cannot be specified for a method that does not return a value");
 		}
@@ -286,22 +292,45 @@ public class StreamListenerAnnotationBeanPostProcessor
 					"An output channel must be specified for a method that can return a value");
 		}
 		StreamListenerMethodUtils.validateStreamListenerMessageHandler(method);
-		StreamListenerMessageHandler handler = new StreamListenerMessageHandler(invocableHandlerMethod);
-		handler.setApplicationContext(this.applicationContext);
-		handler.setChannelResolver(this.binderAwareChannelResolver);
-		if (!StringUtils.isEmpty(defaultOutputChannel)) {
-			handler.setOutputChannelName(defaultOutputChannel);
-		}
-		handler.afterPropertiesSet();
-		channel.subscribe(handler);
+		mappedListenerMethods.add(streamListener.value(),
+				new StreamListenerHandlerMethodMapping(bean, method, streamListener.condition(), defaultOutputChannel));
 	}
 
 	@Override
-	public void afterSingletonsInstantiated() {
-		// Dump the mappings after the context has been created, ensuring that beans can
-		// be processed correctly
-		// again.
-		this.mappedBindings.clear();
+	public final void afterSingletonsInstantiated() {
+		for (Map.Entry<String, List<StreamListenerHandlerMethodMapping>> mappedBindingEntry : mappedListenerMethods
+				.entrySet()) {
+			Collection<DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler> handlerMethods = new ArrayList<>();
+			for (StreamListenerHandlerMethodMapping mapping : mappedBindingEntry.getValue()) {
+				final InvocableHandlerMethod invocableHandlerMethod = this.messageHandlerMethodFactory
+						.createInvocableHandlerMethod(mapping.getTargetBean(),
+								checkProxy(mapping.getMethod(), mapping.getTargetBean()));
+				StreamListenerMessageHandler streamListenerMessageHandler = new StreamListenerMessageHandler(
+						invocableHandlerMethod);
+				streamListenerMessageHandler.setApplicationContext(this.applicationContext);
+				streamListenerMessageHandler.setBeanFactory(this.applicationContext.getBeanFactory());
+				if (StringUtils.hasText(mapping.getDefaultOutputChannel())) {
+					streamListenerMessageHandler.setOutputChannelName(mapping.getDefaultOutputChannel());
+				}
+				streamListenerMessageHandler.afterPropertiesSet();
+				if (StringUtils.hasText(mapping.getCondition())) {
+					Expression condition = new SpelExpressionParser().parseExpression(mapping.getCondition());
+					handlerMethods.add(new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler(
+							condition, streamListenerMessageHandler));
+				}
+				else {
+					handlerMethods.add(new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler(
+							null, streamListenerMessageHandler));
+				}
+			}
+			DispatchingStreamListenerMessageHandler handler = new DispatchingStreamListenerMessageHandler(
+					handlerMethods, this.evaluationContext);
+			handler.setApplicationContext(this.applicationContext);
+			handler.setChannelResolver(this.binderAwareChannelResolver);
+			handler.afterPropertiesSet();
+			applicationContext.getBean(mappedBindingEntry.getKey(), SubscribableChannel.class).subscribe(handler);
+		}
+		this.mappedListenerMethods.clear();
 	}
 
 	private Method checkProxy(Method methodArg, Object bean) {
@@ -337,33 +366,38 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return method;
 	}
 
-	private final class StreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
+	private class StreamListenerHandlerMethodMapping {
 
-		private final InvocableHandlerMethod invocableHandlerMethod;
+		private Object targetBean;
 
-		private StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod) {
-			this.invocableHandlerMethod = invocableHandlerMethod;
+		private Method method;
+
+		private String condition;
+
+		private String defaultOutputChannel;
+
+		StreamListenerHandlerMethodMapping(Object targetBean, Method method, String condition,
+				String defaultOutputChannel) {
+			this.targetBean = targetBean;
+			this.method = method;
+			this.condition = condition;
+			this.defaultOutputChannel = defaultOutputChannel;
 		}
 
-		@Override
-		protected boolean shouldCopyRequestHeaders() {
-			return false;
+		Object getTargetBean() {
+			return targetBean;
 		}
 
-		@Override
-		protected Object handleRequestMessage(Message<?> requestMessage) {
-			try {
-				return this.invocableHandlerMethod.invoke(requestMessage);
-			}
-			catch (Exception e) {
-				if (e instanceof MessagingException) {
-					throw (MessagingException) e;
-				}
-				else {
-					throw new MessagingException(requestMessage,
-							"Exception thrown while invoking " + this.invocableHandlerMethod.getShortLogMessage(), e);
-				}
-			}
+		Method getMethod() {
+			return method;
+		}
+
+		String getCondition() {
+			return condition;
+		}
+
+		String getDefaultOutputChannel() {
+			return defaultOutputChannel;
 		}
 	}
 

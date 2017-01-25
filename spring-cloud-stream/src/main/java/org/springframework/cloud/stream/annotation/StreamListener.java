@@ -23,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 
 /**
@@ -131,6 +132,18 @@ public @interface StreamListener {
 	/**
 	 * The name of the binding target (e.g. channel) that the method subscribes to.
 	 */
+	@AliasFor("target")
 	String value() default "";
 
+	/**
+	 * The name of the binding target (e.g. channel) that the method subscribes to.
+	 * @return
+	 */
+	@AliasFor("value")
+	String target()  default "";
+
+	/**
+	 * A condition that must be met by all items that are dispatched to this method.
+	 */
+	String condition() default "";
 }
