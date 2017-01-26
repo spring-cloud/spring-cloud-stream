@@ -203,11 +203,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		}
 	}
 
-	final MessageValues deserializePayloadIfNecessary(Message<?> message) {
+	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
 		return deserializePayloadIfNecessary(new MessageValues(message));
 	}
 
-	final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
+	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
 		Object originalPayload = messageValues.getPayload();
 		MimeType contentType = this.contentTypeResolver.resolve(messageValues);
 		Object payload = deserializePayload(originalPayload, contentType);
