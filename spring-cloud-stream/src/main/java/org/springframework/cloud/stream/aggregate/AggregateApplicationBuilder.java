@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,47 @@
 
 package org.springframework.cloud.stream.aggregate;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.EndpointCorsProperties;
+import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
+import org.springframework.boot.actuate.autoconfigure.ManagementServerPropertiesAutoConfiguration;
+import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
 import org.springframework.boot.actuate.endpoint.MetricReaderPublicMetrics;
 import org.springframework.boot.actuate.endpoint.MetricsEndpoint;
+import org.springframework.boot.actuate.endpoint.mvc.AbstractEndpointMvcAdapter;
+import org.springframework.boot.actuate.endpoint.mvc.AbstractMvcEndpoint;
+import org.springframework.boot.actuate.endpoint.mvc.EndpointHandlerMapping;
+import org.springframework.boot.actuate.endpoint.mvc.EndpointHandlerMappingCustomizer;
+import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint;
+import org.springframework.boot.actuate.endpoint.mvc.MvcEndpointSecurityInterceptor;
+import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoints;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.web.BasicErrorController;
+import org.springframework.boot.autoconfigure.web.DispatcherServletAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.HttpMessageConvertersAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.ServerPropertiesAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
 import org.springframework.boot.bind.PropertySourcesPropertyValues;
 import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.boot.bind.RelaxedNames;
@@ -46,10 +68,16 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.PropertySources;
 import org.springframework.integration.monitor.IntegrationMBeanExporter;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 /**
  * Application builder for {@link AggregateApplication}.
@@ -202,7 +230,9 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		}
 		if (this.parentContext == null) {
 			if (Boolean.TRUE.equals(this.webEnvironment)) {
-				this.addParentSources(new Object[] { EmbeddedServletContainerAutoConfiguration.class });
+				this.addParentSources(new Object[]{EmbeddedServletContainerAutoConfiguration.class, WebMvcAutoConfiguration.class,
+						DispatcherServletAutoConfiguration.class, HttpMessageConvertersAutoConfiguration.class,
+						ManagementServerPropertiesAutoConfiguration.class, ServerPropertiesAutoConfiguration.class});
 			}
 			this.parentContext = AggregateApplicationUtils.createParentContext(
 					this.parentSources.toArray(new Object[0]),
@@ -224,7 +254,6 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		PropertySources propertySources = this.parentContext.getEnvironment()
 				.getPropertySources();
 		for (Map.Entry<AppConfigurer, String> appConfigurerEntry : appConfigurers.entrySet()) {
-
 			AppConfigurer appConfigurer = appConfigurerEntry.getKey();
 			String namespace = appConfigurerEntry.getValue().toLowerCase();
 			Set<String> argsToUpdate = new LinkedHashSet<>();
@@ -264,15 +293,71 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 				appConfigurer.args(argsToUpdate.toArray(new String[0]));
 			}
 		}
-		for (int i = apps.size() - 1; i >= 0; i--) {
-			AppConfigurer<?> appConfigurer = apps.get(i);
-			appConfigurer.embed();
-		}
+		exposeWebEndpoints(apps);
 		if (BeanFactoryUtils.beansOfTypeIncludingAncestors(this.parentContext, AggregateApplication.class)
 				.size() == 0) {
 			this.parentContext.getBeanFactory().registerSingleton("aggregateApplicationAccessor", this);
 		}
 		return this.parentContext;
+	}
+
+	private void exposeWebEndpoints(List<AppConfigurer<?>> apps) {
+		Set<MvcEndpoint> mvcEndpointsToAdd = new HashSet<>();
+		Map<RequestMappingInfo, Map<Object, Method>> requestMappingInfo = new HashMap<>();
+		for (int i = apps.size() - 1; i >= 0; i--) {
+			AppConfigurer<?> appConfigurer = apps.get(i);
+			ConfigurableApplicationContext childContext = appConfigurer.embed();
+			// Map the Spring MVC RequestMapping into parent context
+			AbstractHandlerMethodMapping handlerMethodMapping = childContext.getBean(AbstractHandlerMethodMapping.class);
+			Map<RequestMappingInfo, HandlerMethod> mappings = handlerMethodMapping.getHandlerMethods();
+			for (Map.Entry<RequestMappingInfo, HandlerMethod> mapping : mappings.entrySet()) {
+				Map<Object, Method> handlerMethodMap = new HashMap<>();
+				HandlerMethod handlerMethod = mapping.getValue();
+				if (!BasicErrorController.class.isAssignableFrom(handlerMethod.getBeanType())) {
+					Object handlerBean = handlerMethod.getBean();
+					try {
+						this.parentContext.getBeanFactory().getBean(handlerBean.toString());
+					}
+					catch (NoSuchBeanDefinitionException e) {
+						// ChildContext is expected to have the bean as the request mapping is retrieved from the child context.
+						this.parentContext.getBeanFactory().registerSingleton(handlerBean.toString(), childContext.getBean(handlerBean.toString()));
+					}
+					handlerMethodMap.put(handlerBean, handlerMethod.getMethod());
+				}
+				requestMappingInfo.put(mapping.getKey(), handlerMethodMap);
+			}
+			// Map the actuator web endpoints
+			MvcEndpoints mvcEndpoints = new MvcEndpoints();
+			mvcEndpoints.setApplicationContext(childContext);
+			try {
+				mvcEndpoints.afterPropertiesSet();
+			}
+			catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			for (MvcEndpoint mvcEndpoint : mvcEndpoints.getEndpoints()) {
+				String namespaceValue = Pattern.compile("\\w+").matcher(appConfigurer.getNamespace()).matches() ? appConfigurer.getNamespace() : "child_" + i;
+				if (mvcEndpoint instanceof AbstractMvcEndpoint) {
+					((AbstractMvcEndpoint) mvcEndpoint).setPath("/" + namespaceValue + "/" + mvcEndpoint.getPath());
+				}
+				else if (mvcEndpoint instanceof AbstractEndpointMvcAdapter) {
+					((AbstractEndpointMvcAdapter) mvcEndpoint).setPath("/" + namespaceValue + "/" + mvcEndpoint.getPath());
+				}
+				else if (mvcEndpoint instanceof AbstractEndpoint) {
+					((AbstractEndpoint) mvcEndpoint).setId(namespaceValue + "_" + ((AbstractEndpoint) mvcEndpoint).getId());
+				}
+			}
+			mvcEndpointsToAdd.addAll(mvcEndpoints.getEndpoints());
+		}
+		MvcEndpointsHolder mvcEndpointsHolder = new MvcEndpointsHolder(mvcEndpointsToAdd);
+		this.parentContext.getBeanFactory().registerSingleton("mvcEndpointsHolder", mvcEndpointsHolder);
+		// invoke lazy bean to get instantiated after setting mvcEndpoints
+		EndpointHandlerMapping endpointHandlerMapping = this.parentContext.getBean(EndpointHandlerMapping.class);
+		for (Map.Entry<RequestMappingInfo, Map<Object, Method>> mappingInfoMapEntry : requestMappingInfo.entrySet()) {
+			for (Map.Entry<Object, Method> handlerMethodEntry : mappingInfoMapEntry.getValue().entrySet()) {
+				endpointHandlerMapping.registerMapping(mappingInfoMapEntry.getKey(), handlerMethodEntry.getKey(), handlerMethodEntry.getValue());
+			}
+		}
 	}
 
 	private boolean selfContained() {
@@ -292,36 +377,6 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 	private ChildContextBuilder childContext(Class<?> app, ConfigurableApplicationContext parentContext,
 			String namespace) {
 		return new ChildContextBuilder(AggregateApplicationUtils.embedApp(parentContext, namespace, app));
-	}
-
-	private static class ChildContextHolder {
-
-		private final ConfigurableApplicationContext childContext;
-
-		ChildContextHolder(ConfigurableApplicationContext childContext) {
-			Assert.notNull(childContext, "cannot be null");
-			this.childContext = childContext;
-		}
-
-		public ConfigurableApplicationContext getChildContext() {
-			return childContext;
-		}
-	}
-
-	@ImportAutoConfiguration({ ChannelBindingAutoConfiguration.class, EndpointAutoConfiguration.class })
-	@EnableBinding
-	public static class ParentConfiguration {
-		@Bean
-		@ConditionalOnMissingBean(SharedBindingTargetRegistry.class)
-		public SharedBindingTargetRegistry sharedBindingTargetRegistry() {
-			return new SharedBindingTargetRegistry();
-		}
-
-		@Bean
-		@ConditionalOnMissingBean(SharedChannelRegistry.class)
-		public SharedChannelRegistry sharedChannelRegistry(SharedBindingTargetRegistry sharedBindingTargetRegistry) {
-			return new SharedChannelRegistry(sharedBindingTargetRegistry);
-		}
 	}
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
@@ -412,7 +467,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			return applicationBuilder.run(args);
 		}
 
-		void embed() {
+		ConfigurableApplicationContext embed() {
 			final ConfigurableApplicationContext childContext = childContext(this.app,
 					AggregateApplicationBuilder.this.parentContext, this.namespace).args(this.args).config(this.names)
 							.profiles(this.profiles).run();
@@ -441,6 +496,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 								new MetricReaderPublicMetrics(new NamespaceAwareSpringIntegrationMetricReader(
 										this.namespace, childContext.getBean(IntegrationMBeanExporter.class))));
 			}
+			return childContext;
 		}
 
 		public AggregateApplication build() {
@@ -500,4 +556,130 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 
 	}
 
+	private static class ChildContextHolder {
+
+		private final ConfigurableApplicationContext childContext;
+
+		ChildContextHolder(ConfigurableApplicationContext childContext) {
+			Assert.notNull(childContext, "cannot be null");
+			this.childContext = childContext;
+		}
+
+		public ConfigurableApplicationContext getChildContext() {
+			return childContext;
+		}
+	}
+
+	@EnableBinding
+	@ImportAutoConfiguration({ChannelBindingAutoConfiguration.class})
+	public static class ParentConfiguration {
+
+		@Autowired(required = false)
+		private ManagementServerProperties managementServerProperties;
+
+		@Autowired(required = false)
+		private List<EndpointHandlerMappingCustomizer> mappingCustomizers;
+
+		@Autowired(required = false)
+		private EndpointCorsProperties corsProperties;
+
+		@Bean
+		@ConditionalOnMissingBean(SharedBindingTargetRegistry.class)
+		public SharedBindingTargetRegistry sharedBindingTargetRegistry() {
+			return new SharedBindingTargetRegistry();
+		}
+
+		@Bean
+		@ConditionalOnMissingBean(SharedChannelRegistry.class)
+		public SharedChannelRegistry sharedChannelRegistry(SharedBindingTargetRegistry sharedBindingTargetRegistry) {
+			return new SharedChannelRegistry(sharedBindingTargetRegistry);
+		}
+
+		@Bean
+		@Lazy
+		@ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.mvc.MvcEndpointSecurityInterceptor")
+		public EndpointHandlerMapping endpointHandlerMapping(MvcEndpointsHolder mvcEndpointsHolder) {
+			EndpointHandlerMapping mapping = null;
+			if (this.corsProperties != null) {
+				CorsConfiguration corsConfiguration = getCorsConfiguration(this.corsProperties);
+				mapping = new EndpointHandlerMapping(mvcEndpointsHolder.getMvcEndpoints(), corsConfiguration);
+			}
+			else {
+				mapping = new EndpointHandlerMapping(mvcEndpointsHolder.getMvcEndpoints(), null);
+			}
+			if (managementServerProperties != null) {
+				mapping.setPrefix(this.managementServerProperties.getContextPath());
+				MvcEndpointSecurityInterceptor securityInterceptor = new MvcEndpointSecurityInterceptor(
+						this.managementServerProperties.getSecurity().isEnabled(),
+						this.managementServerProperties.getSecurity().getRoles());
+				mapping.setSecurityInterceptor(securityInterceptor);
+			}
+			if (this.mappingCustomizers != null) {
+				for (EndpointHandlerMappingCustomizer customizer : this.mappingCustomizers) {
+					customizer.customize(mapping);
+				}
+			}
+			return mapping;
+		}
+
+		@Bean
+		@Lazy
+		@ConditionalOnMissingClass("org.springframework.boot.actuate.endpoint.mvc.MvcEndpointSecurityInterceptor")
+		public EndpointHandlerMapping endpointHandlerMappingWithoutSecurityInterceptor(MvcEndpointsHolder mvcEndpointsHolder) {
+			EndpointHandlerMapping mapping = null;
+			if (this.corsProperties != null) {
+				CorsConfiguration corsConfiguration = getCorsConfiguration(this.corsProperties);
+				mapping = new EndpointHandlerMapping(mvcEndpointsHolder.getMvcEndpoints(), corsConfiguration);
+			}
+			else {
+				mapping = new EndpointHandlerMapping(mvcEndpointsHolder.getMvcEndpoints(), null);
+			}
+			if (managementServerProperties != null) {
+				mapping.setPrefix(this.managementServerProperties.getContextPath());
+			}
+			if (this.mappingCustomizers != null) {
+				for (EndpointHandlerMappingCustomizer customizer : this.mappingCustomizers) {
+					customizer.customize(mapping);
+				}
+			}
+			return mapping;
+		}
+
+		private CorsConfiguration getCorsConfiguration(EndpointCorsProperties properties) {
+			if (CollectionUtils.isEmpty(properties.getAllowedOrigins())) {
+				return null;
+			}
+			CorsConfiguration configuration = new CorsConfiguration();
+			configuration.setAllowedOrigins(properties.getAllowedOrigins());
+			if (!CollectionUtils.isEmpty(properties.getAllowedHeaders())) {
+				configuration.setAllowedHeaders(properties.getAllowedHeaders());
+			}
+			if (!CollectionUtils.isEmpty(properties.getAllowedMethods())) {
+				configuration.setAllowedMethods(properties.getAllowedMethods());
+			}
+			if (!CollectionUtils.isEmpty(properties.getExposedHeaders())) {
+				configuration.setExposedHeaders(properties.getExposedHeaders());
+			}
+			if (properties.getMaxAge() != null) {
+				configuration.setMaxAge(properties.getMaxAge());
+			}
+			if (properties.getAllowCredentials() != null) {
+				configuration.setAllowCredentials(properties.getAllowCredentials());
+			}
+			return configuration;
+		}
+	}
+
+	public static class MvcEndpointsHolder {
+
+		private final Set<MvcEndpoint> mvcEndpoints;
+
+		public MvcEndpointsHolder(Set<MvcEndpoint> mvcEndpoints) {
+			this.mvcEndpoints = mvcEndpoints;
+		}
+
+		public Set<MvcEndpoint> getMvcEndpoints() {
+			return mvcEndpoints;
+		}
+	}
 }
