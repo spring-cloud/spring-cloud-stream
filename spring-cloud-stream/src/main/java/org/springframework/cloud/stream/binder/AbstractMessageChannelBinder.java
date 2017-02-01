@@ -17,6 +17,10 @@
 package org.springframework.cloud.stream.binder;
 
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.cloud.stream.provisioning.ConsumerDestination;
+import org.springframework.cloud.stream.provisioning.ProducerDestination;
+import org.springframework.cloud.stream.provisioning.ProvisioningException;
+import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -38,21 +42,18 @@ import org.springframework.util.MimeType;
  * {@link AbstractBinder} that serves as base class for {@link MessageChannel}
  * binders. Implementors must implement the following methods:
  * <ul>
- * <li>{@link #createProducerDestinationIfNecessary(String, ProducerProperties)}</li>
- * <li>{@link #createProducerMessageHandler(PD, ProducerProperties)} </li>
- * <li>{@link #createConsumerDestinationIfNecessary(String, String, ConsumerProperties)} </li>
- * <li>{@link #createConsumerEndpoint(String, String, CD, ConsumerProperties)}</li>
+ * <li>{@link #createProducerMessageHandler(ProducerDestination, ProducerProperties)} </li>
+ * <li>{@link #createConsumerEndpoint(ConsumerDestination, String, ConsumerProperties)} </li>
  * </ul>
  *
  * @param <C>  the consumer properties type
  * @param <P>  the producer properties type
- * @param <CD> the consumer destination type
- * @param <PD> the producer destination type
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Soby Chacko
  * @since 1.1
  */
-public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, CD, PD>
+public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties>
 		extends AbstractBinder<MessageChannel, C, P> {
 
 	protected static final ExpressionParser EXPRESSION_PARSER = new SpelExpressionParser();
@@ -73,18 +74,22 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private final String[] headersToEmbed;
 
-	public AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed) {
+	private final ProvisioningProvider<C, P> provisioningProvider;
+
+	public AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
+										ProvisioningProvider<C, P> provisioningProvider) {
 		this.supportsHeadersNatively = supportsHeadersNatively;
 		this.headersToEmbed = headersToEmbed;
+		this.provisioningProvider = provisioningProvider;
 	}
 
 	/**
 	 * Binds an outbound channel to a given destination. The implementation delegates to
-	 * {@link #createProducerDestinationIfNecessary(String, ProducerProperties)}
-	 * and {@link #createProducerMessageHandler(PD, ProducerProperties)} for
+	 * {@link ProvisioningProvider#provisionProducerDestination(String, ProducerProperties)}
+	 * and {@link #createProducerMessageHandler(ProducerDestination, ProducerProperties)} for
 	 * handling the middleware specific logic. If the returned producer message handler is an
 	 * {@link InitializingBean} then {@link InitializingBean#afterPropertiesSet()} will be
-	 * called on it. Similarly, if the returned producer message handler endpoint is a
+	 * called on it. Similarly, if the returned producer message handler e	ndpoint is a
 	 * {@link Lifecycle}, then {@link Lifecycle#start()} will be called on it.
 	 *
 	 * @param destination        the name of the destination
@@ -98,9 +103,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			final P producerProperties) throws BinderException {
 		Assert.isInstanceOf(SubscribableChannel.class, outputChannel,
 				"Binding is supported only for SubscribableChannel instances");
-		PD producerDestination = createProducerDestinationIfNecessary(destination, producerProperties);
 		final MessageHandler producerMessageHandler;
+		final ProducerDestination producerDestination;
 		try {
+			producerDestination = this.provisioningProvider.provisionProducerDestination(destination, producerProperties);
 			producerMessageHandler = createProducerMessageHandler(producerDestination, producerProperties);
 			if (producerMessageHandler instanceof InitializingBean) {
 				((InitializingBean) producerMessageHandler).afterPropertiesSet();
@@ -109,6 +115,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		catch (Exception e) {
 			if (e instanceof BinderException) {
 				throw (BinderException) e;
+			}
+			else if (e instanceof ProvisioningException) {
+				throw (ProvisioningException) e;
 			}
 			else {
 				throw new BinderException("Exception thrown while building outbound endpoint", e);
@@ -126,19 +135,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			@Override
 			public void afterUnbind() {
-				afterUnbindProducer(destination, producerProperties);
+				afterUnbindProducer(producerDestination, producerProperties);
 			}
 		};
 	}
-
-	/**
-	 * Creates target destinations for outbound channels. The implementation
-	 * is middleware-specific.
-	 *
-	 * @param name       the name of the producer destination
-	 * @param properties producer properties
-	 */
-	protected abstract PD createProducerDestinationIfNecessary(String name, P properties);
 
 	/**
 	 * Creates a {@link MessageHandler} with the ability to send data to the
@@ -158,7 +158,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @return the message handler for sending data to the target middleware
 	 * @throws Exception
 	 */
-	protected abstract MessageHandler createProducerMessageHandler(PD destination, P producerProperties)
+	protected abstract MessageHandler createProducerMessageHandler(ProducerDestination destination, P producerProperties)
 			throws Exception;
 
 	/**
@@ -168,13 +168,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @param destination        the bound destination
 	 * @param producerProperties the producer properties
 	 */
-	protected void afterUnbindProducer(String destination, P producerProperties) {
+	protected void afterUnbindProducer(ProducerDestination destination, P producerProperties) {
 	}
 
 	/**
 	 * Binds an inbound channel to a given destination. The implementation delegates to
-	 * {@link #createConsumerDestinationIfNecessary(String, String, ConsumerProperties)}
-	 * and {@link #createConsumerEndpoint(String, String, Object, ConsumerProperties)}
+	 * {@link ProvisioningProvider#provisionConsumerDestination(String, String, ConsumerProperties)}
+	 * and {@link #createConsumerEndpoint(ConsumerDestination, String, ConsumerProperties)}
 	 * for handling middleware-specific logic. If the returned consumer endpoint is an
 	 * {@link InitializingBean} then {@link InitializingBean#afterPropertiesSet()} will be
 	 * called on it. Similarly, if the returned consumer endpoint is a {@link Lifecycle},
@@ -192,14 +192,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			final C properties) throws BinderException {
 		MessageProducer consumerEndpoint = null;
 		try {
-			CD destination = createConsumerDestinationIfNecessary(name, group, properties);
+			final ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
 			final boolean extractEmbeddedHeaders = HeaderMode.embeddedHeaders.equals(
 					properties.getHeaderMode()) && !this.supportsHeadersNatively;
 			ReceivingHandler rh = new ReceivingHandler(extractEmbeddedHeaders);
 			rh.setOutputChannel(inputChannel);
 			final FixedSubscriberChannel bridge = new FixedSubscriberChannel(rh);
 			bridge.setBeanName("bridge." + name);
-			consumerEndpoint = createConsumerEndpoint(name, group, destination, properties);
+			consumerEndpoint = createConsumerEndpoint(destination, group, properties);
 			consumerEndpoint.setOutputChannel(bridge);
 			if (consumerEndpoint instanceof InitializingBean) {
 				((InitializingBean) consumerEndpoint).afterPropertiesSet();
@@ -216,7 +216,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 				@Override
 				protected void afterUnbind() {
-					AbstractMessageChannelBinder.this.afterUnbindConsumer(this.name, this.group, properties);
+					AbstractMessageChannelBinder.this.afterUnbindConsumer(destination, this.group, properties);
 				}
 			};
 		}
@@ -227,6 +227,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			if (e instanceof BinderException) {
 				throw (BinderException) e;
 			}
+			else if (e instanceof ProvisioningException) {
+				throw (ProvisioningException) e;
+			}
 			else {
 				throw new BinderException("Exception thrown while starting consumer: ", e);
 			}
@@ -234,27 +237,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	/**
-	 * Creates the middleware destination the consumer will start to consume data from.
-	 *
-	 * @param name       the name of the destination
-	 * @param group      the consumer group
-	 * @param properties consumer properties
-	 * @return reference to the consumer destination
-	 */
-	protected abstract CD createConsumerDestinationIfNecessary(String name, String group, C properties);
-
-	/**
 	 * Creates {@link MessageProducer} that receives data from the consumer destination.
 	 * will be started and stopped by the binder.
 	 *
-	 * @param name        the name of the target destination
 	 * @param group       the consumer group
 	 * @param destination reference to the consumer destination
 	 * @param properties  the consumer properties
 	 * @return the consumer endpoint.
 	 */
-	protected abstract MessageProducer createConsumerEndpoint(String name, String group, CD destination,
-			C properties);
+	protected abstract MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
+			C properties) throws Exception;
 
 	/**
 	 * Invoked after the unbinding of a consumer. The binder implementation can override
@@ -264,7 +256,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @param group              the consumer group
 	 * @param consumerProperties the consumer properties
 	 */
-	protected void afterUnbindConsumer(String destination, String group, C consumerProperties) {
+	protected void afterUnbindConsumer(ConsumerDestination destination, String group, C consumerProperties) {
 	}
 
 	private final class ReceivingHandler extends AbstractReplyProducingMessageHandler {
