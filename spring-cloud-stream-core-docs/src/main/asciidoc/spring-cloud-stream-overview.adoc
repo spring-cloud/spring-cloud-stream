@@ -373,11 +373,10 @@ The channel will be injected as shown in the following example:
 @Component
 public class SendingBean {
 
-    @Autowired @Qualifier("customOutput")
     private MessageChannel output;
 
     @Autowired
-    public SendingBean(MessageChannel output) {
+    public SendingBean(@Qualifier("customOutput") MessageChannel output) {
         this.output = output;
     }
 
@@ -456,6 +455,7 @@ As with other Spring Messaging methods, method arguments can be annotated with `
 [NOTE]
 ====
 For methods which return data, you must use the `@SendTo` annotation to specify the output binding destination for data returned by the method:
+====
 
 [source,java]
 ----
