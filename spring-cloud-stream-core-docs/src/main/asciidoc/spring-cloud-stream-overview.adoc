@@ -420,7 +420,7 @@ Or you can use a processor's channels in a transformer:
 public class TransformProcessor {
   @Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
   public Object transform(String message) {
-    return message.toUpper();
+    return message.toUpperCase();
   }
 }
 ----
