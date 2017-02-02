@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.Deflater;
 
+import com.rabbitmq.http.client.domain.QueueInfo;
 import org.aopalliance.aop.Advice;
 import org.apache.commons.logging.Log;
 import org.junit.Rule;
@@ -59,6 +55,9 @@ import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.Spy;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
+import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.context.ApplicationContext;
@@ -74,7 +73,10 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.GenericMessage;
 
-import com.rabbitmq.http.client.domain.QueueInfo;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Mark Fisher
@@ -511,7 +513,7 @@ public class RabbitBinderTests extends
 
 		consumerBinding.unbind();
 
-		ApplicationContext context = TestUtils.getPropertyValue(binder, "binder.autoDeclareContext",
+		ApplicationContext context = TestUtils.getPropertyValue(binder, "binder.provisioningProvider.autoDeclareContext",
 				ApplicationContext.class);
 		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.binding")).isFalse();
 		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default")).isFalse();
@@ -896,7 +898,9 @@ public class RabbitBinderTests extends
 	public void testLateBinding() throws Exception {
 		RabbitTestSupport.RabbitProxy proxy = new RabbitTestSupport.RabbitProxy();
 		CachingConnectionFactory cf = new CachingConnectionFactory("localhost", proxy.getPort());
-		RabbitMessageChannelBinder rabbitBinder = new RabbitMessageChannelBinder(cf, new RabbitProperties());
+
+		RabbitMessageChannelBinder rabbitBinder = new RabbitMessageChannelBinder(cf, new RabbitProperties(),
+				new RabbitExchangeQueueProvisioner(cf));
 		RabbitTestBinder binder = new RabbitTestBinder(cf, rabbitBinder);
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.rabbit;
+package org.springframework.cloud.stream.binder.rabbit.properties;
 
 import org.hibernate.validator.constraints.Range;
 
@@ -26,6 +26,8 @@ import org.springframework.amqp.core.ExchangeTypes;
  *
  */
 public abstract class RabbitCommonProperties {
+
+	public static final String DEAD_LETTER_EXCHANGE = "DLX";
 
 	/**
 	 * type of exchange to declare (if necessary, and declareExchange is true).

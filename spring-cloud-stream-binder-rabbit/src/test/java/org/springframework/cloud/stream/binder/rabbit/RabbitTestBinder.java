@@ -26,6 +26,10 @@ import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
+import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.context.IntegrationContextUtils;
@@ -51,7 +55,8 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 	private final Set<String> exchanges = new HashSet<String>();
 
 	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitProperties rabbitProperties) {
-		this(connectionFactory, new RabbitMessageChannelBinder(connectionFactory, rabbitProperties));
+		this(connectionFactory, new RabbitMessageChannelBinder(connectionFactory, rabbitProperties,
+				new RabbitExchangeQueueProvisioner(connectionFactory)));
 	}
 
 	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitMessageChannelBinder binder) {

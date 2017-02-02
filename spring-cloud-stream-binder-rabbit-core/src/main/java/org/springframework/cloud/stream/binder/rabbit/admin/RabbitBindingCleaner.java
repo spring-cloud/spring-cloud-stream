@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.rabbit;
+package org.springframework.cloud.stream.binder.rabbit.admin;
 
 import java.net.URI;
 import java.util.ArrayList;

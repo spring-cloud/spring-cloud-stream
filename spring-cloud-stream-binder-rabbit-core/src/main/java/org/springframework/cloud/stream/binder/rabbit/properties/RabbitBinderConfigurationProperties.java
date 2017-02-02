@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.rabbit.config;
+package org.springframework.cloud.stream.binder.rabbit.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -22,7 +22,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author David Turanski
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.rabbit.binder")
-class RabbitBinderConfigurationProperties {
+public class RabbitBinderConfigurationProperties {
 
 	private String[] adminAddresses = new String[0];
 

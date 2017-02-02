@@ -24,8 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.binder.rabbit.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedBindingProperties;
+import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,7 +63,8 @@ public class RabbitMessageChannelBinderConfiguration {
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() {
-		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory, rabbitProperties);
+		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory, rabbitProperties,
+				provisioningProvider());
 		binder.setCodec(codec);
 		binder.setAdminAddresses(rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
@@ -81,6 +84,11 @@ public class RabbitMessageChannelBinderConfiguration {
 		GZipPostProcessor gZipPostProcessor = new GZipPostProcessor();
 		gZipPostProcessor.setLevel(rabbitBinderConfigurationProperties.getCompressionLevel());
 		return gZipPostProcessor;
+	}
+
+	@Bean
+	RabbitExchangeQueueProvisioner provisioningProvider() {
+		return new RabbitExchangeQueueProvisioner(rabbitConnectionFactory);
 	}
 }
 
