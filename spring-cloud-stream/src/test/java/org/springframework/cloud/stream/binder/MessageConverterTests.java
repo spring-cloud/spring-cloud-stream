@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
+ * @author Ilayaperumal Gopinathan
  * @since 1.0
  *
  */
@@ -47,6 +48,23 @@ public class MessageConverterTests {
 		assertThat(extracted.get("foo")).isEqualTo("bar");
 		assertThat(extracted.get("baz")).isEqualTo("quxx");
 	}
+
+	@Test
+	public void testHeaderExtractionWithDirectPayload() throws Exception {
+		EmbeddedHeadersMessageConverter converter = new EmbeddedHeadersMessageConverter();
+		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes()).setHeader("foo", "bar")
+				.setHeader("baz", "quxx").build();
+		byte[] embedded = converter.embedHeaders(new MessageValues(message), "foo", "baz");
+		assertThat(embedded[0] & 0xff).isEqualTo(0xff);
+		assertThat(new String(embedded).substring(1)).isEqualTo(
+				"\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0006\"quxx\"Hello");
+
+		MessageValues extracted = converter.extractHeaders(embedded);
+		assertThat(new String((byte[]) extracted.getPayload())).isEqualTo("Hello");
+		assertThat(extracted.get("foo")).isEqualTo("bar");
+		assertThat(extracted.get("baz")).isEqualTo("quxx");
+	}
+
 
 	@Test
 	public void testUnicodeHeader() throws Exception {
