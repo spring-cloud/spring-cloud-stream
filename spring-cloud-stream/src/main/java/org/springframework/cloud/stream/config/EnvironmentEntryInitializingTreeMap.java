@@ -90,4 +90,8 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 		return delegate.entrySet();
 	}
 
+	@Override
+	public boolean containsKey(Object key) {
+		return get(key) != null;
+	}
 }
