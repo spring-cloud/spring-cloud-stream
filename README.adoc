@@ -24,6 +24,12 @@ The latest documentation for the project can be found http://docs.spring.io/spri
 
 For Spring Cloud Stream samples, take a look to the https://github.com/spring-cloud/spring-cloud-stream-samples[samples repository].
 
+=== Question, Bugs and Enhancements
+
+We use Git Hub issues for tracking bugs and feature requests. 
+If you would like to report a bug or to suggest a feature, please open a Git Hub issue.
+Any question that is not a bug or an issue should be asked on Stack Overflow, using the `spring-cloud-stream` tag.
+
 === Contributing
 
 We love contributions.  Follow this https://github.com/spring-cloud/spring-cloud-commons#contributing[link] for more information on how to contribute.
