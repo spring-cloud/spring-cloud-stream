@@ -26,7 +26,7 @@ For Spring Cloud Stream samples, take a look to the https://github.com/spring-cl
 
 === Question, Bugs and Enhancements
 
-The project team is happy to receive feedback from the community and answer questions, as they arise.
+The project team is happy to receive feedback from the community and answer questions.
 
 We use Git Hub issues for tracking bugs and feature requests. 
 If you would like to report a bug or to suggest a feature, please open a Git Hub issue.
