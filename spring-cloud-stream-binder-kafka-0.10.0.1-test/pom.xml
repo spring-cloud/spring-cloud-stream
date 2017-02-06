@@ -6,8 +6,8 @@
 		<artifactId>spring-cloud-stream-binder-kafka-parent</artifactId>
 		<version>1.2.0.BUILD-SNAPSHOT</version>
 	</parent>
-	<artifactId>spring-cloud-stream-binder-kafka-0.10-test</artifactId>
-	<description>Spring Cloud Stream Kafka Binder 0.10 Tests</description>
+	<artifactId>spring-cloud-stream-binder-kafka-0.10.0.1-test</artifactId>
+	<description>Spring Cloud Stream Kafka Binder 0.10.0.1 Tests</description>
 	<url>http://projects.spring.io/spring-cloud</url>
 	<organization>
 		<name>Pivotal Software, Inc.</name>
@@ -16,11 +16,11 @@
 	<properties>
 		<main.basedir>${basedir}/../..</main.basedir>
 		<!--
-		   Override Kafka dependencies to Kafka 0.10 and supporting Spring Kafka and
+		   Override Kafka dependencies to Kafka 0.9.0.1 and supporting Spring Kafka and
 		   Spring Integration Kafka versions
 		-->
-		<kafka.version>0.10.0.0</kafka.version>
-		<spring-kafka.version>1.1.1.RELEASE</spring-kafka.version>
+		<kafka.version>0.10.0.1</kafka.version>
+		<spring-kafka.version>1.1.2.RELEASE</spring-kafka.version>
 		<spring-integration-kafka.version>2.1.0.RELEASE</spring-integration-kafka.version>
 	</properties>
 
@@ -99,6 +99,5 @@
 			<url>http://packages.confluent.io/maven/</url>
 		</repository>
 	</repositories>
-
 
 </project>

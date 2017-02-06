@@ -328,26 +328,18 @@ In secure environments, we strongly recommend creating topics and managing ACLs 
 
 ==== Using the binder with Apache Kafka 0.10
 
-The binder also supports connecting to Kafka 0.10 brokers.
-In order to support this, when you create the project that contains your application, include `spring-cloud-starter-stream-kafka` as you normally would do for 0.9 based applications.
-Then add these dependencies at the top of the `<dependencies>` section in the pom.xml file to override the Apache Kafka, Spring Kafka, and Spring Integration Kafka with 0.10-compatible versions as in the following example:
+The default Kafka support in Spring Cloud Stream Kafka binder is for Kafka version 0.10.1.1. The binder also supports connecting to other 0.10 based versions and 0.9 clients.
+In order to do this, when you create the project that contains your application, include `spring-cloud-starter-stream-kafka` as you normally would do for the default binder.
+Then add these dependencies at the top of the `<dependencies>` section in the pom.xml file to override the dependencies.
+
+Here is an example for downgrading your application to 0.10.0.1. Since it is still on the 0.10 line, the default `spring-kafka` and `spring-integration-kafka` versions can be retained.
 
 [source,xml]
 ----
 <dependency>
-  <groupId>org.springframework.kafka</groupId>
-  <artifactId>spring-kafka</artifactId>
-  <version>1.1.1.RELEASE</version>
-</dependency>
-<dependency>
-  <groupId>org.springframework.integration</groupId>
-  <artifactId>spring-integration-kafka</artifactId>
-  <version>2.1.0.RELEASE</version>
-</dependency>
-<dependency>
   <groupId>org.apache.kafka</groupId>
   <artifactId>kafka_2.11</artifactId>
-  <version>0.10.0.0</version>
+  <version>0.10.0.1</version>
   <exclusions>
     <exclusion>
       <groupId>org.slf4j</groupId>
@@ -355,6 +347,44 @@ Then add these dependencies at the top of the `<dependencies>` section in the po
     </exclusion>
   </exclusions>
 </dependency>
+<dependency>
+  <groupId>org.apache.kafka</groupId>
+  <artifactId>kafka-clients</artifactId>
+  <version>0.10.0.1</version>
+</dependency>
+----
+
+Here is another example of using 0.9.0.1 version.
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.kafka</groupId>
+  <artifactId>spring-kafka</artifactId>
+  <version>1.0.5.RELEASE</version>
+</dependency>
+<dependency>
+  <groupId>org.springframework.integration</groupId>
+  <artifactId>spring-integration-kafka</artifactId>
+  <version>2.0.1.RELEASE</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.kafka</groupId>
+  <artifactId>kafka_2.11</artifactId>
+  <version>0.9.0.1</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+<dependency>
+  <groupId>org.apache.kafka</groupId>
+  <artifactId>kafka-clients</artifactId>
+  <version>0.9.0.1</version>
+</dependency>
+
 ----
 
 [NOTE]
@@ -369,8 +399,8 @@ For best results, we recommend using the most recent 0.10-compatible versions of
 The Apache Kafka Binder uses the administrative utilities which are part of the Apache Kafka server library to create and reconfigure topics.
 If the inclusion of the Apache Kafka server library and its dependencies is not necessary at runtime because the application will rely on the topics being configured administratively, the Kafka binder allows for Apache Kafka server dependency to be excluded from the application.
 
-If you use Kafka 10 dependencies as advised above, all you have to do is not to include the kafka broker dependency.
-If you use Kafka 0.9, then ensure that you exclude the kafka broker jar from the `spring-cloud-starter-stream-kafka` dependency as following.
+If you use non default versions for Kafka dependencies as advised above, all you have to do is not to include the kafka broker dependency.
+If you use the default Kafka version, then ensure that you exclude the kafka broker jar from the `spring-cloud-starter-stream-kafka` dependency as following.
 
 [source,xml]
 ----

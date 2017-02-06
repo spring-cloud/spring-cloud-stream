@@ -24,7 +24,7 @@ import kafka.utils.ZkUtils;
  * API around {@link kafka.admin.AdminUtils} to support
  * various versions of Kafka brokers.
  *
- * Note: Implementations that support Kafka brokers other than 0.9, need to use
+ * Note: Implementations that support Kafka brokers other than 0.10, need to use
  * a possible strategy that involves reflection around {@link kafka.admin.AdminUtils}.
  *
  * @author Soby Chacko

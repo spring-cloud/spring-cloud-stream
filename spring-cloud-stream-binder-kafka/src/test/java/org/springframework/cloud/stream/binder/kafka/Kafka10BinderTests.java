@@ -31,6 +31,7 @@ import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.server.Server;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -237,8 +238,8 @@ public class Kafka10BinderTests extends KafkaBinderTests {
 		assertThat(inbound).isNotNull();
 		assertTrue(message.getPayload() instanceof User1);
 		User1 receivedUser = (User1) message.getPayload();
-		assertThat(receivedUser.getName()).isEqualTo(userName1);
-		assertThat(receivedUser.getFavoriteColor()).isEqualTo(favColor1);
+		Assertions.assertThat(receivedUser.getName()).isEqualTo(userName1);
+		Assertions.assertThat(receivedUser.getFavoriteColor()).isEqualTo(favColor1);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
