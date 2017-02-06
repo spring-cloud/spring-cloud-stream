@@ -139,6 +139,19 @@ public class EmbeddedHeadersMessageConverter {
 		}
 	}
 
+	/**
+	 * Return a message where headers, that were originally embedded into the payload,
+	 * have been promoted back to actual headers. The new payload is now the original
+	 * payload.
+	 *
+	 * @param payload            the message payload
+	 * @return the message with extracted headers
+	 * @throws Exception
+	 */
+	public MessageValues extractHeaders(byte[] payload) throws Exception {
+		return extractHeaders(payload, false, null);
+	}
+
 	private MessageValues oldExtractHeaders(ByteBuffer byteBuffer, byte[] bytes, int headerCount,
 			boolean copyRequestHeaders, MessageHeaders requestHeaders)
 			throws UnsupportedEncodingException {

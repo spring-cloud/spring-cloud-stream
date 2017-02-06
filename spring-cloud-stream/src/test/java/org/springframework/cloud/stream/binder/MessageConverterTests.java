@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
+ * @author Ilayaperumal Gopinathan
  * @since 1.0
  *
  */
@@ -58,7 +59,7 @@ public class MessageConverterTests {
 		assertThat(new String(embedded).substring(1)).isEqualTo(
 				"\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0006\"quxx\"Hello");
 
-		MessageValues extracted = converter.extractHeaders(embedded, false, null);
+		MessageValues extracted = converter.extractHeaders(embedded);
 		assertThat(new String((byte[]) extracted.getPayload())).isEqualTo("Hello");
 		assertThat(extracted.get("foo")).isEqualTo("bar");
 		assertThat(extracted.get("baz")).isEqualTo("quxx");
