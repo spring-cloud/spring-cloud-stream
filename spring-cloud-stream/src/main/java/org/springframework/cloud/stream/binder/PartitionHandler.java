@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,19 +44,23 @@ public class PartitionHandler {
 
 	private final ProducerProperties producerProperties;
 
+	private final PartitionKeyExtractorStrategy partitionKeyExtractorStrategy;
+
+	private final PartitionSelectorStrategy partitionSelectorStrategy;
+
 
 	/**
 	 * Construct a {@code PartitionHandler}.
 	 *
-	 * @param beanFactory bean factory for binder
+	 * @param beanFactory       bean factory for binder
 	 * @param evaluationContext evaluation context for binder
 	 * @param partitionSelector configured partition selector; may be {@code null}
-	 * @param properties binder properties
+	 * @param properties        binder properties
 	 */
 	public PartitionHandler(ConfigurableListableBeanFactory beanFactory,
-							EvaluationContext evaluationContext,
-							PartitionSelectorStrategy partitionSelector,
-							ProducerProperties properties) {
+			EvaluationContext evaluationContext,
+			PartitionSelectorStrategy partitionSelector,
+			ProducerProperties properties) {
 		Assert.notNull(beanFactory, "BeanFactory must not be null");
 		this.beanFactory = beanFactory;
 		this.evaluationContext = evaluationContext;
@@ -64,6 +68,26 @@ public class PartitionHandler {
 				? new DefaultPartitionSelector()
 				: partitionSelector;
 		this.producerProperties = properties;
+		this.partitionKeyExtractorStrategy = getPartitionKeyExtractorStrategy();
+		this.partitionSelectorStrategy = getPartitionSelectorStrategy();
+	}
+
+	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy() {
+		if (this.producerProperties.getPartitionKeyExtractorClass() != null) {
+			return getBean(
+					this.producerProperties.getPartitionKeyExtractorClass().getName(),
+					PartitionKeyExtractorStrategy.class);
+		}
+		return null;
+	}
+
+	private PartitionSelectorStrategy getPartitionSelectorStrategy() {
+		if (this.producerProperties.getPartitionSelectorClass() != null) {
+			return getBean(
+					producerProperties.getPartitionSelectorClass().getName(),
+					PartitionSelectorStrategy.class);
+		}
+		return null;
 	}
 
 	/**
@@ -116,17 +140,11 @@ public class PartitionHandler {
 	}
 
 	private Object invokeKeyExtractor(Message<?> message) {
-		PartitionKeyExtractorStrategy strategy = getBean(
-				producerProperties.getPartitionKeyExtractorClass().getName(),
-				PartitionKeyExtractorStrategy.class);
-		return strategy.extractKey(message);
+		return this.partitionKeyExtractorStrategy.extractKey(message);
 	}
 
 	private int invokePartitionSelector(Object key) {
-		PartitionSelectorStrategy strategy = getBean(
-				producerProperties.getPartitionSelectorClass().getName(),
-				PartitionSelectorStrategy.class);
-		return strategy.selectPartition(key, producerProperties.getPartitionCount());
+		return this.partitionSelectorStrategy.selectPartition(key, producerProperties.getPartitionCount());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -137,26 +155,21 @@ public class PartitionHandler {
 		else {
 			synchronized (this) {
 				T bean;
-				if (this.beanFactory.containsBean(className)) {
-					bean = this.beanFactory.getBean(className, type);
+				Class<?> clazz;
+				try {
+					clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
 				}
-				else {
-					Class<?> clazz;
-					try {
-						clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
-					}
-					catch (Exception e) {
-						throw new BinderException("Failed to load class: " + className, e);
-					}
-					try {
-						bean = (T) clazz.newInstance();
-						Assert.isInstanceOf(type, bean);
-						this.beanFactory.registerSingleton(className, bean);
-						this.beanFactory.initializeBean(bean, className);
-					}
-					catch (Exception e) {
-						throw new BinderException("Failed to instantiate class: " + className, e);
-					}
+				catch (Exception e) {
+					throw new BinderException("Failed to load class: " + className, e);
+				}
+				try {
+					bean = (T) clazz.newInstance();
+					Assert.isInstanceOf(type, bean);
+					this.beanFactory.registerSingleton(className, bean);
+					this.beanFactory.initializeBean(bean, className);
+				}
+				catch (Exception e) {
+					throw new BinderException("Failed to instantiate class: " + className, e);
 				}
 				return bean;
 			}

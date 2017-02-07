@@ -205,7 +205,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		}
 	}
 
-	private final class PartitioningInterceptor extends ChannelInterceptorAdapter {
+	protected final class PartitioningInterceptor extends ChannelInterceptorAdapter {
 
 		private final BindingProperties bindingProperties;
 
