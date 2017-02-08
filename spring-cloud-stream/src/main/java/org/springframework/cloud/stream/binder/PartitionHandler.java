@@ -16,11 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 
 /**
  * Utility class to determine if a binding is configured for partitioning
@@ -36,11 +34,7 @@ import org.springframework.util.ClassUtils;
  */
 public class PartitionHandler {
 
-	private final ConfigurableListableBeanFactory beanFactory;
-
 	private final EvaluationContext evaluationContext;
-
-	private final PartitionSelectorStrategy partitionSelector;
 
 	private final ProducerProperties producerProperties;
 
@@ -48,46 +42,22 @@ public class PartitionHandler {
 
 	private final PartitionSelectorStrategy partitionSelectorStrategy;
 
-
 	/**
 	 * Construct a {@code PartitionHandler}.
 	 *
-	 * @param beanFactory       bean factory for binder
-	 * @param evaluationContext evaluation context for binder
-	 * @param partitionSelector configured partition selector; may be {@code null}
-	 * @param properties        binder properties
+	 * @param evaluationContext             evaluation context for binder
+	 * @param properties                    binder properties
+	 * @param partitionKeyExtractorStrategy PartitionKeyExtractor strategy
+	 * @param partitionSelectorStrategy     PartitionSelector strategy
 	 */
-	public PartitionHandler(ConfigurableListableBeanFactory beanFactory,
-			EvaluationContext evaluationContext,
-			PartitionSelectorStrategy partitionSelector,
-			ProducerProperties properties) {
-		Assert.notNull(beanFactory, "BeanFactory must not be null");
-		this.beanFactory = beanFactory;
+	public PartitionHandler(EvaluationContext evaluationContext,
+			ProducerProperties properties,
+			PartitionKeyExtractorStrategy partitionKeyExtractorStrategy,
+			PartitionSelectorStrategy partitionSelectorStrategy) {
 		this.evaluationContext = evaluationContext;
-		this.partitionSelector = partitionSelector == null
-				? new DefaultPartitionSelector()
-				: partitionSelector;
 		this.producerProperties = properties;
-		this.partitionKeyExtractorStrategy = getPartitionKeyExtractorStrategy();
-		this.partitionSelectorStrategy = getPartitionSelectorStrategy();
-	}
-
-	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy() {
-		if (this.producerProperties.getPartitionKeyExtractorClass() != null) {
-			return getBean(
-					this.producerProperties.getPartitionKeyExtractorClass().getName(),
-					PartitionKeyExtractorStrategy.class);
-		}
-		return null;
-	}
-
-	private PartitionSelectorStrategy getPartitionSelectorStrategy() {
-		if (this.producerProperties.getPartitionSelectorClass() != null) {
-			return getBean(
-					producerProperties.getPartitionSelectorClass().getName(),
-					PartitionSelectorStrategy.class);
-		}
-		return null;
+		this.partitionKeyExtractorStrategy = partitionKeyExtractorStrategy;
+		this.partitionSelectorStrategy = partitionSelectorStrategy;
 	}
 
 	/**
@@ -112,15 +82,12 @@ public class PartitionHandler {
 		Object key = extractKey(message);
 
 		int partition;
-		if (this.producerProperties.getPartitionSelectorClass() != null) {
-			partition = invokePartitionSelector(key);
-		}
-		else if (this.producerProperties.getPartitionSelectorExpression() != null) {
+		if (this.producerProperties.getPartitionSelectorExpression() != null) {
 			partition = this.producerProperties.getPartitionSelectorExpression().getValue(
 					this.evaluationContext, key, Integer.class);
 		}
 		else {
-			partition = this.partitionSelector.selectPartition(key, producerProperties.getPartitionCount());
+			partition = this.partitionSelectorStrategy.selectPartition(key, producerProperties.getPartitionCount());
 		}
 		// protection in case a user selector returns a negative.
 		return Math.abs(partition % producerProperties.getPartitionCount());
@@ -145,52 +112,6 @@ public class PartitionHandler {
 
 	private int invokePartitionSelector(Object key) {
 		return this.partitionSelectorStrategy.selectPartition(key, producerProperties.getPartitionCount());
-	}
-
-	@SuppressWarnings("unchecked")
-	private <T> T getBean(String className, Class<T> type) {
-		if (this.beanFactory.containsBean(className)) {
-			return this.beanFactory.getBean(className, type);
-		}
-		else {
-			synchronized (this) {
-				T bean;
-				Class<?> clazz;
-				try {
-					clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
-				}
-				catch (Exception e) {
-					throw new BinderException("Failed to load class: " + className, e);
-				}
-				try {
-					bean = (T) clazz.newInstance();
-					Assert.isInstanceOf(type, bean);
-					this.beanFactory.registerSingleton(className, bean);
-					this.beanFactory.initializeBean(bean, className);
-				}
-				catch (Exception e) {
-					throw new BinderException("Failed to instantiate class: " + className, e);
-				}
-				return bean;
-			}
-		}
-	}
-
-	/**
-	 * Default partition strategy; only works on keys with "real" hash codes,
-	 * such as String. Caller now always applies modulo so no need to do so here.
-	 */
-	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
-
-		@Override
-		public int selectPartition(Object key, int partitionCount) {
-			int hashCode = key.hashCode();
-			if (hashCode == Integer.MIN_VALUE) {
-				hashCode = 0;
-			}
-			return Math.abs(hashCode);
-		}
-
 	}
 
 }

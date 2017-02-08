@@ -22,8 +22,12 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.PartitionHandler;
+import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
+import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -42,6 +46,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
@@ -95,6 +100,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	/**
 	 * Setup data-type and message converters for the given message channel.
+	 *
 	 * @param channel     message channel to set the data-type and message converters
 	 * @param channelName the channel name
 	 */
@@ -104,14 +110,62 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		final BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(
 				channelName);
 		final String contentType = bindingProperties.getContentType();
-		if (!input && bindingProperties.getProducer() != null && bindingProperties.getProducer().isPartitioned()) {
-			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties));
+		ProducerProperties producerProperties = bindingProperties.getProducer();
+		if (!input && producerProperties != null && producerProperties.isPartitioned()) {
+			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,
+					getPartitionKeyExtractorStrategy(producerProperties), getPartitionSelectorStrategy(producerProperties)));
 		}
 		if (StringUtils.hasText(contentType)) {
 			messageChannel.addInterceptor(new ContentTypeConvertingInterceptor(contentType, input));
 		}
 	}
 
+	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(ProducerProperties producerProperties) {
+		if (producerProperties.getPartitionKeyExtractorClass() != null) {
+			return getBean(
+					producerProperties.getPartitionKeyExtractorClass().getName(),
+					PartitionKeyExtractorStrategy.class);
+		}
+		return null;
+	}
+
+	private PartitionSelectorStrategy getPartitionSelectorStrategy(ProducerProperties producerProperties) {
+		if (producerProperties.getPartitionSelectorClass() != null) {
+			return getBean(
+					producerProperties.getPartitionSelectorClass().getName(),
+					PartitionSelectorStrategy.class);
+		}
+		return new DefaultPartitionSelector();
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> T getBean(String className, Class<T> type) {
+		if (this.beanFactory.containsBean(className)) {
+			return this.beanFactory.getBean(className, type);
+		}
+		else {
+			synchronized (this) {
+				T bean;
+				Class<?> clazz;
+				try {
+					clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
+				}
+				catch (Exception e) {
+					throw new BinderException("Failed to load class: " + className, e);
+				}
+				try {
+					bean = (T) clazz.newInstance();
+					Assert.isInstanceOf(type, bean);
+					this.beanFactory.registerSingleton(className, bean);
+					this.beanFactory.initializeBean(bean, className);
+				}
+				catch (Exception e) {
+					throw new BinderException("Failed to instantiate class: " + className, e);
+				}
+				return bean;
+			}
+		}
+	}
 
 	private final class ContentTypeConvertingInterceptor extends ChannelInterceptorAdapter {
 
@@ -211,12 +265,12 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		private final PartitionHandler partitionHandler;
 
-		PartitioningInterceptor(BindingProperties bindingProperties) {
+		PartitioningInterceptor(BindingProperties bindingProperties,
+				PartitionKeyExtractorStrategy partitionKeyExtractorStrategy,
+				PartitionSelectorStrategy partitionSelectorStrategy) {
 			this.bindingProperties = bindingProperties;
-			this.partitionHandler = new PartitionHandler(MessageConverterConfigurer.this.beanFactory,
-					ExpressionUtils.createStandardEvaluationContext(MessageConverterConfigurer.this.beanFactory),
-					null,
-					this.bindingProperties.getProducer());
+			this.partitionHandler = new PartitionHandler(ExpressionUtils.createStandardEvaluationContext(MessageConverterConfigurer.this.beanFactory),
+					this.bindingProperties.getProducer(), partitionKeyExtractorStrategy, partitionSelectorStrategy);
 		}
 
 		@Override
@@ -227,6 +281,22 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 					.setHeader(BinderHeaders.PARTITION_HEADER, partition)
 					.build();
 
+		}
+	}
+
+	/**
+	 * Default partition strategy; only works on keys with "real" hash codes,
+	 * such as String. Caller now always applies modulo so no need to do so here.
+	 */
+	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
+
+		@Override
+		public int selectPartition(Object key, int partitionCount) {
+			int hashCode = key.hashCode();
+			if (hashCode == Integer.MIN_VALUE) {
+				hashCode = 0;
+			}
+			return Math.abs(hashCode);
 		}
 
 	}
