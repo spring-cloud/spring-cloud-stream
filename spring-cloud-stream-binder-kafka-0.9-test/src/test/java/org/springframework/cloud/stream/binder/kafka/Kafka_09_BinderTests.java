@@ -50,7 +50,7 @@ import org.springframework.retry.RetryOperations;
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
  */
-public class Kafka09BinderTests extends KafkaBinderTests {
+public class Kafka_09_BinderTests extends KafkaBinderTests {
 
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 

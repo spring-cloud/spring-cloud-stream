@@ -23,6 +23,6 @@ package org.springframework.cloud.stream.binder.kafka;
  *
  * @author Soby Chacko
  */
-public class Kafka01001BinderTests extends Kafka10BinderTests {
+public class Kafka_0_10_0_BinderTests extends Kafka10BinderTests {
 
 }

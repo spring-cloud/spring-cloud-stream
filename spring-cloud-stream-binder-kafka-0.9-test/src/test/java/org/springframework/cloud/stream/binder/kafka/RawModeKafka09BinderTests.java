@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author Mark Fisher
  */
-public class RawModeKafka09BinderTests extends Kafka09BinderTests {
+public class RawModeKafka09BinderTests extends Kafka_09_BinderTests {
 
 	@Test
 	@Override
