@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
-import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 
@@ -79,8 +78,7 @@ public class CompositeMessageConverterFactory {
 
 		this.converters.add(jsonMessageConverter);
 		this.converters.add(new ByteArrayMessageConverter());
-
-		this.converters.add(new StringMessageConverter());
+		this.converters.add(new ObjectStringMessageConverter());
 		this.converters.add(new JavaSerializationMessageConverter());
 		this.converters.add(new JsonUnmarshallingConverter(this.objectMapper));
 	}
