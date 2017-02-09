@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -36,6 +34,8 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
