@@ -37,6 +37,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.tuple.Tuple;
@@ -81,15 +82,17 @@ public class MessageChannelConfigurerTests {
 
 	@Test
 	public void testObjectMapperConfig() throws Exception {
-		MessageConverter converter = messageConverterFactory.getMessageConverterForType(MimeTypeUtils
+		CompositeMessageConverter converters = (CompositeMessageConverter) messageConverterFactory.getMessageConverterForType(MimeTypeUtils
 				.APPLICATION_JSON);
-		DirectFieldAccessor converterAccessor = new DirectFieldAccessor(converter);
-		ObjectMapper objectMapper = (ObjectMapper) converterAccessor.getPropertyValue("objectMapper");
-		// assert that the ObjectMapper used by the converters is compliant with the Boot configuration
-		assertThat(!objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS))
-				.withFailMessage("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled");
-		// assert that the globally set bean is used by the converters
-		assertThat(objectMapper).isSameAs(this.objectMapper);
+		for (MessageConverter converter : converters.getConverters()) {
+			DirectFieldAccessor converterAccessor = new DirectFieldAccessor(converter);
+			ObjectMapper objectMapper = (ObjectMapper) converterAccessor.getPropertyValue("objectMapper");
+			// assert that the ObjectMapper used by the converters is compliant with the Boot configuration
+			assertThat(!objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS))
+					.withFailMessage("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled");
+			// assert that the globally set bean is used by the converters
+			assertThat(objectMapper).isSameAs(this.objectMapper);
+		}
 	}
 
 	@EnableBinding(Sink.class)
