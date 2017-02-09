@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.converter;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -27,12 +28,14 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.tuple.Tuple;
 import org.springframework.tuple.TupleBuilder;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * A {@link org.springframework.messaging.converter.MessageConverter}
  * to convert a {@link Tuple} to a JSON String
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
  */
 public class TupleJsonMessageConverter extends AbstractMessageConverter {
 
@@ -46,7 +49,7 @@ public class TupleJsonMessageConverter extends AbstractMessageConverter {
 	}
 
 	public TupleJsonMessageConverter(ObjectMapper objectMapper) {
-		super(MessageConverterUtils.X_SPRING_TUPLE);
+		super(Arrays.asList(MessageConverterUtils.X_SPRING_TUPLE, MimeTypeUtils.APPLICATION_JSON));
 		this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
 	}
 
