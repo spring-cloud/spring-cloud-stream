@@ -24,6 +24,8 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
  * {@link ProvisioningProvider#provisionConsumerDestination(String, String, ConsumerProperties)}
  *
  * @author Soby Chacko
+ *
+ * @since 1.2
  */
 public interface ConsumerDestination {
 
@@ -32,6 +34,6 @@ public interface ConsumerDestination {
 	 *
 	 * @return destination name
 	 */
-	String getConsumerDestinationName();
+	String getName();
 
 }

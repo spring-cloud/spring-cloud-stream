@@ -41,7 +41,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 public interface ProvisioningProvider<C extends ConsumerProperties, P extends ProducerProperties> {
 
 	/**
-	 * Creates target destinations for outbound channels. The implementation
+	 * Creates middleware destination on the physical broker for the producer to send data. The implementation
 	 * is middleware-specific.
 	 *
 	 * @param name       the name of the producer destination
@@ -51,7 +51,8 @@ public interface ProvisioningProvider<C extends ConsumerProperties, P extends Pr
 	ProducerDestination provisionProducerDestination(String name, P properties);
 
 	/**
-	 * Creates the middleware destination the consumer will start to consume data from.
+	 * Creates the middleware destination on the physical broker for the consumer to consume data.
+	 * The implementation is middleware-specific.
 	 *
 	 * @param name       the name of the destination
 	 * @param group      the consumer group

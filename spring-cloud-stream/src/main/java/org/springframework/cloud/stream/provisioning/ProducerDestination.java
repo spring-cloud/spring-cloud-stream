@@ -24,6 +24,8 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
  * {@link ProvisioningProvider#provisionProducerDestination(String, ProducerProperties)}
  *
  * @author Soby Chacko
+ *
+ * @since 1.2
  */
 public interface ProducerDestination {
 
@@ -32,13 +34,24 @@ public interface ProducerDestination {
 	 *
 	 * @return destination name
 	 */
-	String getProducerDestinationName();
+	String getName();
 
 	/**
-	 * Provides the destination name for a given partition
+	 * Provides the destination name for a given partition.
+	 *
+	 * If the producer provision the destination with partitions, on certain middleware brokers
+	 * there may exist multiple destinations distinguishable by the partition. For example,
+	 * if the destination name is <b>xyz</b> and is is provisioned with <b>4</b> partitions, there may be
+	 * 4 different destinations on the broker such as - <b>xyz-0, xyz-1, xyz-2 and xyz-3</b>.
+	 * However, please keep in mind that, this behavior is completely dependent on the broker
+	 * and the way the corresponding binder implements the logic.
+	 *
+	 * On certain brokers (for instance, Kafka), this behavior is completely skipped
+	 * and there is a one-to-one correspondence between the destination name in the provisioner and
+	 * the physical destination on the broker.
 	 *
 	 * @param partition the partition to find destination for
 	 * @return destination name for the given partition
 	 */
-	String getPartitionedProducerDestinationName(int partition);
+	String getNameForPartition(int partition);
 }
