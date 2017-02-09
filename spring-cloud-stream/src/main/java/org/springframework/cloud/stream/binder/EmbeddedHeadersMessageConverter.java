@@ -103,18 +103,7 @@ public class EmbeddedHeadersMessageConverter {
 		return extractHeaders(message.getPayload(), copyRequestHeaders, message.getHeaders());
 	}
 
-	/**
-	 * Return a message where headers, that were originally embedded into the payload,
-	 * have been promoted back to actual headers. The new payload is now the original
-	 * payload.
-	 *
-	 * @param payload            the message payload
-	 * @param copyRequestHeaders boolean value to specify if the request headers should be copied
-	 * @param requestHeaders     the request headers to copy
-	 * @return the message with extracted headers
-	 * @throws Exception
-	 */
-	public MessageValues extractHeaders(byte[] payload, boolean copyRequestHeaders, MessageHeaders requestHeaders) throws Exception {
+	private MessageValues extractHeaders(byte[] payload, boolean copyRequestHeaders, MessageHeaders requestHeaders) throws Exception {
 		ByteBuffer byteBuffer = ByteBuffer.wrap(payload);
 		int headerCount = byteBuffer.get() & 0xff;
 		if (headerCount < 255) {
