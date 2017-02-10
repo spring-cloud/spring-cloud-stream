@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
+import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.ExpressionParser;
@@ -113,6 +114,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		catch (Exception e) {
 			if (e instanceof BinderException) {
 				throw (BinderException) e;
+			}
+			else if (e instanceof ProvisioningException) {
+				throw (ProvisioningException) e;
 			}
 			else {
 				throw new BinderException("Exception thrown while building outbound endpoint", e);
@@ -221,6 +225,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 			if (e instanceof BinderException) {
 				throw (BinderException) e;
+			}
+			else if (e instanceof ProvisioningException) {
+				throw (ProvisioningException) e;
 			}
 			else {
 				throw new BinderException("Exception thrown while starting consumer: ", e);

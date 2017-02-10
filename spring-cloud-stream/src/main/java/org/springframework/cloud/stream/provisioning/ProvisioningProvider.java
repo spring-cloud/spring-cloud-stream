@@ -47,8 +47,9 @@ public interface ProvisioningProvider<C extends ConsumerProperties, P extends Pr
 	 * @param name       the name of the producer destination
 	 * @param properties producer properties
 	 * @return reference to {@link ProducerDestination} that represents a producer
+	 * @throws ProvisioningException on underlying provisioning errors from the middleware
 	 */
-	ProducerDestination provisionProducerDestination(String name, P properties);
+	ProducerDestination provisionProducerDestination(String name, P properties) throws ProvisioningException;
 
 	/**
 	 * Creates the middleware destination on the physical broker for the consumer to consume data.
@@ -58,7 +59,8 @@ public interface ProvisioningProvider<C extends ConsumerProperties, P extends Pr
 	 * @param group      the consumer group
 	 * @param properties consumer properties
 	 * @return reference to {@link ConsumerDestination} that represents a consumer
+	 * @throws ProvisioningException on underlying provisioning errors from the middleware
 	 */
-	ConsumerDestination provisionConsumerDestination(String name, String group, C properties);
+	ConsumerDestination provisionConsumerDestination(String name, String group, C properties) throws ProvisioningException;
 
 }
