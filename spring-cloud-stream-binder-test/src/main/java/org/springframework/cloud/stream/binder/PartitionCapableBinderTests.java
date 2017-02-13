@@ -194,7 +194,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
 		try {
 			Object endpoint = extractEndpoint(outputBinding);
-			checkRkExpression(endpoint);
+			checkRkExpressionForPartitionedModuleSpEL(endpoint);
 		}
 		catch (UnsupportedOperationException ignored) {
 		}
@@ -248,7 +248,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		outputBinding.unbind();
 	}
 
-	protected void checkRkExpression(Object endpoint) {
+	protected void checkRkExpressionForPartitionedModuleSpEL(Object endpoint) {
 		assertThat(getEndpointRouting(endpoint))
 				.contains(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']");
 	}
