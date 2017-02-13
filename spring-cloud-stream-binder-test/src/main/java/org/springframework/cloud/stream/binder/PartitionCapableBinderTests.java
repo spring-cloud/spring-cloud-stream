@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,8 +194,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
 		try {
 			Object endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint))
-					.contains(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']");
+			checkRkExpressionForPartitionedModuleSpEL(endpoint);
 		}
 		catch (UnsupportedOperationException ignored) {
 		}
@@ -247,6 +246,11 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		input1Binding.unbind();
 		input2Binding.unbind();
 		outputBinding.unbind();
+	}
+
+	protected void checkRkExpressionForPartitionedModuleSpEL(Object endpoint) {
+		assertThat(getEndpointRouting(endpoint))
+				.contains(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']");
 	}
 
 	@Test
