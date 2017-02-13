@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.cloud.stream.binder;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
 import java.util.List;
@@ -34,8 +36,6 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for binders that support partitioning.
@@ -194,8 +194,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
 		try {
 			Object endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint))
-					.contains(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']");
+			checkRkExpression(endpoint);
 		}
 		catch (UnsupportedOperationException ignored) {
 		}
@@ -247,6 +246,11 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		input1Binding.unbind();
 		input2Binding.unbind();
 		outputBinding.unbind();
+	}
+
+	protected void checkRkExpression(Object endpoint) {
+		assertThat(getEndpointRouting(endpoint))
+				.contains(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']");
 	}
 
 	@Test
