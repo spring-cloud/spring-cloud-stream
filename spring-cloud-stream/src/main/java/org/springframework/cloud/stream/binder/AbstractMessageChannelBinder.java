@@ -103,9 +103,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			final P producerProperties) throws BinderException {
 		Assert.isInstanceOf(SubscribableChannel.class, outputChannel,
 				"Binding is supported only for SubscribableChannel instances");
-		final ProducerDestination producerDestination = this.provisioningProvider.provisionProducerDestination(destination, producerProperties);
 		final MessageHandler producerMessageHandler;
+		final ProducerDestination producerDestination;
 		try {
+			producerDestination = this.provisioningProvider.provisionProducerDestination(destination, producerProperties);
 			producerMessageHandler = createProducerMessageHandler(producerDestination, producerProperties);
 			if (producerMessageHandler instanceof InitializingBean) {
 				((InitializingBean) producerMessageHandler).afterPropertiesSet();
