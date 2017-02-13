@@ -18,9 +18,6 @@ package org.springframework.cloud.stream.binder.rabbit;
 
 import java.util.Arrays;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Envelope;
-
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
@@ -40,6 +37,7 @@ import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPos
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
@@ -63,6 +61,9 @@ import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Envelope;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
@@ -93,6 +94,8 @@ public class RabbitMessageChannelBinder
 
 	private final RabbitProperties rabbitProperties;
 
+	private final RabbitExchangeQueueProvisioner provisioningProvider;
+
 	private ConnectionFactory connectionFactory;
 
 	private MessagePostProcessor decompressingPostProcessor = new DelegatingDecompressingPostProcessor();
@@ -106,8 +109,6 @@ public class RabbitMessageChannelBinder
 	private volatile boolean clustered;
 
 	private RabbitExtendedBindingProperties extendedBindingProperties = new RabbitExtendedBindingProperties();
-
-	RabbitExchangeQueueProvisioner provisioningProvider;
 
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory, RabbitProperties rabbitProperties,
 										RabbitExchangeQueueProvisioner provisioningProvider) {
@@ -198,10 +199,10 @@ public class RabbitMessageChannelBinder
 		}
 		else {
 			if (routingKeyExpression == null) {
-				endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(destination));
+				endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(destination, false));
 			}
 			else {
-				endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(routingKeyExpression));
+				endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(routingKeyExpression, true));
 			}
 		}
 		if (extendedProperties.getDelayExpression() != null) {
@@ -215,6 +216,12 @@ public class RabbitMessageChannelBinder
 		endpoint.setBeanFactory(this.getBeanFactory());
 		endpoint.afterPropertiesSet();
 		return endpoint;
+	}
+
+	private String buildPartitionRoutingExpression(String expressionRoot, boolean rootIsExpression) {
+		return rootIsExpression
+				? expressionRoot + " + '-' + headers['" + BinderHeaders.PARTITION_HEADER + "']"
+				: "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
 	}
 
 	@Override
