@@ -73,9 +73,7 @@ public class StreamListenerAnnotationBeanPostProcessorOverrideTest {
 	public static class TestPojoWithAnnotatedArguments {
 
 		List<StreamListenerTestUtils.FooPojo> receivedFoo = new ArrayList<>();
-
-		List<StreamListenerTestUtils.BarPojo> receivedBar = new ArrayList<>();
-
+		
 		@StreamListener(value = Sink.INPUT, condition = "foo")
 		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedFoo.add(fooPojo);
