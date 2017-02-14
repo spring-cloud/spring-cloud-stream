@@ -74,7 +74,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private final String[] headersToEmbed;
 
-	private final ProvisioningProvider<C, P> provisioningProvider;
+	/**
+	 * {@link ProvisioningProvider} delegated by the downstream binder implementations.
+	 */
+	protected final ProvisioningProvider<C, P> provisioningProvider;
 
 	public AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
 										ProvisioningProvider<C, P> provisioningProvider) {
