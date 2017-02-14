@@ -53,7 +53,7 @@ import org.springframework.util.MimeType;
  * @author Soby Chacko
  * @since 1.1
  */
-public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties>
+public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
 		extends AbstractBinder<MessageChannel, C, P> {
 
 	protected static final ExpressionParser EXPRESSION_PARSER = new SpelExpressionParser();
@@ -74,10 +74,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private final String[] headersToEmbed;
 
-	private final ProvisioningProvider<C, P> provisioningProvider;
+	/**
+	 * {@link ProvisioningProvider} delegated by the downstream binder implementations.
+	 */
+	protected final PP provisioningProvider;
 
 	public AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
-										ProvisioningProvider<C, P> provisioningProvider) {
+										PP provisioningProvider) {
 		this.supportsHeadersNatively = supportsHeadersNatively;
 		this.headersToEmbed = headersToEmbed;
 		this.provisioningProvider = provisioningProvider;
