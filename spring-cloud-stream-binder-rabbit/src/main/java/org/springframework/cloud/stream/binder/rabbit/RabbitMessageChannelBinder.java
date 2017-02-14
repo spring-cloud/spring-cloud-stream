@@ -18,6 +18,9 @@ package org.springframework.cloud.stream.binder.rabbit;
 
 import java.util.Arrays;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Envelope;
+
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
@@ -62,9 +65,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Envelope;
-
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
  * @author Mark Fisher
@@ -77,7 +77,7 @@ import com.rabbitmq.client.Envelope;
  */
 public class RabbitMessageChannelBinder
 		extends AbstractMessageChannelBinder<ExtendedConsumerProperties<RabbitConsumerProperties>,
-		ExtendedProducerProperties<RabbitProducerProperties>>
+		ExtendedProducerProperties<RabbitProducerProperties>, RabbitExchangeQueueProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, RabbitConsumerProperties, RabbitProducerProperties> {
 
 	private static final MessagePropertiesConverter inboundMessagePropertiesConverter =
@@ -93,8 +93,6 @@ public class RabbitMessageChannelBinder
 			};
 
 	private final RabbitProperties rabbitProperties;
-
-	private final RabbitExchangeQueueProvisioner provisioningProvider;
 
 	private ConnectionFactory connectionFactory;
 
@@ -117,7 +115,6 @@ public class RabbitMessageChannelBinder
 		Assert.notNull(rabbitProperties, "rabbitProperties must not be null");
 		this.connectionFactory = connectionFactory;
 		this.rabbitProperties = rabbitProperties;
-		this.provisioningProvider = provisioningProvider;
 	}
 
 	/**
