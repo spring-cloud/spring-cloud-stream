@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder.SourceConfigurer;
 import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
@@ -69,7 +70,7 @@ public class AggregationTest {
 	@Test
 	public void aggregation() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0")
+				MockBinderRegistryConfiguration.class, "--server.port=0", "--debug=true")
 				.from(TestSource.class)
 				.to(TestProcessor.class)
 				.run();
@@ -117,6 +118,23 @@ public class AggregationTest {
 		final List<String> parentArgs = (List<String>) aggregateApplicationBuilderAccessor.getPropertyValue(
 				"parentArgs");
 		assertThat(parentArgs).containsExactlyInAnyOrder(argsToVerify.toArray(new String[argsToVerify.size()]));
+		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
+		assertThat(sources).containsExactlyInAnyOrder(AggregateApplicationBuilder.ParentConfiguration.class,
+				MockBinderRegistryConfiguration.class, DummyConfig.class, EmbeddedServletContainerAutoConfiguration.class);
+		context.close();
+	}
+
+	@Test
+	public void testParentArgsAndSourcesWithWebDisabled() {
+		List<String> argsToVerify = new ArrayList<>();
+		AggregateApplicationBuilder aggregateApplicationBuilder =
+				new AggregateApplicationBuilder(MockBinderRegistryConfiguration.class, "--foo1=bar1");
+		final ConfigurableApplicationContext context =
+				aggregateApplicationBuilder.parent(DummyConfig.class, "--foo2=bar2").web(false)
+						.from(TestSource.class)
+						.namespace("foo").to(TestProcessor.class).namespace("bar")
+						.run("--server.port=0");
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
 		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
 		assertThat(sources).containsExactlyInAnyOrder(AggregateApplicationBuilder.ParentConfiguration.class,
 				MockBinderRegistryConfiguration.class, DummyConfig.class);

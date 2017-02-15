@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
@@ -33,9 +31,8 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnBean(BindingService.class)
 public class ReactiveSupportAutoConfiguration {
 
-	private static Log log = LogFactory.getLog(ReactiveSupportAutoConfiguration.class);
-
 	@Bean
+	@ConditionalOnMissingBean(MessageChannelToInputFluxParameterAdapter.class)
 	public MessageChannelToInputFluxParameterAdapter messageChannelToInputFluxArgumentAdapter(
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		return new MessageChannelToInputFluxParameterAdapter(
@@ -43,11 +40,13 @@ public class ReactiveSupportAutoConfiguration {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean(MessageChannelToFluxSenderParameterAdapter.class)
 	public MessageChannelToFluxSenderParameterAdapter messageChannelToFluxSenderArgumentAdapter() {
 		return new MessageChannelToFluxSenderParameterAdapter();
 	}
 
 	@Bean
+	@ConditionalOnMissingBean(FluxToMessageChannelResultAdapter.class)
 	public FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter() {
 		return new FluxToMessageChannelResultAdapter();
 	}
@@ -57,18 +56,21 @@ public class ReactiveSupportAutoConfiguration {
 	public static class RxJava1SupportConfiguration {
 
 		@Bean
+		@ConditionalOnMissingBean(MessageChannelToInputObservableParameterAdapter.class)
 		public MessageChannelToInputObservableParameterAdapter messageChannelToInputObservableArgumentAdapter(
 				MessageChannelToInputFluxParameterAdapter messageChannelToFluxArgumentAdapter) {
 			return new MessageChannelToInputObservableParameterAdapter(messageChannelToFluxArgumentAdapter);
 		}
 
 		@Bean
+		@ConditionalOnMissingBean(MessageChannelToObservableSenderParameterAdapter.class)
 		public MessageChannelToObservableSenderParameterAdapter messageChannelToObservableSenderArgumentAdapter(
 				MessageChannelToFluxSenderParameterAdapter messageChannelToFluxSenderArgumentAdapter) {
 			return new MessageChannelToObservableSenderParameterAdapter(messageChannelToFluxSenderArgumentAdapter);
 		}
 
 		@Bean
+		@ConditionalOnMissingBean(ObservableToMessageChannelResultAdapter.class)
 		public ObservableToMessageChannelResultAdapter
 		observableToMessageChannelResultAdapter(
 				FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter) {
