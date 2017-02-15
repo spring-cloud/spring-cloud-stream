@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.schema.avro;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.StringConvertingContentTypeResolver;
@@ -42,6 +43,7 @@ public class AvroMessageConverterAutoConfiguration {
 	private AvroMessageConverterProperties avroMessageConverterProperties;
 
 	@Bean
+	@ConditionalOnMissingBean(AvroSchemaRegistryClientMessageConverter.class)
 	public AvroSchemaRegistryClientMessageConverter avroSchemaMessageConverter(
 			SchemaRegistryClient schemaRegistryClient) {
 		AvroSchemaRegistryClientMessageConverter
