@@ -27,6 +27,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -42,7 +43,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.core.DestinationResolver;
@@ -62,7 +63,9 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  */
 public class StreamListenerAnnotationBeanPostProcessor
-		implements BeanPostProcessor, ApplicationContextAware, SmartInitializingSingleton {
+		implements BeanPostProcessor, ApplicationContextAware, SmartInitializingSingleton, InitializingBean {
+
+	private static final SpelExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
 
 	@Autowired
 	@Lazy
@@ -86,6 +89,10 @@ public class StreamListenerAnnotationBeanPostProcessor
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public final void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
 		Map<String, StreamListenerParameterAdapter> parameterAdapterMap = BeanFactoryUtils
 				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerParameterAdapter.class);
 		for (StreamListenerParameterAdapter parameterAdapter : parameterAdapterMap.values()) {
@@ -97,7 +104,6 @@ public class StreamListenerAnnotationBeanPostProcessor
 		for (StreamListenerResultAdapter resultAdapter : resultAdapterMap.values()) {
 			this.streamListenerResultAdapters.add(resultAdapter);
 		}
-		this.evaluationContext = new StandardEvaluationContext();
 	}
 
 	@Override
@@ -298,6 +304,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	@Override
 	public final void afterSingletonsInstantiated() {
+		this.evaluationContext = IntegrationContextUtils.getEvaluationContext(this.applicationContext.getBeanFactory());
 		for (Map.Entry<String, List<StreamListenerHandlerMethodMapping>> mappedBindingEntry : mappedListenerMethods
 				.entrySet()) {
 			Collection<DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler> handlerMethods = new ArrayList<>();
@@ -314,7 +321,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 				}
 				streamListenerMessageHandler.afterPropertiesSet();
 				if (StringUtils.hasText(mapping.getCondition())) {
-					Expression condition = new SpelExpressionParser().parseExpression(mapping.getCondition());
+					Expression condition = SPEL_EXPRESSION_PARSER.parseExpression(mapping.getCondition());
 					handlerMethods.add(new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler(
 							condition, streamListenerMessageHandler));
 				}

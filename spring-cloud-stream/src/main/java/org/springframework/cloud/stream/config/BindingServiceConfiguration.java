@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,6 @@ public class BindingServiceConfiguration {
 	@Configuration
 	protected static class PostProcessorConfiguration {
 
-		public static final String DEFAULT_STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
 		private BinderAwareChannelResolver binderAwareChannelResolver;
 
 		@Bean

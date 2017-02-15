@@ -23,6 +23,7 @@ import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 
 /**
  * @author Marius Bogoevici
+ * @since 1.2
  */
 public class StreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
 
@@ -45,10 +46,12 @@ public class StreamListenerMessageHandler extends AbstractReplyProducingMessageH
 	protected Object handleRequestMessage(Message<?> requestMessage) {
 		try {
 			return this.invocableHandlerMethod.invoke(requestMessage);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			if (e instanceof MessagingException) {
 				throw (MessagingException) e;
-			} else {
+			}
+			else {
 				throw new MessagingException(requestMessage,
 						"Exception thrown while invoking " + this.invocableHandlerMethod.getShortLogMessage(), e);
 			}

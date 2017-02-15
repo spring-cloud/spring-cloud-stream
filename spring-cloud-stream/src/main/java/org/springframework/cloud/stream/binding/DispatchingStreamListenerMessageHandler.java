@@ -28,8 +28,12 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.util.Assert;
 
 /**
- * An {@link AbstractReplyProducingMessageHandler} that delegates
+ * An {@link AbstractReplyProducingMessageHandler} that delegates to a
+ * collection of internal {@link ConditionalStreamListenerHandler} instances,
+ * executing the ones that match the given expression.
+ *
  * @author Marius Bogoevici
+ * @since 1.2
  */
 final class DispatchingStreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
 
@@ -55,7 +59,7 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 		Collection<ConditionalStreamListenerHandler> matchingHandlers = findMatchingHandlers(requestMessage);
 		if (matchingHandlers.size() == 0) {
 			if (logger.isWarnEnabled()) {
-				logger.warn("Cannot find a @StreamListener matching " + requestMessage);
+				logger.warn("Cannot find a @StreamListener matching " + requestMessage.toString());
 			}
 			return null;
 		}
@@ -85,13 +89,9 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 				matchingMethods.add(conditionalStreamListenerHandlerMethod);
 			}
 			else {
-				Object value = conditionalStreamListenerHandlerMethod.getCondition().getValue(this.evaluationContext, message);
-				if (Boolean.class.isAssignableFrom(value.getClass())) {
-					if ((Boolean) value) {
-						matchingMethods.add(conditionalStreamListenerHandlerMethod);
-					}
-				}
-				else if (Boolean.valueOf(String.valueOf(value))) {
+				boolean conditionMetOnMessage = conditionalStreamListenerHandlerMethod.getCondition().getValue(
+						this.evaluationContext, message, Boolean.class);
+				if (conditionMetOnMessage) {
 					matchingMethods.add(conditionalStreamListenerHandlerMethod);
 				}
 			}
@@ -105,7 +105,8 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 
 		private StreamListenerMessageHandler streamListenerMessageHandler;
 
-		ConditionalStreamListenerHandler(Expression condition, StreamListenerMessageHandler streamListenerMessageHandler) {
+		ConditionalStreamListenerHandler(Expression condition,
+				StreamListenerMessageHandler streamListenerMessageHandler) {
 			this.condition = condition;
 			this.streamListenerMessageHandler = streamListenerMessageHandler;
 		}
