@@ -25,12 +25,18 @@ import java.util.Map;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanExpressionContext;
+import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -63,7 +69,8 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  */
 public class StreamListenerAnnotationBeanPostProcessor
-		implements BeanPostProcessor, ApplicationContextAware, SmartInitializingSingleton, InitializingBean {
+		implements BeanPostProcessor, ApplicationContextAware, BeanFactoryAware, SmartInitializingSingleton,
+				InitializingBean {
 
 	private static final SpelExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
 
@@ -85,10 +92,25 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private EvaluationContext evaluationContext;
 
+	private BeanFactory beanFactory;
+
+	private BeanExpressionResolver resolver;
+
+	private BeanExpressionContext expressionContext;
+
 	@Override
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public final void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+	}
+
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = beanFactory;
+		if (beanFactory instanceof ConfigurableListableBeanFactory) {
+			this.resolver = ((ConfigurableListableBeanFactory) beanFactory).getBeanExpressionResolver();
+			this.expressionContext = new BeanExpressionContext((ConfigurableListableBeanFactory) beanFactory, null);
+		}
 	}
 
 	@Override
@@ -321,7 +343,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 				}
 				streamListenerMessageHandler.afterPropertiesSet();
 				if (StringUtils.hasText(mapping.getCondition())) {
-					Expression condition = SPEL_EXPRESSION_PARSER.parseExpression(mapping.getCondition());
+					String conditionAsString = resolveExpressionAsString(mapping.getCondition());
+					Expression condition = SPEL_EXPRESSION_PARSER.parseExpression(conditionAsString);
 					handlerMethods.add(new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler(
 							condition, streamListenerMessageHandler));
 				}
@@ -371,6 +394,38 @@ public class StreamListenerAnnotationBeanPostProcessor
 			}
 		}
 		return method;
+	}
+
+	private String resolveExpressionAsString(String value) {
+		Object resolved = resolveExpression(value);
+		if (resolved instanceof String) {
+			return (String) resolved;
+		}
+		else {
+			throw new IllegalStateException("Resolved to [" + resolved.getClass() + "] for [" + value + "]");
+		}
+	}
+
+	private Object resolveExpression(String value) {
+		String resolvedValue = resolve(value);
+
+		if (!(resolvedValue.startsWith("#{") && value.endsWith("}"))) {
+			return resolvedValue;
+		}
+
+		return this.resolver.evaluate(resolvedValue, this.expressionContext);
+	}
+
+	/**
+	 * Resolve the specified value if possible.
+	 *
+	 * @see ConfigurableBeanFactory#resolveEmbeddedValue
+	 */
+	private String resolve(String value) {
+		if (this.beanFactory != null && this.beanFactory instanceof ConfigurableBeanFactory) {
+			return ((ConfigurableBeanFactory) this.beanFactory).resolveEmbeddedValue(value);
+		}
+		return value;
 	}
 
 	private class StreamListenerHandlerMethodMapping {
