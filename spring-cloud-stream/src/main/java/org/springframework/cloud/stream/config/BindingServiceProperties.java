@@ -127,9 +127,10 @@ public class BindingServiceProperties implements ApplicationContextAware, Enviro
 		if (environment instanceof ConfigurableEnvironment) {
 			// override the bindings store with the environment-initializing version if in
 			// a Spring context
+			Map<String, BindingProperties> delegate = new TreeMap<String, BindingProperties>(String.CASE_INSENSITIVE_ORDER);
+			delegate.putAll(this.bindings);
 			this.bindings = new EnvironmentEntryInitializingTreeMap<>((ConfigurableEnvironment) environment,
-					BindingProperties.class, "spring.cloud.stream.default",
-					new TreeMap<String, BindingProperties>(String.CASE_INSENSITIVE_ORDER));
+					BindingProperties.class, "spring.cloud.stream.default", delegate);
 		}
 	}
 
