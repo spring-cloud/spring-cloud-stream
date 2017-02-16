@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 
 /**
@@ -130,7 +131,21 @@ public @interface StreamListener {
 
 	/**
 	 * The name of the binding target (e.g. channel) that the method subscribes to.
+	 * @return the name of the binding target.
 	 */
+	@AliasFor("target")
 	String value() default "";
 
+	/**
+	 * The name of the binding target (e.g. channel) that the method subscribes to.
+	 * @return the name of the binding target.
+	 */
+	@AliasFor("value")
+	String target()  default "";
+
+	/**
+	 * A condition that must be met by all items that are dispatched to this method.
+	 * @return a SpEL expression that must evaluate to a {@code boolean} value.
+	 */
+	String condition() default "";
 }
