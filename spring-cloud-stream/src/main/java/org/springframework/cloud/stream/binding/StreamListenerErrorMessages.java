@@ -62,4 +62,8 @@ public abstract class StreamListenerErrorMessages {
 			+ " and @Output annotation as a method parameter";
 
 	public static final String CONDITION_ON_DECLARATIVE_METHOD = "Cannot set a condition when using @StreamListener in declarative mode";
+
+	public static final String CONDITION_ON_METHOD_RETURNING_VALUE = "Cannot set a condition for methods that return a value";
+
+	public static final String MULTIPLE_VALUE_RETURNING_METHODS = "If multiple @StreamListener methods are listening to the same binding target, none of them may return a value";
 }

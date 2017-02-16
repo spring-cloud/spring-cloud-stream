@@ -59,17 +59,12 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 		Collection<ConditionalStreamListenerHandler> matchingHandlers = findMatchingHandlers(requestMessage);
 		if (matchingHandlers.size() == 0) {
 			if (logger.isWarnEnabled()) {
-				logger.warn("Cannot find a @StreamListener matching " + requestMessage.toString());
+				logger.warn("Cannot find a @StreamListener matching for message with id: "
+						+ requestMessage.getHeaders().getId());
 			}
 			return null;
 		}
 		else if (matchingHandlers.size() > 1) {
-			for (ConditionalStreamListenerHandler matchingHandler : matchingHandlers) {
-				if (!matchingHandler.isVoid()) {
-					throw new MessagingException(
-							"Multiple matching methods cannot return values for " + requestMessage);
-				}
-			}
 			for (ConditionalStreamListenerHandler matchingMethod : matchingHandlers) {
 				matchingMethod.handleMessage(requestMessage);
 			}
@@ -107,6 +102,9 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 
 		ConditionalStreamListenerHandler(Expression condition,
 				StreamListenerMessageHandler streamListenerMessageHandler) {
+			Assert.notNull(streamListenerMessageHandler, "the message handler cannot be null");
+			Assert.isTrue(condition == null || streamListenerMessageHandler.isVoid(),
+					"cannot specify a condition and a return value at the same time");
 			this.condition = condition;
 			this.streamListenerMessageHandler = streamListenerMessageHandler;
 		}

@@ -28,6 +28,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.support.MessageBuilder;
@@ -72,6 +73,20 @@ public class StreamListenerWithConditionsTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
+	public void testConditionalFailsWithReturnValue() throws Exception {
+		try {
+			ConfigurableApplicationContext context = SpringApplication.run(TestConditionalOnMethodWithReturnValueFails.class,
+					"--server.port=0");
+			context.close();
+			fail("Context creation failure expected");
+		} catch (BeanCreationException e) {
+			assertThat(e).hasRootCauseInstanceOf(IllegalArgumentException.class);
+			assertThat(e.getCause()).hasMessageContaining(StreamListenerErrorMessages.CONDITION_ON_METHOD_RETURNING_VALUE);
+		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
 	public void testConditionalFailsWithDeclarativeMethod() throws Exception {
 		try {
 			ConfigurableApplicationContext context = SpringApplication.run(TestConditionalOnDeclarativeMethodFails.class,
@@ -80,7 +95,7 @@ public class StreamListenerWithConditionsTest {
 			fail("Context creation failure expected");
 		} catch (BeanCreationException e) {
 			assertThat(e).hasRootCauseInstanceOf(IllegalArgumentException.class);
-			assertThat(e.getCause()).hasMessageContaining("Cannot set a condition when using @StreamListener in declarative mode");
+			assertThat(e.getCause()).hasMessageContaining(StreamListenerErrorMessages.CONDITION_ON_DECLARATIVE_METHOD);
 		}
 	}
 
@@ -108,13 +123,19 @@ public class StreamListenerWithConditionsTest {
 	@EnableAutoConfiguration
 	public static class TestConditionalOnDeclarativeMethodFails {
 
-		List<StreamListenerTestUtils.FooPojo> receivedFoo = new ArrayList<>();
-
-		List<StreamListenerTestUtils.BarPojo> receivedBar = new ArrayList<>();
-
 		@StreamListener(condition = "headers['type']=='foo'")
 		public void receive(@Input("input") MessageChannel input) {
 			// do nothing
+		}
+	}
+
+	@EnableBinding(Sink.class)
+	@EnableAutoConfiguration
+	public static class TestConditionalOnMethodWithReturnValueFails {
+
+		@StreamListener(value = Sink.INPUT, condition = "headers['type']=='foo'")
+		public String receive(String value) {
+			return null;
 		}
 	}
 }

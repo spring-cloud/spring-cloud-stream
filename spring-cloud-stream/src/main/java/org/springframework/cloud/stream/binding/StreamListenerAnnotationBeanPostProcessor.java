@@ -152,7 +152,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 							methodAnnotatedOutboundName);
 					StreamListenerMethodUtils.validateStreamListenerMethod(method, inputAnnotationCount,
 							outputAnnotationCount, methodAnnotatedInboundName, methodAnnotatedOutboundName,
-							isDeclarative, streamListener);
+							isDeclarative, streamListener.condition());
 					if (!method.getReturnType().equals(Void.TYPE)) {
 						if (!StringUtils.hasText(methodAnnotatedOutboundName)) {
 							if (outputAnnotationCount == 0) {
@@ -329,7 +329,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		this.evaluationContext = IntegrationContextUtils.getEvaluationContext(this.applicationContext.getBeanFactory());
 		for (Map.Entry<String, List<StreamListenerHandlerMethodMapping>> mappedBindingEntry : mappedListenerMethods
 				.entrySet()) {
-			Collection<DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler> handlerMethods = new ArrayList<>();
+			Collection<DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler> handlers = new ArrayList<>();
 			for (StreamListenerHandlerMethodMapping mapping : mappedBindingEntry.getValue()) {
 				final InvocableHandlerMethod invocableHandlerMethod = this.messageHandlerMethodFactory
 						.createInvocableHandlerMethod(mapping.getTargetBean(),
@@ -345,16 +345,21 @@ public class StreamListenerAnnotationBeanPostProcessor
 				if (StringUtils.hasText(mapping.getCondition())) {
 					String conditionAsString = resolveExpressionAsString(mapping.getCondition());
 					Expression condition = SPEL_EXPRESSION_PARSER.parseExpression(conditionAsString);
-					handlerMethods.add(new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler(
+					handlers.add(new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler(
 							condition, streamListenerMessageHandler));
 				}
 				else {
-					handlerMethods.add(new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler(
+					handlers.add(new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler(
 							null, streamListenerMessageHandler));
 				}
 			}
+			if (handlers.size() > 1) {
+				for (DispatchingStreamListenerMessageHandler.ConditionalStreamListenerHandler handler : handlers) {
+					Assert.isTrue(handler.isVoid(), StreamListenerErrorMessages.MULTIPLE_VALUE_RETURNING_METHODS);
+				}
+			}
 			DispatchingStreamListenerMessageHandler handler = new DispatchingStreamListenerMessageHandler(
-					handlerMethods, this.evaluationContext);
+					handlers, this.evaluationContext);
 			handler.setApplicationContext(this.applicationContext);
 			handler.setChannelResolver(this.binderAwareChannelResolver);
 			handler.afterPropertiesSet();
