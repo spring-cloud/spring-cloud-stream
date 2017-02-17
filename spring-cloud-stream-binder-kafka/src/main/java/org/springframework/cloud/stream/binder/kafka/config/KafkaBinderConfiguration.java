@@ -26,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
@@ -40,6 +39,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -79,8 +79,8 @@ public class KafkaBinderConfiguration {
 	@Autowired
 	private ProducerListener producerListener;
 
-	@Autowired(required = false)
-	private KafkaProperties kafkaProperties;
+	@Autowired
+	private ApplicationContext context;
 
 	@Autowired (required = false)
 	private AdminUtilsOperation adminUtilsOperation;
@@ -97,7 +97,6 @@ public class KafkaBinderConfiguration {
 		kafkaMessageChannelBinder.setCodec(this.codec);
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
-		kafkaMessageChannelBinder.setKafkaProperties(kafkaProperties);
 		return kafkaMessageChannelBinder;
 	}
 
@@ -140,7 +139,7 @@ public class KafkaBinderConfiguration {
 			return AppInfoParser.getVersion().startsWith("0.10");
 		}
 	}
-
+	
 	static class Kafka09Present implements Condition {
 
 		@Override
