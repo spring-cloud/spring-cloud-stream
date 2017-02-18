@@ -53,6 +53,7 @@ import org.springframework.util.StringUtils;
  * AMQP implementation for {@link ProvisioningProvider}
  *
  * @author Soby Chacko
+ * @author Gary Russell
  */
 public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<RabbitConsumerProperties>,
 		ExtendedProducerProperties<RabbitProducerProperties>> {
@@ -453,12 +454,13 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 		}
 	}
 
-	private final class RabbitProducerDestination implements ProducerDestination {
+	private static final class RabbitProducerDestination implements ProducerDestination {
 
 		private final Exchange exchange;
+
 		private final Binding binding;
 
-		private RabbitProducerDestination(Exchange exchange, Binding binding) {
+		RabbitProducerDestination(Exchange exchange, Binding binding) {
 			Assert.notNull(exchange, "exchange must not be null");
 			this.exchange = exchange;
 			this.binding = binding;
@@ -483,12 +485,12 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 		}
 	}
 
-	private final class RabbitConsumerDestination implements ConsumerDestination {
+	private static final class RabbitConsumerDestination implements ConsumerDestination {
 
 		private final Queue queue;
 		private final Binding binding;
 
-		private RabbitConsumerDestination(Queue queue, Binding binding) {
+		RabbitConsumerDestination(Queue queue, Binding binding) {
 			Assert.notNull(queue, "queue must not be null");
 			this.queue = queue;
 			this.binding = binding;
@@ -507,4 +509,5 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 			return this.queue.getName();
 		}
 	}
+
 }
