@@ -24,7 +24,8 @@
 		<module>spring-cloud-stream-binder-kafka-0.9-test</module>
 		<module>spring-cloud-stream-binder-kafka-0.10.0-test</module>
 		<module>spring-cloud-stream-binder-kafka-core</module>
-	</modules>
+        <module>spring-cloud-stream-binder-kafka-test-support</module>
+    </modules>
 
 	<dependencyManagement>
 		<dependencies>
