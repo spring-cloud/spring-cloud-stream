@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import kafka.utils.ZkUtils;
  * Kafka implementation for {@link ProvisioningProvider}
  *
  * @author Soby Chacko
+ * @author Gary Russell
  */
 public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<KafkaConsumerProperties>,
 		ExtendedProducerProperties<KafkaProducerProperties>>, InitializingBean {
@@ -238,18 +239,19 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		}
 	}
 
-	private final class KafkaProducerDestination implements ProducerDestination {
+	private static final class KafkaProducerDestination implements ProducerDestination {
 
 		private final String producerDestinationName;
+
 		private final int partitions;
 
-		private KafkaProducerDestination(String destinationName, Integer partitions) {
-			this.producerDestinationName = destinationName;
-			this.partitions = partitions;
+		KafkaProducerDestination(String destinationName) {
+			this(destinationName, 0);
 		}
 
-		private KafkaProducerDestination(String destinationName) {
-			this(destinationName, 0);
+		KafkaProducerDestination(String destinationName, Integer partitions) {
+			this.producerDestinationName = destinationName;
+			this.partitions = partitions;
 		}
 
 		@Override
@@ -271,21 +273,23 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		}
 	}
 
-	private final class KafkaConsumerDestination implements ConsumerDestination {
+	private static final class KafkaConsumerDestination implements ConsumerDestination {
 
 		private final String consumerDestinationName;
+
 		private final int partitions;
+
 		private final String dlqName;
 
-		private KafkaConsumerDestination(String consumerDestinationName) {
+		KafkaConsumerDestination(String consumerDestinationName) {
 			this(consumerDestinationName, 0, null);
 		}
 
-		private KafkaConsumerDestination(String consumerDestinationName, int partitions) {
+		KafkaConsumerDestination(String consumerDestinationName, int partitions) {
 			this(consumerDestinationName, partitions, null);
 		}
 
-		private KafkaConsumerDestination(String consumerDestinationName, Integer partitions, String dlqName) {
+		KafkaConsumerDestination(String consumerDestinationName, Integer partitions, String dlqName) {
 			this.consumerDestinationName = consumerDestinationName;
 			this.partitions = partitions;
 			this.dlqName = dlqName;
