@@ -82,7 +82,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	public AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
 										PP provisioningProvider) {
 		this.supportsHeadersNatively = supportsHeadersNatively;
-		this.headersToEmbed = headersToEmbed;
+		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
 		this.provisioningProvider = provisioningProvider;
 	}
 
