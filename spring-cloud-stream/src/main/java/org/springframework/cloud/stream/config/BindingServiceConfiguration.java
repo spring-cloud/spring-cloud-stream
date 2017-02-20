@@ -101,21 +101,18 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(MessageConverterConfigurer.class)
 	public MessageConverterConfigurer messageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory);
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(SubscribableChannelBindingTargetFactory.class)
 	public SubscribableChannelBindingTargetFactory channelFactory(
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
 		return new SubscribableChannelBindingTargetFactory(compositeMessageChannelConfigurer);
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(CompositeMessageChannelConfigurer.class)
 	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer(
 			MessageConverterConfigurer messageConverterConfigurer) {
 		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
@@ -125,27 +122,23 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	@DependsOn("bindingService")
-	@ConditionalOnMissingBean(OutputBindingLifecycle.class)
 	public OutputBindingLifecycle outputBindingLifecycle() {
 		return new OutputBindingLifecycle();
 	}
 
 	@Bean
 	@DependsOn("bindingService")
-	@ConditionalOnMissingBean(InputBindingLifecycle.class)
 	public InputBindingLifecycle inputBindingLifecycle() {
 		return new InputBindingLifecycle();
 	}
 
 	@Bean
 	@DependsOn("bindingService")
-	@ConditionalOnMissingBean(ContextStartAfterRefreshListener.class)
 	public ContextStartAfterRefreshListener contextStartAfterRefreshListener() {
 		return new ContextStartAfterRefreshListener();
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(BinderAwareChannelResolver.class)
 	public BinderAwareChannelResolver binderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
@@ -154,20 +147,17 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
-	@ConditionalOnMissingBean(SingleBindingTargetBindable.class)
 	public SingleBindingTargetBindable<MessageChannel> errorChannelBindable(
 			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
 		return new SingleBindingTargetBindable<MessageChannel>(ERROR_CHANNEL_NAME, errorChannel);
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(DynamicDestinationsBindable.class)
 	public DynamicDestinationsBindable dynamicDestinationsBindable() {
 		return new DynamicDestinationsBindable();
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(CompositeMessageConverterFactory.class)
 	public CompositeMessageConverterFactory compositeMessageConverterFactory() {
 		List<MessageConverter> messageConverters = new ArrayList<>();
 		if (!CollectionUtils.isEmpty(this.customMessageConverters)) {
@@ -177,7 +167,6 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(MessageHandlerMethodFactory.class)
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
