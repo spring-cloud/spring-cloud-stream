@@ -33,7 +33,7 @@ public class KafkaBinderConfigurationProperties {
 
 	private String[] zkNodes = new String[] {"localhost"};
 
-	private Map<String, String> configuration = new HashMap<>();
+	private Map<String, Object> configuration = new HashMap<>();
 
 	private String defaultZkPort = "2181";
 
@@ -249,11 +249,11 @@ public class KafkaBinderConfigurationProperties {
 		this.socketBufferSize = socketBufferSize;
 	}
 
-	public Map<String, String> getConfiguration() {
+	public Map<String, Object> getConfiguration() {
 		return configuration;
 	}
 
-	public void setConfiguration(Map<String, String> configuration) {
+	public void setConfiguration(Map<String, Object> configuration) {
 		this.configuration = configuration;
 	}
 

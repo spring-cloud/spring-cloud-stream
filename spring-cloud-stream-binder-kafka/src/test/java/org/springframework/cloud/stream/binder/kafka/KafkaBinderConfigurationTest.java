@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package org.springframework.cloud.stream.binder.kafka;
 
-import static org.junit.Assert.assertNotNull;
-
 import java.lang.reflect.Field;
 
 import org.junit.Test;
@@ -28,6 +26,8 @@ import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigura
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.ReflectionUtils;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Ilayaperumal Gopinathan

@@ -1224,7 +1224,7 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		Binding<?> binding = null;
 		try {
 			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
-			Map<String, String> propertiesToOverride = configurationProperties.getConfiguration();
+			Map<String, Object> propertiesToOverride = configurationProperties.getConfiguration();
 			propertiesToOverride.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 			propertiesToOverride.put("value.deserializer", "org.apache.kafka.common.serialization.LongDeserializer");
 			configurationProperties.setConfiguration(propertiesToOverride);

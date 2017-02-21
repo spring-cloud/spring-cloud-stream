@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka;
 import javax.security.auth.login.AppConfigurationEntry;
 
 import com.sun.security.auth.login.ConfigFile;
+
 import org.apache.kafka.common.security.JaasUtils;
 import org.junit.Test;
 

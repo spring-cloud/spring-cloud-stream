@@ -19,6 +19,9 @@ package org.springframework.cloud.stream.binder.kafka;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -32,13 +35,35 @@ import org.springframework.core.env.MapPropertySource;
  */
 public class KafkaBinderEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
+	public final static String SPRING_KAFKA = "spring.kafka";
+
+	public final static String SPRING_KAFKA_PRODUCER = SPRING_KAFKA + ".producer";
+
+	public final static String SPRING_KAFKA_CONSUMER = SPRING_KAFKA + ".consumer";
+
+	public final static String SPRING_KAFKA_PRODUCER_KEY_SERIALIZER = SPRING_KAFKA_PRODUCER + "." + "keySerializer";
+
+	public final static String SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER = SPRING_KAFKA_PRODUCER + "." + "valueSerializer";
+
+	public final static String SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER = SPRING_KAFKA_CONSUMER + "." + "keyDeserializer";
+
+	public final static String SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER = SPRING_KAFKA_CONSUMER + "." + "valueDeserializer";
+
+	private static final String KAFKA_BINDER_DEFAULT_PROPERTIES = "kafkaBinderDefaultProperties";
+
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-		Map<String, Object> propertiesToAdd = new HashMap<>();
-		propertiesToAdd.put("logging.pattern.console", "%d{ISO8601} %5p %t %c{2}:%L - %m%n");
-		propertiesToAdd.put("logging.level.org.I0Itec.zkclient", "ERROR");
-		propertiesToAdd.put("logging.level.kafka.server.KafkaConfig", "ERROR");
-		propertiesToAdd.put("logging.level.kafka.admin.AdminClient.AdminConfig", "ERROR");
-		environment.getPropertySources().addLast(new MapPropertySource("kafkaBinderLogConfig", propertiesToAdd));
+		if (!environment.getPropertySources().contains(KAFKA_BINDER_DEFAULT_PROPERTIES)) {
+			Map<String, Object> kafkaBinderDefaultProperties = new HashMap<>();
+			kafkaBinderDefaultProperties.put("logging.pattern.console", "%d{ISO8601} %5p %t %c{2}:%L - %m%n");
+			kafkaBinderDefaultProperties.put("logging.level.org.I0Itec.zkclient", "ERROR");
+			kafkaBinderDefaultProperties.put("logging.level.kafka.server.KafkaConfig", "ERROR");
+			kafkaBinderDefaultProperties.put("logging.level.kafka.admin.AdminClient.AdminConfig", "ERROR");
+			kafkaBinderDefaultProperties.put(SPRING_KAFKA_PRODUCER_KEY_SERIALIZER, ByteArraySerializer.class.getName());
+			kafkaBinderDefaultProperties.put(SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER, ByteArraySerializer.class.getName());
+			kafkaBinderDefaultProperties.put(SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER, ByteArrayDeserializer.class.getName());
+			kafkaBinderDefaultProperties.put(SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER, ByteArrayDeserializer.class.getName());
+			environment.getPropertySources().addLast(new MapPropertySource(KAFKA_BINDER_DEFAULT_PROPERTIES, kafkaBinderDefaultProperties));
+		}
 	}
 }

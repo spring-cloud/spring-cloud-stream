@@ -17,15 +17,20 @@
 package org.springframework.cloud.stream.binder.kafka.config;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.utils.AppInfoParser;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
@@ -51,6 +56,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.integration.codec.Codec;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
+import org.springframework.util.ObjectUtils;
 
 /**
  * @author David Turanski
@@ -61,7 +67,7 @@ import org.springframework.kafka.support.ProducerListener;
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
+@Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class, KafkaBinderConfiguration.KafkaPropertiesConfiguration.class})
 @EnableConfigurationProperties({KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class})
 public class KafkaBinderConfiguration {
 
@@ -153,5 +159,48 @@ public class KafkaBinderConfiguration {
 		private JaasLoginModuleConfiguration kafka;
 
 		private JaasLoginModuleConfiguration zookeeper;
+	}
+
+	@ConditionalOnClass(name = "org.springframework.boot.autoconfigure.kafka.KafkaProperties")
+	public static class KafkaPropertiesConfiguration {
+
+		// KafkaProperties can still be unavailable if KafkaAutoConfiguration is disabled.
+		@Autowired(required = false)
+		private KafkaProperties kafkaProperties;
+
+		@Autowired
+		private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
+
+		@PostConstruct
+		public void init() {
+			Map<String, Object> configuration = this.kafkaBinderConfigurationProperties.getConfiguration();
+			if (this.kafkaProperties != null) {
+				for (Map.Entry<String, String> properties : this.kafkaProperties.getProperties().entrySet()) {
+					if (!configuration.containsKey(properties.getKey())) {
+						configuration.put(properties.getKey(), properties.getValue());
+					}
+				}
+				for (Map.Entry<String, Object> producerProperties : this.kafkaProperties.buildProducerProperties().entrySet()) {
+					if (!configuration.containsKey(producerProperties.getKey())) {
+						configuration.put(producerProperties.getKey(), producerProperties.getValue());
+					}
+				}
+				for (Map.Entry<String, Object> consumerProperties : this.kafkaProperties.buildConsumerProperties().entrySet()) {
+					if (!configuration.containsKey(consumerProperties.getKey())) {
+						configuration.put(consumerProperties.getKey(), consumerProperties.getValue());
+					}
+				}
+				if (ObjectUtils.isEmpty(configuration.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
+					configuration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBinderConfigurationProperties.getKafkaConnectionString());
+				}
+				else {
+					@SuppressWarnings("unchecked")
+					List<String> bootStrapServers = (List<String>) configuration.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+					if (bootStrapServers.size() == 1 && bootStrapServers.get(0).equals("localhost:9092")) {
+						configuration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBinderConfigurationProperties.getKafkaConnectionString());
+					}
+				}
+			}
+		}
 	}
 }
