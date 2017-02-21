@@ -453,6 +453,7 @@ In the case of `@StreamListener`, the `MessageConverter` mechanism will use the 
 As with other Spring Messaging methods, method arguments can be annotated with `@Payload`, `@Headers` and `@Header`.
 
 [NOTE]
+====
 For methods which return data, you must use the `@SendTo` annotation to specify the output binding destination for data returned by the method:
 
 [source,java]
@@ -470,6 +471,7 @@ public class TransformProcessor {
   }
 }
 ----
+====
 
 ===== Using @StreamListener for dispatching messages to multiple methods
 
@@ -504,9 +506,10 @@ public static class TestPojoWithAnnotatedArguments {
 }
 ----
 
-
 [NOTE]
+====
 Dispatching via `@StreamListener` conditions is only supported for handlers of individual messages, and not for reactive programming support (described below).
+====
 
 ==== Reactive Programming Support
 
