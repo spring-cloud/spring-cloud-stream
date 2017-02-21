@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>1.2.0.BUILD-SNAPSHOT</version>
+		<version>1.2.0.M2</version>
 	</parent>
 	<artifactId>spring-cloud-stream-core-docs</artifactId>
 	<name>spring-cloud-stream-core-docs</name>
