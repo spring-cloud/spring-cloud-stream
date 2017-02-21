@@ -48,6 +48,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.PropertySources;
 import org.springframework.integration.monitor.IntegrationMBeanExporter;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -59,7 +60,10 @@ import org.springframework.util.StringUtils;
  * @author Venil Noronha
  */
 @EnableBinding
-public class AggregateApplicationBuilder implements AggregateApplication, ApplicationContextAware, SmartInitializingSingleton {
+public class AggregateApplicationBuilder implements AggregateApplication, ApplicationContextAware,
+															SmartInitializingSingleton {
+
+	private static final String CHILD_CONTEXT_SUFFIX = ".spring.cloud.stream.context";
 
 	private SourceConfigurer sourceConfigurer;
 
@@ -153,7 +157,9 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			throw new IllegalStateException("The aggregate application has not been started yet");
 		}
 		try {
-			return bindableType.cast(parentContext.getBean(namespace + "." + bindableType.getName()));
+			ChildContextHolder contextHolder = parentContext.getBean(namespace + CHILD_CONTEXT_SUFFIX,
+					ChildContextHolder.class);
+			return contextHolder.getChildContext().getBean(bindableType);
 		}
 		catch (BeansException e) {
 			throw new IllegalStateException("Binding not found for '" + bindableType.getName() + "' into namespace " +
@@ -383,8 +389,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			for (String bindableProxyName : bindableProxies.keySet()) {
 				try {
 					AggregateApplicationBuilder.this.parentContext.getBeanFactory().registerSingleton(
-							this.getNamespace() + "." + bindableProxyName.substring(1, bindableProxyName.length()),
-							bindableProxies.get(bindableProxyName).getObject());
+							this.getNamespace() + CHILD_CONTEXT_SUFFIX, new ChildContextHolder(childContext));
 				}
 				catch (Exception e) {
 					throw new IllegalStateException(
@@ -460,6 +465,20 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			return this.builder.run(args.toArray(new String[0]));
 		}
 
+	}
+
+	private static class ChildContextHolder {
+
+		private final ConfigurableApplicationContext childContext;
+
+		ChildContextHolder(ConfigurableApplicationContext childContext) {
+			Assert.notNull(childContext, "cannot be null");
+			this.childContext = childContext;
+		}
+
+		public ConfigurableApplicationContext getChildContext() {
+			return childContext;
+		}
 	}
 
 	@ImportAutoConfiguration({ChannelBindingAutoConfiguration.class, EndpointAutoConfiguration.class})
