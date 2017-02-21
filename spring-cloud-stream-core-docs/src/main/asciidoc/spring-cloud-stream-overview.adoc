@@ -455,7 +455,6 @@ As with other Spring Messaging methods, method arguments can be annotated with `
 [NOTE]
 ====
 For methods which return data, you must use the `@SendTo` annotation to specify the output binding destination for data returned by the method:
-====
 
 [source,java]
 ----
@@ -472,6 +471,44 @@ public class TransformProcessor {
   }
 }
 ----
+====
+
+===== Using @StreamListener for dispatching messages to multiple methods
+
+Since version 1.2, Spring Cloud Stream supports dispatching messages to multiple `@StreamListener` methods registered on an input channel, based on a condition.
+
+In order to be eligible to support conditional dispatching, a method must satisfy the follow conditions:
+
+* the method must not return a value;
+* to be an individual message handling method (reactive API methods are not supported);
+
+The condition is specified via a SpEL expression in the `condition` attribute of the annotation and is evaluated for each message.
+All the handlers that match the condition will be invoked in the same thread and no assumption must be made about the order in which the invocations take place.
+
+An example of using `@StreamListener` with dispatching conditions can be seen below.
+In this example, all the messages bearing a header `type` with the value `foo` will be dispatched to the `receiveFoo` method, and all the messages bearing a header `type` with the value `bar` will be dispatched to the `receiveBar` method.
+
+[source,java]
+----
+@EnableBinding(Sink.class)
+@EnableAutoConfiguration
+public static class TestPojoWithAnnotatedArguments {
+
+    @StreamListener(target = Sink.INPUT, condition = "headers['type']=='foo'")
+    public void receiveFoo(@Payload FooPojo fooPojo) {
+       // handle the message
+    }
+
+    @StreamListener(target = Sink.INPUT, condition = "headers['type']=='bar'")
+    public void receiveBar(@Payload BarPojo barPojo) {
+       // handle the message
+    }
+}
+----
+
+[NOTE]
+====
+Dispatching via `@StreamListener` conditions is only supported for handlers of individual messages, and not for reactive programming support (described below).
 ====
 
 ==== Reactive Programming Support
