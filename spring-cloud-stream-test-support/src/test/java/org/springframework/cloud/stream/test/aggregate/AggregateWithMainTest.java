@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.aggregate.AggregateApplication;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -37,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Marius Bogoevici
  */
-public class AggregateTestWithMain {
+public class AggregateWithMainTest {
 
 	@Test
 	public void testAggregateApplication() throws InterruptedException {
@@ -59,6 +60,10 @@ public class AggregateTestWithMain {
 	@Configuration
 	@EnableBinding(Processor.class)
 	public static class UppercaseProcessor {
+
+
+		@Autowired
+		Processor processor;
 
 		@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
 		public String transform(String in) {

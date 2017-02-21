@@ -42,8 +42,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = AggregateTestWithBean.ChainedProcessors.class, properties = {"server.port=-1"})
-public class AggregateTestWithBean {
+@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = {"server.port=-1"})
+public class AggregateWithBeanTest {
 
 	@Autowired
 	public MessageCollector messageCollector;
