@@ -1115,6 +1115,50 @@ When native encoding is used, it is the responsibility of the consumer to use ap
 Also, when native encoding/decoding is used the `headerMode` property is ignored and headers will not be embedded into the message.
 +
 Default: `false`.
+[[dynamicdestination]]
+== Binding producer to destinations dynamically at runtime
+
+It is useful to have the Spring Cloud Stream 'outbound' applications sending messages to a 'destination' that is determined dynamically as the messages are processed at runtime.
+In these cases, the destination names to the broker (for example: exchange name in case Rabbit or topic name in case of Kafka) may or may not be available beforehand.
+Spring Cloud Stream applications can make use 'BinderAwareChannelResolver' which is available to the application when '@EnableBinding' is annotated to the application.
+
+The property 'spring.cloud.stream.dynamicDestinations' can be set if the dynamic destinations are known and the application needs to bind to this list of dynamic destinations **only**. If this property is set to empty(which is by default empty), then 'BinderAwareChannelResolver' takes care of binding to all the resolved dynamic destinations.
+
+
+For instance, the below example application registers a REST 'controller' with a request mapping on the path '/'. It uses the 'BinderAwareChannelResolver' that resolves the dynamic destinations using the SpEL expression evaluated against the message payload.
+
+[source,java]
+----
+@EnableBinding
+@Controller
+public class SourceWithDynamicDestination {
+
+	@Autowired
+	private BinderAwareChannelResolver resolver;
+
+	@RequestMapping(path = "/", method = POST, consumes = "*/*")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+		sendMessage(body, contentType);
+	}
+
+	private void sendMessage(String body, Object contentType) {
+		resolver.resolveDestination(body).send(MessageBuilder.createMessage(body,
+				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
+	}
+}
+----
+
+Upon starting the application on the default port 8080, if the following data are sent:
+
+----
+curl -H "Content-Type: application/json" -X POST -d "customerId-1" http://localhost:8080
+
+curl -H "Content-Type: application/json" -X POST -d "customerId-2" http://localhost:8080
+----
+
+The destinations 'customerId-1' and 'customerId-2' are created at the broker (for example: exchange in case of Rabbit or topic in case of Kafka with the names 'customerId-1' and 'customerId-2') and the data are published to the appropriate destinations dynamically.
+
 [[contenttypemanagement]]
 == Content Type and Transformation
 
