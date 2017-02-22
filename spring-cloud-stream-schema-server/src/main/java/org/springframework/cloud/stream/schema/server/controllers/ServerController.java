@@ -133,6 +133,15 @@ public class ServerController {
 		return new ResponseEntity<>(schema, HttpStatus.OK);
 	}
 
+	@RequestMapping(method = RequestMethod.GET, produces = "application/json", path = "/{subject}/{format}")
+	public ResponseEntity<List<Schema>> findBySubjectAndVersion(@PathVariable("subject") String subject, @PathVariable("format") String format) {
+		List<Schema> schemas = repository.findBySubjectAndFormatOrderByVersion(subject, format);
+		if (schemas == null || schemas.size() == 0) {
+			throw new SchemaNotFoundException(String.format("No schemas found for subject %s and format %s", subject, format));
+		}
+		return new ResponseEntity<List<Schema>>(schemas, HttpStatus.OK);
+	}
+
 	@RequestMapping(value = "/{subject}/{format}/v{version}", method = RequestMethod.DELETE)
 	public void delete(@PathVariable("subject") String subject,
 			@PathVariable("format") String format,

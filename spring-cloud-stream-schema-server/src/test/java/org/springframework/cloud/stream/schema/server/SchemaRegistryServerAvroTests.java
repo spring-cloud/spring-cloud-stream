@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.schema.server;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.*;
+
 import java.util.List;
 
 import org.junit.Assert;
@@ -27,6 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.stream.schema.server.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.server.model.Schema;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -34,9 +38,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.context.WebApplicationContext;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 
 /**
  * @author Vinicius Carvalho
@@ -244,6 +245,32 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Object> deleteById = client.exchange("http://localhost:8990/schemas/1", HttpMethod.DELETE,
 				null, Object.class);
 		assertThat(deleteById.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+	}
+
+	@Test
+	public void testFindSchemaBySubject() throws Exception {
+		Schema v1 = new Schema();
+		v1.setFormat("avro");
+		v1.setSubject("test");
+		v1.setDefinition(USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
+				v1, Schema.class);
+		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
+
+		Schema v2 = new Schema();
+		v2.setFormat("avro");
+		v2.setSubject("test");
+		v2.setDefinition(USER_SCHEMA_V2);
+
+		ResponseEntity<Schema> response2 = client.postForEntity("http://localhost:8990/",
+				v2, Schema.class);
+		Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
+
+		ResponseEntity<List<Schema>> schemaResponse = client.exchange("http://localhost:8990/test/avro", HttpMethod.GET, null, new ParameterizedTypeReference<List<Schema>>() {
+		});
+
+		Assert.assertTrue(schemaResponse.getStatusCode().is2xxSuccessful());
+		Assert.assertEquals(2, schemaResponse.getBody().size());
 	}
 
 }

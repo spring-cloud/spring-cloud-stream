@@ -44,18 +44,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class SchemaServerConfiguration {
 
 	@Bean
-	public ServerController serverController(SchemaRepository repository, SchemaServerProperties schemeServerProperties) {
-		return new ServerController(repository, schemaValidators(), schemeServerProperties);
-	}
-
-	@Bean
-	public Map<String, SchemaValidator> schemaValidators() {
-		Map<String, SchemaValidator> validatorMap = new HashMap<>();
-		validatorMap.put("avro", new AvroSchemaValidator());
-		return validatorMap;
-	}
-
-	@Bean
 	public static BeanFactoryPostProcessor entityScanPackagesPostProcessor() {
 		return new BeanFactoryPostProcessor() {
 
@@ -67,6 +55,18 @@ public class SchemaServerConfiguration {
 				}
 			}
 		};
+	}
+
+	@Bean
+	public ServerController serverController(SchemaRepository repository, SchemaServerProperties schemeServerProperties) {
+		return new ServerController(repository, schemaValidators(), schemeServerProperties);
+	}
+
+	@Bean
+	public Map<String, SchemaValidator> schemaValidators() {
+		Map<String, SchemaValidator> validatorMap = new HashMap<>();
+		validatorMap.put("avro", new AvroSchemaValidator());
+		return validatorMap;
 	}
 
 }
