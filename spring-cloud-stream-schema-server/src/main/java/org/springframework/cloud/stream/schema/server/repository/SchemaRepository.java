@@ -30,6 +30,7 @@ public interface SchemaRepository extends PagingAndSortingRepository<Schema, Int
 	@Transactional
 	List<Schema> findBySubjectAndFormatOrderByVersion(String subject,
 			String format);
+
 	@Transactional
 	Schema findOneBySubjectAndFormatAndVersion(String subject, String format,
 			Integer version);

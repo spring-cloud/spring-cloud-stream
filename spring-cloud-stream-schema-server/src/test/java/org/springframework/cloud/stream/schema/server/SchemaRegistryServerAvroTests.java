@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.stream.schema.server.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.server.model.Schema;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -244,6 +245,32 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Object> deleteById = client.exchange("http://localhost:8990/schemas/1", HttpMethod.DELETE,
 				null, Object.class);
 		assertThat(deleteById.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+	}
+
+	@Test
+	public void testFindSchemaBySubject() throws Exception {
+		Schema v1 = new Schema();
+		v1.setFormat("avro");
+		v1.setSubject("test");
+		v1.setDefinition(USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
+				v1, Schema.class);
+		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
+
+		Schema v2 = new Schema();
+		v2.setFormat("avro");
+		v2.setSubject("test");
+		v2.setDefinition(USER_SCHEMA_V2);
+
+		ResponseEntity<Schema> response2 = client.postForEntity("http://localhost:8990/",
+				v2, Schema.class);
+		Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
+
+		ResponseEntity<List<Schema>> schemaResponse = client.exchange("http://localhost:8990/test/avro", HttpMethod.GET, null, new ParameterizedTypeReference<List<Schema>>() {
+		});
+
+		Assert.assertTrue(schemaResponse.getStatusCode().is2xxSuccessful());
+		Assert.assertEquals(2, schemaResponse.getBody().size());
 	}
 
 }

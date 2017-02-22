@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,6 +131,15 @@ public class ServerController {
 			throw new SchemaNotFoundException("Could not find Schema");
 		}
 		return new ResponseEntity<>(schema, HttpStatus.OK);
+	}
+
+	@RequestMapping(method = RequestMethod.GET, produces = "application/json", path = "/{subject}/{format}")
+	public ResponseEntity<List<Schema>> findBySubjectAndVersion(@PathVariable("subject") String subject, @PathVariable("format") String format) {
+		List<Schema> schemas = repository.findBySubjectAndFormatOrderByVersion(subject, format);
+		if (schemas == null || schemas.size() == 0) {
+			throw new SchemaNotFoundException(String.format("No schemas found for subject %s and format %s", subject, format));
+		}
+		return new ResponseEntity<List<Schema>>(schemas, HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/{subject}/{format}/v{version}", method = RequestMethod.DELETE)
