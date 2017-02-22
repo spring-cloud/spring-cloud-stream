@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.schema.server;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.*;
-
 import java.util.List;
 
 import org.junit.Assert;
@@ -38,6 +35,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.context.WebApplicationContext;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
 
 /**
  * @author Vinicius Carvalho
