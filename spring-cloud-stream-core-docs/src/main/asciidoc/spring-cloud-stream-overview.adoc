@@ -745,6 +745,26 @@ For instance, to override the default `fixedDelay` and `debug` properties of 'so
 java -jar target/MyAggregateApplication-0.0.1-SNAPSHOT.jar --source.fixedDelay=10000 --sink.debug=false
 
 ----
+===== Configuring binding service properties for non self contained aggregate application
+
+When passing the binding service properties for non-self contained aggregate applications, it is required to pass the binding service properties to the aggregate application instead of setting them as 'args' to individual child application.
+For instance,
+
+[source,java]
+----
+@SpringBootApplication
+public class SampleAggregateApplication {
+
+	public static void main(String[] args) {
+		new AggregateApplicationBuilder()
+			.from(SourceApplication.class).namespace("source").args("--fixedDelay=5000")
+			.via(ProcessorApplication.class).namespace("processor1").args("--debug=true").run(args);
+	}
+}
+----
+
+
+The binding properties like `--spring.cloud.stream.bindings.output.destination=processor-output` need to be specified as one of the external configuration properties (cmdline arg etc.,).
 
 
 == Binders
