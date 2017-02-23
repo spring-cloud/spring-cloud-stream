@@ -1451,6 +1451,13 @@ A client for the Spring Cloud Stream schema registry can be configured using the
   }
 ----
 
+[NOTE]
+====
+A decorator bean of type `CachingRegistryClient` is available if you want to cache responses from `fetch` operations. In your application
+just create an instance of that bean and it will replace the default version. It uses Spring caching abstraction, so any cache provider that
+you have on your application can be used as a cache manager for the client.
+====
+
 ==== Avro Schema Registry Client Message Converters
 
 For Spring Boot applications that have a `SchemaRegistryClient` bean registered with the application context, Spring Cloud Stream will auto-configure an Apache Avro message converter that uses the schema registry client for schema management.
