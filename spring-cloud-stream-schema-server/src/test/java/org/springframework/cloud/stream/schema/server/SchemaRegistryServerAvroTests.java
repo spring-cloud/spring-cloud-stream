@@ -248,7 +248,7 @@ public class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testFindSchemaBySubject() throws Exception {
+	public void testFindSchemasBySubjectAndVersion() throws Exception {
 		Schema v1 = new Schema();
 		v1.setFormat("avro");
 		v1.setSubject("test");

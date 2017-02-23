@@ -1376,6 +1376,18 @@ Response is a schema object in JSON format, with the following fields:
 *   `version` the schema version;
 *   `definition` the schema definition.
 
+====== `GET /{subject}/{format}`
+
+Retrieve a list of existing schema by its subject and format.
+
+Response is a list of schemas with each schema object in JSON format, with the following fields:
+
+*   `id` the schema id;
+*   `subject` the schema subject;
+*   `format` the schema format;
+*   `version` the schema version;
+*   `definition` the schema definition.
+
 ====== `GET /schemas/{id}`
 
 Retrieve an existing schema by its id.
