@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.schemaRegistryClient")
 public class SchemaRegistryClientProperties {
@@ -27,6 +28,8 @@ public class SchemaRegistryClientProperties {
 	private String endpoint;
 
 	private boolean enabled = true;
+
+	private boolean caching = true;
 
 	public String getEndpoint() {
 		return this.endpoint;
@@ -42,5 +45,13 @@ public class SchemaRegistryClientProperties {
 
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
+	}
+
+	public boolean getCaching() {
+		return caching;
+	}
+
+	public void setCaching(boolean caching) {
+		this.caching = caching;
 	}
 }
