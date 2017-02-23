@@ -22,3 +22,4 @@ _site/
 dump.rdb
 .apt_generated
 artifacts
+**/dependency-reduced-pom.xml

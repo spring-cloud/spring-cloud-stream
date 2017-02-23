@@ -27,6 +27,7 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 public class DefaultSchemaRegistryClient implements SchemaRegistryClient {
 
