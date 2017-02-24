@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.schema.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
@@ -27,13 +29,19 @@ public class CachingRegistryClient implements SchemaRegistryClient {
 
 	private SchemaRegistryClient delegate;
 
+	@Autowired
+	private CacheManager cacheManager;
+
 	public CachingRegistryClient(SchemaRegistryClient delegate) {
 		this.delegate = delegate;
 	}
 
 	@Override
 	public SchemaRegistrationResponse register(String subject, String format, String schema) {
-		return delegate.register(subject,format,schema);
+		SchemaRegistrationResponse response = delegate.register(subject,format,schema);
+		cacheManager.getCache("refCache").put(response.getSchemaReference(),schema);
+		cacheManager.getCache("idCache").put(response.getId(),schema);
+		return response;
 	}
 
 	@Override

@@ -41,20 +41,10 @@ public class SchemaRegistryClientConfiguration {
 	private SchemaRegistryClientProperties schemaRegistryClientProperties;
 
 	@Bean
-	@ConditionalOnProperty(value = "spring.cloud.stream.schemaRegistryClient.caching",  havingValue = "false", matchIfMissing = true)
 	@ConditionalOnMissingBean(SchemaRegistryClient.class)
 	public SchemaRegistryClient schemaRegistryClient(SchemaRegistryClientProperties schemaRegistryClientProperties) {
-		return createDefaultSchemaClient();
-	}
-
-
-	@Bean
-	@ConditionalOnProperty(value = "spring.cloud.stream.schemaRegistryClient.caching", havingValue = "true")
-	@ConditionalOnMissingBean(SchemaRegistryClient.class)
-	public SchemaRegistryClient cachingSchemaRegistryClient(SchemaRegistryClientProperties schemaRegistryClientProperties) {
 		return new CachingRegistryClient(createDefaultSchemaClient());
 	}
-
 
 	private DefaultSchemaRegistryClient createDefaultSchemaClient(){
 		DefaultSchemaRegistryClient defaultSchemaRegistryClient = new DefaultSchemaRegistryClient();

@@ -29,6 +29,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.stream.schema.SchemaReference;
+import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
 import org.springframework.cloud.stream.schema.client.CachingRegistryClient;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -58,6 +59,12 @@ public class SchemaClientTests {
 		Mockito.when(mock.fetch(Mockito.eq(1))).thenReturn("foo");
 		Mockito.when(mock.fetch(Mockito.any(SchemaReference.class))).thenReturn("bar");
 
+		SchemaReference registered = new SchemaReference("baz",1,"avro");
+		SchemaRegistrationResponse response = new SchemaRegistrationResponse();
+		response.setId(2);
+		response.setSchemaReference(registered);
+		Mockito.when(mock.register("baz","avro","bar")).thenReturn(response);
+
 		String result = cachingRegistryClient.fetch(1);
 		Assert.assertEquals("foo",result);
 		cachingRegistryClient.fetch(1);
@@ -69,6 +76,10 @@ public class SchemaClientTests {
 		cachingRegistryClient.fetch(ref);
 		Mockito.verify(mock, Mockito.times(1)).fetch(ref);
 
+
+		cachingRegistryClient.register("baz","avro","bar");
+		cachingRegistryClient.fetch(2);
+		Mockito.verify(mock,Mockito.times(1)).fetch(1);
 	}
 
 	@SpringBootApplication(scanBasePackages = "org.springframework.cloud.stream.schema")
