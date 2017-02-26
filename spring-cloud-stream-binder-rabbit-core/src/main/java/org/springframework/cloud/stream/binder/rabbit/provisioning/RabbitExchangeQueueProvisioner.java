@@ -391,6 +391,12 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 	private Exchange buildExchange(RabbitCommonProperties properties, String exchangeName) {
 		try {
 			ExchangeBuilder builder = new ExchangeBuilder(exchangeName, properties.getExchangeType());
+			if (properties.isExchangeDurable()) {
+				builder.durable();
+			}
+			if (properties.isExchangeAutoDelete()) {
+				builder.autoDelete();
+			}
 			if (properties.isDelayedExchange()) {
 				builder.delayed();
 			}

@@ -100,6 +100,11 @@ autoBindDlq::
   Whether to automatically declare the DLQ and bind it to the binder DLX.
 +
 Default: `false`.
+bindingRoutingKey::
+  The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
+  for partitioned destinations `-<instanceIndex>` will be appended.
++
+Default: `#`.
 bindQueue::
   Whether to bind the queue to the destination exchange; set to `false` if you have set up your own infrastructure and have previously created/bound the queue.
 +
@@ -158,11 +163,14 @@ durableSubscription::
 Only effective if `group` is also set.
 +
 Default: `true`.
-bindingRoutingKey::
-  The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
-  for partitioned destinations `-<instanceIndex>` will be appended.
+exchangeAutoDelete::
+  If `declareExchange` is true, whether the exchange should be auto-delete (removed after the last queue is removed).
 +
-Default: `#`.
+Default: `true`.
+exchangeDurable::
+  If `declareExchange` is true, whether the exchange should be durable (survives broker restart).
++
+Default: `true`.
 exchangeType::
   The exchange type; `direct`, `fanout` or `topic` for non-partitioned destinations; `direct` or `topic` for partitioned destinations.
 +
@@ -251,6 +259,12 @@ batchBufferLimit::
   Default: `10000`.
 batchTimeout::
   Default: `5000`.
+bindingRoutingKey::
+  The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
+  Only applies to non-partitioned destinations.
+  Only applies if `requiredGroups` are provided and then only to those groups.
++
+Default: `#`.
 bindQueue::
   Whether to bind the queue to the destination exchange; set to `false` if you have set up your own infrastructure and have previously created/bound the queue.
   Only applies if `requiredGroups` are provided and then only to those groups.
@@ -327,12 +341,14 @@ dlqTtl::
   Only applies if `requiredGroups` are provided and then only to those groups.
 +
 Default: `no limit`
-exchangeRoutingKey::
-  The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
-  Only applies to non-partitioned destinations.
-  Only applies if `requiredGroups` are provided and then only to those groups.
+exchangeAutoDelete::
+  If `declareExchange` is true, whether the exchange should be auto-delete (removed after the last queue is removed).
 +
-Default: `#`.
+Default: `true`.
+exchangeDurable::
+  If `declareExchange` is true, whether the exchange should be durable (survives broker restart).
++
+Default: `true`.
 exchangeType::
   The exchange type; `direct`, `fanout` or `topic` for non-partitioned destinations; `direct` or `topic` for partitioned destinations.
 +

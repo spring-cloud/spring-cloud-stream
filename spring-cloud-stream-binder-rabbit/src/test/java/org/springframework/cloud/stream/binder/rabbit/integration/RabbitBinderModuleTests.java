@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefault() {
 		context = SpringApplication.run(SimpleProcessor.class, "--server.port=0");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
+		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
@@ -107,7 +107,7 @@ public class RabbitBinderModuleTests {
 				"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
 				"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
+		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		BindingService bindingService = context.getBean(BindingService.class);
 		DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(bindingService);
@@ -144,7 +144,7 @@ public class RabbitBinderModuleTests {
 		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class)
 				.run("--server.port=0");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
+		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
@@ -174,7 +174,7 @@ public class RabbitBinderModuleTests {
 		params.add("--server.port=0");
 		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[params.size()]));
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
+		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor

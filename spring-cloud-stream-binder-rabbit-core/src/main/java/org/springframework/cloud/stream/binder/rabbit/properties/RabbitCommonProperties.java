@@ -30,7 +30,7 @@ public abstract class RabbitCommonProperties {
 	public static final String DEAD_LETTER_EXCHANGE = "DLX";
 
 	/**
-	 * type of exchange to declare (if necessary, and declareExchange is true).
+	 * type of exchange to declare (if necessary, and declareExchange is true)
 	 */
 	private String exchangeType = ExchangeTypes.TOPIC;
 
@@ -38,6 +38,16 @@ public abstract class RabbitCommonProperties {
 	 * whether to declare the exchange
 	 */
 	private boolean declareExchange = true;
+
+	/**
+	 * whether to declare the exchange as durable
+	 */
+	private boolean exchangeDurable = true;
+
+	/**
+	 * whether to declare the exchange as auto-delete
+	 */
+	private boolean exchangeAutoDelete = false;
 
 	/**
 	 * whether a delayed message exchange should be used
@@ -153,6 +163,22 @@ public abstract class RabbitCommonProperties {
 
 	public void setDeclareExchange(boolean declareExchange) {
 		this.declareExchange = declareExchange;
+	}
+
+	public boolean isExchangeDurable() {
+		return this.exchangeDurable;
+	}
+
+	public void setExchangeDurable(boolean exchangeDurable) {
+		this.exchangeDurable = exchangeDurable;
+	}
+
+	public boolean isExchangeAutoDelete() {
+		return this.exchangeAutoDelete;
+	}
+
+	public void setExchangeAutoDelete(boolean exchangeAutoDelete) {
+		this.exchangeAutoDelete = exchangeAutoDelete;
 	}
 
 	public boolean isDelayedExchange() {

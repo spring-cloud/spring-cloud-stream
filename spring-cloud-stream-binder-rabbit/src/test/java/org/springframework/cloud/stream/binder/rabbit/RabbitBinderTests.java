@@ -271,6 +271,8 @@ public class RabbitBinderTests extends
 			exchange = rmt.getExchange("propsUser2");
 		}
 		assertThat(exchange).isInstanceOf(DirectExchange.class);
+		assertThat(exchange.isDurable()).isEqualTo(true);
+		assertThat(exchange.isAutoDelete()).isEqualTo(false);
 	}
 
 	@Test
@@ -279,6 +281,8 @@ public class RabbitBinderTests extends
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		RabbitConsumerProperties extProps = properties.getExtension();
 		extProps.setExchangeType(ExchangeTypes.DIRECT);
+		extProps.setExchangeDurable(false);
+		extProps.setExchangeAutoDelete(true);
 		extProps.setBindingRoutingKey("foo");
 		extProps.setExpires(30_000);
 		extProps.setMaxLength(10_000);
@@ -324,6 +328,8 @@ public class RabbitBinderTests extends
 			exchange = rmt.getExchange("propsUser3");
 		}
 		assertThat(exchange).isInstanceOf(DirectExchange.class);
+		assertThat(exchange.isDurable()).isEqualTo(false);
+		assertThat(exchange.isAutoDelete()).isEqualTo(true);
 
 //		Queue queue = rmt.getQueue("propsUser3"); AMQP-698
 		QueueInfo queue = rmt.getClient().getQueue("/", "propsUser3.infra");
