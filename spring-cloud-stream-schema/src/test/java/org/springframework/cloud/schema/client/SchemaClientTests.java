@@ -43,7 +43,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpyBean(SchemaRegistryClient.class)
 public class SchemaClientTests {
 
-
 	@Autowired
 	private CachingRegistryClient cachingRegistryClient;
 

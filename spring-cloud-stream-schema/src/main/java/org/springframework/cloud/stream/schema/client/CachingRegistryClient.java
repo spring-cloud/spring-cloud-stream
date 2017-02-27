@@ -29,6 +29,9 @@ public class CachingRegistryClient implements SchemaRegistryClient {
 
 	private SchemaRegistryClient delegate;
 
+	protected static final String ID_CACHE = "idCache";
+	protected static final String REF_CACHE = "refCache";
+
 	@Autowired
 	private CacheManager cacheManager;
 
@@ -39,19 +42,19 @@ public class CachingRegistryClient implements SchemaRegistryClient {
 	@Override
 	public SchemaRegistrationResponse register(String subject, String format, String schema) {
 		SchemaRegistrationResponse response = delegate.register(subject,format,schema);
-		cacheManager.getCache("refCache").put(response.getSchemaReference(),schema);
-		cacheManager.getCache("idCache").put(response.getId(),schema);
+		cacheManager.getCache(ID_CACHE).put(response.getSchemaReference(),schema);
+		cacheManager.getCache(REF_CACHE).put(response.getId(),schema);
 		return response;
 	}
 
 	@Override
-	@Cacheable(cacheNames = "refCache")
+	@Cacheable(cacheNames = REF_CACHE)
 	public String fetch(SchemaReference schemaReference) {
 		return delegate.fetch(schemaReference);
 	}
 
 	@Override
-	@Cacheable(cacheNames = "idCache")
+	@Cacheable(cacheNames = ID_CACHE)
 	public String fetch(int id) {
 		return delegate.fetch(id);
 	}

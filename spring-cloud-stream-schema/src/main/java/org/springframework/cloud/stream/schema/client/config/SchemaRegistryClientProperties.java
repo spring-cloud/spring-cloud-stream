@@ -29,7 +29,6 @@ public class SchemaRegistryClientProperties {
 
 	private boolean enabled = true;
 
-	private boolean caching = true;
 
 	public String getEndpoint() {
 		return this.endpoint;
@@ -47,11 +46,5 @@ public class SchemaRegistryClientProperties {
 		this.enabled = enabled;
 	}
 
-	public boolean getCaching() {
-		return caching;
-	}
 
-	public void setCaching(boolean caching) {
-		this.caching = caching;
-	}
 }

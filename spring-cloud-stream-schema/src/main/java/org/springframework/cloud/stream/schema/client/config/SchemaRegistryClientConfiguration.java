@@ -40,8 +40,7 @@ public class SchemaRegistryClientConfiguration {
 	private SchemaRegistryClientProperties schemaRegistryClientProperties;
 
 	@Bean
-	@ConditionalOnMissingBean(SchemaRegistryClient.class)
-	public SchemaRegistryClient schemaRegistryClient(SchemaRegistryClientProperties schemaRegistryClientProperties) {
+	public SchemaRegistryClient schemaRegistryClient() {
 		return new CachingRegistryClient(createDefaultSchemaClient());
 	}
 
