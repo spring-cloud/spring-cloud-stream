@@ -29,8 +29,9 @@ public class CachingRegistryClient implements SchemaRegistryClient {
 
 	private SchemaRegistryClient delegate;
 
-	protected static final String ID_CACHE = "idCache";
-	protected static final String REF_CACHE = "refCache";
+	protected static final String CACHE_PREFIX = "org.springframework.cloud.stream.schema";
+	protected static final String ID_CACHE = CACHE_PREFIX + ".idCache";
+	protected static final String REF_CACHE = CACHE_PREFIX + ".refCache";
 
 	@Autowired
 	private CacheManager cacheManager;
