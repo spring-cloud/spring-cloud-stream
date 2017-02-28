@@ -176,7 +176,6 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(StreamListenerAnnotationBeanPostProcessor.class)
 	public static StreamListenerAnnotationBeanPostProcessor bindToAnnotationBeanPostProcessor(
 			@Lazy BinderAwareChannelResolver binderAwareChannelResolver,
 			@Lazy MessageHandlerMethodFactory messageHandlerMethodFactory) {
