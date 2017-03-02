@@ -1103,7 +1103,7 @@ Spring Cloud Stream applications can make use 'BinderAwareChannelResolver' which
 The property 'spring.cloud.stream.dynamicDestinations' can be set if the dynamic destinations are known and the application needs to bind to this list of dynamic destinations **only**. If this property is set to empty(which is by default empty), then 'BinderAwareChannelResolver' takes care of binding to all the resolved dynamic destinations.
 
 
-For instance, the below example application registers a REST 'controller' with a request mapping on the path '/'. It also has 'router' that resolves the dynamic destinations using the SpEL expression evaluated against the message payload.
+For instance, the below example application registers a REST 'controller' with a request mapping on the path '/'. It uses the 'BinderAwareChannelResolver' that resolves the dynamic destinations using the SpEL expression evaluated against the message payload.
 
 [source,java]
 ----
@@ -1114,44 +1114,25 @@ public class SourceWithDynamicDestination {
 	@Autowired
 	private BinderAwareChannelResolver resolver;
 
-	@Autowired
-	@Qualifier("sourceChannel")
-	private MessageChannel localChannel;
-
 	@RequestMapping(path = "/", method = POST, consumes = "*/*")
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
 		sendMessage(body, contentType);
 	}
 
-	private void sendMessage(Object body, Object contentType) {
-		localChannel.send(MessageBuilder.createMessage(body,
+	private void sendMessage(String body, Object contentType) {
+		resolver.resolveDestination(body).send(MessageBuilder.createMessage(body,
 				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
 	}
-
-	@Bean(name = "sourceChannel")
-	public MessageChannel localChannel() {
-		return new DirectChannel();
-	}
-
-	@Bean
-	@ServiceActivator(inputChannel = "sourceChannel")
-	public ExpressionEvaluatingRouter router() {
-        ExpressionEvaluatingRouter router = new ExpressionEvaluatingRouter(new SpelExpressionParser().parseExpression("payload.id"));
-		router.setDefaultOutputChannelName("default-output");
-		router.setChannelResolver(resolver);
-		return router;
-	}
 }
-
 ----
 
 Upon starting the application on the default port 8080, if the following data are sent:
 
 ----
-curl -H "Content-Type: application/json" -X POST -d '{"id":"customerId-1","bill-pay":"100"}' http://localhost:8080
+curl -H "Content-Type: application/json" -X POST -d "customerId-1" http://localhost:8080
 
-curl -H "Content-Type: application/json" -X POST -d '{"id":"customerId-2","bill-pay":"150"}' http://localhost:8080
+curl -H "Content-Type: application/json" -X POST -d "customerId-2" http://localhost:8080
 ----
 
 The destinations 'customerId-1' and 'customerId-2' are created at the broker (for example: exchange in case of Rabbit or topic in case of Kafka with the names 'customerId-1' and 'customerId-2') and the data are published to the appropriate destinations dynamically.
