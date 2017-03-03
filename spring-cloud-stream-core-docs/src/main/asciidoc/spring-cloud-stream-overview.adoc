@@ -1115,17 +1115,18 @@ When native encoding is used, it is the responsibility of the consumer to use ap
 Also, when native encoding/decoding is used the `headerMode` property is ignored and headers will not be embedded into the message.
 +
 Default: `false`.
+
 [[dynamicdestination]]
-== Binding producer to destinations dynamically at runtime
+=== Using dynamically bound destinations
 
-It is useful to have the Spring Cloud Stream 'outbound' applications sending messages to a 'destination' that is determined dynamically as the messages are processed at runtime.
-In these cases, the destination names to the broker (for example: exchange name in case Rabbit or topic name in case of Kafka) may or may not be available beforehand.
-Spring Cloud Stream applications can make use 'BinderAwareChannelResolver' which is available to the application when '@EnableBinding' is annotated to the application.
+Besides the channels defined via `@EnableBinding`, Spring Cloud Stream allows applications to send messages to dynamically bound destinations.
+This is useful, for example, when the target destination needs to be determined at runtime.
+Applications can do so by using the `BinderAwareChannelResolver` bean, registered automatically by the `@EnableBinding` annotation.
 
-The property 'spring.cloud.stream.dynamicDestinations' can be set if the dynamic destinations are known and the application needs to bind to this list of dynamic destinations **only**. If this property is set to empty(which is by default empty), then 'BinderAwareChannelResolver' takes care of binding to all the resolved dynamic destinations.
+The property 'spring.cloud.stream.dynamicDestinations' can be used for restricting the dynamic destination names to a set known beforehand (whitelisting).
+If the property is not set, any destination can be bound dynamicaly.
 
-
-For instance, the below example application registers a REST 'controller' with a request mapping on the path '/'. It uses the 'BinderAwareChannelResolver' that resolves the dynamic destinations using the SpEL expression evaluated against the message payload.
+The `BinderAwareChannelResolver` can be used directly as in the following example, in which a REST controller uses a path variable to decide the target channel.
 
 [source,java]
 ----
@@ -1136,28 +1137,70 @@ public class SourceWithDynamicDestination {
 	@Autowired
 	private BinderAwareChannelResolver resolver;
 
-	@RequestMapping(path = "/", method = POST, consumes = "*/*")
+	@RequestMapping(path = "/{target}", method = POST, consumes = "*/*")
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-		sendMessage(body, contentType);
+	public void handleRequest(@RequestBody String body, @PathVariable("target") target,
+	       @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+		sendMessage(body, target, contentType);
 	}
 
-	private void sendMessage(String body, Object contentType) {
-		resolver.resolveDestination(body).send(MessageBuilder.createMessage(body,
+	private void sendMessage(String body, String target, Object contentType) {
+		resolver.resolveDestination(target).send(MessageBuilder.createMessage(body,
 				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
 	}
 }
 ----
 
-Upon starting the application on the default port 8080, if the following data are sent:
+After starting the application on the default port 8080, when sending the following data:
 
 ----
-curl -H "Content-Type: application/json" -X POST -d "customerId-1" http://localhost:8080
+curl -H "Content-Type: application/json" -X POST -d "customer-1" http://localhost:8080/customers
 
-curl -H "Content-Type: application/json" -X POST -d "customerId-2" http://localhost:8080
+curl -H "Content-Type: application/json" -X POST -d "order-1" http://localhost:8080/orders
 ----
 
-The destinations 'customerId-1' and 'customerId-2' are created at the broker (for example: exchange in case of Rabbit or topic in case of Kafka with the names 'customerId-1' and 'customerId-2') and the data are published to the appropriate destinations dynamically.
+The destinations 'customers' and 'orders' are created in the broker (for example: exchange in case of Rabbit or topic in case of Kafka) with the names 'customers' and 'orders', and the data is published to the appropriate destinations.
+
+The `BinderAwareChannelResolver` is a general purpose Spring Integration `DestinationResolver` and can be injected in other components.
+For example, in a router using a SpEL expression based on the `target` field of an incoming JSON message.
+
+[source,java]
+----
+@EnableBinding
+@Controller
+public class SourceWithDynamicDestination {
+
+	@Autowired
+	private BinderAwareChannelResolver resolver;
+
+
+	@RequestMapping(path = "/", method = POST, consumes = "application/json")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+		sendMessage(body, contentType);
+	}
+
+	private void sendMessage(Object body, Object contentType) {
+		routerChannel().send(MessageBuilder.createMessage(body,
+				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
+	}
+
+	@Bean(name = "routerChannel")
+	public MessageChannel routerChannel() {
+		return new DirectChannel();
+	}
+
+	@Bean
+	@ServiceActivator(inputChannel = "routerChannel")
+	public ExpressionEvaluatingRouter router() {
+        ExpressionEvaluatingRouter router =
+            new ExpressionEvaluatingRouter(new SpelExpressionParser().parseExpression("payload.target"));
+		router.setDefaultOutputChannelName("default-output");
+		router.setChannelResolver(resolver);
+		return router;
+	}
+}
+----
 
 [[contenttypemanagement]]
 == Content Type and Transformation
