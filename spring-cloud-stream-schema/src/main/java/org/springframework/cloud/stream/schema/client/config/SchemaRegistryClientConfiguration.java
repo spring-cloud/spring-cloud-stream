@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.schema.client.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.schema.client.CachingRegistryClient;
 import org.springframework.cloud.stream.schema.client.DefaultSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.context.annotation.Bean;
@@ -37,15 +38,15 @@ public class SchemaRegistryClientConfiguration {
 
 	@Bean
 	public SchemaRegistryClient schemaRegistryClient() {
-		return createDefaultSchemaClient();
-	}
-
-	private DefaultSchemaRegistryClient createDefaultSchemaClient(){
 		DefaultSchemaRegistryClient defaultSchemaRegistryClient = new DefaultSchemaRegistryClient();
+
 		if (StringUtils.hasText(schemaRegistryClientProperties.getEndpoint())) {
 			defaultSchemaRegistryClient.setEndpoint(schemaRegistryClientProperties.getEndpoint());
 		}
-		return defaultSchemaRegistryClient;
+
+		SchemaRegistryClient client = (schemaRegistryClientProperties.isCached()) ? new CachingRegistryClient(defaultSchemaRegistryClient) : defaultSchemaRegistryClient;
+
+		return client;
 	}
 
 }

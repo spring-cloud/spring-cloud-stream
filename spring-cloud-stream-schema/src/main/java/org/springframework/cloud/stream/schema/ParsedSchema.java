@@ -32,7 +32,9 @@ import org.apache.avro.Schema;
 public class ParsedSchema {
 
 	private final Schema schema;
+
 	private final String representation;
+
 	private SchemaRegistrationResponse registration;
 
 	public ParsedSchema(Schema schema){

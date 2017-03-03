@@ -27,6 +27,8 @@ public class SchemaRegistryClientProperties {
 
 	private String endpoint;
 
+	private boolean cached = false;
+
 	public String getEndpoint() {
 		return this.endpoint;
 	}
@@ -35,4 +37,11 @@ public class SchemaRegistryClientProperties {
 		this.endpoint = endpoint;
 	}
 
+	public boolean isCached() {
+		return cached;
+	}
+
+	public void setCached(boolean cached) {
+		this.cached = cached;
+	}
 }

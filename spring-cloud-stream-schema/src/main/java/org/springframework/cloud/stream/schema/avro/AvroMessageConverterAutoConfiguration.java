@@ -23,7 +23,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.cloud.stream.binder.StringConvertingContentTypeResolver;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
@@ -39,8 +38,7 @@ import org.springframework.util.ObjectUtils;
 @ConditionalOnClass(name = "org.apache.avro.Schema")
 @ConditionalOnProperty(value = "spring.cloud.stream.schemaRegistryClient.enabled", matchIfMissing = true)
 @ConditionalOnBean(type = "org.springframework.cloud.stream.schema.client.SchemaRegistryClient")
-@EnableConfigurationProperties(AvroMessageConverterProperties.class)
-@EnableCaching(proxyTargetClass = true)
+@EnableConfigurationProperties({AvroMessageConverterProperties.class})
 public class AvroMessageConverterAutoConfiguration {
 
 	@Autowired
@@ -71,6 +69,7 @@ public class AvroMessageConverterAutoConfiguration {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
 	public CacheManager cacheManager(){
 		return new ConcurrentMapCacheManager();
 	}

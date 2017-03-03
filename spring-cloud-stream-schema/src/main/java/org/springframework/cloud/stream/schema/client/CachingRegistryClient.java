@@ -27,11 +27,13 @@ import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
  */
 public class CachingRegistryClient implements SchemaRegistryClient {
 
-	private SchemaRegistryClient delegate;
-
 	protected static final String CACHE_PREFIX = "org.springframework.cloud.stream.schema.client";
+
 	protected static final String ID_CACHE = CACHE_PREFIX + ".schemaByIdCache";
+
 	protected static final String REF_CACHE = CACHE_PREFIX + ".schemaByReferenceCache";
+
+	private SchemaRegistryClient delegate;
 
 	@Autowired
 	private CacheManager cacheManager;

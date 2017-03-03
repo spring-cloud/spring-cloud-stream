@@ -57,7 +57,7 @@
 				<version>${avro.version}</version>
 				<executions>
 					<execution>
-						<phase>generate-sources</phase>
+						<phase>generate-test-sources</phase>
 						<goals>
 							<goal>schema</goal>
 						</goals>
@@ -66,7 +66,6 @@
 				</executions>
 				<configuration>
 					<testOutputDirectory>${project.basedir}/target/generated-test-sources</testOutputDirectory>
-					<sourceDirectory>${project.basedir}/src/main/resources/</sourceDirectory>
 					<testSourceDirectory>${project.basedir}/src/test/resources/schemas</testSourceDirectory>
 				</configuration>
 			</plugin>
