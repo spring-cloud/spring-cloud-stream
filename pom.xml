@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-build</artifactId>
-        <version>1.2.1.RELEASE</version>
+        <version>1.2.2.RELEASE</version>
         <relativePath/>
     </parent>
     <scm>
@@ -24,7 +24,7 @@
         <rxjava-reactive-streams.version>1.2.1</rxjava-reactive-streams.version>
         <spring.tuple.version>1.0.0.RELEASE</spring.tuple.version>
         <spring.integration.tuple.version>1.0.0.RELEASE</spring.integration.tuple.version>
-        <reactor.version>3.0.4.RELEASE</reactor.version>
+        <reactor.version>3.0.5.RELEASE</reactor.version>
         <kryo-shaded.version>3.0.3</kryo-shaded.version>
         <objenesis.version>2.1</objenesis.version>
     </properties>
