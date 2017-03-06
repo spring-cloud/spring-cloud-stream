@@ -652,13 +652,24 @@ Depending on the nature of the starting and ending element, the sequence may hav
 Aggregation is performed using the `AggregateApplicationBuilder` utility class, as in the following example.
 Let's consider a project in which we have source, processor and a sink, which may be defined in the project, or may be contained in one of the project's dependencies.
 
+[NOTE]
+====
+Each component (source, sink or processor) in an aggregate application must be provided in a separate package if the configuration classes use `@SpringBootApplication`.
+This is required to avoid cross-talk between applications, due to the classpath scanning performed by `@SpringBootApplication` on the configuration classes inside the same package.
+In the example below, it can be seen that the Source, Processor and Sink application classes are grouped in separate packages.
+A possible alternative is to provide the source, sink or processor configuration in a separate `@Configuration` class, avoid the use of `@SpringBootApplication`/`@ComponentScan` and use those for aggregation.
+====
+
+
 [source,java]
 ----
+package com.app.mysink;
+
 @SpringBootApplication
 @EnableBinding(Sink.class)
 public class SinkApplication {
 
-	private static Logger logger = LoggerFactory.getLogger(SinkModuleDefinition.class);
+	private static Logger logger = LoggerFactory.getLogger(SinkApplication.class);
 
 	@ServiceActivator(inputChannel=Sink.INPUT)
 	public void loggerSink(Object payload) {
@@ -669,6 +680,8 @@ public class SinkApplication {
 
 [source,java]
 ----
+package com.app.myprocessor;
+
 @SpringBootApplication
 @EnableBinding(Processor.class)
 public class ProcessorApplication {
@@ -682,6 +695,8 @@ public class ProcessorApplication {
 
 [source,java]
 ----
+package com.app.mysource;
+
 @SpringBootApplication
 @EnableBinding(Source.class)
 public class SourceApplication {
@@ -698,6 +713,8 @@ Each configuration can be used for running a separate component, but in this cas
 
 [source,java]
 ----
+package com.app;
+
 @SpringBootApplication
 public class SampleAggregateApplication {
 
@@ -745,6 +762,28 @@ For instance, to override the default `fixedDelay` and `debug` properties of 'so
 java -jar target/MyAggregateApplication-0.0.1-SNAPSHOT.jar --source.fixedDelay=10000 --sink.debug=false
 
 ----
+===== Configuring binding service properties for non self contained aggregate application
+
+The non self-contained aggregate application is bound to external broker via either or both the inbound/outbound components (typically, message channels) of the aggregate application while the applications inside the aggregate application are directly bound.
+For example: a source application's output and a processor application's input are directly bound while the processor's output channel is bound to an external destination at the broker.
+When passing the binding service properties for non-self contained aggregate application, it is required to pass the binding service properties to the aggregate application instead of setting them as 'args' to individual child application.
+For instance,
+
+[source,java]
+----
+@SpringBootApplication
+public class SampleAggregateApplication {
+
+	public static void main(String[] args) {
+		new AggregateApplicationBuilder()
+			.from(SourceApplication.class).namespace("source").args("--fixedDelay=5000")
+			.via(ProcessorApplication.class).namespace("processor1").args("--debug=true").run(args);
+	}
+}
+----
+
+
+The binding properties like `--spring.cloud.stream.bindings.output.destination=processor-output` need to be specified as one of the external configuration properties (cmdline arg etc.,).
 
 
 == Binders
@@ -1093,6 +1132,93 @@ When native encoding is used, it is the responsibility of the consumer to use ap
 Also, when native encoding/decoding is used the `headerMode` property is ignored and headers will not be embedded into the message.
 +
 Default: `false`.
+
+[[dynamicdestination]]
+=== Using dynamically bound destinations
+
+Besides the channels defined via `@EnableBinding`, Spring Cloud Stream allows applications to send messages to dynamically bound destinations.
+This is useful, for example, when the target destination needs to be determined at runtime.
+Applications can do so by using the `BinderAwareChannelResolver` bean, registered automatically by the `@EnableBinding` annotation.
+
+The property 'spring.cloud.stream.dynamicDestinations' can be used for restricting the dynamic destination names to a set known beforehand (whitelisting).
+If the property is not set, any destination can be bound dynamicaly.
+
+The `BinderAwareChannelResolver` can be used directly as in the following example, in which a REST controller uses a path variable to decide the target channel.
+
+[source,java]
+----
+@EnableBinding
+@Controller
+public class SourceWithDynamicDestination {
+
+	@Autowired
+	private BinderAwareChannelResolver resolver;
+
+	@RequestMapping(path = "/{target}", method = POST, consumes = "*/*")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void handleRequest(@RequestBody String body, @PathVariable("target") target,
+	       @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+		sendMessage(body, target, contentType);
+	}
+
+	private void sendMessage(String body, String target, Object contentType) {
+		resolver.resolveDestination(target).send(MessageBuilder.createMessage(body,
+				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
+	}
+}
+----
+
+After starting the application on the default port 8080, when sending the following data:
+
+----
+curl -H "Content-Type: application/json" -X POST -d "customer-1" http://localhost:8080/customers
+
+curl -H "Content-Type: application/json" -X POST -d "order-1" http://localhost:8080/orders
+----
+
+The destinations 'customers' and 'orders' are created in the broker (for example: exchange in case of Rabbit or topic in case of Kafka) with the names 'customers' and 'orders', and the data is published to the appropriate destinations.
+
+The `BinderAwareChannelResolver` is a general purpose Spring Integration `DestinationResolver` and can be injected in other components.
+For example, in a router using a SpEL expression based on the `target` field of an incoming JSON message.
+
+[source,java]
+----
+@EnableBinding
+@Controller
+public class SourceWithDynamicDestination {
+
+	@Autowired
+	private BinderAwareChannelResolver resolver;
+
+
+	@RequestMapping(path = "/", method = POST, consumes = "application/json")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+		sendMessage(body, contentType);
+	}
+
+	private void sendMessage(Object body, Object contentType) {
+		routerChannel().send(MessageBuilder.createMessage(body,
+				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
+	}
+
+	@Bean(name = "routerChannel")
+	public MessageChannel routerChannel() {
+		return new DirectChannel();
+	}
+
+	@Bean
+	@ServiceActivator(inputChannel = "routerChannel")
+	public ExpressionEvaluatingRouter router() {
+        ExpressionEvaluatingRouter router =
+            new ExpressionEvaluatingRouter(new SpelExpressionParser().parseExpression("payload.target"));
+		router.setDefaultOutputChannelName("default-output");
+		router.setChannelResolver(resolver);
+		return router;
+	}
+}
+----
+
 [[contenttypemanagement]]
 == Content Type and Transformation
 
@@ -1369,6 +1495,18 @@ Response is a schema object in JSON format, with the following fields:
 Retrieve an existing schema by its subject, format and version.
 
 Response is a schema object in JSON format, with the following fields:
+
+*   `id` the schema id;
+*   `subject` the schema subject;
+*   `format` the schema format;
+*   `version` the schema version;
+*   `definition` the schema definition.
+
+====== `GET /{subject}/{format}`
+
+Retrieve a list of existing schema by its subject and format.
+
+Response is a list of schemas with each schema object in JSON format, with the following fields:
 
 *   `id` the schema id;
 *   `subject` the schema subject;
