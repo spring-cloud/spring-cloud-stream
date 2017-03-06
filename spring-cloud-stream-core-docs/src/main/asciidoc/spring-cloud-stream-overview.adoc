@@ -615,13 +615,24 @@ Depending on the nature of the starting and ending element, the sequence may hav
 Aggregation is performed using the `AggregateApplicationBuilder` utility class, as in the following example.
 Let's consider a project in which we have source, processor and a sink, which may be defined in the project, or may be contained in one of the project's dependencies.
 
+[NOTE]
+====
+Each component (source, sink or processor) in an aggregate application must be provided in a separate package if the configuration classes use `@SpringBootApplication`.
+This is required to avoid cross-talk between applications, due to the classpath scanning performed by `@SpringBootApplication` on the configuration classes inside the same package.
+In the example below, it can be seen that the Source, Processor and Sink application classes are grouped in separate packages.
+A possible alternative is to provide the source, sink or processor configuration in a separate `@Configuration` class, avoid the use of `@SpringBootApplication`/`@ComponentScan` and use those for aggregation.
+====
+
+
 [source,java]
 ----
+package com.app.mysink;
+
 @SpringBootApplication
 @EnableBinding(Sink.class)
 public class SinkApplication {
 
-	private static Logger logger = LoggerFactory.getLogger(SinkModuleDefinition.class);
+	private static Logger logger = LoggerFactory.getLogger(SinkApplication.class);
 
 	@ServiceActivator(inputChannel=Sink.INPUT)
 	public void loggerSink(Object payload) {
@@ -632,6 +643,8 @@ public class SinkApplication {
 
 [source,java]
 ----
+package com.app.myprocessor;
+
 @SpringBootApplication
 @EnableBinding(Processor.class)
 public class ProcessorApplication {
@@ -645,6 +658,8 @@ public class ProcessorApplication {
 
 [source,java]
 ----
+package com.app.mysource;
+
 @SpringBootApplication
 @EnableBinding(Source.class)
 public class SourceApplication {
@@ -661,6 +676,8 @@ Each configuration can be used for running a separate component, but in this cas
 
 [source,java]
 ----
+package com.app;
+
 @SpringBootApplication
 public class SampleAggregateApplication {
 
