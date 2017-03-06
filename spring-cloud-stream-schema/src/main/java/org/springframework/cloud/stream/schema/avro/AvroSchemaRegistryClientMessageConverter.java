@@ -190,8 +190,19 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		}
 		else {
 			Schema.Parser parser = new Schema.Parser();
-			String schemaContents = this.schemaRegistryClient.fetch(schemaReference);
-			schema = parser.parse(schemaContents);
+			try {
+				String schemaContents = this.schemaRegistryClient.fetch(schemaReference);
+				schema = parser.parse(schemaContents);
+			} catch (SchemaNotFoundException e) {
+				if (isDynamicSchemaGenerationEnabled()) {
+					schema = extractSchemaForWriting(payload);
+					SchemaRegistrationResponse schemaRegistrationResponse = this.schemaRegistryClient.register(
+							toSubject(schema), AVRO_FORMAT, schema.toString(true));
+				}
+				else {
+					throw e;
+				}
+			}
 		}
 		if (headers instanceof MutableMessageHeaders) {
 			headers.put(MessageHeaders.CONTENT_TYPE,
