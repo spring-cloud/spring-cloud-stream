@@ -49,6 +49,7 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 	public void testSendMessage() throws Exception {
 		ConfigurableApplicationContext sourceContext = SpringApplication.run(AvroSourceApplication.class,
 				"--server.port=0",
+				"--debug",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.output.contentType=application/*+avro",
 				"--spring.cloud.stream.schema.avro.dynamicSchemaGenerationEnabled=true");
@@ -103,7 +104,7 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 		assertThat(receivedPojos.get(1)).isNotSameAs(firstOutboundUser2);
 		assertThat(receivedPojos.get(1).getFavoriteColor()).isEqualTo(firstOutboundUser2.getFavoriteColor());
 		assertThat(receivedPojos.get(1).getName()).isEqualTo(firstOutboundUser2.getName());
-		assertThat(receivedPojos.get(1).getFavoritePlace()).isEqualTo("NYC");
+		assertThat(receivedPojos.get(1).getFavoritePlace()).isEqualTo("Boston");
 
 
 		assertThat(receivedPojos.get(2)).isNotSameAs(secondBarOutboundPojo);

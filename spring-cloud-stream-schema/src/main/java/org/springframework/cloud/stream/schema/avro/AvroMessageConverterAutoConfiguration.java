@@ -22,6 +22,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.cloud.stream.binder.StringConvertingContentTypeResolver;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.context.annotation.Bean;
@@ -36,11 +38,12 @@ import org.springframework.util.ObjectUtils;
 @ConditionalOnClass(name = "org.apache.avro.Schema")
 @ConditionalOnProperty(value = "spring.cloud.stream.schemaRegistryClient.enabled", matchIfMissing = true)
 @ConditionalOnBean(type = "org.springframework.cloud.stream.schema.client.SchemaRegistryClient")
-@EnableConfigurationProperties(AvroMessageConverterProperties.class)
+@EnableConfigurationProperties({AvroMessageConverterProperties.class})
 public class AvroMessageConverterAutoConfiguration {
 
 	@Autowired
 	private AvroMessageConverterProperties avroMessageConverterProperties;
+
 
 	@Bean
 	@ConditionalOnMissingBean(AvroSchemaRegistryClientMessageConverter.class)
@@ -61,6 +64,13 @@ public class AvroMessageConverterAutoConfiguration {
 					this.avroMessageConverterProperties.getSchemaLocations());
 		}
 		avroSchemaRegistryClientMessageConverter.setPrefix(this.avroMessageConverterProperties.getPrefix());
+		avroSchemaRegistryClientMessageConverter.setCacheManager(cacheManager());
 		return avroSchemaRegistryClientMessageConverter;
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	public CacheManager cacheManager(){
+		return new ConcurrentMapCacheManager();
 	}
 }
