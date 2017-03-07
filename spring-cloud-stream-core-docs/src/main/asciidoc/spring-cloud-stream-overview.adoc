@@ -1490,6 +1490,18 @@ Response is a schema object in JSON format, with the following fields:
 *   `version` the schema version;
 *   `definition` the schema definition.
 
+====== `GET /{subject}/{format}`
+
+Retrieves all versions of a schema given a subject and a format.
+
+Response is an array of schema objects in JSON format, with the following fields:
+
+*   `id` the schema id;
+*   `subject` the schema subject;
+*   `format` the schema format;
+*   `version` the schema version;
+*   `definition` the schema definition.
+
 ====== `GET /{subject}/{format}/{version}`
 
 Retrieve an existing schema by its subject, format and version.
@@ -1576,6 +1588,13 @@ A client for the Spring Cloud Stream schema registry can be configured using the
     ...
   }
 ----
+
+[NOTE]
+====
+The default client caches all responses locally to avoid unnecessary network calls. It leverages Spring caching abstraction, so you can provide
+an external cache provider such as eh-cache or hazelcast if you want to have distributed cache control and invalidation. Schemas are append only entities
+but deletes may occur, make sure you configure your external cache provider to invalidate the cache from time to time to avoid synchronization issues.
+====
 
 ==== Avro Schema Registry Client Message Converters
 

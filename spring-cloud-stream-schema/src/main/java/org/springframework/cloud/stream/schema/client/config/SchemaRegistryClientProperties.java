@@ -20,13 +20,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.schemaRegistryClient")
 public class SchemaRegistryClientProperties {
 
 	private String endpoint;
-
-	private boolean enabled = true;
 
 	public String getEndpoint() {
 		return this.endpoint;
@@ -36,11 +35,4 @@ public class SchemaRegistryClientProperties {
 		this.endpoint = endpoint;
 	}
 
-	public boolean isEnabled() {
-		return enabled;
-	}
-
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
 }

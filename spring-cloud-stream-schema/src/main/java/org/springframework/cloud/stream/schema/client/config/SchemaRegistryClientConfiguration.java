@@ -16,7 +16,10 @@
 
 package org.springframework.cloud.stream.schema.client.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cloud.stream.schema.client.CachingRegistryClient;
 import org.springframework.cloud.stream.schema.client.DefaultSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.context.annotation.Bean;
@@ -25,17 +28,27 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 @Configuration
 @EnableConfigurationProperties(SchemaRegistryClientProperties.class)
+@EnableCaching
 public class SchemaRegistryClientConfiguration {
 
+	@Autowired
+	private SchemaRegistryClientProperties schemaRegistryClientProperties;
+
 	@Bean
-	public SchemaRegistryClient schemaRegistryClient(SchemaRegistryClientProperties schemaRegistryClientProperties) {
+	public SchemaRegistryClient schemaRegistryClient() {
+		return new CachingRegistryClient(createDefaultSchemaClient());
+	}
+
+	private DefaultSchemaRegistryClient createDefaultSchemaClient(){
 		DefaultSchemaRegistryClient defaultSchemaRegistryClient = new DefaultSchemaRegistryClient();
 		if (StringUtils.hasText(schemaRegistryClientProperties.getEndpoint())) {
 			defaultSchemaRegistryClient.setEndpoint(schemaRegistryClientProperties.getEndpoint());
 		}
 		return defaultSchemaRegistryClient;
 	}
+
 }
