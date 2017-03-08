@@ -115,6 +115,7 @@
         <module>spring-cloud-stream-schema</module>
         <module>spring-cloud-stream-schema-server</module>
         <module>spring-cloud-stream-tools</module>
+        <module>spring-cloud-stream-metrics</module>
     </modules>
     <build>
         <pluginManagement>

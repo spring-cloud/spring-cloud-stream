@@ -1813,6 +1813,50 @@ Once we have received the message, we can validate that the component functions 
 Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name of `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
 
+== Metrics Emitter
+Spring Cloud Stream provides a module called `spring-cloud-stream-metrics` that can be used to emit any available metric from https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html[Spring Boot metrics endpoint] to a named channel.
+This module allow operators to collect metrics from stream applications without relying on polling their endpoints.
+
+HTTP polling can be challenging on cloud environments since applications could be on a private network or behind a Load balancer that prevents per instance access.
+
+This module is included on the each of the out of box https://github.com/spring-cloud-stream-app-starters[application starters], if you want to emit metrics from your application, just import it on your pom.xml and follow the activation instructions.
+
+The module is activated when you set the destination name for its channel, `spring.cloud.stream.bindings.streamMetrics.destination=<DESTINATION_NAME>`.
+
+By default the module is configured to only send Spring Integration message channel metrics.
+
+Available properties for customization using the prefix `spring.cloud.stream.metrics`.
+
+delay-millis::
+  The period in which metrics will be posted to the channel
++
+Default: `5000`.
++
+prefix::
+  Prefix string to be prepended to the metrics name
++
+Default: ``
++
+includes::
+  An array of strings containing regex patterns of metrics that should be included.
++
+Default: `integration**`
++
+excludes::
+  An array of strings containing regex patterns of metrics that should be excluded.
++
+Default: ``
++
+properties::
+  Just like the `includes` option, it allows white listing application properties that will be added to the metrics payload
++
+Default: null.
++
+spring.cloud.stream.bindings.streamMetrics.contentType::
+  Content-Type of the message
++
+Default: `application/json`
+
 == Samples
 
 For Spring Cloud Stream samples, please refer to the https://github.com/spring-cloud/spring-cloud-stream-samples[spring-cloud-stream-samples] repository on GitHub.
