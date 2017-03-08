@@ -61,7 +61,6 @@
 						<goals>
 							<goal>schema</goal>
 						</goals>
-
 					</execution>
 				</executions>
 				<configuration>

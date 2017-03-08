@@ -21,17 +21,18 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
+import org.springframework.util.Assert;
 
 /**
  * @author Vinicius Carvalho
  */
 public class CachingRegistryClient implements SchemaRegistryClient {
 
-	protected static final String CACHE_PREFIX = "org.springframework.cloud.stream.schema.client";
+	private static final String CACHE_PREFIX = "org.springframework.cloud.stream.schema.client";
 
-	protected static final String ID_CACHE = CACHE_PREFIX + ".schemaByIdCache";
+	private static final String ID_CACHE = CACHE_PREFIX + ".schemaByIdCache";
 
-	protected static final String REF_CACHE = CACHE_PREFIX + ".schemaByReferenceCache";
+	private static final String REF_CACHE = CACHE_PREFIX + ".schemaByReferenceCache";
 
 	private SchemaRegistryClient delegate;
 
@@ -39,6 +40,7 @@ public class CachingRegistryClient implements SchemaRegistryClient {
 	private CacheManager cacheManager;
 
 	public CachingRegistryClient(SchemaRegistryClient delegate) {
+		Assert.notNull(delegate, "The delegate cannot be null");
 		this.delegate = delegate;
 	}
 
@@ -62,7 +64,4 @@ public class CachingRegistryClient implements SchemaRegistryClient {
 		return delegate.fetch(id);
 	}
 
-	public void setDelegate(SchemaRegistryClient delegate) {
-		this.delegate = delegate;
-	}
 }
