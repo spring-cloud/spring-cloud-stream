@@ -23,8 +23,6 @@ import java.util.Map;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.stream.schema.SchemaNotFoundException;
 import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
@@ -41,7 +39,6 @@ import org.springframework.web.client.RestTemplate;
  * @author Vinicius Carvalho
  * @author Marius Bogoevici
  */
-@CacheConfig(cacheNames = "schemas")
 public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 
 	private RestTemplate template;
@@ -86,7 +83,6 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	}
 
 	@Override
-	@Cacheable
 	public String fetch(SchemaReference schemaReference) {
 		String path = String.format("/subjects/%s/versions/%d",
 				schemaReference.getSubject(), schemaReference.getVersion());
@@ -113,7 +109,6 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	}
 
 	@Override
-	@Cacheable
 	public String fetch(int id) {
 		String path = String.format("/schemas/ids/%d", id);
 		HttpHeaders headers = new HttpHeaders();

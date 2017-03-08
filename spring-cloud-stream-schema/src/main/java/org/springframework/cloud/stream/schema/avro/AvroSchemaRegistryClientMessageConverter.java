@@ -194,8 +194,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 				String schemaContents = this.schemaRegistryClient.fetch(schemaReference);
 				schema = parser.parse(schemaContents);
 			} catch (SchemaNotFoundException e) {
-				if (isDynamicSchemaGenerationEnabled()) {
-					schema = extractSchemaForWriting(payload);
+				schema = extractSchemaForWriting(payload);
+				if (schema != null) {
 					SchemaRegistrationResponse schemaRegistrationResponse = this.schemaRegistryClient.register(
 							toSubject(schema), AVRO_FORMAT, schema.toString(true));
 				}
