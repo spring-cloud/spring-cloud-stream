@@ -45,6 +45,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -139,7 +140,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		ReflectionUtils.doWithMethods(targetClass, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
-				StreamListener streamListener = AnnotationUtils.findAnnotation(method, StreamListener.class);
+				StreamListener streamListener = AnnotatedElementUtils.findMergedAnnotation(method, StreamListener.class);
 				if (streamListener != null && !method.isBridge()) {
 					streamListener = postProcessAnnotation(streamListener, method);
 					Assert.isTrue(method.getAnnotation(Input.class) == null,
