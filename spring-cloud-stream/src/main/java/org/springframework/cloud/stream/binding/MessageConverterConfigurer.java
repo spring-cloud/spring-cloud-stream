@@ -275,12 +275,16 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			int partition = this.partitionHandler.determinePartition(message);
-			return MessageConverterConfigurer.this.messageBuilderFactory
-					.fromMessage(message)
-					.setHeader(BinderHeaders.PARTITION_HEADER, partition)
-					.build();
-
+			if (!message.getHeaders().containsKey(BinderHeaders.PARTITION_HEADER)) {
+				int partition = this.partitionHandler.determinePartition(message);
+				return MessageConverterConfigurer.this.messageBuilderFactory
+						.fromMessage(message)
+						.setHeader(BinderHeaders.PARTITION_HEADER, partition)
+						.build();
+			}
+			else {
+				return message;
+			}
 		}
 	}
 
