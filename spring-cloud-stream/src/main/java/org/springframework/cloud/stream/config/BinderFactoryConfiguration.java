@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,11 @@ public class BinderFactoryConfiguration {
 				URL url = resources.nextElement();
 				UrlResource resource = new UrlResource(url);
 				for (BinderType binderType : parseBinderConfigurations(classLoader, resource)) {
-					binderTypes.put(binderType.getDefaultName(), binderType);
+					// Exclude TestSupportBinder when detected as the TestSupport binder is expected to use its own
+					// BinderFactory when used.
+					if (!binderType.getDefaultName().equalsIgnoreCase("test")) {
+						binderTypes.put(binderType.getDefaultName(), binderType);
+					}
 				}
 			}
 		}
