@@ -199,7 +199,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 						.getValue(methodParameter.getParameterAnnotation(Input.class));
 				Assert.isTrue(StringUtils.hasText(inboundName), StreamListenerErrorMessages.INVALID_INBOUND_NAME);
 				Assert.isTrue(
-						isDeclarativeMethodParameter(this.applicationContext.getBean(inboundName), methodParameter),
+						isDeclarativeMethodParameter(this.applicationContext.getBean(inboundName), methodParameter, true),
 						StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 				return true;
 			}
@@ -208,25 +208,25 @@ public class StreamListenerAnnotationBeanPostProcessor
 						.getValue(methodParameter.getParameterAnnotation(Output.class));
 				Assert.isTrue(StringUtils.hasText(outboundName), StreamListenerErrorMessages.INVALID_OUTBOUND_NAME);
 				Assert.isTrue(
-						isDeclarativeMethodParameter(this.applicationContext.getBean(outboundName), methodParameter),
+						isDeclarativeMethodParameter(this.applicationContext.getBean(outboundName), methodParameter, true),
 						StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 				return true;
 			}
 			if (StringUtils.hasText(methodAnnotatedOutboundName)) {
 				return isDeclarativeMethodParameter(this.applicationContext.getBean(methodAnnotatedOutboundName),
-						methodParameter);
+						methodParameter, false);
 			}
 			if (StringUtils.hasText(methodAnnotatedInboundName)) {
 				return isDeclarativeMethodParameter(this.applicationContext.getBean(methodAnnotatedInboundName),
-						methodParameter);
+						methodParameter, false);
 			}
 		}
 		return false;
 	}
 
-	private boolean isDeclarativeMethodParameter(Object targetBean, MethodParameter methodParameter) {
+	private boolean isDeclarativeMethodParameter(Object targetBean, MethodParameter methodParameter, boolean hasParameterAnnoation) {
 		if (targetBean != null) {
-			if (methodParameter.getParameterType().isAssignableFrom(targetBean.getClass())) {
+			if (hasParameterAnnoation && methodParameter.getParameterType().isAssignableFrom(targetBean.getClass())) {
 				return true;
 			}
 			for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {

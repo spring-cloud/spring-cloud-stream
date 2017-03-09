@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
@@ -40,6 +41,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,7 +66,7 @@ public class StreamListenerHandlerMethodTests {
 	public void testInvalidInputOnMethod() throws Exception {
 		try {
 			SpringApplication.run(TestInvalidInputOnMethod.class, "--server.port=0");
-			fail("Exception expected: "+ INPUT_AT_STREAM_LISTENER);
+			fail("Exception expected: " + INPUT_AT_STREAM_LISTENER);
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).contains(INPUT_AT_STREAM_LISTENER);
@@ -72,10 +74,25 @@ public class StreamListenerHandlerMethodTests {
 	}
 
 	@Test
+	public void testMethodWithObjectAsMethodArgument() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithObjectAsMethodArgument.class, "--server.port=0");
+		Processor processor = context.getBean(Processor.class);
+		String id = UUID.randomUUID().toString();
+		final CountDownLatch latch = new CountDownLatch(1);
+		final String testMessage = "testing";
+		processor.input().send(MessageBuilder.withPayload(testMessage).build());
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		assertThat(result).isNotNull();
+		assertThat(result.getPayload()).isEqualTo(result.getPayload().toString().toUpperCase());
+		context.close();
+	}
+
+	@Test
 	public void testInvalidReturnTypeWithSendToAndOutput() throws Exception {
 		try {
 			SpringApplication.run(TestReturnTypeWithMultipleOutput.class, "--server.port=0");
-			fail("Exception expected: "+ RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
+			fail("Exception expected: " + RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).contains(RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
@@ -97,7 +114,7 @@ public class StreamListenerHandlerMethodTests {
 	public void testInvalidInputAnnotationWithNoValue() throws Exception {
 		try {
 			SpringApplication.run(TestInvalidInputAnnotationWithNoValue.class, "--server.port=0");
-			fail("Exception expected: "+ INVALID_INBOUND_NAME);
+			fail("Exception expected: " + INVALID_INBOUND_NAME);
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).contains(INVALID_INBOUND_NAME);
@@ -108,7 +125,7 @@ public class StreamListenerHandlerMethodTests {
 	public void testInvalidOutputAnnotationWithNoValue() throws Exception {
 		try {
 			SpringApplication.run(TestInvalidOutputAnnotationWithNoValue.class, "--server.port=0");
-			fail("Exception expected: "+ INVALID_OUTBOUND_NAME);
+			fail("Exception expected: " + INVALID_OUTBOUND_NAME);
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).contains(INVALID_OUTBOUND_NAME);
@@ -143,7 +160,7 @@ public class StreamListenerHandlerMethodTests {
 	public void testAmbiguousMethodArguments1() throws Exception {
 		try {
 			SpringApplication.run(TestAmbiguousMethodArguments1.class, "--server.port=0");
-			fail("Exception expected: "+ AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
+			fail("Exception expected: " + AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
@@ -176,7 +193,7 @@ public class StreamListenerHandlerMethodTests {
 	public void testMethodWithOutputAsMethodAndParameter() throws Exception {
 		try {
 			SpringApplication.run(TestMethodWithOutputAsMethodAndParameter.class, "--server.port=0");
-			fail("Exception expected:" +  INVALID_OUTPUT_VALUES);
+			fail("Exception expected:" + INVALID_OUTPUT_VALUES);
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).startsWith(INVALID_OUTPUT_VALUES);
@@ -272,6 +289,17 @@ public class StreamListenerHandlerMethodTests {
 
 		@StreamListener
 		public void receive(StreamListenerTestUtils.FooPojo fooPojo) {
+		}
+	}
+
+	@EnableBinding({Processor.class})
+	@EnableAutoConfiguration
+	public static class TestMethodWithObjectAsMethodArgument {
+
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public String receive(Object received) {
+			return received.toString().toUpperCase();
 		}
 	}
 
