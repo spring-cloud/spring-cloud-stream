@@ -1,0 +1,109 @@
+[[kafka-dlq-processing]]
+== Dead-Letter Topic Processing
+
+Because it can't be anticipated how users would want to dispose of dead-lettered messages, the framework does not provide any standard mechanism to handle them.
+If the reason for the dead-lettering is transient, you may wish to route the messages back to the original topic.
+However, if the problem is a permanent issue, that could cause an infinite loop.
+The following `spring-boot` application is an example of how to route those messages back to the original topic, but moves them to a third "parking lot" topic after three attempts.
+The application is simply another spring-cloud-stream application that reads from the dead-letter topic.
+It terminates when no messages are received for 5 seconds.
+
+The examples assume the original destination is `so8400out` and the consumer group is `so8400`.
+
+There are several considerations.
+
+- Consider only running the rerouting when the main application is not running.
+Otherwise, the retries for transient errors will be used up very quickly.
+- Alternatively, use a two-stage approach - use this application to route to a third topic, and another to route from there back to the main topic.
+- Since this technique uses a message header to keep track of retries, it won't work with `headerMode=raw`.
+In that case, consider adding some data to the payload (that can be ignored by the main application).
+- `x-retries` has to be added to the `headers` property `spring.cloud.stream.kafka.binder.headers=x-retries` on both this, and the main application so that the header is transported between the applications.
+- Since kafka is publish/subscribe, replayed messages will be sent to each consumer group, even those that successfully processed a message the first time around.
+
+.application.properties
+[source]
+----
+spring.cloud.stream.bindings.input.group=so8400replay
+spring.cloud.stream.bindings.input.destination=error.so8400out.so8400
+
+spring.cloud.stream.bindings.output.destination=so8400out
+spring.cloud.stream.bindings.output.producer.partitioned=true
+
+spring.cloud.stream.bindings.parkingLot.destination=so8400in.parkingLot
+spring.cloud.stream.bindings.parkingLot.producer.partitioned=true
+
+spring.cloud.stream.kafka.binder.configuration.auto.offset.reset=earliest
+
+spring.cloud.stream.kafka.binder.headers=x-retries
+----
+
+.Application
+[source, java]
+----
+@SpringBootApplication
+@EnableBinding(TwoOutputProcessor.class)
+public class ReRouteDlqKApplication implements CommandLineRunner {
+
+    private static final String X_RETRIES_HEADER = "x-retries";
+
+    public static void main(String[] args) {
+        SpringApplication.run(ReRouteDlqKApplication.class, args).close();
+    }
+
+    private final AtomicInteger processed = new AtomicInteger();
+
+    @Autowired
+    private MessageChannel parkingLot;
+
+    @StreamListener(Processor.INPUT)
+    @SendTo(Processor.OUTPUT)
+    public Message<?> reRoute(Message<?> failed) {
+        processed.incrementAndGet();
+        Integer retries = failed.getHeaders().get(X_RETRIES_HEADER, Integer.class);
+        if (retries == null) {
+            System.out.println("First retry for " + failed);
+            return MessageBuilder.fromMessage(failed)
+                    .setHeader(X_RETRIES_HEADER, new Integer(1))
+                    .setHeader(BinderHeaders.PARTITION_OVERRIDE,
+                            failed.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
+                    .build();
+        }
+        else if (retries.intValue() < 3) {
+            System.out.println("Another retry for " + failed);
+            return MessageBuilder.fromMessage(failed)
+                    .setHeader(X_RETRIES_HEADER, new Integer(retries.intValue() + 1))
+                    .setHeader(BinderHeaders.PARTITION_OVERRIDE,
+                            failed.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
+                    .build();
+        }
+        else {
+            System.out.println("Retries exhausted for " + failed);
+            parkingLot.send(MessageBuilder.fromMessage(failed)
+                    .setHeader(BinderHeaders.PARTITION_OVERRIDE,
+                            failed.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
+                    .build());
+        }
+        return null;
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        while (true) {
+            int count = this.processed.get();
+            Thread.sleep(5000);
+            if (count == this.processed.get()) {
+                System.out.println("Idle, terminating");
+                return;
+            }
+        }
+    }
+
+    public interface TwoOutputProcessor extends Processor {
+
+        @Output("parkingLot")
+        MessageChannel parkingLot();
+
+    }
+
+}
+----
