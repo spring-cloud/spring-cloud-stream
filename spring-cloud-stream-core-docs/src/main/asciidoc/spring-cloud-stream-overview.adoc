@@ -1257,9 +1257,11 @@ In addition, Spring Cloud Stream provides custom MIME types, notably, `applicati
 === MIME types and Java types
 
 The type conversions Spring Cloud Stream provides out of the box are summarized in the following table:
+'Source Payload' means the payload before conversion and 'Target Payload' means the 'payload' after conversion.
+The type conversion can occur either on the 'producer' side (output) or at the 'consumer' side (input).
 
 |===
-|Source Payload |Target Payload |content-type header | content-type | Comments
+|Source Payload |Target Payload | `content-type` header (source message) | `content-type` header (after conversion) | Comments
 
 |POJO
 |JSON String
@@ -1317,14 +1319,20 @@ The type conversions Spring Cloud Stream provides out of the box are summarized 
 
 |===
 
-[[NOTE]]
+[NOTE]
+====
 Conversion applies to payloads that require type conversion.
-For example, if a module produces an XML string with outputType=application/json, the payload will not be converted from XML to JSON.
-This is because the payload at the module's output channel is already a String so no conversion will be applied at runtime.
+For example, if an application produces an XML string with outputType=application/json, the payload will not be converted from XML to JSON.
+This is because the payload send to the outbound channel is already a String so no conversion will be applied at runtime.
+It is also important to note that when using the default serialization mechanism, the payload class must be shared between the sending and receiving application, and compatible with the binary content.
+This can create issues when application code changes independently in the two applications, as the binary format and code may become incompatible.
+====
 
-[[TIP]]
-While conversion is supported for both input and output channels, it is especially recommended to be used for the conversion of outbound messages.
+[TIP]
+====
+While conversion is supported for both inbound and outbound channels, it is especially recommended to be used for the conversion of outbound messages.
 For the conversion of inbound messages, especially when the target is a POJO, the `@StreamListener` support will perform the conversion automatically.
+====
 
 === Customizing message conversion
 
