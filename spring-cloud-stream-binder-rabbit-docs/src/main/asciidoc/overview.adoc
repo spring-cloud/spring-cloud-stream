@@ -53,6 +53,11 @@ See <<rabbit-binder-properties>> for more information about these properties.
 The framework does not provide any standard mechanism to consume dead-letter messages (or to re-route them back to the primary queue).
 Some options are described in <<rabbit-dlq-processing>>.
 
+[NOTE]
+====
+When *multiple* RabbitMQ binders are used in a Spring Cloud Stream application, it is important to disable 'RabbitAutoConfiguration' to avoid the same configuration from RabbitAutoConfiguration gets applied to the two binders.
+====
+
 == Configuration Options
 
 This section contains settings specific to the RabbitMQ Binder and bound channels.
