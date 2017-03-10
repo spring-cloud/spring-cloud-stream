@@ -55,7 +55,7 @@ Some options are described in <<rabbit-dlq-processing>>.
 
 [NOTE]
 ====
-When *multiple* RabbitMQ binders are used in a Spring Cloud Stream application, it is important to disable 'RabbitAutoConfiguration' to avoid the same configuration from RabbitAutoConfiguration gets applied to the two binders.
+When *multiple* RabbitMQ binders are used in a Spring Cloud Stream application, it is important to disable 'RabbitAutoConfiguration' to avoid the same configuration from RabbitAutoConfiguration being applied to the two binders.
 ====
 
 == Configuration Options
