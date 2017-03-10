@@ -283,8 +283,8 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
 		if (usesExplicitRouting()) {
 			Object endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint)).
-					contains(getExpectedRoutingBaseDestination("partJ.0", "test") + "-' + headers['partition']");
+			assertThat(getEndpointRouting(endpoint)).contains(getExpectedRoutingBaseDestination("partJ.0", "test")
+					+ "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
 		}
 
 		output.send(new GenericMessage<>(2));
