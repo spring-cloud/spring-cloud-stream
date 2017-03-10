@@ -1257,9 +1257,11 @@ In addition, Spring Cloud Stream provides custom MIME types, notably, `applicati
 === MIME types and Java types
 
 The type conversions Spring Cloud Stream provides out of the box are summarized in the following table:
+Source Payload represents the 'payload' before conversion and Target Payload represents the 'payload' after conversion.
+The message type-conversion can occur either at the 'producer' side (outbound) or at the 'consumer' side (inbound).
 
 |===
-|Source Payload |Target Payload |content-type header | content-type | Comments
+|Source Payload |Target Payload |content-type header at source payload | content-type at target payload after conversion | Comments
 
 |POJO
 |JSON String
@@ -1317,14 +1319,19 @@ The type conversions Spring Cloud Stream provides out of the box are summarized 
 
 |===
 
-[[NOTE]]
+[NOTE]
+====
 Conversion applies to payloads that require type conversion.
 For example, if a module produces an XML string with outputType=application/json, the payload will not be converted from XML to JSON.
-This is because the payload at the module's output channel is already a String so no conversion will be applied at runtime.
+This is because the payload at the module's outbound channel is already a String so no conversion will be applied at runtime.
+It is also important to note that when the POJO deserialization occurs, the class to be de-serialized needs to be on the classpath at the application where the deserialization takes place.
+====
 
-[[TIP]]
-While conversion is supported for both input and output channels, it is especially recommended to be used for the conversion of outbound messages.
+[TIP]
+====
+While conversion is supported for both inbound and outbound channels, it is especially recommended to be used for the conversion of outbound messages.
 For the conversion of inbound messages, especially when the target is a POJO, the `@StreamListener` support will perform the conversion automatically.
+====
 
 === Customizing message conversion
 
