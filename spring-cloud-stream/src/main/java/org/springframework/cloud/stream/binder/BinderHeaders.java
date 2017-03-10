@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import org.springframework.messaging.MessageHeaders;
  */
 public final class BinderHeaders {
 
+	private static final String PREFIX = "scst_";
+
 	/**
 	 * Indicates the original content type of a message that has been
 	 * transformed in a native transport format.
@@ -37,7 +39,13 @@ public final class BinderHeaders {
 	 * Indicates the target partition of an outbound message. Binders must
 	 * observe this value when sending data on the transport.
 	 */
-	public static final String PARTITION_HEADER = "partition";
+	public static final String PARTITION_HEADER = PREFIX + "partition";
+
+	/**
+	 * Indicates the target partition of an outbound message. Overrides
+	 * any partition selected by the binder.
+	 */
+	public static final String PARTITION_OVERRIDE = PREFIX + "partitionOverride";
 
 	/**
 	 * The headers that will be propagated, by default, by binder implementations
