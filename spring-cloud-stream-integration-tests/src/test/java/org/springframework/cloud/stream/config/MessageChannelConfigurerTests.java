@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -46,9 +47,11 @@ import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = {MessageChannelConfigurerTests.TestSink.class, MessageChannelConfigurerTests.TestSource.class})
@@ -104,16 +107,19 @@ public class MessageChannelConfigurerTests {
 
 	@Test
 	public void testPartitionHeader() throws Exception {
-		testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
-		Message<?> message = messageCollector.forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
+		this.testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
+		Message<?> message = this.messageCollector.forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message.getHeaders().get(BinderHeaders.PARTITION_HEADER).equals(0));
+		assertNull(message.getHeaders().get(BinderHeaders.PARTITION_OVERRIDE));
 	}
 
 	@Test
-	public void testPartitionHeaderWithExplicitHeader() throws Exception {
-		testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").setHeader(BinderHeaders.PARTITION_HEADER, "customerId-123").build());
-		Message<?> message = messageCollector.forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
-		assertThat(message.getHeaders().get(BinderHeaders.PARTITION_HEADER).equals("customerId-123"));
+	public void testPartitionHeaderWithPartitionOverride() throws Exception {
+		this.testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}")
+				.setHeader(BinderHeaders.PARTITION_OVERRIDE, 123).build());
+		Message<?> message = this.messageCollector.forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(message.getHeaders().get(BinderHeaders.PARTITION_HEADER).equals(123));
+		assertNull(message.getHeaders().get(BinderHeaders.PARTITION_OVERRIDE));
 	}
 
 	@EnableBinding(Sink.class)
