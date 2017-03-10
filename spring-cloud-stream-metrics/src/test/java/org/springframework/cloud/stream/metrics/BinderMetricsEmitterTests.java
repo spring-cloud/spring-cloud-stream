@@ -31,7 +31,6 @@ import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ObjectUtils;
 
 /**
  * @author Vinicius Carvalho
