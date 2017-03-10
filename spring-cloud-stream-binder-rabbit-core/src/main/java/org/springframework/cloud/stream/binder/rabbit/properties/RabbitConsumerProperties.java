@@ -35,8 +35,6 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	private int prefetch = 1;
 
-	private String[] requestHeaderPatterns = new String[] {"STANDARD_REQUEST_HEADERS", "*"};
-
 	private int txSize = 1;
 
 	private boolean durableSubscription = true;
@@ -45,7 +43,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	private boolean requeueRejected = false;
 
-	private String[] replyHeaderPatterns = new String[] {"STANDARD_REPLY_HEADERS", "*"};
+	private String[] headerPatterns = new String[] {"*"};
 
 	private long recoveryInterval = 5000;
 
@@ -84,12 +82,22 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 		this.prefetch = prefetch;
 	}
 
+	/**
+	 * @deprecated - use {@link #getHeaderPatterns()}.
+	 * @return the header patterns.
+	 */
+	@Deprecated
 	public String[] getRequestHeaderPatterns() {
-		return requestHeaderPatterns;
+		return this.headerPatterns;
 	}
 
+	/**
+	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
+	 * @param requestHeaderPatterns
+	 */
+	@Deprecated
 	public void setRequestHeaderPatterns(String[] requestHeaderPatterns) {
-		this.requestHeaderPatterns = requestHeaderPatterns;
+		this.headerPatterns = requestHeaderPatterns;
 	}
 
 	@Min(value = 1, message = "Tx Size should be greater than zero.")
@@ -125,12 +133,12 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 		this.requeueRejected = requeueRejected;
 	}
 
-	public String[] getReplyHeaderPatterns() {
-		return replyHeaderPatterns;
+	public String[] getHeaderPatterns() {
+		return headerPatterns;
 	}
 
-	public void setReplyHeaderPatterns(String[] replyHeaderPatterns) {
-		this.replyHeaderPatterns = replyHeaderPatterns;
+	public void setHeaderPatterns(String[] replyHeaderPatterns) {
+		this.headerPatterns = replyHeaderPatterns;
 	}
 
 	public long getRecoveryInterval() {

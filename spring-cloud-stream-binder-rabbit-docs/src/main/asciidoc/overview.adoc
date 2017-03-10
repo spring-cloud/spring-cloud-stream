@@ -179,6 +179,10 @@ expires::
   how long before an unused queue is deleted (ms)
 +
 Default: `no expiration`
+headerPatterns::
+  Patterns for headers to be mapped from inbound messages.
++
+Default: `['*']` (all headers).
 maxConcurrency::
   the maximum number of consumers
 +
@@ -211,14 +215,6 @@ requeueRejected::
   Whether delivery failures should be requeued when retry is disabled or republishToDlq is false.
 +
 Default: `false`.
-requestHeaderPatterns::
-  The request headers to be transported.
-+
-Default: `[STANDARD_REQUEST_HEADERS,'*']`.
-replyHeaderPatterns::
-  The reply headers to be transported.
-+
-Default: `[STANDARD_REPLY_HEADERS,'*']`.
 republishToDlq::
   By default, messages which fail after retries are exhausted are rejected.
 If a dead-letter queue (DLQ) is configured, RabbitMQ will route the failed message (unchanged) to the DLQ.
@@ -358,6 +354,10 @@ expires::
   Only applies if `requiredGroups` are provided and then only to those groups.
 +
 Default: `no expiration`
+headerPatterns::
+  Patterns for headers to be mapped to outbound messages.
++
+Default: `['*']` (all headers).
 maxLength::
   maximum number of messages in the queue
   Only applies if `requiredGroups` are provided and then only to those groups.
@@ -377,14 +377,6 @@ prefix::
   A prefix to be added to the name of the `destination` exchange.
 +
 Default: "".
-requestHeaderPatterns::
-  The request headers to be transported.
-+
-Default: `[STANDARD_REQUEST_HEADERS,'*']`.
-replyHeaderPatterns::
-  The reply headers to be transported.
-+
-Default: `[STANDARD_REPLY_HEADERS,'*']`.
 routingKeyExpression::
   A SpEL expression to determine the routing key to use when publishing messages.
 +

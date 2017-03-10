@@ -52,6 +52,7 @@ import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPos
 import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
@@ -402,7 +403,8 @@ public class RabbitBinderTests extends
 		producerBinding = binder.bindProducer("props.0", channel,
 				producerProperties);
 		endpoint = extractEndpoint(producerBinding);
-		assertThat(getEndpointRouting(endpoint)).isEqualTo("'props.0-' + headers['partition']");
+		assertThat(getEndpointRouting(endpoint))
+				.isEqualTo("'props.0-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
 		assertThat(TestUtils.getPropertyValue(endpoint, "delayExpression", SpelExpression.class)
 				.getExpressionString()).isEqualTo("42");
 		mode = TestUtils.getPropertyValue(endpoint, "defaultDeliveryMode", MessageDeliveryMode.class);
@@ -609,12 +611,16 @@ public class RabbitBinderTests extends
 
 		org.springframework.amqp.core.Message received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getHeaders()).containsEntry("partition", 1);
+		assertThat(received.getMessageProperties().getReceivedRoutingKey())
+				.isEqualTo("bindertest.partDLQ.0.dlqPartGrp-1");
+		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		output.send(new GenericMessage<>(0));
 		received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getHeaders()).containsEntry("partition", 0);
+		assertThat(received.getMessageProperties().getReceivedRoutingKey())
+				.isEqualTo("bindertest.partDLQ.0.dlqPartGrp-0");
+		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -697,12 +703,16 @@ public class RabbitBinderTests extends
 
 		org.springframework.amqp.core.Message received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getHeaders()).containsEntry("partition", 1);
+		assertThat(received.getMessageProperties().getHeaders().get("x-original-routingKey"))
+				.isEqualTo("partPubDLQ.0-1");
+		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		output.send(new GenericMessage<>(0));
 		received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getHeaders()).containsEntry("partition", 0);
+		assertThat(received.getMessageProperties().getHeaders().get("x-original-routingKey"))
+			.isEqualTo("partPubDLQ.0-0");
+		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -787,12 +797,16 @@ public class RabbitBinderTests extends
 
 		org.springframework.amqp.core.Message received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getHeaders()).containsEntry("partition", 1);
+		assertThat(received.getMessageProperties().getReceivedRoutingKey())
+				.isEqualTo("bindertest.partDLQ.1.dlqPartGrp-1");
+		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		output.send(new GenericMessage<Integer>(0));
 		received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getHeaders()).containsEntry("partition", 0);
+		assertThat(received.getMessageProperties().getReceivedRoutingKey())
+			.isEqualTo("bindertest.partDLQ.1.dlqPartGrp-0");
+		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -1055,8 +1069,8 @@ public class RabbitBinderTests extends
 	private void verifyFooRequestProducer(Lifecycle endpoint) {
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
-		assertThat(requestMatchers).hasSize(1);
-		assertThat(TestUtils.getPropertyValue(requestMatchers.get(0), "pattern")).isEqualTo("foo");
+		assertThat(requestMatchers).hasSize(2);
+		assertThat(TestUtils.getPropertyValue(requestMatchers.get(1), "pattern")).isEqualTo("foo");
 	}
 
 	@Override
@@ -1077,8 +1091,8 @@ public class RabbitBinderTests extends
 
 	@Override
 	protected void checkRkExpressionForPartitionedModuleSpEL(Object endpoint) {
-		assertThat(getEndpointRouting(endpoint))
-			.contains(getExpectedRoutingBaseDestination("'part.0'", "test") + " + '-' + headers['partition']");
+		assertThat(getEndpointRouting(endpoint)).contains(getExpectedRoutingBaseDestination("'part.0'", "test")
+				+ " + '-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
 	}
 
 	@Override

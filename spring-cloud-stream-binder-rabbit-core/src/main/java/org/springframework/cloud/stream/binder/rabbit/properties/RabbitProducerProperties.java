@@ -26,8 +26,6 @@ import org.springframework.amqp.core.MessageDeliveryMode;
  */
 public class RabbitProducerProperties extends RabbitCommonProperties {
 
-	private String[] requestHeaderPatterns = new String[] {"STANDARD_REQUEST_HEADERS", "*"};
-
 	private boolean compress;
 
 	private boolean batchingEnabled;
@@ -42,7 +40,7 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	private MessageDeliveryMode deliveryMode = MessageDeliveryMode.PERSISTENT;
 
-	private String[] replyHeaderPatterns = new String[] {"STANDARD_REPLY_HEADERS", "*"};
+	private String[] headerPatterns = new String[] {"*"};
 
 	/**
 	 * When using a delayed message exchange, a SpEL expression to determine the delay to apply to messages
@@ -54,12 +52,22 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	 */
 	private String routingKeyExpression;
 
+	/**
+	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
+	 * @param requestHeaderPatterns the patterns.
+	 */
+	@Deprecated
 	public void setRequestHeaderPatterns(String[] requestHeaderPatterns) {
-		this.requestHeaderPatterns = requestHeaderPatterns;
+		this.headerPatterns = requestHeaderPatterns;
 	}
 
+	/**
+	 * @deprecated - use {@link #getHeaderPatterns()}.
+	 * @return the header patterns.
+	 */
+	@Deprecated
 	public String[] getRequestHeaderPatterns() {
-		return requestHeaderPatterns;
+		return this.headerPatterns;
 	}
 
 	public void setCompress(boolean compress) {
@@ -78,12 +86,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 		return deliveryMode;
 	}
 
-	public String[] getReplyHeaderPatterns() {
-		return replyHeaderPatterns;
+	public String[] getHeaderPatterns() {
+		return headerPatterns;
 	}
 
-	public void setReplyHeaderPatterns(String[] replyHeaderPatterns) {
-		this.replyHeaderPatterns = replyHeaderPatterns;
+	public void setHeaderPatterns(String[] replyHeaderPatterns) {
+		this.headerPatterns = replyHeaderPatterns;
 	}
 
 	public boolean isBatchingEnabled() {

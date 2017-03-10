@@ -16,10 +16,9 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Envelope;
+import java.util.List;
 
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
@@ -64,6 +63,9 @@ import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Envelope;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
@@ -206,8 +208,10 @@ public class RabbitMessageChannelBinder
 			endpoint.setDelayExpressionString(extendedProperties.getDelayExpression());
 		}
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.outboundMapper();
-		mapper.setRequestHeaderNames(extendedProperties.getRequestHeaderPatterns());
-		mapper.setReplyHeaderNames(extendedProperties.getReplyHeaderPatterns());
+		List<String> headerPatterns = new ArrayList<>(extendedProperties.getHeaderPatterns().length + 1);
+		headerPatterns.add("!" + BinderHeaders.PARTITION_HEADER);
+		headerPatterns.addAll(Arrays.asList(extendedProperties.getHeaderPatterns()));
+		mapper.setRequestHeaderNames(headerPatterns.toArray(new String[headerPatterns.size()]));
 		endpoint.setHeaderMapper(mapper);
 		endpoint.setDefaultDeliveryMode(extendedProperties.getDeliveryMode());
 		endpoint.setBeanFactory(this.getBeanFactory());
@@ -268,8 +272,7 @@ public class RabbitMessageChannelBinder
 		adapter.setBeanFactory(this.getBeanFactory());
 		adapter.setBeanName("inbound." + baseQueueName);
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.inboundMapper();
-		mapper.setRequestHeaderNames(properties.getExtension().getRequestHeaderPatterns());
-		mapper.setReplyHeaderNames(properties.getExtension().getReplyHeaderPatterns());
+		mapper.setRequestHeaderNames(properties.getExtension().getHeaderPatterns());
 		adapter.setHeaderMapper(mapper);
 		adapter.afterPropertiesSet();
 		return adapter;
