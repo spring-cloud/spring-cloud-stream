@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.config.metrics;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.ContextIdApplicationContextInitializer;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
