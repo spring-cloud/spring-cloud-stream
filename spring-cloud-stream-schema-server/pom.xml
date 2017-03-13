@@ -7,7 +7,7 @@
 	<parent>
 		<artifactId>spring-cloud-stream-parent</artifactId>
 		<groupId>org.springframework.cloud</groupId>
-		<version>1.2.0.BUILD-SNAPSHOT</version>
+		<version>1.2.0.RC1</version>
 	</parent>
 
 	<dependencies>
