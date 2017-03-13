@@ -33,7 +33,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @author Vinicius Carvalho
  */
 @Configuration
-@ConditionalOnClass({Binder.class})
+@ConditionalOnClass(Binder.class)
 @EnableScheduling
 @EnableBinding(Emitter.class)
 @EnableConfigurationProperties(StreamMetricsProperties.class)

@@ -1806,8 +1806,12 @@ Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name of `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
 
 == Metrics Emitter
-Spring Cloud Stream provides a module called `spring-cloud-stream-metrics` that can be used to emit any available metric from boot's `/metrics` endpoint to a named channel.
-This module allow operators to collect metrics from stream applications without relying on polling their endpoints, which could be on a private network or behind an LB that prevents per instance access.
+Spring Cloud Stream provides a module called `spring-cloud-stream-metrics` that can be used to emit any available metric from https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html[Spring Boot metrics endpoint] to a named channel.
+This module allow operators to collect metrics from stream applications without relying on polling their endpoints.
+
+HTTP polling can be challenging on cloud environments since applications could be on a private network or behind a Load balancer that prevents per instance access.
+
+This module is included on the each of the out of box https://github.com/spring-cloud-stream-app-starters[application starters], if you want to emit metrics from your application, just import it on your pom.xml and follow the activation instructions.
 
 The module is activated when you set the destination name for its channel, `spring.cloud.stream.bindings.streamMetrics.destination=<DESTINATION_NAME>`.
 
