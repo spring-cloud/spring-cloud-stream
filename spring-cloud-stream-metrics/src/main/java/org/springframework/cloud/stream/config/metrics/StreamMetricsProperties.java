@@ -34,7 +34,7 @@ public class StreamMetricsProperties {
 
 	private String metricName;
 
-	private String[] includes;
+	private String[] includes = new String[]{"integration**"};
 
 	private String[] excludes;
 

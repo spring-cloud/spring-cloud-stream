@@ -31,7 +31,6 @@ public class BinderMetricsEnvironmentPostProcessor implements EnvironmentPostPro
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 		Map<String, Object> propertiesToAdd = new HashMap<>();
-		propertiesToAdd.put("spring.cloud.stream.metrics.includes","integration**");
 		propertiesToAdd.put("spring.cloud.stream.bindings.streamMetrics.contentType","application/json");
 		environment.getPropertySources().addLast(new MapPropertySource("binderMetricsDefaultProperties",propertiesToAdd));
 	}
