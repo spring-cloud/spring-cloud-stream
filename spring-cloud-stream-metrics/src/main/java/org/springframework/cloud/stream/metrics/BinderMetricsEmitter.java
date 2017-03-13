@@ -43,6 +43,10 @@ import org.springframework.util.PatternMatchUtils;
 
 /**
  * @author Vinicius Carvalho
+ *
+ * Component that sends metrics from {@link MetricsEndpointMetricReader} downstream via the configured metrics channel.
+ *
+ * It uses {@link Scheduled} support to periodially emit messages polled from the endpoint.
  */
 public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
 
@@ -59,6 +63,10 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 
 	private ApplicationContext applicationContext;
 
+	/**
+	 * List of properties that are going to be appended to each message.
+	 * This gets populate by onApplicationEvent, once the context refreshes to avoid overhead of doing per message basis.
+	 */
 	private Map<String,Object> whitelistedProperties;
 
 	public BinderMetricsEmitter(MetricsEndpoint endpoint){
@@ -103,6 +111,9 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 	}
 
 	@Override
+	/**
+	 * Iterates over all property sources from this application context and copies the ones listed in {@link StreamMetricsProperties} includes
+	 */
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) event.getSource();
 		if(!ObjectUtils.isEmpty(this.properties.getProperties())) {

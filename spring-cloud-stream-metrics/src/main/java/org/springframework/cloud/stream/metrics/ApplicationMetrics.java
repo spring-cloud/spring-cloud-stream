@@ -33,7 +33,7 @@ public class ApplicationMetrics {
 
 	private String name;
 
-	private int index;
+	private int instanceIndex;
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
 	private final Date createdTime;
@@ -45,10 +45,10 @@ public class ApplicationMetrics {
 
 	@JsonCreator
 	public ApplicationMetrics(@JsonProperty("name") String name,
-			@JsonProperty("index") int id,
+			@JsonProperty("instanceIndex") int instanceIndex,
 			@JsonProperty("metrics") Collection<Metric> metrics) {
 		this.name = name;
-		this.index = id;
+		this.instanceIndex = instanceIndex;
 		this.metrics = metrics;
 		this.createdTime = new Date();
 	}
@@ -61,12 +61,12 @@ public class ApplicationMetrics {
 		this.name = name;
 	}
 
-	public int getIndex() {
-		return index;
+	public int getInstanceIndex() {
+		return instanceIndex;
 	}
 
-	public void setIndex(int index) {
-		this.index = index;
+	public void setInstanceIndex(int instanceIndex) {
+		this.instanceIndex = instanceIndex;
 	}
 
 	public Collection<Metric> getMetrics() {

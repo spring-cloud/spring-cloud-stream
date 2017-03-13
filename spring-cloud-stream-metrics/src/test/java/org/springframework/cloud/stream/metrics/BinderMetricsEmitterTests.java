@@ -71,7 +71,7 @@ public class BinderMetricsEmitterTests {
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean", applicationMetrics.getMetrics()));
 		Assert.assertFalse(contains("mem",applicationMetrics.getMetrics()));
 		Assert.assertEquals("application",applicationMetrics.getName());
-		Assert.assertEquals(0,applicationMetrics.getIndex());
+		Assert.assertEquals(0,applicationMetrics.getInstanceIndex());
 		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
 		applicationContext.close();
 	}
@@ -94,7 +94,7 @@ public class BinderMetricsEmitterTests {
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean", applicationMetrics.getMetrics()));
 		Assert.assertFalse(contains("mem",applicationMetrics.getMetrics()));
 		Assert.assertEquals("foo",applicationMetrics.getName());
-		Assert.assertEquals(1,applicationMetrics.getIndex());
+		Assert.assertEquals(1,applicationMetrics.getInstanceIndex());
 		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
 		applicationContext.close();
 	}
@@ -117,7 +117,7 @@ public class BinderMetricsEmitterTests {
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean", applicationMetrics.getMetrics()));
 		Assert.assertFalse(contains("mem",applicationMetrics.getMetrics()));
 		Assert.assertEquals("foo.application",applicationMetrics.getName());
-		Assert.assertEquals(1,applicationMetrics.getIndex());
+		Assert.assertEquals(1,applicationMetrics.getInstanceIndex());
 		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
 		applicationContext.close();
 	}
