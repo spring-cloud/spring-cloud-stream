@@ -122,9 +122,11 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 				if (source instanceof EnumerablePropertySource) {
 					EnumerablePropertySource e = (EnumerablePropertySource) source;
 					for (String propertyName : e.getPropertyNames()) {
-						for (String relaxedPropertyName : new RelaxedNames(propertyName)) {
+						RelaxedNames relaxedNames = new RelaxedNames(propertyName);
+						outer: for (String relaxedPropertyName : relaxedNames) {
 							if (isMatch(relaxedPropertyName, this.properties.getProperties(), null)) {
-								whitelistedProperties.put(relaxedPropertyName, source.getProperty(propertyName));
+								whitelistedProperties.put(RelaxedPropertiesUtils.findCanonicalFormat(relaxedNames), source.getProperty(propertyName));
+								break outer;
 							}
 						}
 					}
@@ -132,6 +134,8 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 			}
 		}
 	}
+
+
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
