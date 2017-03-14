@@ -1488,6 +1488,31 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 
 	@Test
 	@SuppressWarnings("unchecked")
+	public void testSendAndReceiveWithRawModeAndStringPayload() throws Exception {
+		Binder binder = getBinder();
+		DirectChannel moduleOutputChannel = new DirectChannel();
+		QueueChannel moduleInputChannel = new QueueChannel();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.setHeaderMode(HeaderMode.raw);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("0", moduleOutputChannel,
+				producerProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setHeaderMode(HeaderMode.raw);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("0", "test", moduleInputChannel,
+				consumerProperties);
+		Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload("kafkaBinderTestCommonsDelegate").build();
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+		moduleOutputChannel.send(message);
+		Message<?> inbound = receive(moduleInputChannel);
+		assertThat(inbound).isNotNull();
+		assertThat(new String((byte[]) inbound.getPayload())).isEqualTo("kafkaBinderTestCommonsDelegate");
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
 	public void testSendAndReceiveWithExplicitConsumerGroupWithRawMode() throws Exception {
 		Binder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
