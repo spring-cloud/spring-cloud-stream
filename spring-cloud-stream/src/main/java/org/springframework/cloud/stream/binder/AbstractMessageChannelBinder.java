@@ -24,7 +24,6 @@ import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.http.MediaType;
 import org.springframework.integration.channel.FixedSubscriberChannel;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
@@ -348,21 +347,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 			else {
 				payload = (byte[]) transformed.getPayload();
-			}
-			if (!this.embedHeaders && !AbstractMessageChannelBinder.this.supportsHeadersNatively) {
-				Object contentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-				if (contentType != null && !contentType.toString().equals(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {
-					this.logger.error(
-							"Raw mode supports only " + MediaType.APPLICATION_OCTET_STREAM_VALUE + " content type"
-									+ message.getPayload().getClass());
-				}
-				if (message.getPayload() instanceof byte[]) {
-					payload = (byte[]) message.getPayload();
-				}
-				else {
-					throw new BinderException("Raw mode supports only byte[] payloads but value sent was of type "
-							+ message.getPayload().getClass());
-				}
 			}
 			return getMessageBuilderFactory().withPayload(payload).copyHeaders(transformed.getHeaders()).build();
 		}
