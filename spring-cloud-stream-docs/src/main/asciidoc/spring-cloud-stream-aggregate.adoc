@@ -5,6 +5,7 @@ include::{stream-docs-basedir}/core/spring-cloud-stream-core-docs/src/main/ascii
 == Apache Kafka Binder
 
 include::{stream-docs-basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/overview.adoc[leveloffset=+1]
+include::{stream-docs-basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/dlq.adoc[leveloffset=+1]
 
 == RabbitMQ Binder
 
