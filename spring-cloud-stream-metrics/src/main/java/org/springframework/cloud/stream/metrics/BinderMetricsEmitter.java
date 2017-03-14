@@ -124,7 +124,7 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 					for (String propertyName : e.getPropertyNames()) {
 						for (String relaxedPropertyName : new RelaxedNames(propertyName)) {
 							if (isMatch(relaxedPropertyName, this.properties.getProperties(), null)) {
-								whitelistedProperties.put(relaxedPropertyName, source.getProperty(propertyName));
+								whitelistedProperties.put(propertyName, source.getProperty(propertyName));
 							}
 						}
 					}
