@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,15 +171,6 @@ public class BinderFactoryConfigurationTests {
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
 		Binder binder2 = binderFactory.getBinder("binder2", MessageChannel.class);
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
-	}
-
-	@Test
-	public void loadBinderTypeRegistryWithTwoBindersAndOneOfThemIsTestBinder() throws Exception {
-		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "test" });
-		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
-		assertThat(binderTypeRegistry).isNotNull();
-		assertThat(binderTypeRegistry.getAll()).hasSize(1);
-		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1");
 	}
 
 	@Test
