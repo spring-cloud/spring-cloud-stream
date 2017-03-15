@@ -385,6 +385,12 @@ public class SendingBean {
     }
 }
 ----
+===== Global error handling by subscribing to Spring Integration error channel
+
+Spring Cloud Stream supports global error handling by making use of Spring Integration `errorChannel`.
+Any error messages thrown to this `errorChannel` by Spring Integration can be published to a specific destination at the broker by configuring the bindings for the `errorChannel` outbound target name `error`.
+One needs to specify `spring.cloud.stream.bindings.error.destination` explicitly to subscribe to the Spring Integration `errorChannel` and there by sending all the error messages from the `errorChannel` into a specific destination at the broker.
+
 ==== Producing and Consuming Messages
 
 You can write a Spring Cloud Stream application using either Spring Integration annotations or Spring Cloud Stream's `@StreamListener` annotation.
