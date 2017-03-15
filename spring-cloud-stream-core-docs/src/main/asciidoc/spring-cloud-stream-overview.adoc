@@ -385,6 +385,7 @@ public class SendingBean {
     }
 }
 ----
+
 ==== Producing and Consuming Messages
 
 You can write a Spring Cloud Stream application using either Spring Integration annotations or Spring Cloud Stream's `@StreamListener` annotation.
@@ -423,6 +424,14 @@ public class TransformProcessor {
   }
 }
 ----
+
+===== Spring Integration Error Channel Support
+
+Spring Cloud Stream supports publishing error messages received by the Spring Integration global
+error channel. Error messages sent to the `errorChannel` can be published to a specific destination
+at the broker by configuring a binding for the outbound target named `error`. For example, to
+publish error messages to a broker destination named "myErrors", provide the following property:
+`spring.cloud.stream.bindings.error.destination=myErrors`
 
 ===== Using @StreamListener for Automatic Content Type Handling
 
