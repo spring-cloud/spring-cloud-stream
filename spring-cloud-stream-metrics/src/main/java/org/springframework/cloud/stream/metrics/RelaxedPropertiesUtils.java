@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.metrics;
 
 import org.springframework.boot.bind.RelaxedNames;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Vinicius Carvalho
