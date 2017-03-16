@@ -176,7 +176,7 @@ public class BinderMetricsEmitterTests {
 		Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",applicationMetrics.getMetrics()));
 		Assert.assertFalse(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
-		Assert.assertTrue(applicationMetrics.getProperties().get("spring.test.env.syntax").equals("testing"));
+		Assert.assertTrue(applicationMetrics.getProperties().get("SPRING_TEST_ENV_SYNTAX").equals("testing"));
 		applicationContext.close();
 	}
 
