@@ -70,13 +70,4 @@ public class RelaxedPropertiesUtils {
 		return (float)upperCaseCount/input.length();
 	}
 
-
-	public static void main(String[] args) {
-
-		System.out.println(findCanonicalFormat(new RelaxedNames("OS")));
-		System.out.println(findCanonicalFormat(new RelaxedNames("JAVA_HOME")));
-		System.out.println(findCanonicalFormat(new RelaxedNames("spring.cloud.stream.metrics")));
-		System.out.println(findCanonicalFormat(new RelaxedNames("SpringCloudStreamMetrics")));
-		System.out.println(findCanonicalFormat(new RelaxedNames("SPRING_CLOUD_STREAM_METRICS")));
-	}
 }
