@@ -45,20 +45,21 @@ public class BootMetricJsonSerializer {
 	public static class Serializer extends JsonSerializer<Metric> {
 
 		@Override
-		public void serialize(Metric metric, JsonGenerator json, SerializerProvider serializerProvider) throws IOException {
+		public void serialize(Metric metric, JsonGenerator json, SerializerProvider serializerProvider)
+				throws IOException {
 			json.writeStartObject();
-			json.writeStringField("name",metric.getName());
-			json.writeNumberField("value",metric.getValue().doubleValue());
-			json.writeStringField("timestamp",df.format(metric.getTimestamp()));
+			json.writeStringField("name", metric.getName());
+			json.writeNumberField("value", metric.getValue().doubleValue());
+			json.writeStringField("timestamp", df.format(metric.getTimestamp()));
 			json.writeEndObject();
 		}
 	}
 
 	public static class Deserializer extends JsonDeserializer<Metric> {
 
-
 		@Override
-		public Metric deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+		public Metric deserialize(JsonParser p, DeserializationContext ctxt)
+				throws IOException, JsonProcessingException {
 			JsonNode node = p.getCodec().readTree(p);
 			String name = node.get("name").asText();
 			Number value = node.get("value").asDouble();
@@ -69,7 +70,7 @@ public class BootMetricJsonSerializer {
 			}
 			catch (ParseException e) {
 			}
-			Metric<Number> metric = new Metric(name,value,timestamp);
+			Metric<Number> metric = new Metric(name, value, timestamp);
 
 			return metric;
 		}

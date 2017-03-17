@@ -23,68 +23,77 @@ import org.springframework.boot.bind.RelaxedNames;
 import org.springframework.util.StringUtils;
 
 /**
+ * Utility class to deal with {@link RelaxedNames}.
+ *
  * @author Vinicius Carvalho
- * Utility class to deal with {@link RelaxedNames}
  */
 public class RelaxedPropertiesUtils {
 
 	private static final Pattern HYPHEN_LOWER = Pattern.compile("-_|_-|__|\\.-|\\._");
 
-	private static final Pattern SEPARATED_TO_CAMEL_CASE_PATTERN = Pattern
-			.compile("[_\\-.]");
+	private static final Pattern SEPARATED_TO_CAMEL_CASE_PATTERN = Pattern.compile("[_\\-.]");
 
 	private static final char[] SUFFIXES = new char[] { '_', '-', '.' };
 
 	/**
-	 * Searches relaxed names and tries to find a best match for a canonical form using dot notation.
+	 * Searches relaxed names and tries to find a best match for a canonical form using
+	 * dot notation.
 	 *
-	 * For example, if a new list was built with JAVA_HOME as property, the return of this method would be java.home
+	 * For example, if a new list was built with JAVA_HOME as property, the return of this
+	 * method would be java.home
 	 *
-	 * Relaxed names generate a long list of variations of a property, it can be tricky trying to infer the correct format, which sometimes may not even exist in dot notation.
+	 * Relaxed names generate a long list of variations of a property, it can be tricky
+	 * trying to infer the correct format, which sometimes may not even exist in dot
+	 * notation.
 	 *
-	 * This method attempts to find a best match, or if none is found it converts underscore format to dot notation.
+	 * This method attempts to find a best match, or if none is found it converts
+	 * underscore format to dot notation.
 	 *
 	 * @param names - List of possible permutation of a property
 	 * @return The canonical form (dot notation) of this property
 	 */
-	public static String findCanonicalFormat(Iterable<String> names){
+	public static String findCanonicalFormat(Iterable<String> names) {
 		TreeSet<String> sorted = new TreeSet<>();
 		String environmentFormat = null;
 		String simpleFormat = null;
-		for(String name : names){
+		for (String name : names) {
 			sorted.add(name);
 		}
 		String canonicalForm = null;
-		for(String name : sorted){
-			if(HYPHEN_LOWER.matcher(name).find()){
+		for (String name : sorted) {
+			if (HYPHEN_LOWER.matcher(name).find()) {
 				continue;
 			}
-			if(upperCaseRatio(name) == 1.0){
-				if(name.contains("_")){
+			if (upperCaseRatio(name) == 1.0) {
+				if (name.contains("_")) {
 					environmentFormat = name;
-				}if(!name.matches("^.*?(_|-).*$")){
+				}
+				if (!name.matches("^.*?(_|-).*$")) {
 					simpleFormat = name;
 				}
 				continue;
 			}
-			if(name.contains(".")){
+			if (name.contains(".")) {
 				String[] keys = name.split("\\.");
-				for(int i=0;i<keys.length;i++){
-					keys[i] = separatedToCamelCase(keys[i],false);
+				for (int i = 0; i < keys.length; i++) {
+					keys[i] = separatedToCamelCase(keys[i], false);
 				}
-				canonicalForm = StringUtils.arrayToDelimitedString(keys,".");
+				canonicalForm = StringUtils.arrayToDelimitedString(keys, ".");
 				break;
 			}
 		}
-		//If we can't find any variation it could mean we have a camelCase only value such as springApplicationName.
-		//In this case RelaxedNames only generate _ values, so we should get one and transform into dot notation.
-		//Another possibility is a top level property such as MEM or OS, in this case there's no separator and we only set to lowercase
-		if(canonicalForm == null){
-			if(environmentFormat != null){
-				canonicalForm = environmentFormat.toLowerCase().replace("_",".");
+		// If we can't find any variation it could mean we have a camelCase only value
+		// such as springApplicationName.
+		// In this case RelaxedNames only generate _ values, so we should get one and
+		// transform into dot notation.
+		// Another possibility is a top level property such as MEM or OS, in this case
+		// there's no separator and we only set to lowercase
+		if (canonicalForm == null) {
+			if (environmentFormat != null) {
+				canonicalForm = environmentFormat.toLowerCase().replace("_", ".");
 			}
-			if(canonicalForm == null){
-				if(simpleFormat != null){
+			if (canonicalForm == null) {
+				if (simpleFormat != null) {
 					canonicalForm = simpleFormat.toLowerCase();
 				}
 			}
@@ -97,33 +106,32 @@ public class RelaxedPropertiesUtils {
 	 * @param input
 	 * @return
 	 */
-	private static double upperCaseRatio(String input){
+	private static double upperCaseRatio(String input) {
 		int upperCaseCount = 0;
-		String compare = input.replaceAll("[._-]","");
-		for(int i=0;i<compare.length();i++){
-			if(Character.isUpperCase(compare.charAt(i))){
+		String compare = input.replaceAll("[._-]", "");
+		for (int i = 0; i < compare.length(); i++) {
+			if (Character.isUpperCase(compare.charAt(i))) {
 				upperCaseCount++;
 			}
 		}
-		return (float)upperCaseCount/compare.length();
+		return (float) upperCaseCount / compare.length();
 	}
 
 	/**
-	 * Taken from {@link RelaxedNames}, convert an input of type string-string into stringString
+	 * Taken from {@link RelaxedNames}, convert an input of type string-string into
+	 * stringString
 	 * @param value
 	 * @param caseInsensitive
 	 * @return
 	 */
-	private static String separatedToCamelCase(String value,
-			boolean caseInsensitive) {
+	private static String separatedToCamelCase(String value, boolean caseInsensitive) {
 		if (value.isEmpty()) {
 			return value;
 		}
 		StringBuilder builder = new StringBuilder();
 		for (String field : SEPARATED_TO_CAMEL_CASE_PATTERN.split(value)) {
 			field = (caseInsensitive ? field.toLowerCase() : field);
-			builder.append(
-					builder.length() == 0 ? field : StringUtils.capitalize(field));
+			builder.append(builder.length() == 0 ? field : StringUtils.capitalize(field));
 		}
 		char lastChar = value.charAt(value.length() - 1);
 		for (char suffix : SUFFIXES) {
@@ -134,8 +142,5 @@ public class RelaxedPropertiesUtils {
 		}
 		return builder.toString();
 	}
-
-
-
 
 }
