@@ -1859,15 +1859,15 @@ Default: `application/json`
 
 [NOTE]
 ====
-Due Spring boot's https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-relaxed-binding[relaxed binding] the value of a property being included can be slightly different than the original value.
+Due to Spring boot's https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-relaxed-binding[relaxed binding] the value of a property being included can be slightly different than the original value.
 
 As a rule of thumb, we attempt to normalize all the properties using the dot notation (`JAVA_HOME` becomes `java.home`), but some edge cases such as `CONTENTTYPE` would yield `contenttype` and not `contentType`, since we don't know where to apply the camelCase conversion.
 
-Please note, the normalization exists as an attempt to make downstream consumers of those metrics capable of reading the same data regarless of how the user set it (`--spring.application.name` or `SPRING_APPLICATION_NAME` would always yield `spring.application.name`)
+Please note, the normalization exists as an attempt to make downstream consumers of those metrics capable of reading the same data regardless of how the user set it (`--spring.application.name` or `SPRING_APPLICATION_NAME` would always yield `spring.application.name`)
 
 ====
 
-Bellow is a sample of data that is pushed to the channel in `application/json` format.
+Below is a sample of data that is pushed to the channel in `application/json` format.
 
 [source,javascript]
 ----

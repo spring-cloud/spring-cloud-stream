@@ -20,7 +20,7 @@ import org.springframework.boot.bind.RelaxedNames;
 
 /**
  * @author Vinicius Carvalho
- * Utiliy class to deal with {@link RelaxedNames}
+ * Utility class to deal with {@link RelaxedNames}
  */
 public class RelaxedPropertiesUtils {
 

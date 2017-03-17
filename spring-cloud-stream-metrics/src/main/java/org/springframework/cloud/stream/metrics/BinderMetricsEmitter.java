@@ -123,10 +123,10 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 					EnumerablePropertySource e = (EnumerablePropertySource) source;
 					for (String propertyName : e.getPropertyNames()) {
 						RelaxedNames relaxedNames = new RelaxedNames(propertyName);
-						outer: for (String relaxedPropertyName : relaxedNames) {
+						relaxedLoop: for (String relaxedPropertyName : relaxedNames) {
 							if (isMatch(relaxedPropertyName, this.properties.getProperties(), null)) {
 								whitelistedProperties.put(RelaxedPropertiesUtils.findCanonicalFormat(relaxedNames), source.getProperty(propertyName));
-								break outer;
+								break relaxedLoop;
 							}
 						}
 					}
