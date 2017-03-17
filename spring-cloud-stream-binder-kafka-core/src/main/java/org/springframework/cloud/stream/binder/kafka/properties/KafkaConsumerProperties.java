@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Map;
 
 /**
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  *
  * <p>Thanks to Laszlo Szabo for providing the initial patch for generic property support.</p>
  */
@@ -37,6 +38,8 @@ public class KafkaConsumerProperties {
 	private StartOffset startOffset;
 
 	private boolean enableDlq;
+
+	private String dlqName;
 
 	private int recoveryInterval = 5000;
 
@@ -118,5 +121,13 @@ public class KafkaConsumerProperties {
 
 	public void setConfiguration(Map<String, String> configuration) {
 		this.configuration = configuration;
+	}
+
+	public String getDlqName() {
+		return dlqName;
+	}
+
+	public void setDlqName(String dlqName) {
+		this.dlqName = dlqName;
 	}
 }

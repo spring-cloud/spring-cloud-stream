@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,6 +239,68 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		QueueChannel dlqChannel = new QueueChannel();
 		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
 				"error.retryTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel, dlqConsumerProperties);
+
+		String testMessagePayload = "test." + UUID.randomUUID().toString();
+		Message<String> testMessage = MessageBuilder.withPayload(testMessagePayload).build();
+		moduleOutputChannel.send(testMessage);
+
+		Message<?> dlqMessage = receive(dlqChannel, 3);
+		assertThat(dlqMessage).isNotNull();
+		assertThat(dlqMessage.getPayload()).isEqualTo(testMessagePayload);
+
+		// first attempt fails
+		assertThat(handler.getReceivedMessages().entrySet()).hasSize(1);
+		Message<?> handledMessage = handler.getReceivedMessages().entrySet().iterator().next().getValue();
+		assertThat(handledMessage).isNotNull();
+		assertThat(handledMessage.getPayload()).isEqualTo(testMessagePayload);
+		assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
+		binderBindUnbindLatency();
+		dlqConsumerBinding.unbind();
+		consumerBinding.unbind();
+
+		// on the second attempt the message is not redelivered because the DLQ is set
+		QueueChannel successfulInputChannel = new QueueChannel();
+		consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0", "testGroup",
+				successfulInputChannel, consumerProperties);
+		String testMessage2Payload = "test." + UUID.randomUUID().toString();
+		Message<String> testMessage2 = MessageBuilder.withPayload(testMessage2Payload).build();
+		moduleOutputChannel.send(testMessage2);
+
+		Message<?> receivedMessage = receive(successfulInputChannel);
+		assertThat(receivedMessage.getPayload()).isEqualTo(testMessage2Payload);
+
+		binderBindUnbindLatency();
+		consumerBinding.unbind();
+		producerBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testConfigurableDlqName() throws Exception {
+		Binder binder = getBinder();
+		DirectChannel moduleOutputChannel = new DirectChannel();
+		DirectChannel moduleInputChannel = new DirectChannel();
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.setPartitionCount(10);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setMaxAttempts(3);
+		consumerProperties.setBackOffInitialInterval(100);
+		consumerProperties.setBackOffMaxInterval(150);
+		consumerProperties.getExtension().setEnableDlq(true);
+		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
+		String dlqName = "dlqTest";
+		consumerProperties.getExtension().setDlqName(dlqName);
+		long uniqueBindingId = System.currentTimeMillis();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("retryTest." + uniqueBindingId + ".0",
+				moduleOutputChannel, producerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0",
+				"testGroup", moduleInputChannel, consumerProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
+		dlqConsumerProperties.setMaxAttempts(1);
+		QueueChannel dlqChannel = new QueueChannel();
+		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(dlqName, null, dlqChannel, dlqConsumerProperties);
 
 		String testMessagePayload = "test." + UUID.randomUUID().toString();
 		Message<String> testMessage = MessageBuilder.withPayload(testMessagePayload).build();

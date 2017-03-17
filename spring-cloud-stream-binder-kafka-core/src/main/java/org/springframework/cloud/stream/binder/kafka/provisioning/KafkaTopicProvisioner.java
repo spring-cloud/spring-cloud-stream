@@ -55,6 +55,7 @@ import kafka.utils.ZkUtils;
  *
  * @author Soby Chacko
  * @author Gary Russell
+ * @author Ilayaperumal Gopinathan
  */
 public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<KafkaConsumerProperties>,
 		ExtendedProducerProperties<KafkaProducerProperties>>, InitializingBean {
@@ -137,7 +138,8 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 					JaasUtils.isZkSecurityEnabled());
 			int partitions = adminUtilsOperation.partitionSize(name, zkUtils);
 			if (properties.getExtension().isEnableDlq() && !anonymous) {
-				String dlqTopic = "error." + name + "." + group;
+				String dlqTopic = StringUtils.hasText(properties.getExtension().getDlqName()) ?
+						properties.getExtension().getDlqName() : "error." + name + "." + group;
 				createTopicAndPartitions(dlqTopic, partitions);
 				return new KafkaConsumerDestination(name, partitions, dlqTopic);
 			}

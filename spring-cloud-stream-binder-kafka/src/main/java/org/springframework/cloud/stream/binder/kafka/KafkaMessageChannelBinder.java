@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,7 +201,7 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	@SuppressWarnings("unchecked")
 	protected MessageProducer createConsumerEndpoint(final ConsumerDestination destination, final String group,
-			ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 
 		boolean anonymous = !StringUtils.hasText(group);
 		Assert.isTrue(!anonymous || !extendedConsumerProperties.getExtension().isEnableDlq(),
@@ -281,8 +281,9 @@ public class KafkaMessageChannelBinder extends
 							: null;
 					final byte[] payload = message.value() != null
 							? Utils.toArray(ByteBuffer.wrap((byte[]) message.value())) : null;
-					ListenableFuture<SendResult<byte[], byte[]>> sentDlq = kafkaTemplate.send("error." + destination.getName() + "." + group,
-							message.partition(), key, payload);
+					String dlqName = StringUtils.hasText(extendedConsumerProperties.getExtension().getDlqName()) ?
+							extendedConsumerProperties.getExtension().getDlqName() : "error." + destination.getName() + "." + group;
+					ListenableFuture<SendResult<byte[], byte[]>> sentDlq = kafkaTemplate.send(dlqName, message.partition(), key, payload);
 					sentDlq.addCallback(new ListenableFutureCallback<SendResult<byte[], byte[]>>() {
 						StringBuilder sb = new StringBuilder().append(" a message with key='")
 								.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50)).append("'")
