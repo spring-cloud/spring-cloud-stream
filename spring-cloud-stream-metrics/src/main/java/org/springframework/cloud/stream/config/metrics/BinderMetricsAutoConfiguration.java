@@ -37,7 +37,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableBinding(Emitter.class)
 @EnableConfigurationProperties(StreamMetricsProperties.class)
-@ConditionalOnProperty("spring.cloud.stream.bindings."+ Emitter.METRICS_CHANNEL_NAME + ".destination")
+@ConditionalOnProperty("spring.cloud.stream.bindings." + Emitter.METRICS_CHANNEL_NAME + ".destination")
 public class BinderMetricsAutoConfiguration {
 
 	@Bean

@@ -31,21 +31,19 @@ import org.springframework.boot.actuate.metrics.Metric;
  */
 public class ApplicationMetrics {
 
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+	private final Date createdTime;
+
 	private String name;
 
 	private int instanceIndex;
 
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-	private final Date createdTime;
-
 	private Collection<Metric> metrics;
 
-	private Map<String,Object> properties;
-
+	private Map<String, Object> properties;
 
 	@JsonCreator
-	public ApplicationMetrics(@JsonProperty("name") String name,
-			@JsonProperty("instanceIndex") int instanceIndex,
+	public ApplicationMetrics(@JsonProperty("name") String name, @JsonProperty("instanceIndex") int instanceIndex,
 			@JsonProperty("metrics") Collection<Metric> metrics) {
 		this.name = name;
 		this.instanceIndex = instanceIndex;

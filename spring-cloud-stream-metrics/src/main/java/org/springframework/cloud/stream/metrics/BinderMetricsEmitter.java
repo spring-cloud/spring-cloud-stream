@@ -43,11 +43,14 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
 
 /**
+ *
+ * Component that sends metrics from {@link MetricsEndpointMetricReader} downstream via
+ * the configured metrics channel.
+ *
+ * It uses {@link Scheduled} support to periodially emit messages polled from the
+ * endpoint.
+ *
  * @author Vinicius Carvalho
- *
- * Component that sends metrics from {@link MetricsEndpointMetricReader} downstream via the configured metrics channel.
- *
- * It uses {@link Scheduled} support to periodially emit messages polled from the endpoint.
  */
 public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
 
@@ -65,21 +68,21 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 	private ApplicationContext applicationContext;
 
 	/**
-	 * List of properties that are going to be appended to each message.
-	 * This gets populate by onApplicationEvent, once the context refreshes to avoid overhead of doing per message basis.
+	 * List of properties that are going to be appended to each message. This gets
+	 * populate by onApplicationEvent, once the context refreshes to avoid overhead of
+	 * doing per message basis.
 	 */
-	private Map<String,Object> whitelistedProperties;
+	private Map<String, Object> whitelistedProperties;
 
-	public BinderMetricsEmitter(MetricsEndpoint endpoint){
+	public BinderMetricsEmitter(MetricsEndpoint endpoint) {
 		this.metricsReader = new MetricsEndpointMetricReader(endpoint);
 		this.whitelistedProperties = new HashMap<>();
 	}
 
 	@Scheduled(fixedRateString = "${spring.cloud.stream.metrics.delay-millis:5000}")
-	public void sendMetrics(){
+	public void sendMetrics() {
 		ApplicationMetrics appMetrics = new ApplicationMetrics(this.properties.getMetricName(),
-				this.bindingServiceProperties.getInstanceIndex(),
-				filter());
+				this.bindingServiceProperties.getInstanceIndex(), filter());
 		appMetrics.setProperties(whitelistedProperties);
 		source.metrics().send(MessageBuilder.withPayload(appMetrics).build());
 	}
@@ -88,11 +91,11 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 	 * Shameless copied from {@link MetricCopyExporter}
 	 * @return
 	 */
-	protected Collection<Metric> filter(){
+	protected Collection<Metric> filter() {
 		Collection<Metric> result = new ArrayList<>();
 		Iterable<Metric<?>> metrics = metricsReader.findAll();
-		for(Metric metric : metrics){
-			if(isMatch(metric.getName(),this.properties.getIncludes(),this.properties.getExcludes())){
+		for (Metric metric : metrics) {
+			if (isMatch(metric.getName(), this.properties.getIncludes(), this.properties.getExcludes())) {
 				result.add(metric);
 			}
 		}
@@ -104,8 +107,7 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 	 * @return
 	 */
 	private boolean isMatch(String name, String[] includes, String[] excludes) {
-		if (ObjectUtils.isEmpty(includes)
-				|| PatternMatchUtils.simpleMatch(includes, name)) {
+		if (ObjectUtils.isEmpty(includes) || PatternMatchUtils.simpleMatch(includes, name)) {
 			return !PatternMatchUtils.simpleMatch(excludes, name);
 		}
 		return false;
@@ -113,7 +115,8 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 
 	@Override
 	/**
-	 * Iterates over all property sources from this application context and copies the ones listed in {@link StreamMetricsProperties} includes
+	 * Iterates over all property sources from this application context and copies the
+	 * ones listed in {@link StreamMetricsProperties} includes
 	 */
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) event.getSource();
@@ -122,9 +125,12 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 				if (source instanceof EnumerablePropertySource) {
 					EnumerablePropertySource e = (EnumerablePropertySource) source;
 					for (String propertyName : e.getPropertyNames()) {
-						for (String relaxedPropertyName : new RelaxedNames(propertyName)) {
+						RelaxedNames relaxedNames = new RelaxedNames(propertyName);
+						relaxedLoop: for (String relaxedPropertyName : relaxedNames) {
 							if (isMatch(relaxedPropertyName, this.properties.getProperties(), null)) {
-								whitelistedProperties.put(relaxedPropertyName, source.getProperty(propertyName));
+								whitelistedProperties.put(RelaxedPropertiesUtils.findCanonicalFormat(relaxedNames),
+										source.getProperty(propertyName));
+								break relaxedLoop;
 							}
 						}
 					}

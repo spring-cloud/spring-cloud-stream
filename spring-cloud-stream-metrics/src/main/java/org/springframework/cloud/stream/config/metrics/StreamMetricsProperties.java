@@ -26,7 +26,6 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "spring.cloud.stream.metrics")
 public class StreamMetricsProperties {
 
-
 	private String prefix;
 
 	@Value("${spring.application.name:${vcap.application.name:${spring.config.name:application}}}")
@@ -34,7 +33,7 @@ public class StreamMetricsProperties {
 
 	private String metricName;
 
-	private String[] includes = new String[]{"integration**"};
+	private String[] includes = new String[] { "integration**" };
 
 	private String[] excludes;
 
@@ -78,6 +77,10 @@ public class StreamMetricsProperties {
 		return applicationName;
 	}
 
+	public void setApplicationName(String applicationName) {
+		this.applicationName = applicationName;
+	}
+
 	public String[] getProperties() {
 		return properties;
 	}
@@ -87,25 +90,21 @@ public class StreamMetricsProperties {
 	}
 
 	public String getMetricName() {
-		if(this.metricName == null){
+		if (this.metricName == null) {
 			this.metricName = resolveMetricName();
 		}
 		return metricName;
 	}
 
-	private String resolveMetricName(){
+	private String resolveMetricName() {
 		StringBuffer name = new StringBuffer(this.applicationName);
-		if(!StringUtils.isEmpty(this.prefix)){
+		if (!StringUtils.isEmpty(this.prefix)) {
 			String prefix = this.prefix;
-			if(prefix.lastIndexOf(".") == -1){
+			if (prefix.lastIndexOf(".") == -1) {
 				prefix += ".";
 			}
-			name.insert(0,prefix);
+			name.insert(0, prefix);
 		}
 		return name.toString();
-	}
-
-	public void setApplicationName(String applicationName) {
-		this.applicationName = applicationName;
 	}
 }
