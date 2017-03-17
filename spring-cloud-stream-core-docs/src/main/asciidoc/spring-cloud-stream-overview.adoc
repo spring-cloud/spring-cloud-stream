@@ -1819,8 +1819,6 @@ This module allow operators to collect metrics from stream applications without 
 
 HTTP polling can be challenging on cloud environments since applications could be on a private network or behind a Load balancer that prevents per instance access.
 
-This module is included in each of the out of box https://github.com/spring-cloud-stream-app-starters[application starters], if you want to emit metrics from your application, just import it on your pom.xml and follow the activation instructions.
-
 The module is activated when you set the destination name for its channel, `spring.cloud.stream.bindings.streamMetrics.destination=<DESTINATION_NAME>`.
 
 By default the module is configured to only send Spring Integration message channel metrics.
@@ -1861,7 +1859,7 @@ Default: `application/json`
 ====
 Due to Spring boot's https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-relaxed-binding[relaxed binding] the value of a property being included can be slightly different than the original value.
 
-As a rule of thumb, we attempt to normalize all the properties using the dot notation (`JAVA_HOME` becomes `java.home`), but some edge cases such as `CONTENTTYPE` would yield `contenttype` and not `contentType`, since we don't know where to apply the camelCase conversion.
+As a rule of thumb, we attempt to normalize all the properties using the dot notation (`JAVA_HOME` becomes `java.home`).
 
 Please note, the normalization exists as an attempt to make downstream consumers of those metrics capable of reading the same data regardless of how the user set it (`--spring.application.name` or `SPRING_APPLICATION_NAME` would always yield `spring.application.name`)
 
