@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -70,6 +71,7 @@ public class BinderFactoryConfiguration {
 		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
 			defaultCandidatesExist = binderPropertiesIterator.next().getValue().isDefaultCandidate();
 		}
+		List<String> existingBinderConfigurations = new ArrayList<>();
 		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
 			BinderProperties binderProperties = binderEntry.getValue();
 			if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
@@ -77,6 +79,7 @@ public class BinderFactoryConfiguration {
 						new BinderConfiguration(binderTypeRegistry.get(binderEntry.getKey()),
 								binderProperties.getEnvironment(), binderProperties.isInheritEnvironment(),
 								binderProperties.isDefaultCandidate()));
+				existingBinderConfigurations.add(binderEntry.getKey());
 			}
 			else {
 				Assert.hasText(binderProperties.getType(),
@@ -86,12 +89,20 @@ public class BinderFactoryConfiguration {
 				binderConfigurations.put(binderEntry.getKey(),
 						new BinderConfiguration(binderType, binderProperties.getEnvironment(),
 								binderProperties.isInheritEnvironment(), binderProperties.isDefaultCandidate()));
+				existingBinderConfigurations.add(binderEntry.getKey());
+			}
+		}
+		for (Map.Entry<String, BinderConfiguration> configurationEntry: binderConfigurations.entrySet()) {
+			if (configurationEntry.getValue().isDefaultCandidate()) {
+				defaultCandidatesExist = true;
 			}
 		}
 		if (!defaultCandidatesExist) {
-			for (Map.Entry<String, BinderType> entry : binderTypeRegistry.getAll().entrySet()) {
-				binderConfigurations.put(entry.getKey(),
-						new BinderConfiguration(entry.getValue(), new Properties(), true, true));
+			for (Map.Entry<String, BinderType> binderEntry : binderTypeRegistry.getAll().entrySet()) {
+				if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
+					binderConfigurations.put(binderEntry.getKey(), new BinderConfiguration(binderEntry.getValue(),
+							new Properties(), true, true));
+				}
 			}
 		}
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory(binderConfigurations);
@@ -117,7 +128,7 @@ public class BinderFactoryConfiguration {
 				URL url = resources.nextElement();
 				UrlResource resource = new UrlResource(url);
 				for (BinderType binderType : parseBinderConfigurations(classLoader, resource)) {
-					binderTypes.put(binderType.getDefaultName(), binderType);
+						binderTypes.put(binderType.getDefaultName(), binderType);
 				}
 			}
 		}

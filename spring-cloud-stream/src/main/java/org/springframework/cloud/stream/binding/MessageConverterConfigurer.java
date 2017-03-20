@@ -60,6 +60,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  * @author Maxim Kirilov
+ * @author Gary Russell
  */
 public class MessageConverterConfigurer implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
 
@@ -275,12 +276,21 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			int partition = this.partitionHandler.determinePartition(message);
-			return MessageConverterConfigurer.this.messageBuilderFactory
-					.fromMessage(message)
-					.setHeader(BinderHeaders.PARTITION_HEADER, partition)
-					.build();
-
+			if (!message.getHeaders().containsKey(BinderHeaders.PARTITION_OVERRIDE)) {
+				int partition = this.partitionHandler.determinePartition(message);
+				return MessageConverterConfigurer.this.messageBuilderFactory
+						.fromMessage(message)
+						.setHeader(BinderHeaders.PARTITION_HEADER, partition)
+						.build();
+			}
+			else {
+				return MessageConverterConfigurer.this.messageBuilderFactory
+						.fromMessage(message)
+						.setHeader(BinderHeaders.PARTITION_HEADER,
+								message.getHeaders().get(BinderHeaders.PARTITION_OVERRIDE))
+						.removeHeader(BinderHeaders.PARTITION_OVERRIDE)
+						.build();
+			}
 		}
 	}
 

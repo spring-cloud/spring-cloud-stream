@@ -385,6 +385,7 @@ public class SendingBean {
     }
 }
 ----
+
 ==== Producing and Consuming Messages
 
 You can write a Spring Cloud Stream application using either Spring Integration annotations or Spring Cloud Stream's `@StreamListener` annotation.
@@ -423,6 +424,14 @@ public class TransformProcessor {
   }
 }
 ----
+
+===== Spring Integration Error Channel Support
+
+Spring Cloud Stream supports publishing error messages received by the Spring Integration global
+error channel. Error messages sent to the `errorChannel` can be published to a specific destination
+at the broker by configuring a binding for the outbound target named `error`. For example, to
+publish error messages to a broker destination named "myErrors", provide the following property:
+`spring.cloud.stream.bindings.error.destination=myErrors`
 
 ===== Using @StreamListener for Automatic Content Type Handling
 
@@ -1257,9 +1266,11 @@ In addition, Spring Cloud Stream provides custom MIME types, notably, `applicati
 === MIME types and Java types
 
 The type conversions Spring Cloud Stream provides out of the box are summarized in the following table:
+'Source Payload' means the payload before conversion and 'Target Payload' means the 'payload' after conversion.
+The type conversion can occur either on the 'producer' side (output) or at the 'consumer' side (input).
 
 |===
-|Source Payload |Target Payload |content-type header | content-type | Comments
+|Source Payload |Target Payload | `content-type` header (source message) | `content-type` header (after conversion) | Comments
 
 |POJO
 |JSON String
@@ -1317,14 +1328,20 @@ The type conversions Spring Cloud Stream provides out of the box are summarized 
 
 |===
 
-[[NOTE]]
+[NOTE]
+====
 Conversion applies to payloads that require type conversion.
-For example, if a module produces an XML string with outputType=application/json, the payload will not be converted from XML to JSON.
-This is because the payload at the module's output channel is already a String so no conversion will be applied at runtime.
+For example, if an application produces an XML string with outputType=application/json, the payload will not be converted from XML to JSON.
+This is because the payload send to the outbound channel is already a String so no conversion will be applied at runtime.
+It is also important to note that when using the default serialization mechanism, the payload class must be shared between the sending and receiving application, and compatible with the binary content.
+This can create issues when application code changes independently in the two applications, as the binary format and code may become incompatible.
+====
 
-[[TIP]]
-While conversion is supported for both input and output channels, it is especially recommended to be used for the conversion of outbound messages.
+[TIP]
+====
+While conversion is supported for both inbound and outbound channels, it is especially recommended to be used for the conversion of outbound messages.
 For the conversion of inbound messages, especially when the target is a POJO, the `@StreamListener` support will perform the conversion automatically.
+====
 
 === Customizing message conversion
 
@@ -1577,6 +1594,13 @@ A client for the Spring Cloud Stream schema registry can be configured using the
   }
 ----
 
+[NOTE]
+====
+The default converter is optimized to cache not only the schemas from the remote server but also the `parse()` and `toString()` methods that are quite expensive.
+Because of this, it uses a `DefaultSchemaRegistryClient` that does not caches responses. If you intend to use the client directly on your code, you can request a bean that also caches responses to be created.
+To do that, just add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
+====
+
 ==== Avro Schema Registry Client Message Converters
 
 For Spring Boot applications that have a `SchemaRegistryClient` bean registered with the application context, Spring Cloud Stream will auto-configure an Apache Avro message converter that uses the schema registry client for schema management.
@@ -1797,6 +1821,77 @@ Once we have received the message, we can validate that the component functions 
 
 Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name of `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
+
+== Metrics Emitter
+Spring Cloud Stream provides a module called `spring-cloud-stream-metrics` that can be used to emit any available metric from https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html[Spring Boot metrics endpoint] to a named channel.
+This module allow operators to collect metrics from stream applications without relying on polling their endpoints.
+
+HTTP polling can be challenging on cloud environments since applications could be on a private network or behind a Load balancer that prevents per instance access.
+
+The module is activated when you set the destination name for its channel, `spring.cloud.stream.bindings.streamMetrics.destination=<DESTINATION_NAME>`.
+
+By default the module is configured to only send Spring Integration message channel metrics.
+
+Available properties for customization using the prefix `spring.cloud.stream.metrics`.
+
+delay-millis::
+  The period in which metrics will be posted to the channel
++
+Default: `5000`.
++
+prefix::
+  Prefix string to be prepended to the metrics name
++
+Default: ``
++
+includes::
+  An array of strings containing regex patterns of metrics that should be included.
++
+Default: `integration**`
++
+excludes::
+  An array of strings containing regex patterns of metrics that should be excluded.
++
+Default: ``
++
+properties::
+  Just like the `includes` option, it allows white listing application properties that will be added to the metrics payload
++
+Default: null.
++
+spring.cloud.stream.bindings.streamMetrics.contentType::
+  Content-Type of the message
++
+Default: `application/json`
+
+[NOTE]
+====
+Due to Spring Boot's https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-relaxed-binding[relaxed binding] the value of a property being included can be slightly different than the original value.
+
+As a rule of thumb, the metric exporter will attempt to normalize all the properties in a consistent format using the dot notation (e.g. `JAVA_HOME` becomes `java.home`).
+
+The goal of normalization is to make downstream consumers of those metrics capable of receiving property names consistently, regardless of how they are set on the monitored application (`--spring.application.name` or `SPRING_APPLICATION_NAME` would always yield `spring.application.name`).
+
+====
+
+Below is a sample of data that is pushed to the channel in `application/json` format.
+
+[source,javascript]
+----
+{
+  "name" : "application",
+  "instanceIndex" : 0,
+  "createdTime" : "2017-03-14T13:55:38.547Z",
+  "properties" : {
+    "java.specification.version" : "1.8"
+  }
+  "metrics" : [ {
+    "name" : "mem",
+    "value" : 170757.0,
+    "timestamp" : "2017-03-14T09:55:38.547Z"
+  } ]
+}
+----
 
 == Samples
 

@@ -5,4 +5,5 @@
 <suppressions>
     <suppress files="[\\/]src[\\/]main[\\/]java[\\/]org[\\/]springframework[\\/]cloud[\\/]stream[\\/]reactive[\\/]reactor[\\/]core[\\/]scheduler[\\/]" checks=".*" />
     <suppress files="[\\/]src[\\/]test[\\/]java[\\/]" checks="AvoidStaticImport" />
+    <suppress files="[\\/]target[\\/]generated-test-sources[\\/]" checks="[a-zA-Z0-9]*"/>
 </suppressions>

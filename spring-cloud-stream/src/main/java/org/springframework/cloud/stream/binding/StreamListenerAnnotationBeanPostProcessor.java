@@ -71,7 +71,7 @@ import org.springframework.util.StringUtils;
  */
 public class StreamListenerAnnotationBeanPostProcessor
 		implements BeanPostProcessor, ApplicationContextAware, BeanFactoryAware, SmartInitializingSingleton,
-				InitializingBean {
+		InitializingBean {
 
 	private static final SpelExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
 
@@ -100,7 +100,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 	private BeanExpressionContext expressionContext;
 
 	@Override
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public final void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
@@ -182,7 +182,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 	 * the postprocessor.
 	 *
 	 * @param originalAnnotation the original annotation
-	 * @param annotatedMethod the method on which the annotation has been found
+	 * @param annotatedMethod    the method on which the annotation has been found
 	 * @return the postprocessed {@link StreamListener} annotation
 	 */
 	protected StreamListener postProcessAnnotation(StreamListener originalAnnotation, Method annotatedMethod) {
@@ -226,7 +226,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private boolean isDeclarativeMethodParameter(Object targetBean, MethodParameter methodParameter) {
 		if (targetBean != null) {
-			if (methodParameter.getParameterType().isAssignableFrom(targetBean.getClass())) {
+			if (!methodParameter.getParameterType().equals(Object.class)
+					&& methodParameter.getParameterType().isAssignableFrom(targetBean.getClass())) {
 				return true;
 			}
 			for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
@@ -238,7 +239,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return false;
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	private void invokeSetupMethodOnListenedChannel(Method method, Object bean, String inboundName,
 			String outboundName) {
 		Object[] arguments = new Object[method.getParameterTypes().length];
