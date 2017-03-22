@@ -30,10 +30,14 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.integration.annotation.Router;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.support.DefaultMessageBuilderFactory;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -84,7 +88,22 @@ public class StreamListenerHandlerMethodTests {
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
 		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo(result.getPayload().toString().toUpperCase());
+		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
+		context.close();
+	}
+
+	@Test
+	public void testStreamListenerMethodWithTargetBeanFromOutside() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestStreamListenerMethodWithTargetBeanFromOutside.class, "--server.port=0");
+		Sink sink = context.getBean(Sink.class);
+		final String testMessageToSend = "testing";
+		sink.input().send(MessageBuilder.withPayload(testMessageToSend).build());
+		DirectChannel directChannel = (DirectChannel) context.getBean(testMessageToSend.toUpperCase(), MessageChannel.class);
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		Message<?> result = messageCollector.forChannel(directChannel).poll(1000, TimeUnit.MILLISECONDS);
+		sink.input().send(MessageBuilder.withPayload(testMessageToSend).build());
+		assertThat(result).isNotNull();
+		assertThat(result.getPayload()).isEqualTo(testMessageToSend.toUpperCase());
 		context.close();
 	}
 
@@ -139,8 +158,8 @@ public class StreamListenerHandlerMethodTests {
 			fail("Exception expected on using invalid inbound name");
 		}
 		catch (BeanCreationException e) {
-			assertThat(e.getCause()).isInstanceOf(NoSuchBeanDefinitionException.class);
-			assertThat(e.getCause()).hasMessageContaining("'invalid'");
+			assertThat(e.getCause()).isInstanceOf(IllegalArgumentException.class);
+			assertThat(e.getCause()).hasMessageContaining(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
@@ -300,6 +319,24 @@ public class StreamListenerHandlerMethodTests {
 		@SendTo(Processor.OUTPUT)
 		public String receive(Object received) {
 			return received.toString().toUpperCase();
+		}
+	}
+
+	@EnableBinding(Sink.class)
+	@EnableAutoConfiguration
+	public static class TestStreamListenerMethodWithTargetBeanFromOutside {
+
+		private static final String ROUTER_QUEUE = "routeInstruction";
+
+		@StreamListener(Sink.INPUT)
+		@SendTo(ROUTER_QUEUE)
+		public Message<String> convertMessageBody(Message<String> message) {
+			return new DefaultMessageBuilderFactory().withPayload(message.getPayload().toUpperCase()).build();
+		}
+
+		@Router(inputChannel = ROUTER_QUEUE)
+		public String route(String message) {
+			return message.toUpperCase();
 		}
 	}
 
