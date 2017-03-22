@@ -44,6 +44,12 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 		return true;
 	}
 
+	@Override
+	protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
+		// only supports the conversion to String
+		return supportsMimeType(message.getHeaders()) && String.class == targetClass;
+	}
+
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		if (message.getPayload() != null) {
 			if (message.getPayload() instanceof byte[]) {
