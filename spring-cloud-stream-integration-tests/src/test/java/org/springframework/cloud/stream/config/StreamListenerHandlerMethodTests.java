@@ -48,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER;
+import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_BOUND_TARGET_NAME;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_INBOUND_NAME;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_OUTBOUND_NAME;
@@ -138,9 +139,9 @@ public class StreamListenerHandlerMethodTests {
 			SpringApplication.run(TestMethodInvalidInboundName.class, "--server.port=0");
 			fail("Exception expected on using invalid inbound name");
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause()).isInstanceOf(NoSuchBeanDefinitionException.class);
-			assertThat(e.getCause()).hasMessageContaining("'invalid'");
+		catch (Exception e) {
+			assertThat(e.getCause()).isInstanceOf(IllegalStateException.class);
+			assertThat(e.getCause()).hasMessageContaining(INVALID_BOUND_TARGET_NAME);
 		}
 	}
 

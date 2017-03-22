@@ -20,13 +20,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -71,8 +71,8 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 			fail("Exception expected on using invalid bindable target as method parameter");
 		}
 		catch (Exception e) {
-			assertThat(e.getCause()).isInstanceOf(NoSuchBeanDefinitionException.class);
-			assertThat(e.getCause()).hasMessageContaining("'invalid'");
+			assertThat(e.getCause()).isInstanceOf(IllegalStateException.class);
+			assertThat(e.getCause()).hasMessageContaining(StreamListenerErrorMessages.INVALID_BOUND_TARGET_NAME);
 		}
 	}
 
