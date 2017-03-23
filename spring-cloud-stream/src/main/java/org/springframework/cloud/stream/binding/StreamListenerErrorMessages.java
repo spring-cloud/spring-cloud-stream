@@ -37,8 +37,6 @@ public abstract class StreamListenerErrorMessages {
 
 	public static final String INVALID_OUTBOUND_NAME = "The @Output annotation must have the name of an input as value";
 
-	public static final String INVALID_BOUND_TARGET_NAME = "The bound target name is not valid";
-
 	public static final String ATLEAST_ONE_OUTPUT = "At least one output must be specified";
 
 	public static final String SEND_TO_MULTIPLE_DESTINATIONS = "Multiple destinations cannot be specified";

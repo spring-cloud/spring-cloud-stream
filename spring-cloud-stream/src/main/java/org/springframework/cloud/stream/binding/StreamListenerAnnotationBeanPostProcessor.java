@@ -226,24 +226,27 @@ public class StreamListenerAnnotationBeanPostProcessor
 	private boolean isDeclarativeMethodParameter(String targetBeanName, MethodParameter methodParameter) {
 		try {
 			Class targetBeanClass = this.applicationContext.getType(targetBeanName);
-			if (targetBeanClass != null) {
-				if (!methodParameter.getParameterType().equals(Object.class)
-						&& (targetBeanClass.isAssignableFrom(methodParameter.getParameterType()) ||
-						methodParameter.getParameterType().isAssignableFrom(targetBeanClass))) {
-					return true;
-				}
-				if (!this.streamListenerParameterAdapters.isEmpty()) {
-					Object targetBean = this.applicationContext.getBean(targetBeanName);
-					for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
-						if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
-							return true;
-						}
-					}
-				}
+			if (!methodParameter.getParameterType().equals(Object.class)
+					&& (targetBeanClass.isAssignableFrom(methodParameter.getParameterType()) ||
+					methodParameter.getParameterType().isAssignableFrom(targetBeanClass))) {
+				return true;
 			}
 		}
 		catch (NoSuchBeanDefinitionException e) {
-			throw new IllegalStateException(String.format("%s: %s: ", targetBeanName, StreamListenerErrorMessages.INVALID_BOUND_TARGET_NAME, targetBeanName),  e);
+			// ignore as the bean definition might not exist yet.
+		}
+		if (!this.streamListenerParameterAdapters.isEmpty()) {
+			try {
+				Object targetBean = this.applicationContext.getBean(targetBeanName);
+				for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
+					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
+						return true;
+					}
+				}
+			}
+			catch (BeansException e) {
+				// ignore as the bean definition might not exist yet.
+			}
 		}
 		return false;
 	}
