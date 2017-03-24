@@ -44,16 +44,12 @@ import org.springframework.context.annotation.Profile;
  * @author David Turanski
  * @author Eric Bottard
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@Import(RabbitMessageChannelBinderConfiguration.class)
+@Import({RabbitMessageChannelBinderConfiguration.class, RabbitServiceAutoConfiguration.RabbitHealthIndicatorConfiguration.class})
 public class RabbitServiceAutoConfiguration {
-
-	@Bean
-	public HealthIndicator binderHealthIndicator(RabbitTemplate rabbitTemplate) {
-		return new RabbitHealthIndicator(rabbitTemplate);
-	}
 
 	/**
 	 * Configuration to be used when the cloud profile is set.
@@ -133,5 +129,15 @@ public class RabbitServiceAutoConfiguration {
 	@Profile("!cloud")
 	@Import(RabbitAutoConfiguration.class)
 	protected static class NoCloudProfile {
+	}
+
+	@Configuration
+	@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
+	public static class RabbitHealthIndicatorConfiguration {
+
+		@Bean
+		public HealthIndicator binderHealthIndicator(RabbitTemplate rabbitTemplate) {
+			return new RabbitHealthIndicator(rabbitTemplate);
+		}
 	}
 }
