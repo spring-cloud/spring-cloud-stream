@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,14 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
-import org.springframework.boot.actuate.health.CompositeHealthIndicator;
-import org.springframework.boot.actuate.health.OrderedHealthAggregator;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.MessageChannel;
 
@@ -41,34 +33,20 @@ import org.springframework.messaging.MessageChannel;
  *
  * @author Dave Syer
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 @Configuration
 @ConditionalOnBean(BindingService.class)
 @EnableConfigurationProperties(DefaultPollerProperties.class)
-@AutoConfigureBefore(EndpointAutoConfiguration.class)
+@Import(ChannelsEndpointConfiguration.class)
 public class ChannelBindingAutoConfiguration {
 
 	@Autowired
 	private DefaultPollerProperties poller;
 
-	@Autowired(required = false)
-	private List<Bindable> adapters;
-
 	@Bean(name = PollerMetadata.DEFAULT_POLLER)
 	@ConditionalOnMissingBean(PollerMetadata.class)
 	public PollerMetadata defaultPoller() {
 		return this.poller.getPollerMetadata();
-	}
-
-	@Bean
-	public ChannelsEndpoint channelsEndpoint(BindingServiceProperties properties) {
-		return new ChannelsEndpoint(this.adapters, properties);
-	}
-
-	@Bean
-	@ConditionalOnEnabledHealthIndicator("binders")
-	@ConditionalOnMissingBean(name = "bindersHealthIndicator")
-	public CompositeHealthIndicator bindersHealthIndicator() {
-		return new CompositeHealthIndicator(new OrderedHealthAggregator());
 	}
 }
