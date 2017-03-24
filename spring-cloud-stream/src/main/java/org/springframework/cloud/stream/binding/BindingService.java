@@ -152,12 +152,13 @@ public class BindingService {
 
 	@SuppressWarnings("unchecked")
 	private <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
-		String transport = this.bindingServiceProperties.getBinder(channelName);
-		return binderFactory.getBinder(transport, bindableType);
+		String binderConfigurationName = this.bindingServiceProperties.getBinder(channelName);
+		return binderFactory.getBinder(binderConfigurationName, bindableType);
 	}
 
 	/**
 	 * Provided for backwards compatibility. Will be removed in a future version.
+	 *
 	 * @return
 	 */
 	@Deprecated
