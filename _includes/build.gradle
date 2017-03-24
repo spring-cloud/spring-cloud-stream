@@ -14,6 +14,5 @@ dependencyManagement {
 
 dependencies {
     compile '{@= groupId @}:spring-cloud-stream'
-    compile 'org.springframework.boot:spring-boot-starter-kafka'
     compile 'org.springframework.cloud:spring-cloud-starter-stream-kafka'
 }
