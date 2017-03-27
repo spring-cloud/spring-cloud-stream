@@ -1834,6 +1834,11 @@ By default the module is configured to only send Spring Integration message chan
 
 Available properties for customization using the prefix `spring.cloud.stream.metrics`.
 
+key::
+  The name of the metric being emitted. Should be an unique value per application.
++
+Default:: `${spring.application.name:${vcap.application.name:${spring.config.name:application}}}`
++
 delay-millis::
   The period in which metrics will be posted to the channel
 +
