@@ -168,6 +168,28 @@ public class BinderMetricsEmitterTests {
 		applicationContext.close();
 	}
 
+		@Test
+		public void overrideAppName() throws Exception {
+				ConfigurableApplicationContext applicationContext = SpringApplication.run(BinderExporterApplication.class,
+						"--server.port=0", "--spring.jmx.enabled=false", "--spring.cloud.stream.metrics.delay-millis=500",
+						"--spring.application.name=foo", "--spring.cloud.stream.instanceIndex=1",
+						"--spring.cloud.stream.bindings.streamMetrics.destination=foo",
+						"--spring.cloud.stream.metrics.key=foobarfoo");
+				Emitter emitterSource = applicationContext.getBean(Emitter.class);
+				MessageCollector collector = applicationContext.getBean(MessageCollector.class);
+				Message message = collector.forChannel(emitterSource.metrics()).poll(1000, TimeUnit.MILLISECONDS);
+				Assert.assertNotNull(message);
+				ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
+				ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+						ApplicationMetrics.class);
+				Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean", applicationMetrics.getMetrics()));
+				Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
+				Assert.assertEquals("foobarfoo", applicationMetrics.getName());
+				Assert.assertEquals(1, applicationMetrics.getInstanceIndex());
+				Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
+				applicationContext.close();
+		}
+
 	private boolean contains(String metric, Collection<Metric> metrics) {
 		boolean contains = false;
 		for (Metric entry : metrics) {

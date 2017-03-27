@@ -29,7 +29,7 @@ public class StreamMetricsProperties {
 	private String prefix;
 
 	@Value("${spring.application.name:${vcap.application.name:${spring.config.name:application}}}")
-	private String applicationName;
+	private String key;
 
 	private String metricName;
 
@@ -73,12 +73,12 @@ public class StreamMetricsProperties {
 		this.prefix = prefix;
 	}
 
-	public String getApplicationName() {
-		return applicationName;
+	public String getKey() {
+		return key;
 	}
 
-	public void setApplicationName(String applicationName) {
-		this.applicationName = applicationName;
+	public void setKey(String key) {
+		this.key = key;
 	}
 
 	public String[] getProperties() {
@@ -97,7 +97,7 @@ public class StreamMetricsProperties {
 	}
 
 	private String resolveMetricName() {
-		StringBuffer name = new StringBuffer(this.applicationName);
+		StringBuffer name = new StringBuffer(this.key);
 		if (!StringUtils.isEmpty(this.prefix)) {
 			String prefix = this.prefix;
 			if (prefix.lastIndexOf(".") == -1) {
