@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private Map<String, String> defaultBinderForBindingTargetType = new HashMap<>();
 
+	private Collection<BinderFactoryListener> binderFactoryListeners;
+
 	private volatile String defaultBinder;
 
 	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations) {
@@ -70,8 +73,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		this.defaultBinder = defaultBinder;
 	}
 
-	protected Map<String, BinderInstanceHolder> getBinderInstanceCache() {
-		return binderInstanceCache;
+	public void setBinderFactoryListeners(Collection<BinderFactoryListener> binderFactoryListeners) {
+		this.binderFactoryListeners = binderFactoryListeners;
 	}
 
 	@Override
@@ -153,7 +156,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		return binderInstance;
 	}
 
-	protected <T> Binder<T, ?, ?> getBinderInstance(String configurationName) {
+	private <T> Binder<T, ?, ?> getBinderInstance(String configurationName) {
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
 			BinderConfiguration binderConfiguration = this.binderConfigurations.get(configurationName);
 			if (binderConfiguration == null) {
@@ -203,6 +206,11 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					springApplicationBuilder.run(args.toArray(new String[args.size()]));
 			@SuppressWarnings("unchecked")
 			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
+			if (this.binderFactoryListeners != null) {
+				for (BinderFactoryListener binderFactoryListener : binderFactoryListeners) {
+					binderFactoryListener.apply(configurationName, binderProducingContext);
+				}
+			}
 			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder(binder,
 					binderProducingContext));
 		}
@@ -212,7 +220,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	/**
 	 * Utility class for storing {@link Binder} instances, along with their associated contexts.
 	 */
-	protected static final class BinderInstanceHolder {
+	private static final class BinderInstanceHolder {
 
 		private final Binder<?, ?, ?> binderInstance;
 

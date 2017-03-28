@@ -26,28 +26,22 @@ import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * {@link BinderFactory} that extends {@link DefaultBinderFactory} and provides {@link HealthIndicator} support.
+ * {@link BinderFactoryListener} that provides {@link HealthIndicator} support.
  *
  * @author Ilayaperumal Gopinathan
  */
-public class BinderFactoryWithHealthIndicator extends DefaultBinderFactory {
+public class BindersHealthIndicatorListener implements BinderFactoryListener {
 
-	private volatile CompositeHealthIndicator bindersHealthIndicator;
+	private final CompositeHealthIndicator bindersHealthIndicator;
 
-	public BinderFactoryWithHealthIndicator(Map<String, BinderConfiguration> binderConfigurations) {
-		super(binderConfigurations);
-	}
-
-	public void setBindersHealthIndicator(CompositeHealthIndicator bindersHealthIndicator) {
+	public BindersHealthIndicatorListener(CompositeHealthIndicator bindersHealthIndicator) {
 		this.bindersHealthIndicator = bindersHealthIndicator;
 	}
 
 	@Override
-	protected <T> Binder<T, ?, ?> getBinderInstance(String binderConfigurationName) {
-		Binder<T, ?, ?> binder = super.getBinderInstance(binderConfigurationName);
+	public void apply(String binderConfigurationName, ConfigurableApplicationContext binderProducingContext) {
 		if (this.bindersHealthIndicator != null) {
 			OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
-			ConfigurableApplicationContext binderProducingContext = this.getBinderInstanceCache().get(binderConfigurationName).getBinderContext();
 			Map<String, HealthIndicator> indicators = binderProducingContext.getBeansOfType(HealthIndicator.class);
 			// if there are no health indicators in the child context, we just mark the binder's health as unknown
 			// this can happen due to the fact that configuration is inherited
@@ -56,7 +50,6 @@ public class BinderFactoryWithHealthIndicator extends DefaultBinderFactory {
 							healthAggregator, indicators);
 			this.bindersHealthIndicator.addHealthIndicator(binderConfigurationName, binderHealthIndicator);
 		}
-		return binder;
 	}
 
 	private static class DefaultHealthIndicator extends AbstractHealthIndicator {

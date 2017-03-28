@@ -38,15 +38,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binder.BinderFactoryWithHealthIndicator;
+import org.springframework.cloud.stream.binder.BinderFactoryListener;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
+import org.springframework.cloud.stream.binder.BindersHealthIndicatorListener;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -59,7 +59,6 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  */
 @Configuration
-@Import(BinderFactoryConfiguration.BindersHealthIndicatorConfiguration.class)
 public class BinderFactoryConfiguration {
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
@@ -77,15 +76,18 @@ public class BinderFactoryConfiguration {
 	@Autowired
 	private BindingServiceProperties bindingServiceProperties;
 
+	@Autowired(required = false)
+	private Collection<BinderFactoryListener> binderFactoryListeners;
+
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
-	public BinderFactory binderFactory(Map<String, BinderConfiguration> binderConfigurations) {
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(binderConfigurations);
+	public BinderFactory binderFactory() {
+		DefaultBinderFactory binderFactory = new DefaultBinderFactory(getBinderConfigurations());
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
+		binderFactory.setBinderFactoryListeners(binderFactoryListeners);
 		return binderFactory;
 	}
 
-	@Bean(name = BINDER_CONFIGURATIONS_BEAN_NAME)
 	public Map<String, BinderConfiguration> getBinderConfigurations() {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
 		Map<String, BinderProperties> declaredBinders = this.bindingServiceProperties.getBinders();
@@ -182,9 +184,6 @@ public class BinderFactoryConfiguration {
 	@Configuration
 	public static class BindersHealthIndicatorConfiguration {
 
-		@Autowired
-		private BindingServiceProperties bindingServiceProperties;
-
 		@Bean
 		@ConditionalOnMissingBean(name = "bindersHealthIndicator")
 		public CompositeHealthIndicator bindersHealthIndicator() {
@@ -192,13 +191,8 @@ public class BinderFactoryConfiguration {
 		}
 
 		@Bean
-		@ConditionalOnMissingBean(BinderFactory.class)
-		public BinderFactory binderFactory(@Qualifier(BINDER_CONFIGURATIONS_BEAN_NAME) Map<String, BinderConfiguration> binderConfigurations,
-				@Qualifier("bindersHealthIndicator") CompositeHealthIndicator compositeHealthIndicator) {
-			BinderFactoryWithHealthIndicator binderFactoryWithHealthIndicator = new BinderFactoryWithHealthIndicator(binderConfigurations);
-			binderFactoryWithHealthIndicator.setDefaultBinder(this.bindingServiceProperties.getDefaultBinder());
-			binderFactoryWithHealthIndicator.setBindersHealthIndicator(compositeHealthIndicator);
-			return binderFactoryWithHealthIndicator;
+		public BinderFactoryListener bindersHealthIndicatorListener(@Qualifier("bindersHealthIndicator") CompositeHealthIndicator compositeHealthIndicator) {
+			return new BindersHealthIndicatorListener(compositeHealthIndicator);
 		}
 	}
 }
