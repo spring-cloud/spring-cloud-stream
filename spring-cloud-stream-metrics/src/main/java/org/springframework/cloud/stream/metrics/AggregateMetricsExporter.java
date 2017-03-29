@@ -21,17 +21,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.MetricsEndpoint;
 import org.springframework.boot.actuate.endpoint.MetricsEndpointMetricReader;
 import org.springframework.boot.actuate.metrics.Metric;
+import org.springframework.boot.actuate.metrics.export.Exporter;
 import org.springframework.boot.actuate.metrics.export.MetricCopyExporter;
 import org.springframework.boot.bind.RelaxedNames;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.config.metrics.StreamMetricsProperties;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -52,7 +50,8 @@ import org.springframework.util.PatternMatchUtils;
  *
  * @author Vinicius Carvalho
  */
-public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
+public class AggregateMetricsExporter
+		implements ApplicationListener<ContextRefreshedEvent>, Exporter {
 
 	@Autowired
 	private Emitter source;
@@ -65,8 +64,6 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 
 	private MetricsEndpointMetricReader metricsReader;
 
-	private ApplicationContext applicationContext;
-
 	/**
 	 * List of properties that are going to be appended to each message. This gets
 	 * populate by onApplicationEvent, once the context refreshes to avoid overhead of
@@ -74,14 +71,15 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 	 */
 	private Map<String, Object> whitelistedProperties;
 
-	public BinderMetricsEmitter(MetricsEndpoint endpoint) {
+	public AggregateMetricsExporter(MetricsEndpoint endpoint) {
 		this.metricsReader = new MetricsEndpointMetricReader(endpoint);
 		this.whitelistedProperties = new HashMap<>();
 	}
 
-	@Scheduled(fixedRateString = "${spring.cloud.stream.metrics.delay-millis:5000}")
-	public void sendMetrics() {
-		ApplicationMetrics appMetrics = new ApplicationMetrics(this.properties.getMetricName(),
+	@Override
+	public void export() {
+		ApplicationMetrics appMetrics = new ApplicationMetrics(
+				this.properties.getMetricName(),
 				this.bindingServiceProperties.getInstanceIndex(), filter());
 		appMetrics.setProperties(whitelistedProperties);
 		source.metrics().send(MessageBuilder.withPayload(appMetrics).build());
@@ -90,11 +88,12 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 	/**
 	 * Copy of similarly named method in {@link MetricCopyExporter}.
 	 */
-	protected Collection<Metric> filter() {
-		Collection<Metric> result = new ArrayList<>();
+	protected Collection<Metric<?>> filter() {
+		Collection<Metric<?>> result = new ArrayList<>();
 		Iterable<Metric<?>> metrics = metricsReader.findAll();
-		for (Metric metric : metrics) {
-			if (isMatch(metric.getName(), this.properties.getIncludes(), this.properties.getExcludes())) {
+		for (Metric<?> metric : metrics) {
+			if (isMatch(metric.getName(), this.properties.getIncludes(),
+					this.properties.getExcludes())) {
 				result.add(metric);
 			}
 		}
@@ -105,7 +104,8 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 	 * Copy of similarly named method in {@link MetricCopyExporter}.
 	 */
 	private boolean isMatch(String name, String[] includes, String[] excludes) {
-		if (ObjectUtils.isEmpty(includes) || PatternMatchUtils.simpleMatch(includes, name)) {
+		if (ObjectUtils.isEmpty(includes)
+				|| PatternMatchUtils.simpleMatch(includes, name)) {
 			return !PatternMatchUtils.simpleMatch(excludes, name);
 		}
 		return false;
@@ -117,16 +117,20 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 	 */
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) event.getSource();
+		ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) event
+				.getSource();
 		if (!ObjectUtils.isEmpty(this.properties.getProperties())) {
-			for (PropertySource source : ctx.getEnvironment().getPropertySources()) {
+			for (PropertySource<?> source : ctx.getEnvironment().getPropertySources()) {
 				if (source instanceof EnumerablePropertySource) {
-					EnumerablePropertySource e = (EnumerablePropertySource) source;
+					EnumerablePropertySource<?> e = (EnumerablePropertySource<?>) source;
 					for (String propertyName : e.getPropertyNames()) {
 						RelaxedNames relaxedNames = new RelaxedNames(propertyName);
 						relaxedLoop: for (String relaxedPropertyName : relaxedNames) {
-							if (isMatch(relaxedPropertyName, this.properties.getProperties(), null)) {
-								whitelistedProperties.put(RelaxedPropertiesUtils.findCanonicalFormat(relaxedNames),
+							if (isMatch(relaxedPropertyName,
+									this.properties.getProperties(), null)) {
+								whitelistedProperties.put(
+										RelaxedPropertiesUtils
+												.findCanonicalFormat(relaxedNames),
 										source.getProperty(propertyName));
 								break relaxedLoop;
 							}
@@ -137,8 +141,4 @@ public class BinderMetricsEmitter implements ApplicationListener<ContextRefreshe
 		}
 	}
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
-	}
 }

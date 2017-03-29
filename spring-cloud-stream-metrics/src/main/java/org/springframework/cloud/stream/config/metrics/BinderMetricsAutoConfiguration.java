@@ -22,9 +22,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.metrics.BinderMetricsEmitter;
-import org.springframework.cloud.stream.metrics.BootMetricJsonSerializer;
+import org.springframework.cloud.stream.metrics.AggregateMetricsExporter;
 import org.springframework.cloud.stream.metrics.Emitter;
+import org.springframework.cloud.stream.metrics.MetricJsonSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -37,17 +37,18 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableBinding(Emitter.class)
 @EnableConfigurationProperties(StreamMetricsProperties.class)
-@ConditionalOnProperty("spring.cloud.stream.bindings." + Emitter.METRICS_CHANNEL_NAME + ".destination")
+@ConditionalOnProperty("spring.cloud.stream.bindings." + Emitter.METRICS_CHANNEL_NAME
+		+ ".destination")
 public class BinderMetricsAutoConfiguration {
 
 	@Bean
-	public BinderMetricsEmitter binderMetricsExporter(MetricsEndpoint endpoint) {
-		return new BinderMetricsEmitter(endpoint);
+	public AggregateMetricsExporter aggregateMetricsExporter(MetricsEndpoint endpoint) {
+		return new AggregateMetricsExporter(endpoint);
 	}
 
 	@Bean
-	public BootMetricJsonSerializer metricJsonSerializer() {
-		return new BootMetricJsonSerializer();
+	public MetricJsonSerializer metricJsonSerializer() {
+		return new MetricJsonSerializer();
 	}
 
 }
