@@ -27,19 +27,19 @@ import org.springframework.util.StringUtils;
  *
  * @author Vinicius Carvalho
  */
-public class RelaxedPropertiesUtils {
+class RelaxedPropertiesUtils {
 
 	private static final Pattern HYPHEN_LOWER = Pattern.compile("-_|_-|__|\\.-|\\._");
 
-	private static final Pattern SEPARATED_TO_CAMEL_CASE_PATTERN = Pattern.compile("[_\\-.]");
+	private static final Pattern SEPARATED_TO_CAMEL_CASE_PATTERN = Pattern
+			.compile("[_\\-.]");
 
 	private static final char[] SUFFIXES = new char[] { '_', '-', '.' };
 
 	/**
 	 * Searches relaxed names and tries to find a best match for a canonical form using
-	 * dot notation.
-	 * For example, if a new list was built with JAVA_HOME as property, the return of this
-	 * method would be {@code java.home}.
+	 * dot notation. For example, if a new list was built with JAVA_HOME as property, the
+	 * return of this method would be {@code java.home}.
 	 *
 	 * Relaxed names generate a long list of variations of a property, it can be tricky
 	 * trying to infer the correct format, which sometimes may not even exist in dot
