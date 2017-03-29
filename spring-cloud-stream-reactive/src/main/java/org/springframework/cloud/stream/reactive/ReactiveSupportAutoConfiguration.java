@@ -51,6 +51,11 @@ public class ReactiveSupportAutoConfiguration {
 		return new FluxToMessageChannelResultAdapter();
 	}
 
+	@Bean
+	public StreamEmitterAnnotationBeanPostProcessor streamEmitterAnnotationBeanPostProcessor() {
+		return new StreamEmitterAnnotationBeanPostProcessor();
+	}
+
 	@Configuration
 	@ConditionalOnClass(name = "rx.Observable")
 	public static class RxJava1SupportConfiguration {

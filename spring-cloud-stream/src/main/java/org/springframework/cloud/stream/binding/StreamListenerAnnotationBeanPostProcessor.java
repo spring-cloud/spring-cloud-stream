@@ -147,9 +147,9 @@ public class StreamListenerAnnotationBeanPostProcessor
 					Assert.isTrue(method.getAnnotation(Input.class) == null,
 							StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
 					String methodAnnotatedInboundName = streamListener.value();
-					String methodAnnotatedOutboundName = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
+					String methodAnnotatedOutboundName = StreamAnnotationCommonMethodUtils.getOutboundBindingTargetName(method);
 					int inputAnnotationCount = StreamListenerMethodUtils.inputAnnotationCount(method);
-					int outputAnnotationCount = StreamListenerMethodUtils.outputAnnotationCount(method);
+					int outputAnnotationCount = StreamAnnotationCommonMethodUtils.outputAnnotationCount(method);
 					boolean isDeclarative = checkDeclarativeMethod(method, methodAnnotatedInboundName,
 							methodAnnotatedOutboundName);
 					StreamListenerMethodUtils.validateStreamListenerMethod(method, inputAnnotationCount,
@@ -322,7 +322,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		if (!StringUtils.hasText(streamListener.value())) {
 			throw new BeanInitializationException("A bound component name must be specified");
 		}
-		final String defaultOutputChannel = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
+		final String defaultOutputChannel = StreamAnnotationCommonMethodUtils.getOutboundBindingTargetName(method);
 		if (Void.TYPE.equals(method.getReturnType())) {
 			Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
 					"An output channel cannot be specified for a method that does not return a value");

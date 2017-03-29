@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binding;
 /**
  * @author Ilayaperumal Gopinathan
  */
-public abstract class StreamListenerErrorMessages {
+public abstract class StreamListenerErrorMessages extends StreamAnnotationErrorMessages {
 
 	private static final String PREFIX = "A method annotated with @StreamListener ";
 
@@ -34,14 +34,6 @@ public abstract class StreamListenerErrorMessages {
 			+ "having a return type should have only one outbound target specified";
 
 	public static final String INVALID_INBOUND_NAME = "The @Input annotation must have the name of an input as value";
-
-	public static final String INVALID_OUTBOUND_NAME = "The @Output annotation must have the name of an input as value";
-
-	public static final String ATLEAST_ONE_OUTPUT = "At least one output must be specified";
-
-	public static final String SEND_TO_MULTIPLE_DESTINATIONS = "Multiple destinations cannot be specified";
-
-	public static final String SEND_TO_EMPTY_DESTINATION = "An empty destination cannot be specified";
 
 	public static final String INVALID_INPUT_OUTPUT_METHOD_PARAMETERS = "@Input or @Output annotations are not permitted on "
 			+ "method parameters while using the @StreamListener value and a method-level output specification";
