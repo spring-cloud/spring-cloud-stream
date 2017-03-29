@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.rabbit.properties;
 import javax.validation.constraints.Min;
 
 import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.util.Assert;
 
 /**
@@ -41,6 +42,8 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	private boolean republishToDlq;
 
+	private MessageDeliveryMode republishDeliveyMode = MessageDeliveryMode.PERSISTENT;
+
 	private boolean requeueRejected = false;
 
 	private String[] headerPatterns = new String[] {"*"};
@@ -60,7 +63,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	}
 
 	public void setAcknowledgeMode(AcknowledgeMode acknowledgeMode) {
-		Assert.notNull("Acknowledge mode cannot be null");
+		Assert.notNull(acknowledgeMode, "Acknowledge mode cannot be null");
 		this.acknowledgeMode = acknowledgeMode;
 	}
 
@@ -127,6 +130,14 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public boolean isRequeueRejected() {
 		return requeueRejected;
+	}
+
+	public MessageDeliveryMode getRepublishDeliveyMode() {
+		return this.republishDeliveyMode;
+	}
+
+	public void setRepublishDeliveyMode(MessageDeliveryMode republishDeliveyMode) {
+		this.republishDeliveyMode = republishDeliveyMode;
 	}
 
 	public void setRequeueRejected(boolean requeueRejected) {

@@ -636,6 +636,7 @@ public class RabbitBinderTests extends
 		properties.getExtension().setPrefix("bindertest.");
 		properties.getExtension().setAutoBindDlq(true);
 		properties.getExtension().setRepublishToDlq(true);
+		properties.getExtension().setRepublishDeliveyMode(MessageDeliveryMode.NON_PERSISTENT);
 		properties.setMaxAttempts(1); // disable retry
 		properties.setPartitioned(true);
 		properties.setInstanceIndex(0);
@@ -706,6 +707,8 @@ public class RabbitBinderTests extends
 		assertThat(received.getMessageProperties().getHeaders().get("x-original-routingKey"))
 				.isEqualTo("partPubDLQ.0-1");
 		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+		assertThat(received.getMessageProperties().getReceivedDeliveryMode())
+				.isEqualTo(MessageDeliveryMode.NON_PERSISTENT);
 
 		output.send(new GenericMessage<>(0));
 		received = template.receive(streamDLQName);
@@ -800,6 +803,7 @@ public class RabbitBinderTests extends
 		assertThat(received.getMessageProperties().getReceivedRoutingKey())
 				.isEqualTo("bindertest.partDLQ.1.dlqPartGrp-1");
 		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+		assertThat(received.getMessageProperties().getReceivedDeliveryMode()).isEqualTo(MessageDeliveryMode.PERSISTENT);
 
 		output.send(new GenericMessage<Integer>(0));
 		received = template.receive(streamDLQName);

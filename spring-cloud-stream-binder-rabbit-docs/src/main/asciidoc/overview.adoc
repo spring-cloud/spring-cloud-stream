@@ -44,6 +44,7 @@ If retry is enabled (`maxAttempts > 1`) failed messages will be delivered to the
 If retry is disabled (`maxAttempts = 1`), you should set `requeueRejected` to `false` (default) so that a failed message will be routed to the DLQ, instead of being requeued.
 In addition, `republishToDlq` causes the binder to publish a failed message to the DLQ (instead of rejecting it); this enables additional information to be added to the message in headers, such as the stack trace in the `x-exception-stacktrace` header.
 This option does not need retry enabled; you can republish a failed message after just one attempt.
+Starting with _version 1.2_, you can configure the delivery mode of republished messsages; see property `republishDeliveryMode`.
 
 IMPORTANT: Setting `requeueRejected` to `true` will cause the message to be requeued and redelivered continually, which is likely not what you want unless the failure issue is transient.
 In general, it's better to enable retry within the binder by setting `maxAttempts` to greater than one, or set `republishToDlq` to `true`.
@@ -220,6 +221,10 @@ requeueRejected::
   Whether delivery failures should be requeued when retry is disabled or republishToDlq is false.
 +
 Default: `false`.
+republishDeliveryMode::
+  When `republishToDlq` is `true`, specify the delivery mode of the republished message.
++
+Default: `DeliveryMode.PERSISTENT`
 republishToDlq::
   By default, messages which fail after retries are exhausted are rejected.
 If a dead-letter queue (DLQ) is configured, RabbitMQ will route the failed message (unchanged) to the DLQ.

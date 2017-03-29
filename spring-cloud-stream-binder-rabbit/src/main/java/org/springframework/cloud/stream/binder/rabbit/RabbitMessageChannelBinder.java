@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
@@ -259,8 +260,7 @@ public class RabbitMessageChannelBinder
 		if (properties.getMaxAttempts() > 1 || properties.getExtension().isRepublishToDlq()) {
 			RetryOperationsInterceptor retryInterceptor = RetryInterceptorBuilder.stateless()
 					.retryOperations(buildRetryTemplate(properties))
-					.recoverer(determineRecoverer(baseQueueName, properties.getExtension(),
-							properties.getExtension().isRepublishToDlq()))
+					.recoverer(determineRecoverer(baseQueueName, properties.getExtension()))
 					.build();
 			listenerContainer.setAdviceChain(retryInterceptor);
 		}
@@ -293,12 +293,27 @@ public class RabbitMessageChannelBinder
 		provisioningProvider.cleanAutoDeclareContext(consumerDestination.getName());
 	}
 
-	private MessageRecoverer determineRecoverer(String name, RabbitCommonProperties properties, boolean republish) {
-		if (republish) {
+	private MessageRecoverer determineRecoverer(String name, final RabbitConsumerProperties properties) {
+		if (properties.isRepublishToDlq()) {
 			RabbitTemplate errorTemplate = new RabbitTemplate(this.connectionFactory);
-			return new RepublishMessageRecoverer(errorTemplate,
-					deadLetterExchangeName(properties),
-					applyPrefix(properties.getPrefix(), name));
+			if (properties.getRepublishDeliveyMode() != null) {
+				return new RepublishMessageRecoverer(errorTemplate,
+						deadLetterExchangeName(properties),
+						applyPrefix(properties.getPrefix(), name)) {
+
+							@Override
+							public void recover(Message message, Throwable cause) {
+								message.getMessageProperties().setDeliveryMode(properties.getRepublishDeliveyMode());
+								super.recover(message, cause);
+							}
+
+				};
+			}
+			else {
+				return new RepublishMessageRecoverer(errorTemplate,
+						deadLetterExchangeName(properties),
+						applyPrefix(properties.getPrefix(), name));
+			}
 		}
 		else {
 			return new RejectAndDontRequeueRecoverer();
