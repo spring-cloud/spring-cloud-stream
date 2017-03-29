@@ -22,28 +22,26 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.metrics.AggregateMetricsExporter;
-import org.springframework.cloud.stream.metrics.Emitter;
-import org.springframework.cloud.stream.metrics.MetricJsonSerializer;
+import org.springframework.cloud.stream.metrics.ApplicationMetricsExporter;
+import org.springframework.cloud.stream.metrics.ApplicationMetricsProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * @author Vinicius Carvalho
  */
 @Configuration
 @ConditionalOnClass(Binder.class)
-@EnableScheduling
 @EnableBinding(Emitter.class)
-@EnableConfigurationProperties(StreamMetricsProperties.class)
+@EnableConfigurationProperties(ApplicationMetricsProperties.class)
 @ConditionalOnProperty("spring.cloud.stream.bindings." + Emitter.METRICS_CHANNEL_NAME
 		+ ".destination")
 public class BinderMetricsAutoConfiguration {
 
 	@Bean
-	public AggregateMetricsExporter aggregateMetricsExporter(MetricsEndpoint endpoint) {
-		return new AggregateMetricsExporter(endpoint);
+	public ApplicationMetricsExporter aggregateMetricsExporter(MetricsEndpoint endpoint,
+			Emitter emitter, ApplicationMetricsProperties properties) {
+		return new ApplicationMetricsExporter(endpoint, emitter.metrics(), properties);
 	}
 
 	@Bean

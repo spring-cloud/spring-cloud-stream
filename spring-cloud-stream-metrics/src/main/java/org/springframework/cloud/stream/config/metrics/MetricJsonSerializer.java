@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.metrics;
+package org.springframework.cloud.stream.config.metrics;
 
 import java.io.IOException;
 import java.text.DateFormat;

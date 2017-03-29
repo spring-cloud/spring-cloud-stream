@@ -30,6 +30,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.metrics.Metric;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.stream.config.metrics.Emitter;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
@@ -38,7 +39,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * @author Vinicius Carvalho
  */
-public class AggregateMetricsExporterTests {
+public class ApplicationMetricsExporterTests {
 
 	@BeforeClass
 	public static void setSystemProps() {
