@@ -1903,7 +1903,7 @@ This module allow operators to collect metrics from stream applications without 
 
 HTTP polling can be challenging on cloud environments since applications could be on a private network or behind a Load balancer that prevents per instance access.
 
-The module is activated when you set the destination name for its channel, `spring.cloud.stream.bindings.streamMetrics.destination=<DESTINATION_NAME>`.
+The module is activated when you set the destination name for its channel, `spring.cloud.stream.bindings.aggregateMetricsChannel.destination=<DESTINATION_NAME>`.
 
 By default the module is configured to only send Spring Integration message channel metrics.
 
@@ -1939,7 +1939,7 @@ properties::
 +
 Default: null.
 +
-spring.cloud.stream.bindings.streamMetrics.contentType::
+spring.cloud.stream.bindings.aggregateMetricsChannel.contentType::
   Content-Type of the message
 +
 Default: `application/json`

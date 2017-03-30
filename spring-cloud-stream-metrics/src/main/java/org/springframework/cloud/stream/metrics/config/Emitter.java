@@ -24,7 +24,7 @@ import org.springframework.messaging.MessageChannel;
  */
 public interface Emitter {
 
-	String METRICS_CHANNEL_NAME = "streamMetrics";
+	String METRICS_CHANNEL_NAME = "aggregateMetricsChannel";
 
 	@Output(METRICS_CHANNEL_NAME)
 	MessageChannel metrics();
