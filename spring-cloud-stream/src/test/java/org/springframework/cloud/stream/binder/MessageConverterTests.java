@@ -29,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  * @since 1.0
- *
  */
 public class MessageConverterTests {
 
@@ -46,6 +45,28 @@ public class MessageConverterTests {
 		assertThat(new String((byte[]) extracted.getPayload())).isEqualTo("Hello");
 		assertThat(extracted.get("foo")).isEqualTo("bar");
 		assertThat(extracted.get("baz")).isEqualTo("quxx");
+	}
+
+	@Test
+	public void testConfigurableHeaders() throws Exception {
+		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes()).setHeader("foo", "bar")
+				.setHeader("baz", "quxx").setHeader("contentType", "text/plain").build();
+		String[] headers = new String[]{"foo"};
+		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message), EmbeddedHeaderUtils.headersToEmbed(headers));
+		assertThat(embedded[0] & 0xff).isEqualTo(0xff);
+		assertThat(new String(embedded).substring(1)).isEqualTo(
+				"\u0002\u000BcontentType\u0000\u0000\u0000\u000C\"text/plain\"\u0003foo\u0000\u0000\u0000\u0005\"bar\"Hello");
+		MessageValues extracted = EmbeddedHeaderUtils.extractHeaders(MessageBuilder.withPayload(embedded).build(), false);
+		assertThat(new String((byte[]) extracted.getPayload())).isEqualTo("Hello");
+		assertThat(extracted.get("foo")).isEqualTo("bar");
+		assertThat(extracted.get("baz")).isNull();
+		assertThat(extracted.get("contentType")).isEqualTo("text/plain");
+		assertThat(extracted.get("timestamp")).isNull();
+		MessageValues extractedWithRequestHeaders = EmbeddedHeaderUtils.extractHeaders(MessageBuilder.withPayload(embedded).build(), true);
+		assertThat(extractedWithRequestHeaders.get("foo")).isEqualTo("bar");
+		assertThat(extractedWithRequestHeaders.get("baz")).isNull();
+		assertThat(extractedWithRequestHeaders.get("contentType")).isEqualTo("text/plain");
+		assertThat(extractedWithRequestHeaders.get("timestamp")).isNotNull();
 	}
 
 	@Test
