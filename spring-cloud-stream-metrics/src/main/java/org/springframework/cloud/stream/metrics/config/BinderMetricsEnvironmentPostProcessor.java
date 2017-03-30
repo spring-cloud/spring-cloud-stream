@@ -36,7 +36,7 @@ public class BinderMetricsEnvironmentPostProcessor implements EnvironmentPostPro
 				"application/json");
 		propertiesToAdd.put("spring.cloud.stream.metrics.instanceIndex",
 				"${spring.cloud.stream.instanceIndex:${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}}");
-		propertiesToAdd.put("spring.cloud.stream.metrics.includes", "integration**");
+		propertiesToAdd.put("spring.metrics.export.includes", "integration**");
 		environment.getPropertySources().addLast(
 				new MapPropertySource("binderMetricsDefaultProperties", propertiesToAdd));
 	}

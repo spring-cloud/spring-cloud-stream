@@ -43,7 +43,7 @@ public class ApplicationMetricsExporter implements Exporter {
 
 	private MessageChannel source;
 
-	private ApplicationMetricsProperties properties;
+    private ApplicationMetricsProperties properties;
 
 	private MetricsEndpointMetricReader metricsReader;
 
@@ -70,8 +70,8 @@ public class ApplicationMetricsExporter implements Exporter {
 		Collection<Metric<?>> result = new ArrayList<>();
 		Iterable<Metric<?>> metrics = metricsReader.findAll();
 		for (Metric<?> metric : metrics) {
-			if (isMatch(metric.getName(), this.properties.getIncludes(),
-					this.properties.getExcludes())) {
+			if (isMatch(metric.getName(), this.properties.getTrigger().getIncludes(),
+					this.properties.getTrigger().getExcludes())) {
 				result.add(metric);
 			}
 		}

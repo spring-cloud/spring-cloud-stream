@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.metrics.export.MetricExportProperties;
+import org.springframework.boot.actuate.metrics.export.TriggerProperties;
 import org.springframework.boot.bind.RelaxedNames;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationListener;
@@ -47,36 +49,16 @@ public class ApplicationMetricsProperties
 
 	private String metricName;
 
-	private String[] includes = new String[] { "integration**" };
-
-	private String[] excludes;
-
 	private String[] properties;
 
-	private Long delayMillis;
-
-	public String[] getIncludes() {
-		return includes;
+	private MetricExportProperties export;
+	
+	public TriggerProperties getTrigger() {
+		return export.findTrigger("application");
 	}
 
-	public void setIncludes(String[] includes) {
-		this.includes = includes;
-	}
-
-	public String[] getExcludes() {
-		return excludes;
-	}
-
-	public void setExcludes(String[] excludes) {
-		this.excludes = excludes;
-	}
-
-	public Long getDelayMillis() {
-		return delayMillis;
-	}
-
-	public void setDelayMillis(Long delayMillis) {
-		this.delayMillis = delayMillis;
+	public ApplicationMetricsProperties(MetricExportProperties export) {
+		this.export = export;
 	}
 
 	public String getPrefix() {

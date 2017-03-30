@@ -146,8 +146,8 @@ public class ApplicationMetricsExporterTests {
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
 				"--spring.cloud.stream.bindings.streamMetrics.destination=foo",
-				"--spring.cloud.stream.metrics.includes=mem**",
-				"--spring.cloud.stream.metrics.excludes=integration**");
+				"--spring.metrics.export.includes=mem**",
+				"--spring.metrics.export.excludes=integration**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
 		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
@@ -169,7 +169,7 @@ public class ApplicationMetricsExporterTests {
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
 				"--spring.cloud.stream.bindings.streamMetrics.destination=foo",
-				"--spring.cloud.stream.metrics.includes=integration**",
+				"--spring.metrics.export.includes=integration**",
 				"--spring.cloud.stream.metrics.properties=java**,spring.test.env**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
