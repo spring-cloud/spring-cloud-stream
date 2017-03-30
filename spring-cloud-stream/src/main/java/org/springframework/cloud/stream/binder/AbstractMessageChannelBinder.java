@@ -57,9 +57,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	protected static final ExpressionParser EXPRESSION_PARSER = new SpelExpressionParser();
 
-	private final EmbeddedHeadersMessageConverter embeddedHeadersMessageConverter = new
-			EmbeddedHeadersMessageConverter();
-
 	/**
 	 * Indicates whether the implementation and the message broker have
 	 * native support for message headers. If false, headers will be
@@ -279,12 +276,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			MessageValues messageValues;
 			if (this.extractEmbeddedHeaders) {
 				try {
-					messageValues = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.extractHeaders(
-							(Message<byte[]>) requestMessage, true);
+					messageValues = EmbeddedHeaderUtils.extractHeaders((Message<byte[]>) requestMessage,
+							true);
 				}
 				catch (Exception e) {
 					AbstractMessageChannelBinder.this.logger.error(
-							EmbeddedHeadersMessageConverter.decodeExceptionMessage(
+							EmbeddedHeaderUtils.decodeExceptionMessage(
 									requestMessage), e);
 					messageValues = new MessageValues(requestMessage);
 				}
@@ -342,8 +339,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				if (originalContentType instanceof MimeType) {
 					transformed.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
 				}
-				payload = AbstractMessageChannelBinder.this.embeddedHeadersMessageConverter.embedHeaders(transformed,
-						this.embeddedHeaders);
+				payload = EmbeddedHeaderUtils.embedHeaders(transformed, this.embeddedHeaders);
 			}
 			else {
 				payload = (byte[]) transformed.getPayload();

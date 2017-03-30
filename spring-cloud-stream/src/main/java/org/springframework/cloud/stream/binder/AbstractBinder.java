@@ -165,7 +165,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return name + GROUP_INDEX_DELIMITER + (StringUtils.hasText(group) ? group : "default");
 	}
 
-	final MessageValues serializePayloadIfNecessary(Message<?> message) {
+	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
 		Object originalPayload = message.getPayload();
 		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 
@@ -183,7 +183,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return messageValues;
 	}
 
-	private byte[] serializePayloadIfNecessary(Object originalPayload) {
+	protected final byte[] serializePayloadIfNecessary(Object originalPayload) {
 		if (originalPayload instanceof byte[]) {
 			return (byte[]) originalPayload;
 		}
