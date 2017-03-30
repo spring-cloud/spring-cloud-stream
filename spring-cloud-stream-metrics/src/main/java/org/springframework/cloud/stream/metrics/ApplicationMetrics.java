@@ -38,13 +38,14 @@ public class ApplicationMetrics {
 
 	private int instanceIndex;
 
-	private Collection<Metric> metrics;
+	private Collection<Metric<?>> metrics;
 
 	private Map<String, Object> properties;
 
 	@JsonCreator
-	public ApplicationMetrics(@JsonProperty("name") String name, @JsonProperty("instanceIndex") int instanceIndex,
-			@JsonProperty("metrics") Collection<Metric> metrics) {
+	public ApplicationMetrics(@JsonProperty("name") String name,
+			@JsonProperty("instanceIndex") int instanceIndex,
+			@JsonProperty("metrics") Collection<Metric<?>> metrics) {
 		this.name = name;
 		this.instanceIndex = instanceIndex;
 		this.metrics = metrics;
@@ -67,11 +68,11 @@ public class ApplicationMetrics {
 		this.instanceIndex = instanceIndex;
 	}
 
-	public Collection<Metric> getMetrics() {
+	public Collection<Metric<?>> getMetrics() {
 		return metrics;
 	}
 
-	public void setMetrics(Collection<Metric> metrics) {
+	public void setMetrics(Collection<Metric<?>> metrics) {
 		this.metrics = metrics;
 	}
 

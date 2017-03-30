@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.metrics;
+package org.springframework.cloud.stream.metrics.config;
 
 import org.springframework.boot.actuate.endpoint.MetricsEndpoint;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -22,32 +22,31 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.metrics.BinderMetricsEmitter;
-import org.springframework.cloud.stream.metrics.BootMetricJsonSerializer;
-import org.springframework.cloud.stream.metrics.Emitter;
+import org.springframework.cloud.stream.metrics.ApplicationMetricsExporter;
+import org.springframework.cloud.stream.metrics.ApplicationMetricsProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * @author Vinicius Carvalho
  */
 @Configuration
 @ConditionalOnClass(Binder.class)
-@EnableScheduling
 @EnableBinding(Emitter.class)
-@EnableConfigurationProperties(StreamMetricsProperties.class)
-@ConditionalOnProperty("spring.cloud.stream.bindings." + Emitter.METRICS_CHANNEL_NAME + ".destination")
+@EnableConfigurationProperties(ApplicationMetricsProperties.class)
+@ConditionalOnProperty("spring.cloud.stream.bindings." + Emitter.METRICS_CHANNEL_NAME
+		+ ".destination")
 public class BinderMetricsAutoConfiguration {
 
 	@Bean
-	public BinderMetricsEmitter binderMetricsExporter(MetricsEndpoint endpoint) {
-		return new BinderMetricsEmitter(endpoint);
+	public ApplicationMetricsExporter aggregateMetricsExporter(MetricsEndpoint endpoint,
+			Emitter emitter, ApplicationMetricsProperties properties) {
+		return new ApplicationMetricsExporter(endpoint, emitter.metrics(), properties);
 	}
 
 	@Bean
-	public BootMetricJsonSerializer metricJsonSerializer() {
-		return new BootMetricJsonSerializer();
+	public MetricJsonSerializer metricJsonSerializer() {
+		return new MetricJsonSerializer();
 	}
 
 }

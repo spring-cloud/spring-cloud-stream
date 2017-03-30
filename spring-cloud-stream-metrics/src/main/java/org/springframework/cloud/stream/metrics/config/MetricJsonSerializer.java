@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.metrics;
+package org.springframework.cloud.stream.metrics.config;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -38,15 +38,15 @@ import org.springframework.boot.jackson.JsonComponent;
  * @author Vinicius Carvalho
  */
 @JsonComponent
-public class BootMetricJsonSerializer {
+public class MetricJsonSerializer {
 
 	final static DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-	public static class Serializer extends JsonSerializer<Metric> {
+	public static class Serializer extends JsonSerializer<Metric<?>> {
 
 		@Override
-		public void serialize(Metric metric, JsonGenerator json, SerializerProvider serializerProvider)
-				throws IOException {
+		public void serialize(Metric<?> metric, JsonGenerator json,
+				SerializerProvider serializerProvider) throws IOException {
 			json.writeStartObject();
 			json.writeStringField("name", metric.getName());
 			json.writeNumberField("value", metric.getValue().doubleValue());
@@ -55,10 +55,10 @@ public class BootMetricJsonSerializer {
 		}
 	}
 
-	public static class Deserializer extends JsonDeserializer<Metric> {
+	public static class Deserializer extends JsonDeserializer<Metric<?>> {
 
 		@Override
-		public Metric deserialize(JsonParser p, DeserializationContext ctxt)
+		public Metric<?> deserialize(JsonParser p, DeserializationContext ctxt)
 				throws IOException, JsonProcessingException {
 			JsonNode node = p.getCodec().readTree(p);
 			String name = node.get("name").asText();
@@ -70,7 +70,7 @@ public class BootMetricJsonSerializer {
 			}
 			catch (ParseException e) {
 			}
-			Metric<Number> metric = new Metric(name, value, timestamp);
+			Metric<Number> metric = new Metric<Number>(name, value, timestamp);
 
 			return metric;
 		}
