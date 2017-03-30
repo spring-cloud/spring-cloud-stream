@@ -1254,6 +1254,9 @@ Where _JSON_ represents either a byte array or String payload containing JSON.
 Currently, Objects may be converted from a JSON byte array or String.
 Converting to JSON always produces a String.
 
+If no `content-type` property is set on an outbound channel, Spring Cloud Stream will serialize the payload using a serializer based on the https://github.com/EsotericSoftware/kryo[Kryo] serialization framework.
+Deserializing messages at the destination requires the payload class to be present on the receiver's classpath.
+
 [[mime-types]]
 === MIME types
 `content-type` values are parsed as media types, e.g., `application/json` or `text/plain;charset=UTF-8`.
@@ -1393,7 +1396,7 @@ public class MyCustomMessageConverter extends AbstractMessageConverter {
 === Schema-based message converters
 
 Spring Cloud Stream provides support for schema-based message converters through its `spring-cloud-stream-schema` module.
-Currently, the only serialization format supported out of the box is Apache Avro, with more formats to be added in future versions.
+Currently, the only serialization format supported out of the box for schema-based message converters is Apache Avro, with more formats to be added in future versions.
 
 ==== Apache Avro Message Converters
 
