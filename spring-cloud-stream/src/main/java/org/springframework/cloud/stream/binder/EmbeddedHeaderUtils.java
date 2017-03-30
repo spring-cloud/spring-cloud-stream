@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,35 +28,38 @@ import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.support.json.Jackson2JsonObjectMapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Encodes requested headers into payload with format
- * {@code 0xff, n(1), [ [lenHdr(1), hdr, lenValue(4), value] ... ]}.
- * The 0xff indicates this new format; n is number of headers (max 255); for
- * each header, the name length (1 byte) is followed by the name, followed by
- * the value length (int) followed by the value (json).
+ * {@code 0xff, n(1), [ [lenHdr(1), hdr, lenValue(4), value] ... ]}. The 0xff indicates
+ * this new format; n is number of headers (max 255); for each header, the name length (1
+ * byte) is followed by the name, followed by the value length (int) followed by the value
+ * (json).
  * <p>
- * Previously, there was no leading 0xff; the value length was 1 byte and only
- * String header values were supported (no JSON conversion).
+ * Previously, there was no leading 0xff; the value length was 1 byte and only String
+ * header values were supported (no JSON conversion).
  *
  * @author Eric Bottard
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
+ * @author Marius Bogoevici
+ *
+ * @since 1.2
  */
-public class EmbeddedHeadersMessageConverter {
+public abstract class EmbeddedHeaderUtils {
 
-	private final Jackson2JsonObjectMapper objectMapper = new Jackson2JsonObjectMapper();
+	private static final Jackson2JsonObjectMapper objectMapper = new Jackson2JsonObjectMapper();
 
 	public static String decodeExceptionMessage(Message<?> requestMessage) {
 		return "Could not convert message: " + DatatypeConverter.printHexBinary((byte[]) requestMessage.getPayload());
 	}
 
-
 	/**
-	 * Return a new message where some of the original headers of {@code original}
-	 * have been embedded into the new message payload.
+	 * Return a new message where some of the original headers of {@code original} have
+	 * been embedded into the new message payload.
 	 */
-	public byte[] embedHeaders(MessageValues original, String... headers) throws Exception {
+	public static byte[] embedHeaders(MessageValues original, String... headers) throws Exception {
 		byte[][] headerValues = new byte[headers.length][];
 		int n = 0;
 		int headerCount = 0;
@@ -63,7 +67,7 @@ public class EmbeddedHeadersMessageConverter {
 		for (String header : headers) {
 			Object value = original.get(header) == null ? null : original.get(header);
 			if (value != null) {
-				String json = this.objectMapper.toJson(value);
+				String json = objectMapper.toJson(value);
 				headerValues[n] = json.getBytes("UTF-8");
 				headerCount++;
 				headersLength += header.length() + headerValues[n++].length;
@@ -95,15 +99,16 @@ public class EmbeddedHeadersMessageConverter {
 	 * have been promoted back to actual headers. The new payload is now the original
 	 * payload.
 	 *
-	 * @param message            the message to extract headers
+	 * @param message the message to extract headers
 	 * @param copyRequestHeaders boolean value to specify if the request headers should be
-	 *                           copied
+	 * copied
 	 */
-	public MessageValues extractHeaders(Message<byte[]> message, boolean copyRequestHeaders) throws Exception {
+	public static MessageValues extractHeaders(Message<byte[]> message, boolean copyRequestHeaders) throws Exception {
 		return extractHeaders(message.getPayload(), copyRequestHeaders, message.getHeaders());
 	}
 
-	private MessageValues extractHeaders(byte[] payload, boolean copyRequestHeaders, MessageHeaders requestHeaders) throws Exception {
+	private static MessageValues extractHeaders(byte[] payload, boolean copyRequestHeaders,
+			MessageHeaders requestHeaders) throws Exception {
 		ByteBuffer byteBuffer = ByteBuffer.wrap(payload);
 		int headerCount = byteBuffer.get() & 0xff;
 		if (headerCount < 255) {
@@ -118,7 +123,7 @@ public class EmbeddedHeadersMessageConverter {
 				byteBuffer.position(byteBuffer.position() + len);
 				len = byteBuffer.getInt();
 				String headerValue = new String(payload, byteBuffer.position(), len, "UTF-8");
-				Object headerContent = this.objectMapper.fromJson(headerValue, Object.class);
+				Object headerContent = objectMapper.fromJson(headerValue, Object.class);
 				headers.put(headerName, headerContent);
 				byteBuffer.position(byteBuffer.position() + len);
 			}
@@ -133,17 +138,16 @@ public class EmbeddedHeadersMessageConverter {
 	 * have been promoted back to actual headers. The new payload is now the original
 	 * payload.
 	 *
-	 * @param payload            the message payload
+	 * @param payload the message payload
 	 * @return the message with extracted headers
 	 * @throws Exception
 	 */
-	public MessageValues extractHeaders(byte[] payload) throws Exception {
+	public static MessageValues extractHeaders(byte[] payload) throws Exception {
 		return extractHeaders(payload, false, null);
 	}
 
-	private MessageValues oldExtractHeaders(ByteBuffer byteBuffer, byte[] bytes, int headerCount,
-			boolean copyRequestHeaders, MessageHeaders requestHeaders)
-			throws UnsupportedEncodingException {
+	private static MessageValues oldExtractHeaders(ByteBuffer byteBuffer, byte[] bytes, int headerCount,
+			boolean copyRequestHeaders, MessageHeaders requestHeaders) throws UnsupportedEncodingException {
 		Map<String, Object> headers = new HashMap<String, Object>();
 		for (int i = 0; i < headerCount; i++) {
 			int len = byteBuffer.get();
@@ -165,13 +169,28 @@ public class EmbeddedHeadersMessageConverter {
 		return buildMessageValues(newPayload, headers, copyRequestHeaders, requestHeaders);
 	}
 
-	private MessageValues buildMessageValues(byte[] payload, Map<String, Object> headers,
+	private static MessageValues buildMessageValues(byte[] payload, Map<String, Object> headers,
 			boolean copyRequestHeaders, MessageHeaders requestHeaders) {
 		MessageValues messageValues = new MessageValues(payload, headers);
 		if (copyRequestHeaders && requestHeaders != null) {
 			messageValues.copyHeadersIfAbsent(requestHeaders);
 		}
 		return messageValues;
+	}
+
+	public static String[] headersToEmbed(String[] configuredHeaders) {
+		String[] headersToMap;
+		if (ObjectUtils.isEmpty(configuredHeaders)) {
+			headersToMap = BinderHeaders.STANDARD_HEADERS;
+		}
+		else {
+			String[] combinedHeadersToMap = Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0,
+					BinderHeaders.STANDARD_HEADERS.length + configuredHeaders.length);
+			System.arraycopy(configuredHeaders, 0, combinedHeadersToMap, BinderHeaders.STANDARD_HEADERS.length,
+					configuredHeaders.length);
+			headersToMap = combinedHeadersToMap;
+		}
+		return headersToMap;
 	}
 
 }
