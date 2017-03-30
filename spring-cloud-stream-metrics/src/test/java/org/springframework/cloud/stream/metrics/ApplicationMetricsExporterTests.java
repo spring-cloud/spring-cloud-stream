@@ -73,7 +73,7 @@ public class ApplicationMetricsExporterTests {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
-				"--spring.cloud.stream.bindings.streamMetrics.destination=foo");
+				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
 		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
@@ -97,7 +97,7 @@ public class ApplicationMetricsExporterTests {
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
 				"--spring.application.name=foo", "--spring.cloud.stream.instanceIndex=1",
-				"--spring.cloud.stream.bindings.streamMetrics.destination=foo");
+				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
 		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
@@ -122,7 +122,7 @@ public class ApplicationMetricsExporterTests {
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
 				"--spring.cloud.stream.metrics.prefix=foo",
 				"--spring.cloud.stream.instanceIndex=1",
-				"--spring.cloud.stream.bindings.streamMetrics.destination=foo");
+				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
 		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
@@ -145,7 +145,7 @@ public class ApplicationMetricsExporterTests {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
-				"--spring.cloud.stream.bindings.streamMetrics.destination=foo",
+				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo",
 				"--spring.metrics.export.includes=mem**",
 				"--spring.metrics.export.excludes=integration**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
@@ -168,7 +168,7 @@ public class ApplicationMetricsExporterTests {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
-				"--spring.cloud.stream.bindings.streamMetrics.destination=foo",
+				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo",
 				"--spring.metrics.export.includes=integration**",
 				"--spring.cloud.stream.metrics.properties=java**,spring.test.env**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
@@ -194,7 +194,7 @@ public class ApplicationMetricsExporterTests {
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
 				"--spring.application.name=foo", "--spring.cloud.stream.instanceIndex=1",
-				"--spring.cloud.stream.bindings.streamMetrics.destination=foo",
+				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo",
 				"--spring.cloud.stream.metrics.key=foobarfoo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);

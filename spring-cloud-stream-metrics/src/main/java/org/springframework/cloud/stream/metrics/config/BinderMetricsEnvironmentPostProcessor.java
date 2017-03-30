@@ -32,7 +32,7 @@ public class BinderMetricsEnvironmentPostProcessor implements EnvironmentPostPro
 	public void postProcessEnvironment(ConfigurableEnvironment environment,
 			SpringApplication application) {
 		Map<String, Object> propertiesToAdd = new HashMap<>();
-		propertiesToAdd.put("spring.cloud.stream.bindings.streamMetrics.contentType",
+		propertiesToAdd.put("spring.cloud.stream.bindings."+Emitter.METRICS_CHANNEL_NAME+".contentType",
 				"application/json");
 		propertiesToAdd.put("spring.cloud.stream.metrics.instanceIndex",
 				"${spring.cloud.stream.instanceIndex:${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}}");
