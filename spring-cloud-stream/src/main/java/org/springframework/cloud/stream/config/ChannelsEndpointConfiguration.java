@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Ilayaperumal Gopinathan
  */
 @Configuration
-@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
+@ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.Endpoint")
 @AutoConfigureAfter(EndpointAutoConfiguration.class)
 public class ChannelsEndpointConfiguration {
 

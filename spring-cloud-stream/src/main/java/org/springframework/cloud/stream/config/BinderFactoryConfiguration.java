@@ -29,19 +29,13 @@ import java.util.Properties;
 
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.actuate.health.CompositeHealthIndicator;
-import org.springframework.boot.actuate.health.OrderedHealthAggregator;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderFactoryListener;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
-import org.springframework.cloud.stream.binder.BindersHealthIndicatorListener;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -177,22 +171,5 @@ public class BinderFactoryConfiguration {
 			parsedBinderConfigurations.add(new BinderType(binderType, binderConfigurationClasses));
 		}
 		return parsedBinderConfigurations;
-	}
-
-	@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
-	@ConditionalOnEnabledHealthIndicator("binders")
-	@Configuration
-	public static class BindersHealthIndicatorConfiguration {
-
-		@Bean
-		@ConditionalOnMissingBean(name = "bindersHealthIndicator")
-		public CompositeHealthIndicator bindersHealthIndicator() {
-			return new CompositeHealthIndicator(new OrderedHealthAggregator());
-		}
-
-		@Bean
-		public BinderFactoryListener bindersHealthIndicatorListener(@Qualifier("bindersHealthIndicator") CompositeHealthIndicator compositeHealthIndicator) {
-			return new BindersHealthIndicatorListener(compositeHealthIndicator);
-		}
 	}
 }
