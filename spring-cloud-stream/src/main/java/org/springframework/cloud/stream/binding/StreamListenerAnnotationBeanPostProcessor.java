@@ -278,10 +278,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 						break;
 					}
 				}
-				if (arguments[parameterIndex] == null) {
-					if (parameterType.isAssignableFrom(targetBean.getClass())) {
-						arguments[parameterIndex] = targetBean;
-					}
+				if (arguments[parameterIndex] == null && parameterType.isAssignableFrom(targetBean.getClass())) {
+					arguments[parameterIndex] = targetBean;
 				}
 				Assert.notNull(arguments[parameterIndex], "Cannot convert argument " + parameterIndex + " of " + method
 						+ "from " + targetBean.getClass() + " to " + parameterType);
