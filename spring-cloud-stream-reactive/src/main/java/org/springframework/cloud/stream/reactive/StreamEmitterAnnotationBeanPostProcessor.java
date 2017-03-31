@@ -20,6 +20,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import reactor.core.Disposable;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -40,6 +44,7 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.SynthesizingMethodParameter;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -48,24 +53,33 @@ import org.springframework.util.StringUtils;
  * {@link BeanPostProcessor} that handles {@link StreamEmitter} annotations found on bean methods.
  *
  * @author Soby Chacko
+ * @since 1.2.2
  */
 public class StreamEmitterAnnotationBeanPostProcessor
 		implements BeanPostProcessor, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
 	private final List<StreamListenerParameterAdapter<?, Object>> streamListenerParameterAdapters = new ArrayList<>();
 
-	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
+	private final List<StreamListenerResultAdapter<?, ?, ?>> streamListenerResultAdapters = new ArrayList<>();
+
+	private final List<FluxSender> fluxSenders = new ArrayList<>();
+
+	private final List<Disposable> fluxDisposables = new ArrayList<>();
 
 	private ConfigurableApplicationContext applicationContext;
 
-	private Method targetMethod;
+	private final List<Method> targetMethods = new ArrayList<>();
 
 	private Object targetBean;
 
 	private volatile boolean running;
 
+	private Lock lock = new ReentrantLock();
+
 	@Override
 	public final void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		Assert.isTrue(applicationContext instanceof ConfigurableApplicationContext,
+				"ConfigurableApplicationContext is required");
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
@@ -74,15 +88,11 @@ public class StreamEmitterAnnotationBeanPostProcessor
 	public void afterPropertiesSet() throws Exception {
 		Map<String, StreamListenerParameterAdapter> parameterAdapterMap = BeanFactoryUtils
 				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerParameterAdapter.class);
-		for (StreamListenerParameterAdapter parameterAdapter : parameterAdapterMap.values()) {
-			this.streamListenerParameterAdapters.add(parameterAdapter);
-		}
+		parameterAdapterMap.values().iterator().forEachRemaining(this.streamListenerParameterAdapters::add);
 		Map<String, StreamListenerResultAdapter> resultAdapterMap = BeanFactoryUtils
 				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerResultAdapter.class);
 		this.streamListenerResultAdapters.add(new MessageChannelStreamListenerResultAdapter());
-		for (StreamListenerResultAdapter resultAdapter : resultAdapterMap.values()) {
-			this.streamListenerResultAdapters.add(resultAdapter);
-		}
+		resultAdapterMap.values().iterator().forEachRemaining(this.streamListenerResultAdapters::add);
 	}
 
 	@Override
@@ -96,7 +106,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 		ReflectionUtils.doWithMethods(targetClass, method -> {
 			StreamEmitter streamEmitter = AnnotatedElementUtils.findMergedAnnotation(method, StreamEmitter.class);
 			if (streamEmitter != null && !method.isBridge()) {
-				targetMethod = method;
+				targetMethods.add(method);
 				targetBean = bean;
 			}
 		});
@@ -105,24 +115,31 @@ public class StreamEmitterAnnotationBeanPostProcessor
 
 	@Override
 	public void start() {
-		if (!running) {
-			if (targetMethod != null) {
-				Assert.isTrue(targetMethod.getAnnotation(Input.class) == null,
-						StreamEmitterErrorMessages.INPUT_ANNOTATIONS_ARE_NOT_ALLOWED);
-				String methodAnnotatedOutboundName = StreamAnnotationCommonMethodUtils.getOutboundBindingTargetName(targetMethod);
-				int outputAnnotationCount = StreamAnnotationCommonMethodUtils.outputAnnotationCount(targetMethod);
-				validateStreamEmitterMethod(targetMethod, outputAnnotationCount, methodAnnotatedOutboundName);
-				invokeSetupMethodOnToTargetChannel(targetMethod, targetBean, methodAnnotatedOutboundName);
+		try {
+			lock.lock();
+			if (!running) {
+				for (Method targetMethod : targetMethods) {
+					Assert.isTrue(targetMethod.getAnnotation(Input.class) == null,
+							StreamEmitterErrorMessages.INPUT_ANNOTATIONS_ARE_NOT_ALLOWED);
+					String methodAnnotatedOutboundName = StreamAnnotationCommonMethodUtils.getOutboundBindingTargetName(targetMethod);
+					int outputAnnotationCount = StreamAnnotationCommonMethodUtils.outputAnnotationCount(targetMethod);
+					validateStreamEmitterMethod(targetMethod, outputAnnotationCount, methodAnnotatedOutboundName);
+					invokeSetupMethodOnToTargetChannel(targetMethod, targetBean, methodAnnotatedOutboundName);
+				}
+				this.running = true;
 			}
-			this.running = true;
+		}
+		finally {
+			lock.unlock();
 		}
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private void invokeSetupMethodOnToTargetChannel(Method method, Object bean, String outboundName) {
 		Object[] arguments = new Object[method.getParameterTypes().length];
+		Object targetBean = null;
 		for (int parameterIndex = 0; parameterIndex < arguments.length; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+			MethodParameter methodParameter = new SynthesizingMethodParameter(method, parameterIndex);
 			Class<?> parameterType = methodParameter.getParameterType();
 			Object targetReferenceValue = null;
 			if (methodParameter.hasParameterAnnotation(Output.class)) {
@@ -132,12 +149,14 @@ public class StreamEmitterAnnotationBeanPostProcessor
 				targetReferenceValue = outboundName;
 			}
 			if (targetReferenceValue != null) {
-				Assert.isInstanceOf(String.class, targetReferenceValue, "Annotation value must be a String");
-				Object targetBean = this.applicationContext.getBean((String) targetReferenceValue);
+				targetBean = this.applicationContext.getBean((String) targetReferenceValue);
 				for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
 					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
 						arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean,
 								methodParameter);
+						if (FluxSender.class.isAssignableFrom(arguments[parameterIndex].getClass())) {
+							fluxSenders.add((FluxSender)arguments[parameterIndex]);
+						}
 						break;
 					}
 				}
@@ -157,25 +176,21 @@ public class StreamEmitterAnnotationBeanPostProcessor
 		}
 
 		if (!Void.TYPE.equals(method.getReturnType())) {
-			if (!StringUtils.hasText(outboundName)) {
-				for (int parameterIndex = 0; parameterIndex < method.getParameterTypes().length; parameterIndex++) {
-					MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method,
-							parameterIndex);
-					if (methodParameter.hasParameterAnnotation(Output.class)) {
-						outboundName = methodParameter.getParameterAnnotation(Output.class).value();
-					}
-				}
+			if (targetBean == null) {
+				targetBean = this.applicationContext.getBean(outboundName);
 			}
-			Object targetBean = this.applicationContext.getBean(outboundName);
 			boolean streamListenerResultAdapterFound = false;
 			for (StreamListenerResultAdapter streamListenerResultAdapter : this.streamListenerResultAdapters) {
 				if (streamListenerResultAdapter.supports(result.getClass(), targetBean.getClass())) {
-					streamListenerResultAdapter.adapt(result, targetBean);
+					Object adapted = streamListenerResultAdapter.adapt(result, targetBean);
+					if(adapted != null && Disposable.class.isAssignableFrom(adapted.getClass())) {
+						fluxDisposables.add((Disposable)adapted);
+					}
 					streamListenerResultAdapterFound = true;
 					break;
 				}
 			}
-			Assert.isTrue(streamListenerResultAdapterFound, StreamEmitterErrorMessages.CANNOT_CONVERT_RETURN_TYPE_TO_ANY_AVAILABLE_RESULT_ADAPTERS);
+			Assert.state(streamListenerResultAdapterFound, StreamEmitterErrorMessages.CANNOT_CONVERT_RETURN_TYPE_TO_ANY_AVAILABLE_RESULT_ADAPTERS);
 		}
 	}
 
@@ -227,6 +242,14 @@ public class StreamEmitterAnnotationBeanPostProcessor
 
 	@Override
 	public void stop() {
+		for (FluxSender fluxSender : fluxSenders) {
+			if (fluxSender.getClass().isAssignableFrom(DisposableFluxSender.class)) {
+				((DisposableFluxSender) fluxSender).getDisposable().dispose();
+			}
+		}
+		for (Disposable disposable : fluxDisposables) {
+			disposable.dispose();
+		}
 		if (running) {
 			this.running = false;
 		}
@@ -234,7 +257,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 
 	@Override
 	public boolean isRunning() {
-		return false;
+		return this.running;
 	}
 
 	@Override

@@ -41,30 +41,36 @@ import org.springframework.cloud.stream.annotation.Output;
  *
  * A StreamEmitter method that has a return type cannot take any method parameters.
  *
+ * <pre class="code">
  * &#064;StreamEmitter
  * &#064;Output(Source.OUTPUT)
  * public Flux<String> emit() {
  * 	return Flux.intervalMillis(1000)
  * 		.map(l -> "Hello World!!");
  * }
+ * </pre>
  *
  * The following examples show how a void return type can be used on a method with StreamEmitter and how the
  * method signatures could be used in a flexible manner.
  *
+ * <pre class="code">
  * &#064;StreamEmitter
  * public void emit(&#064;Output(Source.OUTPUT) FluxSender output) {
  * 	output.send(Flux.intervalMillis(1000)
  *		.map(l -> "Hello World!!"));
  * }
+ * </pre>
  *
+ * <pre class="code">
  * &#064;StreamEmitter
  * &#064;Output(Source.OUTPUT)
  * public void emit(FluxSender output) {
  * 	output.send(Flux.intervalMillis(1000)
  *		.map(l -> "Hello World!!"));
  * }
+ * </pre>
  *
- *
+ * <pre class="code">
  * &#064;StreamEmitter
  * public void emit(&#064;Output("OUTPUT1") FluxSender output1,
  *					&#064;Output("OUTPUT2") FluxSender output2,
@@ -76,6 +82,7 @@ import org.springframework.cloud.stream.annotation.Output;
  *	output3.send(Flux.intervalMillis(1000)
  *		.map(l -> "Hello World!!"));
  *	}
+ *</pre>
  *
  * @author Soby Chacko
  */
@@ -83,4 +90,6 @@ import org.springframework.cloud.stream.annotation.Output;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface StreamEmitter {
+
+	String value() default "";
 }

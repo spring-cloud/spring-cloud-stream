@@ -68,6 +68,13 @@ public class StreamEmitterBasicTests {
 		context.close();
 	}
 
+	@Test
+	public void testFluxReturnAndOutputMethodLevelX() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestFluxReturnAndOutputMethodLevelX.class, "--server.port=0");
+		receiveAndValidateMultipleOutputs(context);
+		context.close();
+	}
+
 	@SuppressWarnings("unchecked")
 	private static void receiveAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
 		Source source = context.getBean(Source.class);
@@ -151,6 +158,31 @@ public class StreamEmitterBasicTests {
 			output2.send(Flux.intervalMillis(1)
 					.map(l -> "Hello World!!" + l));
 			output3.send(Flux.intervalMillis(1)
+					.map(l -> "Hello World!!" + l));
+		}
+	}
+
+	@EnableBinding(TestMultiOutboundChannels.class)
+	@EnableAutoConfiguration
+	public static class TestFluxReturnAndOutputMethodLevelX {
+
+		@StreamEmitter
+		@Output(TestMultiOutboundChannels.OUTPUT1)
+		public Flux<String> emit1() {
+			return Flux.intervalMillis(1)
+					.map(l -> "Hello World!!" + l);
+		}
+
+		@StreamEmitter
+		@Output(TestMultiOutboundChannels.OUTPUT2)
+		public Flux<String> emit2() {
+			return Flux.intervalMillis(1)
+					.map(l -> "Hello World!!" + l);
+		}
+
+		@StreamEmitter
+		public void emit3(@Output(TestMultiOutboundChannels.OUTPUT3) FluxSender outputX) {
+			outputX.send(Flux.intervalMillis(1)
 					.map(l -> "Hello World!!" + l));
 		}
 	}

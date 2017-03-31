@@ -52,7 +52,7 @@ public class ReactiveSupportAutoConfiguration {
 	}
 
 	@Bean
-	public StreamEmitterAnnotationBeanPostProcessor streamEmitterAnnotationBeanPostProcessor() {
+	public static StreamEmitterAnnotationBeanPostProcessor streamEmitterAnnotationBeanPostProcessor() {
 		return new StreamEmitterAnnotationBeanPostProcessor();
 	}
 

@@ -90,7 +90,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private final List<StreamListenerParameterAdapter<?, Object>> streamListenerParameterAdapters = new ArrayList<>();
 
-	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
+	private final List<StreamListenerResultAdapter<?, ?, ?>> streamListenerResultAdapters = new ArrayList<>();
 
 	private EvaluationContext evaluationContext;
 
