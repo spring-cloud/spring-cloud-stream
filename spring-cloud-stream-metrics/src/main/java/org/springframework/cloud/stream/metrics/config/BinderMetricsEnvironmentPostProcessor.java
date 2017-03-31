@@ -29,15 +29,12 @@ import org.springframework.core.env.MapPropertySource;
  */
 public class BinderMetricsEnvironmentPostProcessor implements EnvironmentPostProcessor {
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment,
-			SpringApplication application) {
+	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 		Map<String, Object> propertiesToAdd = new HashMap<>();
-		propertiesToAdd.put("spring.cloud.stream.bindings."+Emitter.METRICS_CHANNEL_NAME+".contentType",
+		propertiesToAdd.put("spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS + ".contentType",
 				"application/json");
-		propertiesToAdd.put("spring.cloud.stream.metrics.instanceIndex",
-				"${spring.cloud.stream.instanceIndex:${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}}");
 		propertiesToAdd.put("spring.metrics.export.includes", "integration**");
-		environment.getPropertySources().addLast(
-				new MapPropertySource("binderMetricsDefaultProperties", propertiesToAdd));
+		environment.getPropertySources()
+				.addLast(new MapPropertySource("binderMetricsDefaultProperties", propertiesToAdd));
 	}
 }

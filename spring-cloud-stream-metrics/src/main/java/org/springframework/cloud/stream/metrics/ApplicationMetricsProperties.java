@@ -44,9 +44,6 @@ public class ApplicationMetricsProperties
 	@Value("${spring.application.name:${vcap.application.name:${spring.config.name:application}}}")
 	private String key;
 
-	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
-	private int instanceIndex;
-
 	private String metricName;
 
 	private String[] properties;
@@ -78,14 +75,6 @@ public class ApplicationMetricsProperties
 
 	public void setKey(String key) {
 		this.key = key;
-	}
-
-	public int getInstanceIndex() {
-		return instanceIndex;
-	}
-
-	public void setInstanceIndex(int instanceIndex) {
-		this.instanceIndex = instanceIndex;
 	}
 
 	public String[] getProperties() {

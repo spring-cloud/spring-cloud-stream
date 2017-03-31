@@ -35,19 +35,15 @@ public class ApplicationMetrics {
 	private final Date createdTime;
 
 	private String name;
-
-	private int instanceIndex;
-
+	
 	private Collection<Metric<?>> metrics;
 
 	private Map<String, Object> properties;
 
 	@JsonCreator
 	public ApplicationMetrics(@JsonProperty("name") String name,
-			@JsonProperty("instanceIndex") int instanceIndex,
 			@JsonProperty("metrics") Collection<Metric<?>> metrics) {
 		this.name = name;
-		this.instanceIndex = instanceIndex;
 		this.metrics = metrics;
 		this.createdTime = new Date();
 	}
@@ -58,14 +54,6 @@ public class ApplicationMetrics {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public int getInstanceIndex() {
-		return instanceIndex;
-	}
-
-	public void setInstanceIndex(int instanceIndex) {
-		this.instanceIndex = instanceIndex;
 	}
 
 	public Collection<Metric<?>> getMetrics() {

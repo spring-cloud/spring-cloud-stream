@@ -34,14 +34,14 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(Binder.class)
 @EnableBinding(Emitter.class)
 @EnableConfigurationProperties(ApplicationMetricsProperties.class)
-@ConditionalOnProperty("spring.cloud.stream.bindings." + Emitter.METRICS_CHANNEL_NAME
+@ConditionalOnProperty("spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS
 		+ ".destination")
 public class BinderMetricsAutoConfiguration {
 
 	@Bean
 	public ApplicationMetricsExporter aggregateMetricsExporter(MetricsEndpoint endpoint,
 			Emitter emitter, ApplicationMetricsProperties properties) {
-		return new ApplicationMetricsExporter(endpoint, emitter.metrics(), properties);
+		return new ApplicationMetricsExporter(endpoint, emitter.applicationMetrics(), properties);
 	}
 
 	@Bean

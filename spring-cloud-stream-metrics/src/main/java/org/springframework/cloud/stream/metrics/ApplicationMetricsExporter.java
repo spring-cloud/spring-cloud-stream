@@ -57,7 +57,7 @@ public class ApplicationMetricsExporter implements Exporter {
 	@Override
 	public void export() {
 		ApplicationMetrics appMetrics = new ApplicationMetrics(
-				this.properties.getMetricName(), this.properties.getInstanceIndex(),
+				this.properties.getMetricName(),
 				filter());
 		appMetrics.setProperties(this.properties.getExportProperties());
 		source.send(MessageBuilder.withPayload(appMetrics).build());

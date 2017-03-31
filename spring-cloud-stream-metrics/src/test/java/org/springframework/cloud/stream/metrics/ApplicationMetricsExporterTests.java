@@ -73,21 +73,20 @@ public class ApplicationMetricsExporterTests {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
-				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo");
+				"--spring.cloud.stream.bindings.applicationMetricsChannel.destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
 				TimeUnit.MILLISECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper
+		ApplicationMetrics applicationMetricsChannel = mapper
 				.readValue((String) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
-				applicationMetrics.getMetrics()));
-		Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
-		Assert.assertEquals("application", applicationMetrics.getName());
-		Assert.assertEquals(0, applicationMetrics.getInstanceIndex());
-		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
+				applicationMetricsChannel.getMetrics()));
+		Assert.assertFalse(contains("mem", applicationMetricsChannel.getMetrics()));
+		Assert.assertEquals("application", applicationMetricsChannel.getName());
+		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetricsChannel.getProperties()));
 		applicationContext.close();
 	}
 
@@ -96,22 +95,21 @@ public class ApplicationMetricsExporterTests {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
-				"--spring.application.name=foo", "--spring.cloud.stream.instanceIndex=1",
-				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo");
+				"--spring.application.name=foo", 
+				"--spring.cloud.stream.bindings.applicationMetricsChannel.destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
 				TimeUnit.MILLISECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper
+		ApplicationMetrics applicationMetricsChannel = mapper
 				.readValue((String) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
-				applicationMetrics.getMetrics()));
-		Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
-		Assert.assertEquals("foo", applicationMetrics.getName());
-		Assert.assertEquals(1, applicationMetrics.getInstanceIndex());
-		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
+				applicationMetricsChannel.getMetrics()));
+		Assert.assertFalse(contains("mem", applicationMetricsChannel.getMetrics()));
+		Assert.assertEquals("foo", applicationMetricsChannel.getName());
+		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetricsChannel.getProperties()));
 		applicationContext.close();
 	}
 
@@ -121,22 +119,20 @@ public class ApplicationMetricsExporterTests {
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
 				"--spring.cloud.stream.metrics.prefix=foo",
-				"--spring.cloud.stream.instanceIndex=1",
-				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo");
+				"--spring.cloud.stream.bindings.applicationMetricsChannel.destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
 				TimeUnit.MILLISECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper
+		ApplicationMetrics applicationMetricsChannel = mapper
 				.readValue((String) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
-				applicationMetrics.getMetrics()));
-		Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
-		Assert.assertEquals("foo.application", applicationMetrics.getName());
-		Assert.assertEquals(1, applicationMetrics.getInstanceIndex());
-		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
+				applicationMetricsChannel.getMetrics()));
+		Assert.assertFalse(contains("mem", applicationMetricsChannel.getMetrics()));
+		Assert.assertEquals("foo.application", applicationMetricsChannel.getName());
+		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetricsChannel.getProperties()));
 		applicationContext.close();
 	}
 
@@ -145,21 +141,21 @@ public class ApplicationMetricsExporterTests {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
-				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo",
+				"--spring.cloud.stream.bindings.applicationMetricsChannel.destination=foo",
 				"--spring.metrics.export.includes=mem**",
 				"--spring.metrics.export.excludes=integration**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
 				TimeUnit.MILLISECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper
+		ApplicationMetrics applicationMetricsChannel = mapper
 				.readValue((String) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertFalse(contains("integration.channel.errorChannel.errorRate.mean",
-				applicationMetrics.getMetrics()));
-		Assert.assertTrue(contains("mem", applicationMetrics.getMetrics()));
-		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
+				applicationMetricsChannel.getMetrics()));
+		Assert.assertTrue(contains("mem", applicationMetricsChannel.getMetrics()));
+		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetricsChannel.getProperties()));
 		applicationContext.close();
 	}
 
@@ -168,22 +164,22 @@ public class ApplicationMetricsExporterTests {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
-				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo",
+				"--spring.cloud.stream.bindings.applicationMetricsChannel.destination=foo",
 				"--spring.metrics.export.includes=integration**",
 				"--spring.cloud.stream.metrics.properties=java**,spring.test.env**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
 				TimeUnit.MILLISECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper
+		ApplicationMetrics applicationMetricsChannel = mapper
 				.readValue((String) message.getPayload(), ApplicationMetrics.class);
-		Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
+		Assert.assertFalse(contains("mem", applicationMetricsChannel.getMetrics()));
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
-				applicationMetrics.getMetrics()));
-		Assert.assertFalse(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
-		Assert.assertTrue(applicationMetrics.getProperties().get("spring.test.env.syntax")
+				applicationMetricsChannel.getMetrics()));
+		Assert.assertFalse(CollectionUtils.isEmpty(applicationMetricsChannel.getProperties()));
+		Assert.assertTrue(applicationMetricsChannel.getProperties().get("spring.test.env.syntax")
 				.equals("testing"));
 		applicationContext.close();
 	}
@@ -193,23 +189,22 @@ public class ApplicationMetricsExporterTests {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
-				"--spring.application.name=foo", "--spring.cloud.stream.instanceIndex=1",
-				"--spring.cloud.stream.bindings.aggregateMetricsChannel.destination=foo",
+				"--spring.application.name=foo",
+				"--spring.cloud.stream.bindings.applicationMetricsChannel.destination=foo",
 				"--spring.cloud.stream.metrics.key=foobarfoo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.metrics()).poll(1000,
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
 				TimeUnit.MILLISECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper
+		ApplicationMetrics applicationMetricsChannel = mapper
 				.readValue((String) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
-				applicationMetrics.getMetrics()));
-		Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
-		Assert.assertEquals("foobarfoo", applicationMetrics.getName());
-		Assert.assertEquals(1, applicationMetrics.getInstanceIndex());
-		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
+				applicationMetricsChannel.getMetrics()));
+		Assert.assertFalse(contains("mem", applicationMetricsChannel.getMetrics()));
+		Assert.assertEquals("foobarfoo", applicationMetricsChannel.getName());
+		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetricsChannel.getProperties()));
 		applicationContext.close();
 	}
 
