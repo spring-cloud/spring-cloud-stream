@@ -33,24 +33,24 @@ public class RelaxedPropertiesUtilsTests {
 		RelaxedNames springEnv = new RelaxedNames("SPRING_APPLICATION_NAME");
 		RelaxedNames springDot = new RelaxedNames("spring.application.name");
 		RelaxedNames springCamel = new RelaxedNames("springApplicationName");
-		RelaxedNames contentType = new RelaxedNames("spring.cloud.stream.bindings.streamMetrics.contentType");
-		RelaxedNames contentTypeEnv = new RelaxedNames("SPRING_CLOUD_STREAM_BINDINGS_STREAM-METRICS_CONTENT-TYPE");
+		RelaxedNames contentType = new RelaxedNames("spring.cloud.stream.bindings.aggregateMetricsChannel.contentType");
+		RelaxedNames contentTypeEnv = new RelaxedNames("SPRING_CLOUD_STREAM_BINDINGS_AGGREGATE-METRICS-CHANNEL_CONTENT-TYPE");
 		RelaxedNames xyz = new RelaxedNames("My.X.Is");
-		RelaxedNames springMetrics = new RelaxedNames("spring.cloud.stream.streamMetrics");
-		RelaxedNames springMetricsEnv = new RelaxedNames("spring.cloud.stream.stream-metrics");
+		RelaxedNames springMetrics = new RelaxedNames("spring.cloud.stream.aggregateMetricsChannel");
+		RelaxedNames springMetricsEnv = new RelaxedNames("spring.cloud.stream.aggregate-metrics-channel");
 		Assert.assertEquals("java.home", RelaxedPropertiesUtils.findCanonicalFormat(javaHome));
 		Assert.assertEquals("os", RelaxedPropertiesUtils.findCanonicalFormat(os));
 		Assert.assertEquals("spring.application.name", RelaxedPropertiesUtils.findCanonicalFormat(springEnv));
 		Assert.assertEquals("spring.application.name", RelaxedPropertiesUtils.findCanonicalFormat(springDot));
 		Assert.assertEquals("spring.application.name", RelaxedPropertiesUtils.findCanonicalFormat(springCamel));
-		Assert.assertEquals("spring.cloud.stream.bindings.streamMetrics.contentType",
+		Assert.assertEquals("spring.cloud.stream.bindings.aggregateMetricsChannel.contentType",
 				RelaxedPropertiesUtils.findCanonicalFormat(contentType));
-		Assert.assertEquals("spring.cloud.stream.bindings.streamMetrics.contentType",
+		Assert.assertEquals("spring.cloud.stream.bindings.aggregateMetricsChannel.contentType",
 				RelaxedPropertiesUtils.findCanonicalFormat(contentTypeEnv));
 		Assert.assertEquals("My.X.Is", RelaxedPropertiesUtils.findCanonicalFormat(xyz));
-		Assert.assertEquals("spring.cloud.stream.streamMetrics",
+		Assert.assertEquals("spring.cloud.stream.aggregateMetricsChannel",
 				RelaxedPropertiesUtils.findCanonicalFormat(springMetrics));
-		Assert.assertEquals("spring.cloud.stream.streamMetrics",
+		Assert.assertEquals("spring.cloud.stream.aggregateMetricsChannel",
 				RelaxedPropertiesUtils.findCanonicalFormat(springMetricsEnv));
 	}
 
