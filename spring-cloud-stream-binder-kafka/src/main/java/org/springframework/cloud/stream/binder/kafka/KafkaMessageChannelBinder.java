@@ -44,6 +44,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner.UnexpectedPartitionCountHandling;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
@@ -146,6 +147,7 @@ public class KafkaMessageChannelBinder extends
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) throws Exception {
 		final DefaultKafkaProducerFactory<byte[], byte[]> producerFB = getProducerFactory(producerProperties);
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(producerProperties.getPartitionCount(),
+				provisioningProvider.producerHandling(),
 				new Callable<Collection<PartitionInfo>>() {
 					@Override
 					public Collection<PartitionInfo> call() throws Exception {
@@ -210,7 +212,11 @@ public class KafkaMessageChannelBinder extends
 		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(anonymous, consumerGroup, extendedConsumerProperties);
 		int partitionCount = extendedConsumerProperties.getInstanceCount() * extendedConsumerProperties.getConcurrency();
 
+		UnexpectedPartitionCountHandling unexpedPartitionCountHandling = extendedConsumerProperties.getExtension().isAutoRebalanceEnabled()? provisioningProvider.consumerIdlingAllowed()
+				: provisioningProvider.consumerIdlingForbidden();
+		
 		Collection<PartitionInfo> allPartitions = provisioningProvider.getPartitionsForTopic(partitionCount,
+				unexpedPartitionCountHandling,
 				new Callable<Collection<PartitionInfo>>() {
 					@Override
 					public Collection<PartitionInfo> call() throws Exception {
@@ -239,8 +245,8 @@ public class KafkaMessageChannelBinder extends
 		final TopicPartitionInitialOffset[] topicPartitionInitialOffsets = getTopicPartitionInitialOffsets(
 				listenedPartitions);
 		final ContainerProperties containerProperties =
-				anonymous || extendedConsumerProperties.getExtension().isAutoRebalanceEnabled() ? new ContainerProperties(destination.getName())
-						: new ContainerProperties(topicPartitionInitialOffsets);
+				anonymous || extendedConsumerProperties.getExtension().isAutoRebalanceEnabled() ? 
+						new ContainerProperties(destination.getName()) : new ContainerProperties(topicPartitionInitialOffsets);
 		int concurrency = Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
 		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
 				new ConcurrentMessageListenerContainer(
