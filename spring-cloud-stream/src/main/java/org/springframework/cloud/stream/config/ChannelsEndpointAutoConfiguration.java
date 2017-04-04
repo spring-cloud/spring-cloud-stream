@@ -21,8 +21,10 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.stream.binding.Bindable;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,8 +36,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.Endpoint")
+@ConditionalOnBean(BindingService.class)
 @AutoConfigureAfter(EndpointAutoConfiguration.class)
-public class ChannelsEndpointConfiguration {
+public class ChannelsEndpointAutoConfiguration {
 
 	@Autowired(required = false)
 	private List<Bindable> adapters;

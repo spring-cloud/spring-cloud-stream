@@ -33,7 +33,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binder.BinderFactoryListener;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
@@ -71,14 +70,14 @@ public class BinderFactoryConfiguration {
 	private BindingServiceProperties bindingServiceProperties;
 
 	@Autowired(required = false)
-	private Collection<BinderFactoryListener> binderFactoryListeners;
+	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
-	public BinderFactory binderFactory() {
+	public DefaultBinderFactory binderFactory() {
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory(getBinderConfigurations());
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
-		binderFactory.setBinderFactoryListeners(binderFactoryListeners);
+		binderFactory.setListeners(binderFactoryListeners);
 		return binderFactory;
 	}
 

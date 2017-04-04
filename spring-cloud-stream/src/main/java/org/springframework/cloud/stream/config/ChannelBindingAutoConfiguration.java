@@ -23,7 +23,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.messaging.MessageChannel;
 
@@ -38,7 +37,6 @@ import org.springframework.messaging.MessageChannel;
 @Configuration
 @ConditionalOnBean(BindingService.class)
 @EnableConfigurationProperties(DefaultPollerProperties.class)
-@Import(ChannelsEndpointConfiguration.class)
 public class ChannelBindingAutoConfiguration {
 
 	@Autowired

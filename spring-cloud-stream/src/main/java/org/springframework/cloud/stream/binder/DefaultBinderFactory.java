@@ -55,7 +55,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private Map<String, String> defaultBinderForBindingTargetType = new HashMap<>();
 
-	private Collection<BinderFactoryListener> binderFactoryListeners;
+	private Collection<Listener> listeners;
 
 	private volatile String defaultBinder;
 
@@ -73,8 +73,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		this.defaultBinder = defaultBinder;
 	}
 
-	public void setBinderFactoryListeners(Collection<BinderFactoryListener> binderFactoryListeners) {
-		this.binderFactoryListeners = binderFactoryListeners;
+	public void setListeners(Collection<Listener> listeners) {
+		this.listeners = listeners;
 	}
 
 	@Override
@@ -112,7 +112,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 						List<String> candidatesForBindableType = new ArrayList<>();
 						for (String defaultCandidateConfiguration : defaultCandidateConfigurations) {
 							Binder<Object, ?, ?> binderInstance = getBinderInstance(defaultCandidateConfiguration);
-							Class<?> binderType = GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0);
+							Class<?> binderType = GenericsUtils.getParameterType(binderInstance.getClass(),
+									Binder.class, 0);
 							if (binderType.isAssignableFrom(bindingTargetType)) {
 								candidatesForBindableType.add(defaultCandidateConfiguration);
 							}
@@ -129,8 +130,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 											+ ", and no default binder has been set.");
 						}
 						else {
-							throw new IllegalStateException("A default binder has been requested, but none of the " +
-									"registered binders can bind a '" + bindingTargetType + "': "
+							throw new IllegalStateException("A default binder has been requested, but none of the "
+									+ "registered binders can bind a '" + bindingTargetType + "': "
 									+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations));
 						}
 					}
@@ -163,12 +164,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				throw new IllegalStateException("Unknown binder configuration: " + configurationName);
 			}
 			Properties binderProperties = binderConfiguration.getProperties();
-			// Convert all properties to arguments, so that they receive maximum precedence
+			// Convert all properties to arguments, so that they receive maximum
+			// precedence
 			ArrayList<String> args = new ArrayList<>();
 			for (Map.Entry<Object, Object> property : binderProperties.entrySet()) {
 				args.add(String.format("--%s=%s", property.getKey(), property.getValue()));
 			}
-			// Initialize the domain with a unique name based on the bootstrapping context setting
+			// Initialize the domain with a unique name based on the bootstrapping context
+			// setting
 			ConfigurableEnvironment environment = this.context != null ? this.context.getEnvironment() : null;
 			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain") : null;
 			if (defaultDomain == null) {
@@ -179,17 +182,16 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			}
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
 			args.add("--spring.main.applicationContextClass=" + AnnotationConfigApplicationContext.class.getName());
-			List<Class<?>> configurationClasses =
-					new ArrayList<Class<?>>(
-							Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
-			SpringApplicationBuilder springApplicationBuilder =
-					new SpringApplicationBuilder()
-							.sources(configurationClasses.toArray(new Class<?>[]{}))
-							.bannerMode(Mode.OFF)
-							.web(false);
-			// If the environment is not customized and a main context is available, we will set the latter as parent.
-			// This ensures that the defaults and user-defined customizations (e.g. custom connection factory beans)
-			// are propagated to the binder context. If the environment is customized, then the binder context should
+			List<Class<?>> configurationClasses = new ArrayList<Class<?>>(
+					Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
+			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder()
+					.sources(configurationClasses.toArray(new Class<?>[] {})).bannerMode(Mode.OFF).web(false);
+			// If the environment is not customized and a main context is available, we
+			// will set the latter as parent.
+			// This ensures that the defaults and user-defined customizations (e.g. custom
+			// connection factory beans)
+			// are propagated to the binder context. If the environment is customized,
+			// then the binder context should
 			// not inherit any beans from the parent
 			boolean useApplicationContextAsParent = binderProperties.isEmpty() && this.context != null;
 			if (useApplicationContextAsParent) {
@@ -202,23 +204,23 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					springApplicationBuilder.environment(binderEnvironment);
 				}
 			}
-			ConfigurableApplicationContext binderProducingContext =
-					springApplicationBuilder.run(args.toArray(new String[args.size()]));
+			ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
+					.run(args.toArray(new String[args.size()]));
 			@SuppressWarnings("unchecked")
 			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
-			if (this.binderFactoryListeners != null) {
-				for (BinderFactoryListener binderFactoryListener : binderFactoryListeners) {
-					binderFactoryListener.apply(configurationName, binderProducingContext);
+			if (this.listeners != null) {
+				for (Listener binderFactoryListener : listeners) {
+					binderFactoryListener.afterBinderContextInitialized(configurationName, binderProducingContext);
 				}
 			}
-			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder(binder,
-					binderProducingContext));
+			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder(binder, binderProducingContext));
 		}
 		return (Binder<T, ?, ?>) this.binderInstanceCache.get(configurationName).getBinderInstance();
 	}
 
 	/**
-	 * Utility class for storing {@link Binder} instances, along with their associated contexts.
+	 * Utility class for storing {@link Binder} instances, along with their associated
+	 * contexts.
 	 */
 	private static final class BinderInstanceHolder {
 
@@ -238,5 +240,24 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		public ConfigurableApplicationContext getBinderContext() {
 			return this.binderContext;
 		}
+	}
+
+	/**
+	 * A listener that can be registered with the {@link DefaultBinderFactory} that
+	 * allows the registration of additional configuration.
+	 *
+	 * @author Ilayaperumal Gopinathan
+	 */
+	public interface Listener {
+
+		/**
+		 * Applying additional capabilities to the binder after the binder context
+		 * has been initialized.
+		 *
+		 * @param configurationName the binder configuration name
+		 * @param binderContext the application context of the binder
+		 */
+		void afterBinderContextInitialized(String configurationName,
+				ConfigurableApplicationContext binderContext);
 	}
 }
