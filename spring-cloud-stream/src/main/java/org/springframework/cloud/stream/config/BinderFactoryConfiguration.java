@@ -28,10 +28,12 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.BinderFactoryListener;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
@@ -57,15 +59,32 @@ public class BinderFactoryConfiguration {
 
 	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".selfContained";
 
+	private static final String BINDER_CONFIGURATIONS_BEAN_NAME = "spring.cloud.stream.binderConfigruations";
+
 	@Value("${" + SELF_CONTAINED_APP_PROPERTY_NAME + ":}")
 	private String selfContained;
 
+	@Autowired
+	private BinderTypeRegistry binderTypeRegistry;
+
+	@Autowired
+	private BindingServiceProperties bindingServiceProperties;
+
+	@Autowired(required = false)
+	private Collection<BinderFactoryListener> binderFactoryListeners;
+
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
-	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
-			BindingServiceProperties bindingServiceProperties) {
+	public BinderFactory binderFactory() {
+		DefaultBinderFactory binderFactory = new DefaultBinderFactory(getBinderConfigurations());
+		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
+		binderFactory.setBinderFactoryListeners(binderFactoryListeners);
+		return binderFactory;
+	}
+
+	public Map<String, BinderConfiguration> getBinderConfigurations() {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
-		Map<String, BinderProperties> declaredBinders = bindingServiceProperties.getBinders();
+		Map<String, BinderProperties> declaredBinders = this.bindingServiceProperties.getBinders();
 		boolean defaultCandidatesExist = false;
 		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders.entrySet().iterator();
 		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
@@ -74,9 +93,9 @@ public class BinderFactoryConfiguration {
 		List<String> existingBinderConfigurations = new ArrayList<>();
 		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
 			BinderProperties binderProperties = binderEntry.getValue();
-			if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
+			if (this.binderTypeRegistry.get(binderEntry.getKey()) != null) {
 				binderConfigurations.put(binderEntry.getKey(),
-						new BinderConfiguration(binderTypeRegistry.get(binderEntry.getKey()),
+						new BinderConfiguration(this.binderTypeRegistry.get(binderEntry.getKey()),
 								binderProperties.getEnvironment(), binderProperties.isInheritEnvironment(),
 								binderProperties.isDefaultCandidate()));
 				existingBinderConfigurations.add(binderEntry.getKey());
@@ -84,7 +103,7 @@ public class BinderFactoryConfiguration {
 			else {
 				Assert.hasText(binderProperties.getType(),
 						"No 'type' property present for custom binder " + binderEntry.getKey());
-				BinderType binderType = binderTypeRegistry.get(binderProperties.getType());
+				BinderType binderType = this.binderTypeRegistry.get(binderProperties.getType());
 				Assert.notNull(binderType, "Binder type " + binderProperties.getType() + " is not defined");
 				binderConfigurations.put(binderEntry.getKey(),
 						new BinderConfiguration(binderType, binderProperties.getEnvironment(),
@@ -92,22 +111,20 @@ public class BinderFactoryConfiguration {
 				existingBinderConfigurations.add(binderEntry.getKey());
 			}
 		}
-		for (Map.Entry<String, BinderConfiguration> configurationEntry: binderConfigurations.entrySet()) {
+		for (Map.Entry<String, BinderConfiguration> configurationEntry : binderConfigurations.entrySet()) {
 			if (configurationEntry.getValue().isDefaultCandidate()) {
 				defaultCandidatesExist = true;
 			}
 		}
 		if (!defaultCandidatesExist) {
-			for (Map.Entry<String, BinderType> binderEntry : binderTypeRegistry.getAll().entrySet()) {
+			for (Map.Entry<String, BinderType> binderEntry : this.binderTypeRegistry.getAll().entrySet()) {
 				if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
 					binderConfigurations.put(binderEntry.getKey(), new BinderConfiguration(binderEntry.getValue(),
 							new Properties(), true, true));
 				}
 			}
 		}
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(binderConfigurations);
-		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
-		return binderFactory;
+		return binderConfigurations;
 	}
 
 	@Bean
@@ -128,7 +145,7 @@ public class BinderFactoryConfiguration {
 				URL url = resources.nextElement();
 				UrlResource resource = new UrlResource(url);
 				for (BinderType binderType : parseBinderConfigurations(classLoader, resource)) {
-						binderTypes.put(binderType.getDefaultName(), binderType);
+					binderTypes.put(binderType.getDefaultName(), binderType);
 				}
 			}
 		}

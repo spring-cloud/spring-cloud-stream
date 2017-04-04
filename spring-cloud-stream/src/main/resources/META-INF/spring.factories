@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
-org.springframework.cloud.stream.config.ChannelBindingAutoConfiguration
+org.springframework.cloud.stream.config.ChannelBindingAutoConfiguration,\
+  org.springframework.cloud.stream.binder.BindersHealthIndicatorAutoConfiguration

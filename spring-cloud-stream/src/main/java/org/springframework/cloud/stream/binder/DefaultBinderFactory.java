@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,14 +27,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.Banner.Mode;
-import org.springframework.boot.actuate.health.AbstractHealthIndicator;
-import org.springframework.boot.actuate.health.CompositeHealthIndicator;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
@@ -47,7 +41,9 @@ import org.springframework.util.StringUtils;
 
 /**
  * Default {@link BinderFactory} implementation.
+ *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
@@ -59,9 +55,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private Map<String, String> defaultBinderForBindingTargetType = new HashMap<>();
 
-	private volatile String defaultBinder;
+	private Collection<BinderFactoryListener> binderFactoryListeners;
 
-	private volatile CompositeHealthIndicator bindersHealthIndicator;
+	private volatile String defaultBinder;
 
 	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations) {
 		this.binderConfigurations = new HashMap<>(binderConfigurations);
@@ -73,14 +69,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		this.context = (ConfigurableApplicationContext) applicationContext;
 	}
 
-	@Autowired(required = false)
-	@Qualifier("bindersHealthIndicator")
-	public void setBindersHealthIndicator(CompositeHealthIndicator bindersHealthIndicator) {
-		this.bindersHealthIndicator = bindersHealthIndicator;
-	}
-
 	public void setDefaultBinder(String defaultBinder) {
 		this.defaultBinder = defaultBinder;
+	}
+
+	public void setBinderFactoryListeners(Collection<BinderFactoryListener> binderFactoryListeners) {
+		this.binderFactoryListeners = binderFactoryListeners;
 	}
 
 	@Override
@@ -126,13 +120,15 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 						if (candidatesForBindableType.size() == 1) {
 							configurationName = candidatesForBindableType.iterator().next();
 							this.defaultBinderForBindingTargetType.put(bindingTargetType.getName(), configurationName);
-						} else if (candidatesForBindableType.size() > 1) {
+						}
+						else if (candidatesForBindableType.size() > 1) {
 							throw new IllegalStateException(
 									"A default binder has been requested, but there is more than one binder available for '"
 											+ bindingTargetType.getName() + "' : "
 											+ StringUtils.collectionToCommaDelimitedString(candidatesForBindableType)
 											+ ", and no default binder has been set.");
-						} else {
+						}
+						else {
 							throw new IllegalStateException("A default binder has been requested, but none of the " +
 									"registered binders can bind a '" + bindingTargetType + "': "
 									+ StringUtils.collectionToCommaDelimitedString(defaultCandidateConfigurations));
@@ -188,7 +184,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 							Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
 			SpringApplicationBuilder springApplicationBuilder =
 					new SpringApplicationBuilder()
-							.sources(configurationClasses.toArray(new Class<?>[] {}))
+							.sources(configurationClasses.toArray(new Class<?>[]{}))
 							.bannerMode(Mode.OFF)
 							.web(false);
 			// If the environment is not customized and a main context is available, we will set the latter as parent.
@@ -210,15 +206,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					springApplicationBuilder.run(args.toArray(new String[args.size()]));
 			@SuppressWarnings("unchecked")
 			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
-			if (this.bindersHealthIndicator != null) {
-				OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
-				Map<String, HealthIndicator> indicators = binderProducingContext.getBeansOfType(HealthIndicator.class);
-				// if there are no health indicators in the child context, we just mark the binder's health as unknown
-				// this can happen due to the fact that configuration is inherited
-				HealthIndicator binderHealthIndicator =
-						indicators.isEmpty() ? new DefaultHealthIndicator() : new CompositeHealthIndicator(
-								healthAggregator, indicators);
-				this.bindersHealthIndicator.addHealthIndicator(configurationName, binderHealthIndicator);
+			if (this.binderFactoryListeners != null) {
+				for (BinderFactoryListener binderFactoryListener : binderFactoryListeners) {
+					binderFactoryListener.apply(configurationName, binderProducingContext);
+				}
 			}
 			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder(binder,
 					binderProducingContext));
@@ -246,14 +237,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 		public ConfigurableApplicationContext getBinderContext() {
 			return this.binderContext;
-		}
-	}
-
-	private static class DefaultHealthIndicator extends AbstractHealthIndicator {
-
-		@Override
-		protected void doHealthCheck(Health.Builder builder) throws Exception {
-			builder.unknown();
 		}
 	}
 }

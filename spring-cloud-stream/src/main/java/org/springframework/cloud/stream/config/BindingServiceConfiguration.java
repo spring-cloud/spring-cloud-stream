@@ -68,6 +68,7 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
+ *
  * @author Dave Syer
  * @author David Turanski
  * @author Marius Bogoevici
