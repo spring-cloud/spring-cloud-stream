@@ -147,7 +147,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		@ConditionalOnMissingBean(name = BusAutoConfiguration.BUS_PATH_MATCHER_NAME)
 		@Bean(name = BusAutoConfiguration.BUS_PATH_MATCHER_NAME)
 		public PathMatcher busPathMatcher() {
-			return new AntPathMatcher(":");
+			return new DefaultBusPathMatcher(new AntPathMatcher(":"));
 		}
 
 		@Bean

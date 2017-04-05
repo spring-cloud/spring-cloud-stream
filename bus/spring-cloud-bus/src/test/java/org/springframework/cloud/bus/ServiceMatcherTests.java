@@ -16,10 +16,8 @@
 
 package org.springframework.cloud.bus;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 import java.util.Collections;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -27,11 +25,16 @@ import org.springframework.cloud.bus.event.EnvironmentChangeRemoteApplicationEve
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.util.AntPathMatcher;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 /**
  * @author Dave Syer
  *
  */
 public class ServiceMatcherTests {
+
+	private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
 	private ServiceMatcher matcher = new ServiceMatcher();
 	private StaticApplicationContext context = new StaticApplicationContext();
@@ -40,7 +43,7 @@ public class ServiceMatcherTests {
 	public void init() {
 		context.setId("one:two:8888");
 		context.refresh();
-		matcher.setMatcher(new AntPathMatcher(":"));
+		matcher.setMatcher(new DefaultBusPathMatcher(new AntPathMatcher(":")));
 		matcher.setApplicationContext(context);
 	}
 
@@ -49,7 +52,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isFromSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "one:two:8888",
-								"foo:bar:spam", Collections.<String, String>emptyMap())),
+								"foo:bar:spam", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -58,7 +61,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"one:two:8888", Collections.<String, String>emptyMap())),
+								"one:two:8888", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -67,7 +70,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"one:two:*", Collections.<String, String>emptyMap())),
+								"one:two:*", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -76,7 +79,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"**", Collections.<String, String>emptyMap())),
+								"**", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -85,7 +88,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"o*", Collections.<String, String>emptyMap())),
+								"o*", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -94,7 +97,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"o*:t*", Collections.<String, String>emptyMap())),
+								"o*:t*", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -103,7 +106,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"o*", Collections.<String, String>emptyMap())),
+								"o*", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -112,7 +115,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"o*:f*", Collections.<String, String>emptyMap())),
+								"o*:f*", EMPTY_MAP)),
 				is(false));
 	}
 
@@ -121,7 +124,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"one:**", Collections.<String, String>emptyMap())),
+								"one:**", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -130,7 +133,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"one", Collections.<String, String>emptyMap())),
+								"one", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -139,7 +142,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"one:two", Collections.<String, String>emptyMap())),
+								"one:two", EMPTY_MAP)),
 				is(true));
 	}
 
@@ -148,7 +151,7 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isForSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
-								"one:two:9999", Collections.<String, String>emptyMap())),
+								"one:two:9999", EMPTY_MAP)),
 				is(false));
 	}
 
@@ -157,7 +160,46 @@ public class ServiceMatcherTests {
 		assertThat(
 				matcher.isFromSelf(
 						new EnvironmentChangeRemoteApplicationEvent(this, "one:two:9999",
-								"foo:bar:spam", Collections.<String, String>emptyMap())),
+								"foo:bar:spam", EMPTY_MAP)),
+				is(false));
+	}
+
+	/**
+	 * see gh-678
+	 */
+	@Test
+	public void forSelfWithMultipleProfiles() {
+		context.setId("customerportal:dev,cloud:80");
+		assertThat(
+				matcher.isForSelf(
+						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
+								"customerportal:cloud:*", EMPTY_MAP)),
+				is(true));
+	}
+
+	/**
+	 * see gh-678
+	 */
+	@Test
+	public void notForSelfWithMultipleProfiles() {
+		context.setId("customerportal:dev,cloud:80");
+		assertThat(
+				matcher.isForSelf(
+						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
+								"bar:cloud:*", EMPTY_MAP)),
+				is(false));
+	}
+
+	/**
+	 * see gh-678
+	 */
+	@Test
+	public void notForSelfWithMultipleProfilesDifferentPort() {
+		context.setId("customerportal:dev,cloud:80");
+		assertThat(
+				matcher.isForSelf(
+						new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
+								"customerportal:cloud:8008", EMPTY_MAP)),
 				is(false));
 	}
 
