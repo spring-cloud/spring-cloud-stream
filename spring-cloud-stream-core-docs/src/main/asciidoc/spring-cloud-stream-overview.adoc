@@ -1925,7 +1925,7 @@ The default `contentType` setting of `applicationMetricsChannel` is `application
 
 By default the module is configured to only send Spring Integration message channel metrics.
 
-Available properties for customization using the prefix `spring.cloud.stream.applicationMetricsChannel`.
+Available properties for customization using the prefix `spring.cloud.stream.metrics`.
 
 key::
   The name of the metric being emitted. Should be an unique value per application.
