@@ -33,7 +33,6 @@ public class BinderMetricsEnvironmentPostProcessor implements EnvironmentPostPro
 		Map<String, Object> propertiesToAdd = new HashMap<>();
 		propertiesToAdd.put("spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS + ".contentType",
 				"application/json");
-		propertiesToAdd.put("spring.metrics.export.includes", "integration**");
 		environment.getPropertySources()
 				.addLast(new MapPropertySource("binderMetricsDefaultProperties", propertiesToAdd));
 	}

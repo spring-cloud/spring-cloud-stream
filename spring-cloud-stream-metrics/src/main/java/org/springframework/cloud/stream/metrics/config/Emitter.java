@@ -24,7 +24,7 @@ import org.springframework.messaging.MessageChannel;
  */
 public interface Emitter {
 
-	String APPLICATION_METRICS = "applicationMetricsChannel";
+	String APPLICATION_METRICS = "applicationMetrics";
 
 	@Output(APPLICATION_METRICS)
 	MessageChannel applicationMetrics();
