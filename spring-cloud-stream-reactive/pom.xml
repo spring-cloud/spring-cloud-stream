@@ -73,8 +73,8 @@
 									<shadedPattern>org.springframework.cloud.stream.reactive.shaded.rx.RxReactiveStreams</shadedPattern>
 								</relocation>
 								<relocation>
-									<pattern>rx.internal</pattern>
-									<shadedPattern>org.springframework.cloud.stream.reactive.shaded.rx.internal</shadedPattern>
+									<pattern>rx.internal.reactivestreams</pattern>
+									<shadedPattern>org.springframework.cloud.stream.reactive.shaded.rx.internal.reactivestreams</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
