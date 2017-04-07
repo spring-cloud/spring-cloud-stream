@@ -1932,16 +1932,19 @@ key::
 +
 Default:: `${spring.application.name:${vcap.application.name:${spring.config.name:application}}}`
 +
-delay-millis::
-  The period in which metrics will be posted to the channel
-+
-Default: `5000`.
-+
 prefix::
   Prefix string to be prepended to the metrics name
 +
 Default: ``
 +
+properties::
+  Just like the `includes` option, it allows white listing application properties that will be added to the metrics payload
++
+Default: null.
++
+
+The metrics emitter uses the Spring Boot Metrics Exporter mechanism to configure t
+
 includes::
   An array of strings containing regex patterns of metrics that should be included.
 +
@@ -1951,11 +1954,7 @@ excludes::
   An array of strings containing regex patterns of metrics that should be excluded.
 +
 Default: ``
-+
-properties::
-  Just like the `includes` option, it allows white listing application properties that will be added to the metrics payload
-+
-Default: null.
+
 
 [NOTE]
 ====

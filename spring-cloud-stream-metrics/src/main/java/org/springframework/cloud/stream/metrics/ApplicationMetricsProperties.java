@@ -24,6 +24,7 @@ import org.springframework.boot.actuate.metrics.export.MetricExportProperties;
 import org.springframework.boot.actuate.metrics.export.TriggerProperties;
 import org.springframework.boot.bind.RelaxedNames;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.metrics.config.BinderMetricsAutoConfiguration;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -49,9 +50,9 @@ public class ApplicationMetricsProperties
 	private String[] properties;
 
 	private MetricExportProperties export;
-	
+
 	public TriggerProperties getTrigger() {
-		return export.findTrigger("application");
+		return export.findTrigger(BinderMetricsAutoConfiguration.APPLICATION_METRICS_EXPORTER_TRIGGER_NAME);
 	}
 
 	public ApplicationMetricsProperties(MetricExportProperties export) {

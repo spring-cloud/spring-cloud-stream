@@ -84,7 +84,6 @@ public class ApplicationMetricsExporterTests {
 				.readValue((String) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetricsChannel.getMetrics()));
-		Assert.assertFalse(contains("mem", applicationMetricsChannel.getMetrics()));
 		Assert.assertEquals("application", applicationMetricsChannel.getName());
 		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetricsChannel.getProperties()));
 		applicationContext.close();
@@ -137,7 +136,7 @@ public class ApplicationMetricsExporterTests {
 	}
 
 	@Test
-	public void includesExcludes() throws Exception {
+	public void includesExcludesDefaultConfig() throws Exception {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false", "--spring.metrics.export.delay-millis=500",
@@ -152,6 +151,29 @@ public class ApplicationMetricsExporterTests {
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetricsChannel = mapper
 				.readValue((String) message.getPayload(), ApplicationMetrics.class);
+		Assert.assertFalse(contains("integration.channel.errorChannel.errorRate.mean",
+				applicationMetricsChannel.getMetrics()));
+		Assert.assertTrue(contains("mem", applicationMetricsChannel.getMetrics()));
+		Assert.assertTrue(CollectionUtils.isEmpty(applicationMetricsChannel.getProperties()));
+		applicationContext.close();
+	}
+
+	@Test
+	public void includesExcludesWithApplicationMetricsConfiguration() throws Exception {
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(
+				BinderExporterApplication.class, "--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.metrics.export.triggers.application.delay-millis=500",
+				"--spring.cloud.stream.bindings.applicationMetricsChannel.destination=foo",
+				"--spring.metrics.export.triggers.application.includes=mem**",
+				"--spring.metrics.export.triggers.application.excludes=integration**");
+		Emitter emitterSource = applicationContext.getBean(Emitter.class);
+		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
+				TimeUnit.MILLISECONDS);
+		Assert.assertNotNull(message);
+		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
+		ApplicationMetrics applicationMetricsChannel = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertFalse(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetricsChannel.getMetrics()));
 		Assert.assertTrue(contains("mem", applicationMetricsChannel.getMetrics()));
