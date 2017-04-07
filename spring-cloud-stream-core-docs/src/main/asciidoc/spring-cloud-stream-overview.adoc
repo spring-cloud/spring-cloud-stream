@@ -1914,44 +1914,55 @@ Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name of `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
 
 == Metrics Emitter
+
 Spring Cloud Stream provides a module called `spring-cloud-stream-metrics` that can be used to emit any available metric from https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html[Spring Boot metrics endpoint] to a named channel.
 This module allow operators to collect metrics from stream applications without relying on polling their endpoints.
 
 HTTP polling can be challenging on cloud environments since applications could be on a private network or behind a Load balancer that prevents per instance access.
 
-The module is activated when you set the destination name for its channel, `spring.cloud.stream.bindings.applicationMetricsChannel.destination=<DESTINATION_NAME>`.
-`applicationMetricsChannel` can be configured in a similar fashion to any other bound output channel.
-The default `contentType` setting of `applicationMetricsChannel` is `application/json`.
+The module is activated when you set the destination name for metrics binding, e.g. `spring.cloud.stream.bindings.applicationMetrics.destination=<DESTINATION_NAME>`.
+`applicationMetrics` can be configured in a similar fashion to any other producer binding.
+The default `contentType` setting of `applicationMetrics` is `application/json`.
 
-By default the module is configured to only send Spring Integration message channel metrics.
+The following properties can be used for customizing the emission of metrics:
 
-Available properties for customization using the prefix `spring.cloud.stream.metrics`.
-
-key::
+spring.cloud.stream.metrics.key::
   The name of the metric being emitted. Should be an unique value per application.
 +
 Default:: `${spring.application.name:${vcap.application.name:${spring.config.name:application}}}`
 +
-prefix::
+spring.cloud.stream.metrics.prefix::
   Prefix string to be prepended to the metrics name
 +
 Default: ``
 +
-properties::
+spring.cloud.stream.metrics.properties::
   Just like the `includes` option, it allows white listing application properties that will be added to the metrics payload
 +
 Default: null.
 +
 
-The metrics emitter uses the Spring Boot Metrics Exporter mechanism to configure t
+Spring Cloud Stream provides a metric exporter named `application` that can be configured via regular Spring Boot metrics configuration properties.
+A detailed overview can be found in the https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html#production-ready-metric-writers[Spring Boot reference documentation].
 
-includes::
-  An array of strings containing regex patterns of metrics that should be included.
+Summarizing, the exporter can be configured either by using the global Spring Boot configuration settings for exporters, or by using exporter-specific properties.
+A subset of the available properties is listed below.
+For using the global configuration settings, the properties should be prefixed by `spring.metric.export` (e.g. `spring.metric.export.includes=integration**`).
+These configuration options will apply to all exporters (unless they have been configured differently).
+Alternatively, if it is intended to use configuration settings that are different from the other exporters (e.g. for restricting the number of metrics published), the Spring Cloud Stream provided metrics exporter can be configured using the prefix `spring.metrics.export.triggers.application` (e.g. `spring.metrics.export.triggers.application.includes=application**`).
+
+delay-millis::
+   Delay in milliseconds between export ticks.
 +
-Default: `integration**`
+Default: `5000`
++
+includes::
+   List of patterns for metric names to include.
++
+Default: `` (all metrics are exported)
 +
 excludes::
-  An array of strings containing regex patterns of metrics that should be excluded.
+   List of patterns for metric names to exclude. Applied after the includes.
 +
 Default: ``
 
