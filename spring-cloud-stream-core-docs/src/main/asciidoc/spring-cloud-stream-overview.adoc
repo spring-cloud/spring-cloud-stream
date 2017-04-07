@@ -1938,15 +1938,15 @@ spring.cloud.stream.metrics.properties::
   Just like the `includes` option, it allows white listing application properties that will be added to the metrics payload
 +
 Default: null.
-+
+
 
 A detailed overview of the metrics export process can be found in the https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html#production-ready-metric-writers[Spring Boot reference documentation].
 Spring Cloud Stream provides a metric exporter named `application` that can be configured via regular https://github.com/spring-projects/spring-boot/blob/1.5.x/spring-boot-actuator/src/main/java/org/springframework/boot/actuate/metrics/export/TriggerProperties.java[Spring Boot metrics configuration properties].
 
 The exporter can be configured either by using the global Spring Boot configuration settings for exporters, or by using exporter-specific properties.
-For using the global configuration settings, the properties should be prefixed by `spring.metric.export` (e.g. `spring.metric.export.includes=integration**`).
+For using the global configuration settings, the properties should be prefixed by `spring.metric.export` (e.g. `spring.metric.export.includes=integration+++**+++`).
 These configuration options will apply to all exporters (unless they have been configured differently).
-Alternatively, if it is intended to use configuration settings that are different from the other exporters (e.g. for restricting the number of metrics published), the Spring Cloud Stream provided metrics exporter can be configured using the prefix `spring.metrics.export.triggers.application` (e.g. `spring.metrics.export.triggers.application.includes=integration**`).
+Alternatively, if it is intended to use configuration settings that are different from the other exporters (e.g. for restricting the number of metrics published), the Spring Cloud Stream provided metrics exporter can be configured using the prefix `spring.metrics.export.triggers.application` (e.g. `spring.metrics.export.triggers.application.includes=integration+++**+++`).
 
 [NOTE]
 ====
