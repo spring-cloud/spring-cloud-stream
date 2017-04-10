@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanExpressionContext;
+import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.boot.actuate.metrics.export.MetricExportProperties;
 import org.springframework.boot.actuate.metrics.export.TriggerProperties;
 import org.springframework.boot.bind.RelaxedNames;
@@ -28,8 +30,10 @@ import org.springframework.cloud.stream.metrics.config.BinderMetricsAutoConfigur
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.PropertySource;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
 
@@ -49,14 +53,15 @@ public class ApplicationMetricsProperties
 
 	private String[] properties;
 
-	private MetricExportProperties export;
+	private final MetricExportProperties metricExportProperties;
 
 	public TriggerProperties getTrigger() {
-		return export.findTrigger(BinderMetricsAutoConfiguration.APPLICATION_METRICS_EXPORTER_TRIGGER_NAME);
+		return metricExportProperties.findTrigger(BinderMetricsAutoConfiguration.APPLICATION_METRICS_EXPORTER_TRIGGER_NAME);
 	}
 
-	public ApplicationMetricsProperties(MetricExportProperties export) {
-		this.export = export;
+	public ApplicationMetricsProperties(MetricExportProperties metricExportProperties) {
+		Assert.notNull(metricExportProperties, "'metricsExportProperties' cannot be null");
+		this.metricExportProperties = metricExportProperties;
 	}
 
 	public String getPrefix() {
@@ -114,20 +119,31 @@ public class ApplicationMetricsProperties
 	 */
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) event
-				.getSource();
+		ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) event.getSource();
+		ConfigurableEnvironment environment = ctx.getEnvironment();
+		BeanExpressionResolver beanExpressionResolver = ctx.getBeanFactory().getBeanExpressionResolver();
+		BeanExpressionContext expressionContext = new BeanExpressionContext(ctx.getBeanFactory(), null);
 		if (!ObjectUtils.isEmpty(this.properties)) {
-			for (PropertySource<?> source : ctx.getEnvironment().getPropertySources()) {
+			for (PropertySource<?> source : environment.getPropertySources()) {
 				if (source instanceof EnumerablePropertySource) {
 					EnumerablePropertySource<?> e = (EnumerablePropertySource<?>) source;
 					for (String propertyName : e.getPropertyNames()) {
 						RelaxedNames relaxedNames = new RelaxedNames(propertyName);
 						relaxedLoop: for (String relaxedPropertyName : relaxedNames) {
 							if (isMatch(relaxedPropertyName, this.properties, null)) {
+								Object value = source.getProperty(propertyName);
+								String stringValue =  ObjectUtils.nullSafeToString(value);
+								Object exportedValue = null;
+								if (value != null) {
+									exportedValue = stringValue.startsWith("#{")
+											? beanExpressionResolver.evaluate(
+													environment.resolvePlaceholders(stringValue), expressionContext)
+											: environment.resolvePlaceholders(stringValue);
+								}
 								this.exportProperties.put(
 										RelaxedPropertiesUtils
 												.findCanonicalFormat(relaxedNames),
-										source.getProperty(propertyName));
+										exportedValue);
 								break relaxedLoop;
 							}
 						}

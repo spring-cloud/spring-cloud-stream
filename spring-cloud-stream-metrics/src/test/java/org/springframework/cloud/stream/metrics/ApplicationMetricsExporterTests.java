@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.assertj.core.api.Assertions;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -201,6 +201,44 @@ public class ApplicationMetricsExporterTests {
 		Assert.assertFalse(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
 		Assert.assertTrue(applicationMetrics.getProperties().get("spring.test.env.syntax")
 				.equals("testing"));
+		applicationContext.close();
+	}
+
+	@Test
+	public void propertiesWithPlaceholdersAndExpressions() throws Exception {
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(
+				BinderExporterApplication.class,
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--PLATFORM_APP_NAME=123-name-foo",
+				"--PLATFORM_APP_ID=123-id-bar",
+				"--spring.cloud.application.guid=${PLATFORM_APP_NAME}.${PLATFORM_APP_ID}",
+				"--spring.cloud.application.guid.expression=#{'${PLATFORM_APP_NAME}' + '..' + '${PLATFORM_APP_ID}'}",
+				"--spring.cloud.application.guid.default.prop=${app.name.not.found:time-source}",
+				"--spring.cloud.application.guid.default.env=${APP_NAME_NOT_FOUND:time-source}",
+				"--spring.metrics.export.delay-millis=500",
+				"--spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS + ".destination=foo",
+				"--spring.metrics.export.includes=integration**",
+				"--spring.cloud.stream.metrics.properties=spring**");
+		Emitter emitterSource = applicationContext.getBean(Emitter.class);
+		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
+				TimeUnit.MILLISECONDS);
+		Assert.assertNotNull(message);
+		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
+		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
+		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
+				applicationMetrics.getMetrics()));
+		Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid"))
+				.isEqualTo("123-name-foo.123-id-bar");
+		Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid.expression"))
+				.isEqualTo("123-name-foo..123-id-bar");
+		Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid.default.prop"))
+				.isEqualTo("time-source");
+		Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid.default.env"))
+				.isEqualTo("time-source");
+		Assert.assertFalse(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
+		Assert.assertTrue(applicationMetrics.getProperties().get("spring.test.env.syntax").equals("testing"));
 		applicationContext.close();
 	}
 
