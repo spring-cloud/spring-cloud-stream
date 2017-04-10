@@ -214,6 +214,8 @@ public class ApplicationMetricsExporterTests {
 				"--PLATFORM_APP_ID=123-id-bar",
 				"--spring.cloud.application.guid=${PLATFORM_APP_NAME}.${PLATFORM_APP_ID}",
 				"--spring.cloud.application.guid.expression=#{'${PLATFORM_APP_NAME}' + '..' + '${PLATFORM_APP_ID}'}",
+				"--spring.cloud.application.guid.default.prop=${app.name.not.found:time-source}",
+				"--spring.cloud.application.guid.default.env=${APP_NAME_NOT_FOUND:time-source}",
 				"--spring.metrics.export.delay-millis=500",
 				"--spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS + ".destination=foo",
 				"--spring.metrics.export.includes=integration**",
@@ -231,6 +233,10 @@ public class ApplicationMetricsExporterTests {
 				.isEqualTo("123-name-foo.123-id-bar");
 		Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid.expression"))
 				.isEqualTo("123-name-foo..123-id-bar");
+		Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid.default.prop"))
+				.isEqualTo("time-source");
+		Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid.default.env"))
+				.isEqualTo("time-source");
 		Assert.assertFalse(CollectionUtils.isEmpty(applicationMetrics.getProperties()));
 		Assert.assertTrue(applicationMetrics.getProperties().get("spring.test.env.syntax").equals("testing"));
 		applicationContext.close();
