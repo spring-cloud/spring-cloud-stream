@@ -129,22 +129,26 @@ public class ApplicationMetricsProperties
 					EnumerablePropertySource<?> e = (EnumerablePropertySource<?>) source;
 					for (String propertyName : e.getPropertyNames()) {
 						RelaxedNames relaxedNames = new RelaxedNames(propertyName);
-						relaxedLoop: for (String relaxedPropertyName : relaxedNames) {
-							if (isMatch(relaxedPropertyName, this.properties, null)) {
-								Object value = source.getProperty(propertyName);
-								String stringValue =  ObjectUtils.nullSafeToString(value);
-								Object exportedValue = null;
-								if (value != null) {
-									exportedValue = stringValue.startsWith("#{")
-											? beanExpressionResolver.evaluate(
-													environment.resolvePlaceholders(stringValue), expressionContext)
-											: environment.resolvePlaceholders(stringValue);
+						String canonicalFormat = RelaxedPropertiesUtils.findCanonicalFormat(relaxedNames);
+						// omit this property if already populated from a
+						// higher priority source
+						if (!this.exportProperties.containsKey(canonicalFormat)) {
+							relaxedLoop: for (String relaxedPropertyName : relaxedNames) {
+								if (isMatch(relaxedPropertyName, this.properties, null)) {
+									Object value = source.getProperty(propertyName);
+									String stringValue =  ObjectUtils.nullSafeToString(value);
+									Object exportedValue = null;
+									if (value != null) {
+										exportedValue = stringValue.startsWith("#{")
+												? beanExpressionResolver.evaluate(
+														environment.resolvePlaceholders(stringValue), expressionContext)
+												: environment.resolvePlaceholders(stringValue);
+									}
+									this.exportProperties.put(
+											canonicalFormat,
+											exportedValue);
+									break relaxedLoop;
 								}
-								this.exportProperties.put(
-										RelaxedPropertiesUtils
-												.findCanonicalFormat(relaxedNames),
-										exportedValue);
-								break relaxedLoop;
 							}
 						}
 					}

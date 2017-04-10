@@ -243,6 +243,36 @@ public class ApplicationMetricsExporterTests {
 	}
 
 	@Test
+	public void propertiesFromLowerPrioritySourcesOverridden() throws Exception {
+		System.setProperty("spring.cloud.application.guid.test.metrics", "lowPriority");
+		try {
+			ConfigurableApplicationContext applicationContext = SpringApplication.run(
+					BinderExporterApplication.class,
+					"--server.port=0",
+					"--spring.jmx.enabled=false",
+					"--spring.cloud.application.guid.test.metrics=highPriority",
+					"--spring.metrics.export.delay-millis=500",
+					"--spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS + ".destination=foo",
+					"--spring.metrics.export.includes=integration**",
+					"--spring.cloud.stream.metrics.properties=spring**");
+			Emitter emitterSource = applicationContext.getBean(Emitter.class);
+			MessageCollector collector = applicationContext.getBean(MessageCollector.class);
+			Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
+					TimeUnit.MILLISECONDS);
+			Assert.assertNotNull(message);
+			ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
+			ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
+			Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
+					applicationMetrics.getMetrics()));
+			Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid.test.metrics"))
+					.isEqualTo("highPriority");
+			applicationContext.close();
+		} finally {
+			System.clearProperty("spring.cloud.application.guid.test.metrics");
+		}
+	}
+
+	@Test
 	public void overrideAppName() throws Exception {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				BinderExporterApplication.class, "--server.port=0",
