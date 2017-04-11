@@ -1958,22 +1958,74 @@ The goal of normalization is to make downstream consumers of those metrics capab
 
 ====
 
-Below is a sample of data that is pushed to the channel in `application/json` format.
+Below is a sample of data published to the channel in `application/json` format.
 
 [source,javascript]
 ----
 {
-  "name" : "application",
-  "instanceIndex" : 0,
-  "createdTime" : "2017-03-14T13:55:38.547Z",
-  "properties" : {
-    "java.specification.version" : "1.8"
-  }
-  "metrics" : [ {
-    "name" : "mem",
-    "value" : 170757.0,
-    "timestamp" : "2017-03-14T09:55:38.547Z"
-  } ]
+   "name":"time-source",
+   "metrics":[
+      {
+         "name":"integration.channel.output.errorRate.mean",
+         "value":0.0,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.errorRate.max",
+         "value":0.0,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.errorRate.min",
+         "value":0.0,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.errorRate.stdev",
+         "value":0.0,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.errorRate.count",
+         "value":0.0,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.sendCount",
+         "value":6.0,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.sendRate.mean",
+         "value":0.994885872292989,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.sendRate.max",
+         "value":1.006247080013156,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.sendRate.min",
+         "value":1.0012035220116378,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.sendRate.stdev",
+         "value":6.505181111084848E-4,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      },
+      {
+         "name":"integration.channel.output.sendRate.count",
+         "value":6.0,
+         "timestamp":"2017-04-11T16:56:35.790Z"
+      }
+   ],
+   "createdTime":"2017-04-11T20:56:35.790Z",
+   "properties":{
+      "spring.application.name":"time-source",
+      "spring.cloud.stream.metrics.properties":"spring.cloud.stream.metrics**"
+   }
 }
 ----
 
