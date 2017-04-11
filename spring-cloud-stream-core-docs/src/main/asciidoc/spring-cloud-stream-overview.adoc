@@ -1961,7 +1961,7 @@ The goal of normalization is to make downstream consumers of those metrics capab
 Below is a sample of the data published to the channel in JSON format by the following command:
 
 ```
-java -jar time-source.jar
+java -jar time-source.jar \
     --spring.cloud.stream.bindings.applicationMetrics.destination=someMetrics \
     --spring.cloud.stream.metrics.properties=spring.application** \
     --spring.metrics.export.includes=integration.channel.input**,integration.channel.output**
