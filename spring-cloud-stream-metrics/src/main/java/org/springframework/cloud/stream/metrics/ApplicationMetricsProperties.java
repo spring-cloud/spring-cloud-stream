@@ -119,6 +119,7 @@ public class ApplicationMetricsProperties
 	 */
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
+		this.exportProperties.clear();
 		ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) event.getSource();
 		ConfigurableEnvironment environment = ctx.getEnvironment();
 		BeanExpressionResolver beanExpressionResolver = ctx.getBeanFactory().getBeanExpressionResolver();
