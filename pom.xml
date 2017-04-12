@@ -5,11 +5,11 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
-	<version>Chelsea.SR1</version>
+	<version>Chelsea.BUILD-SNAPSHOT</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>1.3.1.RELEASE</version>
+		<version>1.3.2.BUILD-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 
