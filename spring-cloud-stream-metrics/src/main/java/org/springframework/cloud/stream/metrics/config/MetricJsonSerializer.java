@@ -40,7 +40,12 @@ import org.springframework.boot.jackson.JsonComponent;
 @JsonComponent
 public class MetricJsonSerializer {
 
-	final static DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	final static ThreadLocal<DateFormat> df = new ThreadLocal<DateFormat>(){
+			@Override
+			protected DateFormat initialValue() {
+					return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+			}
+	};
 
 	public static class Serializer extends JsonSerializer<Metric<?>> {
 
@@ -50,7 +55,7 @@ public class MetricJsonSerializer {
 			json.writeStartObject();
 			json.writeStringField("name", metric.getName());
 			json.writeNumberField("value", metric.getValue().doubleValue());
-			json.writeStringField("timestamp", df.format(metric.getTimestamp()));
+			json.writeStringField("timestamp", df.get().format(metric.getTimestamp()));
 			json.writeEndObject();
 		}
 	}
@@ -66,7 +71,7 @@ public class MetricJsonSerializer {
 			Date timestamp = null;
 
 			try {
-				timestamp = df.parse(node.get("timestamp").asText());
+				timestamp = df.get().parse(node.get("timestamp").asText());
 			}
 			catch (ParseException e) {
 			}
