@@ -1,0 +1,12 @@
+---
+spring:
+  cloud:
+    config:
+#      discovery:
+#         enabled: false
+      uri: http://localhost:8888
+      enabled: true
+#eureka:
+#  client:
+#    serviceUrl:
+#      defaultZone: http://localhost:9395/eureka/
