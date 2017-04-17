@@ -17,7 +17,7 @@
         <main.basedir>${basedir}/../..</main.basedir>
         <kafka.version>0.10.1.1</kafka.version>
         <spring-kafka.version>1.1.2.RELEASE</spring-kafka.version>
-        <spring-integration-kafka.version>2.1.0.RELEASE</spring-integration-kafka.version>
+        <spring-integration-kafka.version>2.1.1.RELEASE</spring-integration-kafka.version>
     </properties>
 
     <dependencies>

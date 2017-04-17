@@ -52,20 +52,22 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
+import org.springframework.integration.kafka.support.RawRecordHeaderErrorMessageStrategy;
+import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.ErrorHandler;
 import org.springframework.kafka.listener.config.ContainerProperties;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.messaging.MessagingException;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -87,16 +89,17 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  * @author Doug Saus
  */
 public class KafkaMessageChannelBinder extends
-		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
+		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>,
+			ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
+	private final Map<String, TopicInformation> topicsInUse = new HashMap<>();
+
 	private ProducerListener<byte[], byte[]> producerListener;
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
-
-	private final Map<String, TopicInformation> topicsInUse = new HashMap<>();
 
 	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
@@ -254,20 +257,26 @@ public class KafkaMessageChannelBinder extends
 						? new ContainerProperties(destination.getName())
 						: new ContainerProperties(topicPartitionInitialOffsets);
 		int concurrency = Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
-		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer = new ConcurrentMessageListenerContainer(
-				consumerFactory, containerProperties) {
+		@SuppressWarnings("rawtypes")
+		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
+				new ConcurrentMessageListenerContainer(
+						consumerFactory, containerProperties) {
 
 			@Override
 			public void stop(Runnable callback) {
 				super.stop(callback);
 			}
+
 		};
 		messageListenerContainer.setConcurrency(concurrency);
-		messageListenerContainer.getContainerProperties()
-				.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
 		if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
 			messageListenerContainer.getContainerProperties()
 					.setAckMode(AbstractMessageListenerContainer.AckMode.MANUAL);
+			messageListenerContainer.getContainerProperties().setAckOnError(false);
+		}
+		else {
+			messageListenerContainer.getContainerProperties()
+					.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
 		}
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug(
@@ -280,37 +289,57 @@ public class KafkaMessageChannelBinder extends
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter<>(
 				messageListenerContainer);
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
-		final RetryTemplate retryTemplate = buildRetryTemplate(extendedConsumerProperties);
-		kafkaMessageDrivenChannelAdapter.setRetryTemplate(retryTemplate);
+		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination, consumerGroup,
+				extendedConsumerProperties);
+		if (extendedConsumerProperties.getMaxAttempts() > 1) {
+			kafkaMessageDrivenChannelAdapter.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
+			kafkaMessageDrivenChannelAdapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
+		}
+		else {
+			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
+		}
+		return kafkaMessageDrivenChannelAdapter;
+	}
+
+	@Override
+	protected ErrorMessageStrategy getErrorMessageStrategy() {
+		return new RawRecordHeaderErrorMessageStrategy();
+	}
+
+	@Override
+	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
 			DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = getProducerFactory(
 					new ExtendedProducerProperties<>(new KafkaProducerProperties()));
 			final KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
-			messageListenerContainer.getContainerProperties().setErrorHandler(new ErrorHandler() {
+			return new MessageHandler() {
 
 				@Override
-				public void handle(Exception thrownException, final ConsumerRecord message) {
-					final byte[] key = message.key() != null ? Utils.toArray(ByteBuffer.wrap((byte[]) message.key()))
+				public void handleMessage(Message<?> message) throws MessagingException {
+					final ConsumerRecord<?, ?> record = message.getHeaders()
+							.get(KafkaMessageDrivenChannelAdapter.KAFKA_RAW_DATA, ConsumerRecord.class);
+					final byte[] key = record.key() != null ? Utils.toArray(ByteBuffer.wrap((byte[]) record.key()))
 							: null;
-					final byte[] payload = message.value() != null
-							? Utils.toArray(ByteBuffer.wrap((byte[]) message.value())) : null;
+					final byte[] payload = record.value() != null
+							? Utils.toArray(ByteBuffer.wrap((byte[]) record.value())) : null;
 					String dlqName = StringUtils.hasText(extendedConsumerProperties.getExtension().getDlqName())
 							? extendedConsumerProperties.getExtension().getDlqName()
 							: "error." + destination.getName() + "." + group;
 					ListenableFuture<SendResult<byte[], byte[]>> sentDlq = kafkaTemplate.send(dlqName,
-							message.partition(), key, payload);
+							record.partition(), key, payload);
 					sentDlq.addCallback(new ListenableFutureCallback<SendResult<byte[], byte[]>>() {
 						StringBuilder sb = new StringBuilder().append(" a message with key='")
 								.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50)).append("'")
 								.append(" and payload='")
 								.append(toDisplayString(ObjectUtils.nullSafeToString(payload), 50))
 								.append("'").append(" received from ")
-								.append(message.partition());
+								.append(record.partition());
 
 						@Override
 						public void onFailure(Throwable ex) {
 							KafkaMessageChannelBinder.this.logger.error(
-									"Error sending to DLQ" + sb.toString(), ex);
+									"Error sending to DLQ " + sb.toString(), ex);
 						}
 
 						@Override
@@ -320,11 +349,12 @@ public class KafkaMessageChannelBinder extends
 										"Sent to DLQ " + sb.toString());
 							}
 						}
+
 					});
 				}
-			});
+			};
 		}
-		return kafkaMessageDrivenChannelAdapter;
+		return null;
 	}
 
 	private ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous, String consumerGroup,

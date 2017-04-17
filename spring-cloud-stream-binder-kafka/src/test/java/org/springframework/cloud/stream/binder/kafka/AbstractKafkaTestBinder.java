@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,25 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.List;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
-
 import org.springframework.cloud.stream.binder.AbstractTestBinder;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Registration;
 
 /**
  * @author Soby Chacko
+ * @author Gary Russell
  */
 public abstract class AbstractKafkaTestBinder extends
 		AbstractTestBinder<KafkaMessageChannelBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
@@ -39,6 +43,12 @@ public abstract class AbstractKafkaTestBinder extends
 	@Override
 	public void cleanup() {
 		// do nothing - the rule will take care of that
+	}
+
+	protected void addErrorChannel(GenericApplicationContext context) {
+		PublishSubscribeChannel errorChannel = new PublishSubscribeChannel();
+		context.getBeanFactory().initializeBean(errorChannel, IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME);
+		context.getBeanFactory().registerSingleton(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, errorChannel);
 	}
 
 	protected static Codec getCodec() {

@@ -24,9 +24,9 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -41,7 +41,6 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
@@ -54,6 +53,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerPro
 import org.springframework.cloud.stream.binder.kafka.utils.KafkaTopicUtils;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
@@ -79,6 +79,9 @@ import org.springframework.retry.support.RetryTemplate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.Assert.assertTrue;
+
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 
 /**
  * @author Soby Chacko
@@ -126,9 +129,18 @@ public abstract class KafkaBinderTests extends
 			ZkUtils zkUtils);
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void testDlqAndRetry() throws Exception {
-		Binder binder = getBinder();
+		testDlqGuts(true);
+	}
+
+	@Test
+	public void testDlq() throws Exception {
+		testDlqGuts(false);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public void testDlqGuts(boolean withRetry) throws Exception {
+		AbstractKafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		DirectChannel moduleInputChannel = new DirectChannel();
 		QueueChannel dlqChannel = new QueueChannel();
@@ -137,23 +149,52 @@ public abstract class KafkaBinderTests extends
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionCount(2);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		consumerProperties.setMaxAttempts(3);
+		consumerProperties.setMaxAttempts(withRetry ? 2 : 1);
 		consumerProperties.setBackOffInitialInterval(100);
 		consumerProperties.setBackOffMaxInterval(150);
 		consumerProperties.getExtension().setEnableDlq(true);
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 		long uniqueBindingId = System.currentTimeMillis();
 
-		Binding<MessageChannel> producerBinding = binder.bindProducer("retryTest." + uniqueBindingId + ".0",
+		String producerName = "dlqTest." + uniqueBindingId + ".0";
+		Binding<MessageChannel> producerBinding = binder.bindProducer(producerName,
 				moduleOutputChannel, producerProperties);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0",
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(producerName,
 				"testGroup", moduleInputChannel, consumerProperties);
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
 		dlqConsumerProperties.setMaxAttempts(1);
 
+		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(), "applicationContext",
+				ApplicationContext.class);
+		Map<String, MessageChannel> beansOfType = context.getBeansOfType(MessageChannel.class);
+		SubscribableChannel boundErrorChannel = context
+				.getBean(producerName + ".testGroup.errors-0", SubscribableChannel.class);
+		SubscribableChannel globalErrorChannel = context.getBean("errorChannel", SubscribableChannel.class);
+		final AtomicReference<Message<?>> boundErrorChannelMessage = new AtomicReference<>();
+		final AtomicReference<Message<?>> globalErrorChannelMessage = new AtomicReference<>();
+		final AtomicBoolean hasRecovererInCallStack = new AtomicBoolean(!withRetry);
+		boundErrorChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				boundErrorChannelMessage.set(message);
+				String stackTrace = Arrays.toString(new RuntimeException().getStackTrace());
+				hasRecovererInCallStack.set(stackTrace.contains("ErrorMessageSendingRecoverer"));
+			}
+
+		});
+		globalErrorChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				globalErrorChannelMessage.set(message);
+			}
+
+		});
+
 		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
-				"error.retryTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel, dlqConsumerProperties);
+				"error.dlqTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel, dlqConsumerProperties);
 		binderBindUnbindLatency();
 		String testMessagePayload = "test." + UUID.randomUUID().toString();
 		Message<String> testMessage = MessageBuilder.withPayload(testMessagePayload).build();
@@ -164,6 +205,12 @@ public abstract class KafkaBinderTests extends
 		assertThat(receivedMessage.getPayload()).isEqualTo(testMessagePayload);
 		assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
 		binderBindUnbindLatency();
+
+		// verify we got a message on the dedicated error channel and the global (via bridge)
+		assertThat(boundErrorChannelMessage.get()).isNotNull();
+		assertThat(globalErrorChannelMessage.get()).isNotNull();
+		assertThat(hasRecovererInCallStack.get()).isEqualTo(withRetry);
+
 		dlqConsumerBinding.unbind();
 		consumerBinding.unbind();
 		producerBinding.unbind();
@@ -1325,14 +1372,13 @@ public abstract class KafkaBinderTests extends
 	}
 
 	private KafkaConsumer getKafkaConsumer(Binding binding) {
-		DirectFieldAccessor bindingAccessor = new DirectFieldAccessor((DefaultBinding) binding);
+		DirectFieldAccessor bindingAccessor = new DirectFieldAccessor(binding);
 		KafkaMessageDrivenChannelAdapter adapter = (KafkaMessageDrivenChannelAdapter) bindingAccessor
 				.getPropertyValue("lifecycle");
 		DirectFieldAccessor adapterAccessor = new DirectFieldAccessor(adapter);
-		ConcurrentMessageListenerContainer messageListenerContainer = (ConcurrentMessageListenerContainer) adapterAccessor
-				.getPropertyValue("messageListenerContainer");
-		DirectFieldAccessor containerAccessor = new DirectFieldAccessor(
-				(ConcurrentMessageListenerContainer) messageListenerContainer);
+		ConcurrentMessageListenerContainer messageListenerContainer =
+				(ConcurrentMessageListenerContainer) adapterAccessor.getPropertyValue("messageListenerContainer");
+		DirectFieldAccessor containerAccessor = new DirectFieldAccessor(messageListenerContainer);
 		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) containerAccessor
 				.getPropertyValue("consumerFactory");
 		return (KafkaConsumer) consumerFactory.createConsumer();
@@ -1707,7 +1753,7 @@ public abstract class KafkaBinderTests extends
 				receivedMessages.put(offset, message);
 				latch.countDown();
 			}
-			throw new RuntimeException();
+			throw new RuntimeException("fail");
 		}
 
 		public LinkedHashMap<Long, Message<?>> getReceivedMessages() {
