@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package org.springframework.cloud.stream.binder;
 
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -26,14 +31,21 @@ import org.springframework.context.Lifecycle;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.channel.FixedSubscriberChannel;
+import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.context.Orderable;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
+import org.springframework.integration.handler.BridgeHandler;
+import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
+import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
@@ -241,7 +253,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 								.error("Exception thrown while unbinding " + this.toString(), e);
 					}
 					AbstractMessageChannelBinder.this.afterUnbindConsumer(destination, this.group, properties);
+					destroyErrorInfrastructure(destination, group, properties);
 				}
+
 			};
 		}
 		catch (Exception e) {
@@ -281,6 +295,180 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @param consumerProperties the consumer properties
 	 */
 	protected void afterUnbindConsumer(ConsumerDestination destination, String group, C consumerProperties) {
+	}
+
+	/**
+	 * Build an errorChannelRecoverer that writes to a pub/sub channel for the destination.
+	 * @param destination the destination.
+	 * @param consumerProperties the properties.
+	 * @param errorMessageStrategy
+	 * @return the recoverer.
+	 */
+	protected final ErrorInfrastructure registerErrorInfrastructure(ConsumerDestination destination, String group,
+			ConsumerProperties consumerProperties) {
+		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
+		ConfigurableListableBeanFactory beanFactory = getApplicationContext().getBeanFactory();
+		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
+		SubscribableChannel errorChannel;
+		if (getApplicationContext().containsBean(errorChannelName)) {
+			errorChannel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
+		}
+		else {
+			errorChannel = new ErrorChannel();
+			beanFactory.registerSingleton(errorChannelName, errorChannel);
+			errorChannel = (SubscribableChannel) beanFactory.initializeBean(errorChannel, errorChannelName);
+		}
+		ErrorMessageSendingRecoverer recoverer;
+		if (errorMessageStrategy == null) {
+			recoverer = new ErrorMessageSendingRecoverer(errorChannel);
+		}
+		else {
+			recoverer = new ErrorMessageSendingRecoverer(errorChannel, errorMessageStrategy);
+		}
+		String recovererBeanName = getErrorRecovererName(destination, group, consumerProperties);
+		beanFactory.registerSingleton(recovererBeanName, recoverer);
+		beanFactory.initializeBean(recoverer, recovererBeanName);
+		MessageHandler handler = getErrorMessageHandler(destination, group, consumerProperties);
+		MessageChannel defaultErrorChannel = null;
+		if (getApplicationContext().containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)) {
+			defaultErrorChannel = getApplicationContext().getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
+					MessageChannel.class);
+		}
+		if (handler == null) {
+			handler = getDefaultErrorMessageHandler(errorChannel, defaultErrorChannel != null);
+		}
+		String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, consumerProperties);
+		beanFactory.registerSingleton(errorMessageHandlerName, handler);
+		beanFactory.initializeBean(handler, errorMessageHandlerName);
+		errorChannel.subscribe(handler);
+		if (defaultErrorChannel != null) {
+			BridgeHandler errorBridge = new BridgeHandler();
+			errorBridge.setOutputChannel(defaultErrorChannel);
+			errorChannel.subscribe(errorBridge);
+			String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
+			beanFactory.registerSingleton(errorBridgeHandlerName, handler);
+			beanFactory.initializeBean(handler, errorBridgeHandlerName);
+		}
+		return new ErrorInfrastructure(errorChannel, recoverer, handler);
+	}
+
+	private void destroyErrorInfrastructure(ConsumerDestination destination, String group, C properties) {
+		// TODO more error checking here
+		String recoverer = getErrorRecovererName(destination, group, properties);
+		if (getApplicationContext().containsBean(recoverer)) {
+			((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory()).destroySingleton(recoverer);
+		}
+		String errorChannelName = errorsBaseName(destination, group, properties);
+		String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, properties);
+		String errorBridgeHandlerName = getErrorBridgeName(destination, group, properties);
+		MessageHandler bridgeHandler = null;
+		if (getApplicationContext().containsBean(errorBridgeHandlerName)) {
+			bridgeHandler = getApplicationContext().getBean(errorBridgeHandlerName, MessageHandler.class);
+		}
+		MessageHandler handler = null;
+		if (getApplicationContext().containsBean(errorMessageHandlerName)) {
+			handler = getApplicationContext().getBean(errorMessageHandlerName, MessageHandler.class);
+		}
+		if (getApplicationContext().containsBean(errorChannelName)) {
+			SubscribableChannel channel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
+			if (bridgeHandler != null) {
+				channel.unsubscribe(bridgeHandler);
+				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
+						.destroySingleton(errorBridgeHandlerName);
+			}
+			if (handler != null) {
+				channel.unsubscribe(handler);
+				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
+						.destroySingleton(errorMessageHandlerName);
+			}
+			((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
+					.destroySingleton(errorChannelName);
+		}
+	}
+
+	/**
+	 * Binders can return a message handler to be subscribed to the error channel.
+	 * Examples might be if the user wishes to (re)publish messages to a DLQ.
+	 * @param destination the destination.
+	 * @param group the group.
+	 * @param consumerProperties the properties.
+	 * @return the handler (may be null, which is the default, causing the exception to be
+	 * rethrown).
+	 */
+	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
+			final ConsumerProperties consumerProperties) {
+		return null;
+	}
+
+	/**
+	 * Return the default error message handler, which throws the error message payload to
+	 * the caller if there are no user handlers subscribed. The handler is ordered so it
+	 * runs after any user-defined handlers that are subscribed.
+	 * @param errorChannel the error channel.
+	 * @param defaultErrorChannelPresent
+	 * @return the handler.
+	 */
+	protected MessageHandler getDefaultErrorMessageHandler(final SubscribableChannel errorChannel,
+			final boolean defaultErrorChannelPresent) {
+		class FinalRethrowingErrorMessageHandler implements MessageHandler, Orderable {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				if (errorChannel instanceof SubscriberAwareChannel) {
+					if (((SubscriberAwareChannel) errorChannel).subscribers() > (defaultErrorChannelPresent ? 2 : 1)) {
+						// user has subscribed; default is 2, this and the bridge to the
+						// errorChannel
+						return;
+					}
+				}
+				if (message.getPayload() instanceof MessagingException) {
+					throw (MessagingException) message.getPayload();
+				}
+				else {
+					throw new MessagingException((Message<?>) null, (Throwable) message.getPayload());
+				}
+			}
+
+			@Override
+			public int getOrder() {
+				return Integer.MAX_VALUE; // run last if the user has subscribers too
+			}
+
+			@Override
+			public void setOrder(int order) {
+			}
+
+		}
+		return new FinalRethrowingErrorMessageHandler();
+	}
+
+	/**
+	 * Binders can return an {@link ErrorMessageStrategy} for building error messages; binder
+	 * implementations typically might add extra headers to the error message.
+	 * @return the implementation - may be null.
+	 */
+	protected ErrorMessageStrategy getErrorMessageStrategy() {
+		return null;
+	}
+
+	protected String getErrorRecovererName(ConsumerDestination destination, String group,
+			ConsumerProperties consumerProperties) {
+		return errorsBaseName(destination, group, consumerProperties) + ".recoverer";
+	}
+
+	protected String getErrorMessageHandlerName(ConsumerDestination destination, String group,
+			ConsumerProperties consumerProperties) {
+		return errorsBaseName(destination, group, consumerProperties) + ".handler";
+	}
+
+	protected String getErrorBridgeName(ConsumerDestination destination, String group,
+			ConsumerProperties consumerProperties) {
+		return errorsBaseName(destination, group, consumerProperties) + ".bridge";
+	}
+
+	protected String errorsBaseName(ConsumerDestination destination, String group,
+			ConsumerProperties consumerProperties) {
+		return destination.getName() + "." + group + "." + consumerProperties.getInstanceIndex() + ".errors";
 	}
 
 	private final class ReceivingHandler extends AbstractReplyProducingMessageHandler {
@@ -393,4 +581,63 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			return this.delegate instanceof Lifecycle && ((Lifecycle) this.delegate).isRunning();
 		}
 	}
+
+	private interface SubscriberAwareChannel {
+
+		int subscribers();
+
+	}
+
+	private static class ErrorChannel extends PublishSubscribeChannel {
+
+		private final AtomicInteger subscribers = new AtomicInteger();
+
+		@Override
+		public boolean subscribe(MessageHandler handler) {
+			this.subscribers.incrementAndGet();
+			return super.subscribe(handler);
+		}
+
+		@Override
+		public boolean unsubscribe(MessageHandler handle) {
+			this.subscribers.decrementAndGet();
+			return super.unsubscribe(handle);
+		}
+
+		@SuppressWarnings("unused")
+		private int subscribers() {
+			return this.subscribers.get();
+		}
+
+	}
+
+	protected static class ErrorInfrastructure {
+
+		private final SubscribableChannel errroChannel;
+
+		private final ErrorMessageSendingRecoverer recoverer;
+
+		private final MessageHandler handler;
+
+		ErrorInfrastructure(SubscribableChannel errroChannel, ErrorMessageSendingRecoverer recoverer,
+				MessageHandler handler) {
+			this.errroChannel = errroChannel;
+			this.recoverer = recoverer;
+			this.handler = handler;
+		}
+
+		public SubscribableChannel getErrroChannel() {
+			return this.errroChannel;
+		}
+
+		public ErrorMessageSendingRecoverer getRecoverer() {
+			return this.recoverer;
+		}
+
+		public MessageHandler getHandler() {
+			return this.handler;
+		}
+
+	}
+
 }
