@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfigura
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.test.context.TestPropertySource;
@@ -54,6 +55,9 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 
 	@Autowired
 	private KafkaMessageChannelBinder kafkaMessageChannelBinder;
+
+	@Autowired
+	private KafkaBinderHealthIndicator kafkaBinderHealthIndicator;
 
 	@Test
 	public void testKafkaBinderConfigurationWithKafkaProperties() throws Exception {
@@ -83,6 +87,24 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 		assertTrue(consumerConfigs.get("key.deserializer").equals(LongDeserializer.class));
 		assertTrue(consumerConfigs.get("value.deserializer").equals(LongDeserializer.class));
 		assertTrue((((List<String>) consumerConfigs.get("bootstrap.servers")).containsAll(bootstrapServers)));
+	}
+
+	@Test
+	public void testKafkaHealthIndicatorProperties() {
+		assertNotNull(this.kafkaBinderHealthIndicator);
+		Field consumerFactoryField = ReflectionUtils.findField(KafkaBinderHealthIndicator.class, "consumerFactory",
+				ConsumerFactory.class);
+		ReflectionUtils.makeAccessible(consumerFactoryField);
+		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) ReflectionUtils.getField(
+				consumerFactoryField, this.kafkaBinderHealthIndicator);
+		Field configField = ReflectionUtils.findField(DefaultKafkaConsumerFactory.class, "configs", Map.class);
+		ReflectionUtils.makeAccessible(configField);
+		Map<String, Object> configs = (Map<String, Object>) ReflectionUtils.getField(configField, consumerFactory);
+		assertTrue(configs.containsKey("bootstrap.servers"));
+		List<String> bootstrapServers = new ArrayList<>();
+		bootstrapServers.add("10.98.09.199:9092");
+		bootstrapServers.add("10.98.09.196:9092");
+		assertTrue(((List<String>)configs.get("bootstrap.servers")).containsAll(bootstrapServers));
 	}
 
 	public static class KafkaBinderConfigProperties {

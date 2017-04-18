@@ -125,7 +125,9 @@ public class KafkaBinderConfiguration {
 		if (!ObjectUtils.isEmpty(configurationProperties.getConfiguration())) {
 			props.putAll(configurationProperties.getConfiguration());
 		}
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
+		if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
+			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
+		}
 		ConsumerFactory<?, ?> consumerFactory = new DefaultKafkaConsumerFactory<>(props);
 		return new KafkaBinderHealthIndicator(kafkaMessageChannelBinder, consumerFactory);
 	}
