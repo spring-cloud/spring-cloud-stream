@@ -43,7 +43,7 @@ public class Kafka10TestBinder extends AbstractKafkaTestBinder {
 
 			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(binderConfiguration, provisioningProvider);
 
-			binder.setCodec(getCodec());
+			binder.setCodec(AbstractKafkaTestBinder.getCodec());
 			ProducerListener producerListener = new LoggingProducerListener();
 			binder.setProducerListener(producerListener);
 			GenericApplicationContext context = new GenericApplicationContext();

@@ -58,8 +58,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.MessageBuilder;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -70,7 +68,7 @@ import static org.junit.Assert.assertTrue;
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
  */
-public class Kafka10BinderTests extends KafkaBinderTests {
+public class Kafka_0_10_1_BinderTests extends KafkaBinderTests {
 
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
@@ -201,7 +199,7 @@ public class Kafka10BinderTests extends KafkaBinderTests {
 				break;
 			}
 			else if (System.currentTimeMillis() > endTime) {
-				fail("Kafka Schema Registry Server failed to start");
+				Assertions.fail("Kafka Schema Registry Server failed to start");
 			}
 		}
 		User1 firstOutboundFoo = new User1();
@@ -230,7 +228,7 @@ public class Kafka10BinderTests extends KafkaBinderTests {
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
 		Message<?> inbound = receive(moduleInputChannel);
-		assertThat(inbound).isNotNull();
+		Assertions.assertThat(inbound).isNotNull();
 		assertTrue(message.getPayload() instanceof User1);
 		User1 receivedUser = (User1) message.getPayload();
 		Assertions.assertThat(receivedUser.getName()).isEqualTo(userName1);

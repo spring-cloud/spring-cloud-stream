@@ -16,7 +16,7 @@
 	<properties>
 		<main.basedir>${basedir}/../..</main.basedir>
 		<!--
-		   Override Kafka dependencies to Kafka 0.9.0.1 and supporting Spring Kafka and
+		   Override Kafka dependencies to Kafka 0.10.0.1 and supporting Spring Kafka and
 		   Spring Integration Kafka versions
 		-->
 		<kafka.version>0.10.0.1</kafka.version>
@@ -69,6 +69,13 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-kafka</artifactId>
+			<version>${project.version}</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-binder-kafka-0.10.1-test</artifactId>
 			<version>${project.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
