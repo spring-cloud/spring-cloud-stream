@@ -91,6 +91,7 @@ public class RabbitServiceAutoConfiguration {
 				 * @return the {@link ConnectionFactory} used by the binder.
 				 */
 				@Bean
+				@ConditionalOnMissingBean(ConnectionFactory.class)
 				ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
 					return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
 				}
