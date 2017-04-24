@@ -21,6 +21,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -36,11 +37,16 @@ import org.springframework.boot.jackson.JsonComponent;
 
 /**
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 @JsonComponent
 public class MetricJsonSerializer {
 
-	final static DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	private final static DateFormat df;
+	static {
+		df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+		df.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
 
 	public static class Serializer extends JsonSerializer<Metric<?>> {
 
