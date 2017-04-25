@@ -16,10 +16,7 @@
 
 package org.springframework.cloud.stream.metrics.config;
 
-
-
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 import java.util.Date;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -30,7 +27,6 @@ import org.junit.Test;
 
 import org.springframework.boot.actuate.metrics.Metric;
 import org.springframework.cloud.stream.metrics.config.MetricJsonSerializer.Serializer;
-import org.springframework.util.ReflectionUtils;
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,8 +38,7 @@ public class MetricJsonSerializerTests {
 	@Test
 	public void validateAlwaysGMTDateAndFormat() throws Exception {	
 		Date date = new Date(1493060197188L); // Mon Apr 24 14:56:37 EDT 2017
-		Metric<Number> metric = new Metric<Number>("Hello", 123);	
-		this.injectTimestamp(date, metric);
+		Metric<Number> metric = new Metric<Number>("Hello", 123, date);	
 		
 		JsonFactory factory = new JsonFactory();
 		StringWriter writer = new StringWriter();	
@@ -55,11 +50,5 @@ public class MetricJsonSerializerTests {
 		JSONObject json = new JSONObject(writer.toString());
 		String serializedTimestamp = json.getString("timestamp");
 		assertEquals("2017-04-24T18:56:37.188Z", serializedTimestamp);
-	}
-	
-	private void injectTimestamp(Date date, Metric<Number> metric) throws Exception {
-		Field f = Metric.class.getDeclaredField("timestamp");
-		f.setAccessible(true);
-		ReflectionUtils.setField(f, metric, date);
 	}
 }
