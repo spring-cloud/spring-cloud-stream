@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private ConfigurableListableBeanFactory beanFactory;
 
-	@SuppressWarnings("unchecked")
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
@@ -66,15 +65,21 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	@Override
 	public MessageChannel resolveDestination(String channelName) {
-		MessageChannel channel = null;
-		DestinationResolutionException destinationResolutionException;
 		try {
 			return super.resolveDestination(channelName);
 		}
 		catch (DestinationResolutionException e) {
-			destinationResolutionException = e;
+			// intentionally empty; will check again while holding the monitor
 		}
 		synchronized (this) {
+			DestinationResolutionException destinationResolutionException;
+			try {
+				return super.resolveDestination(channelName);
+			}
+			catch (DestinationResolutionException e) {
+				destinationResolutionException = e;
+			}
+			MessageChannel channel = null;
 			if (this.beanFactory != null) {
 				String[] dynamicDestinations = null;
 				BindingServiceProperties bindingServiceProperties = this.bindingService
