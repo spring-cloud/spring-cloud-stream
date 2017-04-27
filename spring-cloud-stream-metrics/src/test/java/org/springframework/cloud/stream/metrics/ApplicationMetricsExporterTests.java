@@ -54,8 +54,7 @@ public class ApplicationMetricsExporterTests {
 	@Test(expected = NoSuchBeanDefinitionException.class)
 	public void checkDisabledConfiguration() throws Exception {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
-				BinderExporterApplication.class, "--server.port=0",
-				"--spring.jmx.enabled=false");
+				BinderExporterApplication.class, "--server.port=0", "--spring.jmx.enabled=false");
 		try {
 			applicationContext.getBean(Emitter.class);
 		}
@@ -76,8 +75,8 @@ public class ApplicationMetricsExporterTests {
 				"--spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS + ".destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper
@@ -98,8 +97,8 @@ public class ApplicationMetricsExporterTests {
 				"--spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS + ".destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
@@ -120,8 +119,8 @@ public class ApplicationMetricsExporterTests {
 				"--spring.cloud.stream.bindings." + Emitter.APPLICATION_METRICS + ".destination=foo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper
@@ -144,8 +143,8 @@ public class ApplicationMetricsExporterTests {
 				"--spring.metrics.export.excludes=integration**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper
@@ -168,8 +167,8 @@ public class ApplicationMetricsExporterTests {
 				"--spring.metrics.export.triggers.application.excludes=integration**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
@@ -190,8 +189,8 @@ public class ApplicationMetricsExporterTests {
 				"--spring.cloud.stream.metrics.properties=java**,spring.test.env**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
@@ -222,8 +221,8 @@ public class ApplicationMetricsExporterTests {
 				"--spring.cloud.stream.metrics.properties=spring**");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
@@ -257,8 +256,8 @@ public class ApplicationMetricsExporterTests {
 					"--spring.cloud.stream.metrics.properties=spring**");
 			Emitter emitterSource = applicationContext.getBean(Emitter.class);
 			MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-			Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-					TimeUnit.MILLISECONDS);
+			Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+					.poll(10, TimeUnit.SECONDS);
 			Assert.assertNotNull(message);
 			ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 			ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
@@ -282,8 +281,8 @@ public class ApplicationMetricsExporterTests {
 				"--spring.cloud.stream.metrics.key=foobarfoo");
 		Emitter emitterSource = applicationContext.getBean(Emitter.class);
 		MessageCollector collector = applicationContext.getBean(MessageCollector.class);
-		Message<?> message = collector.forChannel(emitterSource.applicationMetrics()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> message = collector.forChannel(emitterSource.applicationMetrics())
+				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
@@ -310,4 +309,5 @@ public class ApplicationMetricsExporterTests {
 	public static class BinderExporterApplication {
 
 	}
+
 }
