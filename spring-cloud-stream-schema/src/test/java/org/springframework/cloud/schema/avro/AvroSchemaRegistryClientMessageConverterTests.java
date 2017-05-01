@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,24 +23,30 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaRegistryClientMessageConverter;
+import org.springframework.cloud.stream.schema.client.DefaultSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.EnableSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.cloud.stream.schema.server.SchemaRegistryServerApplication;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 public class AvroSchemaRegistryClientMessageConverterTests {
 
@@ -141,5 +147,22 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 			receivedPojos.add(fooPojo);
 		}
 
+	}
+
+	@Test
+	public void testNoCacheConfiguration (){
+		ConfigurableApplicationContext sourceContext = SpringApplication.run(NoCacheConfiguration.class, "--spring.main.web-environment=false");
+		AvroSchemaRegistryClientMessageConverter converter = sourceContext.getBean(AvroSchemaRegistryClientMessageConverter.class);
+		DirectFieldAccessor accessor = new DirectFieldAccessor(converter);
+		assertThat(accessor.getPropertyValue("cacheManager")).isInstanceOf(NoOpCacheManager.class);
+	}
+
+	@Configuration
+	public static class NoCacheConfiguration {
+		@SuppressWarnings("deprecation")
+		@Bean
+		AvroSchemaRegistryClientMessageConverter avroSchemaRegistryClientMessageConverter() {
+			return new AvroSchemaRegistryClientMessageConverter(new DefaultSchemaRegistryClient());
+		}
 	}
 }
