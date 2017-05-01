@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.apache.avro.reflect.ReflectData;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.schema.ParsedSchema;
 import org.springframework.cloud.stream.schema.SchemaNotFoundException;
 import org.springframework.cloud.stream.schema.SchemaReference;
@@ -64,8 +65,10 @@ import org.springframework.util.ObjectUtils;
  *
  * When converting from a message, the converter will parse the content-type and use it to
  * fetch and cache the writer schema using the provided {@link SchemaRegistryClient}.
+ *
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessageConverter
 		implements InitializingBean {
@@ -98,15 +101,26 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	private String prefix = "vnd";
 
 	/**
-	 * Creates a new instance, configuring it with a {@link SchemaRegistryClient}.
+	 * @deprecated as of release 1.0.4. Please use another constructor.
+	 */
+	@Deprecated
+	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient) {
+		this(schemaRegistryClient, new NoOpCacheManager());
+	}
+
+	/**
+	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and {@link CacheManager}.
 	 * @param schemaRegistryClient the {@link SchemaRegistryClient} used to interact with
 	 * the schema registry server.
+	 * @param cacheManager instance of {@link CacheManager} to cache parsed schemas. In the event caching
+	 * is not required use {@link NoOpCacheManager}
 	 */
-	public AvroSchemaRegistryClientMessageConverter(
-			SchemaRegistryClient schemaRegistryClient) {
+	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
 		super(Arrays.asList(new MimeType("application", "*+avro")));
 		Assert.notNull(schemaRegistryClient, "cannot be null");
+		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
 		this.schemaRegistryClient = schemaRegistryClient;
+		this.cacheManager = cacheManager;
 	}
 
 	public boolean isDynamicSchemaGenerationEnabled() {
@@ -178,6 +192,12 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 					}
 				}
 			}
+		}
+		if (this.cacheManager instanceof NoOpCacheManager){
+			logger.warn("Schema caching is effectively disabled "
+					+ "since configured cache manager is a NoOpCacheManager. If this was not "
+					+ "the intention, please provide the appropriate instance of CacheManager "
+					+ "(i.e., ConcurrentMapCacheManager).");
 		}
 	}
 
@@ -316,7 +336,13 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		return schema;
 	}
 
+
+	/**
+	 * @deprecated as of release 1.0.4. Please use the constructor to inject CacheManager
+	 */
+	@Deprecated
 	public void setCacheManager(CacheManager cacheManager) {
+		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
 		this.cacheManager = cacheManager;
 	}
 }
