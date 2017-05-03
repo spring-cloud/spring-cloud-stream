@@ -306,7 +306,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 				return MimeTypeUtils.APPLICATION_OCTET_STREAM;
 			}
 			if (payload instanceof String) {
-				return MimeTypeUtils.APPLICATION_JSON_VALUE.equals(originalContentType) ? MimeTypeUtils.APPLICATION_JSON
+				return (originalContentType.startsWith(MimeTypeUtils.APPLICATION_JSON_VALUE)) ? MimeTypeUtils.APPLICATION_JSON
 						: MimeTypeUtils.TEXT_PLAIN;
 			}
 			String className = payload.getClass().getName();
