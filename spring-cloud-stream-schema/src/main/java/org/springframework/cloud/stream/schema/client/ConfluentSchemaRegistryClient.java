@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.springframework.web.client.RestTemplate;
 /**
  * @author Vinicius Carvalho
  * @author Marius Bogoevici
+ * @author Jon Archer
  */
 public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 
@@ -59,26 +60,26 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	@Override
 	public SchemaRegistrationResponse register(String subject, String format, String schema) {
 		Assert.isTrue("avro".equals(format), "Only Avro is supported");
-		String path = String.format("/subjects/%s/versions", subject);
+		String path = String.format("/subjects/%s", subject);
 		HttpHeaders headers = new HttpHeaders();
 		headers.put("Accept",
 				Arrays.asList("application/vnd.schemaregistry.v1+json", "application/vnd.schemaregistry+json",
 						"application/json"));
 		headers.add("Content-Type", "application/json");
-		Integer id = null;
+		Integer version = null;
 		try {
 			String payload = this.mapper.writeValueAsString(Collections.singletonMap("schema", schema));
 			HttpEntity<String> request = new HttpEntity<>(payload, headers);
 			ResponseEntity<Map> response = this.template.exchange(this.endpoint + path, HttpMethod.POST, request,
 					Map.class);
-			id = (Integer) response.getBody().get("id");
+			version = (Integer) response.getBody().get("version");
 		}
 		catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
 		SchemaRegistrationResponse schemaRegistrationResponse = new SchemaRegistrationResponse();
-		schemaRegistrationResponse.setId(id);
-		schemaRegistrationResponse.setSchemaReference(new SchemaReference(subject, id, "avro"));
+		schemaRegistrationResponse.setId(version);
+		schemaRegistrationResponse.setSchemaReference(new SchemaReference(subject, version, "avro"));
 		return schemaRegistrationResponse;
 	}
 
