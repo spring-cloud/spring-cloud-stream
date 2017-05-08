@@ -55,7 +55,6 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
-import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
@@ -230,16 +229,12 @@ public class RabbitMessageChannelBinder
 	protected MessageProducer createConsumerEndpoint(ConsumerDestination consumerDestination, String group,
 													ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
 
-		DirectChannel convertingBridgeChannel = new DirectChannel();
-		convertingBridgeChannel.setBeanFactory(this.getBeanFactory());
-
 		String prefix = properties.getExtension().getPrefix();
 		String destination = consumerDestination.getName();
 		String prefixStripped = (StringUtils.isEmpty(prefix) || !destination.startsWith(prefix)) ? destination
 				: destination.substring(prefix.length());
 		String baseQueueName = StringUtils.hasText(group) ? prefixStripped.substring(0, prefixStripped.indexOf(group)) + group : prefixStripped;
 
-		convertingBridgeChannel.setBeanName(baseQueueName + ".bridge");
 		SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(
 				this.connectionFactory);
 		listenerContainer.setAcknowledgeMode(properties.getExtension().getAcknowledgeMode());

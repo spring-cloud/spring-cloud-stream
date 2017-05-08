@@ -136,15 +136,20 @@ public class RabbitBinderCleanerTests {
 				URI uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues").pathSegment(
 						"{vhost}", "{queue}")
 						.buildAndExpand("/", queueName).encode().toUri();
-				while (n++ < 100) {
+
+				Object consumers = null;
+				while (n++ < 100 && (consumers == null || consumers.equals(Integer.valueOf(state)))) {
 					@SuppressWarnings("unchecked")
 					Map<String, Object> queueInfo = template.getForObject(uri, Map.class);
-					if (!queueInfo.get("consumers").equals(Integer.valueOf(state))) {
-						break;
+					consumers = queueInfo.get("consumers");
+					if (consumers == null || consumers.equals(Integer.valueOf(state))) {
+						Thread.sleep(100);
 					}
-					Thread.sleep(100);
 				}
-				assertThat(n < 100).withFailMessage("Consumer state remained at " + state + " after 10 seconds");
+				assertThat(consumers).isNotNull();
+
+				assertThat(n).withFailMessage("Consumer state remained at " + state + " after 10 seconds")
+						.isLessThan(100);
 			}
 
 		});
