@@ -55,7 +55,6 @@ public class KafkaBinderEnvironmentPostProcessor implements EnvironmentPostProce
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 		if (!environment.getPropertySources().contains(KAFKA_BINDER_DEFAULT_PROPERTIES)) {
 			Map<String, Object> kafkaBinderDefaultProperties = new HashMap<>();
-			kafkaBinderDefaultProperties.put("logging.pattern.console", "%d{ISO8601} %5p %t %c{2}:%L - %m%n");
 			kafkaBinderDefaultProperties.put("logging.level.org.I0Itec.zkclient", "ERROR");
 			kafkaBinderDefaultProperties.put("logging.level.kafka.server.KafkaConfig", "ERROR");
 			kafkaBinderDefaultProperties.put("logging.level.kafka.admin.AdminClient.AdminConfig", "ERROR");
