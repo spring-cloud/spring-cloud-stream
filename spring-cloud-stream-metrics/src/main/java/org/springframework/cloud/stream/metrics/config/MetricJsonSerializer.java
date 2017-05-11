@@ -22,6 +22,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -42,11 +44,7 @@ import org.springframework.boot.jackson.JsonComponent;
 @JsonComponent
 public class MetricJsonSerializer {
 
-	private final static DateFormat df;
-	static {
-		df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-		df.setTimeZone(TimeZone.getTimeZone("GMT"));
-	}
+	private static final BlockingQueue<DateFormat> formattersQueue = new LinkedBlockingQueue<DateFormat>();
 
 	public static class Serializer extends JsonSerializer<Metric<?>> {
 
@@ -56,8 +54,13 @@ public class MetricJsonSerializer {
 			json.writeStartObject();
 			json.writeStringField("name", metric.getName());
 			json.writeNumberField("value", metric.getValue().doubleValue());
+			DateFormat df = formattersQueue.poll();
+			if(df == null){
+				df = defaultDateFormat();
+			}
 			json.writeStringField("timestamp", df.format(metric.getTimestamp()));
 			json.writeEndObject();
+			formattersQueue.offer(df);
 		}
 	}
 
@@ -70,16 +73,28 @@ public class MetricJsonSerializer {
 			String name = node.get("name").asText();
 			Number value = node.get("value").asDouble();
 			Date timestamp = null;
+			DateFormat df = formattersQueue.poll();
 
+			if(df == null){
+				df = defaultDateFormat();
+			}
 			try {
 				timestamp = df.parse(node.get("timestamp").asText());
 			}
 			catch (ParseException e) {
+			}finally {
+				formattersQueue.offer(df);
 			}
 			Metric<Number> metric = new Metric<Number>(name, value, timestamp);
 
 			return metric;
 		}
 
+	}
+
+	public static DateFormat defaultDateFormat(){
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+		df.setTimeZone(TimeZone.getTimeZone("GMT"));
+		return df;
 	}
 }
