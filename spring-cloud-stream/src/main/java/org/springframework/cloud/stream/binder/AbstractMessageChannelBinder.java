@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
@@ -134,6 +135,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			@Override
 			public void afterUnbind() {
+				try {
+					if (producerMessageHandler instanceof DisposableBean) {
+						((DisposableBean) producerMessageHandler).destroy();
+					}
+				} catch (Exception e) {
+					AbstractMessageChannelBinder.this.logger.error("Exception thrown while unbinding " + this.toString(), e);
+				}
 				afterUnbindProducer(producerDestination, producerProperties);
 			}
 		};
@@ -215,6 +223,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 				@Override
 				protected void afterUnbind() {
+					try {
+						if (endpoint instanceof DisposableBean) {
+							((DisposableBean) endpoint).destroy();
+						}
+					}
+					catch (Exception e) {
+						AbstractMessageChannelBinder.this.logger
+								.error("Exception thrown while unbinding " + this.toString(), e);
+					}
 					AbstractMessageChannelBinder.this.afterUnbindConsumer(destination, this.group, properties);
 				}
 			};
