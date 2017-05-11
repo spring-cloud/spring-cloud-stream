@@ -31,9 +31,14 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.support.DefaultMessageBuilderFactory;
+import org.springframework.integration.support.MessageBuilder;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -41,6 +46,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SourceBindingWithBindingTargetsTests.TestSource.class)
@@ -57,6 +63,9 @@ public class SourceBindingWithBindingTargetsTests {
 	@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)
 	private PublishSubscribeChannel errorChannel;
 
+	@Autowired
+	private DefaultMessageBuilderFactory messageBuilderFactory;
+
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSourceOutputChannelBound() {
@@ -64,6 +73,15 @@ public class SourceBindingWithBindingTargetsTests {
 		verify(binder).bindProducer(eq("testtock"), eq(this.testSource.output()),
 				Mockito.<ProducerProperties>any());
 		verifyNoMoreInteractions(binder);
+	}
+
+	@Test
+	public void testReadOnlyContentType() {
+		Message<?> message = MessageBuilder.withPayload("foo")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+				.build();
+		message = this.messageBuilderFactory.withPayload("bar").copyHeaders(message.getHeaders()).build();
+		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isNull();
 	}
 
 	@EnableBinding(Source.class)
