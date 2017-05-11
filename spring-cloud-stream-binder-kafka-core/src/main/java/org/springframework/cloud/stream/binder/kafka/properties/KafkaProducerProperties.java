@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
+import org.springframework.expression.Expression;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +25,7 @@ import javax.validation.constraints.NotNull;
 
 /**
  * @author Marius Bogoevici
+ * @author Henryk Konsek
  */
 public class KafkaProducerProperties {
 
@@ -33,6 +36,8 @@ public class KafkaProducerProperties {
 	private boolean sync;
 
 	private int batchTimeout;
+
+	private Expression messageKeyExpression;
 
 	private Map<String, String> configuration = new HashMap<>();
 
@@ -67,6 +72,14 @@ public class KafkaProducerProperties {
 
 	public void setBatchTimeout(int batchTimeout) {
 		this.batchTimeout = batchTimeout;
+	}
+
+	public Expression getMessageKeyExpression() {
+		return messageKeyExpression;
+	}
+
+	public void setMessageKeyExpression(Expression messageKeyExpression) {
+		this.messageKeyExpression = messageKeyExpression;
 	}
 
 	public Map<String, String> getConfiguration() {

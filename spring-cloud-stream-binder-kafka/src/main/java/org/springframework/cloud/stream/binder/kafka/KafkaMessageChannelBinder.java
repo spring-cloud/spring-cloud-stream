@@ -84,6 +84,7 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  * @author Gary Russell
  * @author Mark Fisher
  * @author Soby Chacko
+ * @author Henryk Konsek
  */
 public class KafkaMessageChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>,
@@ -377,6 +378,7 @@ public class KafkaMessageChannelBinder extends
 				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory) {
 			super(kafkaTemplate);
 			setTopicExpression(new LiteralExpression(topic));
+			setMessageKeyExpression(producerProperties.getExtension().getMessageKeyExpression());
 			setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
 			if (producerProperties.isPartitioned()) {
 				SpelExpressionParser parser = new SpelExpressionParser();

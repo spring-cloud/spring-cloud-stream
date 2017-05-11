@@ -190,6 +190,10 @@ batchTimeout::
 (Normally the producer does not wait at all, and simply sends all the messages that accumulated while the previous send was in progress.) A non-zero value may increase throughput at the expense of latency.
 +
 Default: `0`.
+messageKeyExpression::
+Expression (executed against incoming message) used to resolve the key of the produced Kafka message. For example `headers.key` or `payload.myKey`.
++
+Default: `none`.
 configuration::
   Map with a key/value pair containing generic Kafka producer properties.
 +

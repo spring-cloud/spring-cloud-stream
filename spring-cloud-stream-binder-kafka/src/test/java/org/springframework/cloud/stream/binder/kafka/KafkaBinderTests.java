@@ -32,6 +32,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.assertj.core.api.Condition;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -81,6 +82,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Soby Chacko
  * @author Ilayaperumal Gopinathan
+ * @author Henryk Konsek
  */
 public abstract class KafkaBinderTests extends PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>,
 						ExtendedProducerProperties<KafkaProducerProperties>> {
@@ -460,6 +462,35 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		assertThat((byte[]) inbound.getPayload()).containsExactly(testPayload);
 
 		assertThat(partitionSize("foo" + uniqueBindingId + ".0")).isEqualTo(6);
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testDynamicKeyExpression() throws Exception {
+		Binder binder = getBinder(createConfigurationProperties());
+		QueueChannel moduleInputChannel = new QueueChannel();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension().getConfiguration().put("key.serializer", StringSerializer.class.getName());
+		producerProperties.getExtension().setMessageKeyExpression(spelExpressionParser.parseExpression("headers.key"));
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		String uniqueBindingId = UUID.randomUUID().toString();
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo" + uniqueBindingId + ".0",
+				moduleOutputChannel, producerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo" + uniqueBindingId + ".0", null,
+				moduleInputChannel, consumerProperties);
+		Thread.sleep(1000);
+		Message<?> message = MessageBuilder.withPayload("somePayload").setHeader("key", "myDynamicKey").build();
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+		moduleOutputChannel.send(message);
+		Message<?> inbound = receive(moduleInputChannel);
+		assertThat(inbound).isNotNull();
+		String receivedKey = new String(inbound.getHeaders().get(KafkaHeaders.RECEIVED_MESSAGE_KEY, byte[].class));
+		assertThat(receivedKey).isEqualTo("myDynamicKey");
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
