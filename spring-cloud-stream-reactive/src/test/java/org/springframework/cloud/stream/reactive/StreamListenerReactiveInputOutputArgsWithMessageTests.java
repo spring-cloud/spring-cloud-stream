@@ -56,14 +56,8 @@ public class StreamListenerReactiveInputOutputArgsWithMessageTests {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[]{ReactorTestInputOutputArgsWithMessage.class, RxJava1TestInputOutputArgsWithMessage.class});
-	}
-
-	@Test
-	public void testInputOutputArgs() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
-		sendMessageAndValidate(context);
-		context.close();
+		return Arrays.asList(new Class[] { ReactorTestInputOutputArgsWithMessage.class,
+				RxJava1TestInputOutputArgsWithMessage.class });
 	}
 
 	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
@@ -75,6 +69,13 @@ public class StreamListenerReactiveInputOutputArgsWithMessageTests {
 		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
+	}
+
+	@Test
+	public void testInputOutputArgs() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
+		sendMessageAndValidate(context);
+		context.close();
 	}
 
 	@EnableBinding(Processor.class)

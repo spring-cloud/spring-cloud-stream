@@ -141,7 +141,7 @@ public @interface StreamListener {
 	 * @return the name of the binding target.
 	 */
 	@AliasFor("value")
-	String target()  default "";
+	String target() default "";
 
 	/**
 	 * A condition that must be met by all items that are dispatched to this method.

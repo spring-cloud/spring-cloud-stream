@@ -38,7 +38,8 @@ public class StubBinder1 implements Binder<Object, ConsumerProperties, ProducerP
 	}
 
 	@Override
-	public Binding<Object> bindConsumer(String name, String group, Object inboundBindTarget, ConsumerProperties properties) {
+	public Binding<Object> bindConsumer(String name, String group, Object inboundBindTarget,
+			ConsumerProperties properties) {
 		return null;
 	}
 

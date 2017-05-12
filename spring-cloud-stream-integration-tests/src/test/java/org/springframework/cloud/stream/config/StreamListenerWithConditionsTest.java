@@ -75,13 +75,16 @@ public class StreamListenerWithConditionsTest {
 	@SuppressWarnings("unchecked")
 	public void testConditionalFailsWithReturnValue() throws Exception {
 		try {
-			ConfigurableApplicationContext context = SpringApplication.run(TestConditionalOnMethodWithReturnValueFails.class,
+			ConfigurableApplicationContext context = SpringApplication.run(
+					TestConditionalOnMethodWithReturnValueFails.class,
 					"--server.port=0");
 			context.close();
 			fail("Context creation failure expected");
-		} catch (BeanCreationException e) {
+		}
+		catch (BeanCreationException e) {
 			assertThat(e).hasRootCauseInstanceOf(IllegalArgumentException.class);
-			assertThat(e.getCause()).hasMessageContaining(StreamListenerErrorMessages.CONDITION_ON_METHOD_RETURNING_VALUE);
+			assertThat(e.getCause())
+					.hasMessageContaining(StreamListenerErrorMessages.CONDITION_ON_METHOD_RETURNING_VALUE);
 		}
 	}
 
@@ -89,11 +92,13 @@ public class StreamListenerWithConditionsTest {
 	@SuppressWarnings("unchecked")
 	public void testConditionalFailsWithDeclarativeMethod() throws Exception {
 		try {
-			ConfigurableApplicationContext context = SpringApplication.run(TestConditionalOnDeclarativeMethodFails.class,
+			ConfigurableApplicationContext context = SpringApplication.run(
+					TestConditionalOnDeclarativeMethodFails.class,
 					"--server.port=0");
 			context.close();
 			fail("Context creation failure expected");
-		} catch (BeanCreationException e) {
+		}
+		catch (BeanCreationException e) {
 			assertThat(e).hasRootCauseInstanceOf(IllegalArgumentException.class);
 			assertThat(e.getCause()).hasMessageContaining(StreamListenerErrorMessages.CONDITION_ON_DECLARATIVE_METHOD);
 		}

@@ -61,7 +61,7 @@ import org.springframework.util.StringUtils;
  */
 @EnableBinding
 public class AggregateApplicationBuilder implements AggregateApplication, ApplicationContextAware,
-															SmartInitializingSingleton {
+		SmartInitializingSingleton {
 
 	private static final String CHILD_CONTEXT_SUFFIX = ".spring.cloud.stream.context";
 
@@ -84,11 +84,11 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 	private boolean webEnvironment = true;
 
 	public AggregateApplicationBuilder(String... args) {
-		this(new Object[]{ParentConfiguration.class}, args);
+		this(new Object[] { ParentConfiguration.class }, args);
 	}
 
 	public AggregateApplicationBuilder(Object source, String... args) {
-		this(new Object[]{source}, args);
+		this(new Object[] { source }, args);
 	}
 
 	public AggregateApplicationBuilder(Object[] sources, String[] args) {
@@ -108,7 +108,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 	}
 
 	public AggregateApplicationBuilder parent(Object source, String... args) {
-		return parent(new Object[]{source}, args);
+		return parent(new Object[] { source }, args);
 	}
 
 	public AggregateApplicationBuilder parent(Object[] sources, String[] args) {
@@ -194,16 +194,18 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			Class<?> appToEmbed = appConfigurer.getApp();
 			// Always update namespace before preparing SharedChannelRegistry
 			if (appConfigurer.namespace == null) {
-				appConfigurer.namespace = AggregateApplicationUtils.getDefaultNamespace(appConfigurer.getApp().getName(), i);
+				appConfigurer.namespace = AggregateApplicationUtils
+						.getDefaultNamespace(appConfigurer.getApp().getName(), i);
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 			appConfigurers.put(appConfigurer, appConfigurer.namespace);
 		}
 		if (this.parentContext == null) {
 			if (Boolean.TRUE.equals(this.webEnvironment)) {
-				this.addParentSources(new Object[]{EmbeddedServletContainerAutoConfiguration.class});
+				this.addParentSources(new Object[] { EmbeddedServletContainerAutoConfiguration.class });
 			}
-			this.parentContext = AggregateApplicationUtils.createParentContext(this.parentSources.toArray(new Object[0]),
+			this.parentContext = AggregateApplicationUtils.createParentContext(
+					this.parentSources.toArray(new Object[0]),
 					this.parentArgs.toArray(new String[0]), selfContained(), this.webEnvironment, this.headless);
 		}
 		else {
@@ -216,7 +218,8 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 						new SharedChannelRegistry(sharedBindingTargetRegistry));
 			}
 		}
-		SharedBindingTargetRegistry sharedBindingTargetRegistry = this.parentContext.getBean(SharedBindingTargetRegistry.class);
+		SharedBindingTargetRegistry sharedBindingTargetRegistry = this.parentContext
+				.getBean(SharedBindingTargetRegistry.class);
 		AggregateApplicationUtils.prepareSharedBindingTargetRegistry(sharedBindingTargetRegistry, appsToEmbed);
 		PropertySources propertySources = this.parentContext.getEnvironment()
 				.getPropertySources();
@@ -289,6 +292,36 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 	private ChildContextBuilder childContext(Class<?> app, ConfigurableApplicationContext parentContext,
 			String namespace) {
 		return new ChildContextBuilder(AggregateApplicationUtils.embedApp(parentContext, namespace, app));
+	}
+
+	private static class ChildContextHolder {
+
+		private final ConfigurableApplicationContext childContext;
+
+		ChildContextHolder(ConfigurableApplicationContext childContext) {
+			Assert.notNull(childContext, "cannot be null");
+			this.childContext = childContext;
+		}
+
+		public ConfigurableApplicationContext getChildContext() {
+			return childContext;
+		}
+	}
+
+	@ImportAutoConfiguration({ ChannelBindingAutoConfiguration.class, EndpointAutoConfiguration.class })
+	@EnableBinding
+	public static class ParentConfiguration {
+		@Bean
+		@ConditionalOnMissingBean(SharedBindingTargetRegistry.class)
+		public SharedBindingTargetRegistry sharedBindingTargetRegistry() {
+			return new SharedBindingTargetRegistry();
+		}
+
+		@Bean
+		@ConditionalOnMissingBean(SharedChannelRegistry.class)
+		public SharedChannelRegistry sharedChannelRegistry(SharedBindingTargetRegistry sharedBindingTargetRegistry) {
+			return new SharedChannelRegistry(sharedBindingTargetRegistry);
+		}
 	}
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
@@ -382,7 +415,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		void embed() {
 			final ConfigurableApplicationContext childContext = childContext(this.app,
 					AggregateApplicationBuilder.this.parentContext, this.namespace).args(this.args).config(this.names)
-					.profiles(this.profiles).run();
+							.profiles(this.profiles).run();
 			// Register bindable proxies as beans so they can be queried for later
 			Map<String, BindableProxyFactory> bindableProxies = BeanFactoryUtils
 					.beansOfTypeIncludingAncestors(childContext.getBeanFactory(), BindableProxyFactory.class);
@@ -402,7 +435,8 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			if (BeanFactoryUtils.beansOfTypeIncludingAncestors(AggregateApplicationBuilder.this.parentContext,
 					IntegrationMBeanExporter.class).size() > 0) {
 				BeanFactoryUtils
-						.beanOfTypeIncludingAncestors(AggregateApplicationBuilder.this.parentContext, MetricsEndpoint.class)
+						.beanOfTypeIncludingAncestors(AggregateApplicationBuilder.this.parentContext,
+								MetricsEndpoint.class)
 						.registerPublicMetrics(
 								new MetricReaderPublicMetrics(new NamespaceAwareSpringIntegrationMetricReader(
 										this.namespace, childContext.getBean(IntegrationMBeanExporter.class))));
@@ -412,7 +446,6 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		public AggregateApplication build() {
 			return applicationBuilder;
 		}
-
 
 		public String[] getArgs() {
 			return this.args;
@@ -465,36 +498,6 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			return this.builder.run(args.toArray(new String[0]));
 		}
 
-	}
-
-	private static class ChildContextHolder {
-
-		private final ConfigurableApplicationContext childContext;
-
-		ChildContextHolder(ConfigurableApplicationContext childContext) {
-			Assert.notNull(childContext, "cannot be null");
-			this.childContext = childContext;
-		}
-
-		public ConfigurableApplicationContext getChildContext() {
-			return childContext;
-		}
-	}
-
-	@ImportAutoConfiguration({ChannelBindingAutoConfiguration.class, EndpointAutoConfiguration.class})
-	@EnableBinding
-	public static class ParentConfiguration {
-		@Bean
-		@ConditionalOnMissingBean(SharedBindingTargetRegistry.class)
-		public SharedBindingTargetRegistry sharedBindingTargetRegistry() {
-			return new SharedBindingTargetRegistry();
-		}
-
-		@Bean
-		@ConditionalOnMissingBean(SharedChannelRegistry.class)
-		public SharedChannelRegistry sharedChannelRegistry(SharedBindingTargetRegistry sharedBindingTargetRegistry) {
-			return new SharedChannelRegistry(sharedBindingTargetRegistry);
-		}
 	}
 
 }

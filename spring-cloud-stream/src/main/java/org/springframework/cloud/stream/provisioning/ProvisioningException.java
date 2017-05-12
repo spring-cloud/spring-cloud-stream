@@ -40,8 +40,8 @@ public class ProvisioningException extends NestedRuntimeException {
 	/**
 	 * Constructor that takes a message and a root cause.
 	 * @param msg the detail message
-	 * @param cause the cause of the exception. This argument is generally
-	 * expected to be middleware specific.
+	 * @param cause the cause of the exception. This argument is generally expected to be
+	 * middleware specific.
 	 */
 	public ProvisioningException(String msg, Throwable cause) {
 		super(msg, cause);

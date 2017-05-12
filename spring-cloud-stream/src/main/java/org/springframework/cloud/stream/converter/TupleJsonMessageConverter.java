@@ -31,26 +31,26 @@ import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeTypeUtils;
 
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * to convert a {@link Tuple} to a JSON String
+ * A {@link org.springframework.messaging.converter.MessageConverter} to convert a
+ * {@link Tuple} to a JSON String
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
 public class TupleJsonMessageConverter extends AbstractMessageConverter {
 
-	@Value("${typeconversion.json.prettyPrint:false}")
-	private volatile boolean prettyPrint;
-
 	private final ObjectMapper objectMapper;
 
-	public void setPrettyPrint(boolean prettyPrint) {
-		this.prettyPrint = prettyPrint;
-	}
+	@Value("${typeconversion.json.prettyPrint:false}")
+	private volatile boolean prettyPrint;
 
 	public TupleJsonMessageConverter(ObjectMapper objectMapper) {
 		super(Arrays.asList(MessageConverterUtils.X_SPRING_TUPLE, MimeTypeUtils.APPLICATION_JSON));
 		this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
+	}
+
+	public void setPrettyPrint(boolean prettyPrint) {
+		this.prettyPrint = prettyPrint;
 	}
 
 	@Override

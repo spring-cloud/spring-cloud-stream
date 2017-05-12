@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Import;
 /**
  * @author Marius Bogoevici
  */
-@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited

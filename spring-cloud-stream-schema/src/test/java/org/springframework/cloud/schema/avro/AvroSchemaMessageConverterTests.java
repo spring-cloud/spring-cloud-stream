@@ -68,7 +68,6 @@ public class AvroSchemaMessageConverterTests {
 		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
 				TimeUnit.MILLISECONDS);
 
-
 		ConfigurableApplicationContext barSourceContext = SpringApplication.run(AvroSourceApplication.class,
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
@@ -87,7 +86,6 @@ public class AvroSchemaMessageConverterTests {
 
 		assertThat(barOutboundMessage).isNotNull();
 
-
 		User2 secondUser2OutboundPojo = new User2();
 		secondUser2OutboundPojo.setFavoriteColor("foo" + UUID.randomUUID().toString());
 		secondUser2OutboundPojo.setFavoritePlace("foo" + UUID.randomUUID().toString());
@@ -95,7 +93,6 @@ public class AvroSchemaMessageConverterTests {
 		source.output().send(MessageBuilder.withPayload(secondUser2OutboundPojo).build());
 		Message<?> secondBarOutboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
 				TimeUnit.MILLISECONDS);
-
 
 		ConfigurableApplicationContext sinkContext = SpringApplication.run(AvroSinkApplication.class,
 				"--server.port=0",
@@ -139,7 +136,6 @@ public class AvroSchemaMessageConverterTests {
 		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
 				TimeUnit.MILLISECONDS);
 
-
 		ConfigurableApplicationContext barSourceContext = SpringApplication.run(AvroSourceApplication.class,
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
@@ -157,7 +153,6 @@ public class AvroSchemaMessageConverterTests {
 
 		assertThat(barOutboundMessage).isNotNull();
 
-
 		User2 secondUser2OutboundPojo = new User2();
 		secondUser2OutboundPojo.setFavoriteColor("foo" + UUID.randomUUID().toString());
 		secondUser2OutboundPojo.setFavoritePlace("foo" + UUID.randomUUID().toString());
@@ -165,7 +160,6 @@ public class AvroSchemaMessageConverterTests {
 		source.output().send(MessageBuilder.withPayload(secondUser2OutboundPojo).build());
 		Message<?> secondBarOutboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
 				TimeUnit.MILLISECONDS);
-
 
 		ConfigurableApplicationContext sinkContext = SpringApplication.run(AvroSinkApplication.class,
 				"--server.port=0",
@@ -192,18 +186,17 @@ public class AvroSchemaMessageConverterTests {
 		sourceContext.close();
 	}
 
-
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	@ConfigurationProperties
 	public static class AvroSourceApplication {
 
+		private Resource schemaLocation;
+
 		@Bean
 		public SchemaRegistryClient schemaRegistryClient() {
 			return stubSchemaRegistryClient;
 		}
-
-		private Resource schemaLocation;
 
 		public void setSchemaLocation(Resource schemaLocation) {
 			this.schemaLocation = schemaLocation;
@@ -227,12 +220,12 @@ public class AvroSchemaMessageConverterTests {
 
 		public List<User1> receivedUsers = new ArrayList<>();
 
+		private Resource schemaLocation;
+
 		@StreamListener(Sink.INPUT)
 		public void listen(User1 user) {
 			receivedUsers.add(user);
 		}
-
-		private Resource schemaLocation;
 
 		public void setSchemaLocation(Resource schemaLocation) {
 			this.schemaLocation = schemaLocation;

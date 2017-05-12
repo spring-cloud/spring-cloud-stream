@@ -43,10 +43,12 @@ public class BindingProperties {
 	private String destination;
 
 	/**
-	 * Unique name that the binding belongs to (applies to consumers only). Multiple consumers within the same group
-	 * share the subscription. A null or empty String value indicates an anonymous group that is not shared.
-	 * @see org.springframework.cloud.stream.binder.Binder#bindConsumer(java.lang.String, java.lang.String,
-	 * java.lang.Object, org.springframework.cloud.stream.binder.ConsumerProperties)
+	 * Unique name that the binding belongs to (applies to consumers only). Multiple
+	 * consumers within the same group share the subscription. A null or empty String
+	 * value indicates an anonymous group that is not shared.
+	 * @see org.springframework.cloud.stream.binder.Binder#bindConsumer(java.lang.String,
+	 * java.lang.String, java.lang.Object,
+	 * org.springframework.cloud.stream.binder.ConsumerProperties)
 	 */
 	private String group;
 

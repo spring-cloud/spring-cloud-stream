@@ -17,10 +17,10 @@
 package org.springframework.cloud.stream.binder;
 
 /**
- * Represents a binding between an input or output and an adapter endpoint that connects via a
- * Binder. The binding could be for a consumer or a producer. A consumer binding represents a
- * connection from an adapter to an input. A producer binding represents a connection from an
- * output to an adapter.
+ * Represents a binding between an input or output and an adapter endpoint that connects
+ * via a Binder. The binding could be for a consumer or a producer. A consumer binding
+ * represents a connection from an adapter to an input. A producer binding represents a
+ * connection from an output to an adapter.
  *
  * @author Jennifer Hickey
  * @author Mark Fisher
@@ -31,10 +31,10 @@ package org.springframework.cloud.stream.binder;
 public interface Binding<T> {
 
 	/**
-	 * Unbinds the target component represented by this instance and stops any active components.
-	 * Implementations must be idempotent. After this method is invoked, the target is not expected
-	 * to receive any messages; this instance should be discarded, and a new Binding should be
-	 * created instead.
+	 * Unbinds the target component represented by this instance and stops any active
+	 * components. Implementations must be idempotent. After this method is invoked, the
+	 * target is not expected to receive any messages; this instance should be discarded,
+	 * and a new Binding should be created instead.
 	 */
 	void unbind();
 }

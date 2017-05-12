@@ -26,8 +26,8 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 
 /**
- * A {@link StreamListenerResultAdapter} from an {@link Observable}
- * return type to a bound {@link MessageChannel}.
+ * A {@link StreamListenerResultAdapter} from an {@link Observable} return type to a bound
+ * {@link MessageChannel}.
  *
  * @author Marius Bogoevici
  */

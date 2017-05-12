@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-
 package org.springframework.cloud.stream.schema.server.model;
 
 /**
  * @author Vinicius Carvalho
  */
 public enum Compatibility {
-	BACKWARD, FORWARD, FULL, INCOMPATIBLE;
+	BACKWARD,
+	FORWARD,
+	FULL,
+	INCOMPATIBLE;
 }

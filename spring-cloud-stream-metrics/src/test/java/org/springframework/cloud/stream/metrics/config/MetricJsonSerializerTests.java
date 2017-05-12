@@ -21,7 +21,6 @@ import java.util.Date;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -36,17 +35,17 @@ import static org.junit.Assert.assertEquals;
 public class MetricJsonSerializerTests {
 
 	@Test
-	public void validateAlwaysGMTDateAndFormat() throws Exception {	
+	public void validateAlwaysGMTDateAndFormat() throws Exception {
 		Date date = new Date(1493060197188L); // Mon Apr 24 14:56:37 EDT 2017
-		Metric<Number> metric = new Metric<Number>("Hello", 123, date);	
-		
+		Metric<Number> metric = new Metric<Number>("Hello", 123, date);
+
 		JsonFactory factory = new JsonFactory();
-		StringWriter writer = new StringWriter();	
+		StringWriter writer = new StringWriter();
 		JsonGenerator jsonGenerator = factory.createGenerator(writer);
-		Serializer ser = new Serializer();	
+		Serializer ser = new Serializer();
 		ser.serialize(metric, jsonGenerator, null);
 		jsonGenerator.flush();
-		
+
 		JSONObject json = new JSONObject(writer.toString());
 		String serializedTimestamp = json.getString("timestamp");
 		assertEquals("2017-04-24T18:56:37.188Z", serializedTimestamp);

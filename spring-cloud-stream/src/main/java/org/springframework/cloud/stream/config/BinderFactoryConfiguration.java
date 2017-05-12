@@ -56,7 +56,8 @@ public class BinderFactoryConfiguration {
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
-	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX + ".selfContained";
+	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX
+			+ ".selfContained";
 
 	private static final String BINDER_CONFIGURATIONS_BEAN_NAME = "spring.cloud.stream.binderConfigruations";
 
@@ -71,6 +72,24 @@ public class BinderFactoryConfiguration {
 
 	@Autowired(required = false)
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
+
+	static Collection<BinderType> parseBinderConfigurations(ClassLoader classLoader, Resource resource)
+			throws IOException, ClassNotFoundException {
+		Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+		Collection<BinderType> parsedBinderConfigurations = new ArrayList<>();
+		for (Map.Entry<?, ?> entry : properties.entrySet()) {
+			String binderType = (String) entry.getKey();
+			String[] binderConfigurationClassNames = StringUtils
+					.commaDelimitedListToStringArray((String) entry.getValue());
+			Class<?>[] binderConfigurationClasses = new Class[binderConfigurationClassNames.length];
+			int i = 0;
+			for (String binderConfigurationClassName : binderConfigurationClassNames) {
+				binderConfigurationClasses[i++] = ClassUtils.forName(binderConfigurationClassName, classLoader);
+			}
+			parsedBinderConfigurations.add(new BinderType(binderType, binderConfigurationClasses));
+		}
+		return parsedBinderConfigurations;
+	}
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
@@ -152,23 +171,5 @@ public class BinderFactoryConfiguration {
 			throw new BeanCreationException("Cannot create binder factory:", e);
 		}
 		return new DefaultBinderTypeRegistry(binderTypes);
-	}
-
-	static Collection<BinderType> parseBinderConfigurations(ClassLoader classLoader, Resource resource)
-			throws IOException, ClassNotFoundException {
-		Properties properties = PropertiesLoaderUtils.loadProperties(resource);
-		Collection<BinderType> parsedBinderConfigurations = new ArrayList<>();
-		for (Map.Entry<?, ?> entry : properties.entrySet()) {
-			String binderType = (String) entry.getKey();
-			String[] binderConfigurationClassNames = StringUtils
-					.commaDelimitedListToStringArray((String) entry.getValue());
-			Class<?>[] binderConfigurationClasses = new Class[binderConfigurationClassNames.length];
-			int i = 0;
-			for (String binderConfigurationClassName : binderConfigurationClassNames) {
-				binderConfigurationClasses[i++] = ClassUtils.forName(binderConfigurationClassName, classLoader);
-			}
-			parsedBinderConfigurations.add(new BinderType(binderType, binderConfigurationClasses));
-		}
-		return parsedBinderConfigurations;
 	}
 }

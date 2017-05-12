@@ -74,7 +74,7 @@ public class PartitionedConsumerTest {
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	@Import({MockBinderRegistryConfiguration.class, BinderFactoryConfiguration.class})
+	@Import({ MockBinderRegistryConfiguration.class, BinderFactoryConfiguration.class })
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/partitioned-consumer-test.properties")
 	public static class TestSink {
 

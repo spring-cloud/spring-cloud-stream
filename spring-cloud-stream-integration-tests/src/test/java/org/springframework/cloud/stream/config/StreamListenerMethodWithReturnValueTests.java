@@ -56,7 +56,7 @@ public class StreamListenerMethodWithReturnValueTests {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[]{TestStringProcessor1.class, TestStringProcessor2.class});
+		return Arrays.asList(new Class[] { TestStringProcessor1.class, TestStringProcessor2.class });
 	}
 
 	@Test

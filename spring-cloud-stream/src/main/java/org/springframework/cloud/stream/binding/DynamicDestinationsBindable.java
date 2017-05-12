@@ -24,7 +24,8 @@ import java.util.Set;
 import org.springframework.cloud.stream.binder.Binding;
 
 /**
- * A {@link BindableAdapter} that stores the dynamic destination names and handles their unbinding.
+ * A {@link BindableAdapter} that stores the dynamic destination names and handles their
+ * unbinding.
  *
  * This class is not thread-safe.
  *
@@ -48,7 +49,7 @@ public final class DynamicDestinationsBindable extends BindableAdapter {
 
 	@Override
 	public void unbindOutputs(BindingService adapter) {
-		for (Map.Entry<String, Binding> entry: outputBindings.entrySet()) {
+		for (Map.Entry<String, Binding> entry : outputBindings.entrySet()) {
 			entry.getValue().unbind();
 		}
 		outputBindings.clear();

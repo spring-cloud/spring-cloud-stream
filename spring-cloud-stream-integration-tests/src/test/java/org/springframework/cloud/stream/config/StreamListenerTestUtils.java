@@ -26,6 +26,24 @@ import org.springframework.messaging.SubscribableChannel;
  */
 public class StreamListenerTestUtils {
 
+	public interface FooInboundChannel1 {
+
+		String INPUT = "foo1-input";
+
+		@Input(FooInboundChannel1.INPUT)
+		SubscribableChannel input();
+
+	}
+
+	public interface FooOutboundChannel1 {
+
+		String OUTPUT = "foo1-output";
+
+		@Output(FooOutboundChannel1.OUTPUT)
+		MessageChannel output();
+
+	}
+
 	public static class FooPojo {
 
 		private String foo;
@@ -50,23 +68,5 @@ public class StreamListenerTestUtils {
 		public void setBar(String bar) {
 			this.bar = bar;
 		}
-	}
-
-	public interface FooInboundChannel1 {
-
-		String INPUT = "foo1-input";
-
-		@Input(FooInboundChannel1.INPUT)
-		SubscribableChannel input();
-
-	}
-
-	public interface FooOutboundChannel1 {
-
-		String OUTPUT = "foo1-output";
-
-		@Output(FooOutboundChannel1.OUTPUT)
-		MessageChannel output();
-
 	}
 }

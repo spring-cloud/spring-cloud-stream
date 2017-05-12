@@ -67,7 +67,6 @@ public class PartitionedProducerTest {
 		verifyNoMoreInteractions(binder);
 	}
 
-
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderRegistryConfiguration.class)

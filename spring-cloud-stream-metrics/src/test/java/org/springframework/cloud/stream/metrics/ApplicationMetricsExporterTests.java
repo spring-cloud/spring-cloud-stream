@@ -101,7 +101,8 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
+		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+				ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
 		Assert.assertTrue(contains("mem", applicationMetrics.getMetrics()));
@@ -171,7 +172,8 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
+		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+				ApplicationMetrics.class);
 		Assert.assertFalse(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
 		Assert.assertTrue(contains("mem", applicationMetrics.getMetrics()));
@@ -193,7 +195,8 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
+		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+				ApplicationMetrics.class);
 		Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
@@ -225,7 +228,8 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
+		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+				ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
 		Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid"))
@@ -260,13 +264,15 @@ public class ApplicationMetricsExporterTests {
 					.poll(10, TimeUnit.SECONDS);
 			Assert.assertNotNull(message);
 			ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-			ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
+			ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+					ApplicationMetrics.class);
 			Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 					applicationMetrics.getMetrics()));
 			Assertions.assertThat(applicationMetrics.getProperties().get("spring.cloud.application.guid.test.metrics"))
 					.isEqualTo("highPriority");
 			applicationContext.close();
-		} finally {
+		}
+		finally {
 			System.clearProperty("spring.cloud.application.guid.test.metrics");
 		}
 	}
@@ -285,7 +291,8 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(), ApplicationMetrics.class);
+		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+				ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
 		Assert.assertTrue(contains("mem", applicationMetrics.getMetrics()));

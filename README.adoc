@@ -37,6 +37,19 @@ Any question that is not a bug or an issue should be asked on Stack Overflow, us
 
 We love contributions.  Follow this https://github.com/spring-cloud/spring-cloud-commons#contributing[link] for more information on how to contribute.
 
+=== Code formatting guidelines
+
+* The directory `eclipse` contains two files that can be used to configure the formatting rules in your IDE: `eclipse-code-formatter.xml` for the majority of the code formatting rules and `eclipse.importorder` to order the import statements.
+
+* In Eclipse you import these files by navigating `Windows -> Preferences` and then the menu items `Preferences > Java > Code Style > Formatter` and `Preferences > Java > Code Style > Organize Imports` respectively.
+
+* In `IntelliJ`, install the plugin `Eclipse Code Formatter`.
+You can find it by searching the "Browse Repositories" under the plugin option within `IntelliJ` (Once installed you will need to reboot Intellij for it to take effect).
+Then navigate to `Intellij IDEA > Preferences` and select the Eclipse Code Formatter.
+Select the `eclipse-code-formatter.xml` file for the field `Eclipse Java Formatter config file` and the file `eclipse.importorder` for the field `Import order`.
+Enable the `Eclipse code formatter` by clicking `Use the Eclipse code formatter` then click the *OK* button.
+** NOTE: If you configure the `Eclipse Code Formatter` from `File > Other Settings > Default Settings` it will set this policy across all of your Intellij projects.
+
 == Code of Conduct
 This project adheres to the Contributor Covenant link:CODE_OF_CONDUCT.adoc[code of conduct]. By participating, you  are expected to uphold this code. Please report unacceptable behavior to spring-code-of-conduct@pivotal.io.
 

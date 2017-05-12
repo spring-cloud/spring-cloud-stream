@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.springframework.cloud.stream.schema.server.controllers;
 
 import java.util.List;
@@ -134,10 +133,12 @@ public class ServerController {
 	}
 
 	@RequestMapping(method = RequestMethod.GET, produces = "application/json", path = "/{subject}/{format}")
-	public ResponseEntity<List<Schema>> findBySubjectAndVersion(@PathVariable("subject") String subject, @PathVariable("format") String format) {
+	public ResponseEntity<List<Schema>> findBySubjectAndVersion(@PathVariable("subject") String subject,
+			@PathVariable("format") String format) {
 		List<Schema> schemas = repository.findBySubjectAndFormatOrderByVersion(subject, format);
 		if (schemas == null || schemas.size() == 0) {
-			throw new SchemaNotFoundException(String.format("No schemas found for subject %s and format %s", subject, format));
+			throw new SchemaNotFoundException(
+					String.format("No schemas found for subject %s and format %s", subject, format));
 		}
 		return new ResponseEntity<List<Schema>>(schemas, HttpStatus.OK);
 	}

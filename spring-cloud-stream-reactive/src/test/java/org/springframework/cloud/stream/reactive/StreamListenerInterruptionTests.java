@@ -35,8 +35,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test validating that a fix for <a href="https://github.com/reactor/reactor-core/issues/159"/>
- * is present.
+ * Test validating that a fix for
+ * <a href="https://github.com/reactor/reactor-core/issues/159"/> is present.
  *
  * @author Marius Bogoevici
  */

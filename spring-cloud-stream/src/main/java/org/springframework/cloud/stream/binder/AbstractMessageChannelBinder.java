@@ -39,15 +39,16 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
 /**
- * {@link AbstractBinder} that serves as base class for {@link MessageChannel}
- * binders. Implementors must implement the following methods:
+ * {@link AbstractBinder} that serves as base class for {@link MessageChannel} binders.
+ * Implementors must implement the following methods:
  * <ul>
- * <li>{@link #createProducerMessageHandler(ProducerDestination, ProducerProperties)} </li>
- * <li>{@link #createConsumerEndpoint(ConsumerDestination, String, ConsumerProperties)} </li>
+ * <li>{@link #createProducerMessageHandler(ProducerDestination, ProducerProperties)}</li>
+ * <li>{@link #createConsumerEndpoint(ConsumerDestination, String, ConsumerProperties)}
+ * </li>
  * </ul>
  *
- * @param <C>  the consumer properties type
- * @param <P>  the producer properties type
+ * @param <C> the consumer properties type
+ * @param <P> the producer properties type
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Soby Chacko
@@ -59,9 +60,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	protected static final ExpressionParser EXPRESSION_PARSER = new SpelExpressionParser();
 
 	/**
-	 * Indicates whether the implementation and the message broker have
-	 * native support for message headers. If false, headers will be
-	 * embedded in the message payloads.
+	 * {@link ProvisioningProvider} delegated by the downstream binder implementations.
+	 */
+	protected final PP provisioningProvider;
+
+	/**
+	 * Indicates whether the implementation and the message broker have native support for
+	 * message headers. If false, headers will be embedded in the message payloads.
 	 */
 	private final boolean supportsHeadersNatively;
 
@@ -71,13 +76,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private final String[] headersToEmbed;
 
-	/**
-	 * {@link ProvisioningProvider} delegated by the downstream binder implementations.
-	 */
-	protected final PP provisioningProvider;
-
 	public AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
-										PP provisioningProvider) {
+			PP provisioningProvider) {
 		this.supportsHeadersNatively = supportsHeadersNatively;
 		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
 		this.provisioningProvider = provisioningProvider;
@@ -86,14 +86,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Binds an outbound channel to a given destination. The implementation delegates to
 	 * {@link ProvisioningProvider#provisionProducerDestination(String, ProducerProperties)}
-	 * and {@link #createProducerMessageHandler(ProducerDestination, ProducerProperties)} for
-	 * handling the middleware specific logic. If the returned producer message handler is an
-	 * {@link InitializingBean} then {@link InitializingBean#afterPropertiesSet()} will be
-	 * called on it. Similarly, if the returned producer message handler e	ndpoint is a
-	 * {@link Lifecycle}, then {@link Lifecycle#start()} will be called on it.
+	 * and {@link #createProducerMessageHandler(ProducerDestination, ProducerProperties)}
+	 * for handling the middleware specific logic. If the returned producer message
+	 * handler is an {@link InitializingBean} then
+	 * {@link InitializingBean#afterPropertiesSet()} will be called on it. Similarly, if
+	 * the returned producer message handler e ndpoint is a {@link Lifecycle}, then
+	 * {@link Lifecycle#start()} will be called on it.
 	 *
-	 * @param destination        the name of the destination
-	 * @param outputChannel      the channel to be bound
+	 * @param destination the name of the destination
+	 * @param outputChannel the channel to be bound
 	 * @param producerProperties the {@link ProducerProperties} of the binding
 	 * @return the Binding for the channel
 	 * @throws BinderException on internal errors during binding
@@ -106,7 +107,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		final MessageHandler producerMessageHandler;
 		final ProducerDestination producerDestination;
 		try {
-			producerDestination = this.provisioningProvider.provisionProducerDestination(destination, producerProperties);
+			producerDestination = this.provisioningProvider.provisionProducerDestination(destination,
+					producerProperties);
 			producerMessageHandler = createProducerMessageHandler(producerDestination, producerProperties);
 			if (producerMessageHandler instanceof InitializingBean) {
 				((InitializingBean) producerMessageHandler).afterPropertiesSet();
@@ -128,7 +130,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, !this.supportsHeadersNatively && HeaderMode.embeddedHeaders
-						.equals(producerProperties.getHeaderMode()), this.headersToEmbed, producerProperties.isUseNativeEncoding()));
+						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
+						producerProperties.isUseNativeEncoding()));
 
 		return new DefaultBinding<MessageChannel>(destination, null, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
@@ -139,8 +142,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					if (producerMessageHandler instanceof DisposableBean) {
 						((DisposableBean) producerMessageHandler).destroy();
 					}
-				} catch (Exception e) {
-					AbstractMessageChannelBinder.this.logger.error("Exception thrown while unbinding " + this.toString(), e);
+				}
+				catch (Exception e) {
+					AbstractMessageChannelBinder.this.logger
+							.error("Exception thrown while unbinding " + this.toString(), e);
 				}
 				afterUnbindProducer(producerDestination, producerProperties);
 			}
@@ -148,31 +153,32 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	/**
-	 * Creates a {@link MessageHandler} with the ability to send data to the
-	 * target middleware. If the returned instance is also a {@link Lifecycle},
-	 * it will be stopped automatically by the binder.
+	 * Creates a {@link MessageHandler} with the ability to send data to the target
+	 * middleware. If the returned instance is also a {@link Lifecycle}, it will be
+	 * stopped automatically by the binder.
 	 * <p>
-	 * In order to be fully compliant, the {@link MessageHandler} of the binder
-	 * must observe the following headers:
+	 * In order to be fully compliant, the {@link MessageHandler} of the binder must
+	 * observe the following headers:
 	 * <ul>
-	 * <li>{@link BinderHeaders#PARTITION_HEADER} - indicates the target
-	 * partition where the message must be sent</li>
+	 * <li>{@link BinderHeaders#PARTITION_HEADER} - indicates the target partition where
+	 * the message must be sent</li>
 	 * </ul>
 	 * <p>
 	 *
-	 * @param destination        the name of the target destination
+	 * @param destination the name of the target destination
 	 * @param producerProperties the producer properties
 	 * @return the message handler for sending data to the target middleware
 	 * @throws Exception
 	 */
-	protected abstract MessageHandler createProducerMessageHandler(ProducerDestination destination, P producerProperties)
+	protected abstract MessageHandler createProducerMessageHandler(ProducerDestination destination,
+			P producerProperties)
 			throws Exception;
 
 	/**
 	 * Invoked after the unbinding of a producer. Subclasses may override this to provide
 	 * their own logic for dealing with unbinding.
 	 *
-	 * @param destination        the bound destination
+	 * @param destination the bound destination
 	 * @param producerProperties the producer properties
 	 */
 	protected void afterUnbindProducer(ProducerDestination destination, P producerProperties) {
@@ -181,16 +187,17 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Binds an inbound channel to a given destination. The implementation delegates to
 	 * {@link ProvisioningProvider#provisionConsumerDestination(String, String, ConsumerProperties)}
-	 * and {@link #createConsumerEndpoint(ConsumerDestination, String, ConsumerProperties)}
+	 * and
+	 * {@link #createConsumerEndpoint(ConsumerDestination, String, ConsumerProperties)}
 	 * for handling middleware-specific logic. If the returned consumer endpoint is an
 	 * {@link InitializingBean} then {@link InitializingBean#afterPropertiesSet()} will be
 	 * called on it. Similarly, if the returned consumer endpoint is a {@link Lifecycle},
 	 * then {@link Lifecycle#start()} will be called on it.
 	 *
-	 * @param name         the name of the destination
-	 * @param group        the consumer group
+	 * @param name the name of the destination
+	 * @param group the consumer group
 	 * @param inputChannel the channel to be bound
-	 * @param properties   the {@link ConsumerProperties} of the binding
+	 * @param properties the {@link ConsumerProperties} of the binding
 	 * @return the Binding for the channel
 	 * @throws BinderException on internal errors during binding
 	 */
@@ -199,7 +206,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			final C properties) throws BinderException {
 		MessageProducer consumerEndpoint = null;
 		try {
-			final ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
+			final ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group,
+					properties);
 			final boolean extractEmbeddedHeaders = HeaderMode.embeddedHeaders.equals(
 					properties.getHeaderMode()) && !this.supportsHeadersNatively;
 			ReceivingHandler rh = new ReceivingHandler(extractEmbeddedHeaders);
@@ -256,9 +264,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * Creates {@link MessageProducer} that receives data from the consumer destination.
 	 * will be started and stopped by the binder.
 	 *
-	 * @param group       the consumer group
+	 * @param group the consumer group
 	 * @param destination reference to the consumer destination
-	 * @param properties  the consumer properties
+	 * @param properties the consumer properties
 	 * @return the consumer endpoint.
 	 */
 	protected abstract MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
@@ -268,8 +276,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * Invoked after the unbinding of a consumer. The binder implementation can override
 	 * this method to provide their own logic (e.g. for cleaning up destinations).
 	 *
-	 * @param destination        the consumer destination
-	 * @param group              the consumer group
+	 * @param destination the consumer destination
+	 * @param group the consumer group
 	 * @param consumerProperties the consumer properties
 	 */
 	protected void afterUnbindConsumer(ConsumerDestination destination, String group, C consumerProperties) {
@@ -299,7 +307,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				catch (Exception e) {
 					AbstractMessageChannelBinder.this.logger.error(
 							EmbeddedHeaderUtils.decodeExceptionMessage(
-									requestMessage), e);
+									requestMessage),
+							e);
 					messageValues = new MessageValues(requestMessage);
 				}
 				messageValues = deserializePayloadIfNecessary(messageValues);
@@ -338,8 +347,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) throws Exception {
-			Message<?> messageToSend = (this.useNativeEncoding) ?
-					message : serializeAndEmbedHeadersIfApplicable(message);
+			Message<?> messageToSend = (this.useNativeEncoding) ? message
+					: serializeAndEmbedHeadersIfApplicable(message);
 			this.delegate.handleMessage(messageToSend);
 		}
 
@@ -348,7 +357,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			byte[] payload;
 			if (this.embedHeaders) {
 				Object contentType = transformed.get(MessageHeaders.CONTENT_TYPE);
-				// transform content type headers to String, so that they can be properly embedded in JSON
+				// transform content type headers to String, so that they can be properly
+				// embedded in JSON
 				if (contentType instanceof MimeType) {
 					transformed.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
 				}

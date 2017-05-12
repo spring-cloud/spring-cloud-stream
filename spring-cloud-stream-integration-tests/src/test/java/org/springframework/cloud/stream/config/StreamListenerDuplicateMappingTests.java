@@ -64,8 +64,8 @@ public class StreamListenerDuplicateMappingTests {
 			context = SpringApplication.run(TestDuplicateMappingFromAbstractMethod.class, "--server.port=0");
 		}
 		catch (BeanCreationException e) {
-			String errorMessage = e.getCause().getMessage().startsWith("Duplicate @StreamListener mapping") ?
-					"Duplicate mapping exception is not expected" : "Test failed with exception";
+			String errorMessage = e.getCause().getMessage().startsWith("Duplicate @StreamListener mapping")
+					? "Duplicate mapping exception is not expected" : "Test failed with exception";
 			fail(errorMessage + ": " + e.getMessage());
 		}
 		finally {
@@ -73,6 +73,14 @@ public class StreamListenerDuplicateMappingTests {
 				context.close();
 			}
 		}
+	}
+
+	public interface GenericSink<T extends Base> {
+		void testMethod(T msg);
+	}
+
+	public interface Base {
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -100,14 +108,6 @@ public class StreamListenerDuplicateMappingTests {
 		@StreamListener(Sink.INPUT)
 		public void testMethod(TestBase msg) {
 		}
-	}
-
-	public interface GenericSink<T extends Base> {
-		void testMethod(T msg);
-	}
-
-	public interface Base {
-
 	}
 
 	public class TestBase implements Base {

@@ -51,11 +51,11 @@ public class BoundChannelsInterceptedTest {
 	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").build();
 
 	@Autowired
-	ChannelInterceptor channelInterceptor;
-
-	@Autowired
 	@Bindings(BoundChannelsInterceptedTest.Foo.class)
 	public Sink fooSink;
+
+	@Autowired
+	ChannelInterceptor channelInterceptor;
 
 	@Test
 	public void testBoundChannelsIntercepted() {
@@ -63,7 +63,6 @@ public class BoundChannelsInterceptedTest {
 		verify(this.channelInterceptor).preSend(TEST_MESSAGE, this.fooSink.input());
 		verifyNoMoreInteractions(this.channelInterceptor);
 	}
-
 
 	@SpringBootApplication
 	@EnableBinding(Sink.class)

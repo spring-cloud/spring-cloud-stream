@@ -31,7 +31,6 @@ import org.springframework.web.client.RestTemplate;
  */
 public class DefaultSchemaRegistryClient implements SchemaRegistryClient {
 
-
 	private RestTemplate template;
 
 	private String endpoint = "http://localhost:8990";
@@ -69,7 +68,8 @@ public class DefaultSchemaRegistryClient implements SchemaRegistryClient {
 		ResponseEntity<Map> responseEntity = this.template.getForEntity(
 				this.endpoint + "/" + schemaReference.getSubject() + "/" + schemaReference
 						.getFormat() + "/v" + schemaReference
-						.getVersion(), Map.class);
+								.getVersion(),
+				Map.class);
 		if (!responseEntity.getStatusCode().is2xxSuccessful()) {
 			throw new RuntimeException("Failed to fetch schema: " + responseEntity.toString());
 		}

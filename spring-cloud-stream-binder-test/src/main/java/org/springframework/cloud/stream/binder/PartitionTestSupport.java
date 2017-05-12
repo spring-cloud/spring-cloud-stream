@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder;
 
 import org.springframework.messaging.Message;
 
-
 /**
  * @author Gary Russell
  */

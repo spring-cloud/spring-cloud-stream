@@ -21,8 +21,9 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * A {@link StreamListenerResultAdapter} used for bridging an {@link org.springframework.cloud.stream.annotation.Output}
- * {@link MessageChannel} to a bound {@link MessageChannel}.
+ * A {@link StreamListenerResultAdapter} used for bridging an
+ * {@link org.springframework.cloud.stream.annotation.Output} {@link MessageChannel} to a
+ * bound {@link MessageChannel}.
  * @author Marius Bogoevici
  */
 public class MessageChannelStreamListenerResultAdapter

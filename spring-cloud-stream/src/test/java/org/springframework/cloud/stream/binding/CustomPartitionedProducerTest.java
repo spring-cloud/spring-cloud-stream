@@ -62,15 +62,22 @@ public class CustomPartitionedProducerTest {
 		DirectChannel messageChannel = (DirectChannel) this.testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
-				Field partitionHandlerField = ReflectionUtils.findField(MessageConverterConfigurer.PartitioningInterceptor.class, "partitionHandler");
+				Field partitionHandlerField = ReflectionUtils
+						.findField(MessageConverterConfigurer.PartitioningInterceptor.class, "partitionHandler");
 				ReflectionUtils.makeAccessible(partitionHandlerField);
-				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils.getField(partitionHandlerField, channelInterceptor);
-				Field partitonKeyExtractorField = ReflectionUtils.findField(PartitionHandler.class, "partitionKeyExtractorStrategy");
+				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils.getField(partitionHandlerField,
+						channelInterceptor);
+				Field partitonKeyExtractorField = ReflectionUtils.findField(PartitionHandler.class,
+						"partitionKeyExtractorStrategy");
 				ReflectionUtils.makeAccessible(partitonKeyExtractorField);
-				Field partitonSelectorField = ReflectionUtils.findField(PartitionHandler.class, "partitionSelectorStrategy");
+				Field partitonSelectorField = ReflectionUtils.findField(PartitionHandler.class,
+						"partitionSelectorStrategy");
 				ReflectionUtils.makeAccessible(partitonSelectorField);
-				Assert.assertTrue(((PartitionKeyExtractorStrategy) ReflectionUtils.getField(partitonKeyExtractorField, partitionHandler)).getClass().equals(CustomPartitionKeyExtractorClass.class));
-				Assert.assertTrue(((PartitionSelectorStrategy) ReflectionUtils.getField(partitonSelectorField, partitionHandler)).getClass().equals(CustomPartitionSelectorClass.class));
+				Assert.assertTrue(((PartitionKeyExtractorStrategy) ReflectionUtils.getField(partitonKeyExtractorField,
+						partitionHandler)).getClass().equals(CustomPartitionKeyExtractorClass.class));
+				Assert.assertTrue(
+						((PartitionSelectorStrategy) ReflectionUtils.getField(partitonSelectorField, partitionHandler))
+								.getClass().equals(CustomPartitionSelectorClass.class));
 			}
 		}
 	}

@@ -27,12 +27,12 @@ import org.springframework.core.Ordered;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * Installs the {@link TestSupportBinder} and exposes {@link TestSupportBinder.MessageCollectorImpl} to be injected in
- * tests.
+ * Installs the {@link TestSupportBinder} and exposes
+ * {@link TestSupportBinder.MessageCollectorImpl} to be injected in tests.
  *
- * Note that this auto-configuration has higher priority than regular binder configuration, so adding
- * this on the classpath in test scope is sufficient to have support kick in and replace all binders
- * with the test binder.
+ * Note that this auto-configuration has higher priority than regular binder
+ * configuration, so adding this on the classpath in test scope is sufficient to have
+ * support kick in and replace all binders with the test binder.
  *
  * @author Eric Bottard
  * @author Marius Bogoevici
@@ -47,7 +47,8 @@ public class TestSupportBinderAutoConfiguration {
 	public BinderFactory binderFactory() {
 		return new BinderFactory() {
 			@Override
-			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(String configurationName, Class<? extends T> bindableType) {
+			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(
+					String configurationName, Class<? extends T> bindableType) {
 				return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) messageChannelBinder;
 			}
 		};

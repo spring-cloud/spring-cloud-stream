@@ -28,7 +28,8 @@ import org.springframework.context.event.ContextRefreshedEvent;
  *
  * @author Marius Bogoevici
  */
-public class ContextStartAfterRefreshListener implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
+public class ContextStartAfterRefreshListener
+		implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware {
 
 	private ApplicationContext applicationContext;
 

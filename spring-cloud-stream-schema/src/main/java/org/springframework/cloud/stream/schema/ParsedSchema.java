@@ -21,13 +21,14 @@ import org.apache.avro.Schema;
 /**
  * Stores a {@link Schema} together with its String representation.
  *
- * Helps to avoid unnecessary parsing of schema textual representation,
- * as well as calls to {@link org.apache.avro.Schema} toString method which is very
- * expensive due the utilization of {@link com.fasterxml.jackson.databind.ObjectMapper}
- * to output a JSON representation of the schema.
+ * Helps to avoid unnecessary parsing of schema textual representation, as well as calls
+ * to {@link org.apache.avro.Schema} toString method which is very expensive due the
+ * utilization of {@link com.fasterxml.jackson.databind.ObjectMapper} to output a JSON
+ * representation of the schema.
  *
- * Once a schema is found for any Class, be it a POJO or a {@link org.apache.avro.generic.GenericContainer},
- * both textual representation as well as the {@link org.apache.avro.Schema} will be stored within this class.
+ * Once a schema is found for any Class, be it a POJO or a
+ * {@link org.apache.avro.generic.GenericContainer}, both textual representation as well
+ * as the {@link org.apache.avro.Schema} will be stored within this class.
  *
  * @author Vinicius Carvalho
  *
@@ -40,7 +41,7 @@ public class ParsedSchema {
 
 	private SchemaRegistrationResponse registration;
 
-	public ParsedSchema(Schema schema){
+	public ParsedSchema(Schema schema) {
 		this.schema = schema;
 		this.representation = schema.toString();
 	}

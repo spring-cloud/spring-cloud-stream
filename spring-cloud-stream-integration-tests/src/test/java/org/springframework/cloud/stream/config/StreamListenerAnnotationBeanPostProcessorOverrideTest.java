@@ -73,11 +73,6 @@ public class StreamListenerAnnotationBeanPostProcessorOverrideTest {
 	public static class TestPojoWithAnnotatedArguments {
 
 		List<StreamListenerTestUtils.FooPojo> receivedFoo = new ArrayList<>();
-		
-		@StreamListener(value = Sink.INPUT, condition = "foo")
-		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo) {
-			this.receivedFoo.add(fooPojo);
-		}
 
 		/**
 		 * Overrides the default {@link StreamListenerAnnotationBeanPostProcessor}.
@@ -86,12 +81,19 @@ public class StreamListenerAnnotationBeanPostProcessorOverrideTest {
 		public static BeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
 			return new StreamListenerAnnotationBeanPostProcessor() {
 				@Override
-				protected StreamListener postProcessAnnotation(StreamListener originalAnnotation, Method annotatedMethod) {
-					Map<String,Object> attributes = new HashMap<>(AnnotationUtils.getAnnotationAttributes(originalAnnotation));
+				protected StreamListener postProcessAnnotation(StreamListener originalAnnotation,
+						Method annotatedMethod) {
+					Map<String, Object> attributes = new HashMap<>(
+							AnnotationUtils.getAnnotationAttributes(originalAnnotation));
 					attributes.put("condition", "headers['type']=='" + originalAnnotation.condition() + "'");
 					return AnnotationUtils.synthesizeAnnotation(attributes, StreamListener.class, annotatedMethod);
 				}
 			};
+		}
+
+		@StreamListener(value = Sink.INPUT, condition = "foo")
+		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo) {
+			this.receivedFoo.add(fooPojo);
 		}
 	}
 }

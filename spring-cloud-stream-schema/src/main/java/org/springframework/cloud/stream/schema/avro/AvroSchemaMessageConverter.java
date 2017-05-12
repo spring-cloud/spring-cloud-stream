@@ -27,14 +27,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
 /**
- * A {@link org.springframework.messaging.converter.MessageConverter}
- * using Apache Avro.
- * The schema for serializing and deserializing will be automatically inferred
- * from the class for {@link org.apache.avro.specific.SpecificRecord} and regular
- * classes, unless a specific schema is set, case in which that schema will be used
- * instead.
- * For converting to {@link org.apache.avro.generic.GenericRecord} targets,
- * a schema must be set.s
+ * A {@link org.springframework.messaging.converter.MessageConverter} using Apache Avro.
+ * The schema for serializing and deserializing will be automatically inferred from the
+ * class for {@link org.apache.avro.specific.SpecificRecord} and regular classes, unless a
+ * specific schema is set, case in which that schema will be used instead. For converting
+ * to {@link org.apache.avro.generic.GenericRecord} targets, a schema must be set.s
  * @author Marius Bogoevici
  */
 
@@ -43,24 +40,24 @@ public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 	private Schema schema;
 
 	/**
-	 * Create a {@link AvroSchemaMessageConverter}.
-	 * Uses the default {@link MimeType} of {@code "application/avro"}.
+	 * Create a {@link AvroSchemaMessageConverter}. Uses the default {@link MimeType} of
+	 * {@code "application/avro"}.
 	 */
 	public AvroSchemaMessageConverter() {
 		super(new MimeType("application", "avro"));
 	}
 
 	/**
-	 * Create a {@link AvroSchemaMessageConverter}.
-	 * The converter will be used for the provided {@link MimeType}.
+	 * Create a {@link AvroSchemaMessageConverter}. The converter will be used for the
+	 * provided {@link MimeType}.
 	 */
 	public AvroSchemaMessageConverter(MimeType supportedMimeType) {
 		super(supportedMimeType);
 	}
 
 	/**
-	 * Create a {@link AvroSchemaMessageConverter}.
-	 * The converter will be used for the provided {@link MimeType}s.
+	 * Create a {@link AvroSchemaMessageConverter}. The converter will be used for the
+	 * provided {@link MimeType}s.
 	 * @param supportedMimeTypes the mime types supported by this converter
 	 */
 	public AvroSchemaMessageConverter(Collection<MimeType> supportedMimeTypes) {

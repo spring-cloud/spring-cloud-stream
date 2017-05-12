@@ -57,16 +57,11 @@ public class StreamListenerReactiveReturnWithMessageTests {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {ReactorTestReturnWithMessage1.class, ReactorTestReturnWithMessage2.class,
-				ReactorTestReturnWithMessage3.class, ReactorTestReturnWithMessage4.class, RxJava1TestReturnWithMessage1.class,
-				RxJava1TestReturnWithMessage2.class, RxJava1TestReturnWithMessage3.class, RxJava1TestReturnWithMessage4.class});
-	}
-
-	@Test
-	public void testReturnWithMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
-		sendMessageAndValidate(context);
-		context.close();
+		return Arrays.asList(new Class[] { ReactorTestReturnWithMessage1.class, ReactorTestReturnWithMessage2.class,
+				ReactorTestReturnWithMessage3.class, ReactorTestReturnWithMessage4.class,
+				RxJava1TestReturnWithMessage1.class,
+				RxJava1TestReturnWithMessage2.class, RxJava1TestReturnWithMessage3.class,
+				RxJava1TestReturnWithMessage4.class });
 	}
 
 	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
@@ -80,14 +75,19 @@ public class StreamListenerReactiveReturnWithMessageTests {
 		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
 
+	@Test
+	public void testReturnWithMessage() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
+		sendMessageAndValidate(context);
+		context.close();
+	}
+
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class ReactorTestReturnWithMessage1 {
 
 		@StreamListener
-		public
-		@Output(Processor.OUTPUT)
-		Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
+		public @Output(Processor.OUTPUT) Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
@@ -97,9 +97,7 @@ public class StreamListenerReactiveReturnWithMessageTests {
 	public static class ReactorTestReturnWithMessage2 {
 
 		@StreamListener(Processor.INPUT)
-		public
-		@Output(Processor.OUTPUT)
-		Flux<String> receive(Flux<Message<String>> input) {
+		public @Output(Processor.OUTPUT) Flux<String> receive(Flux<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
@@ -109,22 +107,17 @@ public class StreamListenerReactiveReturnWithMessageTests {
 	public static class ReactorTestReturnWithMessage3 {
 
 		@StreamListener(Processor.INPUT)
-		public
-		@SendTo(Processor.OUTPUT)
-		Flux<String> receive(Flux<Message<String>> input) {
+		public @SendTo(Processor.OUTPUT) Flux<String> receive(Flux<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
-
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class ReactorTestReturnWithMessage4 {
 
 		@StreamListener
-		public
-		@SendTo(Processor.OUTPUT)
-		Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
+		public @SendTo(Processor.OUTPUT) Flux<String> receive(@Input(Processor.INPUT) Flux<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
@@ -134,9 +127,8 @@ public class StreamListenerReactiveReturnWithMessageTests {
 	public static class RxJava1TestReturnWithMessage1 {
 
 		@StreamListener
-		public
-		@Output(Processor.OUTPUT)
-		Observable<String> receive(@Input(Processor.INPUT) Observable<Message<String>> input) {
+		public @Output(Processor.OUTPUT) Observable<String> receive(
+				@Input(Processor.INPUT) Observable<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
@@ -146,9 +138,8 @@ public class StreamListenerReactiveReturnWithMessageTests {
 	public static class RxJava1TestReturnWithMessage2 {
 
 		@StreamListener
-		public
-		@SendTo(Processor.OUTPUT)
-		Observable<String> receive(@Input(Processor.INPUT) Observable<Message<String>> input) {
+		public @SendTo(Processor.OUTPUT) Observable<String> receive(
+				@Input(Processor.INPUT) Observable<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
@@ -158,9 +149,7 @@ public class StreamListenerReactiveReturnWithMessageTests {
 	public static class RxJava1TestReturnWithMessage3 {
 
 		@StreamListener(Processor.INPUT)
-		public
-		@Output(Processor.OUTPUT)
-		Observable<String> receive(Observable<Message<String>> input) {
+		public @Output(Processor.OUTPUT) Observable<String> receive(Observable<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
@@ -170,9 +159,7 @@ public class StreamListenerReactiveReturnWithMessageTests {
 	public static class RxJava1TestReturnWithMessage4 {
 
 		@StreamListener(Processor.INPUT)
-		public
-		@SendTo(Processor.OUTPUT)
-		Observable<String> receive(Observable<Message<String>> input) {
+		public @SendTo(Processor.OUTPUT) Observable<String> receive(Observable<Message<String>> input) {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
