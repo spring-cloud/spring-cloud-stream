@@ -1654,7 +1654,7 @@ Use a full URL when setting this, including protocol (`http` or `https`) , port 
 +
 Default:: ``http://localhost:8990/``
 spring.cloud.stream.schemaRegistryClient.cached:: Whether the client should cache schema server responses.
-Normally set to `false`, as the caching happens iin the message converter.
+Normally set to `false`, as the caching happens in the message converter.
 Clients using the schema registry client should set this to `true`.
 +
 Default:: `true`
