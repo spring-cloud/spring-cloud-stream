@@ -56,9 +56,9 @@ public class StreamListenerReactiveReturnWithPojoTests {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] {ReactorTestReturnWithPojo1.class, ReactorTestReturnWithPojo2.class,
+		return Arrays.asList(new Class[] { ReactorTestReturnWithPojo1.class, ReactorTestReturnWithPojo2.class,
 				ReactorTestReturnWithPojo3.class, ReactorTestReturnWithPojo4.class, RxJava1TestReturnWithPojo1.class,
-				RxJava1TestReturnWithPojo2.class, RxJava1TestReturnWithPojo3.class, RxJava1TestReturnWithPojo4.class});
+				RxJava1TestReturnWithPojo2.class, RxJava1TestReturnWithPojo3.class, RxJava1TestReturnWithPojo4.class });
 	}
 
 	@Test
@@ -81,9 +81,7 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class ReactorTestReturnWithPojo1 {
 
 		@StreamListener
-		public
-		@Output(Processor.OUTPUT)
-		Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
+		public @Output(Processor.OUTPUT) Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
@@ -93,9 +91,7 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class ReactorTestReturnWithPojo2 {
 
 		@StreamListener(Processor.INPUT)
-		public
-		@Output(Processor.OUTPUT)
-		Flux<BarPojo> receive(Flux<FooPojo> input) {
+		public @Output(Processor.OUTPUT) Flux<BarPojo> receive(Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
@@ -105,9 +101,7 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class ReactorTestReturnWithPojo3 {
 
 		@StreamListener(Processor.INPUT)
-		public
-		@SendTo(Processor.OUTPUT)
-		Flux<BarPojo> receive(Flux<FooPojo> input) {
+		public @SendTo(Processor.OUTPUT) Flux<BarPojo> receive(Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
@@ -117,9 +111,7 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class ReactorTestReturnWithPojo4 {
 
 		@StreamListener
-		public
-		@SendTo(Processor.OUTPUT)
-		Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
+		public @SendTo(Processor.OUTPUT) Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
@@ -129,9 +121,8 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class RxJava1TestReturnWithPojo1 {
 
 		@StreamListener
-		public
-		@Output(Processor.OUTPUT)
-		Observable<BarPojo> receive(@Input(Processor.INPUT) Observable<FooPojo> input) {
+		public @Output(Processor.OUTPUT) Observable<BarPojo> receive(
+				@Input(Processor.INPUT) Observable<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
@@ -141,9 +132,8 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class RxJava1TestReturnWithPojo2 {
 
 		@StreamListener
-		public
-		@SendTo(Processor.OUTPUT)
-		Observable<BarPojo> receive(@Input(Processor.INPUT) Observable<FooPojo> input) {
+		public @SendTo(Processor.OUTPUT) Observable<BarPojo> receive(
+				@Input(Processor.INPUT) Observable<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
@@ -153,9 +143,7 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class RxJava1TestReturnWithPojo3 {
 
 		@StreamListener(Processor.INPUT)
-		public
-		@Output(Processor.OUTPUT)
-		Observable<BarPojo> receive(Observable<FooPojo> input) {
+		public @Output(Processor.OUTPUT) Observable<BarPojo> receive(Observable<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}
@@ -165,9 +153,7 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class RxJava1TestReturnWithPojo4 {
 
 		@StreamListener(Processor.INPUT)
-		public
-		@SendTo(Processor.OUTPUT)
-		Observable<BarPojo> receive(Observable<FooPojo> input) {
+		public @SendTo(Processor.OUTPUT) Observable<BarPojo> receive(Observable<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}

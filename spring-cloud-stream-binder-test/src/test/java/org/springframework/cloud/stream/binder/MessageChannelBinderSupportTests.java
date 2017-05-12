@@ -43,7 +43,6 @@ import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 /**
  * @author Gary Russell
  * @author David Turanski
@@ -131,7 +130,6 @@ public class MessageChannelBinderSupportTests {
 		assertThat(reconstructed.getPayload()).isEqualTo("{\"foo\":\"foo\"}");
 		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.APPLICATION_JSON_VALUE);
 	}
-
 
 	@Test
 	public void testContentTypePreservedForNonSCStApp() {
@@ -253,19 +251,6 @@ public class MessageChannelBinderSupportTests {
 
 	}
 
-	public class TestMessageChannelBinder extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
-
-		@Override
-		protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel channel, ConsumerProperties properties) {
-			return null;
-		}
-
-		@Override
-		public Binding<MessageChannel> doBindProducer(String name, MessageChannel channel, ProducerProperties properties) {
-			return null;
-		}
-	}
-
 	private static class TupleRegistrar implements KryoRegistrar {
 		private final TupleKryoRegistrar delegate = new TupleKryoRegistrar();
 
@@ -277,6 +262,22 @@ public class MessageChannelBinderSupportTests {
 		@Override
 		public List<Registration> getRegistrations() {
 			return delegate.getRegistrations();
+		}
+	}
+
+	public class TestMessageChannelBinder
+			extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
+
+		@Override
+		protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel channel,
+				ConsumerProperties properties) {
+			return null;
+		}
+
+		@Override
+		public Binding<MessageChannel> doBindProducer(String name, MessageChannel channel,
+				ProducerProperties properties) {
+			return null;
 		}
 	}
 

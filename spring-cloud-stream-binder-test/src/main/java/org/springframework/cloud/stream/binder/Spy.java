@@ -17,9 +17,8 @@
 package org.springframework.cloud.stream.binder;
 
 /**
- * Represents an out-of-band connection to the underlying middleware,
- * so that tests can check that some messages actually do (or do not)
- * transit through it.
+ * Represents an out-of-band connection to the underlying middleware, so that tests can
+ * check that some messages actually do (or do not) transit through it.
  *
  * @author Eric Bottard
  */

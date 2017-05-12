@@ -52,11 +52,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(StreamListenerMethodReturnWithConversionTests.class)
-@Suite.SuiteClasses({StreamListenerMethodReturnWithConversionTests.TestReturnConversion.class,
-		StreamListenerMethodReturnWithConversionTests.TestReturnNoConversion.class})
+@Suite.SuiteClasses({ StreamListenerMethodReturnWithConversionTests.TestReturnConversion.class,
+		StreamListenerMethodReturnWithConversionTests.TestReturnNoConversion.class })
 public class StreamListenerMethodReturnWithConversionTests extends Suite {
 
-	public StreamListenerMethodReturnWithConversionTests(Class<?> klass, RunnerBuilder builder) throws InitializationError {
+	public StreamListenerMethodReturnWithConversionTests(Class<?> klass, RunnerBuilder builder)
+			throws InitializationError {
 		super(klass, builder);
 	}
 
@@ -71,7 +72,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 
 		@Parameterized.Parameters
 		public static Collection InputConfigs() {
-			return Arrays.asList(new Class[] {TestPojoWithMimeType1.class, TestPojoWithMimeType2.class});
+			return Arrays.asList(new Class[] { TestPojoWithMimeType1.class, TestPojoWithMimeType2.class });
 		}
 
 		@Test
@@ -87,10 +88,12 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 			assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
 			assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
-			Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+			Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1,
+					TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
 			assertThat(message.getPayload()).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
-			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class).includes(MimeTypeUtils.APPLICATION_JSON));
+			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
+					.includes(MimeTypeUtils.APPLICATION_JSON));
 			context.close();
 		}
 	}
@@ -106,7 +109,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 
 		@Parameterized.Parameters
 		public static Collection InputConfigs() {
-			return Arrays.asList(new Class[] {TestPojoWithMimeType1.class, TestPojoWithMimeType2.class});
+			return Arrays.asList(new Class[] { TestPojoWithMimeType1.class, TestPojoWithMimeType2.class });
 		}
 
 		@Test
@@ -121,8 +124,9 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 			assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
 			assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
-			Message<StreamListenerTestUtils.BarPojo> message = (Message<StreamListenerTestUtils.BarPojo>) collector.forChannel(processor.output()).poll(1,
-					TimeUnit.SECONDS);
+			Message<StreamListenerTestUtils.BarPojo> message = (Message<StreamListenerTestUtils.BarPojo>) collector
+					.forChannel(processor.output()).poll(1,
+							TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
 			assertThat(message.getPayload().getBar()).isEqualTo("barbar" + id);
 			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class) == null);

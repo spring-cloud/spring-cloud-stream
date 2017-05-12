@@ -25,7 +25,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 /**
- * An {@link EnvironmentPostProcessor} that sets some common configuration properties (log config etc.,) for binder tests.
+ * An {@link EnvironmentPostProcessor} that sets some common configuration properties (log
+ * config etc.,) for binder tests.
  *
  * @author Ilayaperumal Gopinathan
  */

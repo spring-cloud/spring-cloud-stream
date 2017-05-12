@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.springframework.cloud.stream.schema.server.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;

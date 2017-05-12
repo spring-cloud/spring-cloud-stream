@@ -27,9 +27,9 @@ import org.springframework.util.Assert;
 public abstract class GenericsUtils {
 
 	/**
-	 * For a specific class that implements or extends a parametrized type
-	 * returns the parameter of that interface at a given position. For example,
-	 * for this class:
+	 * For a specific class that implements or extends a parametrized type returns the
+	 * parameter of that interface at a given position. For example, for this class:
+	 * 
 	 * <pre>
 	 * {@code
 	 * class MessageChannelBinder implements Binder<MessageChannel, ?, ?>
@@ -46,7 +46,8 @@ public abstract class GenericsUtils {
 	 * @param interfaceClass the parametrized interface
 	 * @param position the position
 	 * @return the parameter type if any
-	 * @throws IllegalStateException if the evaluated class does not implement the interface or
+	 * @throws IllegalStateException if the evaluated class does not implement the
+	 * interface or
 	 */
 	public static Class<?> getParameterType(Class<?> evaluatedClass, Class<?> interfaceClass, int position) {
 		Class<?> bindableType = null;

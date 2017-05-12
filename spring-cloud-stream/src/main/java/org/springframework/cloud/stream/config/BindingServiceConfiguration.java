@@ -79,9 +79,9 @@ import org.springframework.util.CollectionUtils;
 @EnableConfigurationProperties(BindingServiceProperties.class)
 public class BindingServiceConfiguration {
 
-	private static final String ERROR_CHANNEL_NAME = "error";
-
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
+
+	private static final String ERROR_CHANNEL_NAME = "error";
 
 	@Autowired(required = false)
 	private ObjectMapper objectMapper;
@@ -91,6 +91,20 @@ public class BindingServiceConfiguration {
 	 */
 	@Autowired(required = false)
 	private List<MessageConverter> customMessageConverters;
+
+	@Bean
+	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
+			CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
+		messageHandlerMethodFactory
+				.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		return messageHandlerMethodFactory;
+	}
+
+	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
+	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
+		return new StreamListenerAnnotationBeanPostProcessor();
+	}
 
 	@Bean
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
@@ -169,24 +183,10 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory
-				.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
-		return messageHandlerMethodFactory;
-	}
-
-	@Bean
 	// provided for backwards compatibility scenarios
 	public ChannelBindingServiceProperties channelBindingServiceProperties(
 			BindingServiceProperties bindingServiceProperties) {
 		return new ChannelBindingServiceProperties(bindingServiceProperties);
-	}
-
-	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
-	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
-		return new StreamListenerAnnotationBeanPostProcessor();
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
@@ -194,25 +194,6 @@ public class BindingServiceConfiguration {
 	protected static class PostProcessorConfiguration {
 
 		private BinderAwareChannelResolver binderAwareChannelResolver;
-
-		@Bean
-		@ConditionalOnMissingBean(BinderAwareRouterBeanPostProcessor.class)
-		public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
-				final ConfigurableListableBeanFactory beanFactory) {
-			// IMPORTANT: Lazy delegate to avoid instantiating all of the above early
-			return new BinderAwareRouterBeanPostProcessor(new DestinationResolver<MessageChannel>() {
-
-				@Override
-				public MessageChannel resolveDestination(String name) throws DestinationResolutionException {
-					if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
-						PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils
-								.beanOfType(beanFactory, BinderAwareChannelResolver.class);
-					}
-					return PostProcessorConfiguration.this.binderAwareChannelResolver.resolveDestination(name);
-				}
-
-			});
-		}
 
 		/**
 		 * Adds property accessors for use in SpEL expression evaluation
@@ -244,6 +225,25 @@ public class BindingServiceConfiguration {
 					return bean;
 				}
 			};
+		}
+
+		@Bean
+		@ConditionalOnMissingBean(BinderAwareRouterBeanPostProcessor.class)
+		public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
+				final ConfigurableListableBeanFactory beanFactory) {
+			// IMPORTANT: Lazy delegate to avoid instantiating all of the above early
+			return new BinderAwareRouterBeanPostProcessor(new DestinationResolver<MessageChannel>() {
+
+				@Override
+				public MessageChannel resolveDestination(String name) throws DestinationResolutionException {
+					if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
+						PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils
+								.beanOfType(beanFactory, BinderAwareChannelResolver.class);
+					}
+					return PostProcessorConfiguration.this.binderAwareChannelResolver.resolveDestination(name);
+				}
+
+			});
 		}
 	}
 

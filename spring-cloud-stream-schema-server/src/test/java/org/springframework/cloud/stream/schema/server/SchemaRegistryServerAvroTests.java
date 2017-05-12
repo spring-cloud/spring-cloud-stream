@@ -207,7 +207,8 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
 				schema1, Schema.class);
 		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(HttpStatus.OK, client.getForEntity("http://localhost:8990/test/avro/v1", Schema.class).getStatusCode());
+		Assert.assertEquals(HttpStatus.OK,
+				client.getForEntity("http://localhost:8990/test/avro/v1", Schema.class).getStatusCode());
 		client.getForEntity("http://localhost:8990/test/avro/1", Schema.class);
 		Schema schema2 = new Schema();
 		schema2.setFormat("avro");
@@ -216,7 +217,8 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Schema> response2 = client.postForEntity("http://localhost:8990/",
 				schema2, Schema.class);
 		Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(HttpStatus.OK, client.getForEntity("http://localhost:8990/test/avro/v2", Schema.class).getStatusCode());
+		Assert.assertEquals(HttpStatus.OK,
+				client.getForEntity("http://localhost:8990/test/avro/v2", Schema.class).getStatusCode());
 		schemaServerProperties.setAllowSchemaDeletion(true);
 		client.delete("http://localhost:8990/test");
 		ResponseEntity<Schema> response4 = client
@@ -236,7 +238,8 @@ public class SchemaRegistryServerAvroTests {
 		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
 				schema, Schema.class);
 		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-		ResponseEntity<Object> deleteBySubjectFormatVersion = client.exchange("http://localhost:8990/test/avro/v1", HttpMethod.DELETE,
+		ResponseEntity<Object> deleteBySubjectFormatVersion = client.exchange("http://localhost:8990/test/avro/v1",
+				HttpMethod.DELETE,
 				null, Object.class);
 		assertThat(deleteBySubjectFormatVersion.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 		ResponseEntity<Object> deleteBySubject = client.exchange("http://localhost:8990/test", HttpMethod.DELETE,
@@ -266,8 +269,9 @@ public class SchemaRegistryServerAvroTests {
 				v2, Schema.class);
 		Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
 
-		ResponseEntity<List<Schema>> schemaResponse = client.exchange("http://localhost:8990/test/avro", HttpMethod.GET, null, new ParameterizedTypeReference<List<Schema>>() {
-		});
+		ResponseEntity<List<Schema>> schemaResponse = client.exchange("http://localhost:8990/test/avro", HttpMethod.GET,
+				null, new ParameterizedTypeReference<List<Schema>>() {
+				});
 
 		Assert.assertTrue(schemaResponse.getStatusCode().is2xxSuccessful());
 		Assert.assertEquals(2, schemaResponse.getBody().size());

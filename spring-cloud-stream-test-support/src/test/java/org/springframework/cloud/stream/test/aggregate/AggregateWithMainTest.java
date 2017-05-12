@@ -43,8 +43,9 @@ public class AggregateWithMainTest {
 	@Test
 	public void testAggregateApplication() throws InterruptedException {
 		// emulate a main method
-		ConfigurableApplicationContext context = new AggregateApplicationBuilder(TestSupportBinderAutoConfiguration.class).from(UppercaseProcessor.class)
-				.namespace("upper").to(SuffixProcessor.class).namespace("suffix").run();
+		ConfigurableApplicationContext context = new AggregateApplicationBuilder(
+				TestSupportBinderAutoConfiguration.class).from(UppercaseProcessor.class)
+						.namespace("upper").to(SuffixProcessor.class).namespace("suffix").run();
 
 		AggregateApplication aggregateAccessor = context.getBean(AggregateApplication.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
@@ -60,7 +61,6 @@ public class AggregateWithMainTest {
 	@Configuration
 	@EnableBinding(Processor.class)
 	public static class UppercaseProcessor {
-
 
 		@Autowired
 		Processor processor;

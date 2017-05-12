@@ -27,8 +27,8 @@ import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 
 /**
- * A mutable type for allowing {@link Binder} implementations to transform and enrich message content more
- * efficiently.
+ * A mutable type for allowing {@link Binder} implementations to transform and enrich
+ * message content more efficiently.
  * @author David Turanski
  * @author Marius Bogoevici
  */
@@ -61,28 +61,6 @@ public class MessageValues implements Map<String, Object> {
 		return payload;
 	}
 
-	public Map<String, Object> getHeaders() {
-		return headers;
-	}
-
-	/**
-	 * Convert to a {@link Message} using a {@link org.springframework.integration.support.MessageBuilderFactory}.
-	 * @param messageBuilderFactory the MessageBuilderFactory
-	 * @return the Message
-	 */
-	public Message<?> toMessage(MessageBuilderFactory messageBuilderFactory) {
-		return messageBuilderFactory.withPayload(this.payload).copyHeaders(this.headers).build();
-	}
-
-
-	/**
-	 * Convert to a {@link Message} using a the default {@link org.springframework.integration.support.MessageBuilder}.
-	 * @return the Message
-	 */
-	public Message<?> toMessage() {
-		return MessageBuilder.withPayload(this.payload).copyHeaders(this.headers).build();
-	}
-
 	/**
 	 * Set the payload
 	 * @param payload any non null object.
@@ -90,6 +68,29 @@ public class MessageValues implements Map<String, Object> {
 	public void setPayload(Object payload) {
 		Assert.notNull(payload, "'payload' cannot be null");
 		this.payload = payload;
+	}
+
+	public Map<String, Object> getHeaders() {
+		return headers;
+	}
+
+	/**
+	 * Convert to a {@link Message} using a
+	 * {@link org.springframework.integration.support.MessageBuilderFactory}.
+	 * @param messageBuilderFactory the MessageBuilderFactory
+	 * @return the Message
+	 */
+	public Message<?> toMessage(MessageBuilderFactory messageBuilderFactory) {
+		return messageBuilderFactory.withPayload(this.payload).copyHeaders(this.headers).build();
+	}
+
+	/**
+	 * Convert to a {@link Message} using a the default
+	 * {@link org.springframework.integration.support.MessageBuilder}.
+	 * @return the Message
+	 */
+	public Message<?> toMessage() {
+		return MessageBuilder.withPayload(this.payload).copyHeaders(this.headers).build();
 	}
 
 	@Override

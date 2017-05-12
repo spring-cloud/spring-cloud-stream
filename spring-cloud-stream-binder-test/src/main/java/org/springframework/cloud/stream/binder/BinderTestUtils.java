@@ -25,18 +25,17 @@ import org.springframework.integration.support.utils.IntegrationUtils;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-
 /**
  *
  * @author Gary Russell
  */
 public abstract class BinderTestUtils {
 
-	private static final MessageBuilderFactory mbf = new MutableMessageBuilderFactory();
-
 	public static final AbstractApplicationContext MOCK_AC = mock(AbstractApplicationContext.class);
 
 	public static final ConfigurableListableBeanFactory MOCK_BF = mock(ConfigurableListableBeanFactory.class);
+
+	private static final MessageBuilderFactory mbf = new MutableMessageBuilderFactory();
 
 	static {
 		when(MOCK_BF.getBean(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,

@@ -40,7 +40,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 		"spring.cloud.stream.default.contentType=application/json",
 		"spring.cloud.stream.bindings.output.destination=ticktock",
 		"spring.cloud.stream.default.producer.requiredGroups=someGroup",
-		"spring.cloud.stream.bindings.output.producer.headerMode=raw"})
+		"spring.cloud.stream.bindings.output.producer.headerMode=raw" })
 public class SourceBindingWithGlobalPropertiesTest {
 
 	@Autowired

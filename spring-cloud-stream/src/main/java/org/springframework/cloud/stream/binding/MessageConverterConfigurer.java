@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binding;
 
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -51,11 +50,11 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
- * A {@link MessageChannelConfigurer} that sets data types and message converters based on {@link
- * org.springframework.cloud.stream.config.BindingProperties#contentType}. Also adds a
- * {@link org.springframework.messaging.support.ChannelInterceptor} to
- * the message channel to set the `ContentType` header for the message (if not already set) based on the `ContentType`
- * binding property of the channel.
+ * A {@link MessageChannelConfigurer} that sets data types and message converters based on
+ * {@link org.springframework.cloud.stream.config.BindingProperties#contentType}. Also
+ * adds a {@link org.springframework.messaging.support.ChannelInterceptor} to the message
+ * channel to set the `ContentType` header for the message (if not already set) based on
+ * the `ContentType` binding property of the channel.
  *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -66,11 +65,11 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	private final MessageBuilderFactory messageBuilderFactory = new MutableMessageBuilderFactory();
 
-	private ConfigurableListableBeanFactory beanFactory;
-
 	private final CompositeMessageConverterFactory compositeMessageConverterFactory;
 
 	private final BindingServiceProperties bindingServiceProperties;
+
+	private ConfigurableListableBeanFactory beanFactory;
 
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
@@ -102,7 +101,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	/**
 	 * Setup data-type and message converters for the given message channel.
 	 *
-	 * @param channel     message channel to set the data-type and message converters
+	 * @param channel message channel to set the data-type and message converters
 	 * @param channelName the channel name
 	 */
 	private void configureMessageChannel(MessageChannel channel, String channelName, boolean input) {
@@ -114,7 +113,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		ProducerProperties producerProperties = bindingProperties.getProducer();
 		if (!input && producerProperties != null && producerProperties.isPartitioned()) {
 			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,
-					getPartitionKeyExtractorStrategy(producerProperties), getPartitionSelectorStrategy(producerProperties)));
+					getPartitionKeyExtractorStrategy(producerProperties),
+					getPartitionSelectorStrategy(producerProperties)));
 		}
 		if (StringUtils.hasText(contentType)) {
 			messageChannel.addInterceptor(new ContentTypeConvertingInterceptor(contentType, input));
@@ -168,6 +168,23 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		}
 	}
 
+	/**
+	 * Default partition strategy; only works on keys with "real" hash codes, such as
+	 * String. Caller now always applies modulo so no need to do so here.
+	 */
+	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
+
+		@Override
+		public int selectPartition(Object key, int partitionCount) {
+			int hashCode = key.hashCode();
+			if (hashCode == Integer.MIN_VALUE) {
+				hashCode = 0;
+			}
+			return Math.abs(hashCode);
+		}
+
+	}
+
 	private final class ContentTypeConvertingInterceptor extends ChannelInterceptorAdapter {
 
 		private final String contentType;
@@ -187,9 +204,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			this.mimeType = MessageConverterUtils.getMimeType(contentType);
 			this.input = input;
 			if (MessageConverterUtils.X_JAVA_OBJECT.includes(this.mimeType)) {
-				this.klazz =
-						MessageConverterUtils
-								.getJavaTypeForJavaObjectContentType(this.mimeType);
+				this.klazz = MessageConverterUtils
+						.getJavaTypeForJavaObjectContentType(this.mimeType);
 			}
 			else if (this.mimeType.equals(MessageConverterUtils.X_SPRING_TUPLE)) {
 				this.klazz = Tuple.class;
@@ -201,9 +217,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			else {
 				this.klazz = byte[].class;
 			}
-			this.messageConverter =
-					MessageConverterConfigurer.this.compositeMessageConverterFactory
-							.getMessageConverterForType(this.mimeType);
+			this.messageConverter = MessageConverterConfigurer.this.compositeMessageConverterFactory
+					.getMessageConverterForType(this.mimeType);
 			this.provideHint = this.messageConverter instanceof AbstractMessageConverter;
 		}
 
@@ -250,7 +265,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 					sentMessage = MessageConverterConfigurer.this.messageBuilderFactory.withPayload(converted)
 							.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE,
 
-									this.mimeType).build();
+									this.mimeType)
+							.build();
 				}
 			}
 			if (sentMessage == null) {
@@ -270,7 +286,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 				PartitionKeyExtractorStrategy partitionKeyExtractorStrategy,
 				PartitionSelectorStrategy partitionSelectorStrategy) {
 			this.bindingProperties = bindingProperties;
-			this.partitionHandler = new PartitionHandler(ExpressionUtils.createStandardEvaluationContext(MessageConverterConfigurer.this.beanFactory),
+			this.partitionHandler = new PartitionHandler(
+					ExpressionUtils.createStandardEvaluationContext(MessageConverterConfigurer.this.beanFactory),
 					this.bindingProperties.getProducer(), partitionKeyExtractorStrategy, partitionSelectorStrategy);
 		}
 
@@ -292,23 +309,6 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 						.build();
 			}
 		}
-	}
-
-	/**
-	 * Default partition strategy; only works on keys with "real" hash codes,
-	 * such as String. Caller now always applies modulo so no need to do so here.
-	 */
-	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
-
-		@Override
-		public int selectPartition(Object key, int partitionCount) {
-			int hashCode = key.hashCode();
-			if (hashCode == Integer.MIN_VALUE) {
-				hashCode = 0;
-			}
-			return Math.abs(hashCode);
-		}
-
 	}
 
 }

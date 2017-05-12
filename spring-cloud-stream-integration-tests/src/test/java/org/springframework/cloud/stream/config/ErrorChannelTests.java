@@ -56,7 +56,8 @@ public class ErrorChannelTests {
 
 	@Test
 	public void testErrorChannelBinding() throws Exception {
-		Message<?> message = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class)).messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
+		Message<?> message = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+				.messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
 		Assert.isTrue(message instanceof ErrorMessage, "Message should be an instance of ErrorMessage");
 		Assert.isTrue(message.getPayload() instanceof MessagingException, "Message payload should be an instance" +
 				"of MessagingException");
@@ -81,4 +82,3 @@ public class ErrorChannelTests {
 		}
 	}
 }
-

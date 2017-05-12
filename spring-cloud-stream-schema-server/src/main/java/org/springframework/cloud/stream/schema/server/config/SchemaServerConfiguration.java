@@ -48,17 +48,18 @@ public class SchemaServerConfiguration {
 		return new BeanFactoryPostProcessor() {
 
 			@Override
-			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws
-					BeansException {
+			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 				if (beanFactory instanceof BeanDefinitionRegistry) {
-					EntityScanPackages.register((BeanDefinitionRegistry) beanFactory, Collections.singletonList(Schema.class.getPackage().getName()));
+					EntityScanPackages.register((BeanDefinitionRegistry) beanFactory,
+							Collections.singletonList(Schema.class.getPackage().getName()));
 				}
 			}
 		};
 	}
 
 	@Bean
-	public ServerController serverController(SchemaRepository repository, SchemaServerProperties schemeServerProperties) {
+	public ServerController serverController(SchemaRepository repository,
+			SchemaServerProperties schemeServerProperties) {
 		return new ServerController(repository, schemaValidators(), schemeServerProperties);
 	}
 

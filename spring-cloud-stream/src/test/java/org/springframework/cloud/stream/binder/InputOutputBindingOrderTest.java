@@ -62,7 +62,7 @@ public class InputOutputBindingOrderTest {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@Import({MockBinderRegistryConfiguration.class, BinderFactoryConfiguration.class})
+	@Import({ MockBinderRegistryConfiguration.class, BinderFactoryConfiguration.class })
 	public static class TestSource {
 
 		@Bean

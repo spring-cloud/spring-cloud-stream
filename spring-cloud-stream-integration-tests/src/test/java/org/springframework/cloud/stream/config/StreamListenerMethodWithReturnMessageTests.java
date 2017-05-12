@@ -56,7 +56,7 @@ public class StreamListenerMethodWithReturnMessageTests {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[]{TestPojoWithMessageReturn1.class, TestPojoWithMessageReturn2.class});
+		return Arrays.asList(new Class[] { TestPojoWithMessageReturn1.class, TestPojoWithMessageReturn2.class });
 	}
 
 	@Test

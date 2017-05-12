@@ -26,8 +26,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * A {@link org.springframework.cloud.stream.binding.StreamListenerResultAdapter} from a {@link Flux}
- * return type to a bound {@link MessageChannel}.
+ * A {@link org.springframework.cloud.stream.binding.StreamListenerResultAdapter} from a
+ * {@link Flux} return type to a bound {@link MessageChannel}.
  * @author Marius Bogoevici
  */
 public class FluxToMessageChannelResultAdapter

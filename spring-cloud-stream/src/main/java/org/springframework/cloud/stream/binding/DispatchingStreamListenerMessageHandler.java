@@ -28,9 +28,9 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.util.Assert;
 
 /**
- * An {@link AbstractReplyProducingMessageHandler} that delegates to a
- * collection of internal {@link ConditionalStreamListenerHandler} instances,
- * executing the ones that match the given expression.
+ * An {@link AbstractReplyProducingMessageHandler} that delegates to a collection of
+ * internal {@link ConditionalStreamListenerHandler} instances, executing the ones that
+ * match the given expression.
  *
  * @author Marius Bogoevici
  * @since 1.2

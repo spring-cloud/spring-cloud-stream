@@ -76,10 +76,9 @@ public class BindingServiceTests {
 		final String inputChannelName = "input";
 		bindingProperties.put(inputChannelName, props);
 		properties.setBindings(bindingProperties);
-		DefaultBinderFactory binderFactory =
-				new DefaultBinderFactory(Collections.singletonMap("mock",
-						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
-								new Properties(), true, true)));
+		DefaultBinderFactory binderFactory = new DefaultBinderFactory(Collections.singletonMap("mock",
+				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
+						new Properties(), true, true)));
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		BindingService service = new BindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
@@ -269,10 +268,9 @@ public class BindingServiceTests {
 		final String outputChannelName = "output";
 		bindingProperties.put(outputChannelName, props);
 		serviceProperties.setBindings(bindingProperties);
-		DefaultBinderFactory binderFactory =
-				new DefaultBinderFactory(Collections.singletonMap("mock",
-						new BinderConfiguration(new BinderType("mock", new Class[]{MockBinderConfiguration.class}),
-								new Properties(), true, true)));
+		DefaultBinderFactory binderFactory = new DefaultBinderFactory(Collections.singletonMap("mock",
+				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
+						new Properties(), true, true)));
 		BindingService service = new BindingService(serviceProperties, binderFactory);
 		MessageChannel outputChannel = new DirectChannel();
 		try {
@@ -310,13 +308,13 @@ public class BindingServiceTests {
 			assertThat(e).hasMessageContaining("Concurrency should be greater than zero.");
 		}
 	}
-	
+
 	@Test
 	public void testResolveBindableType() {
 		Class<?> bindableType = GenericsUtils.getParameterType(FooBinder.class, Binder.class, 0);
 		assertThat(bindableType).isSameAs(SomeBindableType.class);
 	}
-	
+
 	public static class FooBinder
 			implements Binder<SomeBindableType, ConsumerProperties, ProducerProperties> {
 		@Override
@@ -333,7 +331,7 @@ public class BindingServiceTests {
 			throw new UnsupportedOperationException();
 		}
 	}
-	
+
 	public static class SomeBindableType {
 	}
 }

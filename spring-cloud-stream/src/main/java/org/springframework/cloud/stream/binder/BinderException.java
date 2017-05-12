@@ -16,10 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
-
 /**
- * Exception thrown to indicate a binder error (most
- * likely a configuration error).
+ * Exception thrown to indicate a binder error (most likely a configuration error).
  *
  * @author Gary Russell
  * @author Marius Bogoevici

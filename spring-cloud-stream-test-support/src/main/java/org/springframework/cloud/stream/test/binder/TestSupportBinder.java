@@ -36,9 +36,12 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 
 /**
- * A minimal binder that<ul>
- *     <li>does nothing about binding consumers, leaving the channel as-is, so that a test author can interact with it directly,</li>
- *     <li>registers a queue channel on the producer side, so that it is easy to assert what is received.</li>
+ * A minimal binder that
+ * <ul>
+ * <li>does nothing about binding consumers, leaving the channel as-is, so that a test
+ * author can interact with it directly,</li>
+ * <li>registers a queue channel on the producer side, so that it is easy to assert what
+ * is received.</li>
  * </ul>
  *
  * @author Eric Bottard
@@ -53,12 +56,14 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 	private final ConcurrentMap<String, MessageChannel> messageChannels = new ConcurrentHashMap<>();
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget, ConsumerProperties properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget,
+			ConsumerProperties properties) {
 		return new TestBinding(inboundBindTarget, null);
 	}
 
 	/**
-	 * Registers a single subscriber to the channel, that enqueues messages for later retrieval and assertion in tests.
+	 * Registers a single subscriber to the channel, that enqueues messages for later
+	 * retrieval and assertion in tests.
 	 */
 	@Override
 	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget,
@@ -99,7 +104,8 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 		}
 
 		private void unregister(MessageChannel channel) {
-			Assert.notNull(results.remove(channel), "Trying to unregister a mapping for an unknown channel [" + channel + "]");
+			Assert.notNull(results.remove(channel),
+					"Trying to unregister a mapping for an unknown channel [" + channel + "]");
 		}
 
 		@Override

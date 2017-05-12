@@ -56,7 +56,19 @@ public class StreamListenerReactiveInputOutputArgsWithSenderTests {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[]{ReactorTestInputOutputArgsWithFluxSender.class, RxJava1TestInputOutputArgsWithObservableSender.class});
+		return Arrays.asList(new Class[] { ReactorTestInputOutputArgsWithFluxSender.class,
+				RxJava1TestInputOutputArgsWithObservableSender.class });
+	}
+
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+		@SuppressWarnings("unchecked")
+		Processor processor = context.getBean(Processor.class);
+		String sentPayload = "hello " + UUID.randomUUID().toString();
+		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		assertThat(result).isNotNull();
+		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
 
 	@Test
@@ -70,23 +82,12 @@ public class StreamListenerReactiveInputOutputArgsWithSenderTests {
 		context.close();
 	}
 
-
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
-		@SuppressWarnings("unchecked")
-		Processor processor = context.getBean(Processor.class);
-		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
-		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
-		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
-	}
-
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class ReactorTestInputOutputArgsWithFluxSender {
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input, @Output(Processor.OUTPUT) FluxSender output) {
+		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input,
+				@Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString().toUpperCase())
 					.map(o -> MessageBuilder.withPayload(o).build()));
@@ -97,8 +98,8 @@ public class StreamListenerReactiveInputOutputArgsWithSenderTests {
 	@EnableAutoConfiguration
 	public static class RxJava1TestInputOutputArgsWithObservableSender {
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) Observable<Message<?>> input, @Output(Processor.OUTPUT)
-				ObservableSender output) {
+		public void receive(@Input(Processor.INPUT) Observable<Message<?>> input,
+				@Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString().toUpperCase())
 					.map(o -> MessageBuilder.withPayload(o).build()));

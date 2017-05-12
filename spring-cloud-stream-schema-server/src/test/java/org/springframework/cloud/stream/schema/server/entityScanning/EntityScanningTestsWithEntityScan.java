@@ -31,7 +31,8 @@ public class EntityScanningTestsWithEntityScan {
 
 	@Test
 	public void testApplicationWithEmbeddedSchemaRegistryServerOutsideOfRootPackage() throws Exception {
-		final ConfigurableApplicationContext context = SpringApplication.run(CustomApplicationEmbeddingSchemaServer.class, "--server.port=0");
+		final ConfigurableApplicationContext context = SpringApplication
+				.run(CustomApplicationEmbeddingSchemaServer.class, "--server.port=0");
 		context.close();
 	}
 

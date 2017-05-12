@@ -57,23 +57,23 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	protected B testBinder;
 
 	/**
-	 * Subclasses may override this default value to have tests wait longer for a message receive, for example if
-	 * running
-	 * in an environment that is known to be slow (e.g. travis).
+	 * Subclasses may override this default value to have tests wait longer for a message
+	 * receive, for example if running in an environment that is known to be slow (e.g.
+	 * travis).
 	 */
 	protected double timeoutMultiplier = 1.0D;
 
 	/**
-	 * Attempt to receive a message on the given channel,
-	 * waiting up to 1s (times the {@link #timeoutMultiplier}).
+	 * Attempt to receive a message on the given channel, waiting up to 1s (times the
+	 * {@link #timeoutMultiplier}).
 	 */
 	protected Message<?> receive(PollableChannel channel) {
 		return receive(channel, 1);
 	}
 
 	/**
-	 * Attempt to receive a message on the given channel,
-	 * waiting up to 1s * additionalMultiplier * {@link #timeoutMultiplier}).
+	 * Attempt to receive a message on the given channel, waiting up to 1s *
+	 * additionalMultiplier * {@link #timeoutMultiplier}).
 	 *
 	 * Allows accomodating tests which are slower than normal (e.g. retry).
 	 */
@@ -170,7 +170,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel1.send(message1);
 		moduleOutputChannel2.send(message2);
 
-
 		Message<?>[] messages = new Message[2];
 		messages[0] = receive(moduleInputChannel);
 		messages[1] = receive(moduleInputChannel);
@@ -211,7 +210,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		consumerBinding.unbind();
 	}
 
-
 	protected abstract B getBinder() throws Exception;
 
 	protected abstract CP createConsumerProperties();
@@ -224,15 +222,14 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		return bindingProperties;
 	}
 
-
 	protected BindingProperties createProducerBindingProperties(PP producerProperties) {
 		BindingProperties bindingProperties = new BindingProperties();
 		bindingProperties.setProducer(producerProperties);
 		return bindingProperties;
 	}
 
-	protected DirectChannel createBindableChannel(String channelName, BindingProperties bindingProperties) throws
-			Exception {
+	protected DirectChannel createBindableChannel(String channelName, BindingProperties bindingProperties)
+			throws Exception {
 		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
 		bindingServiceProperties.getBindings().put(channelName, bindingProperties);
 		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
@@ -259,7 +256,8 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	}
 
 	/**
-	 * If appropriate, let the binder middleware settle down a bit while binding/unbinding actually happens.
+	 * If appropriate, let the binder middleware settle down a bit while binding/unbinding
+	 * actually happens.
 	 */
 	protected void binderBindUnbindLatency() throws InterruptedException {
 		// default none

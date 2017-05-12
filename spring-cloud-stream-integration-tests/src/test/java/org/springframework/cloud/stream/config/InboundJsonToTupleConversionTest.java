@@ -61,9 +61,8 @@ public class InboundJsonToTupleConversionTest {
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo(TupleBuilder.tuple().of("name","foo"));
+		assertThat(received.getPayload()).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
 	}
-
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration

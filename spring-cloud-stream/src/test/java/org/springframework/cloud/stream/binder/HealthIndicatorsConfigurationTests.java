@@ -51,6 +51,24 @@ import static org.junit.Assert.fail;
  */
 public class HealthIndicatorsConfigurationTests {
 
+	public static ConfigurableApplicationContext createBinderTestContext(
+			String[] additionalClasspathDirectories, String... properties)
+			throws IOException {
+		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ? new URL[0]
+				: new URL[additionalClasspathDirectories.length];
+		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
+			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
+				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i])
+						.getURL().toString() + "/");
+			}
+		}
+		ClassLoader classLoader = new URLClassLoader(urls,
+				BinderFactoryConfigurationTests.class.getClassLoader());
+		return new SpringApplicationBuilder(SimpleSource.class)
+				.resourceLoader(new DefaultResourceLoader(classLoader))
+				.properties(properties).web(false).run();
+	}
+
 	@Test
 	public void healthIndicatorsCheck() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" },
@@ -95,24 +113,6 @@ public class HealthIndicatorsConfigurationTests {
 		assertThat(context.getBean("testHealthIndicator1", CompositeHealthIndicator.class)).isNotNull();
 		assertThat(context.getBean("testHealthIndicator2", CompositeHealthIndicator.class)).isNotNull();
 		context.close();
-	}
-
-	public static ConfigurableApplicationContext createBinderTestContext(
-			String[] additionalClasspathDirectories, String... properties)
-					throws IOException {
-		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ? new URL[0]
-				: new URL[additionalClasspathDirectories.length];
-		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
-			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
-				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i])
-						.getURL().toString() + "/");
-			}
-		}
-		ClassLoader classLoader = new URLClassLoader(urls,
-				BinderFactoryConfigurationTests.class.getClassLoader());
-		return new SpringApplicationBuilder(SimpleSource.class)
-				.resourceLoader(new DefaultResourceLoader(classLoader))
-				.properties(properties).web(false).run();
 	}
 
 	@EnableAutoConfiguration

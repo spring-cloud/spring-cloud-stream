@@ -28,24 +28,16 @@ import org.springframework.messaging.MessageChannel;
  * @author Gary Russell
  * @author Mark Fisher
  */
-public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> implements Binder<MessageChannel, CP, PP> {
+public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
+		implements Binder<MessageChannel, CP, PP> {
 
 	protected Set<String> queues = new HashSet<String>();
 
 	private C binder;
 
-	public void setBinder(C binder) {
-		try {
-			binder.afterPropertiesSet();
-		}
-		catch (Exception e) {
-			throw new RuntimeException("Failed to initialize binder", e);
-		}
-		this.binder = binder;
-	}
-
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel, CP properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel,
+			CP properties) {
 		queues.add(name);
 		return binder.bindConsumer(name, group, moduleInputChannel, properties);
 	}
@@ -64,6 +56,16 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 
 	public C getBinder() {
 		return this.binder;
+	}
+
+	public void setBinder(C binder) {
+		try {
+			binder.afterPropertiesSet();
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Failed to initialize binder", e);
+		}
+		this.binder = binder;
 	}
 
 }

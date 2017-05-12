@@ -20,19 +20,19 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 
 /**
- * Provisioning SPI that allows the users to provision destinations such as queues and topics.
- * This SPI will allow the binders to be separated from any provisioning concerns and only focus
- * on setting up endpoints for sending/receiving messages.
+ * Provisioning SPI that allows the users to provision destinations such as queues and
+ * topics. This SPI will allow the binders to be separated from any provisioning concerns
+ * and only focus on setting up endpoints for sending/receiving messages.
  *
  * Implementations must implement the following methods:
  *
  * <ul>
  * <li>{@link #provisionProducerDestination(String, ProducerProperties)}</li>
- * <li>{@link #provisionConsumerDestination(String, String, ConsumerProperties)} </li>
+ * <li>{@link #provisionConsumerDestination(String, String, ConsumerProperties)}</li>
  * </ul>
  *
- * @param <C>  the consumer properties type
- * @param <P>  the producer properties type
+ * @param <C> the consumer properties type
+ * @param <P> the producer properties type
  *
  * @author Soby Chacko
  *
@@ -41,10 +41,10 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 public interface ProvisioningProvider<C extends ConsumerProperties, P extends ProducerProperties> {
 
 	/**
-	 * Creates middleware destination on the physical broker for the producer to send data. The implementation
-	 * is middleware-specific.
+	 * Creates middleware destination on the physical broker for the producer to send
+	 * data. The implementation is middleware-specific.
 	 *
-	 * @param name       the name of the producer destination
+	 * @param name the name of the producer destination
 	 * @param properties producer properties
 	 * @return reference to {@link ProducerDestination} that represents a producer
 	 * @throws ProvisioningException on underlying provisioning errors from the middleware
@@ -52,15 +52,16 @@ public interface ProvisioningProvider<C extends ConsumerProperties, P extends Pr
 	ProducerDestination provisionProducerDestination(String name, P properties) throws ProvisioningException;
 
 	/**
-	 * Creates the middleware destination on the physical broker for the consumer to consume data.
-	 * The implementation is middleware-specific.
+	 * Creates the middleware destination on the physical broker for the consumer to
+	 * consume data. The implementation is middleware-specific.
 	 *
-	 * @param name       the name of the destination
-	 * @param group      the consumer group
+	 * @param name the name of the destination
+	 * @param group the consumer group
 	 * @param properties consumer properties
 	 * @return reference to {@link ConsumerDestination} that represents a consumer
 	 * @throws ProvisioningException on underlying provisioning errors from the middleware
 	 */
-	ConsumerDestination provisionConsumerDestination(String name, String group, C properties) throws ProvisioningException;
+	ConsumerDestination provisionConsumerDestination(String name, String group, C properties)
+			throws ProvisioningException;
 
 }

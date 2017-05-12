@@ -20,7 +20,8 @@ import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * An implementation of {@link BindingTargetFactory} for creating {@link SubscribableChannel}s.
+ * An implementation of {@link BindingTargetFactory} for creating
+ * {@link SubscribableChannel}s.
  *
  * @author Marius Bogoevici
  * @author David Syer

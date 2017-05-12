@@ -25,7 +25,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 /**
- * An {@link EnvironmentPostProcessor} that sets some configuration properties for {@link TestSupportBinder}.
+ * An {@link EnvironmentPostProcessor} that sets some configuration properties for
+ * {@link TestSupportBinder}.
  *
  * @author Ilayaperumal Gopinathan
  */

@@ -28,8 +28,8 @@ import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
 /**
- * Message converter providing backwards compatibility for applications using
- * an Java type as input.
+ * Message converter providing backwards compatibility for applications using an Java type
+ * as input.
  *
  * @author Marius Bogoevici
  */
@@ -72,7 +72,8 @@ public class JsonUnmarshallingConverter extends AbstractMessageConverter {
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		Object payload = message.getPayload();
 		try {
-			return payload instanceof byte[] ? objectMapper.readValue((byte[]) payload, targetClass) : objectMapper.readValue((String) payload, targetClass);
+			return payload instanceof byte[] ? objectMapper.readValue((byte[]) payload, targetClass)
+					: objectMapper.readValue((String) payload, targetClass);
 		}
 		catch (IOException e) {
 			throw new MessageConversionException("Cannot parse payload ", e);

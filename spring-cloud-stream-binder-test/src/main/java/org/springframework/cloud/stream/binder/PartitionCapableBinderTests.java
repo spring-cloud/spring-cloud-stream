@@ -44,8 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
-public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends
-		AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
+public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
 		extends AbstractBinderTests<B, CP, PP> {
 
 	protected static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();

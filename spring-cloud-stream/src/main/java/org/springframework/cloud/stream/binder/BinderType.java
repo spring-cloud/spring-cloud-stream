@@ -19,10 +19,12 @@ package org.springframework.cloud.stream.binder;
 import java.util.Arrays;
 
 /**
- * References one or more {@link org.springframework.context.annotation.Configuration}-annotated classes which
- * provide a context definition which contains exactly one {@link Binder}, typically for a given type of system (e.g.
- * Rabbit, Kafka, Redis, etc.). An application may contain multiple instances of a given {@link BinderType},
- * when connecting to multiple systems of the same type.
+ * References one or more
+ * {@link org.springframework.context.annotation.Configuration}-annotated classes which
+ * provide a context definition which contains exactly one {@link Binder}, typically for a
+ * given type of system (e.g. Rabbit, Kafka, Redis, etc.). An application may contain
+ * multiple instances of a given {@link BinderType}, when connecting to multiple systems
+ * of the same type.
  *
  * @author Marius Bogoevici
  */

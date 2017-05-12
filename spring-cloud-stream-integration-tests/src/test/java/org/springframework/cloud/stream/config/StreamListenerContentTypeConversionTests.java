@@ -63,6 +63,7 @@ public class StreamListenerContentTypeConversionTests {
 	public static class TestSinkWithContentTypeConversion {
 
 		List<StreamListenerTestUtils.FooPojo> receivedArguments = new ArrayList<>();
+
 		CountDownLatch latch = new CountDownLatch(1);
 
 		@StreamListener(Sink.INPUT)

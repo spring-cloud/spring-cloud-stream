@@ -44,6 +44,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
@@ -72,7 +73,6 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
 				TimeUnit.MILLISECONDS);
 
-
 		ConfigurableApplicationContext barSourceContext = SpringApplication.run(AvroSourceApplication.class,
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
@@ -89,14 +89,12 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 
 		assertThat(barOutboundMessage).isNotNull();
 
-
 		User2 secondBarOutboundPojo = new User2();
 		secondBarOutboundPojo.setFavoriteColor("foo" + UUID.randomUUID().toString());
 		secondBarOutboundPojo.setName("foo" + UUID.randomUUID().toString());
 		source.output().send(MessageBuilder.withPayload(secondBarOutboundPojo).build());
 		Message<?> secondBarOutboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
 				TimeUnit.MILLISECONDS);
-
 
 		ConfigurableApplicationContext sinkContext = SpringApplication.run(AvroSinkApplication.class,
 				"--server.port=0", "--spring.jmx.enabled=false");
@@ -116,7 +114,6 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 		assertThat(receivedPojos.get(1).getName()).isEqualTo(firstOutboundUser2.getName());
 		assertThat(receivedPojos.get(1).getFavoritePlace()).isEqualTo("Boston");
 
-
 		assertThat(receivedPojos.get(2)).isNotSameAs(secondBarOutboundPojo);
 		assertThat(receivedPojos.get(2).getFavoriteColor()).isEqualTo(secondBarOutboundPojo.getFavoriteColor());
 		assertThat(receivedPojos.get(2).getName()).isEqualTo(secondBarOutboundPojo.getName());
@@ -126,6 +123,16 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 		barSourceContext.close();
 		sourceContext.close();
 		schemaRegistryServerContext.close();
+	}
+
+	@Test
+	public void testNoCacheConfiguration() {
+		ConfigurableApplicationContext sourceContext = SpringApplication.run(NoCacheConfiguration.class,
+				"--spring.main.web-environment=false");
+		AvroSchemaRegistryClientMessageConverter converter = sourceContext
+				.getBean(AvroSchemaRegistryClientMessageConverter.class);
+		DirectFieldAccessor accessor = new DirectFieldAccessor(converter);
+		assertThat(accessor.getPropertyValue("cacheManager")).isInstanceOf(NoOpCacheManager.class);
 	}
 
 	@EnableBinding(Source.class)
@@ -147,14 +154,6 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 			receivedPojos.add(fooPojo);
 		}
 
-	}
-
-	@Test
-	public void testNoCacheConfiguration (){
-		ConfigurableApplicationContext sourceContext = SpringApplication.run(NoCacheConfiguration.class, "--spring.main.web-environment=false");
-		AvroSchemaRegistryClientMessageConverter converter = sourceContext.getBean(AvroSchemaRegistryClientMessageConverter.class);
-		DirectFieldAccessor accessor = new DirectFieldAccessor(converter);
-		assertThat(accessor.getPropertyValue("cacheManager")).isInstanceOf(NoOpCacheManager.class);
 	}
 
 	@Configuration

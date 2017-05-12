@@ -33,8 +33,10 @@ public class RelaxedPropertiesUtilsTests {
 		RelaxedNames springEnv = new RelaxedNames("SPRING_APPLICATION_NAME");
 		RelaxedNames springDot = new RelaxedNames("spring.application.name");
 		RelaxedNames springCamel = new RelaxedNames("springApplicationName");
-		RelaxedNames contentType = new RelaxedNames("spring.cloud.stream.bindings.applicationMetricsChannel.contentType");
-		RelaxedNames contentTypeEnv = new RelaxedNames("SPRING_CLOUD_STREAM_BINDINGS_APPLICATION-METRICS-CHANNEL_CONTENT-TYPE");
+		RelaxedNames contentType = new RelaxedNames(
+				"spring.cloud.stream.bindings.applicationMetricsChannel.contentType");
+		RelaxedNames contentTypeEnv = new RelaxedNames(
+				"SPRING_CLOUD_STREAM_BINDINGS_APPLICATION-METRICS-CHANNEL_CONTENT-TYPE");
 		RelaxedNames xyz = new RelaxedNames("My.X.Is");
 		RelaxedNames springMetrics = new RelaxedNames("spring.cloud.stream.applicationMetricsChannel");
 		RelaxedNames springMetricsEnv = new RelaxedNames("spring.cloud.stream.application-metrics-channel");

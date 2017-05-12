@@ -44,6 +44,8 @@ import org.springframework.util.PatternMatchUtils;
 public class ApplicationMetricsProperties
 		implements ApplicationListener<ContextRefreshedEvent> {
 
+	private final MetricExportProperties metricExportProperties;
+
 	private String prefix = "";
 
 	@Value("${spring.application.name:${vcap.application.name:${spring.config.name:application}}}")
@@ -53,15 +55,21 @@ public class ApplicationMetricsProperties
 
 	private String[] properties;
 
-	private final MetricExportProperties metricExportProperties;
-
-	public TriggerProperties getTrigger() {
-		return metricExportProperties.findTrigger(BinderMetricsAutoConfiguration.APPLICATION_METRICS_EXPORTER_TRIGGER_NAME);
-	}
+	/**
+	 * List of properties that are going to be appended to each message. This gets
+	 * populate by onApplicationEvent, once the context refreshes to avoid overhead of
+	 * doing per message basis.
+	 */
+	private Map<String, Object> exportProperties = new HashMap<>();
 
 	public ApplicationMetricsProperties(MetricExportProperties metricExportProperties) {
 		Assert.notNull(metricExportProperties, "'metricsExportProperties' cannot be null");
 		this.metricExportProperties = metricExportProperties;
+	}
+
+	public TriggerProperties getTrigger() {
+		return metricExportProperties
+				.findTrigger(BinderMetricsAutoConfiguration.APPLICATION_METRICS_EXPORTER_TRIGGER_NAME);
 	}
 
 	public String getPrefix() {
@@ -90,13 +98,6 @@ public class ApplicationMetricsProperties
 	public void setProperties(String[] properties) {
 		this.properties = properties;
 	}
-
-	/**
-	 * List of properties that are going to be appended to each message. This gets
-	 * populate by onApplicationEvent, once the context refreshes to avoid overhead of
-	 * doing per message basis.
-	 */
-	private Map<String, Object> exportProperties = new HashMap<>();
 
 	public Map<String, Object> getExportProperties() {
 		return exportProperties;
@@ -137,7 +138,7 @@ public class ApplicationMetricsProperties
 							relaxedLoop: for (String relaxedPropertyName : relaxedNames) {
 								if (isMatch(relaxedPropertyName, this.properties, null)) {
 									Object value = source.getProperty(propertyName);
-									String stringValue =  ObjectUtils.nullSafeToString(value);
+									String stringValue = ObjectUtils.nullSafeToString(value);
 									Object exportedValue = null;
 									if (value != null) {
 										exportedValue = stringValue.startsWith("#{")

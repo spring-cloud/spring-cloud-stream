@@ -49,16 +49,6 @@ public class StreamListenerReactiveMethodTests {
 		}
 	}
 
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class ReactorTestInputOutputArgs {
-
-		@StreamListener(Processor.INPUT)
-		public void receive(Flux<String> input, @Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> m.toUpperCase()));
-		}
-	}
-
 	@Test
 	public void testRxJava1InvalidInputValueWithOutputMethodParameters() {
 		try {
@@ -70,16 +60,6 @@ public class StreamListenerReactiveMethodTests {
 		}
 	}
 
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestInputOutputArgs {
-
-		@StreamListener(Processor.INPUT)
-		public void receive(Observable<String> input, @Output(Processor.OUTPUT) ObservableSender output) {
-			output.send(input.map(m -> m.toUpperCase()));
-		}
-	}
-
 	@Test
 	public void testMethodReturnTypeWithNoOutboundSpecified() {
 		try {
@@ -88,6 +68,26 @@ public class StreamListenerReactiveMethodTests {
 		}
 		catch (Exception e) {
 			assertThat(e.getMessage()).contains(RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class ReactorTestInputOutputArgs {
+
+		@StreamListener(Processor.INPUT)
+		public void receive(Flux<String> input, @Output(Processor.OUTPUT) FluxSender output) {
+			output.send(input.map(m -> m.toUpperCase()));
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class RxJava1TestInputOutputArgs {
+
+		@StreamListener(Processor.INPUT)
+		public void receive(Observable<String> input, @Output(Processor.OUTPUT) ObservableSender output) {
+			output.send(input.map(m -> m.toUpperCase()));
 		}
 	}
 

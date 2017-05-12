@@ -55,8 +55,7 @@ public class MessageChannelToObservableSenderParameterAdapter implements
 	public ObservableSender adapt(MessageChannel bindingTarget, MethodParameter parameter) {
 		return new ObservableSender() {
 
-			private FluxSender fluxSender = MessageChannelToObservableSenderParameterAdapter.this
-					.messageChannelToFluxSenderArgumentAdapter
+			private FluxSender fluxSender = MessageChannelToObservableSenderParameterAdapter.this.messageChannelToFluxSenderArgumentAdapter
 					.adapt(bindingTarget, parameter);
 
 			@Override

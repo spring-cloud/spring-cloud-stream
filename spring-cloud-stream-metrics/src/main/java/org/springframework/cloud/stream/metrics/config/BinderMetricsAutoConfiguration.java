@@ -40,8 +40,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 
 /**
- * Autoconfiguration registering an {@link Exporter} that publishes application metrics over
- * the {@link Emitter#applicationMetrics()} channel.  
+ * Autoconfiguration registering an {@link Exporter} that publishes application metrics
+ * over the {@link Emitter#applicationMetrics()} channel.
  *
  * @author Vinicius Carvalho
  * @author Marius Bogoevici
@@ -56,19 +56,15 @@ import org.springframework.context.annotation.Lazy;
 		+ ".destination")
 public class BinderMetricsAutoConfiguration {
 
-	public static Log log = LogFactory.getLog(BinderMetricsAutoConfiguration.class);
-
 	public static final String APPLICATION_METRICS_EXPORTER_TRIGGER_NAME = "application";
 
-	@Bean
-	public MetricJsonSerializer metricJsonSerializer() {
-		return new MetricJsonSerializer();
-	}
+	public static Log log = LogFactory.getLog(BinderMetricsAutoConfiguration.class);
 
 	/**
-	 * Postprocessor for installing the {@link ApplicationMetricsExporter} as an
-	 * exporter under the name {@code application}.
-	 * @param endpoint the metrics endpoint (lazy reference to prevent early initialization)
+	 * Postprocessor for installing the {@link ApplicationMetricsExporter} as an exporter
+	 * under the name {@code application}.
+	 * @param endpoint the metrics endpoint (lazy reference to prevent early
+	 * initialization)
 	 * @param emitter the emitter bound interface
 	 * @param properties application metrics properties
 	 * @return
@@ -99,6 +95,11 @@ public class BinderMetricsAutoConfiguration {
 				return bean;
 			}
 		};
+	}
+
+	@Bean
+	public MetricJsonSerializer metricJsonSerializer() {
+		return new MetricJsonSerializer();
 	}
 
 }

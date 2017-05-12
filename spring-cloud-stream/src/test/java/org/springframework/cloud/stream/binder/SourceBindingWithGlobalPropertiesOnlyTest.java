@@ -37,7 +37,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SourceBindingWithGlobalPropertiesOnlyTest.TestSource.class, properties = {
-		"spring.cloud.stream.default.contentType=application/json"})
+		"spring.cloud.stream.default.contentType=application/json" })
 public class SourceBindingWithGlobalPropertiesOnlyTest {
 
 	@Autowired

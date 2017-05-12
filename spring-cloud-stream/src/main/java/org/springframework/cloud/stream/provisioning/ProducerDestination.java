@@ -39,15 +39,16 @@ public interface ProducerDestination {
 	/**
 	 * Provides the destination name for a given partition.
 	 *
-	 * If the producer provision the destination with partitions, on certain middleware brokers
-	 * there may exist multiple destinations distinguishable by the partition. For example,
-	 * if the destination name is <b>xyz</b> and it is provisioned with <b>4</b> partitions, there may be
-	 * 4 different destinations on the broker such as - <b>xyz-0, xyz-1, xyz-2 and xyz-3</b>.
-	 * This behavior is dependent on the broker and the way the corresponding binder implements the logic.
+	 * If the producer provision the destination with partitions, on certain middleware
+	 * brokers there may exist multiple destinations distinguishable by the partition. For
+	 * example, if the destination name is <b>xyz</b> and it is provisioned with <b>4</b>
+	 * partitions, there may be 4 different destinations on the broker such as - <b>xyz-0,
+	 * xyz-1, xyz-2 and xyz-3</b>. This behavior is dependent on the broker and the way
+	 * the corresponding binder implements the logic.
 	 *
-	 * On certain brokers (for instance, Kafka), this behavior is completely skipped
-	 * and there is a one-to-one correspondence between the destination name in the provisioner and
-	 * the physical destination on the broker.
+	 * On certain brokers (for instance, Kafka), this behavior is completely skipped and
+	 * there is a one-to-one correspondence between the destination name in the
+	 * provisioner and the physical destination on the broker.
 	 *
 	 * @param partition the partition to find destination for
 	 * @return destination name for the given partition

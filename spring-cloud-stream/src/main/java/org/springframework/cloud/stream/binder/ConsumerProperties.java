@@ -82,17 +82,13 @@ public class ConsumerProperties {
 		this.instanceIndex = instanceIndex;
 	}
 
-	public void setMaxAttempts(int maxAttempts) {
-		this.maxAttempts = maxAttempts;
-	}
-
 	@Min(value = 1, message = "Max attempts should be greater than zero.")
 	public int getMaxAttempts() {
 		return maxAttempts;
 	}
 
-	public void setBackOffInitialInterval(int backOffInitialInterval) {
-		this.backOffInitialInterval = backOffInitialInterval;
+	public void setMaxAttempts(int maxAttempts) {
+		this.maxAttempts = maxAttempts;
 	}
 
 	@Min(value = 1, message = "Backoff initial interval should be greater than zero.")
@@ -100,8 +96,8 @@ public class ConsumerProperties {
 		return backOffInitialInterval;
 	}
 
-	public void setBackOffMaxInterval(int backOffMaxInterval) {
-		this.backOffMaxInterval = backOffMaxInterval;
+	public void setBackOffInitialInterval(int backOffInitialInterval) {
+		this.backOffInitialInterval = backOffInitialInterval;
 	}
 
 	@Min(value = 1, message = "Backoff max interval should be greater than zero.")
@@ -109,13 +105,17 @@ public class ConsumerProperties {
 		return backOffMaxInterval;
 	}
 
-	public void setBackOffMultiplier(double backOffMultiplier) {
-		this.backOffMultiplier = backOffMultiplier;
+	public void setBackOffMaxInterval(int backOffMaxInterval) {
+		this.backOffMaxInterval = backOffMaxInterval;
 	}
 
 	@Min(value = 1, message = "Backoff multiplier should be greater than zero.")
 	public double getBackOffMultiplier() {
 		return backOffMultiplier;
+	}
+
+	public void setBackOffMultiplier(double backOffMultiplier) {
+		this.backOffMultiplier = backOffMultiplier;
 	}
 
 	public HeaderMode getHeaderMode() {
@@ -126,4 +126,3 @@ public class ConsumerProperties {
 		this.headerMode = headerMode;
 	}
 }
-

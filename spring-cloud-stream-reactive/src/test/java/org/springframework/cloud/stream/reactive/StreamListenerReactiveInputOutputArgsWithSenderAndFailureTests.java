@@ -56,18 +56,9 @@ public class StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests {
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[]{TestInputOutputArgsWithFluxSenderAndFailure.class, TestInputOutputArgsWithObservableSenderAndFailure.class});
+		return Arrays.asList(new Class[] { TestInputOutputArgsWithFluxSenderAndFailure.class,
+				TestInputOutputArgsWithObservableSenderAndFailure.class });
 	}
-
-	@Test
-	public void testInputOutputArgsWithFluxSenderAndFailure() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
-		sendMessageAndValidate(context);
-		sendFailingMessage(context);
-		sendMessageAndValidate(context);
-		context.close();
-	}
-
 
 	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
 		@SuppressWarnings("unchecked")
@@ -86,11 +77,21 @@ public class StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests {
 		processor.input().send(MessageBuilder.withPayload("fail").setHeader("contentType", "text/plain").build());
 	}
 
+	@Test
+	public void testInputOutputArgsWithFluxSenderAndFailure() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
+		sendMessageAndValidate(context);
+		sendFailingMessage(context);
+		sendMessageAndValidate(context);
+		context.close();
+	}
+
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestInputOutputArgsWithFluxSenderAndFailure {
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input, @Output(Processor.OUTPUT) FluxSender output) {
+		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input,
+				@Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString())
 					.map(m -> {
@@ -109,7 +110,8 @@ public class StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests {
 	@EnableAutoConfiguration
 	public static class TestInputOutputArgsWithObservableSenderAndFailure {
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) Observable<Message<String>> input, @Output(Processor.OUTPUT) ObservableSender output) {
+		public void receive(@Input(Processor.INPUT) Observable<Message<String>> input,
+				@Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString())
 					.map(m -> {

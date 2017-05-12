@@ -73,13 +73,15 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause()).isInstanceOf(IllegalArgumentException.class);
-			assertThat(e.getCause()).hasMessageContaining(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+			assertThat(e.getCause())
+					.hasMessageContaining(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
 	@Test
 	public void testInputOutputArgsWithParameterOrderChanged() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestInputOutputArgsWithParameterOrderChanged.class, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestInputOutputArgsWithParameterOrderChanged.class, "--server.port=0");
 		sendMessageAndValidate(context);
 	}
 
@@ -94,13 +96,13 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 		context.close();
 	}
 
-
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestInputOutputArgs {
 
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) SubscribableChannel input, @Output(Processor.OUTPUT) final MessageChannel output) {
+		public void receive(@Input(Processor.INPUT) SubscribableChannel input,
+				@Output(Processor.OUTPUT) final MessageChannel output) {
 			input.subscribe(new MessageHandler() {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {
@@ -115,7 +117,8 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 	public static class TestInputOutputArgsWithMoreParameters {
 
 		@StreamListener
-		public void receive(@Input(Processor.INPUT) SubscribableChannel input, @Output(Processor.OUTPUT) final MessageChannel output,
+		public void receive(@Input(Processor.INPUT) SubscribableChannel input,
+				@Output(Processor.OUTPUT) final MessageChannel output,
 				String someArg) {
 			input.subscribe(new MessageHandler() {
 				@Override
@@ -131,7 +134,8 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 	public static class TestInputOutputArgsWithInvalidBindableTarget {
 
 		@StreamListener
-		public void receive(@Input("invalid") SubscribableChannel input, @Output(Processor.OUTPUT) final MessageChannel output) {
+		public void receive(@Input("invalid") SubscribableChannel input,
+				@Output(Processor.OUTPUT) final MessageChannel output) {
 			input.subscribe(new MessageHandler() {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {
@@ -146,7 +150,8 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 	public static class TestInputOutputArgsWithParameterOrderChanged {
 
 		@StreamListener
-		public void receive(@Output(Processor.OUTPUT) final MessageChannel output, @Input("input") SubscribableChannel input) {
+		public void receive(@Output(Processor.OUTPUT) final MessageChannel output,
+				@Input("input") SubscribableChannel input) {
 			input.subscribe(new MessageHandler() {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {

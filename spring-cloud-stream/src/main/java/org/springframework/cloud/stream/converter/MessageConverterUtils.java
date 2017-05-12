@@ -22,7 +22,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
-
 /**
  * Message conversion utility methods.
  *
@@ -53,8 +52,9 @@ public abstract class MessageConverterUtils {
 	 * @return the class for the content type
 	 */
 	public static Class<?> getJavaTypeForJavaObjectContentType(MimeType contentType) {
-		Assert.isTrue(X_JAVA_OBJECT.includes(contentType), "Content type must be " + X_JAVA_OBJECT.toString() + ", or " +
-				"included in it");
+		Assert.isTrue(X_JAVA_OBJECT.includes(contentType),
+				"Content type must be " + X_JAVA_OBJECT.toString() + ", or " +
+						"included in it");
 		if (contentType.getParameter("type") != null) {
 			try {
 				return ClassUtils.forName(contentType.getParameter("type"), null);

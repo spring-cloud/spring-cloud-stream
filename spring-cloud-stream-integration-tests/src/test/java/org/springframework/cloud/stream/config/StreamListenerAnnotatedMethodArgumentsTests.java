@@ -61,7 +61,8 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments).hasSize(3);
-		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).isInstanceOf(StreamListenerTestUtils.FooPojo.class);
+		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0))
+				.isInstanceOf(StreamListenerTestUtils.FooPojo.class);
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0)).hasFieldOrPropertyWithValue("foo",
 				"barbar" + id);
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(1)).isInstanceOf(Map.class);
@@ -77,7 +78,7 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 	public void testInputAnnotationAtMethodParameter() throws Exception {
 		try {
 			SpringApplication.run(TestPojoWithInvalidInputAnnotatedArgument.class, "--server.port=0");
-			fail("Exception expected: "+ INVALID_DECLARATIVE_METHOD_PARAMETERS);
+			fail("Exception expected: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		catch (BeanCreationException e) {
 			assertThat(e.getCause().getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);

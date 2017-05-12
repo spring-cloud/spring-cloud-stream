@@ -71,8 +71,9 @@ public class CustomMessageConverterTests {
 				BarConverter.class, DefaultDatatypeChannelMessageConverter.class);
 		testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null,
+				MessageChannel.class))
+						.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
 		Assert.assertThat(received, notNullValue());
 		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("test/foo"));
 	}
@@ -127,7 +128,6 @@ public class CustomMessageConverterTests {
 		public BarConverter() {
 			super(MimeType.valueOf("test/bar"));
 		}
-
 
 		@Override
 		protected boolean supports(Class<?> clazz) {

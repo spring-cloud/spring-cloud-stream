@@ -71,7 +71,8 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 		BinderFactory binderFactory = new BinderFactory() {
 
 			@Override
-			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(String configurationName, Class<? extends T> bindableType) {
+			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(
+					String configurationName, Class<? extends T> bindableType) {
 				return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) binder;
 			}
 		};
@@ -143,7 +144,8 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 	/**
 	 * A simple test binder that creates queues for the destinations. Ignores groups.
 	 */
-	class TestBinder implements ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> {
+	class TestBinder implements
+			ExtendedPropertiesBinder<MessageChannel, ExtendedConsumerProperties, ExtendedProducerProperties> {
 
 		private final Map<String, DirectChannel> destinations = new ConcurrentHashMap<>();
 
@@ -159,7 +161,6 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 			destinations.get(name).subscribe(directHandler);
 			return new TestBinding(name, directHandler);
 		}
-
 
 		@Override
 		public Binding<MessageChannel> bindProducer(String name,
