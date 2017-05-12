@@ -27,7 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
@@ -39,6 +38,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.DataBinder;
 import org.springframework.validation.beanvalidation.CustomValidatorBean;
 
 /**
@@ -49,6 +49,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Janne Valkealahti
  */
 public class BindingService {
 
@@ -149,7 +150,6 @@ public class BindingService {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
 		String binderConfigurationName = this.bindingServiceProperties.getBinder(channelName);
 		return binderFactory.getBinder(binderConfigurationName, bindableType);
@@ -170,7 +170,7 @@ public class BindingService {
 	}
 
 	private void validate(Object properties) {
-		RelaxedDataBinder dataBinder = new RelaxedDataBinder(properties);
+		DataBinder dataBinder = new DataBinder(properties);
 		dataBinder.setValidator(validator);
 		dataBinder.validate();
 		if (dataBinder.getBindingResult().hasErrors()) {
