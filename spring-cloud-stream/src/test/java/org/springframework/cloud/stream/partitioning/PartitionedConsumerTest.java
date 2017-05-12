@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,20 +39,20 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = PartitionedConsumerTest.TestSink.class)
 public class PartitionedConsumerTest {
 
-	@SuppressWarnings("rawtypes")
 	@Autowired
 	private BinderFactory binderFactory;
 
@@ -61,11 +61,11 @@ public class PartitionedConsumerTest {
 	private Sink testSink;
 
 	@Test
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void testBindingPartitionedConsumer() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor.forClass(ConsumerProperties.class);
-		verify(binder).bindConsumer(eq("partIn"), anyString(), eq(this.testSink.input()),
+		verify(binder).bindConsumer(eq("partIn"), isNull(), eq(this.testSink.input()),
 				argumentCaptor.capture());
 		Assert.assertThat(argumentCaptor.getValue().getInstanceIndex(), equalTo(0));
 		Assert.assertThat(argumentCaptor.getValue().getInstanceCount(), equalTo(2));
@@ -80,9 +80,10 @@ public class PartitionedConsumerTest {
 
 	}
 
-	class PropertiesArgumentMatcher extends ArgumentMatcher<ConsumerProperties> {
+	class PropertiesArgumentMatcher implements ArgumentMatcher<ConsumerProperties> {
+
 		@Override
-		public boolean matches(Object argument) {
+		public boolean matches(ConsumerProperties argument) {
 			return argument instanceof ConsumerProperties;
 		}
 	}

@@ -22,7 +22,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.schemaRegistryClient")
+@ConfigurationProperties(prefix = "spring.cloud.stream.schema-registry-client")
 public class SchemaRegistryClientProperties {
 
 	private String endpoint;

@@ -38,17 +38,18 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * @author Vinicius Carvalho
+ * @author Janne Valkealahti
  */
 public class ApplicationMetricsExporterTests {
 
 	@BeforeClass
 	public static void setSystemProps() {
-		System.setProperty("SPRING_TEST_ENV_SYNTAX", "testing");
+		System.setProperty("spring.test.env.syntax", "testing");
 	}
 
 	@AfterClass
 	public static void unsetSystemProps() {
-		System.clearProperty("SPRING_TEST_ENV_SYNTAX");
+		System.clearProperty("spring.test.env.syntax");
 	}
 
 	@Test(expected = NoSuchBeanDefinitionException.class)

@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.boot.bind.PropertySourcesPropertyValues;
-import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.Assert;
 
@@ -40,6 +40,7 @@ import org.springframework.util.Assert;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Janne Valkealahti
  */
 public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, T> {
 
@@ -55,7 +56,7 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 
 	/**
 	 * Constructs the map.
-	 * 
+	 *
 	 * @param environment the environment that supplies the default property values
 	 * @param entryClass the entry class
 	 * @param defaultsPrefix the prefix for initializing the properties
@@ -80,9 +81,7 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 	public T get(Object key) {
 		if (!this.delegate.containsKey(key) && key instanceof String) {
 			T entry = BeanUtils.instantiate(entryClass);
-			RelaxedDataBinder defaultsDataBinder = new RelaxedDataBinder(entry, defaultsPrefix);
-			defaultsDataBinder.setConversionService(this.conversionService);
-			defaultsDataBinder.bind(new PropertySourcesPropertyValues(environment.getPropertySources()));
+			Binder.get(environment).bind(defaultsPrefix, Bindable.ofInstance(entry));
 			this.delegate.put((String) key, entry);
 		}
 		return this.delegate.get(key);
@@ -90,6 +89,8 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 
 	@Override
 	public T put(String key, T value) {
+		// boot 2 call this first
+		Binder.get(environment).bind(defaultsPrefix, Bindable.ofInstance(value));
 		return this.delegate.put(key, value);
 	}
 

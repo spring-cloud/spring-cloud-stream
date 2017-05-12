@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.schema.server.controllers;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.cloud.stream.schema.server.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.server.model.Schema;
@@ -125,11 +126,11 @@ public class ServerController {
 
 	@RequestMapping(method = RequestMethod.GET, produces = "application/json", path = "/schemas/{id}")
 	public ResponseEntity<Schema> findOne(@PathVariable("id") Integer id) {
-		Schema schema = this.repository.findOne(id);
-		if (schema == null) {
+		Optional<Schema> schema = this.repository.findById(id);
+		if (!schema.isPresent()) {
 			throw new SchemaNotFoundException("Could not find Schema");
 		}
-		return new ResponseEntity<>(schema, HttpStatus.OK);
+		return new ResponseEntity<>(schema.get(), HttpStatus.OK);
 	}
 
 	@RequestMapping(method = RequestMethod.GET, produces = "application/json", path = "/{subject}/{format}")
@@ -160,8 +161,11 @@ public class ServerController {
 	@RequestMapping(value = "/schemas/{id}", method = RequestMethod.DELETE)
 	public void delete(@PathVariable("id") Integer id) {
 		if (this.schemaServerProperties.isAllowSchemaDeletion()) {
-			Schema schema = this.repository.findOne(id);
-			deleteSchema(schema);
+			Optional<Schema> schema = this.repository.findById(id);
+			if (!schema.isPresent()) {
+				throw new SchemaNotFoundException("Could not find Schema");
+			}
+			deleteSchema(schema.get());
 		}
 		else {
 			throw new SchemaDeletionNotAllowedException();
