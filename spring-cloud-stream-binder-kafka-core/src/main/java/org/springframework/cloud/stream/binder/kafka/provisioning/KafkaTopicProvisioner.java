@@ -105,7 +105,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			this.logger.info("Using kafka topic for outbound: " + name);
 		}
 		KafkaTopicUtils.validateTopicName(name);
-		createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(name, properties.getPartitionCount(), producerHandling());
+		createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(name, properties.getPartitionCount(), false);
 		if (this.configurationProperties.isAutoCreateTopics() && adminUtilsOperation != null) {
 			final ZkUtils zkUtils = ZkUtils.apply(this.configurationProperties.getZkConnectionString(),
 					this.configurationProperties.getZkSessionTimeout(),
@@ -129,11 +129,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			throw new IllegalArgumentException("Instance count cannot be zero");
 		}
 		int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
-
-		UnexpectedPartitionCountHandling unexpectedPartitionCountHandling = properties.getExtension().isAutoRebalanceEnabled() ?
-				consumerIdlingAllowed() : consumerIdlingForbidden();
-
-		createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(name, partitionCount, unexpectedPartitionCountHandling);
+		createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(name, partitionCount, properties.getExtension().isAutoRebalanceEnabled());
 		if (this.configurationProperties.isAutoCreateTopics() && adminUtilsOperation != null) {
 			final ZkUtils zkUtils = ZkUtils.apply(this.configurationProperties.getZkConnectionString(),
 					this.configurationProperties.getZkSessionTimeout(),
@@ -143,7 +139,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			if (properties.getExtension().isEnableDlq() && !anonymous) {
 				String dlqTopic = StringUtils.hasText(properties.getExtension().getDlqName()) ?
 						properties.getExtension().getDlqName() : "error." + name + "." + group;
-				createTopicAndPartitions(dlqTopic, partitions, unexpectedPartitionCountHandling);
+				createTopicAndPartitions(dlqTopic, partitions, properties.getExtension().isAutoRebalanceEnabled());
 				return new KafkaConsumerDestination(name, partitions, dlqTopic);
 			}
 			return new KafkaConsumerDestination(name, partitions);
@@ -152,10 +148,9 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	}
 
 	private void createTopicsIfAutoCreateEnabledAndAdminUtilsPresent(final String topicName, final int partitionCount,
-																	UnexpectedPartitionCountHandling unexpectedPartitionCountHandling) {
-
+																	boolean tolerateLowerPartitionsOnBroker) {
 		if (this.configurationProperties.isAutoCreateTopics() && adminUtilsOperation != null) {
-			createTopicAndPartitions(topicName, partitionCount, unexpectedPartitionCountHandling);
+			createTopicAndPartitions(topicName, partitionCount, tolerateLowerPartitionsOnBroker);
 		}
 		else if (this.configurationProperties.isAutoCreateTopics() && adminUtilsOperation == null) {
 			this.logger.warn("Auto creation of topics is enabled, but Kafka AdminUtils class is not present on the classpath. " +
@@ -171,7 +166,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	 * desired number.
 	 */
 	private void createTopicAndPartitions(final String topicName, final int partitionCount,
-										UnexpectedPartitionCountHandling unexpectPartitonCountHandling) {
+										boolean tolerateLowerPartitionsOnBroker) {
 
 		final ZkUtils zkUtils = ZkUtils.apply(this.configurationProperties.getZkConnectionString(),
 				this.configurationProperties.getZkSessionTimeout(),
@@ -190,8 +185,16 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 					if (this.configurationProperties.isAutoAddPartitions()) {
 						adminUtilsOperation.invokeAddPartitions(zkUtils, topicName, effectivePartitionCount, null, false);
 					}
+					else if (tolerateLowerPartitionsOnBroker) {
+						logger.warn("The number of expected partitions was: " + partitionCount + ", but "
+								+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
+								+ "There will be " + (effectivePartitionCount - partitionSize) + " consumers");
+					}
 					else {
-						unexpectPartitonCountHandling.handlePartitionCountTooLow(topicName, partitionSize, effectivePartitionCount);
+						throw new ProvisioningException("The number of expected partitions was: " + partitionCount + ", but "
+								+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
+								+ "Consider either increasing the partition count of the topic or enabling " +
+								"`autoAddPartitions`");
 					}
 				}
 			}
@@ -236,9 +239,8 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	}
 
 	public Collection<PartitionInfo> getPartitionsForTopic(final int partitionCount,
-														final UnexpectedPartitionCountHandling unexpectedPartitionCountHandling,
+														final boolean tolerateLowerPartitionsOnBroker,
 														final Callable<Collection<PartitionInfo>> callable) {
-
 		try {
 			return this.metadataRetryOperations
 					.execute(new RetryCallback<Collection<PartitionInfo>, Exception>() {
@@ -247,9 +249,18 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 						public Collection<PartitionInfo> doWithRetry(RetryContext context) throws Exception {
 							Collection<PartitionInfo> partitions = callable.call();
 							// do a sanity check on the partition set
+							int partitionSize = partitions.size();
 							if (partitions.size() < partitionCount) {
-								String topic = partitions.isEmpty() ? "unknown" : partitions.iterator().next().topic();
-								unexpectedPartitionCountHandling.handlePartitionCountTooLow(topic, partitions.size(), partitionCount);
+								if (tolerateLowerPartitionsOnBroker) {
+									logger.warn("The number of expected partitions was: " + partitionCount + ", but "
+											+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
+											+ "There will be " + (partitionCount - partitionSize) + "idle consumers");
+								}
+								else {
+									throw new IllegalStateException("The number of expected partitions was: "
+											+ partitionCount + ", but " + partitions.size()
+											+ (partitions.size() > 1 ? " have " : " has ") + "been found instead");
+								}
 							}
 							return partitions;
 						}
@@ -330,50 +341,5 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 					", dlqName='" + dlqName + '\'' +
 					'}';
 		}
-
 	}
-
-	public UnexpectedPartitionCountHandling consumerIdlingAllowed() {
-		return new UnexpectedPartitionCountHandling() {
-
-			@Override
-			public void handlePartitionCountTooLow(String topicName, int partitionSize, int effectivePartitionCount) {
-				logger.warn(String.format("There is only %s partitions on topic %s, but %s consumers. %s consumer will be idle",
-						partitionSize, topicName, effectivePartitionCount, effectivePartitionCount - partitionSize));
-			}
-		};
-	}
-
-	public UnexpectedPartitionCountHandling consumerIdlingForbidden() {
-		return new UnexpectedPartitionCountHandling() {
-
-			@Override
-			public void handlePartitionCountTooLow(String topicName, int partitionSize, int effectivePartitionCount) {
-				throw new ProvisioningException("The number of expected partitions was: " + partitionSize + ", but "
-						+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
-						+ "Consider either increasing the partition count of the topic or enabling " +
-						"`autoAddPartitions`");
-			}
-		};
-	}
-
-	public UnexpectedPartitionCountHandling producerHandling() {
-		return new UnexpectedPartitionCountHandling() {
-
-			@Override
-			public void handlePartitionCountTooLow(String topicName, int partitionSize, int effectivePartitionCount) {
-				throw new ProvisioningException("The number of expected partitions was: " + partitionSize + ", but "
-						+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
-						+ "Consider either increasing the partition count of the topic or enabling " +
-						"`autoAddPartitions`");
-			}
-
-		};
-	}
-
-	public interface UnexpectedPartitionCountHandling {
-
-		void handlePartitionCountTooLow(String topicName, int partitionSize, int effectivePartitionCount);
-	}
-
 }

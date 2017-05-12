@@ -35,7 +35,9 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.assertj.core.api.Condition;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
@@ -85,7 +87,10 @@ import static org.junit.Assert.assertTrue;
  * @author Henryk Konsek
  */
 public abstract class KafkaBinderTests extends PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>,
-						ExtendedProducerProperties<KafkaProducerProperties>> {
+		ExtendedProducerProperties<KafkaProducerProperties>> {
+
+	@Rule
+	public ExpectedException expectedProvisioningException = ExpectedException.none();
 
 	@Override
 	protected ExtendedConsumerProperties<KafkaConsumerProperties> createConsumerProperties() {
@@ -115,10 +120,10 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 	protected abstract ZkUtils getZkUtils(KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties);
 
 	protected abstract void invokeCreateTopic(ZkUtils zkUtils, String topic, int partitions,
-												int replicationFactor, Properties topicConfig);
+											int replicationFactor, Properties topicConfig);
 
 	protected abstract int invokePartitionSize(String topic,
-												ZkUtils zkUtils);
+											ZkUtils zkUtils);
 
 	@Test
 	@SuppressWarnings("unchecked")
@@ -1170,7 +1175,7 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testAutoAddPartitionsDisabledFailsIfTopicUnderpartitioned() throws Exception {
+	public void testAutoAddPartitionsDisabledSucceedsIfTopicUnderPartitionedAndAutoRebalanceEnabled() throws Exception {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 
 		final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
@@ -1185,26 +1190,46 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		Binder binder = getBinder(configurationProperties);
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.refresh();
-		//		binder.setApplicationContext(context);
-		//		binder.afterPropertiesSet();
+
 		DirectChannel output = new DirectChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		// this consumer must consume from partition 2
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setInstanceIndex(2);
-		Binding binding = null;
-		try {
-			binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
-		}
-		catch (Exception e) {
-			assertThat(e).isInstanceOf(ProvisioningException.class);
-			assertThat(e)
-					.hasMessageContaining("The number of expected partitions was: 3, but 1 has been found instead");
-		}
-		finally {
-			if (binding != null) {
-				binding.unbind();
-			}
+		Binding binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+		binding.unbind();
+		assertThat(invokePartitionSize(testTopicName, zkUtils)).isEqualTo(1);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAutoAddPartitionsDisabledFailsIfTopicUnderPartitionedAndAutoRebalanceDisabled() throws Exception {
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+
+		final ZkClient zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
+				ZKStringSerializer$.MODULE$);
+
+		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+
+		String testTopicName = "existing" + System.currentTimeMillis();
+		invokeCreateTopic(zkUtils, testTopicName, 1, 1, new Properties());
+		configurationProperties.setAutoAddPartitions(false);
+		Binder binder = getBinder(configurationProperties);
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+
+		DirectChannel output = new DirectChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		// this consumer must consume from partition 2
+		consumerProperties.setInstanceCount(3);
+		consumerProperties.setInstanceIndex(2);
+		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
+		expectedProvisioningException.expect(ProvisioningException.class);
+		expectedProvisioningException.expectMessage("The number of expected partitions was: 3, but 1 has been found instead");
+		Binding binding = binder.bindConsumer(testTopicName, "test", output, consumerProperties);
+		if (binding != null) {
+			binding.unbind();
 		}
 	}
 
@@ -1341,11 +1366,11 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 	}
 
 	private KafkaConsumer getKafkaConsumer(Binding binding) {
-		DirectFieldAccessor bindingAccessor = new DirectFieldAccessor((DefaultBinding)binding);
+		DirectFieldAccessor bindingAccessor = new DirectFieldAccessor((DefaultBinding) binding);
 		KafkaMessageDrivenChannelAdapter adapter = (KafkaMessageDrivenChannelAdapter) bindingAccessor.getPropertyValue("lifecycle");
 		DirectFieldAccessor adapterAccessor = new DirectFieldAccessor(adapter);
 		ConcurrentMessageListenerContainer messageListenerContainer = (ConcurrentMessageListenerContainer) adapterAccessor.getPropertyValue("messageListenerContainer");
-		DirectFieldAccessor containerAccessor = new DirectFieldAccessor((ConcurrentMessageListenerContainer)messageListenerContainer);
+		DirectFieldAccessor containerAccessor = new DirectFieldAccessor((ConcurrentMessageListenerContainer) messageListenerContainer);
 		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) containerAccessor.getPropertyValue("consumerFactory");
 		return (KafkaConsumer) consumerFactory.createConsumer();
 	}
@@ -1472,9 +1497,9 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		input2.setBeanName("test.input2J");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("partJ.raw.0", "test", input2, consumerProperties);
 
-		output.send(new GenericMessage<>(new byte[] {(byte) 0}));
-		output.send(new GenericMessage<>(new byte[] {(byte) 1}));
-		output.send(new GenericMessage<>(new byte[] {(byte) 2}));
+		output.send(new GenericMessage<>(new byte[]{(byte) 0}));
+		output.send(new GenericMessage<>(new byte[]{(byte) 1}));
+		output.send(new GenericMessage<>(new byte[]{(byte) 2}));
 
 		Message<?> receive0 = receive(input0);
 		assertThat(receive0).isNotNull();
@@ -1533,13 +1558,13 @@ public abstract class KafkaBinderTests extends PartitionCapableBinderTests<Abstr
 		input2.setBeanName("test.input2S");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("part.raw.0", "test", input2, consumerProperties);
 
-		Message<byte[]> message2 = org.springframework.integration.support.MessageBuilder.withPayload(new byte[] {2})
+		Message<byte[]> message2 = org.springframework.integration.support.MessageBuilder.withPayload(new byte[]{2})
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "kafkaBinderTestCommonsDelegate")
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, 42)
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43).build();
 		output.send(message2);
-		output.send(new GenericMessage<>(new byte[] {1}));
-		output.send(new GenericMessage<>(new byte[] {0}));
+		output.send(new GenericMessage<>(new byte[]{1}));
+		output.send(new GenericMessage<>(new byte[]{0}));
 		Message<?> receive0 = receive(input0);
 		assertThat(receive0).isNotNull();
 		Message<?> receive1 = receive(input1);
