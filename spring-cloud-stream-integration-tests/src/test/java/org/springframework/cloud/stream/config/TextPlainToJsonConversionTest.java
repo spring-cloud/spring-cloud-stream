@@ -55,7 +55,6 @@ public class TextPlainToJsonConversionTest {
 	@Test
 	public void testNoContentTypeToJsonConversionOnInput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").build());
-		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
@@ -66,7 +65,6 @@ public class TextPlainToJsonConversionTest {
 	public void testTextPlainToJsonConversionOnInput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
-		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
@@ -80,7 +78,9 @@ public class TextPlainToJsonConversionTest {
 		@StreamListener("input")
 		@SendTo("output")
 		public Foo consume(Foo foo) {
-			return new Foo("transformed-" + foo.getName());
+			Foo returnFoo = new Foo();
+			returnFoo.setName("transformed-" + foo.getName());
+			return returnFoo;
 		}
 
 	}
@@ -90,10 +90,6 @@ public class TextPlainToJsonConversionTest {
 		private String name;
 
 		public Foo() {
-		}
-
-		public Foo(String name) {
-			this.name = name;
 		}
 
 		public String getName() {
