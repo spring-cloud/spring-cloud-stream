@@ -18,31 +18,35 @@ package org.springframework.cloud.stream.metrics;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanExpressionContext;
 import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.boot.actuate.metrics.export.MetricExportProperties;
 import org.springframework.boot.actuate.metrics.export.TriggerProperties;
-import org.springframework.boot.bind.RelaxedNames;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.BindResult;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.cloud.stream.metrics.config.BinderMetricsAutoConfiguration;
-import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.EnumerablePropertySource;
-import org.springframework.core.env.PropertySource;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
 
 /**
  * @author Vinicius Carvalho
+ * @author Janne Valkealahti
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.metrics")
 public class ApplicationMetricsProperties
-		implements ApplicationListener<ContextRefreshedEvent> {
+		implements EnvironmentAware, ApplicationContextAware {
 
 	private String prefix = "";
 
@@ -54,6 +58,23 @@ public class ApplicationMetricsProperties
 	private String[] properties;
 
 	private final MetricExportProperties metricExportProperties;
+
+	private Environment environment;
+
+	private ApplicationContext applicationContext;
+
+	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable
+			.mapOf(String.class, String.class);
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.environment = environment;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
 
 	public TriggerProperties getTrigger() {
 		return metricExportProperties.findTrigger(BinderMetricsAutoConfiguration.APPLICATION_METRICS_EXPORTER_TRIGGER_NAME);
@@ -99,6 +120,29 @@ public class ApplicationMetricsProperties
 	private Map<String, Object> exportProperties = new HashMap<>();
 
 	public Map<String, Object> getExportProperties() {
+		this.exportProperties.clear();
+		if (!ObjectUtils.isEmpty(this.properties)) {
+			Map<String, String> target = bindProperties();
+
+			BeanExpressionResolver beanExpressionResolver = ((ConfigurableApplicationContext) applicationContext)
+					.getBeanFactory().getBeanExpressionResolver();
+			BeanExpressionContext expressionContext = new BeanExpressionContext(
+					((ConfigurableApplicationContext) applicationContext).getBeanFactory(), null);
+			for (Entry<String, String> entry : target.entrySet()) {
+				if (isMatch(entry.getKey(), this.properties, null)) {
+					String stringValue =  ObjectUtils.nullSafeToString(entry.getValue());
+					Object exportedValue = null;
+					if (stringValue != null) {
+						exportedValue = stringValue.startsWith("#{")
+							? beanExpressionResolver.evaluate(
+									environment.resolvePlaceholders(stringValue), expressionContext)
+							: environment.resolvePlaceholders(stringValue);
+					}
+
+					this.exportProperties.put(entry.getKey(), exportedValue);
+				}
+			}
+		}
 		return exportProperties;
 	}
 
@@ -113,51 +157,6 @@ public class ApplicationMetricsProperties
 		return this.prefix + this.key;
 	}
 
-	/**
-	 * Iterates over all property sources from this application context and copies the
-	 * ones listed in {@link ApplicationMetricsProperties} includes.
-	 */
-	@Override
-	public void onApplicationEvent(ContextRefreshedEvent event) {
-		this.exportProperties.clear();
-		ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) event.getSource();
-		ConfigurableEnvironment environment = ctx.getEnvironment();
-		BeanExpressionResolver beanExpressionResolver = ctx.getBeanFactory().getBeanExpressionResolver();
-		BeanExpressionContext expressionContext = new BeanExpressionContext(ctx.getBeanFactory(), null);
-		if (!ObjectUtils.isEmpty(this.properties)) {
-			for (PropertySource<?> source : environment.getPropertySources()) {
-				if (source instanceof EnumerablePropertySource) {
-					EnumerablePropertySource<?> e = (EnumerablePropertySource<?>) source;
-					for (String propertyName : e.getPropertyNames()) {
-						RelaxedNames relaxedNames = new RelaxedNames(propertyName);
-						String canonicalFormat = RelaxedPropertiesUtils.findCanonicalFormat(relaxedNames);
-						// omit this property if already populated from a
-						// higher priority source
-						if (!this.exportProperties.containsKey(canonicalFormat)) {
-							relaxedLoop: for (String relaxedPropertyName : relaxedNames) {
-								if (isMatch(relaxedPropertyName, this.properties, null)) {
-									Object value = source.getProperty(propertyName);
-									String stringValue =  ObjectUtils.nullSafeToString(value);
-									Object exportedValue = null;
-									if (value != null) {
-										exportedValue = stringValue.startsWith("#{")
-												? beanExpressionResolver.evaluate(
-														environment.resolvePlaceholders(stringValue), expressionContext)
-												: environment.resolvePlaceholders(stringValue);
-									}
-									this.exportProperties.put(
-											canonicalFormat,
-											exportedValue);
-									break relaxedLoop;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
 	private boolean isMatch(String name, String[] includes, String[] excludes) {
 		if (ObjectUtils.isEmpty(includes)
 				|| PatternMatchUtils.simpleMatch(includes, name)) {
@@ -166,4 +165,15 @@ public class ApplicationMetricsProperties
 		return false;
 	}
 
+	private Map<String, String> bindProperties() {
+		Map<String, String> target;
+		BindResult<Map<String,String>> bindResult = Binder.get(environment).bind("", STRING_STRING_MAP);
+		if (bindResult.isBound()) {
+			target = bindResult.get();
+		}
+		else {
+			target = new HashMap<>();
+		}
+		return target;
+	}
 }

@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder.SourceConfigurer;
 import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
@@ -46,11 +46,14 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Janne Valkealahti
  */
 public class AggregationTest {
 
@@ -60,8 +63,8 @@ public class AggregationTest {
 	public void closeContext() {
 		System.clearProperty("a.foo-value");
 		System.clearProperty("c.fooValue");
-		System.clearProperty("a_FOO_VALUE");
-		System.clearProperty("C_FOO_VALUE");
+		System.clearProperty("a.foo.value");
+		System.clearProperty("c.foo.value");
 		if (aggregatedApplicationContext != null) {
 			aggregatedApplicationContext.close();
 		}
@@ -120,7 +123,7 @@ public class AggregationTest {
 		assertThat(parentArgs).containsExactlyInAnyOrder(argsToVerify.toArray(new String[argsToVerify.size()]));
 		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
 		assertThat(sources).containsExactlyInAnyOrder(AggregateApplicationBuilder.ParentConfiguration.class,
-				MockBinderRegistryConfiguration.class, DummyConfig.class, EmbeddedServletContainerAutoConfiguration.class);
+				MockBinderRegistryConfiguration.class, DummyConfig.class, ServletWebServerFactoryAutoConfiguration.class);
 		context.close();
 	}
 
@@ -226,8 +229,7 @@ public class AggregationTest {
 						new String[]{ "--foo-value=barb" }));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
-				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo1=barc" }));
+				assertThat(processorConfigurer.getArgs(), is(new String[]{ "--foo1=barc" }));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -249,7 +251,7 @@ public class AggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[]{ "--fooValue=bara" }));
+				new String[]{ "--fooValue=bara", "--foo-value=bara" }));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
 				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
 						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
@@ -283,9 +285,6 @@ public class AggregationTest {
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
 				new String[]{ "--foo-value=sysbara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
-				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
-						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder
 				.ProcessorConfigurer>) aggregateApplicationBuilderAccessor.getPropertyValue(
 				"processorConfigurers"))) {
@@ -306,8 +305,8 @@ public class AggregationTest {
 	public void testNamespacePrefixesWithCAPSProperties() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
-		System.setProperty("a_FOO_VALUE", "sysbara");
-		System.setProperty("C_FOO_VALUE", "sysbarc");
+		System.setProperty("a.foo.value", "sysbara");
+		System.setProperty("c.foo.value", "sysbarc");
 		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar")
 				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
@@ -317,7 +316,7 @@ public class AggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[]{ "--fooValue=highest" }));
+				new String[]{ "--fooValue=highest", "--foo.value=sysbara" }));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
 				(List<AggregateApplicationBuilder.ProcessorConfigurer>)
 						aggregateApplicationBuilderAccessor.getPropertyValue("processorConfigurers");
@@ -328,7 +327,7 @@ public class AggregationTest {
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[]{ "--foo-value=sysbarc" }));
+						new String[]{ "--foo.value=sysbarc" }));
 			}
 		}
 		aggregatedApplicationContext.close();

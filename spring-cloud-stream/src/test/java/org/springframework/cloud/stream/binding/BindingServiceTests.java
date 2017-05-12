@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ import static org.mockito.Mockito.when;
  * @author Mark Fisher
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Janne Valkealahti
  */
 public class BindingServiceTests {
 
@@ -226,7 +227,7 @@ public class BindingServiceTests {
 
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
-				dynamic.set(invocation.getArgumentAt(1, MessageChannel.class));
+				dynamic.set(invocation.getArgument(1));
 				return null;
 			}
 
@@ -310,13 +311,13 @@ public class BindingServiceTests {
 			assertThat(e).hasMessageContaining("Concurrency should be greater than zero.");
 		}
 	}
-	
+
 	@Test
 	public void testResolveBindableType() {
 		Class<?> bindableType = GenericsUtils.getParameterType(FooBinder.class, Binder.class, 0);
 		assertThat(bindableType).isSameAs(SomeBindableType.class);
 	}
-	
+
 	public static class FooBinder
 			implements Binder<SomeBindableType, ConsumerProperties, ProducerProperties> {
 		@Override
@@ -333,7 +334,7 @@ public class BindingServiceTests {
 			throw new UnsupportedOperationException();
 		}
 	}
-	
+
 	public static class SomeBindableType {
 	}
 }
