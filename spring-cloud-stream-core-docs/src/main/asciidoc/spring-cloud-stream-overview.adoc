@@ -742,6 +742,14 @@ Intermediate processors are provided as argument to the `via()` method.
 Multiple processors of the same type can be chained together (e.g. for pipelining transformations with different configurations).
 For each component, the builder can provide runtime arguments for Spring Boot configuration.
 
+[NOTE]
+====
+Each child application in the aggregate application needs to be packaged into a separate package.
+This is needed to avoid classpath scanning performed by the annotation `SpringBootApplication` on the configuration classes inside the same package.
+When the component scan kicks in by the `SpringBootApplication` and if the other child applications are also in the same package, then the binding configurations get mixed up and the application behaves erroneously.
+In the above example, it can be seen that the Source, Processor and Sink application classes are grouped in separate packages.
+====
+
 ===== Configuring aggregate application
 
 Spring Cloud Stream supports passing properties for the individual applications inside the aggregate application using 'namespace' as prefix.
