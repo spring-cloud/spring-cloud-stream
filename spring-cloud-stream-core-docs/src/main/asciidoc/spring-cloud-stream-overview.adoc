@@ -464,6 +464,7 @@ As with other Spring Messaging methods, method arguments can be annotated with `
 [NOTE]
 ====
 For methods which return data, you must use the `@SendTo` annotation to specify the output binding destination for data returned by the method:
+====
 
 [source,java]
 ----
