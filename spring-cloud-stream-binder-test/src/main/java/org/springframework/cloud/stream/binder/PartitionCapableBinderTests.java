@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -34,8 +36,6 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for binders that support partitioning.
