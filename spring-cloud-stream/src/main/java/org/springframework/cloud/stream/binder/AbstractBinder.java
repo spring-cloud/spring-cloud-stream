@@ -78,6 +78,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private volatile Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
 
+	protected final Log logger = LogFactory.getLog(getClass());
+
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
 	 *
