@@ -308,6 +308,22 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			}
 			return Math.abs(hashCode);
 		}
+	}
+
+	/**
+	 * Default partition strategy; only works on keys with "real" hash codes,
+	 * such as String. Caller now always applies modulo so no need to do so here.
+	 */
+	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
+
+		@Override
+		public int selectPartition(Object key, int partitionCount) {
+			int hashCode = key.hashCode();
+			if (hashCode == Integer.MIN_VALUE) {
+				hashCode = 0;
+			}
+			return Math.abs(hashCode);
+		}
 
 	}
 
