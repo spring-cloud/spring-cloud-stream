@@ -66,6 +66,13 @@ public class ApplicationMetricsProperties
 	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable
 			.mapOf(String.class, String.class);
 
+	/**
+	 * List of properties that are going to be appended to each message. This gets
+	 * populate by onApplicationEvent, once the context refreshes to avoid overhead of
+	 * doing per message basis.
+	 */
+	private Map<String, Object> exportProperties = null;
+
 	@Override
 	public void setEnvironment(Environment environment) {
 		this.environment = environment;
@@ -112,38 +119,11 @@ public class ApplicationMetricsProperties
 		this.properties = properties;
 	}
 
-	/**
-	 * List of properties that are going to be appended to each message. This gets
-	 * populate by onApplicationEvent, once the context refreshes to avoid overhead of
-	 * doing per message basis.
-	 */
-	private Map<String, Object> exportProperties = new HashMap<>();
-
 	public Map<String, Object> getExportProperties() {
-		this.exportProperties.clear();
-		if (!ObjectUtils.isEmpty(this.properties)) {
-			Map<String, String> target = bindProperties();
-
-			BeanExpressionResolver beanExpressionResolver = ((ConfigurableApplicationContext) applicationContext)
-					.getBeanFactory().getBeanExpressionResolver();
-			BeanExpressionContext expressionContext = new BeanExpressionContext(
-					((ConfigurableApplicationContext) applicationContext).getBeanFactory(), null);
-			for (Entry<String, String> entry : target.entrySet()) {
-				if (isMatch(entry.getKey(), this.properties, null)) {
-					String stringValue =  ObjectUtils.nullSafeToString(entry.getValue());
-					Object exportedValue = null;
-					if (stringValue != null) {
-						exportedValue = stringValue.startsWith("#{")
-							? beanExpressionResolver.evaluate(
-									environment.resolvePlaceholders(stringValue), expressionContext)
-							: environment.resolvePlaceholders(stringValue);
-					}
-
-					this.exportProperties.put(entry.getKey(), exportedValue);
-				}
-			}
+		if (this.exportProperties == null) {
+			this.exportProperties = buildExportProperties();
 		}
-		return exportProperties;
+		return this.exportProperties;
 	}
 
 	public String getMetricName() {
@@ -163,6 +143,33 @@ public class ApplicationMetricsProperties
 			return !PatternMatchUtils.simpleMatch(excludes, name);
 		}
 		return false;
+	}
+
+	private Map<String, Object> buildExportProperties() {
+		Map<String, Object> props = new HashMap<>();
+		if (!ObjectUtils.isEmpty(this.properties)) {
+			Map<String, String> target = bindProperties();
+
+			BeanExpressionResolver beanExpressionResolver = ((ConfigurableApplicationContext) applicationContext)
+					.getBeanFactory().getBeanExpressionResolver();
+			BeanExpressionContext expressionContext = new BeanExpressionContext(
+					((ConfigurableApplicationContext) applicationContext).getBeanFactory(), null);
+			for (Entry<String, String> entry : target.entrySet()) {
+				if (isMatch(entry.getKey(), this.properties, null)) {
+					String stringValue =  ObjectUtils.nullSafeToString(entry.getValue());
+					Object exportedValue = null;
+					if (stringValue != null) {
+						exportedValue = stringValue.startsWith("#{")
+							? beanExpressionResolver.evaluate(
+									environment.resolvePlaceholders(stringValue), expressionContext)
+							: environment.resolvePlaceholders(stringValue);
+					}
+
+					props.put(entry.getKey(), exportedValue);
+				}
+			}
+		}
+		return props;
 	}
 
 	private Map<String, String> bindProperties() {
