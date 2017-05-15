@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = {"server.port=-1"})
+@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = { "server.port=-1" })
 public class AggregateWithBeanTest {
 
 	@Autowired

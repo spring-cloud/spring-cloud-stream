@@ -28,11 +28,13 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.annotation.Import;
 
 /**
- * Annotation that identifies the class as RxJava processor module. The class that has {@link EnableRxJavaProcessor}
- * annotated is expected to provide a bean that implements {@link RxJavaProcessor}.
+ * Annotation that identifies the class as RxJava processor module. The class that has
+ * {@link EnableRxJavaProcessor} annotated is expected to provide a bean that implements
+ * {@link RxJavaProcessor}.
  *
  * @author Ilayaperumal Gopinathan
- * @deprecated in favor of {@link org.springframework.cloud.stream.annotation.StreamListener} with reactive types
+ * @deprecated in favor of
+ * {@link org.springframework.cloud.stream.annotation.StreamListener} with reactive types
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

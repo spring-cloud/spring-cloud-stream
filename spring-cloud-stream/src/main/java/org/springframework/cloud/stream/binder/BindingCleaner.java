@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Interface for implementations that perform cleanup for binders.
  *
@@ -30,8 +29,9 @@ public interface BindingCleaner {
 
 	/**
 	 * Clean up all resources for the supplied stream/job.
-	 * @param entity the stream or job; may be terminated with a simple wild card '*', in which
-	 * case all streams with names starting with the characters before the '*' will be cleaned.
+	 * @param entity the stream or job; may be terminated with a simple wild card '*', in
+	 * which case all streams with names starting with the characters before the '*' will
+	 * be cleaned.
 	 * @param isJob true if the entity is a job.
 	 * @return a map of lists of resources removed.
 	 */

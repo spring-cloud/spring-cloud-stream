@@ -71,8 +71,7 @@ public class ReactiveSupportAutoConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean(ObservableToMessageChannelResultAdapter.class)
-		public ObservableToMessageChannelResultAdapter
-		observableToMessageChannelResultAdapter(
+		public ObservableToMessageChannelResultAdapter observableToMessageChannelResultAdapter(
 				FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter) {
 			return new ObservableToMessageChannelResultAdapter(fluxToMessageChannelResultAdapter);
 		}

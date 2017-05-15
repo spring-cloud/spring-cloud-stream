@@ -219,6 +219,25 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	}
 
 	/**
+	 * A listener that can be registered with the {@link DefaultBinderFactory} that allows
+	 * the registration of additional configuration.
+	 *
+	 * @author Ilayaperumal Gopinathan
+	 */
+	public interface Listener {
+
+		/**
+		 * Applying additional capabilities to the binder after the binder context has
+		 * been initialized.
+		 *
+		 * @param configurationName the binder configuration name
+		 * @param binderContext the application context of the binder
+		 */
+		void afterBinderContextInitialized(String configurationName,
+				ConfigurableApplicationContext binderContext);
+	}
+
+	/**
 	 * Utility class for storing {@link Binder} instances, along with their associated
 	 * contexts.
 	 */
@@ -240,24 +259,5 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		public ConfigurableApplicationContext getBinderContext() {
 			return this.binderContext;
 		}
-	}
-
-	/**
-	 * A listener that can be registered with the {@link DefaultBinderFactory} that
-	 * allows the registration of additional configuration.
-	 *
-	 * @author Ilayaperumal Gopinathan
-	 */
-	public interface Listener {
-
-		/**
-		 * Applying additional capabilities to the binder after the binder context
-		 * has been initialized.
-		 *
-		 * @param configurationName the binder configuration name
-		 * @param binderContext the application context of the binder
-		 */
-		void afterBinderContextInitialized(String configurationName,
-				ConfigurableApplicationContext binderContext);
 	}
 }

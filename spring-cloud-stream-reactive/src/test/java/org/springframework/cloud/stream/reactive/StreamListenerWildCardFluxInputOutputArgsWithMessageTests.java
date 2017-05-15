@@ -45,9 +45,21 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  */
 public class StreamListenerWildCardFluxInputOutputArgsWithMessageTests {
 
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+		@SuppressWarnings("unchecked")
+		Processor processor = context.getBean(Processor.class);
+		String sentPayload = "hello " + UUID.randomUUID().toString();
+		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		assertThat(result).isNotNull();
+		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
+	}
+
 	@Test
 	public void testWildCardFluxInputOutputArgsWithMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage1.class, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestWildCardFluxInputOutputArgsWithMessage1.class, "--server.port=0");
 		sendMessageAndValidate(context);
 		context.close();
 	}
@@ -72,17 +84,6 @@ public class StreamListenerWildCardFluxInputOutputArgsWithMessageTests {
 		catch (Exception e) {
 			assertThat(e.getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
-	}
-
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
-		@SuppressWarnings("unchecked")
-		Processor processor = context.getBean(Processor.class);
-		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
-		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
-		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
 
 	@EnableBinding(Processor.class)

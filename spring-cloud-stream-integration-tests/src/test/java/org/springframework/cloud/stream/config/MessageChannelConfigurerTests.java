@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -54,7 +53,8 @@ import static org.junit.Assert.assertNull;
  * @author Gary Russell
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = {MessageChannelConfigurerTests.TestSink.class, MessageChannelConfigurerTests.TestSource.class})
+@SpringBootTest(classes = { MessageChannelConfigurerTests.TestSink.class,
+		MessageChannelConfigurerTests.TestSource.class })
 public class MessageChannelConfigurerTests {
 
 	@Autowired
@@ -92,12 +92,13 @@ public class MessageChannelConfigurerTests {
 
 	@Test
 	public void testObjectMapperConfig() throws Exception {
-		CompositeMessageConverter converters = (CompositeMessageConverter) messageConverterFactory.getMessageConverterForType(MimeTypeUtils
-				.APPLICATION_JSON);
+		CompositeMessageConverter converters = (CompositeMessageConverter) messageConverterFactory
+				.getMessageConverterForType(MimeTypeUtils.APPLICATION_JSON);
 		for (MessageConverter converter : converters.getConverters()) {
 			DirectFieldAccessor converterAccessor = new DirectFieldAccessor(converter);
 			ObjectMapper objectMapper = (ObjectMapper) converterAccessor.getPropertyValue("objectMapper");
-			// assert that the ObjectMapper used by the converters is compliant with the Boot configuration
+			// assert that the ObjectMapper used by the converters is compliant with the
+			// Boot configuration
 			assertThat(!objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS))
 					.withFailMessage("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled");
 			// assert that the globally set bean is used by the converters

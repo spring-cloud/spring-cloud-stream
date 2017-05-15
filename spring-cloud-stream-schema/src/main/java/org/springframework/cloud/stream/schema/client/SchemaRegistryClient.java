@@ -26,16 +26,19 @@ import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
 public interface SchemaRegistryClient {
 
 	/**
-	 * Registers a schema with the remote repository returning the unique identifier associated with this schema.
+	 * Registers a schema with the remote repository returning the unique identifier
+	 * associated with this schema.
 	 * @param subject the full name of the schema
 	 * @param schema
-	 * @return a {@link SchemaRegistrationResponse} representing the result of the operation
+	 * @return a {@link SchemaRegistrationResponse} representing the result of the
+	 * operation
 	 */
 	SchemaRegistrationResponse register(String subject, String format, String schema);
 
 	/**
 	 * Retrieves a schema by its reference (subject and version).
-	 * @param schemaReference a {@link SchemaReference} used to identify the target schema.
+	 * @param schemaReference a {@link SchemaReference} used to identify the target
+	 * schema.
 	 * @return
 	 */
 	String fetch(SchemaReference schemaReference);

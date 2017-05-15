@@ -76,6 +76,12 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private static final SpelExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
 
+	private final MultiValueMap<String, StreamListenerHandlerMethodMapping> mappedListenerMethods = new LinkedMultiValueMap<>();
+
+	private final List<StreamListenerParameterAdapter<?, Object>> streamListenerParameterAdapters = new ArrayList<>();
+
+	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
+
 	@Autowired
 	@Lazy
 	private DestinationResolver<MessageChannel> binderAwareChannelResolver;
@@ -84,13 +90,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 	@Lazy
 	private MessageHandlerMethodFactory messageHandlerMethodFactory;
 
-	private final MultiValueMap<String, StreamListenerHandlerMethodMapping> mappedListenerMethods = new LinkedMultiValueMap<>();
-
 	private ConfigurableApplicationContext applicationContext;
-
-	private final List<StreamListenerParameterAdapter<?, Object>> streamListenerParameterAdapters = new ArrayList<>();
-
-	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
 
 	private EvaluationContext evaluationContext;
 
@@ -101,7 +101,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 	private BeanExpressionContext expressionContext;
 
 	@Override
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public final void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
@@ -141,7 +141,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 		ReflectionUtils.doWithMethods(targetClass, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
-				StreamListener streamListener = AnnotatedElementUtils.findMergedAnnotation(method, StreamListener.class);
+				StreamListener streamListener = AnnotatedElementUtils.findMergedAnnotation(method,
+						StreamListener.class);
 				if (streamListener != null && !method.isBridge()) {
 					streamListener = postProcessAnnotation(streamListener, method);
 					Assert.isTrue(method.getAnnotation(Input.class) == null,
@@ -179,11 +180,11 @@ public class StreamListenerAnnotationBeanPostProcessor
 	}
 
 	/**
-	 * Extension point, allowing subclasses to customize the {@link StreamListener} annotation detected by
-	 * the postprocessor.
+	 * Extension point, allowing subclasses to customize the {@link StreamListener}
+	 * annotation detected by the postprocessor.
 	 *
 	 * @param originalAnnotation the original annotation
-	 * @param annotatedMethod    the method on which the annotation has been found
+	 * @param annotatedMethod the method on which the annotation has been found
 	 * @return the postprocessed {@link StreamListener} annotation
 	 */
 	protected StreamListener postProcessAnnotation(StreamListener originalAnnotation, Method annotatedMethod) {
@@ -228,7 +229,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 			Class targetBeanClass = this.applicationContext.getType(targetBeanName);
 			if (!methodParameter.getParameterType().equals(Object.class)
 					&& (targetBeanClass.isAssignableFrom(methodParameter.getParameterType()) ||
-					methodParameter.getParameterType().isAssignableFrom(targetBeanClass))) {
+							methodParameter.getParameterType().isAssignableFrom(targetBeanClass))) {
 				return true;
 			}
 		}
@@ -251,7 +252,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return false;
 	}
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void invokeSetupMethodOnListenedChannel(Method method, Object bean, String inboundName,
 			String outboundName) {
 		Object[] arguments = new Object[method.getParameterTypes().length];
@@ -317,7 +318,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 		}
 	}
 
-	protected final void registerHandlerMethodOnListenedChannel(Method method, StreamListener streamListener, Object bean) {
+	protected final void registerHandlerMethodOnListenedChannel(Method method, StreamListener streamListener,
+			Object bean) {
 		Assert.hasText(streamListener.value(), "The binding name cannot be null");
 		if (!StringUtils.hasText(streamListener.value())) {
 			throw new BeanInitializationException("A bound component name must be specified");

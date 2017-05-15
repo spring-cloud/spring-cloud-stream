@@ -48,6 +48,39 @@ import static org.junit.Assert.fail;
  */
 public class BinderFactoryConfigurationTests {
 
+	private static ClassLoader createClassLoader(String[] additionalClasspathDirectories,
+			String... properties) throws IOException {
+		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ? new URL[0]
+				: new URL[additionalClasspathDirectories.length];
+		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
+			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
+				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i]).getURL().toString() + "/");
+			}
+		}
+		return new URLClassLoader(urls, BinderFactoryConfigurationTests.class.getClassLoader());
+	}
+
+	private static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
+			String... properties) throws IOException {
+		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
+		return new SpringApplicationBuilder(SimpleApplication.class)
+				.resourceLoader(new DefaultResourceLoader(classLoader))
+				.properties(properties)
+				.web(false)
+				.run();
+	}
+
+	private static ConfigurableApplicationContext createBinderTestContextWithSources(Class[] sources,
+			String[] additionalClasspathDirectories,
+			String... properties) throws IOException {
+		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
+		return new SpringApplicationBuilder(sources)
+				.resourceLoader(new DefaultResourceLoader(classLoader))
+				.properties(properties)
+				.web(false)
+				.run();
+	}
+
 	@Test
 	public void loadBinderTypeRegistry() throws Exception {
 		try {
@@ -64,7 +97,7 @@ public class BinderFactoryConfigurationTests {
 	public void loadBinderTypeRegistryWithNonSelfContainedAggregatorApp() throws Exception {
 		try {
 			createBinderTestContextWithSources(
-					new Class[]{SimpleApplication.class}, new String[]{},
+					new Class[] { SimpleApplication.class }, new String[] {},
 					"spring.cloud.stream.internal.selfContained=false");
 			fail();
 		}
@@ -77,15 +110,15 @@ public class BinderFactoryConfigurationTests {
 
 	@Test
 	public void loadBinderTypeRegistryWithSelfContainedAggregatorApp() throws Exception {
-			createBinderTestContextWithSources(
-					new Class[] { SimpleApplication.class}, new String[] {},
-					"spring.cloud.stream.internal.selfContained=true");
+		createBinderTestContextWithSources(
+				new Class[] { SimpleApplication.class }, new String[] {},
+				"spring.cloud.stream.internal.selfContained=true");
 	}
 
 	@Test
 	public void loadBinderTypeRegistryWithOneBinder() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
-				new String[] {"binder1"});
+				new String[] { "binder1" });
 
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
 		assertThat(binderTypeRegistry).isNotNull();
@@ -106,7 +139,7 @@ public class BinderFactoryConfigurationTests {
 	@Test
 	public void loadBinderTypeRegistryWithOneBinderAndSharedEnvironment() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
-				new String[] {"binder1"}, "binder1.name=foo");
+				new String[] { "binder1" }, "binder1.name=foo");
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
@@ -117,7 +150,7 @@ public class BinderFactoryConfigurationTests {
 	@Test
 	public void loadBinderTypeRegistryWithOneCustomBinderAndSharedEnvironment() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
-				new String[] {"binder1"}, "binder1.name=foo",
+				new String[] { "binder1" }, "binder1.name=foo",
 				"spring.cloud.stream.binders.custom.environment.foo=bar",
 				"spring.cloud.stream.binders.custom.type=binder1");
 
@@ -132,7 +165,7 @@ public class BinderFactoryConfigurationTests {
 	@Test
 	public void loadBinderTypeRegistryWithOneCustomBinderAndIsolatedEnvironment() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
-				new String[] {"binder1"}, "binder1.name=foo",
+				new String[] { "binder1" }, "binder1.name=foo",
 				"spring.cloud.stream.binders.custom.type=binder1",
 				"spring.cloud.stream.binders.custom.environment.foo=bar",
 				"spring.cloud.stream.binders.custom.inheritEnvironment=false");
@@ -177,7 +210,7 @@ public class BinderFactoryConfigurationTests {
 	public void loadBinderTypeRegistryWithCustomNonDefaultCandidate() throws Exception {
 
 		ConfigurableApplicationContext context = createBinderTestContext(
-				new String[] { "binder1"},
+				new String[] { "binder1" },
 				"spring.cloud.stream.binders.custom.type=binder1",
 				"spring.cloud.stream.binders.custom.environment.binder1.name=foo",
 				"spring.cloud.stream.binders.custom.defaultCandidate=false",
@@ -208,8 +241,7 @@ public class BinderFactoryConfigurationTests {
 	@Test
 	public void loadDefaultBinderWithTwoBinders() throws Exception {
 
-		ConfigurableApplicationContext context =
-				createBinderTestContext(
+		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] { "binder1", "binder2" },
 				"spring.cloud.stream.defaultBinder:binder2");
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
@@ -232,39 +264,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(defaultBinder).isSameAs(binder2);
 	}
 
-	private static ClassLoader createClassLoader(String[] additionalClasspathDirectories,
-			String... properties) throws IOException {
-		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ?
-				new URL[0] : new URL[additionalClasspathDirectories.length];
-		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
-			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
-				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i]).getURL().toString() + "/");
-			}
-		}
-		return new URLClassLoader(urls, BinderFactoryConfigurationTests.class.getClassLoader());
-	}
-
-	private static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
-			String... properties) throws IOException {
-		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
-		return new SpringApplicationBuilder(SimpleApplication.class)
-				.resourceLoader(new DefaultResourceLoader(classLoader))
-				.properties(properties)
-				.web(false)
-				.run();
-	}
-
-
-	private static ConfigurableApplicationContext createBinderTestContextWithSources(Class[] sources, String[] additionalClasspathDirectories,
-			String... properties) throws IOException {
-		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
-		return new SpringApplicationBuilder(sources)
-				.resourceLoader(new DefaultResourceLoader(classLoader))
-				.properties(properties)
-				.web(false)
-				.run();
-	}
-	@Import({BinderFactoryConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
+	@Import({ BinderFactoryConfiguration.class, PropertyPlaceholderAutoConfiguration.class })
 	@EnableBinding
 	public static class SimpleApplication {
 

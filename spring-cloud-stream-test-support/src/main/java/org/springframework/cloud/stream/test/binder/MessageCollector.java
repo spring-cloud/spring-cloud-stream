@@ -22,8 +22,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * Maintains a map between (output) channels and messages received (in FIFO order). To be injected in tests that
- * can then run assertions on the enqueued messages.
+ * Maintains a map between (output) channels and messages received (in FIFO order). To be
+ * injected in tests that can then run assertions on the enqueued messages.
  *
  * @author Eric Bottard
  */

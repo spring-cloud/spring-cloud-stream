@@ -44,9 +44,21 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
 @SuppressWarnings("unchecked")
 public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 
+	@SuppressWarnings("unchecked")
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+		Processor processor = context.getBean(Processor.class);
+		String sentPayload = "hello " + UUID.randomUUID().toString();
+		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		assertThat(result).isNotNull();
+		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
+	}
+
 	@Test
 	public void testGenericFluxInputOutputArgsWithMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestGenericStringFluxInputOutputArgsWithMessageImpl1.class, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestGenericStringFluxInputOutputArgsWithMessageImpl1.class, "--server.port=0");
 		sendMessageAndValidate(context);
 		context.close();
 	}
@@ -62,21 +74,12 @@ public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
-		Processor processor = context.getBean(Processor.class);
-		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
-		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
-		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
+	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl1
+			extends TestGenericFluxInputOutputArgsWithMessage1<String> {
 	}
 
-	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl1 extends TestGenericFluxInputOutputArgsWithMessage1<String> {
-	}
-
-	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl2 extends TestGenericFluxInputOutputArgsWithMessage2<String> {
+	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl2
+			extends TestGenericFluxInputOutputArgsWithMessage2<String> {
 	}
 
 	@EnableBinding(Processor.class)

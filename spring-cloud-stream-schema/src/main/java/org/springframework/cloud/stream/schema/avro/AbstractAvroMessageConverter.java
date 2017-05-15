@@ -45,11 +45,11 @@ import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.util.MimeType;
 
 /**
- * Base class for Apache Avro {@link org.springframework.messaging.converter.MessageConverter} implementations.
+ * Base class for Apache Avro
+ * {@link org.springframework.messaging.converter.MessageConverter} implementations.
  * @author Marius Bogoevici
  */
 public abstract class AbstractAvroMessageConverter extends AbstractMessageConverter {
-
 
 	protected AbstractAvroMessageConverter(MimeType supportedMimeType) {
 		super(supportedMimeType);

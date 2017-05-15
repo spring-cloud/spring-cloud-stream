@@ -46,9 +46,9 @@ public class CachingRegistryClient implements SchemaRegistryClient {
 
 	@Override
 	public SchemaRegistrationResponse register(String subject, String format, String schema) {
-		SchemaRegistrationResponse response = delegate.register(subject,format,schema);
-		cacheManager.getCache(ID_CACHE).put(response.getSchemaReference(),schema);
-		cacheManager.getCache(REF_CACHE).put(response.getId(),schema);
+		SchemaRegistrationResponse response = delegate.register(subject, format, schema);
+		cacheManager.getCache(ID_CACHE).put(response.getSchemaReference(), schema);
+		cacheManager.getCache(REF_CACHE).put(response.getId(), schema);
 		return response;
 	}
 

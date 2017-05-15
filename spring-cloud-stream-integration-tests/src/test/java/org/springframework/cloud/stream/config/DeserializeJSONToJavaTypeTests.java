@@ -58,7 +58,8 @@ public class DeserializeJSONToJavaTypeTests {
 
 	@Test
 	public void testMessageDeserialized() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").setHeader("contentType", "application/json").build());
+		testProcessor.input().send(
+				MessageBuilder.withPayload("{\"name\":\"Bar\"}").setHeader("contentType", "application/json").build());
 		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);

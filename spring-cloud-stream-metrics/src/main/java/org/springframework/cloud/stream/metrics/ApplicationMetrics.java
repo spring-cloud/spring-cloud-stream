@@ -35,7 +35,7 @@ public class ApplicationMetrics {
 	private final Date createdTime;
 
 	private String name;
-	
+
 	private Collection<Metric<?>> metrics;
 
 	private Map<String, Object> properties;

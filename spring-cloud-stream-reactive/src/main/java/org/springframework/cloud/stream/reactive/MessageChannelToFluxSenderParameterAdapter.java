@@ -53,8 +53,9 @@ public class MessageChannelToFluxSenderParameterAdapter
 					.doOnError(e -> this.log.error("Error during processing: ", e))
 					.retry()
 					.subscribe(
-							result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result :
-									MessageBuilder.withPayload(result).build()), e -> sendResult.onError(e),
+							result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result
+									: MessageBuilder.withPayload(result).build()),
+							e -> sendResult.onError(e),
 							() -> sendResult.onComplete());
 			return sendResult;
 		};

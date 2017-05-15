@@ -36,11 +36,12 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Integration test that validates that {@link org.springframework.cloud.stream.test.binder.TestSupportBinder} applies
+ * Integration test that validates that
+ * {@link org.springframework.cloud.stream.test.binder.TestSupportBinder} applies
  * correctly.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ExampleTest.MyProcessor.class, properties = {"server.port=-1"})
+@SpringBootTest(classes = ExampleTest.MyProcessor.class, properties = { "server.port=-1" })
 @DirtiesContext
 public class ExampleTest {
 
@@ -62,7 +63,6 @@ public class ExampleTest {
 		Message<String> received = (Message<String>) this.messageCollector.forChannel(this.processor.output()).poll();
 		assertThat(received.getPayload()).isEqualTo("hello world");
 	}
-
 
 	@SpringBootApplication
 	@EnableBinding(Processor.class)

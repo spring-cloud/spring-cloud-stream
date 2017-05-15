@@ -42,11 +42,11 @@ public abstract class AbstractExternalResourceTestSupport<R> implements TestRule
 
 	public static final String SCS_EXTERNAL_SERVERS_REQUIRED = "SCS_EXTERNAL_SERVERS_REQUIRED";
 
+	protected final Log logger = LogFactory.getLog(getClass());
+
 	protected R resource;
 
 	private String resourceDescription;
-
-	protected final Log logger = LogFactory.getLog(getClass());
 
 	protected AbstractExternalResourceTestSupport(String resourceDescription) {
 		Assert.hasText(resourceDescription, "resourceDescription is required");

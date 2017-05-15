@@ -33,7 +33,9 @@ import org.springframework.messaging.Message;
 /**
  * A Hamcrest Matcher meant to be used in conjunction with {@link TestSupportBinder}.
  *
- * <p>Expected usage is of the form (with appropriate static imports):
+ * <p>
+ * Expected usage is of the form (with appropriate static imports):
+ * 
  * <pre>
  * public class TransformProcessorApplicationTests {
  *
@@ -51,7 +53,8 @@ import org.springframework.messaging.Message;
  *        assertThat(messageCollector.forChannel(processor.output()), receivesPayloadThat(is("hellofoo")).within(10));
  *    }
  *
- * }</pre>
+ * }
+ * </pre>
  * </p>
  *
  * @author Eric Bottard
@@ -62,17 +65,39 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 
 	private final long timeout;
 
+	private final TimeUnit unit;
+
 	private Extractor<Message<?>, T> extractor;
 
 	private Map<BlockingQueue<Message<?>>, T> actuallyReceived = new HashMap<>();
-
-	private final TimeUnit unit;
 
 	public MessageQueueMatcher(Matcher<T> delegate, long timeout, TimeUnit unit, Extractor<Message<?>, T> extractor) {
 		this.delegate = delegate;
 		this.timeout = timeout;
 		this.unit = (unit != null ? unit : TimeUnit.SECONDS);
 		this.extractor = extractor;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <P> MessageQueueMatcher<P> receivesMessageThat(Matcher<Message<P>> messageMatcher) {
+		return new MessageQueueMatcher(messageMatcher, 5, TimeUnit.SECONDS,
+				new Extractor<Message<P>, Message<P>>("a message that ") {
+					@Override
+					public Message<P> apply(Message<P> m) {
+						return m;
+					}
+				});
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <P> MessageQueueMatcher<P> receivesPayloadThat(Matcher<P> payloadMatcher) {
+		return new MessageQueueMatcher(payloadMatcher, 5, TimeUnit.SECONDS,
+				new Extractor<Message<P>, P>("a message whose payload ") {
+					@Override
+					public P apply(Message<P> m) {
+						return m.getPayload();
+					}
+				});
 	}
 
 	@Override
@@ -129,28 +154,9 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		description.appendText("Channel to receive ").appendDescriptionOf(extractor).appendDescriptionOf(delegate);
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	public static <P> MessageQueueMatcher<P> receivesMessageThat(Matcher<Message<P>> messageMatcher) {
-		return new MessageQueueMatcher(messageMatcher, 5, TimeUnit.SECONDS, new Extractor<Message<P>, Message<P>>("a message that ") {
-			@Override
-			public Message<P> apply(Message<P> m) {
-				return m;
-			}
-		});
-	}
-
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	public static <P> MessageQueueMatcher<P> receivesPayloadThat(Matcher<P> payloadMatcher) {
-		return new MessageQueueMatcher(payloadMatcher, 5, TimeUnit.SECONDS, new Extractor<Message<P>, P>("a message whose payload ") {
-			@Override
-			public P apply(Message<P> m) {
-				return m.getPayload();
-			}
-		});
-	}
-
 	/**
-	 * A transformation to be applied to a received message before asserting, <i>e.g.</i> to only inspect the payload.
+	 * A transformation to be applied to a received message before asserting, <i>e.g.</i>
+	 * to only inspect the payload.
 	 */
 	public static abstract class Extractor<R, T> implements Function<R, T>, SelfDescribing {
 
@@ -165,7 +171,5 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 			description.appendText(behaviorDescription);
 		}
 	}
-
-
 
 }

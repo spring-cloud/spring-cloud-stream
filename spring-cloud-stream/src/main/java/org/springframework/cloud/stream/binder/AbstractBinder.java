@@ -68,11 +68,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
+
 	private volatile AbstractApplicationContext applicationContext;
 
 	private volatile Codec codec;
-
-	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
 	private volatile EvaluationContext evaluationContext;
 
@@ -82,7 +82,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * For binder implementations that support a prefix, apply the prefix to the name.
 	 *
 	 * @param prefix the prefix.
-	 * @param name   the name.
+	 * @param name the name.
 	 */
 	public static String applyPrefix(String prefix, String name) {
 		return prefix + name;
@@ -98,14 +98,14 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return name + ".dlq";
 	}
 
+	protected AbstractApplicationContext getApplicationContext() {
+		return this.applicationContext;
+	}
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		Assert.isInstanceOf(AbstractApplicationContext.class, applicationContext);
 		this.applicationContext = (AbstractApplicationContext) applicationContext;
-	}
-
-	protected AbstractApplicationContext getApplicationContext() {
-		return this.applicationContext;
 	}
 
 	protected ConfigurableListableBeanFactory getBeanFactory() {
@@ -157,7 +157,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	/**
 	 * Construct a name comprised of the name and group.
 	 *
-	 * @param name  the name.
+	 * @param name the name.
 	 * @param group the group.
 	 * @return the constructed name.
 	 */
@@ -243,7 +243,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 				return new String(bytes, "UTF-8");
 			}
 			catch (UnsupportedEncodingException e) {
-				String errorMessage = "unable to deserialize [java.lang.String]. Encoding not supported. " + e.getMessage();
+				String errorMessage = "unable to deserialize [java.lang.String]. Encoding not supported. "
+						+ e.getMessage();
 				logger.error(errorMessage);
 				throw new SerializationFailedException(errorMessage, e);
 			}
@@ -258,9 +259,10 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 					this.payloadTypeCache.put(className, targetType);
 				}
 				return this.codec.decode(bytes, targetType);
-			}// catch all exceptions that could occur during de-serialization
+			} // catch all exceptions that could occur during de-serialization
 			catch (Exception e) {
-				String errorMessage = "Unable to deserialize [" + className + "] using the contentType [" + contentType + "] " + e.getMessage();
+				String errorMessage = "Unable to deserialize [" + className + "] using the contentType [" + contentType
+						+ "] " + e.getMessage();
 				logger.error(errorMessage);
 				throw new SerializationFailedException(errorMessage, e);
 			}

@@ -26,7 +26,6 @@ import java.util.Set;
  */
 public class BindableAdapter implements Bindable {
 
-
 	@Override
 	public void bindInputs(BindingService adapter) {
 	}

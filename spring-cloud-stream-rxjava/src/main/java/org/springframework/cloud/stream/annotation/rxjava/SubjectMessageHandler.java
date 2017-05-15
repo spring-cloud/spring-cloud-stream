@@ -34,34 +34,39 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
- * Adapts the item at a time delivery of a {@link org.springframework.messaging.MessageHandler}
- * by delegating processing to a {@link Observable}.
+ * Adapts the item at a time delivery of a
+ * {@link org.springframework.messaging.MessageHandler} by delegating processing to a
+ * {@link Observable}.
  * <p/>
- * The outputStream of the processor is used to create a message and send it to the output channel.  If the
- * input channel and output channel are connected to the {@link org.springframework.cloud.stream.binder.Binder},
- * then data delivered to the input stream via a call to onNext is invoked on the dispatcher thread of the binder
- * and sending a message to the output channel will involve IO operations on the binder.
+ * The outputStream of the processor is used to create a message and send it to the output
+ * channel. If the input channel and output channel are connected to the
+ * {@link org.springframework.cloud.stream.binder.Binder}, then data delivered to the
+ * input stream via a call to onNext is invoked on the dispatcher thread of the binder and
+ * sending a message to the output channel will involve IO operations on the binder.
  * <p/>
- * The implementation uses a SerializedSubject.  This has the advantage that the state of the Observabale
- * can be shared across all the incoming dispatcher threads that are invoking onNext.  It has the disadvantage
- * that processing and sending to the output channel will execute serially on one of the dispatcher threads.
+ * The implementation uses a SerializedSubject. This has the advantage that the state of
+ * the Observabale can be shared across all the incoming dispatcher threads that are
+ * invoking onNext. It has the disadvantage that processing and sending to the output
+ * channel will execute serially on one of the dispatcher threads.
  * <p/>
- * The use of this handler makes for a very natural first experience when processing data.  For example given
- * the stream <code></code>http | rxjava-processor | log</code> where the <code>rxjava-processor</code> does a
- * <code>buffer(5)</code> and then produces a single value.  Sending 10 messages to the http source will
- * result in 2 messages in the log, no matter how many dispatcher threads are used.
+ * The use of this handler makes for a very natural first experience when processing data.
+ * For example given the stream <code></code>http | rxjava-processor | log</code> where
+ * the <code>rxjava-processor</code> does a <code>buffer(5)</code> and then produces a
+ * single value. Sending 10 messages to the http source will result in 2 messages in the
+ * log, no matter how many dispatcher threads are used.
  * <p/>
- * You can modify what thread the outputStream subscriber, which does the send to the output channel,
- * will use by explicitly calling <code>observeOn</code> before returning the outputStream from your processor.
+ * You can modify what thread the outputStream subscriber, which does the send to the
+ * output channel, will use by explicitly calling <code>observeOn</code> before returning
+ * the outputStream from your processor.
  * <p/>
-
+ * 
  * All error handling is the responsibility of the processor implementation.
  *
  * @author Mark Pollack
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({ "unchecked", "rawtypes" })
 @Deprecated
 public class SubjectMessageHandler extends AbstractMessageProducingHandler implements SmartLifecycle {
 
@@ -76,7 +81,7 @@ public class SubjectMessageHandler extends AbstractMessageProducingHandler imple
 
 	private volatile boolean running;
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public SubjectMessageHandler(RxJavaProcessor processor) {
 		Assert.notNull(processor, "RxJava processor must not be null.");
 		this.processor = processor;

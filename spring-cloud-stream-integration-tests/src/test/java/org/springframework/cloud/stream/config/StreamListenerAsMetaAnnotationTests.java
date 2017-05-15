@@ -40,11 +40,40 @@ import org.springframework.messaging.handler.annotation.Payload;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@MessageMapping
+@Documented
+@StreamListener
+@interface EventHandler {
+	/**
+	 * The name of the binding target (e.g. channel) that the method subscribes to.
+	 * @return the name of the binding target.
+	 */
+	@AliasFor(annotation = StreamListener.class, attribute = "target")
+	String value() default "";
+
+	/**
+	 * The name of the binding target (e.g. channel) that the method subscribes to.
+	 * @return the name of the binding target.
+	 */
+	@AliasFor(annotation = StreamListener.class, attribute = "target")
+	String target() default "";
+
+	/**
+	 * A condition that must be met by all items that are dispatched to this method.
+	 * @return a SpEL expression that must evaluate to a {@code boolean} value.
+	 */
+	@AliasFor(annotation = StreamListener.class, attribute = "condition")
+	String condition() default "";
+
+}
+
 /**
  * @author David Turanski
  */
 public class StreamListenerAsMetaAnnotationTests {
-	
+
 	@Test
 	public void testCustomAnnotation() {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithCustomAnnotatedArguments.class,
@@ -62,7 +91,7 @@ public class StreamListenerAsMetaAnnotationTests {
 				"barbar" + id);
 		context.close();
 	}
-	
+
 	@Test
 	public void testAnnotation() {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class,
@@ -80,7 +109,7 @@ public class StreamListenerAsMetaAnnotationTests {
 				"barbar" + id);
 		context.close();
 	}
-	
+
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	public static class TestPojoWithCustomAnnotatedArguments {
@@ -94,7 +123,7 @@ public class StreamListenerAsMetaAnnotationTests {
 			this.receivedFoo.add(fooPojo);
 		}
 	}
-	
+
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	public static class TestPojoWithAnnotatedArguments {
@@ -108,33 +137,4 @@ public class StreamListenerAsMetaAnnotationTests {
 			this.receivedFoo.add(fooPojo);
 		}
 	}
-}
-
-@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
-@Retention(RetentionPolicy.RUNTIME)
-@MessageMapping
-@Documented
-@StreamListener
-@interface EventHandler {
-	/**
-	 * The name of the binding target (e.g. channel) that the method subscribes to.
-	 * @return the name of the binding target.
-	 */
-	@AliasFor(annotation=StreamListener.class, attribute="target")
-	String value() default "";
-
-	/**
-	 * The name of the binding target (e.g. channel) that the method subscribes to.
-	 * @return the name of the binding target.
-	 */
-	@AliasFor(annotation=StreamListener.class, attribute="target")
-	String target()  default "";
-
-	/**
-	 * A condition that must be met by all items that are dispatched to this method.
-	 * @return a SpEL expression that must evaluate to a {@code boolean} value.
-	 */
-	@AliasFor(annotation=StreamListener.class, attribute="condition")
-	String condition() default "";
-	
 }

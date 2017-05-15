@@ -44,10 +44,13 @@ public class AggregateApplicationTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testAggregateApplication() throws Exception {
-		ConfigurableApplicationContext context = new AggregateApplicationBuilder(TestSupportBinderAutoConfiguration.class).from(TestSource.class).to(TestProcessor.class).run();
-		TestSupportBinder testSupportBinder = (TestSupportBinder) context.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
+		ConfigurableApplicationContext context = new AggregateApplicationBuilder(
+				TestSupportBinderAutoConfiguration.class).from(TestSource.class).to(TestProcessor.class).run();
+		TestSupportBinder testSupportBinder = (TestSupportBinder) context.getBean(BinderFactory.class).getBinder(null,
+				MessageChannel.class);
 		MessageChannel processorOutput = testSupportBinder.getChannelForName("output");
-		Message<String> received = (Message<String>) (testSupportBinder.messageCollector().forChannel(processorOutput).poll(5, TimeUnit.SECONDS));
+		Message<String> received = (Message<String>) (testSupportBinder.messageCollector().forChannel(processorOutput)
+				.poll(5, TimeUnit.SECONDS));
 		Assert.assertThat(received, notNullValue());
 		Assert.assertTrue(received.getPayload().endsWith("processed"));
 	}

@@ -110,13 +110,15 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	/**
-	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and {@link CacheManager}.
+	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and
+	 * {@link CacheManager}.
 	 * @param schemaRegistryClient the {@link SchemaRegistryClient} used to interact with
 	 * the schema registry server.
-	 * @param cacheManager instance of {@link CacheManager} to cache parsed schemas. If caching
-	 * is not required use {@link NoOpCacheManager}
+	 * @param cacheManager instance of {@link CacheManager} to cache parsed schemas. If
+	 * caching is not required use {@link NoOpCacheManager}
 	 */
-	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
+	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient,
+			CacheManager cacheManager) {
 		super(Arrays.asList(new MimeType("application", "*+avro")));
 		Assert.notNull(schemaRegistryClient, "cannot be null");
 		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
@@ -194,7 +196,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 				}
 			}
 		}
-		if (this.cacheManager instanceof NoOpCacheManager){
+		if (this.cacheManager instanceof NoOpCacheManager) {
 			logger.warn("Schema caching is effectively disabled "
 					+ "since configured cache manager is a NoOpCacheManager. If this was not "
 					+ "the intention, please provide the appropriate instance of CacheManager "
@@ -336,7 +338,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		}
 		return schema;
 	}
-
 
 	/**
 	 * @deprecated as of release 1.0.4. Please use the constructor to inject CacheManager

@@ -32,9 +32,9 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 
-
 /**
- * A factory for creating an instance of {@link CompositeMessageConverter} for a given target MIME type
+ * A factory for creating an instance of {@link CompositeMessageConverter} for a given
+ * target MIME type
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -65,7 +65,6 @@ public class CompositeMessageConverterFactory {
 		}
 		initDefaultConverters();
 	}
-
 
 	private void initDefaultConverters() {
 		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));

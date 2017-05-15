@@ -23,7 +23,8 @@ import rx.Observable;
  *
  * @author Mark Pollack
  * @author Ilayaperumal Gopinathan
- * @deprecated in favor of {@link org.springframework.cloud.stream.annotation.StreamListener} with reactive types
+ * @deprecated in favor of
+ * {@link org.springframework.cloud.stream.annotation.StreamListener} with reactive types
  */
 @Deprecated
 public interface RxJavaProcessor<I, O> {

@@ -90,7 +90,8 @@ public class BinderAwareChannelResolverTests {
 		BinderFactory binderFactory = new BinderFactory() {
 
 			@Override
-			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(String configurationName, Class<? extends T> bindableType) {
+			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(
+					String configurationName, Class<? extends T> bindableType) {
 				return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) binder;
 			}
 		};
@@ -165,7 +166,7 @@ public class BinderAwareChannelResolverTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void propertyPassthrough() {
 		Map<String, BindingProperties> bindings = new HashMap<>();
 		BindingProperties genericProperties = new BindingProperties();
@@ -187,9 +188,8 @@ public class BinderAwareChannelResolverTests {
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				mockBinderFactory);
 		@SuppressWarnings("unchecked")
-		BinderAwareChannelResolver resolver =
-				new BinderAwareChannelResolver(bindingService, this.bindingTargetFactory,
-						new DynamicDestinationsBindable());
+		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(bindingService, this.bindingTargetFactory,
+				new DynamicDestinationsBindable());
 		BeanFactory beanFactory = new DefaultListableBeanFactory();
 		resolver.setBeanFactory(beanFactory);
 		SubscribableChannel resolved = (SubscribableChannel) resolver.resolveDestination("foo");
@@ -216,7 +216,6 @@ public class BinderAwareChannelResolverTests {
 			destinations.get(name).subscribe(directHandler);
 			return new TestBinding(name, directHandler);
 		}
-
 
 		@Override
 		public Binding<MessageChannel> bindProducer(String name,

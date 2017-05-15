@@ -46,6 +46,12 @@ public class MetricJsonSerializer {
 
 	private static final BlockingQueue<DateFormat> formatters = new LinkedBlockingQueue<DateFormat>();
 
+	private static DateFormat defaultDateFormat() {
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+		df.setTimeZone(TimeZone.getTimeZone("GMT"));
+		return df;
+	}
+
 	public static class Serializer extends JsonSerializer<Metric<?>> {
 
 		@Override
@@ -94,11 +100,5 @@ public class MetricJsonSerializer {
 			return metric;
 		}
 
-	}
-
-	private static DateFormat defaultDateFormat() {
-		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-		df.setTimeZone(TimeZone.getTimeZone("GMT"));
-		return df;
 	}
 }

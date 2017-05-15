@@ -57,6 +57,8 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
+	private final Map<Method, Object> targetCache = new HashMap<>(2);
+
 	@Value("${" + InternalPropertyNames.NAMESPACE_PROPERTY_NAME + ":}")
 	private String namespace;
 
@@ -73,8 +75,6 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	private Map<String, BoundTargetHolder> inputHolders = new HashMap<>();
 
 	private Map<String, BoundTargetHolder> outputHolders = new HashMap<>();
-
-	private final Map<Method, Object> targetCache = new HashMap<>(2);
 
 	public BindableProxyFactory(Class<?> type) {
 		this.type = type;
@@ -93,7 +93,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		Input input = AnnotationUtils.findAnnotation(method, Input.class);
 		if (input != null) {
 			String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input, method);
-			boundTarget =  this.inputHolders.get(name).getBoundTarget();
+			boundTarget = this.inputHolders.get(name).getBoundTarget();
 			targetCache.put(method, boundTarget);
 			return boundTarget;
 		}

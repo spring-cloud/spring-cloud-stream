@@ -26,13 +26,13 @@ import java.lang.annotation.Target;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Indicates an instance of an interface containing methods returning bound
- * inputs and outputs.
+ * Indicates an instance of an interface containing methods returning bound inputs and
+ * outputs.
  *
  * @author Dave Syer
  * @author Marius Bogoevici
- * @deprecated As of 1.1 for being redundant (beans qualified by it are already
- *             uniquely identified by their type)
+ * @deprecated As of 1.1 for being redundant (beans qualified by it are already uniquely
+ * identified by their type)
  */
 
 @Qualifier

@@ -53,28 +53,28 @@ public class BinderConfigurationParsingTests {
 		String oneBinderConfiguration = "binder1=org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration";
 		Resource resource = new InputStreamResource(new ByteArrayInputStream(oneBinderConfiguration.getBytes()));
 
-		Collection<BinderType> binderConfigurations
-				= BinderFactoryConfiguration.parseBinderConfigurations(classLoader, resource);
+		Collection<BinderType> binderConfigurations = BinderFactoryConfiguration.parseBinderConfigurations(classLoader,
+				resource);
 
 		Assert.assertNotNull(binderConfigurations);
 		Assert.assertThat(binderConfigurations.size(), equalTo(1));
 		Assert.assertThat(binderConfigurations, contains(
 				both(hasProperty("defaultName", equalTo("binder1"))).and(
-						hasProperty("configurationClasses", hasItemInArray(StubBinder1Configuration.class)))
-		));
+						hasProperty("configurationClasses", hasItemInArray(StubBinder1Configuration.class)))));
 	}
 
 	@Test
 	public void testParseTwoBindersConfigurations() throws Exception {
 		// this is just checking that resources are passed and classes are loaded properly
 		// class values used here are not binder configurations
-		String binderConfiguration = "binder1=org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration\n" +
+		String binderConfiguration = "binder1=org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration\n"
+				+
 				"binder2=org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationA";
-		Resource twoBinderConfigurationResource =
-				new InputStreamResource(new ByteArrayInputStream(binderConfiguration.getBytes()));
+		Resource twoBinderConfigurationResource = new InputStreamResource(
+				new ByteArrayInputStream(binderConfiguration.getBytes()));
 
-		Collection<BinderType> twoBinderConfigurations
-				= BinderFactoryConfiguration.parseBinderConfigurations(classLoader,
+		Collection<BinderType> twoBinderConfigurations = BinderFactoryConfiguration.parseBinderConfigurations(
+				classLoader,
 				twoBinderConfigurationResource);
 
 		Assert.assertThat(twoBinderConfigurations.size(), equalTo(2));
@@ -82,8 +82,7 @@ public class BinderConfigurationParsingTests {
 				both(hasProperty("defaultName", equalTo("binder1"))).and(
 						hasProperty("configurationClasses", hasItemInArray(StubBinder1Configuration.class))),
 				both(hasProperty("defaultName", equalTo("binder2"))).and(
-						hasProperty("configurationClasses", hasItemInArray(StubBinder2ConfigurationA.class)))
-		));
+						hasProperty("configurationClasses", hasItemInArray(StubBinder2ConfigurationA.class)))));
 
 	}
 
@@ -92,14 +91,15 @@ public class BinderConfigurationParsingTests {
 	public void testParseTwoBindersWithMultipleClasses() throws Exception {
 		// this is just checking that resources are passed and classes are loaded properly
 		// class values used here are not binder configurations
-		String binderConfiguration = "binder1=org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration\n" +
+		String binderConfiguration = "binder1=org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration\n"
+				+
 				"binder2=org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationA," +
 				"org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationB";
-		Resource binderConfigurationResource =
-				new InputStreamResource(new ByteArrayInputStream(binderConfiguration.getBytes()));
+		Resource binderConfigurationResource = new InputStreamResource(
+				new ByteArrayInputStream(binderConfiguration.getBytes()));
 
-		Collection<BinderType> binderConfigurations
-				= BinderFactoryConfiguration.parseBinderConfigurations(classLoader, binderConfigurationResource);
+		Collection<BinderType> binderConfigurations = BinderFactoryConfiguration.parseBinderConfigurations(classLoader,
+				binderConfigurationResource);
 
 		Assert.assertThat(binderConfigurations.size(), equalTo(2));
 		Assert.assertThat(binderConfigurations, containsInAnyOrder(
@@ -107,8 +107,7 @@ public class BinderConfigurationParsingTests {
 						hasProperty("configurationClasses", hasItemInArray(StubBinder1Configuration.class))),
 				both(hasProperty("defaultName", equalTo("binder2"))).and(
 						hasProperty("configurationClasses", arrayContainingInAnyOrder(StubBinder2ConfigurationA.class,
-								StubBinder2ConfigurationB.class)))
-		));
+								StubBinder2ConfigurationB.class)))));
 
 	}
 }

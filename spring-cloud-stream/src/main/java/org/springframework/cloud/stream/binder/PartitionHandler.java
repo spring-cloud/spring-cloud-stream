@@ -21,9 +21,9 @@ import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 
 /**
- * Utility class to determine if a binding is configured for partitioning
- * (based on the binder properties provided in the constructor) and
- * what partition a message should be delivered to.
+ * Utility class to determine if a binding is configured for partitioning (based on the
+ * binder properties provided in the constructor) and what partition a message should be
+ * delivered to.
  *
  * @author Patrick Peralta
  * @author David Turanski
@@ -45,10 +45,10 @@ public class PartitionHandler {
 	/**
 	 * Construct a {@code PartitionHandler}.
 	 *
-	 * @param evaluationContext             evaluation context for binder
-	 * @param properties                    binder properties
+	 * @param evaluationContext evaluation context for binder
+	 * @param properties binder properties
 	 * @param partitionKeyExtractorStrategy PartitionKeyExtractor strategy
-	 * @param partitionSelectorStrategy     PartitionSelector strategy
+	 * @param partitionSelectorStrategy PartitionSelector strategy
 	 */
 	public PartitionHandler(EvaluationContext evaluationContext,
 			ProducerProperties properties,
@@ -63,17 +63,16 @@ public class PartitionHandler {
 	/**
 	 * Determine the partition to which to send this message.
 	 * <p>
-	 * If a partition key extractor class is provided, it is invoked to determine
-	 * the key. Otherwise, the partition key expression is evaluated to obtain the
-	 * key value.
+	 * If a partition key extractor class is provided, it is invoked to determine the key.
+	 * Otherwise, the partition key expression is evaluated to obtain the key value.
 	 * <p>
 	 * If a partition selector class is provided, it will be invoked to determine the
 	 * partition. Otherwise, if the partition expression is not null, it is evaluated
-	 * against the key and is expected to return an integer to which the modulo
-	 * function will be applied, using the {@code partitionCount} as the divisor. If no
-	 * partition expression is provided, the key will be passed to the binder
-	 * partition strategy along with the {@code partitionCount}. The default partition
-	 * strategy uses {@code key.hashCode()}, and the result will be the mod of that value.
+	 * against the key and is expected to return an integer to which the modulo function
+	 * will be applied, using the {@code partitionCount} as the divisor. If no partition
+	 * expression is provided, the key will be passed to the binder partition strategy
+	 * along with the {@code partitionCount}. The default partition strategy uses
+	 * {@code key.hashCode()}, and the result will be the mod of that value.
 	 *
 	 * @param message the message.
 	 * @return the partition

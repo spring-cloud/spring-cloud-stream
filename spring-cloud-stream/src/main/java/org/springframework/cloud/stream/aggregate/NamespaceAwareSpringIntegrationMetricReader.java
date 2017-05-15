@@ -27,11 +27,13 @@ import org.springframework.integration.support.management.Statistics;
 import org.springframework.util.Assert;
 
 /**
- * A customized version of {@link org.springframework.boot.actuate.metrics.integration.SpringIntegrationMetricReader} that
- * provides support for customizing channels with a namespace prefix.
+ * A customized version of
+ * {@link org.springframework.boot.actuate.metrics.integration.SpringIntegrationMetricReader}
+ * that provides support for customizing channels with a namespace prefix.
  *
  * @author Marius Bogoevici
- * @see org.springframework.boot.actuate.metrics.integration.SpringIntegrationMetricReader for original implementation
+ * @see org.springframework.boot.actuate.metrics.integration.SpringIntegrationMetricReader
+ * for original implementation
  */
 public class NamespaceAwareSpringIntegrationMetricReader implements MetricReader {
 
@@ -101,4 +103,3 @@ public class NamespaceAwareSpringIntegrationMetricReader implements MetricReader
 	}
 
 }
-

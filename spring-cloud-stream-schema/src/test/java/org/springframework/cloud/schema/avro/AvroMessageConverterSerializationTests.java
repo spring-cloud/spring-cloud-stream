@@ -53,12 +53,12 @@ public class AvroMessageConverterSerializationTests {
 	Pattern versionedSchema = Pattern.compile(
 			"application/" + "vnd" + "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+avro");
 
-	private ConfigurableApplicationContext schemaRegistryServerContext;
 	Log logger = LogFactory.getLog(getClass());
 
+	private ConfigurableApplicationContext schemaRegistryServerContext;
 
 	@Before
-	public void setup(){
+	public void setup() {
 		schemaRegistryServerContext = SpringApplication.run(
 				SchemaRegistryServerApplication.class);
 	}
@@ -72,9 +72,10 @@ public class AvroMessageConverterSerializationTests {
 	public void sourceWriteSameVersion() throws Exception {
 		User specificRecord = new User();
 		specificRecord.setName("joe");
-		Schema v1 = new Schema.Parser().parse(AvroMessageConverterSerializationTests.class.getClassLoader().getResourceAsStream("schemas/user.avsc"));
+		Schema v1 = new Schema.Parser().parse(
+				AvroMessageConverterSerializationTests.class.getClassLoader().getResourceAsStream("schemas/user.avsc"));
 		GenericRecord genericRecord = new GenericData.Record(v1);
-		genericRecord.put("name","joe");
+		genericRecord.put("name", "joe");
 		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
 		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(client);
 		converter.setDynamicSchemaGenerationEnabled(false);
@@ -82,13 +83,19 @@ public class AvroMessageConverterSerializationTests {
 		converter.setCacheManager(new ConcurrentMapCacheManager());
 		converter.afterPropertiesSet();
 
-		Message specificMessage = converter.toMessage(specificRecord,new MutableMessageHeaders(Collections.<String,Object>emptyMap()), MimeTypeUtils.parseMimeType("application/*+avro"));
-		SchemaReference specificRef = extractSchemaReference( MimeTypeUtils.parseMimeType(specificMessage.getHeaders().get("contentType").toString()));
+		Message specificMessage = converter.toMessage(specificRecord,
+				new MutableMessageHeaders(Collections.<String, Object>emptyMap()),
+				MimeTypeUtils.parseMimeType("application/*+avro"));
+		SchemaReference specificRef = extractSchemaReference(
+				MimeTypeUtils.parseMimeType(specificMessage.getHeaders().get("contentType").toString()));
 
-		Message genericMessage = converter.toMessage(genericRecord,new MutableMessageHeaders(Collections.<String,Object>emptyMap()), MimeTypeUtils.parseMimeType("application/*+avro"));
-		SchemaReference genericRef = extractSchemaReference( MimeTypeUtils.parseMimeType(genericMessage.getHeaders().get("contentType").toString()));
+		Message genericMessage = converter.toMessage(genericRecord,
+				new MutableMessageHeaders(Collections.<String, Object>emptyMap()),
+				MimeTypeUtils.parseMimeType("application/*+avro"));
+		SchemaReference genericRef = extractSchemaReference(
+				MimeTypeUtils.parseMimeType(genericMessage.getHeaders().get("contentType").toString()));
 
-		Assert.assertEquals(genericRef,specificRef);
+		Assert.assertEquals(genericRef, specificRef);
 		Assert.assertEquals(1, genericRef.getVersion());
 	}
 
@@ -98,7 +105,8 @@ public class AvroMessageConverterSerializationTests {
 		if (schemaMatcher.find()) {
 			String subject = schemaMatcher.group(1);
 			Integer version = Integer.parseInt(schemaMatcher.group(2));
-			schemaReference = new SchemaReference(subject, version, AvroSchemaRegistryClientMessageConverter.AVRO_FORMAT);
+			schemaReference = new SchemaReference(subject, version,
+					AvroSchemaRegistryClientMessageConverter.AVRO_FORMAT);
 		}
 		return schemaReference;
 	}

@@ -43,8 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 1.2
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = TextPlainConversionTest.FooProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = TextPlainConversionTest.FooProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class TextPlainConversionTest {
 
 	@Autowired
@@ -82,7 +81,6 @@ public class TextPlainConversionTest {
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo("Foo{name='Foo{name='Bar'}'}");
 	}
-
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration

@@ -58,7 +58,8 @@ public class BindersHealthIndicatorAutoConfiguration {
 	}
 
 	/**
-	 * A {@link DefaultBinderFactory.Listener} that provides {@link HealthIndicator} support.
+	 * A {@link DefaultBinderFactory.Listener} that provides {@link HealthIndicator}
+	 * support.
 	 *
 	 * @author Ilayaperumal Gopinathan
 	 */
@@ -71,7 +72,8 @@ public class BindersHealthIndicatorAutoConfiguration {
 		}
 
 		@Override
-		public void afterBinderContextInitialized(String binderConfigurationName, ConfigurableApplicationContext binderContext) {
+		public void afterBinderContextInitialized(String binderConfigurationName,
+				ConfigurableApplicationContext binderContext) {
 			if (this.bindersHealthIndicator != null) {
 				OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
 				Map<String, HealthIndicator> indicators = binderContext.getBeansOfType(HealthIndicator.class);

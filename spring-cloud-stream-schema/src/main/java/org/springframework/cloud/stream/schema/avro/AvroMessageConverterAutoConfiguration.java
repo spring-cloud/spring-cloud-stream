@@ -38,19 +38,17 @@ import org.springframework.util.ObjectUtils;
 @ConditionalOnClass(name = "org.apache.avro.Schema")
 @ConditionalOnProperty(value = "spring.cloud.stream.schemaRegistryClient.enabled", matchIfMissing = true)
 @ConditionalOnBean(type = "org.springframework.cloud.stream.schema.client.SchemaRegistryClient")
-@EnableConfigurationProperties({AvroMessageConverterProperties.class})
+@EnableConfigurationProperties({ AvroMessageConverterProperties.class })
 public class AvroMessageConverterAutoConfiguration {
 
 	@Autowired
 	private AvroMessageConverterProperties avroMessageConverterProperties;
 
-
 	@Bean
 	@ConditionalOnMissingBean(AvroSchemaRegistryClientMessageConverter.class)
 	public AvroSchemaRegistryClientMessageConverter avroSchemaMessageConverter(
 			SchemaRegistryClient schemaRegistryClient) {
-		AvroSchemaRegistryClientMessageConverter
-				avroSchemaRegistryClientMessageConverter = new AvroSchemaRegistryClientMessageConverter(
+		AvroSchemaRegistryClientMessageConverter avroSchemaRegistryClientMessageConverter = new AvroSchemaRegistryClientMessageConverter(
 				schemaRegistryClient);
 		avroSchemaRegistryClientMessageConverter.setDynamicSchemaGenerationEnabled(
 				this.avroMessageConverterProperties.isDynamicSchemaGenerationEnabled());
@@ -70,7 +68,7 @@ public class AvroMessageConverterAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public CacheManager cacheManager(){
+	public CacheManager cacheManager() {
 		return new ConcurrentMapCacheManager();
 	}
 }
