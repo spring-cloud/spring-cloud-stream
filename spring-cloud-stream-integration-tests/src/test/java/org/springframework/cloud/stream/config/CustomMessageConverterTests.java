@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.integration.support.converter.ConfigurableCompositeMessageConverter;
 import org.springframework.integration.support.converter.DefaultDatatypeChannelMessageConverter;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -49,6 +50,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * @author Ilayaperumal Gopinathan
+ * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CustomMessageConverterTests.TestSource.class)
@@ -66,9 +68,9 @@ public class CustomMessageConverterTests {
 
 	@Test
 	public void testCustomMessageConverter() throws Exception {
-		assertThat(customMessageConverters).hasSize(3);
+		assertThat(customMessageConverters).hasSize(4);
 		assertThat(customMessageConverters).extracting("class").contains(FooConverter.class,
-				BarConverter.class, DefaultDatatypeChannelMessageConverter.class);
+				BarConverter.class, DefaultDatatypeChannelMessageConverter.class, ConfigurableCompositeMessageConverter.class);
 		testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
 		@SuppressWarnings("unchecked")
 		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -27,7 +28,6 @@ import org.hamcrest.Matcher;
 import org.hamcrest.SelfDescribing;
 
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
-import org.springframework.integration.util.Function;
 import org.springframework.messaging.Message;
 
 /**
@@ -55,6 +55,7 @@ import org.springframework.messaging.Message;
  * </p>
  *
  * @author Eric Bottard
+ * @author Janne Valkealahti
  */
 public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>>> {
 

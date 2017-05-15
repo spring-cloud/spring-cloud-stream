@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,15 @@ import org.springframework.context.annotation.Import;
 import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Janne Valkealahti
  */
 public class InputOutputBindingOrderTest {
 
@@ -52,7 +53,7 @@ public class InputOutputBindingOrderTest {
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
-		verify(binder).bindConsumer(eq("input"), anyString(), eq(processor.input()), Mockito.<ConsumerProperties>any());
+		verify(binder).bindConsumer(eq("input"), isNull(), eq(processor.input()), Mockito.<ConsumerProperties>any());
 		SomeLifecycle someLifecycle = applicationContext.getBean(SomeLifecycle.class);
 		assertThat(someLifecycle.isRunning());
 		applicationContext.close();
@@ -73,7 +74,6 @@ public class InputOutputBindingOrderTest {
 
 	public static class SomeLifecycle implements SmartLifecycle {
 
-		@SuppressWarnings("rawtypes")
 		@Autowired
 		private BinderFactory binderFactory;
 
@@ -83,7 +83,7 @@ public class InputOutputBindingOrderTest {
 		private boolean running;
 
 		@Override
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({ "unchecked", "rawtypes" })
 		public synchronized void start() {
 			Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 			verify(binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<ProducerProperties>any());
