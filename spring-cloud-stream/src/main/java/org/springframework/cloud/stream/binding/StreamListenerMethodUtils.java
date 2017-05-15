@@ -24,9 +24,7 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -46,17 +44,6 @@ public class StreamListenerMethodUtils {
 			}
 		}
 		return inputAnnotationCount;
-	}
-
-	protected static int outputAnnotationCount(Method method) {
-		int outputAnnotationCount = 0;
-		for (int parameterIndex = 0; parameterIndex < method.getParameterTypes().length; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
-			if (methodParameter.hasParameterAnnotation(Output.class)) {
-				outputAnnotationCount++;
-			}
-		}
-		return outputAnnotationCount;
 	}
 
 	protected static void validateStreamListenerMethod(Method method, int inputAnnotationCount,
@@ -128,21 +115,5 @@ public class StreamListenerMethodUtils {
 						StreamListenerErrorMessages.AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 			}
 		}
-	}
-
-	protected static String getOutboundBindingTargetName(Method method) {
-		SendTo sendTo = AnnotationUtils.findAnnotation(method, SendTo.class);
-		if (sendTo != null) {
-			Assert.isTrue(!ObjectUtils.isEmpty(sendTo.value()), StreamListenerErrorMessages.ATLEAST_ONE_OUTPUT);
-			Assert.isTrue(sendTo.value().length == 1, StreamListenerErrorMessages.SEND_TO_MULTIPLE_DESTINATIONS);
-			Assert.hasText(sendTo.value()[0], StreamListenerErrorMessages.SEND_TO_EMPTY_DESTINATION);
-			return sendTo.value()[0];
-		}
-		Output output = AnnotationUtils.findAnnotation(method, Output.class);
-		if (output != null) {
-			Assert.isTrue(StringUtils.hasText(output.value()), StreamListenerErrorMessages.ATLEAST_ONE_OUTPUT);
-			return output.value();
-		}
-		return null;
 	}
 }

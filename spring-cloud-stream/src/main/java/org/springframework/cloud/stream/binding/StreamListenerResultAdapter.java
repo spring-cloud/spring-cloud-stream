@@ -26,7 +26,7 @@ package org.springframework.cloud.stream.binding;
  * annotated method is operating in declarative mode.
  * @author Marius Bogoevici
  */
-public interface StreamListenerResultAdapter<R, B> {
+public interface StreamListenerResultAdapter<R, B, D> {
 
 	/**
 	 * Return true if the result type can be converted to the binding target.
@@ -41,6 +41,6 @@ public interface StreamListenerResultAdapter<R, B> {
 	 * @param streamListenerResult the result of invoking the method.
 	 * @param bindingTarget the binding target.
 	 */
-	void adapt(R streamListenerResult, B bindingTarget);
+	D adapt(R streamListenerResult, B bindingTarget);
 
 }

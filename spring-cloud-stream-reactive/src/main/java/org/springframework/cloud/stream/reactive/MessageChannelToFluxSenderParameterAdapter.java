@@ -30,7 +30,9 @@ import org.springframework.messaging.MessageChannel;
 /**
  * Adapts an {@link org.springframework.cloud.stream.annotation.Output} annotated
  * {@link FluxSender} to an outbound {@link MessageChannel}.
+ *
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 public class MessageChannelToFluxSenderParameterAdapter
 		implements StreamListenerParameterAdapter<FluxSender, MessageChannel> {
@@ -46,17 +48,20 @@ public class MessageChannelToFluxSenderParameterAdapter
 
 	@Override
 	public FluxSender adapt(MessageChannel bindingTarget, MethodParameter parameter) {
-		return resultPublisher -> {
+		DisposableFluxSender disposableFluxSender = new DisposableFluxSender();
+		FluxSender fluxSender = resultPublisher -> {
 			MonoProcessor<Void> sendResult = MonoProcessor.create();
 			// add error handling and reconnect in the event of an error
-			resultPublisher
+			disposableFluxSender.setDisposable(resultPublisher
 					.doOnError(e -> this.log.error("Error during processing: ", e))
 					.retry()
 					.subscribe(
 							result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result :
 									MessageBuilder.withPayload(result).build()), e -> sendResult.onError(e),
-							() -> sendResult.onComplete());
+							() -> sendResult.onComplete()));
 			return sendResult;
 		};
+		disposableFluxSender.setWrappedFluxSender(fluxSender);
+		return disposableFluxSender;
 	}
 }
