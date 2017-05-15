@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,11 +25,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.DirectFieldAccessor;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -62,10 +57,7 @@ import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.json.JsonPropertyAccessor;
-import org.springframework.integration.support.DefaultMessageBuilderFactory;
-import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
@@ -195,48 +187,6 @@ public class BindingServiceConfiguration {
 	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
 	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
 		return new StreamListenerAnnotationBeanPostProcessor();
-	}
-
-	@Bean
-	public ReadOnlyHeadersAdjuster readOnlyHeadersAdjuster() {
-		return new ReadOnlyHeadersAdjuster();
-	}
-
-	public static class ReadOnlyHeadersAdjuster implements SmartInitializingSingleton, BeanFactoryAware {
-
-		private BeanFactory beanFactory;
-
-		@Override
-		public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-			this.beanFactory = beanFactory;
-		}
-
-		@Override
-		public void afterSingletonsInstantiated() {
-			if (beanFactory.containsBean(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME)) {
-				try {
-					DefaultMessageBuilderFactory messageBuilderFactory = beanFactory.getBean(
-							IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
-							DefaultMessageBuilderFactory.class);
-					// TODO: Add 'addReadOnlyHeader' to builder - INT-4272
-					String[] readOnlyHeaders = (String[]) new DirectFieldAccessor(messageBuilderFactory)
-							.getPropertyValue("readOnlyHeaders");
-					if (readOnlyHeaders == null
-							|| !Arrays.asList(readOnlyHeaders).contains(MessageHeaders.CONTENT_TYPE)) {
-						String[] newReadOnlyHeaders = readOnlyHeaders == null ? new String[1]
-								: Arrays.copyOf(readOnlyHeaders, readOnlyHeaders.length + 1);
-						int pos = readOnlyHeaders != null ? readOnlyHeaders.length : 0;
-						newReadOnlyHeaders[pos] = MessageHeaders.CONTENT_TYPE;
-						messageBuilderFactory.setReadOnlyHeaders(newReadOnlyHeaders);
-					}
-				}
-				catch (RuntimeException e) {
-					// ignore
-				}
-			}
-
-		}
-
 	}
 
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
