@@ -60,26 +60,22 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  *
  * An example of declarative method signature using the former idiom is as follows:
  *
- * <pre>
- * {@code
- * &#64;StreamListener
- * public @Output("joined") Flux<String> join(
- *       &#64;Input("input1") Flux<String> input1,
- *       &#64;Input("input2") Flux<String> input2) {
+ * <pre class="code">
+ * &#064;StreamListener
+ * public &#064;Output("joined") Flux<String> join(
+ *       &#064;Input("input1") Flux<String> input1,
+ *       &#064;Input("input2") Flux<String> input2) {
  *   // ... join the two input streams via functional operators
- * }
  * }
  * </pre>
  *
  * An example of declarative method signature using the latter idiom is as follows:
  *
- * <pre>
- * {@code
- * &#64;StreamListener(Processor.INPUT)
- * &#64;SendTo(Processor.OUTPUT)
+ * <pre class="code">
+ * &#064;StreamListener(Processor.INPUT)
+ * &#064;SendTo(Processor.OUTPUT)
  * public Flux<String> convert(Flux<String> input) {
  *     return input.map(String::toUppercase);
- * }
  * }
  * </pre>
  *
@@ -112,16 +108,19 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  *
  * An example of individual message handler signature is as follows:
  *
- * <pre>
- * {@code
- * @StreamListener(Processor.INPUT) @SendTo(Processor.OUTPUT) public String convert(String
- * input) { return input.toUppercase(); } }
+ * <pre class="code">
+ * &#064;StreamListener(Processor.INPUT)
+ * &#064;SendTo(Processor.OUTPUT)
+ * public String convert(String input) {
+ * 		return input.toUppercase();
+ * }
+ * </pre>
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
- * @see {@link MessageMapping}
- * @see {@link EnableBinding}
- * @see {@link org.springframework.messaging.handler.annotation.SendTo}
+ * @see MessageMapping
+ * @see EnableBinding
+ * @see org.springframework.messaging.handler.annotation.SendTo
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
