@@ -188,7 +188,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 					else if (tolerateLowerPartitionsOnBroker) {
 						logger.warn("The number of expected partitions was: " + partitionCount + ", but "
 								+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
-								+ "There will be " + (effectivePartitionCount - partitionSize) + " consumers");
+								+ "There will be " + (effectivePartitionCount - partitionSize) + " idle consumers");
 					}
 					else {
 						throw new ProvisioningException("The number of expected partitions was: " + partitionCount + ", but "
@@ -250,16 +250,16 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 							Collection<PartitionInfo> partitions = callable.call();
 							// do a sanity check on the partition set
 							int partitionSize = partitions.size();
-							if (partitions.size() < partitionCount) {
+							if (partitionSize < partitionCount) {
 								if (tolerateLowerPartitionsOnBroker) {
 									logger.warn("The number of expected partitions was: " + partitionCount + ", but "
 											+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
-											+ "There will be " + (partitionCount - partitionSize) + "idle consumers");
+											+ "There will be " + (partitionCount - partitionSize) + " idle consumers");
 								}
 								else {
 									throw new IllegalStateException("The number of expected partitions was: "
-											+ partitionCount + ", but " + partitions.size()
-											+ (partitions.size() > 1 ? " have " : " has ") + "been found instead");
+											+ partitionCount + ", but " + partitionSize
+											+ (partitionSize > 1 ? " have " : " has ") + "been found instead");
 								}
 							}
 							return partitions;
