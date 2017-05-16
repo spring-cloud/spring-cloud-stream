@@ -191,7 +191,8 @@ batchTimeout::
 +
 Default: `0`.
 messageKeyExpression::
-Expression (executed against incoming message) used to resolve the key of the produced Kafka message. For example `headers.key` or `payload.myKey`.
+ A SpEL expression evaluated against the outgoing message used to populate the key of the produced Kafka message.
+For example `headers.key` or `payload.myKey`.
 +
 Default: `none`.
 configuration::
