@@ -90,11 +90,11 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binder binder = getBinder();
 		Binding<MessageChannel> foo0ProducerBinding = binder.bindProducer("foo.0", new DirectChannel(),
 				createProducerProperties());
-		Binding<MessageChannel> foo0ConsumerBinding = binder.bindConsumer("foo.0", "test", new DirectChannel(),
+		Binding<MessageChannel> foo0ConsumerBinding = binder.bindConsumer("foo.0", "testClean", new DirectChannel(),
 				createConsumerProperties());
 		Binding<MessageChannel> foo1ProducerBinding = binder.bindProducer("foo.1", new DirectChannel(),
 				createProducerProperties());
-		Binding<MessageChannel> foo1ConsumerBinding = binder.bindConsumer("foo.1", "test", new DirectChannel(),
+		Binding<MessageChannel> foo1ConsumerBinding = binder.bindConsumer("foo.1", "testClean", new DirectChannel(),
 				createConsumerProperties());
 		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer("foo.2", new DirectChannel(),
 				createProducerProperties());
@@ -123,7 +123,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		QueueChannel moduleInputChannel = new QueueChannel();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel,
 				outputBindingProperties.getProducer());
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "test", moduleInputChannel,
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "testSendAndReceive", moduleInputChannel,
 				createConsumerProperties());
 		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
 				.build();
@@ -155,9 +155,9 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binding<MessageChannel> producerBinding2 = binder.bindProducer("foo.y", moduleOutputChannel2,
 				createProducerProperties());
 
-		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer("foo.x", "test", moduleInputChannel,
+		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer("foo.x", "testSendAndReceiveMultipleTopics", moduleInputChannel,
 				createConsumerProperties());
-		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer("foo.y", "test", moduleInputChannel,
+		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer("foo.y", "testSendAndReceiveMultipleTopics", moduleInputChannel,
 				createConsumerProperties());
 
 		String testPayload1 = "foo" + UUID.randomUUID().toString();
@@ -195,7 +195,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		QueueChannel moduleInputChannel = new QueueChannel();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("bar.0", moduleOutputChannel,
 				producerBindingProperties.getProducer());
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bar.0", "test", moduleInputChannel,
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bar.0", "testSendAndReceiveNoOriginalContentType", moduleInputChannel,
 				createConsumerProperties());
 		binderBindUnbindLatency();
 
