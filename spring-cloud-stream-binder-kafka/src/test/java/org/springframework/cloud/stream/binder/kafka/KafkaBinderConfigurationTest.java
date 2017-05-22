@@ -33,7 +33,7 @@ import static org.junit.Assert.assertNotNull;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = KafkaBinderConfiguration.class)
+@SpringBootTest(classes = { KafkaBinderConfiguration.class, KafkaBinderConfigurationTest.class })
 public class KafkaBinderConfigurationTest {
 
 	@Autowired
@@ -50,4 +50,5 @@ public class KafkaBinderConfigurationTest {
 				producerListenerField, this.kafkaMessageChannelBinder);
 		assertNotNull(producerListener);
 	}
+
 }

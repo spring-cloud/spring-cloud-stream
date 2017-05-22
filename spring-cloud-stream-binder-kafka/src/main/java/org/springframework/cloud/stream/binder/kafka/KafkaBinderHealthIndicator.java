@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.springframework.kafka.core.ConsumerFactory;
  *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Henryk Konsek
  */
 public class KafkaBinderHealthIndicator implements HealthIndicator {
 
@@ -53,8 +54,9 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 			for (String topic : this.binder.getTopicsInUse().keySet()) {
 				List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
 				for (PartitionInfo partitionInfo : partitionInfos) {
-					if (this.binder.getTopicsInUse().get(topic).contains(partitionInfo) && partitionInfo.leader()
-							.id() == -1) {
+					if (this.binder.getTopicsInUse().get(topic).getPartitionInfos().contains(partitionInfo)
+							&& partitionInfo.leader()
+									.id() == -1) {
 						downMessages.add(partitionInfo.toString());
 					}
 				}

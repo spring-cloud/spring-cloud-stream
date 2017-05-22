@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package org.springframework.cloud.stream.binder.kafka.config;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +31,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.utils.AppInfoParser;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.endpoint.PublicMetrics;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -38,6 +40,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderJaasInitializerListener;
+import org.springframework.cloud.stream.binder.kafka.KafkaBinderMetrics;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
 import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.admin.Kafka09AdminUtilsOperation;
@@ -69,11 +72,13 @@ import org.springframework.util.ObjectUtils;
  * @author Soby Chacko
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
+ * @author Henryk Konsek
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@Import({KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class, KafkaBinderConfiguration.KafkaPropertiesConfiguration.class})
-@EnableConfigurationProperties({KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class})
+@Import({ KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class,
+		KafkaBinderConfiguration.KafkaPropertiesConfiguration.class })
+@EnableConfigurationProperties({ KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class })
 public class KafkaBinderConfiguration {
 
 	protected static final Log logger = LogFactory.getLog(KafkaBinderConfiguration.class);
@@ -93,7 +98,7 @@ public class KafkaBinderConfiguration {
 	@Autowired
 	private ApplicationContext context;
 
-	@Autowired (required = false)
+	@Autowired(required = false)
 	private AdminUtilsOperation adminUtilsOperation;
 
 	@Bean
@@ -132,6 +137,11 @@ public class KafkaBinderConfiguration {
 		return new KafkaBinderHealthIndicator(kafkaMessageChannelBinder, consumerFactory);
 	}
 
+	@Bean
+	public PublicMetrics kafkaBinderMetrics(KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+		return new KafkaBinderMetrics(kafkaMessageChannelBinder, configurationProperties);
+	}
+
 	@Bean(name = "adminUtilsOperation")
 	@Conditional(Kafka09Present.class)
 	@ConditionalOnClass(name = "kafka.admin.AdminUtils")
@@ -160,7 +170,7 @@ public class KafkaBinderConfiguration {
 			return AppInfoParser.getVersion().startsWith("0.10");
 		}
 	}
-	
+
 	static class Kafka09Present implements Condition {
 
 		@Override
@@ -195,24 +205,29 @@ public class KafkaBinderConfiguration {
 						configuration.put(properties.getKey(), properties.getValue());
 					}
 				}
-				for (Map.Entry<String, Object> producerProperties : this.kafkaProperties.buildProducerProperties().entrySet()) {
+				for (Map.Entry<String, Object> producerProperties : this.kafkaProperties.buildProducerProperties()
+						.entrySet()) {
 					if (!configuration.containsKey(producerProperties.getKey())) {
 						configuration.put(producerProperties.getKey(), producerProperties.getValue());
 					}
 				}
-				for (Map.Entry<String, Object> consumerProperties : this.kafkaProperties.buildConsumerProperties().entrySet()) {
+				for (Map.Entry<String, Object> consumerProperties : this.kafkaProperties.buildConsumerProperties()
+						.entrySet()) {
 					if (!configuration.containsKey(consumerProperties.getKey())) {
 						configuration.put(consumerProperties.getKey(), consumerProperties.getValue());
 					}
 				}
 				if (ObjectUtils.isEmpty(configuration.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
-					configuration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBinderConfigurationProperties.getKafkaConnectionString());
+					configuration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+							kafkaBinderConfigurationProperties.getKafkaConnectionString());
 				}
 				else {
 					@SuppressWarnings("unchecked")
-					List<String> bootStrapServers = (List<String>) configuration.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+					List<String> bootStrapServers = (List<String>) configuration
+							.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
 					if (bootStrapServers.size() == 1 && bootStrapServers.get(0).equals("localhost:9092")) {
-						configuration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBinderConfigurationProperties.getKafkaConnectionString());
+						configuration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+								kafkaBinderConfigurationProperties.getKafkaConnectionString());
 					}
 				}
 			}

@@ -15,14 +15,11 @@
  */
 package org.springframework.cloud.stream.binder.kafka;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
@@ -30,9 +27,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
 /**
  * @author Barry Commins
@@ -40,6 +41,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 public class KafkaBinderHealthIndicatorTest {
 
 	private static final String TEST_TOPIC = "test";
+
 	private KafkaBinderHealthIndicator indicator;
 
 	@Mock
@@ -51,7 +53,7 @@ public class KafkaBinderHealthIndicatorTest {
 	@Mock
 	private KafkaMessageChannelBinder binder;
 
-	private Map<String, Collection<PartitionInfo>> topicsInUse = new HashMap<>();
+	private Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse = new HashMap<>();
 
 	@Before
 	public void setup() {
@@ -64,7 +66,7 @@ public class KafkaBinderHealthIndicatorTest {
 	@Test
 	public void kafkaBinderIsUp() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, partitions);
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group", partitions));
 		given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
@@ -73,7 +75,7 @@ public class KafkaBinderHealthIndicatorTest {
 	@Test
 	public void kafkaBinderIsDown() {
 		final List<PartitionInfo> partitions = partitions(new Node(-1, null, 0));
-		topicsInUse.put(TEST_TOPIC, partitions);
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group", partitions));
 		given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
