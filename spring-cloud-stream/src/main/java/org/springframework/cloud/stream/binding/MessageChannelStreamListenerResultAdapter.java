@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -24,7 +27,9 @@ import org.springframework.messaging.SubscribableChannel;
  * A {@link StreamListenerResultAdapter} used for bridging an
  * {@link org.springframework.cloud.stream.annotation.Output} {@link MessageChannel} to a
  * bound {@link MessageChannel}.
+ *
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 public class MessageChannelStreamListenerResultAdapter
 		implements StreamListenerResultAdapter<MessageChannel, MessageChannel> {
@@ -36,10 +41,22 @@ public class MessageChannelStreamListenerResultAdapter
 	}
 
 	@Override
-	public void adapt(MessageChannel streamListenerResult, MessageChannel bindingTarget) {
+	public Closeable adapt(MessageChannel streamListenerResult, MessageChannel bindingTarget) {
 		BridgeHandler handler = new BridgeHandler();
 		handler.setOutputChannel(bindingTarget);
 		handler.afterPropertiesSet();
 		((SubscribableChannel) streamListenerResult).subscribe(handler);
+
+		return new NoOpCloseeable();
 	}
+
+	private static final class NoOpCloseeable implements Closeable {
+
+		@Override
+		public void close() throws IOException {
+
+		}
+
+	}
+
 }

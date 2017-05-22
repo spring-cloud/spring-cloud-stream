@@ -16,8 +16,9 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import java.io.Closeable;
+
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
 import rx.Observable;
 import rx.RxReactiveStreams;
 
@@ -34,12 +35,12 @@ import org.springframework.util.Assert;
 public class ObservableToMessageChannelResultAdapter
 		implements StreamListenerResultAdapter<Observable<?>, MessageChannel> {
 
-	private FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter;
+	private PublisherToMessageChannelResultAdapter publisherToMessageChannelResultAdapter;
 
 	public ObservableToMessageChannelResultAdapter(
-			FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter) {
-		Assert.notNull(fluxToMessageChannelResultAdapter, "cannot be null");
-		this.fluxToMessageChannelResultAdapter = fluxToMessageChannelResultAdapter;
+			PublisherToMessageChannelResultAdapter publisherToMessageChannelResultAdapter) {
+		Assert.notNull(publisherToMessageChannelResultAdapter, "cannot be null");
+		this.publisherToMessageChannelResultAdapter = publisherToMessageChannelResultAdapter;
 	}
 
 	@Override
@@ -48,8 +49,9 @@ public class ObservableToMessageChannelResultAdapter
 				&& MessageChannel.class.isAssignableFrom(bindingTarget);
 	}
 
-	public void adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
+	public Closeable adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
 		Publisher<?> adaptedPublisher = RxReactiveStreams.toPublisher(streamListenerResult);
-		this.fluxToMessageChannelResultAdapter.adapt(Flux.from(adaptedPublisher), bindingTarget);
+		return this.publisherToMessageChannelResultAdapter.adapt(adaptedPublisher, bindingTarget);
 	}
+
 }
