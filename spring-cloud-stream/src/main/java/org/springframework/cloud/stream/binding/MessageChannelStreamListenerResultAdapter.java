@@ -27,7 +27,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Marius Bogoevici
  */
 public class MessageChannelStreamListenerResultAdapter
-		implements StreamListenerResultAdapter<MessageChannel, MessageChannel> {
+		implements StreamListenerResultAdapter<MessageChannel, MessageChannel, Boolean> {
 
 	@Override
 	public boolean supports(Class<?> resultType, Class<?> bindingTarget) {
@@ -36,10 +36,10 @@ public class MessageChannelStreamListenerResultAdapter
 	}
 
 	@Override
-	public void adapt(MessageChannel streamListenerResult, MessageChannel bindingTarget) {
+	public Boolean adapt(MessageChannel streamListenerResult, MessageChannel bindingTarget) {
 		BridgeHandler handler = new BridgeHandler();
 		handler.setOutputChannel(bindingTarget);
 		handler.afterPropertiesSet();
-		((SubscribableChannel) streamListenerResult).subscribe(handler);
+		return ((SubscribableChannel) streamListenerResult).subscribe(handler);
 	}
 }

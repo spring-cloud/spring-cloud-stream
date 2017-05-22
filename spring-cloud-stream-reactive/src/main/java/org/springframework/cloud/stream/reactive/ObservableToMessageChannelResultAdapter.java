@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.reactive;
 
 import org.reactivestreams.Publisher;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import rx.Observable;
 import rx.RxReactiveStreams;
@@ -32,7 +33,7 @@ import org.springframework.util.Assert;
  * @author Marius Bogoevici
  */
 public class ObservableToMessageChannelResultAdapter
-		implements StreamListenerResultAdapter<Observable<?>, MessageChannel> {
+		implements StreamListenerResultAdapter<Observable<?>, MessageChannel, Disposable> {
 
 	private FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter;
 
@@ -48,8 +49,8 @@ public class ObservableToMessageChannelResultAdapter
 				&& MessageChannel.class.isAssignableFrom(bindingTarget);
 	}
 
-	public void adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
+	public Disposable adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
 		Publisher<?> adaptedPublisher = RxReactiveStreams.toPublisher(streamListenerResult);
-		this.fluxToMessageChannelResultAdapter.adapt(Flux.from(adaptedPublisher), bindingTarget);
+		return this.fluxToMessageChannelResultAdapter.adapt(Flux.from(adaptedPublisher), bindingTarget);
 	}
 }
