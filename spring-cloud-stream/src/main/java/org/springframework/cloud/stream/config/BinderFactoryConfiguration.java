@@ -59,16 +59,8 @@ public class BinderFactoryConfiguration {
 	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX
 			+ ".selfContained";
 
-	private static final String BINDER_CONFIGURATIONS_BEAN_NAME = "spring.cloud.stream.binderConfigruations";
-
 	@Value("${" + SELF_CONTAINED_APP_PROPERTY_NAME + ":}")
 	private String selfContained;
-
-	@Autowired
-	private BinderTypeRegistry binderTypeRegistry;
-
-	@Autowired
-	private BindingServiceProperties bindingServiceProperties;
 
 	@Autowired(required = false)
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
@@ -93,16 +85,19 @@ public class BinderFactoryConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
-	public DefaultBinderFactory binderFactory() {
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(getBinderConfigurations());
+	public DefaultBinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
+			BindingServiceProperties bindingServiceProperties) {
+		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
+				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties), binderTypeRegistry);
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
 		binderFactory.setListeners(binderFactoryListeners);
 		return binderFactory;
 	}
 
-	public Map<String, BinderConfiguration> getBinderConfigurations() {
+	private Map<String, BinderConfiguration> getBinderConfigurations(BinderTypeRegistry binderTypeRegistry,
+			BindingServiceProperties bindingServiceProperties) {
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
-		Map<String, BinderProperties> declaredBinders = this.bindingServiceProperties.getBinders();
+		Map<String, BinderProperties> declaredBinders = bindingServiceProperties.getBinders();
 		boolean defaultCandidatesExist = false;
 		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders.entrySet().iterator();
 		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
@@ -111,9 +106,9 @@ public class BinderFactoryConfiguration {
 		List<String> existingBinderConfigurations = new ArrayList<>();
 		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
 			BinderProperties binderProperties = binderEntry.getValue();
-			if (this.binderTypeRegistry.get(binderEntry.getKey()) != null) {
+			if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
 				binderConfigurations.put(binderEntry.getKey(),
-						new BinderConfiguration(this.binderTypeRegistry.get(binderEntry.getKey()),
+						new BinderConfiguration(binderEntry.getKey(),
 								binderProperties.getEnvironment(), binderProperties.isInheritEnvironment(),
 								binderProperties.isDefaultCandidate()));
 				existingBinderConfigurations.add(binderEntry.getKey());
@@ -121,10 +116,8 @@ public class BinderFactoryConfiguration {
 			else {
 				Assert.hasText(binderProperties.getType(),
 						"No 'type' property present for custom binder " + binderEntry.getKey());
-				BinderType binderType = this.binderTypeRegistry.get(binderProperties.getType());
-				Assert.notNull(binderType, "Binder type " + binderProperties.getType() + " is not defined");
 				binderConfigurations.put(binderEntry.getKey(),
-						new BinderConfiguration(binderType, binderProperties.getEnvironment(),
+						new BinderConfiguration(binderProperties.getType(), binderProperties.getEnvironment(),
 								binderProperties.isInheritEnvironment(), binderProperties.isDefaultCandidate()));
 				existingBinderConfigurations.add(binderEntry.getKey());
 			}
@@ -135,9 +128,9 @@ public class BinderFactoryConfiguration {
 			}
 		}
 		if (!defaultCandidatesExist) {
-			for (Map.Entry<String, BinderType> binderEntry : this.binderTypeRegistry.getAll().entrySet()) {
+			for (Map.Entry<String, BinderType> binderEntry : binderTypeRegistry.getAll().entrySet()) {
 				if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
-					binderConfigurations.put(binderEntry.getKey(), new BinderConfiguration(binderEntry.getValue(),
+					binderConfigurations.put(binderEntry.getKey(), new BinderConfiguration(binderEntry.getKey(),
 							new Properties(), true, true));
 				}
 			}
