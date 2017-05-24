@@ -59,8 +59,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private volatile String defaultBinder;
 
-	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations) {
+	private final BinderTypeRegistry binderTypeRegistry;
+
+	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations,
+			BinderTypeRegistry binderTypeRegistry) {
 		this.binderConfigurations = new HashMap<>(binderConfigurations);
+		this.binderTypeRegistry = binderTypeRegistry;
 	}
 
 	@Override
@@ -163,6 +167,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			if (binderConfiguration == null) {
 				throw new IllegalStateException("Unknown binder configuration: " + configurationName);
 			}
+			BinderType binderType = this.binderTypeRegistry.get(binderConfiguration.getBinderType());
+			Assert.notNull(binderType, "Binder type " + binderConfiguration.getBinderType() + " is not defined");
 			Properties binderProperties = binderConfiguration.getProperties();
 			// Convert all properties to arguments, so that they receive maximum
 			// precedence
@@ -183,7 +189,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
 			args.add("--spring.main.applicationContextClass=" + AnnotationConfigApplicationContext.class.getName());
 			List<Class<?>> configurationClasses = new ArrayList<Class<?>>(
-					Arrays.asList(binderConfiguration.getBinderType().getConfigurationClasses()));
+					Arrays.asList(binderType.getConfigurationClasses()));
 			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder()
 					.sources(configurationClasses.toArray(new Class<?>[] {})).bannerMode(Mode.OFF).web(false);
 			// If the environment is not customized and a main context is available, we

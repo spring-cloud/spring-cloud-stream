@@ -29,15 +29,20 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderType;
+import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
+import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -76,9 +81,7 @@ public class BindingServiceTests {
 		final String inputChannelName = "input";
 		bindingProperties.put(inputChannelName, props);
 		properties.setBindings(bindingProperties);
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(Collections.singletonMap("mock",
-				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
-						new Properties(), true, true)));
+		DefaultBinderFactory binderFactory = createMockBinderFactory();
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		BindingService service = new BindingService(properties, binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
@@ -98,6 +101,18 @@ public class BindingServiceTests {
 		binderFactory.destroy();
 	}
 
+	private DefaultBinderFactory createMockBinderFactory() {
+		BinderTypeRegistry binderTypeRegistry = createMockBinderTypeRegistry();
+		return new DefaultBinderFactory(
+				Collections.singletonMap("mock", new BinderConfiguration("mock", new Properties(), true, true)),
+				binderTypeRegistry);
+	}
+
+	private DefaultBinderTypeRegistry createMockBinderTypeRegistry() {
+		return new DefaultBinderTypeRegistry(Collections.singletonMap("mock",
+				new BinderType("mock", new Class[] { MockBinderConfiguration.class })));
+	}
+
 	@Test
 	public void testMultipleConsumerBindings() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
@@ -109,9 +124,7 @@ public class BindingServiceTests {
 
 		properties.setBindings(bindingProperties);
 
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(Collections.singletonMap("mock",
-				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
-						new Properties(), true, true)));
+		DefaultBinderFactory binderFactory = createMockBinderFactory();
 
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		BindingService service = new BindingService(properties,
@@ -161,14 +174,7 @@ public class BindingServiceTests {
 		final String inputChannelName = "input";
 		bindingProperties.put(inputChannelName, props);
 		properties.setBindings(bindingProperties);
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
-				Collections
-						.singletonMap("mock",
-								new BinderConfiguration(
-										new BinderType("mock",
-												new Class[] {
-														MockBinderConfiguration.class }),
-										new Properties(), true, true)));
+		DefaultBinderFactory binderFactory = createMockBinderFactory();
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		BindingService service = new BindingService(properties,
 				binderFactory);
@@ -193,14 +199,7 @@ public class BindingServiceTests {
 	@Test
 	public void checkDynamicBinding() {
 		BindingServiceProperties properties = new BindingServiceProperties();
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
-				Collections
-						.singletonMap("mock",
-								new BinderConfiguration(
-										new BinderType("mock",
-												new Class[] {
-														MockBinderConfiguration.class }),
-										new Properties(), true, true)));
+		DefaultBinderFactory binderFactory = createMockBinderFactory();
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		@SuppressWarnings("unchecked")
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
@@ -210,8 +209,7 @@ public class BindingServiceTests {
 				any(ProducerProperties.class))).thenReturn(mockBinding);
 		BindingService bindingService = new BindingService(properties, binderFactory);
 		SubscribableChannelBindingTargetFactory bindableSubscribableChannelFactory = new SubscribableChannelBindingTargetFactory(
-				new MessageConverterConfigurer(properties,
-						new CompositeMessageConverterFactory()));
+				new MessageConverterConfigurer(properties, new CompositeMessageConverterFactory()));
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(
 				bindingService, bindableSubscribableChannelFactory,
 				new DynamicDestinationsBindable());
@@ -268,9 +266,7 @@ public class BindingServiceTests {
 		final String outputChannelName = "output";
 		bindingProperties.put(outputChannelName, props);
 		serviceProperties.setBindings(bindingProperties);
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(Collections.singletonMap("mock",
-				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
-						new Properties(), true, true)));
+		DefaultBinderFactory binderFactory = createMockBinderFactory();
 		BindingService service = new BindingService(serviceProperties, binderFactory);
 		MessageChannel outputChannel = new DirectChannel();
 		try {
@@ -294,9 +290,7 @@ public class BindingServiceTests {
 		final String inputChannelName = "input";
 		bindingProperties.put(inputChannelName, props);
 		serviceProperties.setBindings(bindingProperties);
-		DefaultBinderFactory binderFactory = new DefaultBinderFactory(Collections.singletonMap("mock",
-				new BinderConfiguration(new BinderType("mock", new Class[] { MockBinderConfiguration.class }),
-						new Properties(), true, true)));
+		DefaultBinderFactory binderFactory = createMockBinderFactory();
 		BindingService service = new BindingService(serviceProperties,
 				binderFactory);
 		MessageChannel inputChannel = new DirectChannel();
@@ -306,6 +300,73 @@ public class BindingServiceTests {
 		}
 		catch (IllegalStateException e) {
 			assertThat(e).hasMessageContaining("Concurrency should be greater than zero.");
+		}
+	}
+
+	@Test
+	public void testUnknownBinderOnBindingFailure() {
+		HashMap<String, String> properties = new HashMap<>();
+		properties.put("spring.cloud.stream.bindings.input.destination", "fooInput");
+		properties.put("spring.cloud.stream.bindings.input.binder", "mock");
+		properties.put("spring.cloud.stream.bindings.output.destination", "fooOutput");
+		properties.put("spring.cloud.stream.bindings.output.binder", "mockError");
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		RelaxedDataBinder dataBinder = new RelaxedDataBinder(bindingServiceProperties, "spring.cloud.stream");
+		dataBinder.bind(new MutablePropertyValues(properties));
+		BindingService bindingService = new BindingService(bindingServiceProperties,
+				createMockBinderFactory());
+		bindingService.bindConsumer(new DirectChannel(), "input");
+		try {
+			bindingService.bindProducer(new DirectChannel(), "output");
+			fail("Expected 'Unknown binder configuration'");
+		}
+		catch (IllegalStateException e) {
+			assertThat(e).hasMessageContaining("Unknown binder configuration: mockError");
+		}
+	}
+
+	@Test
+	public void testUnrecognizedBinderAllowedIfNotUsed() {
+		HashMap<String, String> properties = new HashMap<>();
+		properties.put("spring.cloud.stream.bindings.input.destination", "fooInput");
+		properties.put("spring.cloud.stream.bindings.output.destination", "fooOutput");
+		properties.put("spring.cloud.stream.defaultBinder", "mock1");
+		properties.put("spring.cloud.stream.binders.mock1.type", "mock");
+		properties.put("spring.cloud.stream.binders.kafka1.type", "kafka");
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		RelaxedDataBinder dataBinder = new RelaxedDataBinder(bindingServiceProperties, "spring.cloud.stream");
+		dataBinder.bind(new MutablePropertyValues(properties));
+		DefaultBinderFactory binderFactory = new BinderFactoryConfiguration()
+				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties);
+		BindingService bindingService = new BindingService(bindingServiceProperties,
+				binderFactory);
+		bindingService.bindConsumer(new DirectChannel(), "input");
+		bindingService.bindProducer(new DirectChannel(), "output");
+	}
+
+	@Test
+	public void testUnrecognizedBinderDisallowedIfUsed() {
+		HashMap<String, String> properties = new HashMap<>();
+		properties.put("spring.cloud.stream.bindings.input.destination", "fooInput");
+		properties.put("spring.cloud.stream.bindings.input.binder", "mock1");
+		properties.put("spring.cloud.stream.bindings.output.destination", "fooOutput");
+		properties.put("spring.cloud.stream.bindings.output.type", "kafka1");
+		properties.put("spring.cloud.stream.binders.mock1.type", "mock");
+		properties.put("spring.cloud.stream.binders.kafka1.type", "kafka");
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		RelaxedDataBinder dataBinder = new RelaxedDataBinder(bindingServiceProperties, "spring.cloud.stream");
+		dataBinder.bind(new MutablePropertyValues(properties));
+		DefaultBinderFactory binderFactory = new BinderFactoryConfiguration()
+				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties);
+		BindingService bindingService = new BindingService(bindingServiceProperties,
+				binderFactory);
+		bindingService.bindConsumer(new DirectChannel(), "input");
+		try {
+			bindingService.bindProducer(new DirectChannel(), "output");
+			fail("Expected 'Unknown binder configuration'");
+		}
+		catch (IllegalArgumentException e) {
+			assertThat(e).hasMessageContaining("Binder type kafka is not defined");
 		}
 	}
 
