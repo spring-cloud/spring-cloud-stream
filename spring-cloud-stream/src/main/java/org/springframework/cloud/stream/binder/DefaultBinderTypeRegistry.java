@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Defult implementation of a {@link BinderTypeRegistry}.
+ * Default implementation of a {@link BinderTypeRegistry}.
  *
  * @author Marius Bogoevici
  */
