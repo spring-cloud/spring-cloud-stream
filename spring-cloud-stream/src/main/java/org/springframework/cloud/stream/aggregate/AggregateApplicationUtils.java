@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import org.springframework.boot.Banner.Mode;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -51,11 +52,12 @@ abstract class AggregateApplicationUtils {
 		aggregatorParentConfiguration.sources(sources).web(webEnvironment)
 				.headless(headless)
 				.properties("spring.jmx.default-domain="
-								+ AggregateApplicationBuilder.ParentConfiguration.class.getName(),
+						+ AggregateApplicationBuilder.ParentConfiguration.class.getName(),
 						InternalPropertyNames.SELF_CONTAINED_APP_PROPERTY_NAME + "="
 								+ selfContained)
 				.properties("management.port=-1")
-				.properties("spring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration");
+				.properties(
+						"spring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration");
 		return aggregatorParentConfiguration.run(args);
 	}
 
@@ -66,8 +68,9 @@ abstract class AggregateApplicationUtils {
 	protected static SpringApplicationBuilder embedApp(
 			ConfigurableApplicationContext parentContext, String namespace,
 			Class<?> app) {
-		// Child context needs to enable web MVC configuration and web enabled to obtain the MVC request mapping in the child applications
-		return new SpringApplicationBuilder(new Object[]{app, RequestMappingConfiguration.class})
+		// Child context needs to enable web MVC configuration and web enabled to obtain
+		// the MVC request mapping in the child applications
+		return new SpringApplicationBuilder(new Object[] { app, RequestMappingConfiguration.class })
 				.web(false)
 				.bannerMode(Mode.OFF)
 				.properties("spring.jmx.default-domain=" + namespace)
@@ -97,6 +100,7 @@ abstract class AggregateApplicationUtils {
 	}
 
 	@Configuration
+	@ConditionalOnClass(name = "org.springframework.web.servlet.DispatcherServlet")
 	public static class RequestMappingConfiguration {
 
 		@Bean
