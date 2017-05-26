@@ -31,7 +31,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
@@ -97,7 +97,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundNotFromSelfWithAck() throws Exception {
 		this.context = SpringApplication
-				.run(new Object[] { InboundMessageHandlerConfiguration.class,
+				.run(new Class[] { InboundMessageHandlerConfiguration.class,
 						OutboundMessageHandlerConfiguration.class,
 						SentMessageConfiguration.class }, new String[] {});
 		this.context.setId("bar");
@@ -118,7 +118,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundNotFromSelfWithTrace() throws Exception {
 		this.context = SpringApplication.run(
-				new Object[] { InboundMessageHandlerConfiguration.class,
+				new Class[] { InboundMessageHandlerConfiguration.class,
 						OutboundMessageHandlerConfiguration.class,
 						SentMessageConfiguration.class },
 				new String[] { "--spring.cloud.bus.trace.enabled=true" });
@@ -138,7 +138,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundAckWithTrace() throws Exception {
 		this.context = SpringApplication.run(
-				new Object[] { InboundMessageHandlerConfiguration.class,
+				new Class[] { InboundMessageHandlerConfiguration.class,
 						OutboundMessageHandlerConfiguration.class,
 						AckMessageConfiguration.class },
 				new String[] { "--spring.cloud.bus.trace.enabled=true" });
