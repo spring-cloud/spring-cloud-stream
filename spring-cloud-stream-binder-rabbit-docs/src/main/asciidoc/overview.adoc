@@ -389,6 +389,7 @@ prefix::
 Default: "".
 routingKeyExpression::
   A SpEL expression to determine the routing key to use when publishing messages.
+  For a fixed routing key, use a literal expression, e.g. `routingKeyExpression='my.routingKey'` in a properties file, or `routingKeyExpression: '''my.routingKey'''` in a YAML file.
 +
 Default: `destination` or `destination-<partition>` for partitioned destinations.
 transacted::
