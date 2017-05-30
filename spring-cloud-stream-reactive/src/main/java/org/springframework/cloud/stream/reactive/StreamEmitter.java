@@ -90,7 +90,4 @@ import org.springframework.cloud.stream.annotation.Output;
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface StreamEmitter {
-
-	String value() default "";
-}
+public @interface StreamEmitter {}

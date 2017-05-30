@@ -46,6 +46,8 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.SynthesizingMethodParameter;
 import org.springframework.util.Assert;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -68,9 +70,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 
 	private ConfigurableApplicationContext applicationContext;
 
-	private final List<Method> targetMethods = new ArrayList<>();
-
-	private Object targetBean;
+	private MultiValueMap<Object, Method> mappedStreamEmitterMethods = new LinkedMultiValueMap<>();
 
 	private volatile boolean running;
 
@@ -106,8 +106,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 		ReflectionUtils.doWithMethods(targetClass, method -> {
 			StreamEmitter streamEmitter = AnnotatedElementUtils.findMergedAnnotation(method, StreamEmitter.class);
 			if (streamEmitter != null && !method.isBridge()) {
-				targetMethods.add(method);
-				targetBean = bean;
+				mappedStreamEmitterMethods.add(bean, method);
 			}
 		});
 		return bean;
@@ -118,14 +117,15 @@ public class StreamEmitterAnnotationBeanPostProcessor
 		try {
 			lock.lock();
 			if (!running) {
-				for (Method targetMethod : targetMethods) {
-					Assert.isTrue(targetMethod.getAnnotation(Input.class) == null,
-							StreamEmitterErrorMessages.INPUT_ANNOTATIONS_ARE_NOT_ALLOWED);
-					String methodAnnotatedOutboundName = StreamAnnotationCommonMethodUtils.getOutboundBindingTargetName(targetMethod);
-					int outputAnnotationCount = StreamAnnotationCommonMethodUtils.outputAnnotationCount(targetMethod);
-					validateStreamEmitterMethod(targetMethod, outputAnnotationCount, methodAnnotatedOutboundName);
-					invokeSetupMethodOnToTargetChannel(targetMethod, targetBean, methodAnnotatedOutboundName);
-				}
+				mappedStreamEmitterMethods.forEach((k, v) -> v.forEach(item -> {
+							Assert.isTrue(item.getAnnotation(Input.class) == null,
+									StreamEmitterErrorMessages.INPUT_ANNOTATIONS_ARE_NOT_ALLOWED);
+							String methodAnnotatedOutboundName = StreamAnnotationCommonMethodUtils.getOutboundBindingTargetName(item);
+							int outputAnnotationCount = StreamAnnotationCommonMethodUtils.outputAnnotationCount(item);
+							validateStreamEmitterMethod(item, outputAnnotationCount, methodAnnotatedOutboundName);
+							invokeSetupMethodOnToTargetChannel(item, k, methodAnnotatedOutboundName);
+						}
+				));
 				this.running = true;
 			}
 		}
@@ -155,7 +155,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 						arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean,
 								methodParameter);
 						if (FluxSender.class.isAssignableFrom(arguments[parameterIndex].getClass())) {
-							fluxSenders.add((FluxSender)arguments[parameterIndex]);
+							fluxSenders.add((FluxSender) arguments[parameterIndex]);
 						}
 						break;
 					}
@@ -183,8 +183,8 @@ public class StreamEmitterAnnotationBeanPostProcessor
 			for (StreamListenerResultAdapter streamListenerResultAdapter : this.streamListenerResultAdapters) {
 				if (streamListenerResultAdapter.supports(result.getClass(), targetBean.getClass())) {
 					Object adapted = streamListenerResultAdapter.adapt(result, targetBean);
-					if(adapted != null && Disposable.class.isAssignableFrom(adapted.getClass())) {
-						fluxDisposables.add((Disposable)adapted);
+					if (adapted != null && Disposable.class.isAssignableFrom(adapted.getClass())) {
+						fluxDisposables.add((Disposable) adapted);
 					}
 					streamListenerResultAdapterFound = true;
 					break;
@@ -245,8 +245,8 @@ public class StreamEmitterAnnotationBeanPostProcessor
 		try {
 			lock.lock();
 			for (FluxSender fluxSender : fluxSenders) {
-				if (fluxSender.getClass().isAssignableFrom(DisposableFluxSender.class)) {
-					((DisposableFluxSender) fluxSender).getDisposable().dispose();
+				if (fluxSender.getClass().isAssignableFrom(FluxSenderImpl.class)) {
+					((FluxSenderImpl) fluxSender).dispose();
 				}
 			}
 			for (Disposable disposable : fluxDisposables) {

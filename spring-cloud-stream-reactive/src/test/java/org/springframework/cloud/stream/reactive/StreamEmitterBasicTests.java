@@ -31,6 +31,7 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,6 +76,13 @@ public class StreamEmitterBasicTests {
 		context.close();
 	}
 
+	@Test
+	public void testFluxReturnAndOutputMethodLevelXYZ() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestFluxReturnAndOutputMethodLevelXYZ.class, "--server.port=0");
+		receiveAndValidateMultipleOutputsXYZ(context);
+		context.close();
+	}
+
 	@SuppressWarnings("unchecked")
 	private static void receiveAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
 		Source source = context.getBean(Source.class);
@@ -101,12 +109,43 @@ public class StreamEmitterBasicTests {
 		messages.clear();
 	}
 
+	@SuppressWarnings("unchecked")
+	private static void receiveAndValidateMultipleOutputsXYZ(ConfigurableApplicationContext context1) throws InterruptedException {
+		TestMultiOutboundChannels source1 = context1.getBean(TestMultiOutboundChannels.class);
+		MessageCollector messageCollector = context1.getBean(MessageCollector.class);
+
+		List<String> messages = new ArrayList<>();
+		assertMessagesX(source1.output1(), messageCollector, messages);
+		messages.clear();
+		assertMessagesY(source1.output2(), messageCollector, messages);
+		messages.clear();
+	}
+
+
 	private static void assertMessages(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
 		for (int i = 0; i < 1000; i ++) {
 			messages.add((String)messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
 		}
 		for (int i = 0; i < 1000; i ++) {
 			assertThat(messages.get(i)).isEqualTo("Hello World!!" + i);
+		}
+	}
+
+	private static void assertMessagesX(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
+		for (int i = 0; i < 1000; i ++) {
+			messages.add((String)messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+		}
+		for (int i = 0; i < 1000; i ++) {
+			assertThat(messages.get(i)).isEqualTo("Hello World!!" + i);
+		}
+	}
+
+	private static void assertMessagesY(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
+		for (int i = 0; i < 1000; i ++) {
+			messages.add((String)messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+		}
+		for (int i = 0; i < 1000; i ++) {
+			assertThat(messages.get(i)).isEqualTo("Hello FooBar!!" + i);
 		}
 	}
 
@@ -184,6 +223,41 @@ public class StreamEmitterBasicTests {
 		public void emit3(@Output(TestMultiOutboundChannels.OUTPUT3) FluxSender outputX) {
 			outputX.send(Flux.intervalMillis(1)
 					.map(l -> "Hello World!!" + l));
+		}
+	}
+
+	@EnableBinding(TestMultiOutboundChannels.class)
+	@EnableAutoConfiguration
+	public static class TestFluxReturnAndOutputMethodLevelXYZ {
+
+		@Bean
+		public Foo foo() {
+			return new Foo();
+		}
+
+		@Bean
+		public Bar bar() {
+			return new Bar();
+		}
+
+		static class Foo {
+
+			@StreamEmitter
+			@Output(TestMultiOutboundChannels.OUTPUT1)
+			public Flux<String> emit1() {
+				return Flux.intervalMillis(1)
+						.map(l -> "Hello World!!" + l);
+			}
+		}
+
+		static class Bar {
+
+			@StreamEmitter
+			@Output(TestMultiOutboundChannels.OUTPUT2)
+			public Flux<String> emit2() {
+				return Flux.intervalMillis(1)
+						.map(l -> "Hello FooBar!!" + l);
+			}
 		}
 	}
 

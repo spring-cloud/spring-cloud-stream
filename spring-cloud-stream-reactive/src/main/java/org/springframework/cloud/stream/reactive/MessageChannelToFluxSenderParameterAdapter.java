@@ -16,10 +16,6 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import reactor.core.publisher.MonoProcessor;
-
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
@@ -37,8 +33,6 @@ import org.springframework.messaging.MessageChannel;
 public class MessageChannelToFluxSenderParameterAdapter
 		implements StreamListenerParameterAdapter<FluxSender, MessageChannel> {
 
-	private Log log = LogFactory.getLog(MessageChannelToFluxSenderParameterAdapter.class);
-
 	@Override
 	public boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter) {
 		ResolvableType type = ResolvableType.forMethodParameter(methodParameter);
@@ -48,21 +42,7 @@ public class MessageChannelToFluxSenderParameterAdapter
 
 	@Override
 	public FluxSender adapt(MessageChannel bindingTarget, MethodParameter parameter) {
-		DisposableFluxSender disposableFluxSender = new DisposableFluxSender();
-		FluxSender fluxSender = resultPublisher -> {
-			MonoProcessor<Void> sendResult = MonoProcessor.create();
-			// add error handling and reconnect in the event of an error
-			disposableFluxSender.setDisposable(resultPublisher
-					.doOnError(e -> this.log.error("Error during processing: ", e))
-					.retry()
-					.subscribe(
-							result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result
-									: MessageBuilder.withPayload(result).build()),
-							sendResult::onError,
-							sendResult::onComplete));
-			return sendResult;
-		};
-		disposableFluxSender.setWrappedFluxSender(fluxSender);
-		return disposableFluxSender;
+		return new FluxSenderImpl(result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result
+				: MessageBuilder.withPayload(result).build()));
 	}
 }
