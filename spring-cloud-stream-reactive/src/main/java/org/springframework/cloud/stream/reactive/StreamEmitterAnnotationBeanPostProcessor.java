@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -26,7 +27,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import reactor.core.Disposable;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -69,9 +69,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 
 	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
 
-	private final List<FluxSender> fluxSenders = new ArrayList<>();
-
-	private final List<Disposable> fluxDisposables = new ArrayList<>();
+	private final List<Closeable> fluxDisposables = new ArrayList<>();
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -160,7 +158,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 						arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean,
 								methodParameter);
 						if (FluxSender.class.isAssignableFrom(arguments[parameterIndex].getClass())) {
-							fluxSenders.add((FluxSender) arguments[parameterIndex]);
+							fluxDisposables.add((FluxSender) arguments[parameterIndex]);
 						}
 						break;
 					}
@@ -187,10 +185,8 @@ public class StreamEmitterAnnotationBeanPostProcessor
 			boolean streamListenerResultAdapterFound = false;
 			for (StreamListenerResultAdapter streamListenerResultAdapter : this.streamListenerResultAdapters) {
 				if (streamListenerResultAdapter.supports(result.getClass(), targetBean.getClass())) {
-					Object adapted = streamListenerResultAdapter.adapt(result, targetBean);
-					if (adapted != null && Disposable.class.isAssignableFrom(adapted.getClass())) {
-						fluxDisposables.add((Disposable) adapted);
-					}
+					Closeable fluxDisposable = streamListenerResultAdapter.adapt(result, targetBean);
+					fluxDisposables.add(fluxDisposable);
 					streamListenerResultAdapterFound = true;
 					break;
 				}
@@ -249,18 +245,17 @@ public class StreamEmitterAnnotationBeanPostProcessor
 	public void stop() {
 		try {
 			lock.lock();
-			for (FluxSender fluxSender : fluxSenders) {
-				fluxSender.close();
-			}
-			for (Disposable disposable : fluxDisposables) {
-				disposable.dispose();
+			for (Closeable closeable : fluxDisposables) {
+				try {
+					closeable.close();
+				}
+				catch (IOException e) {
+					log.error("Error closing reactive source", e);
+				}
 			}
 			if (running) {
 				this.running = false;
 			}
-		}
-		catch (IOException e) {
-			log.error("Error closing reactive source", e);
 		}
 		finally {
 			lock.unlock();
