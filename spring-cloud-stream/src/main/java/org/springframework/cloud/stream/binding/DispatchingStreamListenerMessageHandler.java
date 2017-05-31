@@ -18,18 +18,18 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
 import org.springframework.util.Assert;
 
 /**
  * An {@link AbstractReplyProducingMessageHandler} that delegates to a collection of
- * internal {@link ConditionalStreamListenerHandler} instances, executing the ones that
+ * internal {@link ConditionalStreamListenerMessageHandlerWrapper} instances, executing the ones that
  * match the given expression.
  *
  * @author Marius Bogoevici
@@ -37,15 +37,27 @@ import org.springframework.util.Assert;
  */
 final class DispatchingStreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
 
-	private final Collection<ConditionalStreamListenerHandler> handlerMethods;
+	private final List<ConditionalStreamListenerMessageHandlerWrapper> handlerMethods;
+
+	private final boolean evaluateExpressions;
 
 	private final EvaluationContext evaluationContext;
 
-	DispatchingStreamListenerMessageHandler(Collection<ConditionalStreamListenerHandler> handlerMethods,
+	DispatchingStreamListenerMessageHandler(Collection<ConditionalStreamListenerMessageHandlerWrapper> handlerMethods,
 			EvaluationContext evaluationContext) {
 		Assert.notEmpty(handlerMethods, "'handlerMethods' cannot be empty");
-		Assert.notNull(evaluationContext, "'evaluationContext' cannot be empty");
-		this.handlerMethods = handlerMethods;
+		this.handlerMethods = Collections.unmodifiableList(new ArrayList<>(handlerMethods));
+		boolean evaluateExpressions = false;
+		for (ConditionalStreamListenerMessageHandlerWrapper handlerMethod : handlerMethods) {
+			if (handlerMethod.getCondition() != null) {
+				evaluateExpressions = true;
+				break;
+			}
+		}
+		this.evaluateExpressions = evaluateExpressions;
+		if (evaluateExpressions) {
+			Assert.notNull(evaluationContext, "'evaluationContext' cannot be null if conditions are used");
+		}
 		this.evaluationContext = evaluationContext;
 	}
 
@@ -56,7 +68,7 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 
 	@Override
 	protected Object handleRequestMessage(Message<?> requestMessage) {
-		Collection<ConditionalStreamListenerHandler> matchingHandlers = findMatchingHandlers(requestMessage);
+		List<ConditionalStreamListenerMessageHandlerWrapper> matchingHandlers = this.evaluateExpressions ? findMatchingHandlers(requestMessage) : this.handlerMethods;
 		if (matchingHandlers.size() == 0) {
 			if (logger.isWarnEnabled()) {
 				logger.warn("Cannot find a @StreamListener matching for message with id: "
@@ -65,42 +77,42 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 			return null;
 		}
 		else if (matchingHandlers.size() > 1) {
-			for (ConditionalStreamListenerHandler matchingMethod : matchingHandlers) {
-				matchingMethod.handleMessage(requestMessage);
+			for (ConditionalStreamListenerMessageHandlerWrapper matchingMethod : matchingHandlers) {
+				matchingMethod.getStreamListenerMessageHandler().handleMessage(requestMessage);
 			}
 			return null;
 		}
 		else {
-			final ConditionalStreamListenerHandler singleMatchingHandler = matchingHandlers.iterator().next();
-			singleMatchingHandler.handleMessage(requestMessage);
+			final ConditionalStreamListenerMessageHandlerWrapper singleMatchingHandler = matchingHandlers.get(0);
+			singleMatchingHandler.getStreamListenerMessageHandler().handleMessage(requestMessage);
 			return null;
 		}
 	}
 
-	private Collection<ConditionalStreamListenerHandler> findMatchingHandlers(Message<?> message) {
-		ArrayList<ConditionalStreamListenerHandler> matchingMethods = new ArrayList<>();
-		for (ConditionalStreamListenerHandler conditionalStreamListenerHandlerMethod : this.handlerMethods) {
-			if (conditionalStreamListenerHandlerMethod.getCondition() == null) {
-				matchingMethods.add(conditionalStreamListenerHandlerMethod);
+	private List<ConditionalStreamListenerMessageHandlerWrapper> findMatchingHandlers(Message<?> message) {
+		ArrayList<ConditionalStreamListenerMessageHandlerWrapper> matchingMethods = new ArrayList<>();
+		for (ConditionalStreamListenerMessageHandlerWrapper conditionalStreamListenerMessageHandlerWrapperMethod : this.handlerMethods) {
+			if (conditionalStreamListenerMessageHandlerWrapperMethod.getCondition() == null) {
+				matchingMethods.add(conditionalStreamListenerMessageHandlerWrapperMethod);
 			}
 			else {
-				boolean conditionMetOnMessage = conditionalStreamListenerHandlerMethod.getCondition().getValue(
+				boolean conditionMetOnMessage = conditionalStreamListenerMessageHandlerWrapperMethod.getCondition().getValue(
 						this.evaluationContext, message, Boolean.class);
 				if (conditionMetOnMessage) {
-					matchingMethods.add(conditionalStreamListenerHandlerMethod);
+					matchingMethods.add(conditionalStreamListenerMessageHandlerWrapperMethod);
 				}
 			}
 		}
 		return matchingMethods;
 	}
 
-	static class ConditionalStreamListenerHandler implements MessageHandler {
+	static class ConditionalStreamListenerMessageHandlerWrapper {
 
-		private Expression condition;
+		private final Expression condition;
 
-		private StreamListenerMessageHandler streamListenerMessageHandler;
+		private final StreamListenerMessageHandler streamListenerMessageHandler;
 
-		ConditionalStreamListenerHandler(Expression condition,
+		ConditionalStreamListenerMessageHandlerWrapper(Expression condition,
 				StreamListenerMessageHandler streamListenerMessageHandler) {
 			Assert.notNull(streamListenerMessageHandler, "the message handler cannot be null");
 			Assert.isTrue(condition == null || streamListenerMessageHandler.isVoid(),
@@ -117,9 +129,8 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 			return this.streamListenerMessageHandler.isVoid();
 		}
 
-		@Override
-		public void handleMessage(Message<?> message) throws MessagingException {
-			this.streamListenerMessageHandler.handleMessage(message);
+		public StreamListenerMessageHandler getStreamListenerMessageHandler() {
+			return streamListenerMessageHandler;
 		}
 	}
 }

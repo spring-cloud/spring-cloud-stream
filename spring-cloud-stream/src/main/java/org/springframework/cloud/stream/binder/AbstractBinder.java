@@ -68,7 +68,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	private final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
+	protected final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
 	private volatile AbstractApplicationContext applicationContext;
 
