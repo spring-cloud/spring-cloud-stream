@@ -20,11 +20,12 @@ import java.util.function.Consumer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.reactivestreams.Subscription;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
+
+import org.springframework.util.Assert;
 
 /**
  * Default {@link org.springframework.cloud.stream.reactive.FluxSender} implementation.
@@ -34,15 +35,16 @@ import reactor.core.publisher.MonoProcessor;
  * @author Soby Chacko
  * @since 1.3.0
  */
-class FluxSenderImpl implements FluxSender, Disposable {
+class DefaultFluxSender implements FluxSender {
 
-	private Log log = LogFactory.getLog(FluxSenderImpl.class);
+	private Log log = LogFactory.getLog(DefaultFluxSender.class);
 
-	private Subscription subscription;
+	private volatile Disposable disposable;
 
-	private Consumer<Object> consumer;
+	private final Consumer<Object> consumer;
 
-	FluxSenderImpl(Consumer<Object> consumer) {
+	DefaultFluxSender(Consumer<Object> consumer) {
+		Assert.notNull(consumer, "Consumer must not be null");
 		this.consumer = consumer;
 	}
 
@@ -50,10 +52,9 @@ class FluxSenderImpl implements FluxSender, Disposable {
 	public Mono<Void> send(Flux<?> flux) {
 		MonoProcessor<Void> sendResult = MonoProcessor.create();
 		// add error handling and reconnect in the event of an error
-		flux
+		disposable = flux
 				.doOnError(e -> this.log.error("Error during processing: ", e))
 				.retry()
-				.doOnSubscribe(subscription -> this.subscription = subscription)
 				.subscribe(
 						consumer,
 						sendResult::onError,
@@ -62,7 +63,9 @@ class FluxSenderImpl implements FluxSender, Disposable {
 	}
 
 	@Override
-	public void dispose() {
-		this.subscription.cancel();
+	public void close() {
+		if (this.disposable != null) {
+			this.disposable.dispose();
+		}
 	}
 }

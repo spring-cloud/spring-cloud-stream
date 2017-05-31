@@ -16,8 +16,9 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import java.io.Closeable;
+
 import org.reactivestreams.Publisher;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import rx.Observable;
 import rx.RxReactiveStreams;
@@ -33,7 +34,7 @@ import org.springframework.util.Assert;
  * @author Marius Bogoevici
  */
 public class ObservableToMessageChannelResultAdapter
-		implements StreamListenerResultAdapter<Observable<?>, MessageChannel, Disposable> {
+		implements StreamListenerResultAdapter<Observable<?>, MessageChannel> {
 
 	private FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter;
 
@@ -49,7 +50,7 @@ public class ObservableToMessageChannelResultAdapter
 				&& MessageChannel.class.isAssignableFrom(bindingTarget);
 	}
 
-	public Disposable adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
+	public Closeable adapt(Observable<?> streamListenerResult, MessageChannel bindingTarget) {
 		Publisher<?> adaptedPublisher = RxReactiveStreams.toPublisher(streamListenerResult);
 		return this.fluxToMessageChannelResultAdapter.adapt(Flux.from(adaptedPublisher), bindingTarget);
 	}

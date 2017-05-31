@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,8 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import reactor.core.Disposable;
 
 import org.springframework.aop.support.AopUtils;
@@ -60,9 +63,11 @@ import org.springframework.util.StringUtils;
 public class StreamEmitterAnnotationBeanPostProcessor
 		implements BeanPostProcessor, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
+	private Log log = LogFactory.getLog(StreamEmitterAnnotationBeanPostProcessor.class);
+
 	private final List<StreamListenerParameterAdapter<?, Object>> streamListenerParameterAdapters = new ArrayList<>();
 
-	private final List<StreamListenerResultAdapter<?, ?, ?>> streamListenerResultAdapters = new ArrayList<>();
+	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
 
 	private final List<FluxSender> fluxSenders = new ArrayList<>();
 
@@ -245,9 +250,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 		try {
 			lock.lock();
 			for (FluxSender fluxSender : fluxSenders) {
-				if (fluxSender.getClass().isAssignableFrom(FluxSenderImpl.class)) {
-					((FluxSenderImpl) fluxSender).dispose();
-				}
+				fluxSender.close();
 			}
 			for (Disposable disposable : fluxDisposables) {
 				disposable.dispose();
@@ -255,6 +258,9 @@ public class StreamEmitterAnnotationBeanPostProcessor
 			if (running) {
 				this.running = false;
 			}
+		}
+		catch (IOException e) {
+			log.error("Error closing reactive source", e);
 		}
 		finally {
 			lock.unlock();

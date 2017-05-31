@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import java.io.Closeable;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import reactor.core.Disposable;
@@ -32,7 +34,7 @@ import org.springframework.messaging.MessageChannel;
  * @author Marius Bogoevici
  */
 public class FluxToMessageChannelResultAdapter
-		implements StreamListenerResultAdapter<Flux<?>, MessageChannel, Disposable> {
+		implements StreamListenerResultAdapter<Flux<?>, MessageChannel> {
 
 	private Log log = LogFactory.getLog(FluxToMessageChannelResultAdapter.class);
 
@@ -41,12 +43,13 @@ public class FluxToMessageChannelResultAdapter
 		return Flux.class.isAssignableFrom(resultType) && MessageChannel.class.isAssignableFrom(bindingTarget);
 	}
 
-	public Disposable adapt(Flux<?> streamListenerResult, MessageChannel bindingTarget) {
-		return streamListenerResult
+	public Closeable adapt(Flux<?> streamListenerResult, MessageChannel bindingTarget) {
+		Disposable disposable = streamListenerResult
 				.doOnError(e -> this.log.error("Error while processing result", e))
 				.retry()
 				.subscribe(
 						result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result
 								: MessageBuilder.withPayload(result).build()));
+		return disposable::dispose;
 	}
 }
