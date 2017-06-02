@@ -17,8 +17,6 @@
 package org.springframework.cloud.stream.binder;
 
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -31,9 +29,7 @@ import org.springframework.context.Lifecycle;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.channel.FixedSubscriberChannel;
-import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
-import org.springframework.integration.context.Orderable;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.handler.AbstractMessageHandler;
@@ -45,7 +41,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
@@ -300,23 +295,29 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Build an errorChannelRecoverer that writes to a pub/sub channel for the destination.
 	 * @param destination the destination.
+	 * @param group the group.
 	 * @param consumerProperties the properties.
-	 * @param errorMessageStrategy
-	 * @return the recoverer.
+	 * @return the ErrorInfrastructure which is a holder for the error channel, the recoverer and the
+	 * message handler that is subscribed to the channel.
 	 */
 	protected final ErrorInfrastructure registerErrorInfrastructure(ConsumerDestination destination, String group,
 			ConsumerProperties consumerProperties) {
 		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
 		ConfigurableListableBeanFactory beanFactory = getApplicationContext().getBeanFactory();
 		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
-		SubscribableChannel errorChannel;
+		LastSubscriberAwareChannel errorChannel;
 		if (getApplicationContext().containsBean(errorChannelName)) {
-			errorChannel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
+			Object errorChannelObject = getApplicationContext().getBean(errorChannelName);
+			if (!(errorChannelObject instanceof LastSubscriberAwareChannel)) {
+				throw new IllegalStateException(
+						"Error channel '" + errorChannelName + "' must be a LastSubscriberAwareChannel");
+			}
+			errorChannel = (LastSubscriberAwareChannel) errorChannelObject;
 		}
 		else {
-			errorChannel = new ErrorChannel();
+			errorChannel = new BinderErrorChannel();
 			beanFactory.registerSingleton(errorChannelName, errorChannel);
-			errorChannel = (SubscribableChannel) beanFactory.initializeBean(errorChannel, errorChannelName);
+			errorChannel = (LastSubscriberAwareChannel) beanFactory.initializeBean(errorChannel, errorChannelName);
 		}
 		ErrorMessageSendingRecoverer recoverer;
 		if (errorMessageStrategy == null) {
@@ -408,38 +409,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @param defaultErrorChannelPresent
 	 * @return the handler.
 	 */
-	protected MessageHandler getDefaultErrorMessageHandler(final SubscribableChannel errorChannel,
-			final boolean defaultErrorChannelPresent) {
-		class FinalRethrowingErrorMessageHandler implements MessageHandler, Orderable {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				if (errorChannel instanceof SubscriberAwareChannel) {
-					if (((SubscriberAwareChannel) errorChannel).subscribers() > (defaultErrorChannelPresent ? 2 : 1)) {
-						// user has subscribed; default is 2, this and the bridge to the
-						// errorChannel
-						return;
-					}
-				}
-				if (message.getPayload() instanceof MessagingException) {
-					throw (MessagingException) message.getPayload();
-				}
-				else {
-					throw new MessagingException((Message<?>) null, (Throwable) message.getPayload());
-				}
-			}
-
-			@Override
-			public int getOrder() {
-				return Integer.MAX_VALUE; // run last if the user has subscribers too
-			}
-
-			@Override
-			public void setOrder(int order) {
-			}
-
-		}
-		return new FinalRethrowingErrorMessageHandler();
+	protected MessageHandler getDefaultErrorMessageHandler(LastSubscriberAwareChannel errorChannel,
+			boolean defaultErrorChannelPresent) {
+		return new FinalRethrowingErrorMessageHandler(errorChannel, defaultErrorChannelPresent);
 	}
 
 	/**
@@ -582,38 +554,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
-	private interface SubscriberAwareChannel {
-
-		int subscribers();
-
-	}
-
-	private static class ErrorChannel extends PublishSubscribeChannel {
-
-		private final AtomicInteger subscribers = new AtomicInteger();
-
-		@Override
-		public boolean subscribe(MessageHandler handler) {
-			this.subscribers.incrementAndGet();
-			return super.subscribe(handler);
-		}
-
-		@Override
-		public boolean unsubscribe(MessageHandler handle) {
-			this.subscribers.decrementAndGet();
-			return super.unsubscribe(handle);
-		}
-
-		@SuppressWarnings("unused")
-		private int subscribers() {
-			return this.subscribers.get();
-		}
-
-	}
-
 	protected static class ErrorInfrastructure {
 
-		private final SubscribableChannel errroChannel;
+		private final SubscribableChannel errorChannel;
 
 		private final ErrorMessageSendingRecoverer recoverer;
 
@@ -621,13 +564,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		ErrorInfrastructure(SubscribableChannel errroChannel, ErrorMessageSendingRecoverer recoverer,
 				MessageHandler handler) {
-			this.errroChannel = errroChannel;
+			this.errorChannel = errroChannel;
 			this.recoverer = recoverer;
 			this.handler = handler;
 		}
 
-		public SubscribableChannel getErrroChannel() {
-			return this.errroChannel;
+		public SubscribableChannel getErrorChannel() {
+			return this.errorChannel;
 		}
 
 		public ErrorMessageSendingRecoverer getRecoverer() {
