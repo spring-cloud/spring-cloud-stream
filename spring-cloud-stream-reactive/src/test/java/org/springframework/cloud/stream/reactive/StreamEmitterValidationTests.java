@@ -19,13 +19,13 @@ package org.springframework.cloud.stream.reactive;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -47,7 +47,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testOutputAsMethodandMethodParameter() {
 		try {
-			SpringApplication.run(TestOutputAsMethodandMethodParameter.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestOutputAsMethodandMethodParameter.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + INVALID_OUTPUT_METHOD_PARAMETERS);
 		}
 		catch (Exception e) {
@@ -58,7 +61,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testFluxReturnTypeNoOutputGiven() {
 		try {
-			SpringApplication.run(TestFluxReturnTypeNoOutputGiven.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestFluxReturnTypeNoOutputGiven.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + NO_OUTPUT_SPECIFIED);
 		}
 		catch (Exception e) {
@@ -69,7 +75,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testVoidReturnTypeNoOutputGiven() {
 		try {
-			SpringApplication.run(TestVoidReturnTypeNoOutputGiven.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestVoidReturnTypeNoOutputGiven.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + NO_OUTPUT_SPECIFIED);
 		}
 		catch (Exception e) {
@@ -80,7 +89,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testNonVoidReturnButOutputAsMethodParameter() {
 		try {
-			SpringApplication.run(TestNonVoidReturnButOutputAsMethodParameter.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestNonVoidReturnButOutputAsMethodParameter.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
 		catch (Exception e) {
@@ -91,7 +103,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testNonVoidReturnButMethodArguments() {
 		try {
-			SpringApplication.run(TestNonVoidReturnButMethodArguments.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestNonVoidReturnButMethodArguments.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + RETURN_TYPE_METHOD_ARGUMENTS);
 		}
 		catch (Exception e) {
@@ -102,7 +117,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testVoidReturnTypeMultipleMethodParametersWithOneMissingOutput() {
 		try {
-			SpringApplication.run(TestVoidReturnTypeMultipleMethodParametersWithOneMissingOutput.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestVoidReturnTypeMultipleMethodParametersWithOneMissingOutput.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + OUTPUT_ANNOTATION_MISSING_ON_METHOD_PARAMETERS_VOID_RETURN_TYPE);
 		}
 		catch (Exception e) {
@@ -113,7 +131,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testOutputAtCorrectLocationButNameMissing1() {
 		try {
-			SpringApplication.run(TestOutputAtCorrectLocationButNameMissing1.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestOutputAtCorrectLocationButNameMissing1.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + ATLEAST_ONE_OUTPUT);
 		}
 		catch (Exception e) {
@@ -124,7 +145,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testOutputAtCorrectLocationButNameMissing2() {
 		try {
-			SpringApplication.run(TestOutputAtCorrectLocationButNameMissing2.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestOutputAtCorrectLocationButNameMissing2.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + INVALID_OUTBOUND_NAME);
 		}
 		catch (Exception e) {
@@ -135,7 +159,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testInputAnnotationsAreNotPermitted() {
 		try {
-			SpringApplication.run(TestInputAnnotationsAreNotPermitted.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestInputAnnotationsAreNotPermitted.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + INPUT_ANNOTATIONS_ARE_NOT_ALLOWED);
 		}
 		catch (Exception e) {
@@ -146,7 +173,10 @@ public class StreamEmitterValidationTests {
 	@Test
 	public void testReturnTypeNotSupported() {
 		try {
-			SpringApplication.run(TestReturnTypeNotSupported.class, "--server.port=0");
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+			context.register(TestReturnTypeNotSupported.class);
+			context.refresh();
+			context.close();
 			fail("Expected exception: " + CANNOT_CONVERT_RETURN_TYPE_TO_ANY_AVAILABLE_RESULT_ADAPTERS);
 		}
 		catch (Exception e) {

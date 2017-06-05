@@ -69,7 +69,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 
 	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
 
-	private final List<Closeable> fluxDisposables = new ArrayList<>();
+	private final List<Closeable> closeableFluxResources = new ArrayList<>();
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -77,7 +77,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 
 	private volatile boolean running;
 
-	private Lock lock = new ReentrantLock();
+	private final Lock lock = new ReentrantLock();
 
 	@Override
 	public final void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -108,10 +108,10 @@ public class StreamEmitterAnnotationBeanPostProcessor
 		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
 		ReflectionUtils.doWithMethods(targetClass, method -> {
 			StreamEmitter streamEmitter = AnnotatedElementUtils.findMergedAnnotation(method, StreamEmitter.class);
-			if (streamEmitter != null && !method.isBridge()) {
+			if (streamEmitter != null) {
 				mappedStreamEmitterMethods.add(bean, method);
 			}
-		});
+		}, ReflectionUtils.USER_DECLARED_METHODS);
 		return bean;
 	}
 
@@ -139,7 +139,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private void invokeSetupMethodOnToTargetChannel(Method method, Object bean, String outboundName) {
-		Object[] arguments = new Object[method.getParameterTypes().length];
+		Object[] arguments = new Object[method.getParameterCount()];
 		Object targetBean = null;
 		for (int parameterIndex = 0; parameterIndex < arguments.length; parameterIndex++) {
 			MethodParameter methodParameter = new SynthesizingMethodParameter(method, parameterIndex);
@@ -157,8 +157,8 @@ public class StreamEmitterAnnotationBeanPostProcessor
 					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
 						arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean,
 								methodParameter);
-						if (FluxSender.class.isAssignableFrom(arguments[parameterIndex].getClass())) {
-							fluxDisposables.add((FluxSender) arguments[parameterIndex]);
+						if (arguments[parameterIndex] instanceof FluxSender) {
+							closeableFluxResources.add((FluxSender) arguments[parameterIndex]);
 						}
 						break;
 					}
@@ -186,7 +186,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 			for (StreamListenerResultAdapter streamListenerResultAdapter : this.streamListenerResultAdapters) {
 				if (streamListenerResultAdapter.supports(result.getClass(), targetBean.getClass())) {
 					Closeable fluxDisposable = streamListenerResultAdapter.adapt(result, targetBean);
-					fluxDisposables.add(fluxDisposable);
+					closeableFluxResources.add(fluxDisposable);
 					streamListenerResultAdapterFound = true;
 					break;
 				}
@@ -213,7 +213,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 			if (!StringUtils.hasText(methodAnnotatedOutboundName)) {
 				int methodArgumentsLength = method.getParameterTypes().length;
 				for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
-					MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+					MethodParameter methodParameter = new MethodParameter(method, parameterIndex);
 					if (methodParameter.hasParameterAnnotation(Output.class)) {
 						String outboundName = (String) AnnotationUtils
 								.getValue(methodParameter.getParameterAnnotation(Output.class));
@@ -244,21 +244,21 @@ public class StreamEmitterAnnotationBeanPostProcessor
 	@Override
 	public void stop() {
 		try {
-			lock.lock();
-			for (Closeable closeable : fluxDisposables) {
-				try {
-					closeable.close();
+			this.lock.lock();
+			if (this.running) {
+				for (Closeable closeable : closeableFluxResources) {
+					try {
+						closeable.close();
+					}
+					catch (IOException e) {
+						log.error("Error closing reactive source", e);
+					}
 				}
-				catch (IOException e) {
-					log.error("Error closing reactive source", e);
-				}
-			}
-			if (running) {
 				this.running = false;
 			}
 		}
 		finally {
-			lock.unlock();
+			this.lock.unlock();
 		}
 	}
 

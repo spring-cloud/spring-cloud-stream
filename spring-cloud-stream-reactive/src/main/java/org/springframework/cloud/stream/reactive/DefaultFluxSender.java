@@ -52,11 +52,11 @@ class DefaultFluxSender implements FluxSender {
 	public Mono<Void> send(Flux<?> flux) {
 		MonoProcessor<Void> sendResult = MonoProcessor.create();
 		// add error handling and reconnect in the event of an error
-		disposable = flux
+		this.disposable = flux
 				.doOnError(e -> this.log.error("Error during processing: ", e))
 				.retry()
 				.subscribe(
-						consumer,
+						this.consumer,
 						sendResult::onError,
 						sendResult::onComplete);
 		return sendResult;

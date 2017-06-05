@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
@@ -31,6 +30,7 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.MessageChannel;
 
@@ -43,43 +43,55 @@ public class StreamEmitterBasicTests {
 
 	@Test
 	public void testFluxReturnAndOutputMethodLevel() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestFluxReturnAndOutputMethodLevel.class, "--server.port=0");
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		context.register(TestFluxReturnAndOutputMethodLevel.class);
+		context.refresh();
 		receiveAndValidate(context);
 		context.close();
 	}
 
 	@Test
 	public void testVoidReturnAndOutputMethodParameter() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndOutputMethodParameter.class, "--server.port=0");
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		context.register(TestVoidReturnAndOutputMethodParameter.class);
+		context.refresh();
 		receiveAndValidate(context);
 		context.close();
 	}
 
 	@Test
 	public void testVoidReturnAndOutputAtMethodLevel() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndOutputAtMethodLevel.class, "--server.port=0");
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		context.register(TestVoidReturnAndOutputAtMethodLevel.class);
+		context.refresh();
 		receiveAndValidate(context);
 		context.close();
 	}
 
 	@Test
 	public void testVoidReturnAndMultipleOutputMethodParameters() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndMultipleOutputMethodParameters.class, "--server.port=0");
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		context.register(TestVoidReturnAndMultipleOutputMethodParameters.class);
+		context.refresh();
 		receiveAndValidateMultipleOutputs(context);
 		context.close();
 	}
 
 	@Test
-	public void testFluxReturnAndOutputMethodLevelX() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestFluxReturnAndOutputMethodLevelX.class, "--server.port=0");
+	public void testMultipleStreamEmitterMethods() throws Exception {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		context.register(TestMultipleStreamEmitterMethods.class);
+		context.refresh();
 		receiveAndValidateMultipleOutputs(context);
 		context.close();
 	}
 
 	@Test
-	public void testFluxReturnAndOutputMethodLevelXYZ() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestFluxReturnAndOutputMethodLevelXYZ.class, "--server.port=0");
-		receiveAndValidateMultipleOutputsXYZ(context);
+	public void testSameAppContextWithMultipleStreamEmitters() throws Exception {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		context.register(TestSameAppContextWithMultipleStreamEmitters.class);
+		context.refresh();
+		receiveAndValidateMultiStreamEmittersInSameContext(context);
 		context.close();
 	}
 
@@ -110,7 +122,7 @@ public class StreamEmitterBasicTests {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void receiveAndValidateMultipleOutputsXYZ(ConfigurableApplicationContext context1) throws InterruptedException {
+	private static void receiveAndValidateMultiStreamEmittersInSameContext(ConfigurableApplicationContext context1) throws InterruptedException {
 		TestMultiOutboundChannels source1 = context1.getBean(TestMultiOutboundChannels.class);
 		MessageCollector messageCollector = context1.getBean(MessageCollector.class);
 
@@ -120,7 +132,6 @@ public class StreamEmitterBasicTests {
 		assertMessagesY(source1.output2(), messageCollector, messages);
 		messages.clear();
 	}
-
 
 	private static void assertMessages(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
 		for (int i = 0; i < 1000; i ++) {
@@ -203,7 +214,7 @@ public class StreamEmitterBasicTests {
 
 	@EnableBinding(TestMultiOutboundChannels.class)
 	@EnableAutoConfiguration
-	public static class TestFluxReturnAndOutputMethodLevelX {
+	public static class TestMultipleStreamEmitterMethods {
 
 		@StreamEmitter
 		@Output(TestMultiOutboundChannels.OUTPUT1)
@@ -228,7 +239,7 @@ public class StreamEmitterBasicTests {
 
 	@EnableBinding(TestMultiOutboundChannels.class)
 	@EnableAutoConfiguration
-	public static class TestFluxReturnAndOutputMethodLevelXYZ {
+	public static class TestSameAppContextWithMultipleStreamEmitters {
 
 		@Bean
 		public Foo foo() {
