@@ -301,7 +301,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * message handler that is subscribed to the channel.
 	 */
 	protected final ErrorInfrastructure registerErrorInfrastructure(ConsumerDestination destination, String group,
-			ConsumerProperties consumerProperties) {
+			C consumerProperties) {
 		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
 		ConfigurableListableBeanFactory beanFactory = getApplicationContext().getBeanFactory();
 		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
@@ -397,7 +397,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * rethrown).
 	 */
 	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
-			final ConsumerProperties consumerProperties) {
+			final C consumerProperties) {
 		return null;
 	}
 
@@ -424,22 +424,22 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	protected String getErrorRecovererName(ConsumerDestination destination, String group,
-			ConsumerProperties consumerProperties) {
+			C consumerProperties) {
 		return errorsBaseName(destination, group, consumerProperties) + ".recoverer";
 	}
 
 	protected String getErrorMessageHandlerName(ConsumerDestination destination, String group,
-			ConsumerProperties consumerProperties) {
+			C consumerProperties) {
 		return errorsBaseName(destination, group, consumerProperties) + ".handler";
 	}
 
 	protected String getErrorBridgeName(ConsumerDestination destination, String group,
-			ConsumerProperties consumerProperties) {
+			C consumerProperties) {
 		return errorsBaseName(destination, group, consumerProperties) + ".bridge";
 	}
 
 	protected String errorsBaseName(ConsumerDestination destination, String group,
-			ConsumerProperties consumerProperties) {
+			C consumerProperties) {
 		return destination.getName() + "." + group + "." + consumerProperties.getInstanceIndex() + ".errors";
 	}
 
