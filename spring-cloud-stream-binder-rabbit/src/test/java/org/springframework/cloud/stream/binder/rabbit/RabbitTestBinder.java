@@ -31,6 +31,7 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerP
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.MessageChannel;
@@ -65,6 +66,9 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 		scheduler.setPoolSize(1);
 		scheduler.afterPropertiesSet();
 		context.getBeanFactory().registerSingleton(IntegrationContextUtils.TASK_SCHEDULER_BEAN_NAME, scheduler);
+		PublishSubscribeChannel errorChannel = new PublishSubscribeChannel();
+		context.getBeanFactory().initializeBean(errorChannel, IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME);
+		context.getBeanFactory().registerSingleton(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, errorChannel);
 		context.refresh();
 		binder.setApplicationContext(context);
 		binder.setCodec(new PojoCodec());

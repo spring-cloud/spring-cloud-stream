@@ -16,14 +16,17 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.LocalizedQueueConnectionFactory;
 import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
@@ -31,7 +34,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.core.support.BatchingStrategy;
 import org.springframework.amqp.rabbit.core.support.SimpleBatchingStrategy;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.retry.MessageRecoverer;
+import org.springframework.amqp.rabbit.listener.exception.ListenerExecutionFailedException;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter;
@@ -54,12 +57,15 @@ import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
+import org.springframework.integration.amqp.support.AmqpMessageHeaderErrorMessageStrategy;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
-import org.springframework.retry.interceptor.RetryOperationsInterceptor;
+import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -81,6 +87,9 @@ public class RabbitMessageChannelBinder
 		extends AbstractMessageChannelBinder<ExtendedConsumerProperties<RabbitConsumerProperties>,
 		ExtendedProducerProperties<RabbitProducerProperties>, RabbitExchangeQueueProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, RabbitConsumerProperties, RabbitProducerProperties> {
+
+	private static final AmqpMessageHeaderErrorMessageStrategy errorMessageStrategy =
+			new AmqpMessageHeaderErrorMessageStrategy();
 
 	private static final MessagePropertiesConverter inboundMessagePropertiesConverter =
 			new DefaultMessagePropertiesConverter() {
@@ -246,13 +255,6 @@ public class RabbitMessageChannelBinder
 		listenerContainer.setTxSize(properties.getExtension().getTxSize());
 		listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(consumerDestination.getName() + "-"));
 		listenerContainer.setQueueNames(consumerDestination.getName());
-		if (properties.getMaxAttempts() > 1 || properties.getExtension().isRepublishToDlq()) {
-			RetryOperationsInterceptor retryInterceptor = RetryInterceptorBuilder.stateless()
-					.retryOperations(buildRetryTemplate(properties))
-					.recoverer(determineRecoverer(destination, properties.getExtension()))
-					.build();
-			listenerContainer.setAdviceChain(retryInterceptor);
-		}
 		listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
 		listenerContainer.setMessagePropertiesConverter(RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
 		listenerContainer.afterPropertiesSet();
@@ -263,13 +265,112 @@ public class RabbitMessageChannelBinder
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.inboundMapper();
 		mapper.setRequestHeaderNames(properties.getExtension().getHeaderPatterns());
 		adapter.setHeaderMapper(mapper);
-		adapter.afterPropertiesSet();
+		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(consumerDestination, group, properties);
+		if (properties.getMaxAttempts() > 1) {
+			adapter.setRetryTemplate(buildRetryTemplate(properties));
+			if (properties.getExtension().isRepublishToDlq()) {
+				adapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
+			}
+		}
+		else {
+			adapter.setErrorMessageStrategy(errorMessageStrategy);
+			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
+		}
 		return adapter;
+	}
+
+	@Override
+	protected ErrorMessageStrategy getErrorMessageStrategy() {
+		return errorMessageStrategy;
+	}
+
+	@Override
+	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination, String group,
+			final ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+		if (properties.getExtension().isRepublishToDlq()) {
+			return new MessageHandler() {
+
+				private final RabbitTemplate template = new RabbitTemplate(
+						RabbitMessageChannelBinder.this.connectionFactory);
+
+				private final String exchange = deadLetterExchangeName(properties.getExtension());
+
+				private final String routingKey = properties.getExtension().getDeadLetterRoutingKey();
+
+				@Override
+				public void handleMessage(org.springframework.messaging.Message<?> message) throws MessagingException {
+					Message amqpMessage = (Message) message.getHeaders()
+							.get(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE);
+					if (!(message instanceof ErrorMessage)) {
+						logger.error("Expected an ErrorMessage, not a " + message.getClass().toString() + " for: "
+								+ message);
+					}
+					else if (amqpMessage == null) {
+						logger.error("No raw message header in " + message);
+					}
+					else {
+						Throwable cause = (Throwable) message.getPayload();
+						MessageProperties messageProperties = amqpMessage.getMessageProperties();
+						Map<String, Object> headers = messageProperties.getHeaders();
+						headers.put(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE, getStackTraceAsString(cause));
+						headers.put(RepublishMessageRecoverer.X_EXCEPTION_MESSAGE,
+								cause.getCause() != null ? cause.getCause().getMessage() : cause.getMessage());
+						headers.put(RepublishMessageRecoverer.X_ORIGINAL_EXCHANGE,
+								messageProperties.getReceivedExchange());
+						headers.put(RepublishMessageRecoverer.X_ORIGINAL_ROUTING_KEY,
+								messageProperties.getReceivedRoutingKey());
+						if (properties.getExtension().getRepublishDeliveyMode() != null) {
+							messageProperties.setDeliveryMode(properties.getExtension().getRepublishDeliveyMode());
+						}
+						template.send(this.exchange,
+								this.routingKey != null ? this.routingKey : messageProperties.getConsumerQueue(),
+								amqpMessage);
+					}
+				}
+
+			};
+		}
+		else if (properties.getMaxAttempts() > 1) {
+			return new MessageHandler() {
+
+				private final RejectAndDontRequeueRecoverer recoverer = new RejectAndDontRequeueRecoverer();
+
+				@Override
+				public void handleMessage(org.springframework.messaging.Message<?> message) throws MessagingException {
+					Message amqpMessage = (Message) message.getHeaders()
+							.get(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE);
+					if (!(message instanceof ErrorMessage)) {
+						logger.error("Expected an ErrorMessage, not a " + message.getClass().toString() + " for: "
+								+ message);
+						throw new ListenerExecutionFailedException("Unexpected error message " + message,
+								new AmqpRejectAndDontRequeueException(""), null);
+					}
+					else if (amqpMessage == null) {
+						logger.error("No raw message header in " + message);
+						throw new ListenerExecutionFailedException("Unexpected error message " + message,
+								new AmqpRejectAndDontRequeueException(""), amqpMessage);
+					}
+					else {
+						this.recoverer.recover(amqpMessage, (Throwable) message.getPayload());
+					}
+				}
+
+			};
+		}
+		else {
+			return super.getErrorMessageHandler(destination, group, properties);
+		}
+	}
+
+	@Override
+	protected String errorsBaseName(ConsumerDestination destination, String group,
+			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
+		return destination.getName() + ".errors";
 	}
 
 	private String deadLetterExchangeName(RabbitCommonProperties properties) {
 		if (properties.getDeadLetterExchange() == null) {
-			return properties.getPrefix() + RabbitCommonProperties.DEAD_LETTER_EXCHANGE;
+			return applyPrefix(properties.getPrefix(), RabbitCommonProperties.DEAD_LETTER_EXCHANGE);
 		}
 		else {
 			return properties.getDeadLetterExchange();
@@ -280,29 +381,6 @@ public class RabbitMessageChannelBinder
 	protected void afterUnbindConsumer(ConsumerDestination consumerDestination, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
 		provisioningProvider.cleanAutoDeclareContext(consumerDestination.getName());
-	}
-
-	private MessageRecoverer determineRecoverer(String name, final RabbitConsumerProperties properties) {
-		if (properties.isRepublishToDlq()) {
-			RabbitTemplate errorTemplate = new RabbitTemplate(this.connectionFactory);
-			if (properties.getRepublishDeliveyMode() != null) {
-				return new RepublishMessageRecoverer(errorTemplate, deadLetterExchangeName(properties), name) {
-
-							@Override
-							public void recover(Message message, Throwable cause) {
-								message.getMessageProperties().setDeliveryMode(properties.getRepublishDeliveyMode());
-								super.recover(message, cause);
-							}
-
-				};
-			}
-			else {
-				return new RepublishMessageRecoverer(errorTemplate, deadLetterExchangeName(properties), name);
-			}
-		}
-		else {
-			return new RejectAndDontRequeueRecoverer();
-		}
 	}
 
 	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties) {
@@ -326,6 +404,13 @@ public class RabbitMessageChannelBinder
 		rabbitTemplate.setChannelTransacted(properties.isTransacted());
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
+	}
+
+	private String getStackTraceAsString(Throwable cause) {
+		StringWriter stringWriter = new StringWriter();
+		PrintWriter printWriter = new PrintWriter(stringWriter, true);
+		cause.printStackTrace(printWriter);
+		return stringWriter.getBuffer().toString();
 	}
 
 }

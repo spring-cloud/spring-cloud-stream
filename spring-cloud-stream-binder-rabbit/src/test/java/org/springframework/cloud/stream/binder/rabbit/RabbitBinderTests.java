@@ -21,14 +21,16 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
 
-import org.aopalliance.aop.Advice;
 import org.apache.commons.logging.Log;
 import org.junit.Rule;
 import org.junit.Test;
@@ -77,7 +79,9 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.retry.support.RetryTemplate;
 
 import com.rabbitmq.http.client.domain.QueueInfo;
 
@@ -85,6 +89,7 @@ import com.rabbitmq.http.client.domain.QueueInfo;
  * @author Mark Fisher
  * @author Gary Russell
  * @author David Turanski
+ * @author Artem Bilan
  */
 public class RabbitBinderTests extends
 		PartitionCapableBinderTests<RabbitTestBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
@@ -172,11 +177,11 @@ public class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected", Boolean.class)).isTrue();
 		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(1);
 		assertThat(TestUtils.getPropertyValue(container, "txSize")).isEqualTo(1);
-		Advice retry = TestUtils.getPropertyValue(container, "adviceChain", Advice[].class)[0];
-		assertThat(TestUtils.getPropertyValue(retry, "retryOperations.retryPolicy.maxAttempts")).isEqualTo(3);
-		assertThat(TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.initialInterval")).isEqualTo(1000L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.maxInterval")).isEqualTo(10000L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.multiplier")).isEqualTo(2.0);
+		RetryTemplate retry = TestUtils.getPropertyValue(endpoint, "retryTemplate", RetryTemplate.class);
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts")).isEqualTo(3);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval")).isEqualTo(1000L);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.maxInterval")).isEqualTo(10000L);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.multiplier")).isEqualTo(2.0);
 		consumerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
 
@@ -190,7 +195,7 @@ public class RabbitBinderTests extends
 		properties.getExtension().setMaxConcurrency(3);
 		properties.getExtension().setPrefix("foo.");
 		properties.getExtension().setPrefetch(20);
-		properties.getExtension().setRequestHeaderPatterns(new String[] { "foo" });
+		properties.getExtension().setHeaderPatterns(new String[] { "foo" });
 		properties.getExtension().setTxSize(10);
 		properties.setInstanceIndex(0);
 		consumerBinding = binder.bindConsumer("props.0", "test", createBindableChannel("input", new BindingProperties()),
@@ -388,7 +393,7 @@ public class RabbitBinderTests extends
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setPrefix("foo.");
 		producerProperties.getExtension().setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
-		producerProperties.getExtension().setRequestHeaderPatterns(new String[] { "foo" });
+		producerProperties.getExtension().setHeaderPatterns(new String[] { "foo" });
 		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("'foo'"));
 		producerProperties.setPartitionKeyExtractorClass(TestPartitionKeyExtractorClass.class);
 		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("0"));
@@ -630,14 +635,23 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
-	public void testAutoBindDLQPartionedConsumerFirstWithRepublish() throws Exception {
+	public void testAutoBindDLQPartionedConsumerFirstWithRepublishNoRetry() throws Exception {
+		testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(false);
+	}
+
+	@Test
+	public void testAutoBindDLQPartionedConsumerFirstWithRepublishWithRetry() throws Exception {
+		testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(true);
+	}
+
+	private void testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(final boolean withRetry) throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.getExtension().setPrefix("bindertest.");
 		properties.getExtension().setAutoBindDlq(true);
 		properties.getExtension().setRepublishToDlq(true);
 		properties.getExtension().setRepublishDeliveyMode(MessageDeliveryMode.NON_PERSISTENT);
-		properties.setMaxAttempts(1); // disable retry
+		properties.setMaxAttempts(withRetry ? 2 : 1);
 		properties.setPartitioned(true);
 		properties.setInstanceIndex(0);
 		DirectChannel input0 = createBindableChannel("input", createConsumerBindingProperties(properties));
@@ -689,6 +703,33 @@ public class RabbitBinderTests extends
 
 		});
 
+		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(), "applicationContext",
+				ApplicationContext.class);
+		SubscribableChannel boundErrorChannel = context
+				.getBean("bindertest.partPubDLQ.0.dlqPartGrp-0.errors", SubscribableChannel.class);
+		SubscribableChannel globalErrorChannel = context.getBean("errorChannel", SubscribableChannel.class);
+		final AtomicReference<Message<?>> boundErrorChannelMessage = new AtomicReference<>();
+		final AtomicReference<Message<?>> globalErrorChannelMessage = new AtomicReference<>();
+		final AtomicBoolean hasRecovererInCallStack = new AtomicBoolean(!withRetry);
+		boundErrorChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				boundErrorChannelMessage.set(message);
+				String stackTrace = Arrays.toString(new RuntimeException().getStackTrace());
+				hasRecovererInCallStack.set(stackTrace.contains("ErrorMessageSendingRecoverer"));
+			}
+
+		});
+		globalErrorChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				globalErrorChannelMessage.set(message);
+			}
+
+		});
+
 		output.send(new GenericMessage<>(1));
 		assertThat(latch1.await(10, TimeUnit.SECONDS)).isTrue();
 
@@ -716,6 +757,11 @@ public class RabbitBinderTests extends
 		assertThat(received.getMessageProperties().getHeaders().get("x-original-routingKey"))
 			.isEqualTo("partPubDLQ.0-0");
 		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+
+		// verify we got a message on the dedicated error channel and the global (via bridge)
+		assertThat(boundErrorChannelMessage.get()).isNotNull();
+		assertThat(globalErrorChannelMessage.get()).isNotNull();
+		assertThat(hasRecovererInCallStack.get()).isEqualTo(withRetry);
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -1045,7 +1091,7 @@ public class RabbitBinderTests extends
 
 	private SimpleMessageListenerContainer verifyContainer(Lifecycle endpoint) {
 		SimpleMessageListenerContainer container;
-		Advice retry;
+		RetryTemplate retry;
 		container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertThat(container.getAcknowledgeMode()).isEqualTo(AcknowledgeMode.NONE);
@@ -1056,11 +1102,11 @@ public class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected", Boolean.class)).isFalse();
 		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(20);
 		assertThat(TestUtils.getPropertyValue(container, "txSize")).isEqualTo(10);
-		retry = TestUtils.getPropertyValue(container, "adviceChain", Advice[].class)[0];
-		assertThat(TestUtils.getPropertyValue(retry, "retryOperations.retryPolicy.maxAttempts")).isEqualTo(23);
-		assertThat(TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.initialInterval")).isEqualTo(2000L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.maxInterval")).isEqualTo(20000L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryOperations.backOffPolicy.multiplier")).isEqualTo(5.0);
+		retry = TestUtils.getPropertyValue(endpoint, "retryTemplate", RetryTemplate.class);
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts")).isEqualTo(23);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval")).isEqualTo(2000L);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.maxInterval")).isEqualTo(20000L);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.multiplier")).isEqualTo(5.0);
 
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint, "headerMapper.requestHeaderMatcher.matchers",
 				List.class);
