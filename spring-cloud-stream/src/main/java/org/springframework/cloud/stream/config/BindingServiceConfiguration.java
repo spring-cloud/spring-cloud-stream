@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -254,7 +255,8 @@ public class BindingServiceConfiguration {
 				@Override
 				public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 					// TODO: Filter out beans created by SCSt (not currently necessary)
-					if (bean instanceof AbstractReplyProducingMessageHandler) {
+					Class<?> beanClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
+					if (AbstractReplyProducingMessageHandler.class.isAssignableFrom(beanClass)) {
 						AbstractReplyProducingMessageHandler messageHandler = (AbstractReplyProducingMessageHandler) bean;
 						messageHandler.addNotPropagatedHeaders(
 								springIntegrationProperties.getMessageHandlerNotPropagatedHeaders());

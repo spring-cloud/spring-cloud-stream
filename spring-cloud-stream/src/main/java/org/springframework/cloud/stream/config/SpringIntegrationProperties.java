@@ -21,6 +21,8 @@ import org.springframework.messaging.MessageHeaders;
 
 /**
  * Contains properties for Spring Integration settings.
+ * @author Marius Bogoevici
+ * @since 1.2.3
  */
 @ConfigurationProperties("spring.cloud.stream.integration")
 public class SpringIntegrationProperties {
