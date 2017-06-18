@@ -37,7 +37,8 @@ public final class KafkaTopicUtils {
 				if (!((b >= 'a') && (b <= 'z') || (b >= 'A') && (b <= 'Z') || (b >= '0') && (b <= '9') || (b == '.')
 						|| (b == '-') || (b == '_'))) {
 					throw new IllegalArgumentException(
-							"Topic name can only have ASCII alphanumerics, '.', '_' and '-'");
+							"Topic name can only have ASCII alphanumerics, '.', '_' and '-', but was: '" + topicName
+									+ "'");
 				}
 			}
 		}
