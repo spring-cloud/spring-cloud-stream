@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -36,10 +39,20 @@ public class MessageChannelStreamListenerResultAdapter
 	}
 
 	@Override
-	public void adapt(MessageChannel streamListenerResult, MessageChannel bindingTarget) {
+	public Closeable adapt(MessageChannel streamListenerResult, MessageChannel bindingTarget) {
 		BridgeHandler handler = new BridgeHandler();
 		handler.setOutputChannel(bindingTarget);
 		handler.afterPropertiesSet();
 		((SubscribableChannel) streamListenerResult).subscribe(handler);
+
+		return new NoOpCloseeable();
+	}
+
+	private static class NoOpCloseeable implements Closeable {
+
+		@Override
+		public void close() throws IOException {
+
+		}
 	}
 }

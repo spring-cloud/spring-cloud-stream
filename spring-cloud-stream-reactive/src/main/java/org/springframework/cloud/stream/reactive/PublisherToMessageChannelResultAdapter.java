@@ -16,8 +16,12 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import java.io.Closeable;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
@@ -27,25 +31,30 @@ import org.springframework.messaging.MessageChannel;
 
 /**
  * A {@link org.springframework.cloud.stream.binding.StreamListenerResultAdapter} from a
- * {@link Flux} return type to a bound {@link MessageChannel}.
+ * {@link Publisher} return type to a bound {@link MessageChannel}.
+ *
  * @author Marius Bogoevici
+ * @author Soby Chacko
+ *
  */
-public class FluxToMessageChannelResultAdapter
-		implements StreamListenerResultAdapter<Flux<?>, MessageChannel> {
+public class PublisherToMessageChannelResultAdapter
+		implements StreamListenerResultAdapter<Publisher<?>, MessageChannel> {
 
-	private Log log = LogFactory.getLog(FluxToMessageChannelResultAdapter.class);
+	private Log log = LogFactory.getLog(PublisherToMessageChannelResultAdapter.class);
 
 	@Override
 	public boolean supports(Class<?> resultType, Class<?> bindingTarget) {
-		return Flux.class.isAssignableFrom(resultType) && MessageChannel.class.isAssignableFrom(bindingTarget);
+		return Publisher.class.isAssignableFrom(resultType)
+				&& MessageChannel.class.isAssignableFrom(bindingTarget);
 	}
 
-	public void adapt(Flux<?> streamListenerResult, MessageChannel bindingTarget) {
-		streamListenerResult
+	public Closeable adapt(Publisher<?> streamListenerResult, MessageChannel bindingTarget) {
+		Disposable disposable = Flux.from(streamListenerResult)
 				.doOnError(e -> this.log.error("Error while processing result", e))
 				.retry()
 				.subscribe(
 						result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result
 								: MessageBuilder.withPayload(result).build()));
+		return disposable::dispose;
 	}
 }

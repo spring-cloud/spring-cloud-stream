@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,21 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import java.io.Closeable;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Used for {@link org.springframework.cloud.stream.annotation.StreamListener} arguments
+ * Used for {@link org.springframework.cloud.stream.annotation.StreamListener}
+ * and {@link org.springframework.cloud.stream.reactive.StreamEmitter} arguments
  * annotated with {@link org.springframework.cloud.stream.annotation.Output}.
+ *
+ * @see reactor.core.Disposable
+ *
  * @author Marius Bogoevici
  */
-public interface FluxSender {
+public interface FluxSender extends Closeable {
 
 	/**
 	 * Streams the {@link reactor.core.publisher.Flux} through the binding target

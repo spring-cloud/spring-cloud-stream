@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.io.Closeable;
+
 /**
  * A strategy for adapting the result of a
  * {@link org.springframework.cloud.stream.annotation.StreamListener} annotated method to
@@ -41,6 +43,6 @@ public interface StreamListenerResultAdapter<R, B> {
 	 * @param streamListenerResult the result of invoking the method.
 	 * @param bindingTarget the binding target.
 	 */
-	void adapt(R streamListenerResult, B bindingTarget);
+	Closeable adapt(R streamListenerResult, B bindingTarget);
 
 }
