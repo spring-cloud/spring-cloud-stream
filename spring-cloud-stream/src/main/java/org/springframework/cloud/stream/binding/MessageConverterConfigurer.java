@@ -243,34 +243,59 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 					if (this.provideHint) {
 						converted = ((AbstractMessageConverter) this.messageConverter).fromMessage(message, this.klazz,
 								this.mimeType);
+						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+							converted = ((AbstractMessageConverter) this.messageConverter).fromMessage(
+									MessageConverterConfigurer.this.messageBuilderFactory.fromMessage(message)
+										.removeHeader(MessageHeaders.CONTENT_TYPE)
+										.build(), this.klazz, this.mimeType);
+						}
 					}
 					else {
 						converted = this.messageConverter.fromMessage(message, this.klazz);
+						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+							converted = this.messageConverter.fromMessage(
+									MessageConverterConfigurer.this.messageBuilderFactory.fromMessage(message)
+										.removeHeader(MessageHeaders.CONTENT_TYPE)
+										.build(), this.klazz);
+						}
 					}
 				}
 				else {
+					MutableMessageHeaders headers = new MutableMessageHeaders(message.getHeaders());
 					if (this.provideHint) {
 						converted = ((AbstractMessageConverter) this.messageConverter).toMessage(message.getPayload(),
-								new MutableMessageHeaders(message.getHeaders()), this.mimeType);
+								headers, this.mimeType);
+						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+							headers.remove(MessageHeaders.CONTENT_TYPE);
+							converted = ((AbstractMessageConverter) this.messageConverter).toMessage(message.getPayload(),
+									headers, this.mimeType);
+						}
 					}
 					else {
-						converted = this.messageConverter.toMessage(message.getPayload(),
-								new MutableMessageHeaders(message.getHeaders()));
+						converted = this.messageConverter.toMessage(message.getPayload(), headers);
+						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+							headers.remove(MessageHeaders.CONTENT_TYPE);
+							converted = this.messageConverter.toMessage(message.getPayload(), headers);
+						}
 					}
 				}
-				if (converted instanceof Message) {
-					sentMessage = (Message<?>) converted;
-				}
-				else {
-					sentMessage = MessageConverterConfigurer.this.messageBuilderFactory.withPayload(converted)
-							.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE,
-
-									this.mimeType)
-							.build();
+				if (converted != null) {
+					if (converted instanceof Message) {
+						sentMessage = (Message<?>) converted;
+					}
+					else {
+						sentMessage = MessageConverterConfigurer.this.messageBuilderFactory.withPayload(converted)
+								.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE,
+										this.mimeType)
+								.build();
+					}
 				}
 			}
 			if (sentMessage == null) {
-				throw new MessageConversionException("Cannot convert " + message + " to " + this.contentType);
+				throw new MessageConversionException(message, this.messageConverter.getClass().toString()
+						+ " could not convert '" + message + "' to the configured output type: '"
+						+ this.contentType + "'");
+
 			}
 			return sentMessage;
 		}
