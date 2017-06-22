@@ -29,10 +29,9 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.bind.RelaxedDataBinder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderType;
@@ -311,9 +310,7 @@ public class BindingServiceTests {
 		properties.put("spring.cloud.stream.bindings.input.binder", "mock");
 		properties.put("spring.cloud.stream.bindings.output.destination", "fooOutput");
 		properties.put("spring.cloud.stream.bindings.output.binder", "mockError");
-		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
-		RelaxedDataBinder dataBinder = new RelaxedDataBinder(bindingServiceProperties, "spring.cloud.stream");
-		dataBinder.bind(new MutablePropertyValues(properties));
+		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(properties);
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				createMockBinderFactory());
 		bindingService.bindConsumer(new DirectChannel(), "input");
@@ -334,15 +331,20 @@ public class BindingServiceTests {
 		properties.put("spring.cloud.stream.defaultBinder", "mock1");
 		properties.put("spring.cloud.stream.binders.mock1.type", "mock");
 		properties.put("spring.cloud.stream.binders.kafka1.type", "kafka");
-		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
-		RelaxedDataBinder dataBinder = new RelaxedDataBinder(bindingServiceProperties, "spring.cloud.stream");
-		dataBinder.bind(new MutablePropertyValues(properties));
+		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(properties);
 		DefaultBinderFactory binderFactory = new BinderFactoryConfiguration()
 				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties);
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory);
 		bindingService.bindConsumer(new DirectChannel(), "input");
 		bindingService.bindProducer(new DirectChannel(), "output");
+	}
+
+	private BindingServiceProperties createBindingServiceProperties(HashMap<String, String> properties) {
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		org.springframework.boot.context.properties.bind.Binder propertiesBinder = new org.springframework.boot.context.properties.bind.Binder(new MapConfigurationPropertySource(properties));
+		propertiesBinder.bind("spring.cloud.stream", org.springframework.boot.context.properties.bind.Bindable.ofInstance(bindingServiceProperties));
+		return bindingServiceProperties;
 	}
 
 	@Test
@@ -354,9 +356,7 @@ public class BindingServiceTests {
 		properties.put("spring.cloud.stream.bindings.output.type", "kafka1");
 		properties.put("spring.cloud.stream.binders.mock1.type", "mock");
 		properties.put("spring.cloud.stream.binders.kafka1.type", "kafka");
-		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
-		RelaxedDataBinder dataBinder = new RelaxedDataBinder(bindingServiceProperties, "spring.cloud.stream");
-		dataBinder.bind(new MutablePropertyValues(properties));
+		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(properties);
 		DefaultBinderFactory binderFactory = new BinderFactoryConfiguration()
 				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties);
 		BindingService bindingService = new BindingService(bindingServiceProperties,

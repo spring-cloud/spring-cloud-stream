@@ -65,7 +65,7 @@ public class MessageChannelToInputFluxParameterAdapter
 					}
 				};
 				bindingTarget.subscribe(messageHandler);
-				emitter.onDispose(() -> bindingTarget.unsubscribe(messageHandler));
+				emitter.onCancel(() -> bindingTarget.unsubscribe(messageHandler));
 			}).publish().autoConnect();
 		}
 		else {
@@ -82,7 +82,7 @@ public class MessageChannelToInputFluxParameterAdapter
 					}
 				};
 				bindingTarget.subscribe(messageHandler);
-				emitter.onDispose(() -> bindingTarget.unsubscribe(messageHandler));
+				emitter.onCancel(() -> bindingTarget.unsubscribe(messageHandler));
 			}).publish().autoConnect();
 		}
 	}
