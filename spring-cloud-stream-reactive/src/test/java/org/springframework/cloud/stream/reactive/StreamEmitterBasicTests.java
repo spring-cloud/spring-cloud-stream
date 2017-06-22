@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.reactive;
 
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -191,7 +192,7 @@ public class StreamEmitterBasicTests {
 
 		@StreamEmitter
 		public void emit(@Output(Source.OUTPUT) FluxSender output) {
-			output.send(Flux.intervalMillis(1)
+			output.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l)
 					.map(String::toUpperCase));
 		}
@@ -204,7 +205,7 @@ public class StreamEmitterBasicTests {
 		@StreamEmitter
 		@Output(Source.OUTPUT)
 		public void emit(FluxSender output) {
-			output.send(Flux.intervalMillis(1)
+			output.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l)
 					.map(String::toUpperCase));
 		}
@@ -218,11 +219,11 @@ public class StreamEmitterBasicTests {
 		public void emit(@Output(TestMultiOutboundChannels.OUTPUT1) FluxSender output1,
 				@Output(TestMultiOutboundChannels.OUTPUT2) FluxSender output2,
 				@Output(TestMultiOutboundChannels.OUTPUT3) FluxSender output3) {
-			output1.send(Flux.intervalMillis(1)
+			output1.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
-			output2.send(Flux.intervalMillis(1)
+			output2.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
-			output3.send(Flux.intervalMillis(1)
+			output3.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
 		}
 	}
@@ -234,20 +235,20 @@ public class StreamEmitterBasicTests {
 		@StreamEmitter
 		@Output(TestMultiOutboundChannels.OUTPUT1)
 		public Flux<String> emit1() {
-			return Flux.intervalMillis(1)
+			return Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l);
 		}
 
 		@StreamEmitter
 		@Output(TestMultiOutboundChannels.OUTPUT2)
 		public Flux<String> emit2() {
-			return Flux.intervalMillis(1)
+			return Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l);
 		}
 
 		@StreamEmitter
 		public void emit3(@Output(TestMultiOutboundChannels.OUTPUT3) FluxSender outputX) {
-			outputX.send(Flux.intervalMillis(1)
+			outputX.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
 		}
 	}
@@ -271,7 +272,7 @@ public class StreamEmitterBasicTests {
 			@StreamEmitter
 			@Output(TestMultiOutboundChannels.OUTPUT1)
 			public Flux<String> emit1() {
-				return Flux.intervalMillis(1)
+				return Flux.interval(Duration.ofMillis(1))
 						.map(l -> "Hello World!!" + l);
 			}
 		}
@@ -281,7 +282,7 @@ public class StreamEmitterBasicTests {
 			@StreamEmitter
 			@Output(TestMultiOutboundChannels.OUTPUT2)
 			public Flux<String> emit2() {
-				return Flux.intervalMillis(1)
+				return Flux.interval(Duration.ofMillis(1))
 						.map(l -> "Hello FooBar!!" + l);
 			}
 		}
