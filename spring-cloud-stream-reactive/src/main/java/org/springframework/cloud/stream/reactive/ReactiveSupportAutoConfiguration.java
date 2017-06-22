@@ -46,9 +46,14 @@ public class ReactiveSupportAutoConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnMissingBean(FluxToMessageChannelResultAdapter.class)
-	public FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter() {
-		return new FluxToMessageChannelResultAdapter();
+	@ConditionalOnMissingBean(PublisherToMessageChannelResultAdapter.class)
+	public PublisherToMessageChannelResultAdapter fluxToMessageChannelResultAdapter() {
+		return new PublisherToMessageChannelResultAdapter();
+	}
+
+	@Bean
+	public static StreamEmitterAnnotationBeanPostProcessor streamEmitterAnnotationBeanPostProcessor() {
+		return new StreamEmitterAnnotationBeanPostProcessor();
 	}
 
 	@Configuration
@@ -72,8 +77,8 @@ public class ReactiveSupportAutoConfiguration {
 		@Bean
 		@ConditionalOnMissingBean(ObservableToMessageChannelResultAdapter.class)
 		public ObservableToMessageChannelResultAdapter observableToMessageChannelResultAdapter(
-				FluxToMessageChannelResultAdapter fluxToMessageChannelResultAdapter) {
-			return new ObservableToMessageChannelResultAdapter(fluxToMessageChannelResultAdapter);
+				PublisherToMessageChannelResultAdapter publisherToMessageChannelResultAdapter) {
+			return new ObservableToMessageChannelResultAdapter(publisherToMessageChannelResultAdapter);
 		}
 	}
 }

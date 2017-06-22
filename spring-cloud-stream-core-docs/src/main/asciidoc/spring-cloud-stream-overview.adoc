@@ -691,6 +691,8 @@ public class SinkApplication {
 ----
 package com.app.myprocessor;
 
+// Imports omitted
+
 @SpringBootApplication
 @EnableBinding(Processor.class)
 public class ProcessorApplication {
@@ -706,11 +708,12 @@ public class ProcessorApplication {
 ----
 package com.app.mysource;
 
+// Imports omitted
+
 @SpringBootApplication
 @EnableBinding(Source.class)
 public class SourceApplication {
 
-	@Bean
 	@InboundChannelAdapter(value = Source.OUTPUT)
 	public String timerMessageSource() {
 		return new SimpleDateFormat().format(new Date());
@@ -723,6 +726,8 @@ Each configuration can be used for running a separate component, but in this cas
 [source,java]
 ----
 package com.app;
+
+// Imports omitted
 
 @SpringBootApplication
 public class SampleAggregateApplication {

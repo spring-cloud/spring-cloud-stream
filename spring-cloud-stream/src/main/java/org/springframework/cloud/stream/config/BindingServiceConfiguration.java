@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,7 @@ import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.integration.json.JsonPropertyAccessor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.MessageConverter;
@@ -76,7 +78,7 @@ import org.springframework.util.CollectionUtils;
  * @author Gary Russell
  */
 @Configuration
-@EnableConfigurationProperties(BindingServiceProperties.class)
+@EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
 public class BindingServiceConfiguration {
 
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
@@ -245,6 +247,32 @@ public class BindingServiceConfiguration {
 
 			});
 		}
+
+		@Bean
+		public static BeanPostProcessor messageHandlerHeaderPropagationBeanPostProcessor(
+				final SpringIntegrationProperties springIntegrationProperties) {
+			return new BeanPostProcessor() {
+
+				@Override
+				public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+					// TODO: Filter out beans created by SCSt (not currently necessary)
+					Class<?> beanClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
+					if (AbstractReplyProducingMessageHandler.class.isAssignableFrom(beanClass)) {
+						AbstractReplyProducingMessageHandler messageHandler = (AbstractReplyProducingMessageHandler) bean;
+						messageHandler.addNotPropagatedHeaders(
+								springIntegrationProperties.getMessageHandlerNotPropagatedHeaders());
+					}
+					return bean;
+				}
+
+				@Override
+				public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+					return bean;
+				}
+
+			};
+		}
+
 	}
 
 }

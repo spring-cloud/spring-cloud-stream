@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,6 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import reactor.core.publisher.MonoProcessor;
-
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
@@ -30,12 +26,12 @@ import org.springframework.messaging.MessageChannel;
 /**
  * Adapts an {@link org.springframework.cloud.stream.annotation.Output} annotated
  * {@link FluxSender} to an outbound {@link MessageChannel}.
+ *
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 public class MessageChannelToFluxSenderParameterAdapter
 		implements StreamListenerParameterAdapter<FluxSender, MessageChannel> {
-
-	private Log log = LogFactory.getLog(MessageChannelToFluxSenderParameterAdapter.class);
 
 	@Override
 	public boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter) {
@@ -46,18 +42,10 @@ public class MessageChannelToFluxSenderParameterAdapter
 
 	@Override
 	public FluxSender adapt(MessageChannel bindingTarget, MethodParameter parameter) {
-		return resultPublisher -> {
-			MonoProcessor<Void> sendResult = MonoProcessor.create();
-			// add error handling and reconnect in the event of an error
-			resultPublisher
-					.doOnError(e -> this.log.error("Error during processing: ", e))
-					.retry()
-					.subscribe(
-							result -> bindingTarget.send(result instanceof Message<?> ? (Message<?>) result
-									: MessageBuilder.withPayload(result).build()),
-							e -> sendResult.onError(e),
-							() -> sendResult.onComplete());
-			return sendResult;
-		};
+		return new DefaultFluxSender(result ->
+				bindingTarget.send(result instanceof Message<?>
+						? (Message<?>) result
+						: MessageBuilder.withPayload(result).build()));
 	}
+
 }
