@@ -356,7 +356,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	private void destroyErrorInfrastructure(ConsumerDestination destination, String group, C properties) {
-		// TODO more error checking here
 		try {
 			String recoverer = getErrorRecovererName(destination, group, properties);
 			if (getApplicationContext().containsBean(recoverer)) {
@@ -413,7 +412,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * the caller if there are no user handlers subscribed. The handler is ordered so it
 	 * runs after any user-defined handlers that are subscribed.
 	 * @param errorChannel the error channel.
-	 * @param defaultErrorChannelPresent
+	 * @param defaultErrorChannelPresent true if the context has a default 'errorChannel'.
 	 * @return the handler.
 	 */
 	protected MessageHandler getDefaultErrorMessageHandler(LastSubscriberAwareChannel errorChannel,
@@ -447,7 +446,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	protected String errorsBaseName(ConsumerDestination destination, String group,
 			C consumerProperties) {
-		return destination.getName() + "." + group + "." + consumerProperties.getInstanceIndex() + ".errors";
+		return destination.getName() + "." + group + ".errors";
 	}
 
 	private final class ReceivingHandler extends AbstractReplyProducingMessageHandler {
@@ -569,9 +568,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		private final MessageHandler handler;
 
-		ErrorInfrastructure(SubscribableChannel errroChannel, ErrorMessageSendingRecoverer recoverer,
+		ErrorInfrastructure(SubscribableChannel errorChannel, ErrorMessageSendingRecoverer recoverer,
 				MessageHandler handler) {
-			this.errorChannel = errroChannel;
+			this.errorChannel = errorChannel;
 			this.recoverer = recoverer;
 			this.handler = handler;
 		}

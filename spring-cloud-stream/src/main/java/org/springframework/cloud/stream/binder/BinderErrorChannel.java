@@ -26,7 +26,7 @@ import org.springframework.messaging.MessageHandler;
  * subscriber, it can only have one and it will always be the last subscriber.
  *
  * @author Gary Russell
- * @since 5.0
+ * @since 1.3
  *
  */
 class BinderErrorChannel extends PublishSubscribeChannel implements LastSubscriberAwareChannel {
