@@ -247,7 +247,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 						AbstractMessageChannelBinder.this.logger
 								.error("Exception thrown while unbinding " + this.toString(), e);
 					}
-					AbstractMessageChannelBinder.this.afterUnbindConsumer(destination, this.group, properties);
+					afterUnbindConsumer(destination, this.group, properties);
 					destroyErrorInfrastructure(destination, group, properties);
 				}
 
@@ -305,14 +305,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
 		ConfigurableListableBeanFactory beanFactory = getApplicationContext().getBeanFactory();
 		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
-		LastSubscriberAwareChannel errorChannel;
+		SubscribableChannel errorChannel = null;
 		if (getApplicationContext().containsBean(errorChannelName)) {
 			Object errorChannelObject = getApplicationContext().getBean(errorChannelName);
-			if (!(errorChannelObject instanceof LastSubscriberAwareChannel)) {
+			if (!(errorChannelObject instanceof SubscribableChannel)) {
 				throw new IllegalStateException(
-						"Error channel '" + errorChannelName + "' must be a LastSubscriberAwareChannel");
+						"Error channel '" + errorChannelName + "' must be a SubscribableChannel");
 			}
-			errorChannel = (LastSubscriberAwareChannel) errorChannelObject;
+			errorChannel = (SubscribableChannel) errorChannelObject;
 		}
 		else {
 			errorChannel = new BinderErrorChannel();
@@ -335,55 +335,62 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			defaultErrorChannel = getApplicationContext().getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
 					MessageChannel.class);
 		}
-		if (handler == null) {
-			handler = getDefaultErrorMessageHandler(errorChannel, defaultErrorChannel != null);
+		if (handler == null && errorChannel instanceof LastSubscriberAwareChannel) {
+			handler = getDefaultErrorMessageHandler((LastSubscriberAwareChannel) errorChannel, defaultErrorChannel != null);
 		}
 		String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, consumerProperties);
-		beanFactory.registerSingleton(errorMessageHandlerName, handler);
-		beanFactory.initializeBean(handler, errorMessageHandlerName);
-		errorChannel.subscribe(handler);
+		if (handler != null) {
+			beanFactory.registerSingleton(errorMessageHandlerName, handler);
+			beanFactory.initializeBean(handler, errorMessageHandlerName);
+			errorChannel.subscribe(handler);
+		}
 		if (defaultErrorChannel != null) {
 			BridgeHandler errorBridge = new BridgeHandler();
 			errorBridge.setOutputChannel(defaultErrorChannel);
 			errorChannel.subscribe(errorBridge);
 			String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
-			beanFactory.registerSingleton(errorBridgeHandlerName, handler);
-			beanFactory.initializeBean(handler, errorBridgeHandlerName);
+			beanFactory.registerSingleton(errorBridgeHandlerName, errorBridge);
+			beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
 		}
 		return new ErrorInfrastructure(errorChannel, recoverer, handler);
 	}
 
 	private void destroyErrorInfrastructure(ConsumerDestination destination, String group, C properties) {
 		// TODO more error checking here
-		String recoverer = getErrorRecovererName(destination, group, properties);
-		if (getApplicationContext().containsBean(recoverer)) {
-			((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory()).destroySingleton(recoverer);
-		}
-		String errorChannelName = errorsBaseName(destination, group, properties);
-		String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, properties);
-		String errorBridgeHandlerName = getErrorBridgeName(destination, group, properties);
-		MessageHandler bridgeHandler = null;
-		if (getApplicationContext().containsBean(errorBridgeHandlerName)) {
-			bridgeHandler = getApplicationContext().getBean(errorBridgeHandlerName, MessageHandler.class);
-		}
-		MessageHandler handler = null;
-		if (getApplicationContext().containsBean(errorMessageHandlerName)) {
-			handler = getApplicationContext().getBean(errorMessageHandlerName, MessageHandler.class);
-		}
-		if (getApplicationContext().containsBean(errorChannelName)) {
-			SubscribableChannel channel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
-			if (bridgeHandler != null) {
-				channel.unsubscribe(bridgeHandler);
-				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
-						.destroySingleton(errorBridgeHandlerName);
+		try {
+			String recoverer = getErrorRecovererName(destination, group, properties);
+			if (getApplicationContext().containsBean(recoverer)) {
+				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory()).destroySingleton(recoverer);
 			}
-			if (handler != null) {
-				channel.unsubscribe(handler);
-				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
-						.destroySingleton(errorMessageHandlerName);
+			String errorChannelName = errorsBaseName(destination, group, properties);
+			String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, properties);
+			String errorBridgeHandlerName = getErrorBridgeName(destination, group, properties);
+			MessageHandler bridgeHandler = null;
+			if (getApplicationContext().containsBean(errorBridgeHandlerName)) {
+				bridgeHandler = getApplicationContext().getBean(errorBridgeHandlerName, MessageHandler.class);
 			}
-			((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
-					.destroySingleton(errorChannelName);
+			MessageHandler handler = null;
+			if (getApplicationContext().containsBean(errorMessageHandlerName)) {
+				handler = getApplicationContext().getBean(errorMessageHandlerName, MessageHandler.class);
+			}
+			if (getApplicationContext().containsBean(errorChannelName)) {
+				SubscribableChannel channel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
+				if (bridgeHandler != null) {
+					channel.unsubscribe(bridgeHandler);
+					((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
+							.destroySingleton(errorBridgeHandlerName);
+				}
+				if (handler != null) {
+					channel.unsubscribe(handler);
+					((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
+							.destroySingleton(errorMessageHandlerName);
+				}
+				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
+						.destroySingleton(errorChannelName);
+			}
+		}
+		catch (IllegalStateException e) {
+			// context is shutting down.
 		}
 	}
 
