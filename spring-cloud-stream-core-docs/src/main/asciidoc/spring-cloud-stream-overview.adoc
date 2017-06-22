@@ -640,6 +640,90 @@ public static class UppercaseTransformer {
 }
 ----
 
+===== Reactive Sources
+
+Spring Cloud Stream reactive support also provides the ability for creating reactive sources through the StreamEmitter annotation.
+Using StreamEmitter annotation, a regular source may be converted to a reactive one.
+StreamEmitter is a method level annotation that marks a method to be an emitter to outputs declared via EnableBinding.
+It is not allowed to use the Input annotation along with StreamEmitter, as the methods marked with this annotation are not listening from any input, rather generating to an output.
+Following the same programming model used in StreamListener, StreamEmitter also allows flexible ways of using the Output annotation depending on whether the method has any arguments, return type etc.
+
+Here are some examples of using StreamEmitter in various styles.
+
+The following example will emit the "Hello World" message every millisecond and publish to a Flux.
+In this case, the resulting messages in Flux will be sent to the output channel of the Source.
+
+[source, java]
+----
+@EnableBinding(Source.class)
+@EnableAutoConfiguration
+public static class HelloWorldEmitter {
+
+  @StreamEmitter
+  @Output(Source.OUTPUT)
+  public Flux<String> emit() {
+    return Flux.intervalMillis(1)
+            .map(l -> "Hello World");
+  }
+}
+----
+
+Following is another flavor of the same sample as above.
+Instead of returning a Flux, this method uses a FluxSender to programmatically send Flux from a source.
+
+[source, java]
+----
+@EnableBinding(Source.class)
+@EnableAutoConfiguration
+public static class HelloWorldEmitter {
+
+  @StreamEmitter
+  @Output(Source.OUTPUT)
+  public void emit(FluxSender output) {
+    output.send(Flux.intervalMillis(1)
+            .map(l -> "Hello World"));
+  }
+}
+----
+
+Following is exactly same as the above snippet in functionality and style.
+However, instead of using an explicit Output annotation at the method level, it is used as the method parameter level.
+
+[source, java]
+----
+@EnableBinding(Source.class)
+@EnableAutoConfiguration
+public static class HelloWorldEmitter {
+
+  @StreamEmitter
+  public void emit(@Output(Source.OUTPUT) FluxSender output) {
+    output.send(Flux.intervalMillis(1)
+            .map(l -> "Hello World"));
+  }
+}
+----
+
+Here is yet another flavor of writing reacting sources using the Reactive Streams Publisher API and the support for it in the https://github.com/spring-projects/spring-integration-java-dsl/wiki/Spring-Integration-Java-DSL-Reference[Spring Integration Java DSL].
+The Publisher is still using Reactor Flux under the hood, but from an application perspective, that is transparent to the user and only needs Reactive Streams and Java DSL for Spring Integration.
+
+[source, java]
+----
+@EnableBinding(Source.class)
+@EnableAutoConfiguration
+public static class HelloWorldEmitter {
+
+  @StreamEmitter
+  @Output(Source.OUTPUT)
+  @Bean
+  public Publisher<Message<String>> emit() {
+    return IntegrationFlows.from(() ->
+                new GenericMessage<>("Hello World"),
+        e -> e.poller(p -> p.fixedDelay(1)))
+        .toReactivePublisher();
+  }
+}
+----
+
 ==== Aggregation
 
 Spring Cloud Stream provides support for aggregating multiple applications together, connecting their input and output channels directly and avoiding the additional cost of exchanging messages via a broker.
