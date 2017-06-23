@@ -13,6 +13,7 @@
 	<properties>
 		<java.version>1.7</java.version>
 		<kafka.version>0.10.2.0</kafka.version>
+		<spring-kafka.version>2.0.0.BUILD-SNAPSHOT</spring-kafka.version>
 		<spring-integration-kafka.version>3.0.0.BUILD-SNAPSHOT</spring-integration-kafka.version>
 		<spring-cloud-stream.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
 	</properties>
