@@ -10,21 +10,29 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-binder-kafka-parent</artifactId>
+<<<<<<< b20f4a0e08629664c73e2e6cc1e73ac791509697
 <<<<<<< e3460d6fcef9406fc9c6018f0f828630b929a815
 		<version>1.3.1.BUILD-SNAPSHOT</version>
 =======
 		<version>2.0.0.BUILD-SNAPSHOT</version>
 >>>>>>> Update version to 2.0.0.BUILD-SNAPSHOT
+=======
+		<version>2.0.0.M1</version>
+>>>>>>> Release 2.0.0.M1
 	</parent>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-kafka-core</artifactId>
+<<<<<<< b20f4a0e08629664c73e2e6cc1e73ac791509697
 <<<<<<< e3460d6fcef9406fc9c6018f0f828630b929a815
 =======
 			<version>2.0.0.BUILD-SNAPSHOT</version>
 >>>>>>> Update version to 2.0.0.BUILD-SNAPSHOT
+=======
+			<version>2.0.0.M1</version>
+>>>>>>> Release 2.0.0.M1
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -82,6 +90,7 @@
 			<artifactId>spring-cloud-stream-binder-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+<<<<<<< b20f4a0e08629664c73e2e6cc1e73ac791509697
 <<<<<<< e3460d6fcef9406fc9c6018f0f828630b929a815
 =======
 		<dependency>
@@ -103,6 +112,8 @@
 			<scope>test</scope>
 		</dependency>
 >>>>>>> Update version to 2.0.0.BUILD-SNAPSHOT
+=======
+>>>>>>> Release 2.0.0.M1
 	</dependencies>
 
 	<build>
