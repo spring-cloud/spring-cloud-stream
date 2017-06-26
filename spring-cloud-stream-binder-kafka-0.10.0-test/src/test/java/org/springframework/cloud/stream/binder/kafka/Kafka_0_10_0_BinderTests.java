@@ -19,10 +19,10 @@ package org.springframework.cloud.stream.binder.kafka;
 /**
  * Integration tests for the {@link KafkaMessageChannelBinder}.
  *
- * This test specifically tests for the 0.10.0.1 version of Kafka.
+ * This test specifically tests for the 0.10.0.x version of Kafka.
  *
  * @author Soby Chacko
  */
-public class Kafka_0_10_0_BinderTests extends Kafka_0_10_1_BinderTests {
+public class Kafka_0_10_0_BinderTests extends Kafka_0_10_2_BinderTests {
 
 }

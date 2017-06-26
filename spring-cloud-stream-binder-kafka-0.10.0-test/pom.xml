@@ -75,7 +75,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-kafka-0.10.1-test</artifactId>
+			<artifactId>spring-cloud-stream-binder-kafka-0.10.2-test</artifactId>
 			<version>${project.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>

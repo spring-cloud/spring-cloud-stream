@@ -62,15 +62,15 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Integration tests for the {@link KafkaMessageChannelBinder}.
- * 
- * This test specifically tests for the 0.10.1.x version of Kafka.
+ *
+ * This test specifically tests for the 0.10.2.x version of Kafka.
  *
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
  */
-public class Kafka_0_10_1_BinderTests extends Kafka_0_10_2_BinderTests {
+public class Kafka_0_10_2_BinderTests extends KafkaBinderTests {
 
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
