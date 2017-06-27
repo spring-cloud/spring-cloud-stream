@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
 public class MessageChannelBinderSupportTests {
 
