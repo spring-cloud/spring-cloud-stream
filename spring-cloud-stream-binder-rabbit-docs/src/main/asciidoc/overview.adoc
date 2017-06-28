@@ -64,7 +64,7 @@ When *multiple* RabbitMQ binders are used in a Spring Cloud Stream application, 
 This section contains settings specific to the RabbitMQ Binder and bound channels.
 
 For general binding configuration options and properties,
-please refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[Spring Cloud Stream core documentation].
+please refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-core-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[Spring Cloud Stream core documentation].
 
 [[rabbit-binder-properties]]
 === RabbitMQ Binder Properties
