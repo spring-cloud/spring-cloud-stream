@@ -33,6 +33,7 @@ import org.springframework.util.Assert;
  * {@link MessageChannel} to a {@link Flux}.
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
 public class MessageChannelToInputFluxParameterAdapter
 		implements StreamListenerParameterAdapter<Flux<?>, SubscribableChannel> {
@@ -64,7 +65,7 @@ public class MessageChannelToInputFluxParameterAdapter
 					}
 				};
 				bindingTarget.subscribe(messageHandler);
-				emitter.setCancellation(() -> bindingTarget.unsubscribe(messageHandler));
+				emitter.onDispose(() -> bindingTarget.unsubscribe(messageHandler));
 			}).publish().autoConnect();
 		}
 		else {
@@ -81,7 +82,7 @@ public class MessageChannelToInputFluxParameterAdapter
 					}
 				};
 				bindingTarget.subscribe(messageHandler);
-				emitter.setCancellation(() -> bindingTarget.unsubscribe(messageHandler));
+				emitter.onDispose(() -> bindingTarget.unsubscribe(messageHandler));
 			}).publish().autoConnect();
 		}
 	}

@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import java.time.Duration;
+
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -41,6 +43,7 @@ import static org.springframework.cloud.stream.reactive.StreamEmitterErrorMessag
 
 /**
  * @author Soby Chacko
+ * @author Vinicius Carvalho
  */
 public class StreamEmitterValidationTests {
 
@@ -191,7 +194,7 @@ public class StreamEmitterValidationTests {
 		@StreamEmitter
 		@Output(Source.OUTPUT)
 		public void receive(@Output(Source.OUTPUT) FluxSender output) {
-			output.send(Flux.intervalMillis(1)
+			output.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
 		}
 	}
@@ -202,7 +205,7 @@ public class StreamEmitterValidationTests {
 
 		@StreamEmitter
 		public Flux<String> emit() {
-			return Flux.intervalMillis(1)
+			return Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l);
 		}
 	}
@@ -213,7 +216,7 @@ public class StreamEmitterValidationTests {
 
 		@StreamEmitter
 		public void emit(FluxSender output) {
-			output.send(Flux.intervalMillis(1)
+			output.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
 		}
 	}
@@ -224,7 +227,7 @@ public class StreamEmitterValidationTests {
 
 		@StreamEmitter
 		public Flux<String> emit(@Output(Source.OUTPUT) FluxSender output) {
-			return Flux.intervalMillis(1)
+			return Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l);
 		}
 	}
@@ -236,7 +239,7 @@ public class StreamEmitterValidationTests {
 		@StreamEmitter
 		@Output(Source.OUTPUT)
 		public Flux<String> receive(FluxSender output) {
-			return Flux.intervalMillis(1)
+			return Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l);
 		}
 	}
@@ -249,11 +252,11 @@ public class StreamEmitterValidationTests {
 		public void emit(@Output(StreamEmitterBasicTests.TestMultiOutboundChannels.OUTPUT1) FluxSender output1,
 						@Output(StreamEmitterBasicTests.TestMultiOutboundChannels.OUTPUT2) FluxSender output2,
 						FluxSender output3) {
-			output1.send(Flux.intervalMillis(1)
+			output1.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
-			output2.send(Flux.intervalMillis(1)
+			output2.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
-			output3.send(Flux.intervalMillis(1)
+			output3.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
 		}
 	}
@@ -265,7 +268,7 @@ public class StreamEmitterValidationTests {
 		@StreamEmitter
 		@Output("")
 		public void receive(FluxSender output) {
-			output.send(Flux.intervalMillis(1)
+			output.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
 		}
 	}
@@ -276,7 +279,7 @@ public class StreamEmitterValidationTests {
 
 		@StreamEmitter
 		public void emit(@Output("") FluxSender output1) {
-			output1.send(Flux.intervalMillis(1)
+			output1.send(Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l));
 		}
 	}
@@ -289,7 +292,7 @@ public class StreamEmitterValidationTests {
 		@Output(Source.OUTPUT)
 		@Input(Processor.INPUT)
 		public Flux<String> emit() {
-			return Flux.intervalMillis(1)
+			return Flux.interval(Duration.ofMillis(1))
 					.map(l -> "Hello World!!" + l);
 		}
 	}
