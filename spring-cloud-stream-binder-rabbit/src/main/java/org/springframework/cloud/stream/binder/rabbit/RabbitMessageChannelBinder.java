@@ -228,13 +228,7 @@ public class RabbitMessageChannelBinder
 	@Override
 	protected MessageProducer createConsumerEndpoint(ConsumerDestination consumerDestination, String group,
 													ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
-
-		String prefix = properties.getExtension().getPrefix();
 		String destination = consumerDestination.getName();
-		String prefixStripped = (StringUtils.isEmpty(prefix) || !destination.startsWith(prefix)) ? destination
-				: destination.substring(prefix.length());
-		String baseQueueName = StringUtils.hasText(group) ? prefixStripped.substring(0, prefixStripped.indexOf(group)) + group : prefixStripped;
-
 		SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(
 				this.connectionFactory);
 		listenerContainer.setAcknowledgeMode(properties.getExtension().getAcknowledgeMode());
@@ -255,7 +249,7 @@ public class RabbitMessageChannelBinder
 		if (properties.getMaxAttempts() > 1 || properties.getExtension().isRepublishToDlq()) {
 			RetryOperationsInterceptor retryInterceptor = RetryInterceptorBuilder.stateless()
 					.retryOperations(buildRetryTemplate(properties))
-					.recoverer(determineRecoverer(baseQueueName, properties.getExtension()))
+					.recoverer(determineRecoverer(destination, properties.getExtension()))
 					.build();
 			listenerContainer.setAdviceChain(retryInterceptor);
 		}
@@ -265,7 +259,7 @@ public class RabbitMessageChannelBinder
 
 		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);
 		adapter.setBeanFactory(this.getBeanFactory());
-		adapter.setBeanName("inbound." + baseQueueName);
+		adapter.setBeanName("inbound." + destination);
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.inboundMapper();
 		mapper.setRequestHeaderNames(properties.getExtension().getHeaderPatterns());
 		adapter.setHeaderMapper(mapper);
@@ -292,9 +286,7 @@ public class RabbitMessageChannelBinder
 		if (properties.isRepublishToDlq()) {
 			RabbitTemplate errorTemplate = new RabbitTemplate(this.connectionFactory);
 			if (properties.getRepublishDeliveyMode() != null) {
-				return new RepublishMessageRecoverer(errorTemplate,
-						deadLetterExchangeName(properties),
-						applyPrefix(properties.getPrefix(), name)) {
+				return new RepublishMessageRecoverer(errorTemplate, deadLetterExchangeName(properties), name) {
 
 							@Override
 							public void recover(Message message, Throwable cause) {
@@ -305,9 +297,7 @@ public class RabbitMessageChannelBinder
 				};
 			}
 			else {
-				return new RepublishMessageRecoverer(errorTemplate,
-						deadLetterExchangeName(properties),
-						applyPrefix(properties.getPrefix(), name));
+				return new RepublishMessageRecoverer(errorTemplate, deadLetterExchangeName(properties), name);
 			}
 		}
 		else {
