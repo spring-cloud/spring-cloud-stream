@@ -56,6 +56,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
@@ -238,7 +239,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	private Object deserializePayload(byte[] bytes, MimeType contentType) {
-		if ("text".equalsIgnoreCase(contentType.getType()) || MimeTypeUtils.APPLICATION_JSON.equals(contentType)) {
+		if ("text".equalsIgnoreCase(contentType.getType()) || contentType.getSubtype().toLowerCase().contains(MimeTypeUtils.APPLICATION_JSON.getSubtype())) {
 			try {
 				return new String(bytes, "UTF-8");
 			}
@@ -303,13 +304,13 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		private static ConcurrentMap<String, MimeType> mimeTypesCache = new ConcurrentHashMap<>();
 
 		static MimeType mimeTypeFromObject(Object payload, String originalContentType) {
+
 			Assert.notNull(payload, "payload object cannot be null.");
 			if (payload instanceof byte[]) {
 				return MimeTypeUtils.APPLICATION_OCTET_STREAM;
 			}
 			if (payload instanceof String) {
-				return MimeTypeUtils.APPLICATION_JSON_VALUE.equals(originalContentType) ? MimeTypeUtils.APPLICATION_JSON
-						: MimeTypeUtils.TEXT_PLAIN;
+				return originalContentType.toLowerCase().contains(MimeTypeUtils.APPLICATION_JSON.getSubtype()) ? MimeType.valueOf(originalContentType) : MimeTypeUtils.TEXT_PLAIN;
 			}
 			String className = payload.getClass().getName();
 			MimeType mimeType = mimeTypesCache.get(className);

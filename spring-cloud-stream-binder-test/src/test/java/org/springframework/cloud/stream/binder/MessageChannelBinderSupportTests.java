@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
 public class MessageChannelBinderSupportTests {
 
@@ -129,6 +130,20 @@ public class MessageChannelBinderSupportTests {
 		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
 		assertThat(reconstructed.getPayload()).isEqualTo("{\"foo\":\"foo\"}");
 		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.APPLICATION_JSON_VALUE);
+	}
+
+	@Test
+	public void testContentTypePreservedForCustomJson() throws IOException {
+		Message<String> inbound = MessageBuilder.withPayload("{\"foo\":\"foo\"}")
+				.copyHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("application/vnd.spring.cloud.stream.user.v1+json")))
+				.build();
+		MessageValues convertedValues = binder.serializePayloadIfNecessary(inbound);
+		Message<?> converted = convertedValues.toMessage();
+		assertThat(contentTypeResolver.resolve(converted.getHeaders())).isEqualTo(MimeType.valueOf("application/vnd.spring.cloud.stream.user.v1+json"));
+		assertThat(converted.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		MessageValues reconstructed = binder.deserializePayloadIfNecessary(converted);
+		assertThat(reconstructed.getPayload()).isEqualTo("{\"foo\":\"foo\"}");
+		assertThat(reconstructed.get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("application/vnd.spring.cloud.stream.user.v1+json").toString());
 	}
 
 	@Test

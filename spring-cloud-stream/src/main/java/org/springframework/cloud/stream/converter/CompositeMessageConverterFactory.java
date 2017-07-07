@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
@@ -38,6 +37,7 @@ import org.springframework.util.MimeType;
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 public class CompositeMessageConverterFactory {
 
@@ -68,8 +68,7 @@ public class CompositeMessageConverterFactory {
 
 	private void initDefaultConverters() {
 		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));
-
-		MappingJackson2MessageConverter jsonMessageConverter = new MappingJackson2MessageConverter();
+		CustomJackson2MessageConverter jsonMessageConverter = new CustomJackson2MessageConverter();
 		jsonMessageConverter.setSerializedPayloadClass(String.class);
 		if (this.objectMapper != null) {
 			jsonMessageConverter.setObjectMapper(this.objectMapper);
