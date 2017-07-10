@@ -1735,6 +1735,25 @@ If you intend to use the client directly on your code, you can request a bean th
 To do that, just add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
 ====
 
+==== Using Confluent's Schema Registry
+
+The default configuration will create a `DefaultSchemaRegistryClient` bean.
+If you want to use the Confluent schema registry, you need to create a bean of type `ConfluentSchemaRegistryClient`, which will supersede the one configured by default by the framework.
+
+[source,java]
+----
+@Bean
+public SchemaRegistryClient schemaRegistryClient(@Value("${spring.cloud.stream.schemaRegistryClient.endpoint}") String endpoint){
+  ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient();
+  client.setEndpoint(endpoint);
+  return client;
+}
+----
+[NOTE]
+====
+The ConfluentSchemaRegistryClient is tested against Confluent platform version 3.2.2.
+====
+
 ==== Schema Registry Client properties
 
 The Schema Registry Client supports the following properties:
