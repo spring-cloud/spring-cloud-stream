@@ -60,6 +60,38 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	@Override
 	public SchemaRegistrationResponse register(String subject, String format, String schema) {
 		Assert.isTrue("avro".equals(format), "Only Avro is supported");
+		String path = String.format("/subjects/%s/versions", subject);
+		HttpHeaders headers = new HttpHeaders();
+		headers.put("Accept",
+				Arrays.asList("application/vnd.schemaregistry.v1+json", "application/vnd.schemaregistry+json",
+						"application/json"));
+		headers.add("Content-Type", "application/json");
+		Integer version = null;
+		Integer id = null;
+		try {
+			String payload = this.mapper.writeValueAsString(Collections.singletonMap("schema", schema));
+			HttpEntity<String> request = new HttpEntity<>(payload, headers);
+			ResponseEntity<Map> response = this.template.exchange(this.endpoint + path, HttpMethod.POST, request,
+					Map.class);
+			id = (Integer) response.getBody().get("id");
+			version = getSubjectVersion(subject,schema);
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Failed to register schema: " + schema,e);
+		}
+		SchemaRegistrationResponse schemaRegistrationResponse = new SchemaRegistrationResponse();
+		schemaRegistrationResponse.setId(id);
+		schemaRegistrationResponse.setSchemaReference(new SchemaReference(subject, version, "avro"));
+		return schemaRegistrationResponse;
+	}
+
+	/**
+	 * Confluent register API returns the id, but we need the version of a given schema subject.
+	 * After a successful registration we can inquire the server to get the version of a schema
+	 * @param subject
+	 * @return
+	 */
+	private Integer getSubjectVersion(String subject, String schema) {
 		String path = String.format("/subjects/%s", subject);
 		HttpHeaders headers = new HttpHeaders();
 		headers.put("Accept",
@@ -73,14 +105,10 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 			ResponseEntity<Map> response = this.template.exchange(this.endpoint + path, HttpMethod.POST, request,
 					Map.class);
 			version = (Integer) response.getBody().get("version");
+		}catch (Exception ex){
+			throw new IllegalStateException("Unable to fetch schema from registry server",ex);
 		}
-		catch (JsonProcessingException e) {
-			e.printStackTrace();
-		}
-		SchemaRegistrationResponse schemaRegistrationResponse = new SchemaRegistrationResponse();
-		schemaRegistrationResponse.setId(version);
-		schemaRegistrationResponse.setSchemaReference(new SchemaReference(subject, version, "avro"));
-		return schemaRegistrationResponse;
+		return version;
 	}
 
 	@Override
