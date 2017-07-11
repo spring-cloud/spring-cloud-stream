@@ -1726,7 +1726,18 @@ A client for the Spring Cloud Stream schema registry can be configured using the
   }
 ----
 
-The default configuration will create a `DefaultSchemaRegistryClient` bean. If you want to use the confluent schema registry, you need to create a bean of that type
+[NOTE]
+====
+The default converter is optimized to cache not only the schemas from the remote server but also the `parse()` and `toString()` methods that are quite expensive.
+Because of this, it uses a `DefaultSchemaRegistryClient` that does not caches responses.
+If you intend to use the client directly on your code, you can request a bean that also caches responses to be created.
+To do that, just add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
+====
+
+==== Using Confluent's Schema Registry
+
+The default configuration will create a `DefaultSchemaRegistryClient` bean.
+If you want to use the Confluent schema registry, you need to create a bean of type `ConfluentSchemaRegistryClient`
 
 [source,java]
 ----
@@ -1737,13 +1748,9 @@ public SchemaRegistryClient schemaRegistryClient(@Value("${spring.cloud.stream.s
   return client;
 }
 ----
-
 [NOTE]
 ====
-The default converter is optimized to cache not only the schemas from the remote server but also the `parse()` and `toString()` methods that are quite expensive.
-Because of this, it uses a `DefaultSchemaRegistryClient` that does not caches responses.
-If you intend to use the client directly on your code, you can request a bean that also caches responses to be created.
-To do that, just add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
+The ConfluentSchemaRegistryClient is tested against Confluent platform version 3.2.2
 ====
 
 ==== Schema Registry Client properties
