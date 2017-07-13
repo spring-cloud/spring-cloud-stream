@@ -39,10 +39,10 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * A method is considered declarative if all its method parameter types and return type
  * (if not void) are binding targets or conversion targets from binding targets via a
  * registered {@link StreamListenerParameterAdapter}.
- * 
+ *
  * Only declarative methods can have binding targets or conversion targets as arguments
  * and return type.
- * 
+ *
  * Declarative methods must specify what inputs and outputs correspond to their arguments
  * and return type, and can do this in one of the following ways.
  *
@@ -118,6 +118,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  * @see MessageMapping
  * @see EnableBinding
  * @see org.springframework.messaging.handler.annotation.SendTo
@@ -147,4 +148,15 @@ public @interface StreamListener {
 	 * @return a SpEL expression that must evaluate to a {@code boolean} value.
 	 */
 	String condition() default "";
+
+	/**
+	 * When "true" (default), and a {@code @SendTo} annotation is present, copy the
+	 * inbound headers to the outbound message (if the header is absent on the outbound
+	 * message). Can be an expression ({@code #{...}}) or property placeholder. Must
+	 * resolve to a boolean or a string that is parsed by {@code Boolean.parseBoolean()}.
+	 * An expression that resolves to {@code null} is interpreted to mean {@code false}.
+	 * @since 1.2.3
+	 */
+	String copyHeaders() default "true";
+
 }
