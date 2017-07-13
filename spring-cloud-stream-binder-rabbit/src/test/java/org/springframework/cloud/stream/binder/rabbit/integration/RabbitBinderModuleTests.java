@@ -40,13 +40,21 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -165,16 +173,26 @@ public class RabbitBinderModuleTests {
 	}
 
 	@Test
-	public void testParentConnectionFactoryNotInheritedByCustomizedBinders() {
+	public void testParentConnectionFactoryNotInheritedByCustomizedBindersAndProducerRetryBootProperties() {
 		List<String> params = new ArrayList<>();
 		params.add("--spring.cloud.stream.input.binder=custom");
 		params.add("--spring.cloud.stream.output.binder=custom");
 		params.add("--spring.cloud.stream.binders.custom.type=rabbit");
 		params.add("--spring.cloud.stream.binders.custom.environment.foo=bar");
 		params.add("--server.port=0");
+		params.add("--spring.rabbitmq.template.retry.enabled=true");
+		params.add("--spring.rabbitmq.template.retry.maxAttempts=2");
+		params.add("--spring.rabbitmq.template.retry.initial-interval=1000");
+		params.add("--spring.rabbitmq.template.retry.multiplier=1.1");
+		params.add("--spring.rabbitmq.template.retry.max-interval=3000");
 		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[params.size()]));
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
+		@SuppressWarnings("unchecked")
+		Binder<MessageChannel, ExtendedConsumerProperties<RabbitConsumerProperties>,
+								ExtendedProducerProperties<RabbitProducerProperties>> binder =
+			(Binder<MessageChannel, ExtendedConsumerProperties<RabbitConsumerProperties>,
+					ExtendedProducerProperties<RabbitProducerProperties>>) binderFactory
+				.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
@@ -190,6 +208,20 @@ public class RabbitBinderModuleTests {
 				.getPropertyValue("indicators");
 		assertThat(healthIndicators).containsKey("custom");
 		assertThat(healthIndicators.get("custom").health().getStatus()).isEqualTo(Status.UP);
+		Binding<MessageChannel> binding = binder.bindProducer("foo", new DirectChannel(),
+				new ExtendedProducerProperties<>(new RabbitProducerProperties()));
+		RetryTemplate template = TestUtils.getPropertyValue(binding, "lifecycle.amqpTemplate.retryTemplate",
+				RetryTemplate.class);
+		assertThat(template).isNotNull();
+		SimpleRetryPolicy retryPolicy = TestUtils.getPropertyValue(template, "retryPolicy", SimpleRetryPolicy.class);
+		ExponentialBackOffPolicy backOff = TestUtils.getPropertyValue(template, "backOffPolicy",
+				ExponentialBackOffPolicy.class);
+		assertThat(retryPolicy.getMaxAttempts()).isEqualTo(2);
+		assertThat(backOff.getInitialInterval()).isEqualTo(1000L);
+		assertThat(backOff.getMultiplier()).isEqualTo(1.1);
+		assertThat(backOff.getMaxInterval()).isEqualTo(3000L);
+		binding.unbind();
+		context.close();
 	}
 
 	@EnableBinding(Processor.class)

@@ -41,7 +41,9 @@ import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter
 import org.springframework.amqp.rabbit.support.MessagePropertiesConverter;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties.Retry;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -66,6 +68,10 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.ErrorMessage;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -384,6 +390,13 @@ public class RabbitMessageChannelBinder
 	}
 
 	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties) {
+		RabbitProperties rabbitProperties = null;
+		try {
+			rabbitProperties = getApplicationContext().getBean(RabbitProperties.class);
+		}
+		catch (NoSuchBeanDefinitionException e) {
+			logger.debug("No RabbitProperties in context; no producer retry will be configured");
+		}
 		RabbitTemplate rabbitTemplate;
 		if (properties.isBatchingEnabled()) {
 			BatchingStrategy batchingStrategy = new SimpleBatchingStrategy(
@@ -402,6 +415,18 @@ public class RabbitMessageChannelBinder
 			rabbitTemplate.setBeforePublishPostProcessors(this.compressingPostProcessor);
 		}
 		rabbitTemplate.setChannelTransacted(properties.isTransacted());
+		if (rabbitProperties != null && rabbitProperties.getTemplate().getRetry().isEnabled()) {
+			Retry retry = rabbitProperties.getTemplate().getRetry();
+			RetryPolicy retryPolicy = new SimpleRetryPolicy(retry.getMaxAttempts());
+			ExponentialBackOffPolicy backOff = new ExponentialBackOffPolicy();
+			backOff.setInitialInterval(retry.getInitialInterval());
+			backOff.setMultiplier(retry.getMultiplier());
+			backOff.setMaxInterval(retry.getMaxInterval());
+			RetryTemplate retryTemplate = new RetryTemplate();
+			retryTemplate.setRetryPolicy(retryPolicy);
+			retryTemplate.setBackOffPolicy(backOff);
+			rabbitTemplate.setRetryTemplate(retryTemplate);
+		}
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
 	}
