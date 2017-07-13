@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.test.aggregate;
+package org.springframework.cloud.stream.test.aggregate.main;
 
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.aggregate.AggregateApplication;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
-import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.Transformer;
@@ -43,9 +43,10 @@ public class AggregateWithMainTest {
 	@Test
 	public void testAggregateApplication() throws InterruptedException {
 		// emulate a main method
-		ConfigurableApplicationContext context = new AggregateApplicationBuilder(
-				TestSupportBinderAutoConfiguration.class).from(UppercaseProcessor.class)
-						.namespace("upper").to(SuffixProcessor.class).namespace("suffix").run();
+		ConfigurableApplicationContext context = new AggregateApplicationBuilder(MainConfiguration.class)
+				.from(UppercaseProcessor.class).namespace("upper")
+				.to(SuffixProcessor.class).namespace("suffix")
+				.run();
 
 		AggregateApplication aggregateAccessor = context.getBean(AggregateApplication.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
@@ -56,6 +57,10 @@ public class AggregateWithMainTest {
 		assertThat(receivedMessage).isNotNull();
 		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!");
 		context.close();
+	}
+
+	@SpringBootApplication
+	public static class MainConfiguration {
 	}
 
 	@Configuration

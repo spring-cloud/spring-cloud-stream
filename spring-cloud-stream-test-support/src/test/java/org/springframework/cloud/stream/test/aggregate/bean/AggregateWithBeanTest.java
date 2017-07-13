@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.test.aggregate;
+package org.springframework.cloud.stream.test.aggregate.bean;
 
 import java.util.concurrent.TimeUnit;
 

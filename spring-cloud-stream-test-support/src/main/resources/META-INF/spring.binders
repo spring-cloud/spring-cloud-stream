@@ -1,2 +1,2 @@
 test:\
-org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration
+org.springframework.cloud.stream.test.binder.TestSupportBinderConfiguration

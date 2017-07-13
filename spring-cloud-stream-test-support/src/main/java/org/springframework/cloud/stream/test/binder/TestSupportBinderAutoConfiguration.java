@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.messaging.MessageChannel;
 
@@ -34,29 +35,24 @@ import org.springframework.messaging.MessageChannel;
  * configuration, so adding this on the classpath in test scope is sufficient to have
  * support kick in and replace all binders with the test binder.
  *
+ * The test binder instance is supplied by the {@link TestSupportBinderConfiguration}.
+ *
  * @author Eric Bottard
  * @author Marius Bogoevici
  */
 @Configuration
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
+@Import(TestSupportBinderConfiguration.class)
 public class TestSupportBinderAutoConfiguration {
 
-	private Binder<MessageChannel, ?, ?> messageChannelBinder = new TestSupportBinder();
-
 	@Bean
-	public BinderFactory binderFactory() {
+	public BinderFactory binderFactory(final Binder<MessageChannel, ?, ?> binder) {
 		return new BinderFactory() {
 			@Override
 			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(
 					String configurationName, Class<? extends T> bindableType) {
-				return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) messageChannelBinder;
+				return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) binder;
 			}
 		};
 	}
-
-	@Bean
-	public MessageCollector messageCollector(BinderFactory binderFactory) {
-		return ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class)).messageCollector();
-	}
-
 }

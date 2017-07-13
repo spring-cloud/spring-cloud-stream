@@ -1997,6 +1997,31 @@ The bound interface is injected into the test so we can have access to both chan
 We are sending a message on the input channel and we are using the `MessageCollector` provided by Spring Cloud Stream's test support to capture the message has been sent to the output channel as a result.
 Once we have received the message, we can validate that the component functions correctly.
 
+=== Disabling the test binder autoconfiguration
+
+The intent behind the test binder superseding all the other binders on the classpath is to make it easy to test your applications without making changes to your production dependencies.
+In some cases (e.g. integration tests) it is useful to use the actual production binders instead, and that requires disabling the test binder autoconfiguration.
+In order to do so, you can exclude the `org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration` class using one of the Spring Boot autoconfiguration exclusion mechanisms, as in the following example.
+
+[source,java]
+----
+	@SpringBootApplication(exclude = TestSupportBinderAutoConfiguration.class)
+	@EnableBinding(Processor.class)
+	public static class MyProcessor {
+
+		@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
+		public String transform(String in) {
+			return in + " world";
+		}
+	}
+----
+
+When autoconfiguration is disabled, the test binder is available on the classpath, and its `defaultCandidate` property is set to `false`, so that it does not interfere with the regular user configuration. It can be referenced under the name `test` e.g.:
+
+----
+spring.cloud.stream.defaultBinder=test
+----
+
 == Health Indicator
 
 Spring Cloud Stream provides a health indicator for binders.
