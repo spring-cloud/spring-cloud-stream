@@ -23,19 +23,26 @@ import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 
 /**
  * @author Marius Bogoevici
+ * @author Gary Russell
  * @since 1.2
  */
 public class StreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
 
 	private final InvocableHandlerMethod invocableHandlerMethod;
 
-	StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod) {
+	private final boolean copyHeaders;
+
+	StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod, boolean copyHeaders,
+			String[] notPropagatedHeaders) {
+		super();
 		this.invocableHandlerMethod = invocableHandlerMethod;
+		this.copyHeaders = copyHeaders;
+		this.setNotPropagatedHeaders(notPropagatedHeaders);
 	}
 
 	@Override
 	protected boolean shouldCopyRequestHeaders() {
-		return false;
+		return this.copyHeaders;
 	}
 
 	public boolean isVoid() {
