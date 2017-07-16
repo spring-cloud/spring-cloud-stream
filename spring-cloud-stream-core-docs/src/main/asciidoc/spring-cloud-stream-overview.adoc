@@ -212,7 +212,7 @@ The `@EnableBinding` annotation can take as parameters one or more interface cla
 
 [NOTE]
 ====
-In Spring Cloud Stream 1.0, the only supported bindable components are the Spring Messaging `MessageChannel` and its extension `SubscribableChannel`.
+In Spring Cloud Stream, the only supported bindable `MessageChannel` components are the Spring Messaging `MessageChannel` and its extension `SubscribableChannel`.
 Future versions should extend this support to other types of components, using the same mechanism.
 In this documentation, we will continue to refer to channels.
 ====
