@@ -77,7 +77,9 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 				producerFactory);
 		assertTrue(producerConfigs.get("batch.size").equals(10));
 		assertTrue(producerConfigs.get("key.serializer").equals(LongSerializer.class));
+		assertTrue(producerConfigs.get("key.deserializer") == null);
 		assertTrue(producerConfigs.get("value.serializer").equals(LongSerializer.class));
+		assertTrue(producerConfigs.get("value.deserializer") == null);
 		assertTrue(producerConfigs.get("compression.type").equals("snappy"));
 		List<String> bootstrapServers = new ArrayList<>();
 		bootstrapServers.add("10.98.09.199:9092");
@@ -96,7 +98,9 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 		Map<String, Object> consumerConfigs = (Map<String, Object>) ReflectionUtils.getField(consumerFactoryConfigField,
 				consumerFactory);
 		assertTrue(consumerConfigs.get("key.deserializer").equals(LongDeserializer.class));
+		assertTrue(consumerConfigs.get("key.serializer") == null);
 		assertTrue(consumerConfigs.get("value.deserializer").equals(LongDeserializer.class));
+		assertTrue(consumerConfigs.get("value.serialized") == null);
 		assertTrue(consumerConfigs.get("group.id").equals("groupIdFromBootConfig"));
 		assertTrue(consumerConfigs.get("auto.offset.reset").equals("earliest"));
 		assertTrue((((List<String>) consumerConfigs.get("bootstrap.servers")).containsAll(bootstrapServers)));

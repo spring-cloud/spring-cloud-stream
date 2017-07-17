@@ -16,10 +16,18 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -31,13 +39,16 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
 
-	private String[] zkNodes = new String[] {"localhost"};
+	@Autowired(required = false)
+	private KafkaProperties kafkaProperties;
 
-	private Map<String, Object> configuration = new HashMap<>();
+	private String[] zkNodes = new String[] { "localhost" };
+
+	private Map<String, String> configuration = new HashMap<>();
 
 	private String defaultZkPort = "2181";
 
-	private String[] brokers = new String[] {"localhost"};
+	private String[] brokers = new String[] { "localhost" };
 
 	private String defaultBrokerPort = "9092";
 
@@ -249,16 +260,78 @@ public class KafkaBinderConfigurationProperties {
 		this.socketBufferSize = socketBufferSize;
 	}
 
-	public Map<String, Object> getConfiguration() {
+	public Map<String, String> getConfiguration() {
 		return configuration;
 	}
 
-	public void setConfiguration(Map<String, Object> configuration) {
+	public void setConfiguration(Map<String, String> configuration) {
 		this.configuration = configuration;
 	}
 
+	public Map<String, Object> getConsumerConfiguration() {
+		Map<String, Object> consumerConfiguration = new HashMap<>();
+		// If Spring Boot Kafka properties are present, add them with lowest precedence
+		if (this.kafkaProperties != null) {
+			consumerConfiguration.putAll(this.kafkaProperties.buildConsumerProperties());
+		}
+		// Copy configured binder properties
+		for (Map.Entry<String, String> configurationEntry : this.configuration.entrySet()) {
+			if (ConsumerConfig.configNames().contains(configurationEntry.getKey())) {
+				consumerConfiguration.put(configurationEntry.getKey(), configurationEntry.getValue());
+			}
+		}
+		// Override Spring Boot bootstrap server setting if left to default with the value
+		// configured in the binder
+		if (ObjectUtils.isEmpty(consumerConfiguration.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
+			consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConnectionString());
+		}
+		else {
+			Object boostrapServersConfig = consumerConfiguration.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+			if (boostrapServersConfig instanceof List) {
+				@SuppressWarnings("unchecked")
+				List<String> bootStrapServers = (List<String>) consumerConfiguration
+						.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+				if (bootStrapServers.size() == 1 && bootStrapServers.get(0).equals("localhost:9092")) {
+					consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConnectionString());
+				}
+			}
+		}
+		return Collections.unmodifiableMap(consumerConfiguration);
+	}
+
+	public Map<String, Object> getProducerConfiguration() {
+		Map<String, Object> producerConfiguration = new HashMap<>();
+		// If Spring Boot Kafka properties are present, add them with lowest precedence
+		if (this.kafkaProperties != null) {
+			producerConfiguration.putAll(this.kafkaProperties.buildProducerProperties());
+		}
+		// Copy configured binder properties
+		for (Map.Entry<String, String> configurationEntry : configuration.entrySet()) {
+			if (ProducerConfig.configNames().contains(configurationEntry.getKey())) {
+				producerConfiguration.put(configurationEntry.getKey(), configurationEntry.getValue());
+			}
+		}
+		// Override Spring Boot bootstrap server setting if left to default with the value
+		// configured in the binder
+		if (ObjectUtils.isEmpty(producerConfiguration.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
+			producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConnectionString());
+		}
+		else {
+			Object boostrapServersConfig = producerConfiguration.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+			if (boostrapServersConfig instanceof List) {
+				@SuppressWarnings("unchecked")
+				List<String> bootStrapServers = (List<String>) producerConfiguration
+						.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+				if (bootStrapServers.size() == 1 && bootStrapServers.get(0).equals("localhost:9092")) {
+					producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, getKafkaConnectionString());
+				}
+			}
+		}
+		return Collections.unmodifiableMap(producerConfiguration);
+	}
+
 	public JaasLoginModuleConfiguration getJaas() {
-		return jaas;
+		return this.jaas;
 	}
 
 	public void setJaas(JaasLoginModuleConfiguration jaas) {

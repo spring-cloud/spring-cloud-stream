@@ -180,8 +180,8 @@ public class KafkaMessageChannelBinder extends
 		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
 		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
 		props.put(ProducerConfig.ACKS_CONFIG, String.valueOf(this.configurationProperties.getRequiredAcks()));
-		if (!ObjectUtils.isEmpty(configurationProperties.getConfiguration())) {
-			props.putAll(configurationProperties.getConfiguration());
+		if (!ObjectUtils.isEmpty(configurationProperties.getProducerConfiguration())) {
+			props.putAll(configurationProperties.getProducerConfiguration());
 		}
 		if (ObjectUtils.isEmpty(props.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
 			props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
@@ -337,8 +337,8 @@ public class KafkaMessageChannelBinder extends
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, anonymous ? "latest" : "earliest");
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
 
-		if (!ObjectUtils.isEmpty(configurationProperties.getConfiguration())) {
-			props.putAll(configurationProperties.getConfiguration());
+		if (!ObjectUtils.isEmpty(configurationProperties.getConsumerConfiguration())) {
+			props.putAll(configurationProperties.getConsumerConfiguration());
 		}
 		if (ObjectUtils.isEmpty(props.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
 			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());

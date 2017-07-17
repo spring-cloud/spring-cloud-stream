@@ -67,7 +67,7 @@ public class KafkaBinderUnitTests {
 
 		// binder level setting
 		binderConfigurationProperties.setConfiguration(
-				Collections.<String, Object>singletonMap(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest"));
+				Collections.singletonMap(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest"));
 		factory = method.invoke(binder, false, "foo", ecp);
 		configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)).isEqualTo("latest");

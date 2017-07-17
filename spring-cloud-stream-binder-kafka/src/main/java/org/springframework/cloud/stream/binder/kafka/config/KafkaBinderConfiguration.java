@@ -18,15 +18,11 @@ package org.springframework.cloud.stream.binder.kafka.config;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import javax.annotation.PostConstruct;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.utils.AppInfoParser;
 
@@ -35,7 +31,6 @@ import org.springframework.boot.actuate.endpoint.PublicMetrics;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
@@ -76,8 +71,7 @@ import org.springframework.util.ObjectUtils;
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@Import({ KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class,
-		KafkaBinderConfiguration.KafkaPropertiesConfiguration.class })
+@Import({ KryoCodecAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
 @EnableConfigurationProperties({ KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class })
 public class KafkaBinderConfiguration {
 
@@ -127,8 +121,8 @@ public class KafkaBinderConfiguration {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-		if (!ObjectUtils.isEmpty(configurationProperties.getConfiguration())) {
-			props.putAll(configurationProperties.getConfiguration());
+		if (!ObjectUtils.isEmpty(configurationProperties.getConsumerConfiguration())) {
+			props.putAll(configurationProperties.getConsumerConfiguration());
 		}
 		if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
 			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
@@ -184,53 +178,5 @@ public class KafkaBinderConfiguration {
 		private JaasLoginModuleConfiguration kafka;
 
 		private JaasLoginModuleConfiguration zookeeper;
-	}
-
-	@ConditionalOnClass(name = "org.springframework.boot.autoconfigure.kafka.KafkaProperties")
-	public static class KafkaPropertiesConfiguration {
-
-		// KafkaProperties can still be unavailable if KafkaAutoConfiguration is disabled.
-		@Autowired(required = false)
-		private KafkaProperties kafkaProperties;
-
-		@Autowired
-		private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
-
-		@PostConstruct
-		public void init() {
-			Map<String, Object> configuration = this.kafkaBinderConfigurationProperties.getConfiguration();
-			if (this.kafkaProperties != null) {
-				for (Map.Entry<String, String> properties : this.kafkaProperties.getProperties().entrySet()) {
-					if (!configuration.containsKey(properties.getKey())) {
-						configuration.put(properties.getKey(), properties.getValue());
-					}
-				}
-				for (Map.Entry<String, Object> producerProperties : this.kafkaProperties.buildProducerProperties()
-						.entrySet()) {
-					if (!configuration.containsKey(producerProperties.getKey())) {
-						configuration.put(producerProperties.getKey(), producerProperties.getValue());
-					}
-				}
-				for (Map.Entry<String, Object> consumerProperties : this.kafkaProperties.buildConsumerProperties()
-						.entrySet()) {
-					if (!configuration.containsKey(consumerProperties.getKey())) {
-						configuration.put(consumerProperties.getKey(), consumerProperties.getValue());
-					}
-				}
-				if (ObjectUtils.isEmpty(configuration.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
-					configuration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
-							kafkaBinderConfigurationProperties.getKafkaConnectionString());
-				}
-				else {
-					@SuppressWarnings("unchecked")
-					List<String> bootStrapServers = (List<String>) configuration
-							.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
-					if (bootStrapServers.size() == 1 && bootStrapServers.get(0).equals("localhost:9092")) {
-						configuration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
-								kafkaBinderConfigurationProperties.getKafkaConnectionString());
-					}
-				}
-			}
-		}
 	}
 }
