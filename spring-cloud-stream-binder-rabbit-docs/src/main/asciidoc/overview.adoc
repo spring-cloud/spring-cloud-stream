@@ -148,6 +148,12 @@ dlqExpires::
   how long before an unused dead letter queue is deleted (ms)
 +
 Default: `no expiration`
+dlqLazy::
+  Declare the dead letter queue with the `x-queue-mode=lazy` argument.
+  See https://www.rabbitmq.com/lazy-queues.html[Lazy Queues].
+  Consider using a policy instead of this setting because using a policy allows changing the setting without deleting the queue.
++
+Default: `false`.
 dlqMaxLength::
   maximum number of messages in the dead letter queue
 +
@@ -181,6 +187,11 @@ exchangeType::
   The exchange type; `direct`, `fanout` or `topic` for non-partitioned destinations; `direct` or `topic` for partitioned destinations.
 +
 Default: `topic`.
+exclusive::
+  Create an exclusive consumer; concurrency should be 1 when this is `true`; often used when strict ordering is required but enabling a hot standby instance to take over after a failure.
+  See `recoveryInterval`, which controls how often a standby instance will attempt to consume.
++
+Default: `false`.
 expires::
   how long before an unused queue is deleted (ms)
 +
@@ -189,6 +200,12 @@ headerPatterns::
   Patterns for headers to be mapped from inbound messages.
 +
 Default: `['*']` (all headers).
+lazy::
+  Declare the queue with the `x-queue-mode=lazy` argument.
+  See https://www.rabbitmq.com/lazy-queues.html[Lazy Queues].
+  Consider using a policy instead of this setting because using a policy allows changing the setting without deleting the queue.
++
+Default: `false`.
 maxConcurrency::
   the maximum number of consumers
 +
@@ -327,6 +344,12 @@ dlqExpires::
   Only applies if `requiredGroups` are provided and then only to those groups.
 +
 Default: `no expiration`
+dlqLazy::
+  Declare the dead letter queue with the `x-queue-mode=lazy` argument.
+  See https://www.rabbitmq.com/lazy-queues.html[Lazy Queues].
+  Consider using a policy instead of this setting because using a policy allows changing the setting without deleting the queue.
+  Only applies if `requiredGroups` are provided and then only to those groups.
++
 dlqMaxLength::
   maximum number of messages in the dead letter queue
   Only applies if `requiredGroups` are provided and then only to those groups.
@@ -368,6 +391,13 @@ headerPatterns::
   Patterns for headers to be mapped to outbound messages.
 +
 Default: `['*']` (all headers).
+lazy::
+  Declare the queue with the `x-queue-mode=lazy` argument.
+  See https://www.rabbitmq.com/lazy-queues.html[Lazy Queues].
+  Consider using a policy instead of this setting because using a policy allows changing the setting without deleting the queue.
+  Only applies if `requiredGroups` are provided and then only to those groups.
++
+Default: `false`.
 maxLength::
   maximum number of messages in the queue
   Only applies if `requiredGroups` are provided and then only to those groups.

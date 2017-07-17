@@ -50,6 +50,11 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	private long recoveryInterval = 5000;
 
+	/**
+	 * True if the consumer is exclusive.
+	 */
+	private boolean exclusive;
+
 	public boolean isTransacted() {
 		return transacted;
 	}
@@ -159,4 +164,13 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	public void setRecoveryInterval(long recoveryInterval) {
 		this.recoveryInterval = recoveryInterval;
 	}
+
+	public boolean isExclusive() {
+		return this.exclusive;
+	}
+
+	public void setExclusive(boolean exclusive) {
+		this.exclusive = exclusive;
+	}
+
 }

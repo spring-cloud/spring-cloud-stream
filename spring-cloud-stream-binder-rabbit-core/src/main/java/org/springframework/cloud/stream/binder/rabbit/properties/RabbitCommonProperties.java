@@ -149,6 +149,16 @@ public abstract class RabbitCommonProperties {
 	 */
 	private String prefix = "";
 
+	/**
+	 * True if the queue is provisioned as a lazy queue.
+	 */
+	private boolean lazy;
+
+	/**
+	 * True if the DLQ is provisioned as a lazy queue.
+	 */
+	private boolean dlqLazy;
+
 	public String getExchangeType() {
 		return this.exchangeType;
 	}
@@ -340,6 +350,22 @@ public abstract class RabbitCommonProperties {
 
 	public void setPrefix(String prefix) {
 		this.prefix = prefix;
+	}
+
+	public boolean isLazy() {
+		return this.lazy;
+	}
+
+	public void setLazy(boolean lazy) {
+		this.lazy = lazy;
+	}
+
+	public boolean isDlqLazy() {
+		return this.dlqLazy;
+	}
+
+	public void setDlqLazy(boolean dlqLazy) {
+		this.dlqLazy = dlqLazy;
 	}
 
 }

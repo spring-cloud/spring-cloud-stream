@@ -349,7 +349,7 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 				args.put("x-dead-letter-routing-key", dlRk);
 			}
 			additionalArgs(args, properties.getExpires(), properties.getMaxLength(), properties.getMaxLengthBytes(),
-					properties.getMaxPriority(), properties.getTtl());
+					properties.getMaxPriority(), properties.getTtl(), properties.isLazy());
 		}
 		else {
 			if (properties.getDlqDeadLetterExchange() != null) {
@@ -359,13 +359,14 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 				args.put("x-dead-letter-routing-key", properties.getDlqDeadLetterRoutingKey());
 			}
 			additionalArgs(args, properties.getDlqExpires(), properties.getDlqMaxLength(),
-					properties.getDlqMaxLengthBytes(), properties.getDlqMaxPriority(), properties.getDlqTtl());
+					properties.getDlqMaxLengthBytes(), properties.getDlqMaxPriority(), properties.getDlqTtl(),
+					properties.isDlqLazy());
 		}
 		return args;
 	}
 
 	private void additionalArgs(Map<String, Object> args, Integer expires, Integer maxLength, Integer maxLengthBytes,
-								Integer maxPriority, Integer ttl) {
+								Integer maxPriority, Integer ttl, boolean lazy) {
 		if (expires != null) {
 			args.put("x-expires", expires);
 		}
@@ -380,6 +381,9 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 		}
 		if (ttl != null) {
 			args.put("x-message-ttl", ttl);
+		}
+		if (lazy) {
+			args.put("x-queue-mode", "lazy");
 		}
 	}
 

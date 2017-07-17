@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -84,6 +79,11 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
 
 import com.rabbitmq.http.client.domain.QueueInfo;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Mark Fisher
@@ -164,6 +164,7 @@ public class RabbitBinderTests extends
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.getExtension().setRequeueRejected(true);
 		properties.getExtension().setTransacted(true);
+		properties.getExtension().setExclusive(true);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("props.0", null,
 				createBindableChannel("input", new BindingProperties()), properties);
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
@@ -172,6 +173,7 @@ public class RabbitBinderTests extends
 		assertThat(container.getAcknowledgeMode()).isEqualTo(AcknowledgeMode.AUTO);
 		assertThat(container.getQueueNames()[0]).startsWith(properties.getExtension().getPrefix());
 		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class)).isTrue();
+		assertThat(TestUtils.getPropertyValue(container, "exclusive", Boolean.class)).isTrue();
 		assertThat(TestUtils.getPropertyValue(container, "concurrentConsumers")).isEqualTo(1);
 		assertThat(TestUtils.getPropertyValue(container, "maxConcurrentConsumers")).isNull();
 		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected", Boolean.class)).isTrue();
@@ -291,6 +293,7 @@ public class RabbitBinderTests extends
 		extProps.setExchangeAutoDelete(true);
 		extProps.setBindingRoutingKey("foo");
 		extProps.setExpires(30_000);
+		extProps.setLazy(true);
 		extProps.setMaxLength(10_000);
 		extProps.setMaxLengthBytes(100_000);
 		extProps.setMaxPriority(10);
@@ -302,6 +305,7 @@ public class RabbitBinderTests extends
 		extProps.setDlqDeadLetterExchange("propsUser3");
 		extProps.setDlqDeadLetterRoutingKey("propsUser3");
 		extProps.setDlqExpires(60_000);
+		extProps.setDlqLazy(true);
 		extProps.setDlqMaxLength(20_000);
 		extProps.setDlqMaxLengthBytes(40_000);
 		extProps.setDlqMaxPriority(8);
@@ -353,6 +357,7 @@ public class RabbitBinderTests extends
 		assertThat(args.get("x-message-ttl")).isEqualTo(2_000);
 		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("customDLX");
 		assertThat(args.get("x-dead-letter-routing-key")).isEqualTo("customDLRK");
+		assertThat(args.get("x-queue-mode")).isEqualTo("lazy");
 
 		queue = rmt.getClient().getQueue("/", "customDLQ");
 
@@ -370,6 +375,7 @@ public class RabbitBinderTests extends
 		assertThat(args.get("x-message-ttl")).isEqualTo(1_000);
 		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("propsUser3");
 		assertThat(args.get("x-dead-letter-routing-key")).isEqualTo("propsUser3");
+		assertThat(args.get("x-queue-mode")).isEqualTo("lazy");
 	}
 
 	@Test
