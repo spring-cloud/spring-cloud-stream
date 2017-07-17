@@ -63,6 +63,7 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 public class StreamListenerHandlerMethodTests {
 
@@ -82,14 +83,46 @@ public class StreamListenerHandlerMethodTests {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithObjectAsMethodArgument.class,
 				"--server.port=0");
 		Processor processor = context.getBean(Processor.class);
-		String id = UUID.randomUUID().toString();
-		final CountDownLatch latch = new CountDownLatch(1);
 		final String testMessage = "testing";
 		processor.input().send(MessageBuilder.withPayload(testMessage).build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
 		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
+		context.close();
+	}
+
+	@Test
+	public void testMethodHeadersPropagatged() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestMethodHeadersPropagated.class,
+				"--server.port=0");
+		Processor processor = context.getBean(Processor.class);
+		final String testMessage = "testing";
+		processor.input().send(MessageBuilder.withPayload(testMessage)
+				.setHeader("foo", "bar")
+				.build());
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		assertThat(result).isNotNull();
+		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
+		assertThat(result.getHeaders().get("foo")).isEqualTo("bar");
+		context.close();
+	}
+
+	@Test
+	public void testMethodHeadersNotPropagatged() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(TestMethodHeadersNotPropagated.class,
+				"--server.port=0");
+		Processor processor = context.getBean(Processor.class);
+		final String testMessage = "testing";
+		processor.input().send(MessageBuilder.withPayload(testMessage)
+				.setHeader("foo", "bar")
+				.build());
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		assertThat(result).isNotNull();
+		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
+		assertThat(result.getHeaders().get("foo")).isNull();
 		context.close();
 	}
 
@@ -331,6 +364,30 @@ public class StreamListenerHandlerMethodTests {
 		public String receive(Object received) {
 			return received.toString().toUpperCase();
 		}
+	}
+
+	@EnableBinding({ Processor.class })
+	@EnableAutoConfiguration
+	public static class TestMethodHeadersPropagated {
+
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public String receive(String received) {
+			return received.toUpperCase();
+		}
+
+	}
+
+	@EnableBinding({ Processor.class })
+	@EnableAutoConfiguration
+	public static class TestMethodHeadersNotPropagated {
+
+		@StreamListener(value = Processor.INPUT, copyHeaders = "${foo.bar:false}")
+		@SendTo(Processor.OUTPUT)
+		public String receive(String received) {
+			return received.toUpperCase();
+		}
+
 	}
 
 	@EnableBinding(Sink.class)

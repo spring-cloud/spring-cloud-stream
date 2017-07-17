@@ -101,7 +101,6 @@ public class StreamListenerAnnotationBeanPostProcessor
 	private BeanExpressionContext expressionContext;
 
 	@Override
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public final void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
@@ -115,6 +114,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		}
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		Map<String, StreamListenerParameterAdapter> parameterAdapterMap = BeanFactoryUtils
@@ -226,7 +226,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private boolean isDeclarativeMethodParameter(String targetBeanName, MethodParameter methodParameter) {
 		try {
-			Class targetBeanClass = this.applicationContext.getType(targetBeanName);
+			Class<?> targetBeanClass = this.applicationContext.getType(targetBeanName);
 			if (!methodParameter.getParameterType().equals(Object.class)
 					&& (targetBeanClass.isAssignableFrom(methodParameter.getParameterType()) ||
 							methodParameter.getParameterType().isAssignableFrom(targetBeanClass))) {
@@ -335,7 +335,8 @@ public class StreamListenerAnnotationBeanPostProcessor
 		}
 		StreamListenerMethodUtils.validateStreamListenerMessageHandler(method);
 		mappedListenerMethods.add(streamListener.value(),
-				new StreamListenerHandlerMethodMapping(bean, method, streamListener.condition(), defaultOutputChannel));
+				new StreamListenerHandlerMethodMapping(bean, method, streamListener.condition(), defaultOutputChannel,
+						streamListener.copyHeaders()));
 	}
 
 	@Override
@@ -349,7 +350,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 						.createInvocableHandlerMethod(mapping.getTargetBean(),
 								checkProxy(mapping.getMethod(), mapping.getTargetBean()));
 				StreamListenerMessageHandler streamListenerMessageHandler = new StreamListenerMessageHandler(
-						invocableHandlerMethod);
+						invocableHandlerMethod, resolveExpressionAsBoolean(mapping.getCopyHeaders(), "copyHeaders"));
 				streamListenerMessageHandler.setApplicationContext(this.applicationContext);
 				streamListenerMessageHandler.setBeanFactory(this.applicationContext.getBeanFactory());
 				if (StringUtils.hasText(mapping.getDefaultOutputChannel())) {
@@ -357,7 +358,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 				}
 				streamListenerMessageHandler.afterPropertiesSet();
 				if (StringUtils.hasText(mapping.getCondition())) {
-					String conditionAsString = resolveExpressionAsString(mapping.getCondition());
+					String conditionAsString = resolveExpressionAsString(mapping.getCondition(), "condition");
 					Expression condition = SPEL_EXPRESSION_PARSER.parseExpression(conditionAsString);
 					handlers.add(
 							new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper(
@@ -423,13 +424,31 @@ public class StreamListenerAnnotationBeanPostProcessor
 		return method;
 	}
 
-	private String resolveExpressionAsString(String value) {
+	private String resolveExpressionAsString(String value, String property) {
 		Object resolved = resolveExpression(value);
 		if (resolved instanceof String) {
 			return (String) resolved;
 		}
 		else {
-			throw new IllegalStateException("Resolved to [" + resolved.getClass() + "] for [" + value + "]");
+			throw new IllegalStateException(
+					"Resolved " + property + " to [" + resolved.getClass() + "] instead of String for [" + value + "]");
+		}
+	}
+
+	private boolean resolveExpressionAsBoolean(String value, String property) {
+		Object resolved = resolveExpression(value);
+		if (resolved == null) {
+			return false;
+		}
+		else if (resolved instanceof String) {
+			return Boolean.parseBoolean((String) resolved);
+		}
+		else if (resolved instanceof Boolean) {
+			return (Boolean) resolved;
+		}
+		else {
+			throw new IllegalStateException("Resolved " + property + " to [" + resolved.getClass()
+					+ "] instead of String or Boolean for [" + value + "]");
 		}
 	}
 
@@ -457,20 +476,23 @@ public class StreamListenerAnnotationBeanPostProcessor
 
 	private class StreamListenerHandlerMethodMapping {
 
-		private Object targetBean;
+		private final Object targetBean;
 
-		private Method method;
+		private final Method method;
 
-		private String condition;
+		private final String condition;
 
-		private String defaultOutputChannel;
+		private final String defaultOutputChannel;
+
+		private final String copyHeaders;
 
 		StreamListenerHandlerMethodMapping(Object targetBean, Method method, String condition,
-				String defaultOutputChannel) {
+				String defaultOutputChannel, String copyHeaders) {
 			this.targetBean = targetBean;
 			this.method = method;
 			this.condition = condition;
 			this.defaultOutputChannel = defaultOutputChannel;
+			this.copyHeaders = copyHeaders;
 		}
 
 		Object getTargetBean() {
@@ -488,6 +510,11 @@ public class StreamListenerAnnotationBeanPostProcessor
 		String getDefaultOutputChannel() {
 			return defaultOutputChannel;
 		}
+
+		public String getCopyHeaders() {
+			return this.copyHeaders;
+		}
+
 	}
 
 }
