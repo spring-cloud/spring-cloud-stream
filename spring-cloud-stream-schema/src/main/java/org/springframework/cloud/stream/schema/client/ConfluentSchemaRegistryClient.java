@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.schema.client;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -42,6 +43,9 @@ import org.springframework.web.client.RestTemplate;
  */
 public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 
+	private static final List<String> ACCEPT_HEADERS = Arrays.asList("application/vnd.schemaregistry.v1+json",
+			"application/vnd.schemaregistry+json", "application/json");
+
 	private RestTemplate template;
 
 	private String endpoint = "http://localhost:8081";
@@ -53,7 +57,7 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	}
 
 	public ConfluentSchemaRegistryClient(RestTemplate template) {
-		this(template,new ObjectMapper());
+		this(template, new ObjectMapper());
 	}
 
 	public ConfluentSchemaRegistryClient(RestTemplate template, ObjectMapper mapper) {
@@ -71,8 +75,7 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 		Assert.isTrue("avro".equals(format), "Only Avro is supported");
 		String path = String.format("/subjects/%s/versions", subject);
 		HttpHeaders headers = new HttpHeaders();
-		headers.put("Accept", Arrays.asList("application/vnd.schemaregistry.v1+json",
-				"application/vnd.schemaregistry+json", "application/json"));
+		headers.put("Accept", ACCEPT_HEADERS);
 		headers.add("Content-Type", "application/json");
 		Integer version = null;
 		Integer id = null;
@@ -110,13 +113,12 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	 * subject. After a successful registration we can inquire the server to get the
 	 * version of a schema
 	 * @param subject
-	 * @return
+	 * @return the version of the returned schema
 	 */
 	private Integer getSubjectVersion(String subject, String payload) {
 		String path = String.format("/subjects/%s", subject);
 		HttpHeaders headers = new HttpHeaders();
-		headers.put("Accept", Arrays.asList("application/vnd.schemaregistry.v1+json",
-				"application/vnd.schemaregistry+json", "application/json"));
+		headers.put("Accept", ACCEPT_HEADERS);
 		headers.add("Content-Type", "application/json");
 		Integer version = null;
 		try {
@@ -141,8 +143,7 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 		String path = String.format("/subjects/%s/versions/%d",
 				schemaReference.getSubject(), schemaReference.getVersion());
 		HttpHeaders headers = new HttpHeaders();
-		headers.put("Accept", Arrays.asList("application/vnd.schemaregistry.v1+json",
-				"application/vnd.schemaregistry+json", "application/json"));
+		headers.put("Accept", ACCEPT_HEADERS);
 		headers.add("Content-Type", "application/vnd.schemaregistry.v1+json");
 		HttpEntity<String> request = new HttpEntity<>("", headers);
 		try {
@@ -165,8 +166,7 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	public String fetch(int id) {
 		String path = String.format("/schemas/ids/%d", id);
 		HttpHeaders headers = new HttpHeaders();
-		headers.put("Accept", Arrays.asList("application/vnd.schemaregistry.v1+json",
-				"application/vnd.schemaregistry+json", "application/json"));
+		headers.put("Accept", ACCEPT_HEADERS);
 		headers.add("Content-Type", "application/vnd.schemaregistry.v1+json");
 		HttpEntity<String> request = new HttpEntity<>("", headers);
 		try {
