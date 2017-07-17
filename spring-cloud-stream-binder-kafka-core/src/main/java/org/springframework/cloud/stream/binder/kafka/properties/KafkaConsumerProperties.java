@@ -23,7 +23,9 @@ import java.util.Map;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  *
- * <p>Thanks to Laszlo Szabo for providing the initial patch for generic property support.</p>
+ * <p>
+ * Thanks to Laszlo Szabo for providing the initial patch for generic property support.
+ * </p>
  */
 public class KafkaConsumerProperties {
 
@@ -32,8 +34,6 @@ public class KafkaConsumerProperties {
 	private boolean autoCommitOffset = true;
 
 	private Boolean autoCommitOnError;
-
-	private boolean resetOffsets;
 
 	private StartOffset startOffset;
 
@@ -51,14 +51,6 @@ public class KafkaConsumerProperties {
 
 	public void setAutoCommitOffset(boolean autoCommitOffset) {
 		this.autoCommitOffset = autoCommitOffset;
-	}
-
-	public boolean isResetOffsets() {
-		return this.resetOffsets;
-	}
-
-	public void setResetOffsets(boolean resetOffsets) {
-		this.resetOffsets = resetOffsets;
 	}
 
 	public StartOffset getStartOffset() {
@@ -102,7 +94,8 @@ public class KafkaConsumerProperties {
 	}
 
 	public enum StartOffset {
-		earliest(-2L), latest(-1L);
+		earliest(-2L),
+		latest(-1L);
 
 		private final long referencePoint;
 
