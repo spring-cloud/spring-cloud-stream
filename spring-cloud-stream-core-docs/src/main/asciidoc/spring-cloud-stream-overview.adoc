@@ -433,6 +433,42 @@ at the broker by configuring a binding for the outbound target named `error`. Fo
 publish error messages to a broker destination named "myErrors", provide the following property:
 `spring.cloud.stream.bindings.error.destination=myErrors`
 
+===== Using @ErrorListener for handling error messages
+
+The error messages sent to the global Spring Integration `errorChannel` can be consumed via explicit methods annotated with `@ErrorListener`.
+Since the `errorChannel` is a pub-sub message channel, there can be multiple `@ErrorListener` methods consuming the error messages and process them based on the requirements.
+
+[NOTE]
+====
+
+Since the error messages received from the `errorChannel` is always of the type `ErrorMessage`, the `@ErrorListener` annotated method should have parameter argument type `ErrorMessage`.
+
+[source,java]
+----
+
+@EnableBinding(Sink.class)
+public class MySink {
+
+	@Autowired
+    VotingService votingService;
+
+    @StreamListener(Sink.INPUT)
+    public void handle(Vote vote) {
+      votingService.record(vote);
+    }
+
+	@ErrorListener
+	public void errorHandler1(ErrorMessage errorMessage) {
+	  // do something with the errorMessage
+	}
+
+	@ErrorListener
+	public void errorHandler1(ErrorMessage errorMessage) {
+	  // do something with the errorMessage
+	}
+----
+====
+
 ===== Using @StreamListener for Automatic Content Type Handling
 
 Complementary to its Spring Integration support, Spring Cloud Stream provides its own `@StreamListener` annotation, modeled after other Spring Messaging annotations (e.g. `@MessageMapping`, `@JmsListener`, `@RabbitListener`, etc.).

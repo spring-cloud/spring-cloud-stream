@@ -16,17 +16,18 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.ErrorListener;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
@@ -34,7 +35,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
-import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -47,36 +47,38 @@ import org.springframework.util.Assert;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { ErrorChannelTests.TestSource1.class })
-public class ErrorChannelTests {
+@SpringBootTest(classes = { ErrorListenerTests.TestSource2.class })
+public class ErrorListenerTests {
 
 	private static final String TEST_MSG = "test";
 
 	private static String ERROR_MSG = "org.springframework.messaging.MessagingException: " + TEST_MSG;
 
-	private static CountDownLatch countDownLatch = new CountDownLatch(2);
-
-	@Autowired
-	private PublishSubscribeChannel errorChannel;
-
 	@Autowired
 	private BinderFactory binderFactory;
 
+	@Autowired
+	@Qualifier(ErrorHandler.ERROR_OUTPUT)
+	private MessageChannel errorChannelOutput;
+
 	@Test
-	public void testErrorChannelBinding() throws Exception {
+	public void testErrorListenerOutput() throws Exception {
 		Message<?> message = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
+				.messageCollector().forChannel(errorChannelOutput).poll(10, TimeUnit.SECONDS);
 		Assert.isTrue(message instanceof ErrorMessage, "Message should be an instance of ErrorMessage");
 		Assert.isTrue(message.getPayload() instanceof MessagingException, "Message payload should be an instance" +
 				"of MessagingException");
 		Assert.isTrue(message.getPayload().toString().equals(ERROR_MSG), "Message payload is incorrect");
-		Assert.isTrue(countDownLatch.await(1, TimeUnit.SECONDS), "Error listener methods are not invoked");
 	}
 
-	@EnableBinding(Source.class)
+	@EnableBinding({ Source.class, ErrorHandler.class })
 	@EnableAutoConfiguration
 	@PropertySource("classpath:/org/springframework/cloud/stream/config/errorchannel/source-channel.properties")
-	public static class TestSource1 {
+	public static class TestSource2 {
+
+		@Autowired
+		@Qualifier(ErrorHandler.ERROR_OUTPUT)
+		private MessageChannel errorChannelOutput;
 
 		@Bean
 		@InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "50000", maxMessagesPerPoll = "1"))
@@ -91,14 +93,16 @@ public class ErrorChannelTests {
 
 		@ErrorListener
 		public void receive1(ErrorMessage errorMessage) {
-			Assert.isTrue(errorMessage.getPayload().toString().equals(ERROR_MSG), "Error payload is incorrect");
-			countDownLatch.countDown();
+			errorChannelOutput.send(errorMessage);
 		}
+	}
 
-		@ErrorListener
-		public void receive2(ErrorMessage errorMessage) {
-			Assert.isTrue(errorMessage.getPayload().toString().equals(ERROR_MSG), "Error payload is incorrect");
-			countDownLatch.countDown();
-		}
+	public interface ErrorHandler {
+
+		String ERROR_OUTPUT = "errorOutput";
+
+		@Output(ERROR_OUTPUT)
+		MessageChannel output();
+
 	}
 }
