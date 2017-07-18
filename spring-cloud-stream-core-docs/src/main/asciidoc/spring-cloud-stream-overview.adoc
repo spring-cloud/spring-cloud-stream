@@ -212,9 +212,10 @@ The `@EnableBinding` annotation can take as parameters one or more interface cla
 
 [NOTE]
 ====
-In Spring Cloud Stream, the only supported bindable `MessageChannel` components are the Spring Messaging `MessageChannel` and its extension `SubscribableChannel`.
-Future versions should extend this support to other types of components, using the same mechanism.
-In this documentation, we will continue to refer to channels.
+In Spring Cloud Stream, the bindable `MessageChannel` components are the Spring Messaging `MessageChannel` (for outbound) and its extension `SubscribableChannel` (for inbound).
+Using the same mechanism other bindable components can be supported.
+`KStream` support in Spring Cloud Stream Kafka binder is one such example where KStream is used as inbound/outbound `bindable` components.
+In this documentation, we will continue to refer to MessageChannels as the `bindable` components.
 ====
 
 ==== `@Input` and `@Output`
