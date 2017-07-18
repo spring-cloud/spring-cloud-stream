@@ -2,8 +2,7 @@
 
 #Execute this script from local checkout of spring cloud stream
 
-./mvnw versions:update-property -Dproperty=spring-cloud-stream.version -DnewVersion=[$2] -DallowSnapshots=true -DallowDowngrade=true
-./mvnw versions:update-parent -DparentVersion=[0.0.1,$3] -Pspring -DgenerateBackupPoms=false -DallowSnapshots=true
+./mvnw versions:update-parent -DparentVersion=[0.0.1,$2] -Pspring -DgenerateBackupPoms=false -DallowSnapshots=true
 ./mvnw versions:set -DnewVersion=$1 -DgenerateBackupPoms=false
 
 
