@@ -110,10 +110,10 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 
 		private final Expression condition;
 
-		private final StreamListenerMessageHandler streamListenerMessageHandler;
+		private final ListenerMethodMessageHandler streamListenerMessageHandler;
 
 		ConditionalStreamListenerMessageHandlerWrapper(Expression condition,
-				StreamListenerMessageHandler streamListenerMessageHandler) {
+				ListenerMethodMessageHandler streamListenerMessageHandler) {
 			Assert.notNull(streamListenerMessageHandler, "the message handler cannot be null");
 			Assert.isTrue(condition == null || streamListenerMessageHandler.isVoid(),
 					"cannot specify a condition and a return value at the same time");
@@ -129,7 +129,7 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 			return this.streamListenerMessageHandler.isVoid();
 		}
 
-		public StreamListenerMessageHandler getStreamListenerMessageHandler() {
+		public ListenerMethodMessageHandler getStreamListenerMessageHandler() {
 			return streamListenerMessageHandler;
 		}
 	}

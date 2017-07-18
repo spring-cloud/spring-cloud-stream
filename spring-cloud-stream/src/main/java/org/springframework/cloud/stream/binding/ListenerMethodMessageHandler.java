@@ -25,11 +25,11 @@ import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
  * @author Marius Bogoevici
  * @since 1.2
  */
-public class StreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
+public class ListenerMethodMessageHandler extends AbstractReplyProducingMessageHandler {
 
 	private final InvocableHandlerMethod invocableHandlerMethod;
 
-	StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod) {
+	ListenerMethodMessageHandler(InvocableHandlerMethod invocableHandlerMethod) {
 		this.invocableHandlerMethod = invocableHandlerMethod;
 	}
 

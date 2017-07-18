@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
 
+import org.springframework.aop.framework.Advised;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -27,6 +29,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -144,5 +147,38 @@ public class StreamListenerMethodUtils {
 			return output.value();
 		}
 		return null;
+	}
+
+	protected static Method checkProxy(Method methodArg, Object bean) {
+		Method method = methodArg;
+		if (AopUtils.isJdkDynamicProxy(bean)) {
+			try {
+				// Found a @StreamListener method on the target class for this JDK proxy
+				// ->
+				// is it also present on the proxy itself?
+				method = bean.getClass().getMethod(method.getName(), method.getParameterTypes());
+				Class<?>[] proxiedInterfaces = ((Advised) bean).getProxiedInterfaces();
+				for (Class<?> iface : proxiedInterfaces) {
+					try {
+						method = iface.getMethod(method.getName(), method.getParameterTypes());
+						break;
+					}
+					catch (NoSuchMethodException noMethod) {
+					}
+				}
+			}
+			catch (SecurityException ex) {
+				ReflectionUtils.handleReflectionException(ex);
+			}
+			catch (NoSuchMethodException ex) {
+				throw new IllegalStateException(String.format(
+						"Listener method '%s' found on bean target class '%s', "
+								+ "but not found in any interface(s) for bean JDK proxy. Either "
+								+ "pull the method up to an interface or switch to subclass (CGLIB) "
+								+ "proxies by setting proxy-target-class/proxyTargetClass attribute to 'true'",
+						method.getName(), method.getDeclaringClass().getSimpleName()), ex);
+			}
+		}
+		return method;
 	}
 }

@@ -42,6 +42,7 @@ import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
+import org.springframework.cloud.stream.binding.ErrorListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
@@ -106,6 +107,11 @@ public class BindingServiceConfiguration {
 	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
 	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
 		return new StreamListenerAnnotationBeanPostProcessor();
+	}
+
+	@Bean
+	public static ErrorListenerAnnotationBeanPostProcessor errorListenerAnnotationBeanPostProcessor() {
+		return new ErrorListenerAnnotationBeanPostProcessor();
 	}
 
 	@Bean
