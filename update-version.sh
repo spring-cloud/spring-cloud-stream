@@ -7,7 +7,7 @@
 
 
 
-lines=$(find . -name 'pom.xml' | xargs egrep "SNAPSHOT|M[0-9]|RC[0-9]" | grep -v regex | wc -l)
+lines=$(find . -name 'pom.xml' | xargs egrep "SNAPSHOT" | grep -v regex | wc -l)
 if [ $lines -eq 0 ]; then
 	echo "No snapshots found"
 else
