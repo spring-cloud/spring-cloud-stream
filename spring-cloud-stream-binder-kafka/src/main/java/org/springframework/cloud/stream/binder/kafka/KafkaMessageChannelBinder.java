@@ -282,10 +282,6 @@ public class KafkaMessageChannelBinder extends
 			this.logger.debug(
 					"Listened partitions: " + StringUtils.collectionToCommaDelimitedString(listenedPartitions));
 		}
-		if (this.logger.isDebugEnabled()) {
-			this.logger.debug(
-					"Listened partitions: " + StringUtils.collectionToCommaDelimitedString(listenedPartitions));
-		}
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter<>(
 				messageListenerContainer);
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
