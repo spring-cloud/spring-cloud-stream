@@ -16,13 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -32,20 +25,14 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.core.serializer.support.SerializationFailedException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -56,6 +43,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
@@ -75,8 +63,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	private volatile Codec codec;
 
 	private volatile EvaluationContext evaluationContext;
-
-	private volatile Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -166,107 +152,19 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
-		Object originalPayload = message.getPayload();
-		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-
-		// Pass content type as String since some transport adapters will exclude
-		// CONTENT_TYPE Header otherwise
-		Object contentType = JavaClassMimeTypeConversion
-				.mimeTypeFromObject(originalPayload, ObjectUtils.nullSafeToString(originalContentType)).toString();
-		Object payload = serializePayloadIfNecessary(originalPayload);
-		MessageValues messageValues = new MessageValues(message);
-		messageValues.setPayload(payload);
-		messageValues.put(MessageHeaders.CONTENT_TYPE, contentType);
-		if (originalContentType != null && !originalContentType.toString().equals(contentType.toString())) {
-			messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
-		}
-		return messageValues;
+		return MessageSerializationUtils.serializePayload(message, this.codec);
 	}
 
 	protected final byte[] serializePayloadIfNecessary(Object originalPayload) {
-		if (originalPayload instanceof byte[]) {
-			return (byte[]) originalPayload;
-		}
-		else {
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			try {
-				if (originalPayload instanceof String) {
-					return ((String) originalPayload).getBytes("UTF-8");
-				}
-				this.codec.encode(originalPayload, bos);
-				return bos.toByteArray();
-			}
-			catch (IOException e) {
-				throw new SerializationFailedException(
-						"unable to serialize payload [" + originalPayload.getClass().getName() + "]", e);
-			}
-		}
+		return MessageSerializationUtils.serializePayload(originalPayload, this.codec);
 	}
 
 	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
-		return deserializePayloadIfNecessary(new MessageValues(message));
+		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver, this.codec);
 	}
 
 	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
-		Object originalPayload = messageValues.getPayload();
-		MimeType contentType = this.contentTypeResolver.resolve(messageValues);
-		Object payload = deserializePayload(originalPayload, contentType);
-		if (payload != null) {
-			messageValues.setPayload(payload);
-			Object originalContentType = messageValues.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			// Reset content-type only if the original content type is not null (when
-			// receiving messages from
-			// non-SCSt applications).
-			if (originalContentType != null) {
-				messageValues.put(MessageHeaders.CONTENT_TYPE, originalContentType);
-				messageValues.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			}
-		}
-		return messageValues;
-	}
-
-	private Object deserializePayload(Object payload, MimeType contentType) {
-		if (payload instanceof byte[]) {
-			if (contentType == null || MimeTypeUtils.APPLICATION_OCTET_STREAM.equals(contentType)) {
-				return payload;
-			}
-			else {
-				return deserializePayload((byte[]) payload, contentType);
-			}
-		}
-		return payload;
-	}
-
-	private Object deserializePayload(byte[] bytes, MimeType contentType) {
-		if ("text".equalsIgnoreCase(contentType.getType()) || MimeTypeUtils.APPLICATION_JSON.equals(contentType)) {
-			try {
-				return new String(bytes, "UTF-8");
-			}
-			catch (UnsupportedEncodingException e) {
-				String errorMessage = "unable to deserialize [java.lang.String]. Encoding not supported. "
-						+ e.getMessage();
-				logger.error(errorMessage);
-				throw new SerializationFailedException(errorMessage, e);
-			}
-		}
-		else {
-			String className = JavaClassMimeTypeConversion.classNameFromMimeType(contentType);
-			try {
-				// Cache types to avoid unnecessary ClassUtils.forName calls.
-				Class<?> targetType = this.payloadTypeCache.get(className);
-				if (targetType == null) {
-					targetType = ClassUtils.forName(className, null);
-					this.payloadTypeCache.put(className, targetType);
-				}
-				return this.codec.decode(bytes, targetType);
-			} // catch all exceptions that could occur during de-serialization
-			catch (Exception e) {
-				String errorMessage = "Unable to deserialize [" + className + "] using the contentType [" + contentType
-						+ "] " + e.getMessage();
-				logger.error(errorMessage);
-				throw new SerializationFailedException(errorMessage, e);
-			}
-		}
+		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver, this.codec);
 	}
 
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
@@ -290,62 +188,5 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		template.setRetryPolicy(retryPolicy);
 		template.setBackOffPolicy(backOffPolicy);
 		return template;
-	}
-
-	/**
-	 * Handles representing any java class as a {@link MimeType}.
-	 *
-	 * @author David Turanski
-	 * @author Ilayaperumal Gopinathan
-	 */
-	public abstract static class JavaClassMimeTypeConversion {
-
-		private static ConcurrentMap<String, MimeType> mimeTypesCache = new ConcurrentHashMap<>();
-
-		static MimeType mimeTypeFromObject(Object payload, String originalContentType) {
-			Assert.notNull(payload, "payload object cannot be null.");
-			if (payload instanceof byte[]) {
-				return MimeTypeUtils.APPLICATION_OCTET_STREAM;
-			}
-			if (payload instanceof String) {
-				return MimeTypeUtils.APPLICATION_JSON_VALUE.equals(originalContentType) ? MimeTypeUtils.APPLICATION_JSON
-						: MimeTypeUtils.TEXT_PLAIN;
-			}
-			String className = payload.getClass().getName();
-			MimeType mimeType = mimeTypesCache.get(className);
-			if (mimeType == null) {
-				String modifiedClassName = className;
-				if (payload.getClass().isArray()) {
-					// Need to remove trailing ';' for an object array, e.g.
-					// "[Ljava.lang.String;" or multi-dimensional
-					// "[[[Ljava.lang.String;"
-					if (modifiedClassName.endsWith(";")) {
-						modifiedClassName = modifiedClassName.substring(0, modifiedClassName.length() - 1);
-					}
-					// Wrap in quotes to handle the illegal '[' character
-					modifiedClassName = "\"" + modifiedClassName + "\"";
-				}
-				mimeType = MimeType.valueOf("application/x-java-object;type=" + modifiedClassName);
-				mimeTypesCache.put(className, mimeType);
-			}
-			return mimeType;
-		}
-
-		static String classNameFromMimeType(MimeType mimeType) {
-			Assert.notNull(mimeType, "mimeType cannot be null.");
-			String className = mimeType.getParameter("type");
-			if (className == null) {
-				return null;
-			}
-			// unwrap quotes if any
-			className = className.replace("\"", "");
-
-			// restore trailing ';'
-			if (className.contains("[L")) {
-				className += ";";
-			}
-			return className;
-		}
-
 	}
 }
