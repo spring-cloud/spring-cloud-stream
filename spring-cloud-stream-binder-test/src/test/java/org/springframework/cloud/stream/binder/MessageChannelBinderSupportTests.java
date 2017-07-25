@@ -25,7 +25,6 @@ import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.springframework.cloud.stream.binder.AbstractBinder.JavaClassMimeTypeConversion;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
@@ -176,36 +175,36 @@ public class MessageChannelBinderSupportTests {
 
 	@Test
 	public void mimeTypeIsSimpleObject() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new Object(), null);
-		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
+		MimeType mt = PayloadSerdeUtils.JavaClassMimeTypeConversion.mimeTypeFromObject(new Object(), null);
+		String className = PayloadSerdeUtils.JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(Object.class);
 	}
 
 	@Test
 	public void mimeTypeIsObjectArray() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0], null);
-		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
+		MimeType mt = PayloadSerdeUtils.JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0], null);
+		String className = PayloadSerdeUtils.JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(String[].class);
 	}
 
 	@Test
 	public void mimeTypeIsMultiDimensionalObjectArray() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0][0][0], null);
-		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
+		MimeType mt = PayloadSerdeUtils.JavaClassMimeTypeConversion.mimeTypeFromObject(new String[0][0][0], null);
+		String className = PayloadSerdeUtils.JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(String[][][].class);
 	}
 
 	@Test
 	public void mimeTypeIsPrimitiveArray() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0], null);
-		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
+		MimeType mt = PayloadSerdeUtils.JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0], null);
+		String className = PayloadSerdeUtils.JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(int[].class);
 	}
 
 	@Test
 	public void mimeTypeIsMultiDimensionalPrimitiveArray() throws ClassNotFoundException {
-		MimeType mt = JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0][0][0], null);
-		String className = JavaClassMimeTypeConversion.classNameFromMimeType(mt);
+		MimeType mt = PayloadSerdeUtils.JavaClassMimeTypeConversion.mimeTypeFromObject(new int[0][0][0], null);
+		String className = PayloadSerdeUtils.JavaClassMimeTypeConversion.classNameFromMimeType(mt);
 		assertThat(Class.forName(className)).isEqualTo(int[][][].class);
 	}
 
