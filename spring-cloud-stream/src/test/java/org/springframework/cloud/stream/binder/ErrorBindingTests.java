@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -27,8 +29,14 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.GenericMessage;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
@@ -77,10 +85,49 @@ public class ErrorBindingTests {
 		applicationContext.close();
 	}
 
+	@Test
+	public void testErrorChannelIsBoundWithCorrectContentTypeConverter() {
+		final AtomicBoolean received = new AtomicBoolean(false);
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class,
+				"--spring.cloud.stream.bindings.error.destination=foo",
+				"--spring.cloud.stream.bindings.error.content-type=application/json",
+				"--server.port=0");
+
+		MessageChannel errorChannel = applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
+				MessageChannel.class);
+
+		((SubscribableChannel)errorChannel).subscribe(new MessageHandler() {
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				assertThat(message.getPayload()).isEqualTo("{\"foo\":\"bar\"}");
+				received.set(true);
+			}
+		});
+
+		Foo foo = new Foo();
+		foo.setFoo("bar");
+
+		errorChannel.send(new GenericMessage<>(foo));
+		assertThat(received.get()).isTrue();
+		applicationContext.close();
+	}
+
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestProcessor {
 
+	}
+
+	private class Foo {
+		String foo;
+
+		public String getFoo() {
+			return foo;
+		}
+
+		public void setFoo(String foo) {
+			this.foo = foo;
+		}
 	}
 }

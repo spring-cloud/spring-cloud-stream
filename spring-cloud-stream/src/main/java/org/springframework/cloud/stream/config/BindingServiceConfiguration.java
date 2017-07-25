@@ -166,7 +166,9 @@ public class BindingServiceConfiguration {
 	@Bean
 	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
 	public SingleBindingTargetBindable<MessageChannel> errorChannelBindable(
-			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
+			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel,
+			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		compositeMessageChannelConfigurer.configureOutputChannel(errorChannel, ERROR_CHANNEL_NAME);
 		return new SingleBindingTargetBindable<MessageChannel>(ERROR_CHANNEL_NAME, errorChannel);
 	}
 
