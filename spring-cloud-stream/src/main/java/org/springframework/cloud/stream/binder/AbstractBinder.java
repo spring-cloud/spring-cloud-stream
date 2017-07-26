@@ -157,20 +157,20 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
-		return PayloadSerdeUtils.serializePayloadIfNecessary(message, this.codec);
+		return MessageSerializationUtils.serializePayload(message, this.codec);
 	}
 
 	protected final byte[] serializePayloadIfNecessary(Object originalPayload) {
-		return PayloadSerdeUtils.serializePayloadIfNecessary(originalPayload, this.codec);
+		return MessageSerializationUtils.serializePayload(originalPayload, this.codec);
 	}
 
 	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
-		return PayloadSerdeUtils.deserializePayloadIfNecessary(new MessageValues(message), this.contentTypeResolver,
+		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver,
 				this.payloadTypeCache, this.codec);
 	}
 
 	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
-		return PayloadSerdeUtils.deserializePayloadIfNecessary(messageValues, this.contentTypeResolver,
+		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver,
 				this.payloadTypeCache, this.codec);
 	}
 

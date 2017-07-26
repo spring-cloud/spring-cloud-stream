@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,7 +29,6 @@ import org.springframework.integration.codec.Codec;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.ContentTypeResolver;
-import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
@@ -42,9 +39,9 @@ import org.springframework.util.ObjectUtils;
  *
  * @author Soby Chacko
  */
-public abstract class PayloadSerdeUtils {
+public abstract class MessageSerializationUtils {
 
-	protected static final Log LOGGER = LogFactory.getLog(PayloadSerdeUtils.class);
+	protected static final Log LOGGER = LogFactory.getLog(MessageSerializationUtils.class);
 
 	/**
 	 * Serialize the message payload unless it is a byte array.
@@ -53,15 +50,15 @@ public abstract class PayloadSerdeUtils {
 	 * @param codec the codec used for serialization
 	 * @return the Message with teh serialized payload
 	 */
-	public static MessageValues serializePayloadIfNecessary(Message<?> message, Codec codec) {
+	public static MessageValues serializePayload(Message<?> message, Codec codec) {
 		Object originalPayload = message.getPayload();
 		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 
 		// Pass content type as String since some transport adapters will exclude
 		// CONTENT_TYPE Header otherwise
-		Object contentType = JavaClassMimeTypeConversion
+		Object contentType = JavaClassMimeTypeUtils
 				.mimeTypeFromObject(originalPayload, ObjectUtils.nullSafeToString(originalContentType)).toString();
-		Object payload = serializePayloadIfNecessary(originalPayload, codec);
+		Object payload = serializePayload(originalPayload, codec);
 		MessageValues messageValues = new MessageValues(message);
 		messageValues.setPayload(payload);
 		messageValues.put(MessageHeaders.CONTENT_TYPE, contentType);
@@ -78,7 +75,7 @@ public abstract class PayloadSerdeUtils {
 	 * @param codec the codec used for serialization
 	 * @return the serialized byte array or the original payload if it is already a byte array
 	 */
-	public static byte[] serializePayloadIfNecessary(Object originalPayload, Codec codec) {
+	public static byte[] serializePayload(Object originalPayload, Codec codec) {
 		if (originalPayload instanceof byte[]) {
 			return (byte[]) originalPayload;
 		}
@@ -107,8 +104,8 @@ public abstract class PayloadSerdeUtils {
 	 * @param codec used for deserialization
 	 * @return Deserialized Message.
 	 */
-	public static MessageValues deserializePayloadIfNecessary(MessageValues messageValues, ContentTypeResolver contentTypeResolver,
-															Map<String, Class<?>> payloadTypeCache, Codec codec) {
+	public static MessageValues deserializePayload(MessageValues messageValues, ContentTypeResolver contentTypeResolver,
+												Map<String, Class<?>> payloadTypeCache, Codec codec) {
 		Object originalPayload = messageValues.getPayload();
 		MimeType contentType = contentTypeResolver.resolve(new MessageHeaders(messageValues.getHeaders()));
 		Object payload = deserializePayload(originalPayload, contentType, payloadTypeCache, codec);
@@ -148,12 +145,12 @@ public abstract class PayloadSerdeUtils {
 			catch (UnsupportedEncodingException e) {
 				String errorMessage = "unable to deserialize [java.lang.String]. Encoding not supported. "
 						+ e.getMessage();
-				PayloadSerdeUtils.LOGGER.error(errorMessage);
+				MessageSerializationUtils.LOGGER.error(errorMessage);
 				throw new SerializationFailedException(errorMessage, e);
 			}
 		}
 		else {
-			String className = JavaClassMimeTypeConversion.classNameFromMimeType(contentType);
+			String className = JavaClassMimeTypeUtils.classNameFromMimeType(contentType);
 			try {
 				// Cache types to avoid unnecessary ClassUtils.forName calls.
 				Class<?> targetType = payloadTypeCache.get(className);
@@ -166,65 +163,9 @@ public abstract class PayloadSerdeUtils {
 			catch (Exception e) {
 				String errorMessage = "Unable to deserialize [" + className + "] using the contentType [" + contentType
 						+ "] " + e.getMessage();
-				PayloadSerdeUtils.LOGGER.error(errorMessage);
+				MessageSerializationUtils.LOGGER.error(errorMessage);
 				throw new SerializationFailedException(errorMessage, e);
 			}
-		}
-	}
-
-	/**
-	 * Handles representing any java class as a {@link MimeType}.
-	 *
-	 * @author David Turanski
-	 * @author Ilayaperumal Gopinathan
-	 */
-	public abstract static class JavaClassMimeTypeConversion {
-
-		private static ConcurrentMap<String, MimeType> mimeTypesCache = new ConcurrentHashMap<>();
-
-		static MimeType mimeTypeFromObject(Object payload, String originalContentType) {
-			Assert.notNull(payload, "payload object cannot be null.");
-			if (payload instanceof byte[]) {
-				return MimeTypeUtils.APPLICATION_OCTET_STREAM;
-			}
-			if (payload instanceof String) {
-				return MimeTypeUtils.APPLICATION_JSON_VALUE.equals(originalContentType) ? MimeTypeUtils.APPLICATION_JSON
-						: MimeTypeUtils.TEXT_PLAIN;
-			}
-			String className = payload.getClass().getName();
-			MimeType mimeType = mimeTypesCache.get(className);
-			if (mimeType == null) {
-				String modifiedClassName = className;
-				if (payload.getClass().isArray()) {
-					// Need to remove trailing ';' for an object array, e.g.
-					// "[Ljava.lang.String;" or multi-dimensional
-					// "[[[Ljava.lang.String;"
-					if (modifiedClassName.endsWith(";")) {
-						modifiedClassName = modifiedClassName.substring(0, modifiedClassName.length() - 1);
-					}
-					// Wrap in quotes to handle the illegal '[' character
-					modifiedClassName = "\"" + modifiedClassName + "\"";
-				}
-				mimeType = MimeType.valueOf("application/x-java-object;type=" + modifiedClassName);
-				mimeTypesCache.put(className, mimeType);
-			}
-			return mimeType;
-		}
-
-		static String classNameFromMimeType(MimeType mimeType) {
-			Assert.notNull(mimeType, "mimeType cannot be null.");
-			String className = mimeType.getParameter("type");
-			if (className == null) {
-				return null;
-			}
-			// unwrap quotes if any
-			className = className.replace("\"", "");
-
-			// restore trailing ';'
-			if (className.contains("[L")) {
-				className += ";";
-			}
-			return className;
 		}
 	}
 }
