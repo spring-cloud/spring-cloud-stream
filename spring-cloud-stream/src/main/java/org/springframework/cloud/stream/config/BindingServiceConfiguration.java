@@ -54,12 +54,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.expression.PropertyAccessor;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
+import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.json.JsonPropertyAccessor;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
@@ -83,7 +86,9 @@ public class BindingServiceConfiguration {
 
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
 
-	private static final String ERROR_CHANNEL_NAME = "error";
+	public static final String ERROR_BRIDGE_CHANNEL = "errorBridgeChannel";
+
+	private static final String ERROR_NAME = "error";
 
 	@Autowired(required = false)
 	private ObjectMapper objectMapper;
@@ -164,12 +169,23 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_CHANNEL_NAME + ".destination")
-	public SingleBindingTargetBindable<MessageChannel> errorChannelBindable(
-			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel,
+	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_NAME + ".destination")
+	public MessageChannel errorBridgeChannel(
+			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
+		SubscribableChannel errorBridgeChannel = new DirectChannel();
+		BridgeHandler handler = new BridgeHandler();
+		handler.setOutputChannel(errorBridgeChannel);
+		errorChannel.subscribe(handler);
+		return errorBridgeChannel;
+	}
+
+	@Bean
+	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_NAME + ".destination")
+	public SingleBindingTargetBindable<MessageChannel> errorBridgeChannelBindable(
+			@Qualifier(ERROR_BRIDGE_CHANNEL) MessageChannel errorBridgeChannel,
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		compositeMessageChannelConfigurer.configureOutputChannel(errorChannel, ERROR_CHANNEL_NAME);
-		return new SingleBindingTargetBindable<MessageChannel>(ERROR_CHANNEL_NAME, errorChannel);
+		compositeMessageChannelConfigurer.configureOutputChannel(errorBridgeChannel, ERROR_NAME);
+		return new SingleBindingTargetBindable<>(ERROR_NAME, errorBridgeChannel);
 	}
 
 	@Bean

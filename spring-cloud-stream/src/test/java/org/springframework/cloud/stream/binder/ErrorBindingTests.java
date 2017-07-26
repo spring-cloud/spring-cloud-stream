@@ -24,11 +24,11 @@ import org.mockito.Mockito;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
-import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -74,7 +74,7 @@ public class ErrorBindingTests {
 		@SuppressWarnings("unchecked")
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 
-		MessageChannel errorChannel = applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
+		MessageChannel errorChannel = applicationContext.getBean(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL,
 				MessageChannel.class);
 
 		Mockito.verify(binder).bindConsumer(eq("input"), isNull(String.class), any(MessageChannel.class),
@@ -93,7 +93,7 @@ public class ErrorBindingTests {
 				"--spring.cloud.stream.bindings.error.content-type=application/json",
 				"--server.port=0");
 
-		MessageChannel errorChannel = applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
+		MessageChannel errorChannel = applicationContext.getBean(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL,
 				MessageChannel.class);
 
 		((SubscribableChannel)errorChannel).subscribe(new MessageHandler() {

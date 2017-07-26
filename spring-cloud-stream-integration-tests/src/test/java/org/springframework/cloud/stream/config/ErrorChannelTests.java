@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -32,7 +33,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.annotation.Poller;
-import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -49,7 +49,8 @@ import org.springframework.util.Assert;
 public class ErrorChannelTests {
 
 	@Autowired
-	private PublishSubscribeChannel errorChannel;
+	@Qualifier(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL)
+	private MessageChannel errorBridgeChannel;
 
 	@Autowired
 	private BinderFactory binderFactory;
@@ -57,7 +58,7 @@ public class ErrorChannelTests {
 	@Test
 	public void testErrorChannelBinding() throws Exception {
 		Message<?> message = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(errorChannel).poll(10, TimeUnit.SECONDS);
+				.messageCollector().forChannel(errorBridgeChannel).poll(10, TimeUnit.SECONDS);
 		Assert.isTrue(message instanceof ErrorMessage, "Message should be an instance of ErrorMessage");
 		Assert.isTrue(message.getPayload() instanceof MessagingException, "Message payload should be an instance" +
 				"of MessagingException");
