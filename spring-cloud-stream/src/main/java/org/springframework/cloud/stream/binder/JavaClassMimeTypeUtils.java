@@ -74,7 +74,7 @@ public abstract class JavaClassMimeTypeUtils {
 	 * Retrieve the class name from {@link MimeType}.
 	 *
 	 * @param mimeType {@link MimeType} to retrieve class name from
-	 * @return class name from mime type
+	 * @return class name from MimeType and null if the class name cannot be determined from the MimeType
 	 */
 	public static String classNameFromMimeType(MimeType mimeType) {
 		Assert.notNull(mimeType, "mimeType cannot be null.");

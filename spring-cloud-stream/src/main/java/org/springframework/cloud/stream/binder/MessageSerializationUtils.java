@@ -20,9 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.core.serializer.support.SerializationFailedException;
 import org.springframework.integration.codec.Codec;
@@ -41,7 +39,7 @@ import org.springframework.util.ObjectUtils;
  */
 public abstract class MessageSerializationUtils {
 
-	protected static final Log LOGGER = LogFactory.getLog(MessageSerializationUtils.class);
+	private static Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
 
 	/**
 	 * Serialize the message payload unless it is a byte array.
@@ -74,6 +72,7 @@ public abstract class MessageSerializationUtils {
 	 * @param originalPayload the payload to serialize
 	 * @param codec the codec used for serialization
 	 * @return the serialized byte array or the original payload if it is already a byte array
+	 * @throws SerializationFailedException thrown when serialization failed
 	 */
 	public static byte[] serializePayload(Object originalPayload, Codec codec) {
 		if (originalPayload instanceof byte[]) {
@@ -100,15 +99,14 @@ public abstract class MessageSerializationUtils {
 	 *
 	 * @param messageValues message with the payload to deserialize
 	 * @param contentTypeResolver used for resolving the mime type.
-	 * @param payloadTypeCache Map used for caching the payload type
 	 * @param codec used for deserialization
 	 * @return Deserialized Message.
 	 */
 	public static MessageValues deserializePayload(MessageValues messageValues, ContentTypeResolver contentTypeResolver,
-												Map<String, Class<?>> payloadTypeCache, Codec codec) {
+												Codec codec) {
 		Object originalPayload = messageValues.getPayload();
 		MimeType contentType = contentTypeResolver.resolve(new MessageHeaders(messageValues.getHeaders()));
-		Object payload = deserializePayload(originalPayload, contentType, payloadTypeCache, codec);
+		Object payload = deserializePayload(originalPayload, contentType, codec);
 		if (payload != null) {
 			messageValues.setPayload(payload);
 			Object originalContentType = messageValues.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
@@ -123,8 +121,7 @@ public abstract class MessageSerializationUtils {
 		return messageValues;
 	}
 
-	private static Object deserializePayload(Object payload, MimeType contentType,
-											Map<String, Class<?>> payloadTypeCache, Codec codec) {
+	private static Object deserializePayload(Object payload, MimeType contentType, Codec codec) {
 		if (payload instanceof byte[]) {
 			if (contentType == null || MimeTypeUtils.APPLICATION_OCTET_STREAM.equals(contentType)) {
 				return payload;
@@ -145,7 +142,6 @@ public abstract class MessageSerializationUtils {
 			catch (UnsupportedEncodingException e) {
 				String errorMessage = "unable to deserialize [java.lang.String]. Encoding not supported. "
 						+ e.getMessage();
-				MessageSerializationUtils.LOGGER.error(errorMessage);
 				throw new SerializationFailedException(errorMessage, e);
 			}
 		}
@@ -163,7 +159,6 @@ public abstract class MessageSerializationUtils {
 			catch (Exception e) {
 				String errorMessage = "Unable to deserialize [" + className + "] using the contentType [" + contentType
 						+ "] " + e.getMessage();
-				MessageSerializationUtils.LOGGER.error(errorMessage);
 				throw new SerializationFailedException(errorMessage, e);
 			}
 		}

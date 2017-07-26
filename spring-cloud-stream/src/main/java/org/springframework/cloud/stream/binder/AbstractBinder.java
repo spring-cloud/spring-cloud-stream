@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -66,8 +63,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	private volatile Codec codec;
 
 	private volatile EvaluationContext evaluationContext;
-
-	private volatile Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -165,13 +160,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
-		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver,
-				this.payloadTypeCache, this.codec);
+		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver, this.codec);
 	}
 
 	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
-		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver,
-				this.payloadTypeCache, this.codec);
+		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver, this.codec);
 	}
 
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
