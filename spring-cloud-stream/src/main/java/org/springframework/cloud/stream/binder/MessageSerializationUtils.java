@@ -39,7 +39,7 @@ import org.springframework.util.ObjectUtils;
  */
 public abstract class MessageSerializationUtils {
 
-	private static Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
+	private static final Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
 
 	/**
 	 * Serialize the message payload unless it is a byte array.
