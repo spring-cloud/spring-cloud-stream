@@ -88,7 +88,7 @@ public class BindingServiceConfiguration {
 
 	public static final String ERROR_BRIDGE_CHANNEL = "errorBridgeChannel";
 
-	private static final String ERROR_NAME = "error";
+	private static final String ERROR_KEY_NAME = "error";
 
 	@Autowired(required = false)
 	private ObjectMapper objectMapper;
@@ -169,7 +169,7 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_NAME + ".destination")
+	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_KEY_NAME + ".destination")
 	public MessageChannel errorBridgeChannel(
 			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
 		SubscribableChannel errorBridgeChannel = new DirectChannel();
@@ -180,12 +180,12 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_NAME + ".destination")
+	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_KEY_NAME + ".destination")
 	public SingleBindingTargetBindable<MessageChannel> errorBridgeChannelBindable(
 			@Qualifier(ERROR_BRIDGE_CHANNEL) MessageChannel errorBridgeChannel,
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		compositeMessageChannelConfigurer.configureOutputChannel(errorBridgeChannel, ERROR_NAME);
-		return new SingleBindingTargetBindable<>(ERROR_NAME, errorBridgeChannel);
+		compositeMessageChannelConfigurer.configureOutputChannel(errorBridgeChannel, ERROR_KEY_NAME);
+		return new SingleBindingTargetBindable<>(ERROR_KEY_NAME, errorBridgeChannel);
 	}
 
 	@Bean
