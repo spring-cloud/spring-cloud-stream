@@ -29,6 +29,7 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -93,10 +94,12 @@ public class ErrorBindingTests {
 				"--spring.cloud.stream.bindings.error.content-type=application/json",
 				"--server.port=0");
 
-		MessageChannel errorChannel = applicationContext.getBean(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL,
+		MessageChannel errorChannel = applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
+				MessageChannel.class);
+		MessageChannel errorBridgeChannel = applicationContext.getBean(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL,
 				MessageChannel.class);
 
-		((SubscribableChannel)errorChannel).subscribe(new MessageHandler() {
+		((SubscribableChannel)errorBridgeChannel).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				assertThat(message.getPayload()).isEqualTo("{\"foo\":\"bar\"}");
@@ -108,6 +111,38 @@ public class ErrorBindingTests {
 		foo.setFoo("bar");
 
 		errorChannel.send(new GenericMessage<>(foo));
+		assertThat(received.get()).isTrue();
+		applicationContext.close();
+	}
+
+	@Test
+	public void testErrorChannelForExceptionWhenContentTypeIsSet() {
+		final AtomicBoolean received = new AtomicBoolean(false);
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class,
+				"--spring.cloud.stream.bindings.error.destination=foo",
+				"--spring.cloud.stream.bindings.error.content-type=application/json",
+				"--server.port=0");
+
+		MessageChannel errorChannel = applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
+				MessageChannel.class);
+		MessageChannel errorBridgeChannel = applicationContext.getBean(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL,
+				MessageChannel.class);
+
+		((SubscribableChannel)errorBridgeChannel).subscribe(new MessageHandler() {
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				String payload = (String) message.getPayload();
+				assertThat(payload.contains("cause")).isTrue();
+				assertThat(payload.contains("stackTrace")).isTrue();
+				assertThat(payload.contains("throwing exception")).isTrue();
+				received.set(true);
+			}
+		});
+
+		Foo foo = new Foo();
+		foo.setFoo("bar");
+
+		errorChannel.send(new GenericMessage<>(new Exception("throwing exception")));
 		assertThat(received.get()).isTrue();
 		applicationContext.close();
 	}
