@@ -35,6 +35,7 @@ import org.springframework.boot.actuate.endpoint.mvc.AbstractMvcEndpoint;
 import org.springframework.boot.actuate.endpoint.mvc.EndpointHandlerMapping;
 import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.DispatcherServletAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.HttpMessageConvertersAutoConfiguration;
@@ -190,31 +191,12 @@ public class AggregationTest {
 	}
 
 	@Test
-	public void testParentArgsAndSourcesWithWebEnabled() {
+	public void testParentArgsAndSources() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder.parent(DummyConfig.class)
 				.from(TestSource.class)
 				.to(TestProcessor.class)
-				.run("--server.port=0");
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
-		assertThat(sources).containsExactlyInAnyOrder(AggregateApplicationBuilder.ParentConfiguration.class,
-				MockBinderRegistryConfiguration.class, DummyConfig.class,
-				EmbeddedServletContainerAutoConfiguration.class, WebMvcAutoConfiguration.class,
-				DispatcherServletAutoConfiguration.class, HttpMessageConvertersAutoConfiguration.class,
-				ManagementServerPropertiesAutoConfiguration.class, ServerPropertiesAutoConfiguration.class);
-		context.close();
-	}
-
-	@Test
-	public void testParentArgsAndSourcesWithWebDisabled() {
-		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--foo1=bar1");
-		final ConfigurableApplicationContext context = aggregateApplicationBuilder
-				.parent(DummyConfig.class, "--foo2=bar2").web(false)
-				.from(TestSource.class)
-				.namespace("foo").to(TestProcessor.class).namespace("bar")
 				.run("--server.port=0");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
 		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");

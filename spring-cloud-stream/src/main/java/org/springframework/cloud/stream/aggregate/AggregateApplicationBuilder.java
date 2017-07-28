@@ -29,16 +29,10 @@ import java.util.Set;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.boot.actuate.autoconfigure.ManagementServerPropertiesAutoConfiguration;
 import org.springframework.boot.actuate.endpoint.MetricReaderPublicMetrics;
 import org.springframework.boot.actuate.endpoint.MetricsEndpoint;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.web.DispatcherServletAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.HttpMessageConvertersAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.ServerPropertiesAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
 import org.springframework.boot.bind.PropertySourcesPropertyValues;
 import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.boot.bind.RelaxedNames;
@@ -206,13 +200,6 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			appConfigurers.put(appConfigurer, appConfigurer.namespace);
 		}
 		if (this.parentContext == null) {
-			if (Boolean.TRUE.equals(this.webEnvironment)) {
-				this.addParentSources(
-						new Object[] { EmbeddedServletContainerAutoConfiguration.class, WebMvcAutoConfiguration.class,
-								DispatcherServletAutoConfiguration.class, HttpMessageConvertersAutoConfiguration.class,
-								ManagementServerPropertiesAutoConfiguration.class,
-								ServerPropertiesAutoConfiguration.class });
-			}
 			this.parentContext = AggregateApplicationUtils.createParentContext(
 					this.parentSources.toArray(new Object[0]),
 					this.parentArgs.toArray(new String[0]), selfContained(), this.webEnvironment, this.headless);
@@ -272,12 +259,18 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 				appConfigurer.args(argsToUpdate.toArray(new String[0]));
 			}
 		}
+		AggregateWebConfiguration.WebEndpointConfigurer webEndpointConfigurer = null;
 		try {
-			AggregateWebConfiguration.WebEndpointConfigurer webEndpointConfigurer = this.parentContext
+			webEndpointConfigurer = this.parentContext
 					.getBean(AggregateWebConfiguration.WebEndpointConfigurer.class);
-			webEndpointConfigurer.exposeWebEndpoints(apps);
 		}
 		catch (BeansException e) {
+			// ignore as the bean WebEndpointConfigurer may not be available.
+		}
+		if (Boolean.TRUE.equals(this.webEnvironment) && webEndpointConfigurer != null) {
+			webEndpointConfigurer.exposeWebEndpoints(apps);
+		}
+		else {
 			for (int i = apps.size() - 1; i >= 0; i--) {
 				AggregateApplicationBuilder.AppConfigurer<?> appConfigurer = apps.get(i);
 				appConfigurer.embed();

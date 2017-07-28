@@ -55,9 +55,7 @@ abstract class AggregateApplicationUtils {
 						+ AggregateApplicationBuilder.ParentConfiguration.class.getName(),
 						InternalPropertyNames.SELF_CONTAINED_APP_PROPERTY_NAME + "="
 								+ selfContained)
-				.properties("management.port=-1")
-				.properties(
-						"spring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration");
+				.properties("management.port=-1");
 		return aggregatorParentConfiguration.run(args);
 	}
 

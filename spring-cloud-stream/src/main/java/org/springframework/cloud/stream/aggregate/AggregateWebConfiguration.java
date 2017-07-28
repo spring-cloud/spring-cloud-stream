@@ -29,6 +29,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.EndpointCorsProperties;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
+import org.springframework.boot.actuate.autoconfigure.ManagementServerPropertiesAutoConfiguration;
 import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
 import org.springframework.boot.actuate.endpoint.mvc.AbstractEndpointMvcAdapter;
 import org.springframework.boot.actuate.endpoint.mvc.AbstractMvcEndpoint;
@@ -37,9 +38,16 @@ import org.springframework.boot.actuate.endpoint.mvc.EndpointHandlerMappingCusto
 import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint;
 import org.springframework.boot.actuate.endpoint.mvc.MvcEndpointSecurityInterceptor;
 import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoints;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.BasicErrorController;
+import org.springframework.boot.autoconfigure.web.DispatcherServletAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.HttpMessageConvertersAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.ServerPropertiesAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -59,6 +67,11 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
  */
 @Configuration
 @ConditionalOnClass(name = "org.springframework.web.servlet.DispatcherServlet")
+@ImportAutoConfiguration({ ValidationAutoConfiguration.class,
+		EmbeddedServletContainerAutoConfiguration.class, WebMvcAutoConfiguration.class,
+		DispatcherServletAutoConfiguration.class, HttpMessageConvertersAutoConfiguration.class,
+		ManagementServerPropertiesAutoConfiguration.class,
+		ServerPropertiesAutoConfiguration.class })
 public class AggregateWebConfiguration {
 
 	@Autowired(required = false)
