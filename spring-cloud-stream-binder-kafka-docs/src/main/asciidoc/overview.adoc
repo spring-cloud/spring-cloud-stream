@@ -2,6 +2,7 @@
 --
 This guide describes the Apache Kafka implementation of the Spring Cloud Stream Binder.
 It contains information about its design, usage and configuration options, as well as information on how the Stream Cloud Stream concepts map into Apache Kafka specific constructs.
+In addition, this guide also explains the Kafka Streams binding capabilities of Spring Cloud Stream.
 --
 
 == Usage
@@ -428,5 +429,99 @@ Please keep in mind that if you are relying on this, then the Kafka server will 
 On the other hand, if auto topic creation is disabled on the server, then care must be taken before running the application to create the topic with the desired number of partitions.
 
 If you want to have full control over how partitions are allocated, then leave the default settings as they are, i.e. do not exclude the kafka broker jar and ensure that `spring.cloud.stream.kafka.binder.autoCreateTopics` is set to `true`, which is the default.
+
+== Kafka Streams Binding Capabilities of Spring Cloud Stream
+
+Spring Cloud Stream Kafka support also includes a binder specifically designed for Kafka Streams binding.
+Using this binder, applications can be written that leverage the Kafka Streams API.
+For more information on Kafka Streams, see https://kafka.apache.org/documentation/streams/developer-guide[Kafka Streams API Developer Manual]
+
+Kafka Streams support in Spring Cloud Stream is based on the foundations provided by the Spring Kafka project. For details on that support, see http://docs.spring.io/spring-kafka/reference/html/_reference.html#kafka-streams[Kafaka Streams Support in Spring Kafka].
+
+Here are the maven coordinates for the Spring Cloud Stream KStream binder artifact.
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-kstream</artifactId>
+</dependency>
+----
+
+In addition to leveraging the Spring Cloud Stream programming model which is based on Spring Boot, one of the main other benefits that the KStream binder provides is the fact that it avoids the boilerplate configuration that one needs to write when using the Kafka Streams API directly.
+High level streams DSL provided through the Kafka Streams API can be used through Spring Cloud Stream in the current support.
+
+=== Usage example of high level streams DSL
+
+This application will listen from a Kafka topic and write the word count for each unique word that it sees in a 5 seconds time window.
+
+[source]
+----
+@SpringBootApplication
+@EnableBinding(KStreamProcessor.class)
+public class WordCountProcessorApplication {
+
+	@StreamListener("input")
+	@SendTo("output")
+	public KStream<?, String> process(KStream<?, String> input) {
+		return input
+				.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+				.map((key, word) -> new KeyValue<>(word, word))
+				.groupByKey(Serdes.String(), Serdes.String())
+				.count(TimeWindows.of(5000), "store-name")
+				.toStream()
+				.map((w, c) -> new KeyValue<>(null, "Count for " + w.key() + ": " + c));
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(WordCountProcessorApplication.class, args);
+	}
+----
+
+If you build it as Spring Boot runnable fat jar, you can run the above example in the following way:
+
+[source]
+----
+java -jar uber.jar  --spring.cloud.stream.bindings.input.destination=words --spring.cloud.stream.bindings.output.destination=counts
+----
+
+This means that the application will listen from the incoming Kafka topic words and write to the output topic counts.
+
+Spring Cloud Stream will ensure that the messages from both the incoming and outgoing topics are bound as KStream objects.
+As one may observe, the developer can exclusively focus on the business aspects of the code, i.e. writing the logic required in the processor rather than setting up the streams specific configuration required by the Kafka Streams infrastructure.
+All those boilerplate is handled by Spring Cloud Stream behind the scenes.
+
+=== Support for interactive queries
+
+If access to the `KafkaStreams` is needed for interactive queries, the internal `KafkaStreams` instance can be accessed via `KStreamBuilderFactoryBean.getKafkaStreams()`.
+You can autowire the `KStreamBuilderFactoryBean` instance provided by the KStream binder. Then you can get `KafkaStreams` instance from it and retrieve the underlying store, execute queries on it, etc.
+
+=== Kafka Streams properties
+
+configuration::
+  Map with a key/value pair containing properties pertaining to Kafka Streams API.
+  This property must be prefixed with `spring.cloud.stream.kstream.binder.`.
+
+ Following are some examples of using this property.
+
+[source]
+----
+spring.cloud.stream.kstream.binder.configuration.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde
+spring.cloud.stream.kstream.binder.configuration.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde
+spring.cloud.stream.kstream.binder.configuration.commit.interval.ms=1000
+----
+
+  For more information about all the properties that may go into streams configuration, see StreamsConfig JavaDocs.
+
+There can also be binding specific properties.
+
+For instance, you can use a different Serde for your input or output destination.
+
+[source]
+----
+spring.cloud.stream.kstream.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde
+spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde
+----
+
 
 
