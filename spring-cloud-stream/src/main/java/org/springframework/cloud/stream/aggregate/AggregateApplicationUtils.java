@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,17 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import org.springframework.boot.Banner.Mode;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.internal.InternalPropertyNames;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * Utilities for embedding applications in aggregates.
@@ -48,7 +54,8 @@ abstract class AggregateApplicationUtils {
 				.properties("spring.jmx.default-domain="
 						+ AggregateApplicationBuilder.ParentConfiguration.class.getName(),
 						InternalPropertyNames.SELF_CONTAINED_APP_PROPERTY_NAME + "="
-								+ selfContained);
+								+ selfContained)
+				.properties("management.port=-1");
 		return aggregatorParentConfiguration.run(args);
 	}
 
@@ -59,7 +66,11 @@ abstract class AggregateApplicationUtils {
 	protected static SpringApplicationBuilder embedApp(
 			ConfigurableApplicationContext parentContext, String namespace,
 			Class<?> app) {
-		return new SpringApplicationBuilder(app).web(false).main(app).bannerMode(Mode.OFF)
+		// Child context needs to enable web MVC configuration and web enabled to obtain
+		// the MVC request mapping in the child applications
+		return new SpringApplicationBuilder(new Object[] { app, RequestMappingConfiguration.class })
+				.web(false)
+				.bannerMode(Mode.OFF)
 				.properties("spring.jmx.default-domain=" + namespace)
 				.properties(
 						InternalPropertyNames.NAMESPACE_PROPERTY_NAME + "=" + namespace)
@@ -83,6 +94,17 @@ abstract class AggregateApplicationUtils {
 						sharedChannel);
 			}
 			i++;
+		}
+	}
+
+	@Configuration
+	@ConditionalOnClass(name = "org.springframework.web.servlet.DispatcherServlet")
+	public static class RequestMappingConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
+		public RequestMappingHandlerMapping requestMappingHandlerMapping() {
+			return new RequestMappingHandlerMapping();
 		}
 	}
 

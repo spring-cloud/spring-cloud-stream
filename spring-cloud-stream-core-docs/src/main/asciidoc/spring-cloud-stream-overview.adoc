@@ -881,9 +881,22 @@ public class SampleAggregateApplication {
 }
 ----
 
-
+[NOTE]
+====
 The binding properties like `--spring.cloud.stream.bindings.output.destination=processor-output` need to be specified as one of the external configuration properties (cmdline arg etc.,).
+====
 
+===== Exposing Web MVC endpoints of child applications via aggregate application
+
+If the child applications inside the aggregate application have web MVC request mappings (including the Spring Boot actuator endpoints if enabled) then they can be accessed via aggregate application with the request mappings `paths` have child application's `namespace` as their prefixes.
+For instance, if a child application has a request mappings for the path `/user/info` and uses a namespace `http1` then this request mapping can be accessed via aggregate application's server endpoint using the path `/http1/user/info`.
+If no `namespace` is specified, then the prefix `child` and the index number for identifying the child application.
+For instance, if a child application doesn't have explicit `namespace` for the above request mapping, then it would use `/child_0/user/info` as the request mapping from the aggregate applicaton.
+
+[NOTE]
+====
+Since the `namespace` is used for the request mappings to uniquely distinguish from other child applications, it is important to use a valid request mapping name for the namespace (not `-` etc.,)
+====
 
 == Binders
 

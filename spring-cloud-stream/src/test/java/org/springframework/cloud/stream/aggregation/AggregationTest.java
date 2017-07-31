@@ -21,14 +21,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.boot.actuate.autoconfigure.ManagementServerPropertiesAutoConfiguration;
+import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
+import org.springframework.boot.actuate.endpoint.mvc.AbstractEndpointMvcAdapter;
+import org.springframework.boot.actuate.endpoint.mvc.AbstractMvcEndpoint;
+import org.springframework.boot.actuate.endpoint.mvc.EndpointHandlerMapping;
+import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.DispatcherServletAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.HttpMessageConvertersAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.ServerPropertiesAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder.SourceConfigurer;
 import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
@@ -42,11 +54,23 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.stereotype.Controller;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.mvc.condition.MediaTypeExpression;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 /**
  * @author Marius Bogoevici
@@ -84,6 +108,49 @@ public class AggregationTest {
 	}
 
 	@Test
+	public void aggregationWebEndpoints() {
+		aggregatedApplicationContext = new AggregateApplicationBuilder(
+				MockBinderRegistryConfiguration.class, "--server.port=0")
+						.from(TestSource.class).namespace("source")
+						.to(TestProcessor.class).namespace("processor")
+						.run();
+		SharedBindingTargetRegistry sharedBindingTargetRegistry = aggregatedApplicationContext
+				.getBean(SharedBindingTargetRegistry.class);
+		BindingTargetFactory channelFactory = aggregatedApplicationContext
+				.getBean(BindingTargetFactory.class);
+		Map<RequestMappingInfo, HandlerMethod> mappings = aggregatedApplicationContext
+				.getBean(RequestMappingHandlerMapping.class).getHandlerMethods();
+		for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : mappings.entrySet()) {
+			if (!entry.getKey().getPatternsCondition().getPatterns().contains("/error")) {
+				RequestMappingInfo mappingInfo = entry.getKey();
+				assertTrue(mappingInfo.getPatternsCondition().getPatterns().size() == 1);
+				assertTrue(mappingInfo.getPatternsCondition().getPatterns().contains("/"));
+				assertTrue(mappingInfo.getMethodsCondition().getMethods().size() == 1);
+				assertTrue(mappingInfo.getMethodsCondition().getMethods().iterator().next().toString().equals("POST"));
+				for (MediaTypeExpression expression : mappingInfo.getConsumesCondition().getExpressions()) {
+					String mediaType = expression.getMediaType().toString();
+					assertTrue(mediaType.equals("text/*") || mediaType.equals("application/json")
+							|| mediaType.equals("*/*"));
+				}
+			}
+		}
+		Set<MvcEndpoint> endpoints = aggregatedApplicationContext.getBean(EndpointHandlerMapping.class).getEndpoints();
+		for (MvcEndpoint mvcEndpoint : endpoints) {
+			if (mvcEndpoint instanceof AbstractMvcEndpoint || mvcEndpoint instanceof AbstractEndpointMvcAdapter) {
+				String path = mvcEndpoint.getPath();
+				assertTrue(path.startsWith("/source") || path.startsWith("/processor"));
+			}
+			else {
+				String id = ((AbstractEndpoint) mvcEndpoint).getId();
+				assertTrue(id.startsWith("source_") || id.startsWith("processor_"));
+			}
+		}
+		assertThat(channelFactory).isNotNull();
+		assertThat(sharedBindingTargetRegistry.getAll().keySet()).hasSize(2);
+		aggregatedApplicationContext.close();
+	}
+
+	@Test
 	public void testModuleAggregationUsingSharedChannelRegistry() {
 		// test backward compatibility
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
@@ -99,7 +166,7 @@ public class AggregationTest {
 	}
 
 	@Test
-	public void testParentArgsAndSources() {
+	public void testParentArgsAndSourcesWithoutWebDisabled() {
 		List<String> argsToVerify = new ArrayList<>();
 		argsToVerify.add("--foo1=bar1");
 		argsToVerify.add("--foo2=bar2");
@@ -107,7 +174,7 @@ public class AggregationTest {
 		argsToVerify.add("--server.port=0");
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--foo1=bar1");
-		final ConfigurableApplicationContext context = aggregateApplicationBuilder
+		final ConfigurableApplicationContext context = aggregateApplicationBuilder.web(false)
 				.parent(DummyConfig.class, "--foo2=bar2")
 				.from(TestSource.class)
 				.namespace("foo").to(TestProcessor.class).namespace("bar")
@@ -119,20 +186,17 @@ public class AggregationTest {
 		assertThat(parentArgs).containsExactlyInAnyOrder(argsToVerify.toArray(new String[argsToVerify.size()]));
 		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
 		assertThat(sources).containsExactlyInAnyOrder(AggregateApplicationBuilder.ParentConfiguration.class,
-				MockBinderRegistryConfiguration.class, DummyConfig.class,
-				EmbeddedServletContainerAutoConfiguration.class);
+				MockBinderRegistryConfiguration.class, DummyConfig.class);
 		context.close();
 	}
 
 	@Test
-	public void testParentArgsAndSourcesWithWebDisabled() {
-		List<String> argsToVerify = new ArrayList<>();
+	public void testParentArgsAndSources() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--foo1=bar1");
-		final ConfigurableApplicationContext context = aggregateApplicationBuilder
-				.parent(DummyConfig.class, "--foo2=bar2").web(false)
+				MockBinderRegistryConfiguration.class);
+		final ConfigurableApplicationContext context = aggregateApplicationBuilder.parent(DummyConfig.class)
 				.from(TestSource.class)
-				.namespace("foo").to(TestProcessor.class).namespace("bar")
+				.to(TestProcessor.class)
 				.run("--server.port=0");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
 		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
@@ -389,7 +453,20 @@ public class AggregationTest {
 
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
+	@Controller
 	public static class TestSource {
+
+		@RequestMapping(path = "${http.pathPattern:/}", method = POST, consumes = { "text/*", "application/json" })
+		@ResponseStatus(HttpStatus.ACCEPTED)
+		public void handleRequest(@RequestBody String body,
+				@RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+		}
+
+		@RequestMapping(path = "${http.pathPattern:/}", method = POST, consumes = "*/*")
+		@ResponseStatus(HttpStatus.ACCEPTED)
+		public void handleRequest(@RequestBody byte[] body,
+				@RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+		}
 
 	}
 
