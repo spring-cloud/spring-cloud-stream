@@ -2289,3 +2289,9 @@ hello world 1458595078733
 hello world 1458595079734
 hello world 1458595080735
 ----
+
+=== Deploying Stream applications on CloudFoundry
+
+On CloudFoundry services are usually exposed via a special environment variable called https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES[VCAP_SERVICES].
+
+When configuring your binder connections, you can use the values from an environment variable as explained on the http://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups[dataflow cloudfoundry server] docs.
