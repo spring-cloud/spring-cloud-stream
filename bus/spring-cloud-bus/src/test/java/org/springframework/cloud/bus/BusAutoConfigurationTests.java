@@ -35,6 +35,7 @@ import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfigurati
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
+import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -204,6 +205,19 @@ public class BusAutoConfigurationTests {
 						new RefreshRemoteApplicationEvent(this, "foo", "bar*")));
 		assertNotNull(
 				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
+	}
+
+	/**
+	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74
+	 */
+	@Test
+	public void inboundNotFromSelfUnknown() {
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
+		this.context.setId("bar");
+		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
+				.send(new GenericMessage<>(
+						new UnknownRemoteApplicationEvent(this, "UnknownEvent", "yada".getBytes())));
+		// No Exception expected
 	}
 
 	@Configuration

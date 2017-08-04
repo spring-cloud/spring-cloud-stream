@@ -17,6 +17,8 @@
 
 package org.springframework.cloud.bus.event;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * An event that signals an ack of a specific {@link RemoteApplicationEvent}. These events
  * can be monitored by any applications that want to audit the responses to bus events.
@@ -31,7 +33,7 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 
 	private final String ackId;
 	private final String ackDestinationService;
-	private final Class<? extends RemoteApplicationEvent> event;
+	private Class<? extends RemoteApplicationEvent> event;
 
 	@SuppressWarnings("unused")
 	private AckRemoteApplicationEvent() {
@@ -60,6 +62,21 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 
 	public Class<? extends RemoteApplicationEvent> getEvent() {
 		return event;
+	}
+
+	/**
+	 * Used by Jackson to set the remote class name of the event implementation. If the implementing class is unknown to
+	 * this app, set the event to {@link UnknownRemoteApplicationEvent}.
+	 *
+	 * @param eventName  the fq class name of the event implementation, not null
+	 */
+	@JsonProperty("event")
+	public void setEventName(String eventName) {
+		try {
+			event = (Class<? extends RemoteApplicationEvent>) Class.forName(eventName);
+		} catch (ClassNotFoundException e) {
+			event = UnknownRemoteApplicationEvent.class;
+		}
 	}
 
 	@Override
