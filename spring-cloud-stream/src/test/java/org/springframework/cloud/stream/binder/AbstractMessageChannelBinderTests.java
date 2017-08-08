@@ -28,7 +28,7 @@ import org.mockito.stubbing.Answer;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder.ErrorInfrastructure;
+import org.springframework.cloud.stream.binder.AbstractMessageChannelErrorConfigurer.ErrorInfrastructure;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
@@ -151,7 +151,7 @@ public class AbstractMessageChannelBinderTests {
 
 		@SuppressWarnings("unchecked")
 		StubMessageChannelBinder(boolean hasRecoverer) {
-			super(true, null, Mockito.mock(ProvisioningProvider.class));
+			super(true, null, Mockito.mock(ProvisioningProvider.class), new MockMessageChannelErrorConfigurer());
 			mockProvisioner();
 			this.hasRecoverer = hasRecoverer;
 		}
@@ -179,14 +179,13 @@ public class AbstractMessageChannelBinderTests {
 		@Override
 		protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
 				ConsumerProperties properties) throws Exception {
-			this.errorInfrastructure = registerErrorInfrastructure(destination, group, properties);
+
 			MessageProducer adapter = Mockito.mock(MessageProducer.class,
 					Mockito.withSettings().extraInterfaces(Lifecycle.class, InitializingBean.class,
 							DisposableBean.class));
 			return adapter;
 		}
 
-		@Override
 		protected MessageHandler getErrorMessageHandler(ConsumerDestination destination, String group,
 				ConsumerProperties consumerProperties) {
 			if (this.hasRecoverer) {
@@ -197,6 +196,15 @@ public class AbstractMessageChannelBinderTests {
 			}
 		}
 
+	}
+
+	static class MockMessageChannelErrorConfigurer<C extends ConsumerProperties> extends AbstractMessageChannelErrorConfigurer<C>{
+
+
+		@Override
+		public void configure(String destination, MessageChannel target) {
+
+		}
 	}
 
 	private static class SimpleConsumerDestination implements ConsumerDestination {

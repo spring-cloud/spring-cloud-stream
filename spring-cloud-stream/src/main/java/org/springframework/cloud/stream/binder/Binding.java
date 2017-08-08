@@ -26,6 +26,7 @@ package org.springframework.cloud.stream.binder;
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public interface Binding<T> {
@@ -37,4 +38,10 @@ public interface Binding<T> {
 	 * and a new Binding should be created instead.
 	 */
 	void unbind();
+
+	/**
+	 *
+	 * @return the binding target instance
+	 */
+	T getTarget();
 }

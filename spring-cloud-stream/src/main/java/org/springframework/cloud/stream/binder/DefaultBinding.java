@@ -27,6 +27,7 @@ import org.springframework.util.ObjectUtils;
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public class DefaultBinding<T> implements Binding<T> {
@@ -87,5 +88,10 @@ public class DefaultBinding<T> implements Binding<T> {
 						? ((NamedComponent) this.lifecycle).getComponentName()
 						: ObjectUtils.nullSafeToString(this.lifecycle))
 				+ "]";
+	}
+
+	@Override
+	public T getTarget() {
+		return this.target;
 	}
 }

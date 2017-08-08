@@ -252,6 +252,11 @@ public class BinderAwareChannelResolverTests {
 				destinations.get(name).unsubscribe(directHandler);
 			}
 
+			@Override
+			public MessageChannel getTarget() {
+				return null;
+			}
+
 			public boolean isBound() {
 				return bound;
 			}

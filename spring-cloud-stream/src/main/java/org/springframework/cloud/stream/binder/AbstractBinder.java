@@ -44,6 +44,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Vinicius Carvalho
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
@@ -63,6 +64,12 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	private volatile Codec codec;
 
 	private volatile EvaluationContext evaluationContext;
+
+	protected final BinderErrorConfigurer errorConfigurer;
+
+	protected AbstractBinder(BinderErrorConfigurer errorConfigurer) {
+		this.errorConfigurer = errorConfigurer;
+	}
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -128,7 +135,10 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		if (StringUtils.isEmpty(group)) {
 			Assert.isTrue(!properties.isPartitioned(), "A consumer group is required for a partitioned subscription");
 		}
-		return doBindConsumer(name, group, target, properties);
+		Binding<T> binding = doBindConsumer(name, group, target, properties);
+		registerErrorInfrastructure(name,group,properties);
+		configureErrorInfrastructure(name,binding.getTarget());
+		return binding;
 	}
 
 	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget, C properties);
@@ -169,6 +179,18 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
 		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
+	}
+
+	protected void registerErrorInfrastructure(String destination, String group, C consumerProperties){
+		this.errorConfigurer.register(destination,group,consumerProperties);
+	}
+
+	protected void destroyErrorInfrastructure(String destination, String group, C consumerProperties){
+		this.errorConfigurer.destroy(destination,group,consumerProperties);
+	}
+
+	protected void configureErrorInfrastructure(String destination, T target){
+		this.errorConfigurer.configure(destination,target);
 	}
 
 	/**
