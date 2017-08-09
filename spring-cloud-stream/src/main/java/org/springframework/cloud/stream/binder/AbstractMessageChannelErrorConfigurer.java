@@ -97,7 +97,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 		String recovererBeanName = getErrorRecovererName(consumerBinding.getDestination(), group, consumerProperties);
 		beanFactory.registerSingleton(recovererBeanName, recoverer);
 		beanFactory.initializeBean(recoverer, recovererBeanName);
-		MessageHandler handler = getErrorMessageHandler(consumerBinding.getDestination().getName(), group, consumerProperties);
+		MessageHandler handler = getErrorMessageHandler(consumerBinding.getDestination(), group, consumerProperties);
 		MessageChannel defaultErrorChannel = null;
 		if (getApplicationContext().containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)) {
 			defaultErrorChannel = getApplicationContext().getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
@@ -216,7 +216,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 	 * @return the handler (may be null, which is the default, causing the exception to be
 	 * rethrown).
 	 */
-	protected MessageHandler getErrorMessageHandler(final String destination, final String group,
+	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
 			final C consumerProperties) {
 		return null;
 	}
