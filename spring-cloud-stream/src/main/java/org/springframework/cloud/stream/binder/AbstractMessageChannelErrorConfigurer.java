@@ -191,7 +191,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 
 	protected String errorsBaseName(ConsumerDestination destination, String group,
 			C consumerProperties) {
-		return destination.getName() + "." + group + ".errors";
+		return destination.getName() + ".errors";
 	}
 
 	/**
