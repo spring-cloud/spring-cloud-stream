@@ -31,7 +31,7 @@ import org.springframework.util.ObjectUtils;
  * @author Vinicius Carvalho
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-public class DefaultBinding<T,D extends Destination> implements Binding<T> {
+public abstract class DefaultBinding<T,D extends Destination> implements Binding<T> {
 
 	protected final String name;
 
@@ -40,6 +40,8 @@ public class DefaultBinding<T,D extends Destination> implements Binding<T> {
 	protected final T target;
 
 	protected final Lifecycle lifecycle;
+
+	protected volatile boolean running = false;
 
 	protected final D provisioningDestination;
 
@@ -71,6 +73,17 @@ public class DefaultBinding<T,D extends Destination> implements Binding<T> {
 		return this.group;
 	}
 
+
+	@Override
+	public void bind() {
+		try {
+			afterBind();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public final void unbind() {
 		if (this.lifecycle != null) {
@@ -83,8 +96,10 @@ public class DefaultBinding<T,D extends Destination> implements Binding<T> {
 	 * Listener method that executes after unbinding. Subclasses can implement their own
 	 * behaviour on unbinding by overriding this method.
 	 */
-	protected void afterUnbind() {
+	protected void afterUnbind(){
 	}
+
+	protected void afterBind() throws Exception {}
 
 	@Override
 	public String toString() {
@@ -103,4 +118,6 @@ public class DefaultBinding<T,D extends Destination> implements Binding<T> {
 	public D getDestination() {
 		return provisioningDestination;
 	}
+
+
 }

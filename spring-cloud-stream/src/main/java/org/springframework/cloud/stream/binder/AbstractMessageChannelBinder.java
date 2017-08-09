@@ -221,12 +221,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			bridge.setBeanName("bridge." + name);
 			consumerEndpoint = createConsumerEndpoint(destination, group, properties);
 			consumerEndpoint.setOutputChannel(bridge);
-			if (consumerEndpoint instanceof InitializingBean) {
-				((InitializingBean) consumerEndpoint).afterPropertiesSet();
-			}
-			if (consumerEndpoint instanceof Lifecycle) {
-				((Lifecycle) consumerEndpoint).start();
-			}
+//			if (consumerEndpoint instanceof InitializingBean) {
+//				((InitializingBean) consumerEndpoint).afterPropertiesSet();
+//			}
+//			if (consumerEndpoint instanceof Lifecycle) {
+//				((Lifecycle) consumerEndpoint).start();
+//			}
 			final Object endpoint = consumerEndpoint;
 			EventDrivenConsumer edc = new EventDrivenConsumer(bridge, rh);
 			edc.setBeanName("inbound." + groupedName(name, group));

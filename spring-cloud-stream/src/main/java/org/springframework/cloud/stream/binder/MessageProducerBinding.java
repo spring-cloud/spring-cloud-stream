@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageProducer;
@@ -50,5 +51,15 @@ public class MessageProducerBinding extends ConsumerBinding<MessageChannel> {
 
 	public void setMessageProducer(MessageProducer messageProducer) {
 		this.messageProducer = messageProducer;
+	}
+
+	@Override
+	protected void afterBind() throws Exception{
+		if (messageProducer instanceof InitializingBean) {
+			((InitializingBean) messageProducer).afterPropertiesSet();
+		}
+		if (messageProducer instanceof Lifecycle) {
+			((Lifecycle) messageProducer).start();
+		}
 	}
 }

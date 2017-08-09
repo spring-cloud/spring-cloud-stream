@@ -253,6 +253,11 @@ public class BinderAwareChannelResolverTests {
 			}
 
 			@Override
+			public void bind() {
+				bound = true;
+			}
+
+			@Override
 			public MessageChannel getTarget() {
 				return null;
 			}

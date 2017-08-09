@@ -139,6 +139,11 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 		}
 
 		@Override
+		public void bind() {
+
+		}
+
+		@Override
 		public MessageChannel getTarget() {
 			return target;
 		}
