@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -67,10 +68,11 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 	}
 
 	@Override
-	public void register(String destination, String group, C consumerProperties) {
+	public void register(Binding<MessageChannel> binding, String group, C consumerProperties) {
+		MessageProducerBinding consumerBinding = (MessageProducerBinding)binding;
 		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
 		ConfigurableListableBeanFactory beanFactory = getApplicationContext().getBeanFactory();
-		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
+		String errorChannelName = errorsBaseName(consumerBinding.getDestination(), group, consumerProperties);
 		SubscribableChannel errorChannel = null;
 		if (getApplicationContext().containsBean(errorChannelName)) {
 			Object errorChannelObject = getApplicationContext().getBean(errorChannelName);
@@ -92,10 +94,10 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 		else {
 			recoverer = new ErrorMessageSendingRecoverer(errorChannel, errorMessageStrategy);
 		}
-		String recovererBeanName = getErrorRecovererName(destination, group, consumerProperties);
+		String recovererBeanName = getErrorRecovererName(consumerBinding.getDestination(), group, consumerProperties);
 		beanFactory.registerSingleton(recovererBeanName, recoverer);
 		beanFactory.initializeBean(recoverer, recovererBeanName);
-		MessageHandler handler = getErrorMessageHandler(destination, group, consumerProperties);
+		MessageHandler handler = getErrorMessageHandler(consumerBinding.getDestination().getName(), group, consumerProperties);
 		MessageChannel defaultErrorChannel = null;
 		if (getApplicationContext().containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)) {
 			defaultErrorChannel = getApplicationContext().getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
@@ -104,7 +106,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 		if (handler == null && errorChannel instanceof LastSubscriberAwareChannel) {
 			handler = getDefaultErrorMessageHandler((LastSubscriberAwareChannel) errorChannel, defaultErrorChannel != null);
 		}
-		String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, consumerProperties);
+		String errorMessageHandlerName = getErrorMessageHandlerName(consumerBinding.getDestination(), group, consumerProperties);
 		if (handler != null) {
 			beanFactory.registerSingleton(errorMessageHandlerName, handler);
 			beanFactory.initializeBean(handler, errorMessageHandlerName);
@@ -114,23 +116,24 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 			BridgeHandler errorBridge = new BridgeHandler();
 			errorBridge.setOutputChannel(defaultErrorChannel);
 			errorChannel.subscribe(errorBridge);
-			String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
+			String errorBridgeHandlerName = getErrorBridgeName(consumerBinding.getDestination(), group, consumerProperties);
 			beanFactory.registerSingleton(errorBridgeHandlerName, errorBridge);
 			beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
 		}
-		destinationErrors.put(destination,new ErrorInfrastructure(errorChannel,recoverer,handler));
+		destinationErrors.put(consumerBinding.getDestination().getName(),new ErrorInfrastructure(errorChannel,recoverer,handler));
 	}
 
 	@Override
-	public void destroy(String destination, String group, C consumerProperties) {
+	public void destroy(Binding<MessageChannel> binding, String group, C consumerProperties) {
 		try {
-			String recoverer = getErrorRecovererName(destination, group, consumerProperties);
+			MessageProducerBinding consumerBinding = (MessageProducerBinding)binding;
+			String recoverer = getErrorRecovererName(consumerBinding.getDestination(), group, consumerProperties);
 			if (getApplicationContext().containsBean(recoverer)) {
 				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory()).destroySingleton(recoverer);
 			}
-			String errorChannelName = errorsBaseName(destination, group, consumerProperties);
-			String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, consumerProperties);
-			String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
+			String errorChannelName = errorsBaseName(consumerBinding.getDestination(), group, consumerProperties);
+			String errorMessageHandlerName = getErrorMessageHandlerName(consumerBinding.getDestination(), group, consumerProperties);
+			String errorBridgeHandlerName = getErrorBridgeName(consumerBinding.getDestination(), group, consumerProperties);
 			MessageHandler bridgeHandler = null;
 			if (getApplicationContext().containsBean(errorBridgeHandlerName)) {
 				bridgeHandler = getApplicationContext().getBean(errorBridgeHandlerName, MessageHandler.class);
@@ -154,7 +157,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
 						.destroySingleton(errorChannelName);
 			}
-			destinationErrors.remove(destination);
+			destinationErrors.remove(consumerBinding.getDestination().getName());
 		}
 		catch (IllegalStateException e) {
 			// context is shutting down.
@@ -171,24 +174,24 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 		return null;
 	}
 
-	protected String getErrorRecovererName(String destination, String group,
+	protected String getErrorRecovererName(ConsumerDestination destination, String group,
 			C consumerProperties) {
 		return errorsBaseName(destination, group, consumerProperties) + ".recoverer";
 	}
 
-	protected String getErrorMessageHandlerName(String destination, String group,
+	protected String getErrorMessageHandlerName(ConsumerDestination destination, String group,
 			C consumerProperties) {
 		return errorsBaseName(destination, group, consumerProperties) + ".handler";
 	}
 
-	protected String getErrorBridgeName(String destination, String group,
+	protected String getErrorBridgeName(ConsumerDestination destination, String group,
 			C consumerProperties) {
 		return errorsBaseName(destination, group, consumerProperties) + ".bridge";
 	}
 
-	protected String errorsBaseName(String destination, String group,
+	protected String errorsBaseName(ConsumerDestination destination, String group,
 			C consumerProperties) {
-		return destination + "." + group + ".errors";
+		return destination.getName() + "." + group + ".errors";
 	}
 
 	/**

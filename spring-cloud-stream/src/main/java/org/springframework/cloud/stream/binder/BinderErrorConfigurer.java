@@ -25,7 +25,7 @@ package org.springframework.cloud.stream.binder;
  * @since 1.3
  */
 public interface BinderErrorConfigurer<C extends ConsumerProperties, T> {
-	void register(String destination, String group, C consumerProperties);
-	void destroy(String destination, String group, C consumerProperties);
-	void configure(String destination, Binding<T> binding);
+	void register(Binding<T> binding, String group, C consumerProperties);
+	void destroy(Binding<T> binding, String group, C consumerProperties);
+	void configure(Binding<T> binding);
 }

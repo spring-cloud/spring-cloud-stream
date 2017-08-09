@@ -248,7 +248,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 								.error("Exception thrown while unbinding " + this.toString(), e);
 					}
 					afterUnbindConsumer(destination, this.group, properties);
-					destroyErrorInfrastructure(destination.getName(), group, properties);
+					destroyErrorInfrastructure(this, group, properties);
 				}
 
 			};

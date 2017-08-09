@@ -136,8 +136,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			Assert.isTrue(!properties.isPartitioned(), "A consumer group is required for a partitioned subscription");
 		}
 		Binding<T> binding = doBindConsumer(name, group, target, properties);
-		registerErrorInfrastructure(name,group,properties);
-		configureErrorInfrastructure(name,binding);
+		registerErrorInfrastructure(binding,group,properties);
+		configureErrorInfrastructure(binding);
 		return binding;
 	}
 
@@ -181,16 +181,16 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
 	}
 
-	protected void registerErrorInfrastructure(String destination, String group, C consumerProperties){
-		this.errorConfigurer.register(destination,group,consumerProperties);
+	protected void registerErrorInfrastructure(Binding<T> binding, String group, C consumerProperties){
+		this.errorConfigurer.register(binding,group,consumerProperties);
 	}
 
-	protected void destroyErrorInfrastructure(String destination, String group, C consumerProperties){
-		this.errorConfigurer.destroy(destination,group,consumerProperties);
+	protected void destroyErrorInfrastructure(Binding<T> binding, String group, C consumerProperties){
+		this.errorConfigurer.destroy(binding,group,consumerProperties);
 	}
 
-	protected void configureErrorInfrastructure(String destination, Binding<T> binding){
-		this.errorConfigurer.configure(destination,binding);
+	protected void configureErrorInfrastructure(Binding<T> binding){
+		this.errorConfigurer.configure(binding);
 	}
 
 	/**
