@@ -18,12 +18,14 @@ package org.springframework.cloud.stream.binder;
 
 
 /**
+ * Binder implementations should implement their Error Handling strategy using sub classes of this interface.
+ * The {@link AbstractBinder} uses lifecycle hooks to call each of the methods describe in this interface.
  * @author Vinicius Carvalho
- * TODO: Find a better name
+ *
  * @since 1.3
  */
 public interface BinderErrorConfigurer<C extends ConsumerProperties, T> {
 	void register(String destination, String group, C consumerProperties);
 	void destroy(String destination, String group, C consumerProperties);
-	void configure(String destination, T target);
+	void configure(String destination, Binding<T> binding);
 }

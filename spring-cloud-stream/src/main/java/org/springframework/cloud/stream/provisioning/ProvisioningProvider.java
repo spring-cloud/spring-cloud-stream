@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
  * @param <P> the producer properties type
  *
  * @author Soby Chacko
+ * @author Vinicius Carvalho
  *
  * @since 1.2
  */
@@ -49,7 +50,7 @@ public interface ProvisioningProvider<C extends ConsumerProperties, P extends Pr
 	 * @return reference to {@link ProducerDestination} that represents a producer
 	 * @throws ProvisioningException on underlying provisioning errors from the middleware
 	 */
-	ProducerDestination provisionProducerDestination(String name, P properties) throws ProvisioningException;
+	ProducerDestination<P> provisionProducerDestination(String name, P properties) throws ProvisioningException;
 
 	/**
 	 * Creates the middleware destination on the physical broker for the consumer to
@@ -61,7 +62,7 @@ public interface ProvisioningProvider<C extends ConsumerProperties, P extends Pr
 	 * @return reference to {@link ConsumerDestination} that represents a consumer
 	 * @throws ProvisioningException on underlying provisioning errors from the middleware
 	 */
-	ConsumerDestination provisionConsumerDestination(String name, String group, C properties)
+	ConsumerDestination<C> provisionConsumerDestination(String name, String group, C properties)
 			throws ProvisioningException;
 
 }

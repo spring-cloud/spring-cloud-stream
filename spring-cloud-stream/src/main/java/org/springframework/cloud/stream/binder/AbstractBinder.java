@@ -137,7 +137,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		}
 		Binding<T> binding = doBindConsumer(name, group, target, properties);
 		registerErrorInfrastructure(name,group,properties);
-		configureErrorInfrastructure(name,binding.getTarget());
+		configureErrorInfrastructure(name,binding);
 		return binding;
 	}
 
@@ -189,15 +189,16 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		this.errorConfigurer.destroy(destination,group,consumerProperties);
 	}
 
-	protected void configureErrorInfrastructure(String destination, T target){
-		this.errorConfigurer.configure(destination,target);
+	protected void configureErrorInfrastructure(String destination, Binding<T> binding){
+		this.errorConfigurer.configure(destination,binding);
 	}
 
 	/**
 	 * Create and configure a retry template.
-	 *
+	 * TODO: Perhaps we should deprecate this with BinderErrorConfigurer
 	 * @param properties The properties.
 	 * @return The retry template
+	 *
 	 */
 	public RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
 		RetryTemplate template = new RetryTemplate();
@@ -211,4 +212,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		template.setBackOffPolicy(backOffPolicy);
 		return template;
 	}
+
+
 }

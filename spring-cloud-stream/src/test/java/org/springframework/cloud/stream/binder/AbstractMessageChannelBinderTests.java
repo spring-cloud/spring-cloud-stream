@@ -200,9 +200,8 @@ public class AbstractMessageChannelBinderTests {
 
 	static class MockMessageChannelErrorConfigurer<C extends ConsumerProperties> extends AbstractMessageChannelErrorConfigurer<C>{
 
-
 		@Override
-		public void configure(String destination, MessageChannel target) {
+		public void configure(String destination, Binding<MessageChannel> binding) {
 
 		}
 	}
@@ -218,6 +217,11 @@ public class AbstractMessageChannelBinderTests {
 		@Override
 		public String getName() {
 			return this.name;
+		}
+
+		@Override
+		public Object getProperties() {
+			return null;
 		}
 
 	}

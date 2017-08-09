@@ -136,9 +136,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				new SendingHandler(producerMessageHandler, !this.supportsHeadersNatively && HeaderMode.embeddedHeaders
 						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
 						producerProperties.isUseNativeEncoding()));
-
-		return new DefaultBinding<MessageChannel>(destination, null, outputChannel,
-				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
+		MessageHandlerBinding binding = new MessageHandlerBinding(destination, null, outputChannel,
+				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null, producerDestination) {
 
 			@Override
 			public void afterUnbind() {
@@ -154,6 +153,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				afterUnbindProducer(producerDestination, producerProperties);
 			}
 		};
+		binding.setMessageHandler(producerMessageHandler);
+		return binding;
 	}
 
 	/**
@@ -230,8 +231,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			EventDrivenConsumer edc = new EventDrivenConsumer(bridge, rh);
 			edc.setBeanName("inbound." + groupedName(name, group));
 			edc.start();
-			return new DefaultBinding<MessageChannel>(name, group, inputChannel,
-					endpoint instanceof Lifecycle ? (Lifecycle) endpoint : null) {
+
+			MessageProducerBinding binding =
+			new MessageProducerBinding(name, group, inputChannel,
+					endpoint instanceof Lifecycle ? (Lifecycle) endpoint : null,destination) {
 
 				@Override
 				protected void afterUnbind() {
@@ -249,6 +252,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				}
 
 			};
+			binding.setMessageProducer(consumerEndpoint);
+			return binding;
 		}
 		catch (Exception e) {
 			if (consumerEndpoint instanceof Lifecycle) {

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.cloud.stream.provisioning.Destination;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.util.Assert;
@@ -30,7 +31,7 @@ import org.springframework.util.ObjectUtils;
  * @author Vinicius Carvalho
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-public class DefaultBinding<T> implements Binding<T> {
+public class DefaultBinding<T,D extends Destination> implements Binding<T> {
 
 	protected final String name;
 
@@ -40,6 +41,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	protected final Lifecycle lifecycle;
 
+	protected final D provisioningDestination;
+
 	/**
 	 * Creates an instance that associates a given name, group and binding target with an
 	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
@@ -48,14 +51,16 @@ public class DefaultBinding<T> implements Binding<T> {
 	 * @param group the group (only for input targets)
 	 * @param target the binding target
 	 * @param lifecycle {@link Lifecycle} that runs while the binding is active and will
+	 * @param provisioningDestination the provisioned destination created for this binding, can be {@link org.springframework.cloud.stream.provisioning.ConsumerDestination} or {@link org.springframework.cloud.stream.provisioning.ProducerDestination}
 	 * be stopped during unbinding
 	 */
-	public DefaultBinding(String name, String group, T target, Lifecycle lifecycle) {
+	public DefaultBinding(String name, String group, T target, Lifecycle lifecycle, D provisioningDestination) {
 		Assert.notNull(target, "target must not be null");
 		this.name = name;
 		this.group = group;
 		this.target = target;
 		this.lifecycle = lifecycle;
+		this.provisioningDestination = provisioningDestination;
 	}
 
 	public String getName() {
@@ -93,5 +98,9 @@ public class DefaultBinding<T> implements Binding<T> {
 	@Override
 	public T getTarget() {
 		return this.target;
+	}
+
+	public D getDestination() {
+		return provisioningDestination;
 	}
 }

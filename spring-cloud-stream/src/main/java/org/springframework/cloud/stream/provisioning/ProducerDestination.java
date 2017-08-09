@@ -24,17 +24,11 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
  * {@link ProvisioningProvider#provisionProducerDestination(String, ProducerProperties)}
  *
  * @author Soby Chacko
+ * @author Vinicius Carvalho
  *
  * @since 1.2
  */
-public interface ProducerDestination {
-
-	/**
-	 * Provides the destination name.
-	 *
-	 * @return destination name
-	 */
-	String getName();
+public interface ProducerDestination<P extends ProducerProperties> extends Destination<P> {
 
 	/**
 	 * Provides the destination name for a given partition.
@@ -54,4 +48,7 @@ public interface ProducerDestination {
 	 * @return destination name for the given partition
 	 */
 	String getNameForPartition(int partition);
+
 }
+
+

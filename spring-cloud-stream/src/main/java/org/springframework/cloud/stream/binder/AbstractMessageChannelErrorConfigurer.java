@@ -19,6 +19,9 @@ package org.springframework.cloud.stream.binder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
@@ -32,9 +35,16 @@ import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 
 /**
+ * Base implementation of {@link BinderErrorConfigurer}, provides default implementations for
+ * {@link Binder} implementations based on {@link MessageChannel} abstractions.
+ * Binder implementations are still responsible to subclass this and provide a configure implementation
+ * that fits their specific needs.
  * @author Vinicius Carvalho
  * @author Gary Russel
  */
@@ -43,6 +53,8 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 	private volatile AbstractApplicationContext applicationContext;
 
 	private Map<String,ErrorInfrastructure> destinationErrors = new ConcurrentHashMap<>();
+
+	protected final Log logger = LogFactory.getLog(getClass());
 
 	protected AbstractApplicationContext getApplicationContext() {
 		return this.applicationContext;
@@ -237,5 +249,18 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 			return this.handler;
 		}
 
+	}
+
+	public RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
+		RetryTemplate template = new RetryTemplate();
+		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+		retryPolicy.setMaxAttempts(properties.getMaxAttempts());
+		ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+		backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
+		backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
+		backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
+		template.setRetryPolicy(retryPolicy);
+		template.setBackOffPolicy(backOffPolicy);
+		return template;
 	}
 }
