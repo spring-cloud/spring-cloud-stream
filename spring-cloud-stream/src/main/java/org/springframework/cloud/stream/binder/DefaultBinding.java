@@ -80,7 +80,7 @@ public abstract class DefaultBinding<T,D extends Destination> implements Binding
 			afterBind();
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			throw new IllegalStateException(e);
 		}
 	}
 
