@@ -28,6 +28,8 @@ import org.mockito.stubbing.Answer;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.cloud.stream.error.AbstractMessageChannelErrorConfigurer;
+import org.springframework.cloud.stream.error.LastSubscriberMessageHandler;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
@@ -188,11 +190,11 @@ public class AbstractMessageChannelBinderTests {
 
 	}
 
-	static class MockMessageChannelErrorConfigurer<C extends ConsumerProperties> extends AbstractMessageChannelErrorConfigurer<C>{
+	static class MockMessageChannelErrorConfigurer<C extends ConsumerProperties> extends AbstractMessageChannelErrorConfigurer<C> {
 
 		private final boolean hasRecoverer;
 
-		public MockMessageChannelErrorConfigurer(ApplicationContext context, boolean hasRecoverer) {
+		MockMessageChannelErrorConfigurer(ApplicationContext context, boolean hasRecoverer) {
 			this.hasRecoverer = hasRecoverer;
 			setApplicationContext(context);
 		}

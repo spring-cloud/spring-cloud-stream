@@ -20,6 +20,7 @@ import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
 
 /**
+ * An implementation of {@link DefaultBinding} that uses {@link ProducerDestination} as a source of configuration
  * @author Vinicius Carvalho
  */
 public class ProducerBinding<T> extends DefaultBinding<T,ProducerDestination> {

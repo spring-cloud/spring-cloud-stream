@@ -22,6 +22,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
 /**
+ * Implementation of {@link ProducerBinding} used by {@link AbstractMessageChannelBinder} implementations.
  * @author Vinicius Carvalho
  */
 public class MessageHandlerBinding extends ProducerBinding<MessageChannel> {

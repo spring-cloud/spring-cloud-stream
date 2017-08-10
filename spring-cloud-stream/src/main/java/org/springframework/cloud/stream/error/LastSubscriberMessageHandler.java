@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder;
+package org.springframework.cloud.stream.error;
 
-import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.MessageHandler;
 
 /**
- * A channel that can ensure a {@code LastSubscriberMessageHandler} is always
- * the last subscriber.
+ * A marker interface designating a subscriber that must be the last.
  *
  * @author Gary Russell
  * @since 1.3
  *
  */
-interface LastSubscriberAwareChannel extends SubscribableChannel {
-
-	/**
-	 * Return the current subscribers.
-	 * @return the subscribers.
-	 */
-	int subscribers();
+public interface LastSubscriberMessageHandler extends MessageHandler {
 
 }

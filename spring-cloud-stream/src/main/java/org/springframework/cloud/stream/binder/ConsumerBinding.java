@@ -20,6 +20,8 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.Lifecycle;
 
 /**
+ * An implementation of {@link DefaultBinding} that uses {@link ConsumerDestination} as a source of configuration
+ *
  * @author Vinicius Carvalho
  */
 public class ConsumerBinding<T> extends  DefaultBinding<T, ConsumerDestination>{

@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.cloud.stream.error.BinderErrorConfigurer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -221,12 +222,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			bridge.setBeanName("bridge." + name);
 			consumerEndpoint = createConsumerEndpoint(destination, group, properties);
 			consumerEndpoint.setOutputChannel(bridge);
-//			if (consumerEndpoint instanceof InitializingBean) {
-//				((InitializingBean) consumerEndpoint).afterPropertiesSet();
-//			}
-//			if (consumerEndpoint instanceof Lifecycle) {
-//				((Lifecycle) consumerEndpoint).start();
-//			}
 			final Object endpoint = consumerEndpoint;
 			EventDrivenConsumer edc = new EventDrivenConsumer(bridge, rh);
 			edc.setBeanName("inbound." + groupedName(name, group));

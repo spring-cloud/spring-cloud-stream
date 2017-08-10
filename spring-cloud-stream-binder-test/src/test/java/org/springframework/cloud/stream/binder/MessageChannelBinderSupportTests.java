@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import org.springframework.cloud.stream.error.BinderErrorConfigurer;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;

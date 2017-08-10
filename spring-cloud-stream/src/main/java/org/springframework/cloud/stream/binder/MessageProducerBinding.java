@@ -23,6 +23,9 @@ import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
 
 /**
+ * Implementation of {@link ConsumerBinding} used by {@link AbstractMessageChannelBinder} implementations.
+ * Uses the lifecycle hook of {@link Binding} to initialize the {@link MessageProducer} returned by {@link AbstractMessageChannelBinder#createConsumerEndpoint(ConsumerDestination, String, ConsumerProperties)}
+ *
  * @author Vinicius Carvalho
  */
 public class MessageProducerBinding extends ConsumerBinding<MessageChannel> {
@@ -46,7 +49,7 @@ public class MessageProducerBinding extends ConsumerBinding<MessageChannel> {
 	}
 
 	public MessageProducer getMessageProducer() {
-		return messageProducer;
+		return this.messageProducer;
 	}
 
 	public void setMessageProducer(MessageProducer messageProducer) {
@@ -54,12 +57,15 @@ public class MessageProducerBinding extends ConsumerBinding<MessageChannel> {
 	}
 
 	@Override
+	/**
+	 * Initializes the {@link MessageProducer} instance associated with this instance.
+	 */
 	protected void afterBind() throws Exception{
 		if (messageProducer instanceof InitializingBean) {
-			((InitializingBean) messageProducer).afterPropertiesSet();
+			((InitializingBean) this.messageProducer).afterPropertiesSet();
 		}
 		if (messageProducer instanceof Lifecycle) {
-			((Lifecycle) messageProducer).start();
+			((Lifecycle) this.messageProducer).start();
 		}
 	}
 }

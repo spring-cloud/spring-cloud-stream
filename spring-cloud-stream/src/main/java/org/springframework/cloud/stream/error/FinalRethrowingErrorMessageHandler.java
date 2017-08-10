@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder;
+package org.springframework.cloud.stream.error;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;

@@ -99,6 +99,10 @@ public abstract class DefaultBinding<T,D extends Destination> implements Binding
 	protected void afterUnbind(){
 	}
 
+	/**
+	 * Listener method that executes after binding. Subclasses can implement their own
+	 * behaviour on unbinding by overriding this method.
+	 */
 	protected void afterBind() throws Exception {}
 
 	@Override

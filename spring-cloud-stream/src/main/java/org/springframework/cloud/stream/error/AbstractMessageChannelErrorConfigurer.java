@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder;
+package org.springframework.cloud.stream.error;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +25,10 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.MessageProducerBinding;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
