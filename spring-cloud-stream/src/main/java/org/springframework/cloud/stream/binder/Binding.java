@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.springframework.context.Lifecycle;
 
 /**
  * Represents a binding between an input or output and an adapter endpoint that connects
@@ -41,10 +40,15 @@ public interface Binding<T>{
 	 */
 	void unbind();
 
+	/**
+	 * Binds the target component represented by this instance. Should be used to call any
+	 * lifecycle method on the represented target. Implementations must be idempotent.
+	 * This method is called after the concrete {@link Binder} implementation returns from
+	 * its create binding methods
+	 */
 	void bind();
 
 	/**
-	 *
 	 * @return the binding target instance
 	 */
 	T getTarget();
