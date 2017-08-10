@@ -48,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author David Turanski
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 @SuppressWarnings("unchecked")
 public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> {
@@ -90,14 +91,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binder binder = getBinder();
 		Binding<MessageChannel> foo0ProducerBinding = binder.bindProducer("foo.0", new DirectChannel(),
 				createProducerProperties());
+		foo0ProducerBinding.bind();
 		Binding<MessageChannel> foo0ConsumerBinding = binder.bindConsumer("foo.0", "testClean", new DirectChannel(),
 				createConsumerProperties());
+		foo0ConsumerBinding.bind();
 		Binding<MessageChannel> foo1ProducerBinding = binder.bindProducer("foo.1", new DirectChannel(),
 				createProducerProperties());
+		foo1ProducerBinding.bind();
 		Binding<MessageChannel> foo1ConsumerBinding = binder.bindConsumer("foo.1", "testClean", new DirectChannel(),
 				createConsumerProperties());
+		foo1ConsumerBinding.bind();
 		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer("foo.2", new DirectChannel(),
 				createProducerProperties());
+		foo2ProducerBinding.bind();
 		foo0ProducerBinding.unbind();
 		assertThat(TestUtils.getPropertyValue(foo0ProducerBinding, "lifecycle", Lifecycle.class).isRunning())
 				.isFalse();
@@ -123,8 +129,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		QueueChannel moduleInputChannel = new QueueChannel();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel,
 				outputBindingProperties.getProducer());
+		producerBinding.bind();
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "testSendAndReceive", moduleInputChannel,
 				createConsumerProperties());
+		consumerBinding.bind();
 		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
 				.build();
 		// Let the consumer actually bind to the producer before sending a msg
@@ -152,13 +160,17 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		Binding<MessageChannel> producerBinding1 = binder.bindProducer("foo.x", moduleOutputChannel1,
 				createProducerProperties());
+		producerBinding1.bind();
 		Binding<MessageChannel> producerBinding2 = binder.bindProducer("foo.y", moduleOutputChannel2,
 				createProducerProperties());
+		producerBinding2.bind();
 
 		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer("foo.x", "testSendAndReceiveMultipleTopics", moduleInputChannel,
 				createConsumerProperties());
+		consumerBinding1.bind();
 		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer("foo.y", "testSendAndReceiveMultipleTopics", moduleInputChannel,
 				createConsumerProperties());
+		consumerBinding2.bind();
 
 		String testPayload1 = "foo" + UUID.randomUUID().toString();
 		Message<?> message1 = MessageBuilder.withPayload(testPayload1.getBytes()).build();
@@ -195,8 +207,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		QueueChannel moduleInputChannel = new QueueChannel();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("bar.0", moduleOutputChannel,
 				producerBindingProperties.getProducer());
+		producerBinding.bind();
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bar.0", "testSendAndReceiveNoOriginalContentType", moduleInputChannel,
 				createConsumerProperties());
+		consumerBinding.bind();
 		binderBindUnbindLatency();
 
 		Message<?> message = MessageBuilder.withPayload("foo").build();
