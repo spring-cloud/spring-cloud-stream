@@ -57,7 +57,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 
 	private volatile AbstractApplicationContext applicationContext;
 
-	private Map<String,ErrorInfrastructure> destinationErrors = new ConcurrentHashMap<>();
+	private Map<String,ErrorInfrastructure> errorInfrastructureMap = new ConcurrentHashMap<>();
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
@@ -124,7 +124,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 			beanFactory.registerSingleton(errorBridgeHandlerName, errorBridge);
 			beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
 		}
-		destinationErrors.put(consumerBinding.getDestination().getName(),new ErrorInfrastructure(errorChannel,recoverer,handler));
+		errorInfrastructureMap.put(consumerBinding.getDestination().getName(),new ErrorInfrastructure(errorChannel,recoverer,handler));
 	}
 
 	@Override
@@ -161,7 +161,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
 						.destroySingleton(errorChannelName);
 			}
-			destinationErrors.remove(consumerBinding.getDestination().getName());
+			errorInfrastructureMap.remove(consumerBinding.getDestination().getName());
 		}
 		catch (IllegalStateException e) {
 			// context is shutting down.
@@ -226,7 +226,7 @@ public abstract class AbstractMessageChannelErrorConfigurer<C extends ConsumerPr
 	}
 
 	public ErrorInfrastructure getErrorInfrastructure(String destinationName){
-		return destinationErrors.get(destinationName);
+		return errorInfrastructureMap.get(destinationName);
 	}
 
 	protected static class ErrorInfrastructure {
