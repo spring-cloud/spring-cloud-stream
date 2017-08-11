@@ -137,7 +137,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			Assert.isTrue(!properties.isPartitioned(), "A consumer group is required for a partitioned subscription");
 		}
 		Binding<T> binding = doBindConsumer(name, group, target, properties);
-		registerErrorInfrastructure(binding,group,properties);
+		registerErrorInfrastructure(binding, group, properties);
 		configureErrorInfrastructure(binding);
 		return binding;
 	}
