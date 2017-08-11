@@ -47,6 +47,7 @@ import org.springframework.util.Assert;
  * @author Eric Bottard
  * @author Gary Russell
  * @author Mark Fisher
+ * @author Vinicius Carvalho
  * @see MessageQueueMatcher
  */
 public class TestSupportBinder implements Binder<MessageChannel, ConsumerProperties, ProducerProperties> {
@@ -135,6 +136,16 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 			if (messageCollector != null) {
 				messageCollector.unregister(target);
 			}
+		}
+
+		@Override
+		public void bind() {
+
+		}
+
+		@Override
+		public MessageChannel getTarget() {
+			return target;
 		}
 	}
 }

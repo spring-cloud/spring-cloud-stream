@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+
 /**
  * Represents a binding between an input or output and an adapter endpoint that connects
  * via a Binder. The binding could be for a consumer or a producer. A consumer binding
@@ -26,9 +27,10 @@ package org.springframework.cloud.stream.binder;
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-public interface Binding<T> {
+public interface Binding<T>{
 
 	/**
 	 * Unbinds the target component represented by this instance and stops any active
@@ -37,4 +39,17 @@ public interface Binding<T> {
 	 * and a new Binding should be created instead.
 	 */
 	void unbind();
+
+	/**
+	 * Binds the target component represented by this instance. Should be used to call any
+	 * lifecycle method on the represented target. Implementations must be idempotent.
+	 * This method is called after the concrete {@link Binder} implementation returns from
+	 * its create binding methods
+	 */
+	void bind();
+
+	/**
+	 * @return the binding target instance
+	 */
+	T getTarget();
 }

@@ -24,7 +24,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import org.springframework.cloud.stream.error.BinderErrorConfigurer;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
@@ -266,6 +268,10 @@ public class MessageChannelBinderSupportTests {
 
 	public class TestMessageChannelBinder
 			extends AbstractBinder<MessageChannel, ConsumerProperties, ProducerProperties> {
+
+		protected TestMessageChannelBinder() {
+			super(Mockito.mock(BinderErrorConfigurer.class));
+		}
 
 		@Override
 		protected Binding<MessageChannel> doBindConsumer(String name, String group, MessageChannel channel,

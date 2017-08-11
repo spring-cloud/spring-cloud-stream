@@ -28,10 +28,12 @@ import org.mockito.stubbing.Answer;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder.ErrorInfrastructure;
+import org.springframework.cloud.stream.error.AbstractMessageChannelErrorConfigurer;
+import org.springframework.cloud.stream.error.LastSubscriberMessageHandler;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
@@ -51,28 +53,29 @@ import static org.mockito.Mockito.mock;
 /**
  * @author Marius Bogoevici
  * @author Gary Russell
+ * @author Vinicius Carvalho
  * @since 1.2.2
  */
 public class AbstractMessageChannelBinderTests {
 
 	@Test
 	public void testEndpointLifecycle() throws Exception {
-		StubMessageChannelBinder binder = new StubMessageChannelBinder();
 		GenericApplicationContext context = new GenericApplicationContext();
+		StubMessageChannelBinder binder = new StubMessageChannelBinder(context);
 		context.refresh();
 		context.getBeanFactory().registerSingleton("errorChannel", new PublishSubscribeChannel());
 		binder.setApplicationContext(context);
 
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo", "fooGroup", new DirectChannel(),
 				new ConsumerProperties());
+		consumerBinding.bind();
 		DirectFieldAccessor consumerBindingAccessor = new DirectFieldAccessor(consumerBinding);
 		Object messageProducer = consumerBindingAccessor.getPropertyValue("lifecycle");
 		Mockito.verify((Lifecycle) messageProducer).start();
 		Mockito.verify((InitializingBean) messageProducer).afterPropertiesSet();
 		Mockito.verify((MessageProducer) messageProducer).setOutputChannel(Mockito.any(MessageChannel.class));
 		Mockito.verifyNoMoreInteractions(messageProducer);
-		ErrorInfrastructure errorInfra = binder.errorInfrastructure;
-		SubscribableChannel errorChannel = errorInfra.getErrorChannel();
+		SubscribableChannel errorChannel = context.getBean("foo.fooGroup.errors",SubscribableChannel.class);
 		assertThat(errorChannel).isNotNull();
 		@SuppressWarnings("unchecked")
 		Set<MessageHandler> handlers = TestUtils.getPropertyValue(errorChannel, "dispatcher.handlers", Set.class);
@@ -109,16 +112,16 @@ public class AbstractMessageChannelBinderTests {
 
 	@Test
 	public void testEndpointBinderHasRecoverer() throws Exception {
-		StubMessageChannelBinder binder = new StubMessageChannelBinder(true);
 		GenericApplicationContext context = new GenericApplicationContext();
+		StubMessageChannelBinder binder = new StubMessageChannelBinder(context,true);
 		context.refresh();
 		context.getBeanFactory().registerSingleton("errorChannel", new PublishSubscribeChannel());
 		binder.setApplicationContext(context);
 
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo", "fooGroup", new DirectChannel(),
 				new ConsumerProperties());
-		ErrorInfrastructure errorInfra = binder.errorInfrastructure;
-		SubscribableChannel errorChannel = errorInfra.getErrorChannel();
+		consumerBinding.bind();
+		SubscribableChannel errorChannel = context.getBean("foo.fooGroup.errors",SubscribableChannel.class);
 		assertThat(errorChannel).isNotNull();
 		@SuppressWarnings("unchecked")
 		Set<MessageHandler> handlers = TestUtils.getPropertyValue(errorChannel, "dispatcher.handlers", Set.class);
@@ -141,19 +144,17 @@ public class AbstractMessageChannelBinderTests {
 			AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties,
 										ProvisioningProvider<ConsumerProperties, ProducerProperties>> {
 
-		private final boolean hasRecoverer;
 
-		private ErrorInfrastructure errorInfrastructure;
 
-		StubMessageChannelBinder() {
-			this(false);
+		StubMessageChannelBinder(ApplicationContext context) {
+			this(context,false);
+
 		}
 
 		@SuppressWarnings("unchecked")
-		StubMessageChannelBinder(boolean hasRecoverer) {
-			super(true, null, Mockito.mock(ProvisioningProvider.class));
+		StubMessageChannelBinder(ApplicationContext context, boolean hasRecoverer) {
+			super(true, null, Mockito.mock(ProvisioningProvider.class), new MockMessageChannelErrorConfigurer(context, hasRecoverer));
 			mockProvisioner();
-			this.hasRecoverer = hasRecoverer;
 		}
 
 		private void mockProvisioner() {
@@ -161,7 +162,7 @@ public class AbstractMessageChannelBinderTests {
 
 				@Override
 				public SimpleConsumerDestination answer(final InvocationOnMock invocation) throws Throwable {
-					return new SimpleConsumerDestination(invocation.getArgumentAt(0, String.class));
+					return new SimpleConsumerDestination(invocation.getArgumentAt(0, String.class), invocation.getArgumentAt(1, String.class));
 				}
 
 			}).given(this.provisioningProvider).provisionConsumerDestination(anyString(), anyString(),
@@ -179,14 +180,30 @@ public class AbstractMessageChannelBinderTests {
 		@Override
 		protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
 				ConsumerProperties properties) throws Exception {
-			this.errorInfrastructure = registerErrorInfrastructure(destination, group, properties);
+
 			MessageProducer adapter = Mockito.mock(MessageProducer.class,
 					Mockito.withSettings().extraInterfaces(Lifecycle.class, InitializingBean.class,
 							DisposableBean.class));
 			return adapter;
 		}
 
+
+	}
+
+	static class MockMessageChannelErrorConfigurer<C extends ConsumerProperties> extends AbstractMessageChannelErrorConfigurer<C> {
+
+		private final boolean hasRecoverer;
+
+		MockMessageChannelErrorConfigurer(ApplicationContext context, boolean hasRecoverer) {
+			this.hasRecoverer = hasRecoverer;
+			setApplicationContext(context);
+		}
+
 		@Override
+		public void configure(Binding<MessageChannel> binding) {
+			binding.getTarget();
+		}
+
 		protected MessageHandler getErrorMessageHandler(ConsumerDestination destination, String group,
 				ConsumerProperties consumerProperties) {
 			if (this.hasRecoverer) {
@@ -196,20 +213,26 @@ public class AbstractMessageChannelBinderTests {
 				return null;
 			}
 		}
-
 	}
 
 	private static class SimpleConsumerDestination implements ConsumerDestination {
 
 		private final String name;
+		private final String group;
 
-		SimpleConsumerDestination(String name) {
+		SimpleConsumerDestination(String name, String group) {
 			this.name = name;
+			this.group = group;
 		}
 
 		@Override
 		public String getName() {
-			return this.name;
+			return this.name +"."+this.group;
+		}
+
+		@Override
+		public Object getProperties() {
+			return null;
 		}
 
 	}

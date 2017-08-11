@@ -202,6 +202,16 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 			}
 
 			@Override
+			public MessageChannel getTarget() {
+				return null;
+			}
+
+			@Override
+			public void bind() {
+				bound = true;
+			}
+
+			@Override
 			public void unbind() {
 				bound = false;
 				destinations.get(name).unsubscribe(directHandler);

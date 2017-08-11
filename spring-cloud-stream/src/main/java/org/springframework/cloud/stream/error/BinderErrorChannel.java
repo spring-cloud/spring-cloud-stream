@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder;
+package org.springframework.cloud.stream.error;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

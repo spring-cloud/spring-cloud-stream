@@ -49,6 +49,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Vinicius Carvalho
  */
 public class BindingService {
 
@@ -97,6 +98,7 @@ public class BindingService {
 			Binding<T> binding = binder.bindConsumer(target,
 					bindingServiceProperties.getGroup(inputName), input,
 					consumerProperties);
+			binding.bind();
 			bindings.add(binding);
 		}
 		bindings = Collections.unmodifiableCollection(bindings);
@@ -123,6 +125,7 @@ public class BindingService {
 		validate(producerProperties);
 		Binding<T> binding = binder.bindProducer(bindingTarget, output,
 				producerProperties);
+		binding.bind();
 		this.producerBindings.put(outputName, binding);
 		return binding;
 	}

@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.error.BinderErrorConfigurer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -44,6 +45,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Vinicius Carvalho
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
@@ -63,6 +65,12 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	private volatile Codec codec;
 
 	private volatile EvaluationContext evaluationContext;
+
+	protected final BinderErrorConfigurer errorConfigurer;
+
+	protected AbstractBinder(BinderErrorConfigurer errorConfigurer) {
+		this.errorConfigurer = errorConfigurer;
+	}
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -128,7 +136,10 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		if (StringUtils.isEmpty(group)) {
 			Assert.isTrue(!properties.isPartitioned(), "A consumer group is required for a partitioned subscription");
 		}
-		return doBindConsumer(name, group, target, properties);
+		Binding<T> binding = doBindConsumer(name, group, target, properties);
+		registerErrorInfrastructure(binding, group, properties);
+		configureErrorInfrastructure(binding);
+		return binding;
 	}
 
 	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget, C properties);
@@ -171,11 +182,24 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
 	}
 
+	protected void registerErrorInfrastructure(Binding<T> binding, String group, C consumerProperties){
+		this.errorConfigurer.register(binding,group,consumerProperties);
+	}
+
+	protected void destroyErrorInfrastructure(Binding<T> binding, String group, C consumerProperties){
+		this.errorConfigurer.destroy(binding,group,consumerProperties);
+	}
+
+	protected void configureErrorInfrastructure(Binding<T> binding){
+		this.errorConfigurer.configure(binding);
+	}
+
 	/**
 	 * Create and configure a retry template.
-	 *
+	 * TODO: Perhaps we should deprecate this with BinderErrorConfigurer
 	 * @param properties The properties.
 	 * @return The retry template
+	 *
 	 */
 	public RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
 		RetryTemplate template = new RetryTemplate();
@@ -189,4 +213,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		template.setBackOffPolicy(backOffPolicy);
 		return template;
 	}
+
+
 }
