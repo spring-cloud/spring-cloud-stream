@@ -170,7 +170,7 @@ public class AbstractMessageChannelBinderTests {
 
 		@Override
 		protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
-				ProducerProperties producerProperties) throws Exception {
+				ProducerProperties producerProperties, MessageChannel errorChannel) throws Exception {
 			MessageHandler mock = Mockito.mock(MessageHandler.class, Mockito.withSettings()
 					.extraInterfaces(Lifecycle.class, InitializingBean.class, DisposableBean.class));
 			return mock;
