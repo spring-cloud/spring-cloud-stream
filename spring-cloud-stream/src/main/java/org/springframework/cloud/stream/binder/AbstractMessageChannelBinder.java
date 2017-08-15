@@ -301,8 +301,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	/**
-	 * Build an errorChannelRecoverer that writes to a pub/sub channel for the destination
-	 * when an async send error is received.
+	 * Register an error channel for the destination when an async send error is received.
+	 * Bridge the channel to the global error channel (if present).
 	 * @param destination the destination.
 	 * @return the channel.
 	 */
