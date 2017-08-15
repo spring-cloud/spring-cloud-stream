@@ -52,6 +52,8 @@ public class ProducerProperties {
 
 	private boolean useNativeEncoding = false;
 
+	private boolean errorChannelEnabled = false;
+
 	public Expression getPartitionKeyExpression() {
 		return partitionKeyExpression;
 	}
@@ -129,6 +131,14 @@ public class ProducerProperties {
 
 	public void setUseNativeEncoding(boolean useNativeEncoding) {
 		this.useNativeEncoding = useNativeEncoding;
+	}
+
+	public boolean isErrorChannelEnabled() {
+		return this.errorChannelEnabled;
+	}
+
+	public void setErrorChannelEnabled(boolean errorChannelEnabled) {
+		this.errorChannelEnabled = errorChannelEnabled;
 	}
 
 }
