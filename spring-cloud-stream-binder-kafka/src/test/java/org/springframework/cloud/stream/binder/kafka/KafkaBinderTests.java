@@ -58,27 +58,37 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
+import org.springframework.integration.kafka.support.KafkaSendFailureException;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.SettableListenableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
@@ -138,8 +148,7 @@ public abstract class KafkaBinderTests extends
 		testDlqGuts(false);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void testDlqGuts(boolean withRetry) throws Exception {
+	private void testDlqGuts(boolean withRetry) throws Exception {
 		AbstractKafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		DirectChannel moduleInputChannel = new DirectChannel();
@@ -167,7 +176,6 @@ public abstract class KafkaBinderTests extends
 
 		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(), "applicationContext",
 				ApplicationContext.class);
-		Map<String, MessageChannel> beansOfType = context.getBeansOfType(MessageChannel.class);
 		SubscribableChannel boundErrorChannel = context
 				.getBean(producerName + ".testGroup.errors-0", SubscribableChannel.class);
 		SubscribableChannel globalErrorChannel = context.getBean("errorChannel", SubscribableChannel.class);
@@ -1720,6 +1728,68 @@ public abstract class KafkaBinderTests extends
 		assertThat(extractEndpoint(input2Binding).isRunning()).isFalse();
 		assertThat(extractEndpoint(input3Binding).isRunning()).isFalse();
 		assertThat(extractEndpoint(producerBinding).isRunning()).isFalse();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testProducerErrorChannel() throws Exception {
+		AbstractKafkaTestBinder binder = getBinder();
+		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		ExtendedProducerProperties<KafkaProducerProperties> producerProps = new ExtendedProducerProperties<>(
+				new KafkaProducerProperties());
+		producerProps.setHeaderMode(HeaderMode.raw);
+		producerProps.setErrorChannelEnabled(true);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0", moduleOutputChannel, producerProps);
+		final Message<?> message = MessageBuilder.withPayload("bad").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
+				.build();
+		SubscribableChannel ec = binder.getApplicationContext().getBean("ec.0.errors", SubscribableChannel.class);
+		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();
+		final CountDownLatch latch = new CountDownLatch(2);
+		ec.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				errorMessage.set(message);
+				latch.countDown();
+			}
+
+		});
+		SubscribableChannel globalEc = binder.getApplicationContext()
+				.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class);
+		globalEc.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				latch.countDown();
+			}
+
+		});
+		KafkaProducerMessageHandler endpoint = TestUtils.getPropertyValue(producerBinding, "lifecycle",
+				KafkaProducerMessageHandler.class);
+		final RuntimeException fooException = new RuntimeException("foo");
+		final AtomicReference<Object> sent = new AtomicReference<>();
+		new DirectFieldAccessor(endpoint).setPropertyValue("kafkaTemplate",
+				new KafkaTemplate(mock(ProducerFactory.class)) {
+
+					@Override
+					public ListenableFuture<SendResult> send(String topic, Object payload) {
+						sent.set(payload);
+						SettableListenableFuture<SendResult> future = new SettableListenableFuture<>();
+						future.setException(fooException);
+						return future;
+					}
+
+		});
+
+		moduleOutputChannel.send(message);
+		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(errorMessage.get()).isInstanceOf(ErrorMessage.class);
+		assertThat(errorMessage.get().getPayload()).isInstanceOf(KafkaSendFailureException.class);
+		KafkaSendFailureException exception = (KafkaSendFailureException) errorMessage.get().getPayload();
+		assertThat(exception.getCause()).isSameAs(fooException);
+		assertThat(new String(((byte[] )exception.getFailedMessage().getPayload()))).isEqualTo(message.getPayload());
+		assertThat(exception.getRecord().value()).isSameAs(sent.get());
+		producerBinding.unbind();
 	}
 
 	@Override

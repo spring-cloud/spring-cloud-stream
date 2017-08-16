@@ -22,12 +22,10 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
-import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.context.ApplicationContext;
 import org.springframework.integration.codec.Codec;
 import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
-import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -40,15 +38,19 @@ import com.esotericsoftware.kryo.Registration;
 public abstract class AbstractKafkaTestBinder extends
 		AbstractTestBinder<KafkaMessageChannelBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
 
+	private ApplicationContext applicationContext;
+
 	@Override
 	public void cleanup() {
 		// do nothing - the rule will take care of that
 	}
 
-	protected void addErrorChannel(GenericApplicationContext context) {
-		PublishSubscribeChannel errorChannel = new PublishSubscribeChannel();
-		context.getBeanFactory().initializeBean(errorChannel, IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME);
-		context.getBeanFactory().registerSingleton(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, errorChannel);
+	protected final void setApplicationContext(ApplicationContext context) {
+		this.applicationContext = context;
+	}
+
+	public ApplicationContext getApplicationContext() {
+		return this.applicationContext;
 	}
 
 	protected static Codec getCodec() {

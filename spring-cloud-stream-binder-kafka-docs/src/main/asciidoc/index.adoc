@@ -23,12 +23,15 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 
 = Reference Guide
 include::overview.adoc[]
+
 include::dlq.adoc[]
+
 include::metrics.adoc[]
 
 = Appendices
 [appendix]
 include::building.adoc[]
+
 include::contributing.adoc[]
 
 // ======================================================================================

@@ -147,7 +147,8 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	protected MessageHandler createProducerMessageHandler(final ProducerDestination destination,
-			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) throws Exception {
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, MessageChannel errorChannel)
+					throws Exception {
 		final DefaultKafkaProducerFactory<byte[], byte[]> producerFB = getProducerFactory(producerProperties);
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
 				producerProperties.getPartitionCount(),
@@ -171,8 +172,12 @@ public class KafkaMessageChannelBinder extends
 		if (this.producerListener != null) {
 			kafkaTemplate.setProducerListener(this.producerListener);
 		}
-		return new ProducerConfigurationMessageHandler(kafkaTemplate, destination.getName(), producerProperties,
-				producerFB);
+		ProducerConfigurationMessageHandler handler = new ProducerConfigurationMessageHandler(kafkaTemplate,
+				destination.getName(), producerProperties, producerFB);
+		if (errorChannel != null) {
+			handler.setSendFailureChannel(errorChannel);
+		}
+		return handler;
 	}
 
 	private DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
@@ -413,7 +418,7 @@ public class KafkaMessageChannelBinder extends
 
 		private final DefaultKafkaProducerFactory<byte[], byte[]> producerFactory;
 
-		private ProducerConfigurationMessageHandler(KafkaTemplate<byte[], byte[]> kafkaTemplate, String topic,
+		ProducerConfigurationMessageHandler(KafkaTemplate<byte[], byte[]> kafkaTemplate, String topic,
 				ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
 				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory) {
 			super(kafkaTemplate);

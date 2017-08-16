@@ -523,5 +523,15 @@ spring.cloud.stream.kstream.bindings.output.producer.keySerde=org.apache.kafka.c
 spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde
 ----
 
+[[kafka-error-channels]]
+== Error Channels
 
+Starting with _version 1.3_, the binder unconditionally sends exceptions to an error channel for each consumer destination, and can be configured to send async producer send failures to an error channel too.
+See <<binder-error-channels>> for more information.
 
+The payload of the `ErrorMessage` for a send failure is a `KafkaSendFailureException` with properties:
+
+* `failedMessage` - the spring-messaging `Message<?>` that failed to be sent.
+* `record` - the raw `ProducerRecord` that was created from the `failedMessage`
+
+There is no automatic handling of these exceptions (such as sending to a <<kafka-dlq-processing, Dead-Letter queue>>); you can consume these exceptions with your own Spring Integration flow.

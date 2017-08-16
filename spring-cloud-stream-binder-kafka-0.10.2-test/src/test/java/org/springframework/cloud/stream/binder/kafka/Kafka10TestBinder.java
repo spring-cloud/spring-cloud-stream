@@ -67,6 +67,7 @@ public class Kafka10TestBinder extends AbstractKafkaTestBinder {
 			ProducerListener producerListener = new LoggingProducerListener();
 			binder.setProducerListener(producerListener);
 			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Config.class);
+			setApplicationContext(context);
 			binder.setApplicationContext(context);
 			binder.afterPropertiesSet();
 			this.setBinder(binder);
