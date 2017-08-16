@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.mockito.ArgumentCaptor;
 
 import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
@@ -70,8 +72,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.spel.standard.SpelExpression;
+import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
+import org.springframework.integration.amqp.support.NackedAmqpMessageException;
+import org.springframework.integration.amqp.support.ReturnedAmqpMessageException;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -79,13 +85,16 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.ReflectionUtils;
 
 import com.rabbitmq.http.client.domain.QueueInfo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -161,6 +170,77 @@ public class RabbitBinderTests extends
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		producerBinding.unbind();
 		consumerBinding.unbind();
+	}
+
+	@Test
+	public void testProducerErrorChannel() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		ccf.setPublisherReturns(true);
+		ccf.setPublisherConfirms(true);
+		ccf.resetConnection();
+		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		ExtendedProducerProperties<RabbitProducerProperties> producerProps = createProducerProperties();
+		producerProps.setErrorChannelEnabled(true);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0", moduleOutputChannel, producerProps);
+		final Message<?> message = MessageBuilder.withPayload("bad").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
+				.build();
+		SubscribableChannel ec = binder.getApplicationContext().getBean("ec.0.errors", SubscribableChannel.class);
+		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();
+		final CountDownLatch latch = new CountDownLatch(2);
+		ec.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				errorMessage.set(message);
+				latch.countDown();
+			}
+
+		});
+		SubscribableChannel globalEc = binder.getApplicationContext()
+				.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class);
+		globalEc.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				latch.countDown();
+			}
+
+		});
+		moduleOutputChannel.send(message);
+		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(errorMessage.get()).isInstanceOf(ErrorMessage.class);
+		assertThat(errorMessage.get().getPayload()).isInstanceOf(ReturnedAmqpMessageException.class);
+		ReturnedAmqpMessageException exception = (ReturnedAmqpMessageException) errorMessage.get().getPayload();
+		assertThat(exception.getReplyCode()).isEqualTo(312);
+		assertThat(exception.getReplyText()).isEqualTo("NO_ROUTE");
+
+		AmqpOutboundEndpoint endpoint = TestUtils.getPropertyValue(producerBinding, "lifecycle",
+				AmqpOutboundEndpoint.class);
+		assertThat(TestUtils.getPropertyValue(endpoint, "confirmCorrelationExpression.expression"))
+				.isEqualTo("#root");
+		class WrapperAccessor extends AmqpOutboundEndpoint {
+
+			public WrapperAccessor(AmqpTemplate amqpTemplate) {
+				super(amqpTemplate);
+			}
+
+			public CorrelationDataWrapper getWrapper() throws Exception {
+				Constructor<CorrelationDataWrapper> constructor = CorrelationDataWrapper.class.getDeclaredConstructor(
+						String.class, Object.class, Message.class);
+				ReflectionUtils.makeAccessible(constructor);
+				return constructor.newInstance(null, message, message);
+			}
+
+		}
+		endpoint.confirm(new WrapperAccessor(mock(AmqpTemplate.class)).getWrapper(), false, "Mock NACK");
+		assertThat(errorMessage.get()).isInstanceOf(ErrorMessage.class);
+		assertThat(errorMessage.get().getPayload()).isInstanceOf(NackedAmqpMessageException.class);
+		NackedAmqpMessageException nack = (NackedAmqpMessageException) errorMessage.get().getPayload();
+		assertThat(nack.getNackReason()).isEqualTo("Mock NACK");
+		assertThat(nack.getCorrelationData()).isEqualTo(message);
+		assertThat(nack.getFailedMessage()).isEqualTo(message);
+		producerBinding.unbind();
 	}
 
 	@Test
@@ -1103,8 +1183,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testBadUserDeclarationsFatal() {
 		RabbitTestBinder binder = getBinder();
-		ConfigurableApplicationContext context = TestUtils.getPropertyValue(binder, "binder.applicationContext",
-				ConfigurableApplicationContext.class);
+		ConfigurableApplicationContext context = binder.getApplicationContext();
 		ConfigurableListableBeanFactory bf = context.getBeanFactory();
 		bf.registerSingleton("testBadUserDeclarationsFatal", new Queue("testBadUserDeclarationsFatal", false));
 		bf.registerSingleton("binder", binder);

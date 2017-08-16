@@ -30,12 +30,11 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonPro
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
-import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.codec.kryo.PojoCodec;
-import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.config.EnableIntegration;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 /**
  * Test support class for {@link RabbitMessageChannelBinder}.
@@ -55,25 +54,23 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 
 	private final Set<String> exchanges = new HashSet<String>();
 
+	private final AnnotationConfigApplicationContext applicationContext;
+
 	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitProperties rabbitProperties) {
 		this(connectionFactory, new RabbitMessageChannelBinder(connectionFactory, rabbitProperties,
 				new RabbitExchangeQueueProvisioner(connectionFactory)));
 	}
 
 	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitMessageChannelBinder binder) {
-		GenericApplicationContext context = new GenericApplicationContext();
-		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-		scheduler.setPoolSize(1);
-		scheduler.afterPropertiesSet();
-		context.getBeanFactory().registerSingleton(IntegrationContextUtils.TASK_SCHEDULER_BEAN_NAME, scheduler);
-		PublishSubscribeChannel errorChannel = new PublishSubscribeChannel();
-		context.getBeanFactory().initializeBean(errorChannel, IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME);
-		context.getBeanFactory().registerSingleton(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, errorChannel);
-		context.refresh();
-		binder.setApplicationContext(context);
+		this.applicationContext = new AnnotationConfigApplicationContext(Config.class);
+		binder.setApplicationContext(this.applicationContext);
 		binder.setCodec(new PojoCodec());
 		this.setBinder(binder);
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
+	}
+
+	public AnnotationConfigApplicationContext getApplicationContext() {
+		return this.applicationContext;
 	}
 
 	@Override
@@ -129,6 +126,13 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 		for (String prefix : this.prefixes) {
 			this.rabbitAdmin.deleteExchange(prefix + "DLX");
 		}
+		this.applicationContext.close();
+	}
+
+	@Configuration
+	@EnableIntegration
+	static class Config {
+
 	}
 
 }

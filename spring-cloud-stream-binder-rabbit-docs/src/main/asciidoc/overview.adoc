@@ -502,3 +502,42 @@ public class XDeathApplication {
 ----
 
 Notice that the count property in the `x-death` header is a `Long`.
+
+[[rabbit-error-channels]]
+== Error Channels
+
+Starting with _version 1.3_, the binder unconditionally sends exceptions to an error channel for each consumer destination, and can be configured to send async producer send failures to an error channel too.
+See <<binder-error-channels>> for more information.
+
+With rabbitmq, there are two types of send failures:
+
+* returned messages
+* negatively acknowledged https://www.rabbitmq.com/confirms.html[Publisher Confirms]
+
+The latter is rare; quoting the RabbitMQ documentation "[A nack] will only be delivered if an internal error occurs in the Erlang process responsible for a queue.".
+
+As well as enabling producer error channels as described in <<binder-error-channels>>, the RabbitMQ binder will only send messages to the channels if the connection factory is appropriately configured:
+
+* `ccf.setPublisherConfirms(true);`
+* `ccf.setPublisherReturns(true);`
+
+When using spring boot configuration for the connection factory, set properties:
+
+* `spring.rabbitmq.publisher-confirms`
+* `spring.rabbitmq.publisher-returns`
+
+The payload of the `ErrorMessage` for a returned message is a `ReturnedAmqpMessageException` with properties:
+
+* `failedMessage` - the spring-messaging `Message<?>` that failed to be sent.
+* `amqpMessage` - the raw spring-amqp `Message`
+* `replyCode` - an integer value indicating the reason for the failure (e.g. 312 - No route)
+* `replyText` - a text value indicating the reason for the failure e.g. `NO_ROUTE`.
+* `exchange` - the exchange to which the message was published.
+* `routingKey` - the routing key used when the message was published.
+
+For negatively acknowledged confirms, the payload is a `NackedAmqpMessageException` with properties:
+
+* `failedMessage` - the spring-messaging `Message<?>` that failed to be sent.
+* `nackReason` - a reason (if available; you may need to examine the broker logs for more information).
+
+There is no automatic handling of these exceptions (such as sending to a <<rabbit-dlq-processing, Dead-Letter queue>>); you can consume these exceptions with your own Spring Integration flow.

@@ -27,6 +27,7 @@ import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.LocalizedQueueConnectionFactory;
 import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
@@ -63,6 +64,7 @@ import org.springframework.integration.amqp.support.AmqpMessageHeaderErrorMessag
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.integration.support.DefaultErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -194,12 +196,13 @@ public class RabbitMessageChannelBinder
 
 	@Override
 	protected MessageHandler createProducerMessageHandler(final ProducerDestination producerDestination,
-														ExtendedProducerProperties<RabbitProducerProperties> producerProperties)
-			throws Exception {
+			ExtendedProducerProperties<RabbitProducerProperties> producerProperties, MessageChannel errorChannel)
+					throws Exception {
 		String prefix = producerProperties.getExtension().getPrefix();
 		String exchangeName = producerDestination.getName();
 		String destination = StringUtils.isEmpty(prefix) ? exchangeName : exchangeName.substring(prefix.length());
-		final AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(buildRabbitTemplate(producerProperties.getExtension()));
+		final AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(
+				buildRabbitTemplate(producerProperties.getExtension(), errorChannel != null));
 		endpoint.setExchangeName(producerDestination.getName());
 		RabbitProducerProperties extendedProperties = producerProperties.getExtension();
 		String routingKeyExpression = extendedProperties.getRoutingKeyExpression();
@@ -230,8 +233,37 @@ public class RabbitMessageChannelBinder
 		endpoint.setHeaderMapper(mapper);
 		endpoint.setDefaultDeliveryMode(extendedProperties.getDeliveryMode());
 		endpoint.setBeanFactory(this.getBeanFactory());
+		if (errorChannel != null) {
+			checkConnectionFactoryIsErrorCapable();
+			endpoint.setReturnChannel(errorChannel);
+			endpoint.setConfirmNackChannel(errorChannel);
+			endpoint.setConfirmCorrelationExpressionString("#root");
+			endpoint.setErrorMessageStrategy(new DefaultErrorMessageStrategy());
+		}
 		endpoint.afterPropertiesSet();
 		return endpoint;
+	}
+
+	private void checkConnectionFactoryIsErrorCapable() {
+		if (!(this.connectionFactory instanceof CachingConnectionFactory)) {
+			logger.warn("Unknown connection factory type, cannot determine error capabilities: "
+					+ this.connectionFactory.getClass());
+		}
+		else {
+			CachingConnectionFactory ccf = (CachingConnectionFactory) this.connectionFactory;
+			if (!ccf.isPublisherConfirms() && !ccf.isPublisherReturns()) {
+				logger.warn("Producer error channel is enabled, but the connection factory is not configured for "
+						+ "returns or confirms; the error channel will receive no messages");
+			}
+			else if (!ccf.isPublisherConfirms()) {
+				logger.info("Producer error channel is enabled, but the connection factory is only configured to "
+						+ "handle returned messages; negative acks will not be reported");
+			}
+			else if (!ccf.isPublisherReturns()) {
+				logger.info("Producer error channel is enabled, but the connection factory is only configured to "
+						+ "handle negatively acked messages; returned messages will not be reported");
+			}
+		}
 	}
 
 	private String buildPartitionRoutingExpression(String expressionRoot, boolean rootIsExpression) {
@@ -390,7 +422,7 @@ public class RabbitMessageChannelBinder
 		provisioningProvider.cleanAutoDeclareContext(consumerDestination.getName());
 	}
 
-	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties) {
+	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties, boolean mandatory) {
 		RabbitProperties rabbitProperties = null;
 		try {
 			rabbitProperties = getApplicationContext().getBean(RabbitProperties.class);
@@ -416,6 +448,7 @@ public class RabbitMessageChannelBinder
 			rabbitTemplate.setBeforePublishPostProcessors(this.compressingPostProcessor);
 		}
 		rabbitTemplate.setChannelTransacted(properties.isTransacted());
+		rabbitTemplate.setMandatory(mandatory); // returned messages
 		if (rabbitProperties != null && rabbitProperties.getTemplate().getRetry().isEnabled()) {
 			Retry retry = rabbitProperties.getTemplate().getRetry();
 			RetryPolicy retryPolicy = new SimpleRetryPolicy(retry.getMaxAttempts());
