@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -45,6 +44,7 @@ import org.springframework.messaging.SubscribableChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 
@@ -94,17 +94,22 @@ public class AbstractMessageChannelBinderTests {
 		Mockito.verify((DisposableBean) messageProducer).destroy();
 		Mockito.verifyNoMoreInteractions(messageProducer);
 
-		Binding<MessageChannel> producerBinding = binder.bindProducer("bar", new DirectChannel(),
-				new ProducerProperties());
+		ProducerProperties producerProps = new ProducerProperties();
+		producerProps.setErrorChannelEnabled(true);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bar", new DirectChannel(), producerProps);
 		DirectFieldAccessor producerBindingAccessor = new DirectFieldAccessor(producerBinding);
 		Object messageHandler = producerBindingAccessor.getPropertyValue("lifecycle");
 		Mockito.verify((Lifecycle) messageHandler).start();
 		Mockito.verify((InitializingBean) messageHandler).afterPropertiesSet();
 		Mockito.verifyNoMoreInteractions(messageHandler);
+		assertThat(context.containsBean("bar.errors")).isTrue();
+		assertThat(context.containsBean("bar.errors.bridge")).isTrue();
 		producerBinding.unbind();
 		Mockito.verify((Lifecycle) messageHandler).stop();
 		Mockito.verify((DisposableBean) messageHandler).destroy();
 		Mockito.verifyNoMoreInteractions(messageHandler);
+		assertThat(context.containsBean("bar.errors")).isFalse();
+		assertThat(context.containsBean("bar.errors.bridge")).isFalse();
 	}
 
 	@Test
@@ -165,7 +170,16 @@ public class AbstractMessageChannelBinderTests {
 				}
 
 			}).given(this.provisioningProvider).provisionConsumerDestination(anyString(), anyString(),
-					Matchers.any(ConsumerProperties.class));
+					any(ConsumerProperties.class));
+			willAnswer(new Answer<SimpleProducerDestination>() {
+
+				@Override
+				public SimpleProducerDestination answer(final InvocationOnMock invocation) throws Throwable {
+					return new SimpleProducerDestination(invocation.getArgumentAt(0, String.class));
+				}
+
+			}).given(this.provisioningProvider).provisionProducerDestination(anyString(),
+					any(ProducerProperties.class));
 		}
 
 		@Override
@@ -210,6 +224,27 @@ public class AbstractMessageChannelBinderTests {
 		@Override
 		public String getName() {
 			return this.name;
+		}
+
+	}
+
+	private static class SimpleProducerDestination implements ProducerDestination {
+
+		private final String name;
+
+
+		SimpleProducerDestination(String name) {
+			this.name = name;
+		}
+
+		@Override
+		public String getName() {
+			return this.name;
+		}
+
+		@Override
+		public String getNameForPartition(int partition) {
+			return getName() + partition;
 		}
 
 	}

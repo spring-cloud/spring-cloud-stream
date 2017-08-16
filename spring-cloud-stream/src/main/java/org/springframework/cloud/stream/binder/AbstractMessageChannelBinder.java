@@ -118,7 +118,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		try {
 			producerDestination = this.provisioningProvider.provisionProducerDestination(destination,
 					producerProperties);
-			SubscribableChannel errorChannel = registerErrorInfrastructure(producerDestination);
+			SubscribableChannel errorChannel = producerProperties.isErrorChannelEnabled()
+					? registerErrorInfrastructure(producerDestination) : null;
 			producerMessageHandler = createProducerMessageHandler(producerDestination, producerProperties,
 					errorChannel);
 			if (producerMessageHandler instanceof InitializingBean) {
