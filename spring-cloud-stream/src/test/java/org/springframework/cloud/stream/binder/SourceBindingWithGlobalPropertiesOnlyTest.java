@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SourceBindingWithGlobalPropertiesOnlyTest.TestSource.class, properties = {
-		"spring.cloud.stream.default.contentType=application/json" })
+		"spring.cloud.stream.default.contentType=application/json",
+		"spring.cloud.stream.default.producer.partitionKeyExpression=key" })
 public class SourceBindingWithGlobalPropertiesOnlyTest {
 
 	@Autowired
@@ -48,6 +49,8 @@ public class SourceBindingWithGlobalPropertiesOnlyTest {
 	public void testGlobalPropertiesSet() {
 		BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(Source.OUTPUT);
 		Assertions.assertThat(bindingProperties.getContentType()).isEqualTo("application/json");
+		Assertions.assertThat(bindingProperties.getProducer()).isNotNull();
+		Assertions.assertThat(bindingProperties.getProducer().getPartitionKeyExpression().getExpressionString()).isEqualTo("key");
 	}
 
 	@EnableBinding(Source.class)

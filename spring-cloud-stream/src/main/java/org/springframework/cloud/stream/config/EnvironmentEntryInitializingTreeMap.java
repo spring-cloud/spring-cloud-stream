@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Set;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.bind.PropertySourcesPropertyValues;
 import org.springframework.boot.bind.RelaxedDataBinder;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.Assert;
 
@@ -38,6 +39,7 @@ import org.springframework.util.Assert;
  * This implementation is not thread safe.
  *
  * @author Marius Bogoevici
+ * @author Ilayaperumal Gopinathan
  */
 public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, T> {
 
@@ -49,6 +51,8 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 
 	private final Map<String, T> delegate;
 
+	private final ConversionService conversionService;
+
 	/**
 	 * Constructs the map.
 	 * 
@@ -56,9 +60,11 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 	 * @param entryClass the entry class
 	 * @param defaultsPrefix the prefix for initializing the properties
 	 * @param delegate the actual map that stores the values
+	 * @param conversionService the conversion service to use when binding the default
+	 * property values.
 	 */
 	public EnvironmentEntryInitializingTreeMap(ConfigurableEnvironment environment, Class<T> entryClass,
-			String defaultsPrefix, Map<String, T> delegate) {
+			String defaultsPrefix, Map<String, T> delegate, ConversionService conversionService) {
 		Assert.notNull(environment, "The environment cannot be null");
 		Assert.notNull(entryClass, "The entry class cannot be null");
 		Assert.notNull(defaultsPrefix, "The prefix for the property defaults cannot be null");
@@ -67,6 +73,7 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 		this.entryClass = entryClass;
 		this.defaultsPrefix = defaultsPrefix;
 		this.delegate = delegate;
+		this.conversionService = conversionService;
 	}
 
 	@Override
@@ -74,6 +81,7 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 		if (!this.delegate.containsKey(key) && key instanceof String) {
 			T entry = BeanUtils.instantiate(entryClass);
 			RelaxedDataBinder defaultsDataBinder = new RelaxedDataBinder(entry, defaultsPrefix);
+			defaultsDataBinder.setConversionService(this.conversionService);
 			defaultsDataBinder.bind(new PropertySourcesPropertyValues(environment.getPropertySources()));
 			this.delegate.put((String) key, entry);
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,8 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.EnvironmentAware;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Environment;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
 
@@ -48,7 +46,7 @@ import org.springframework.util.Assert;
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
-public class BindingServiceProperties implements ApplicationContextAware, EnvironmentAware, InitializingBean {
+public class BindingServiceProperties implements ApplicationContextAware, InitializingBean {
 
 	private ConversionService conversionService;
 
@@ -120,18 +118,15 @@ public class BindingServiceProperties implements ApplicationContextAware, Enviro
 	public void setApplicationContext(ApplicationContext applicationContext)
 			throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-	}
-
-	@Override
-	public void setEnvironment(Environment environment) {
-		if (environment instanceof ConfigurableEnvironment) {
+		if (this.applicationContext.getEnvironment() instanceof ConfigurableEnvironment) {
 			// override the bindings store with the environment-initializing version if in
 			// a Spring context
 			Map<String, BindingProperties> delegate = new TreeMap<String, BindingProperties>(
 					String.CASE_INSENSITIVE_ORDER);
 			delegate.putAll(this.bindings);
-			this.bindings = new EnvironmentEntryInitializingTreeMap<>((ConfigurableEnvironment) environment,
-					BindingProperties.class, "spring.cloud.stream.default", delegate);
+			this.bindings = new EnvironmentEntryInitializingTreeMap<>(this.applicationContext.getEnvironment(),
+					BindingProperties.class, "spring.cloud.stream.default", delegate,
+					IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory()));
 		}
 	}
 
