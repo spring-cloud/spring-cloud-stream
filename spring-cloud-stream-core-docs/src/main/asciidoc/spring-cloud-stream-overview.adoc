@@ -33,6 +33,8 @@ The `@EnableBinding` annotation takes one or more interfaces as parameters (in t
 An interface declares input and/or output channels.
 Spring Cloud Stream provides the interfaces `Source`, `Sink`, and `Processor`; you can also define your own interfaces.
 
+
+
 The following is the definition of the `Sink` interface:
 
 [source,java]
@@ -212,11 +214,11 @@ The `@EnableBinding` annotation can take as parameters one or more interface cla
 
 [NOTE]
 ====
-In Spring Cloud Stream, the bindable `MessageChannel` components are the Spring Messaging `MessageChannel` (for outbound) and its extension `SubscribableChannel` (for inbound).
-Using the same mechanism other bindable components can be supported.
-`KStream` support in Spring Cloud Stream Kafka binder is one such example where KStream is used as inbound/outbound `bindable` components.
-In this documentation, we will continue to refer to MessageChannels as the `bindable` components.
+The `@EnableBinding` annotation is only required on your `Configuration` classes, you can provide as many binding interfaces as you need, for instance: `@EnableBinding(value={Orders.class, Payment.class}`.
+Where both `Order` and `Payment` interfaces would declare `@Input` and `@Output` channels.
 ====
+
+
 
 ==== `@Input` and `@Output`
 
@@ -247,6 +249,13 @@ public class CafeConfiguration {
    ...
 }
 ----
+[NOTE]
+====
+In Spring Cloud Stream, the bindable `MessageChannel` components are the Spring Messaging `MessageChannel` (for outbound) and its extension `SubscribableChannel` (for inbound).
+Using the same mechanism other bindable components can be supported.
+`KStream` support in Spring Cloud Stream Kafka binder is one such example where KStream is used as inbound/outbound `bindable` components.
+In this documentation, we will continue to refer to MessageChannels as the `bindable` components.
+====
 
 ===== Customizing Channel Names
 
@@ -425,6 +434,12 @@ public class TransformProcessor {
   }
 }
 ----
+
+[NOTE]
+====
+It's important to understant that when you consume from the same binding using `@StreamListener` a pubsub model is used, where each method annotated with `@StreamListener` receives it's own copy of the message, each one has its own consumer group.
+However, if you share a bindable channel as an input for `@Aggregator`, `@Transformer` or `@ServiceActivator`, those will consume in a competing model, no individual consumer group is created for each subscription.
+====
 
 ===== Spring Integration Error Channel Support
 
