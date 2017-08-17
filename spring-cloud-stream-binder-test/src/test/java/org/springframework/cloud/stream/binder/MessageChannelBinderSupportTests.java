@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,10 @@ package org.springframework.cloud.stream.binder;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.springframework.integration.codec.kryo.KryoRegistrar;
 import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.tuple.TupleKryoRegistrar;
@@ -55,7 +51,7 @@ public class MessageChannelBinderSupportTests {
 
 	@Before
 	public void setUp() {
-		binder.setCodec(new PojoCodec(new TupleRegistrar()));
+		binder.setCodec(new PojoCodec(new TupleKryoRegistrar()));
 	}
 
 	@Test
@@ -248,20 +244,6 @@ public class MessageChannelBinderSupportTests {
 			this.foo = foo;
 		}
 
-	}
-
-	private static class TupleRegistrar implements KryoRegistrar {
-		private final TupleKryoRegistrar delegate = new TupleKryoRegistrar();
-
-		@Override
-		public void registerTypes(Kryo kryo) {
-			delegate.registerTypes(kryo);
-		}
-
-		@Override
-		public List<Registration> getRegistrations() {
-			return delegate.getRegistrations();
-		}
 	}
 
 	public class TestMessageChannelBinder
