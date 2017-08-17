@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.mockito.ArgumentCaptor;
 
+import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -48,7 +49,9 @@ import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -64,6 +67,7 @@ import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchang
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.integration.channel.DirectChannel;
@@ -81,6 +85,7 @@ import org.springframework.retry.support.RetryTemplate;
 import com.rabbitmq.http.client.domain.QueueInfo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1093,6 +1098,43 @@ public class RabbitBinderTests extends
 		cf.destroy();
 
 		this.rabbitAvailableRule.getResource().destroy();
+	}
+
+	@Test
+	public void testBadUserDeclarationsFatal() {
+		RabbitTestBinder binder = getBinder();
+		ConfigurableApplicationContext context = TestUtils.getPropertyValue(binder, "binder.applicationContext",
+				ConfigurableApplicationContext.class);
+		ConfigurableListableBeanFactory bf = context.getBeanFactory();
+		bf.registerSingleton("testBadUserDeclarationsFatal", new Queue("testBadUserDeclarationsFatal", false));
+		bf.registerSingleton("binder", binder);
+		RabbitExchangeQueueProvisioner provisioner = TestUtils.getPropertyValue(binder, "binder.provisioningProvider",
+				RabbitExchangeQueueProvisioner.class);
+		bf.initializeBean(provisioner, "provisioner");
+		bf.registerSingleton("provisioner", provisioner);
+		context.addApplicationListener(provisioner);
+		RabbitAdmin admin = new RabbitAdmin(rabbitAvailableRule.getResource());
+		admin.declareQueue(new Queue("testBadUserDeclarationsFatal"));
+		// reset the connection and configure the "user" admin to auto declare queues...
+		rabbitAvailableRule.getResource().resetConnection();
+		bf.initializeBean(admin, "rabbitAdmin");
+		bf.registerSingleton("rabbitAdmin", admin);
+		admin.afterPropertiesSet();
+		// the mis-configured queue should be fatal
+		Binding<?> binding = null;
+		try {
+			binding = binder.bindConsumer("input", "baddecls", new DirectChannel(), createConsumerProperties());
+			fail("Expected exception");
+		}
+		catch (BinderException e) {
+			assertThat(e.getCause()).isInstanceOf(AmqpIOException.class);
+		}
+		finally {
+			admin.deleteQueue("testBadUserDeclarationsFatal");
+			if (binding != null) {
+				binding.unbind();
+			}
+		}
 	}
 
 	private SimpleMessageListenerContainer verifyContainer(Lifecycle endpoint) {

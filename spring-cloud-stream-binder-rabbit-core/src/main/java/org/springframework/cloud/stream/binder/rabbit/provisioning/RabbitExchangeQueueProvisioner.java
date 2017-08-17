@@ -33,6 +33,7 @@ import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.DeclarationExceptionEvent;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -45,6 +46,7 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -55,8 +57,9 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Gary Russell
  */
-public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<RabbitConsumerProperties>,
-		ExtendedProducerProperties<RabbitProducerProperties>> {
+public class RabbitExchangeQueueProvisioner implements ApplicationListener<DeclarationExceptionEvent>,
+		ProvisioningProvider<ExtendedConsumerProperties<RabbitConsumerProperties>,
+							ExtendedProducerProperties<RabbitProducerProperties>> {
 
 	private static final AnonymousQueue.Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR
 			= new AnonymousQueue.Base64UrlNamingStrategy("anonymous.");
@@ -71,13 +74,14 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 
 	private final RabbitAdmin rabbitAdmin;
 
+	private boolean notOurAdminException;
+
 	private final GenericApplicationContext autoDeclareContext = new GenericApplicationContext();
 
 	public RabbitExchangeQueueProvisioner(ConnectionFactory connectionFactory) {
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 		this.autoDeclareContext.refresh();
 		this.rabbitAdmin.setApplicationContext(this.autoDeclareContext);
-		this.rabbitAdmin.setIgnoreDeclarationExceptions(true);
 		this.rabbitAdmin.afterPropertiesSet();
 	}
 
@@ -324,6 +328,15 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 				this.logger.debug("Declaration of queue: " + queue.getName() + " deferred - connection not available");
 			}
 		}
+		catch (RuntimeException e) {
+			if (this.notOurAdminException) {
+				this.notOurAdminException = false;
+				throw e;
+			}
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Declaration of queue: " + queue.getName() + " deferred", e);
+			}
+		}
 		addToAutoDeclareContext(beanName, queue);
 	}
 
@@ -419,6 +432,15 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 						"Declaration of exchange: " + exchange.getName() + " deferred - connection not available");
 			}
 		}
+		catch (RuntimeException e) {
+			if (this.notOurAdminException) {
+				this.notOurAdminException = false;
+				throw e;
+			}
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Declaration of exchange: " + exchange.getName() + " deferred", e);
+			}
+		}
 		addToAutoDeclareContext(rootName + ".exchange", exchange);
 	}
 
@@ -438,6 +460,15 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 			if (this.logger.isDebugEnabled()) {
 				this.logger.debug(
 						"Declaration of binding: " + rootName + ".binding deferred - connection not available");
+			}
+		}
+		catch (RuntimeException e) {
+			if (this.notOurAdminException) {
+				this.notOurAdminException = false;
+				throw e;
+			}
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Declaration of binding: " + rootName + ".binding deferred", e);
 			}
 		}
 		addToAutoDeclareContext(rootName + ".binding", binding);
@@ -460,6 +491,11 @@ public class RabbitExchangeQueueProvisioner implements ProvisioningProvider<Exte
 				((DefaultListableBeanFactory) beanFactory).destroySingleton(name);
 			}
 		}
+	}
+
+	@Override
+	public void onApplicationEvent(DeclarationExceptionEvent event) {
+		this.notOurAdminException = true; // our admin doesn't have an event publisher
 	}
 
 	private static final class RabbitProducerDestination implements ProducerDestination {
