@@ -432,7 +432,23 @@ Spring Cloud Stream supports publishing error messages received by the Spring In
 error channel. Error messages sent to the `errorChannel` can be published to a specific destination
 at the broker by configuring a binding for the outbound target named `error`. For example, to
 publish error messages to a broker destination named "myErrors", provide the following property:
-`spring.cloud.stream.bindings.error.destination=myErrors`
+`spring.cloud.stream.bindings.error.destination=myErrors`.
+
+[[binder-error-channels]]
+===== Message Channel Binders and Error Channels
+
+Starting with _version 1.3_, some `MessageChannel` - based binders publish errors to a discrete error channel for each destination.
+In addition, these error channels are bridged to the global Spring Integration `errorChannel` mentioned above.
+You can therefore consume errors for specific destinations and/or for all destinations, using a standard Spring Integration flow (`IntegrationFlow`, `@ServiceActivator`, etc).
+
+On the consumer side, the listener thread catches any exceptions and forwards an `ErrorMessage` to the destination's error channel.
+The payload of the message is a `MessagingException` with the normal `failedMessage` and `cause` properties.
+Usually, the raw data received from the broker is included in a header.
+For binders that support (and are configured with) a dead letter destination; a `MessagePublishingErrorHandler` is subscribed to the channel, and the raw data is forwarded to the dead letter destination.
+
+On the producer side; for binders that support some kind of async result after publishing messages (e.g. RabbitMQ, Kafka), you can enable an error channel by setting the `...producer.errorChannelEnabled` to `true`.
+The payload of the `ErrorMessage` depends on the binder implementation but will be a `MessagingException` with the normal `failedMessage`  property, as well as additional properties about the failure.
+Refer to the binder documentation for complete details.
 
 ===== Using @StreamListener for Automatic Content Type Handling
 
@@ -1229,6 +1245,11 @@ useNativeEncoding::
 When this configuration is being used, the outbound message marshalling is not based on the `contentType` of the binding.
 When native encoding is used, it is the responsibility of the consumer to use appropriate decoder (ex: Kafka consumer value de-serializer) to deserialize the inbound message.
 Also, when native encoding/decoding is used the `headerMode` property is ignored and headers will not be embedded into the message.
++
+Default: `false`.
+errorChannelEnabled::
+  When set to `true`, if the binder supports async send results; send failures will be sent to an error channel for the destination.
+  See <<binder-error-channels>> for more information.
 +
 Default: `false`.
 
