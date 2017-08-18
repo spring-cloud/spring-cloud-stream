@@ -97,6 +97,7 @@ import kafka.utils.ZkUtils;
  * @author Soby Chacko
  * @author Ilayaperumal Gopinathan
  * @author Henryk Konsek
+ * @author Gary Russell
  */
 public abstract class KafkaBinderTests extends
 		PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
@@ -975,13 +976,23 @@ public abstract class KafkaBinderTests extends
 
 	@Test
 	@Override
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void testPartitionedModuleJava() throws Exception {
 		Binder binder = getBinder();
 
+		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
+
+		final ZkClient zkClient;
+		zkClient = new ZkClient(configurationProperties.getZkConnectionString(),
+				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
+				ZKStringSerializer$.MODULE$);
+
+		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+		invokeCreateTopic(zkUtils, "partJ.0", 8, 1, new Properties());
+
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.setConcurrency(2);
-		consumerProperties.setInstanceCount(3);
+		consumerProperties.setInstanceCount(4);
 		consumerProperties.setInstanceIndex(0);
 		consumerProperties.setPartitioned(true);
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
@@ -996,11 +1007,15 @@ public abstract class KafkaBinderTests extends
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2J");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer("partJ.0", "test", input2, consumerProperties);
+		consumerProperties.setInstanceIndex(3);
+		QueueChannel input3 = new QueueChannel();
+		input3.setBeanName("test.input3J");
+		Binding<MessageChannel> input3Binding = binder.bindConsumer("partJ.0", "test", input3, consumerProperties);
 
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
-		producerProperties.setPartitionCount(3);
+		producerProperties.setPartitionCount(3); // overridden to 8 on the actual topic
 		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 		output.setBeanName("test.output");
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
@@ -1013,6 +1028,7 @@ public abstract class KafkaBinderTests extends
 		output.send(new GenericMessage<>(2));
 		output.send(new GenericMessage<>(1));
 		output.send(new GenericMessage<>(0));
+		output.send(new GenericMessage<>(3));
 
 		Message<?> receive0 = receive(input0);
 		assertThat(receive0).isNotNull();
@@ -1020,20 +1036,18 @@ public abstract class KafkaBinderTests extends
 		assertThat(receive1).isNotNull();
 		Message<?> receive2 = receive(input2);
 		assertThat(receive2).isNotNull();
+		Message<?> receive3 = receive(input3);
+		assertThat(receive3).isNotNull();
 
-		if (usesExplicitRouting()) {
-			assertThat(receive0.getPayload()).isEqualTo(0);
-			assertThat(receive1.getPayload()).isEqualTo(1);
-			assertThat(receive2.getPayload()).isEqualTo(2);
-		}
-		else {
-			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1, receive2);
-			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder(0, 1, 2);
-		}
+		assertThat(receive0.getPayload()).isEqualTo(0);
+		assertThat(receive1.getPayload()).isEqualTo(1);
+		assertThat(receive2.getPayload()).isEqualTo(2);
+		assertThat(receive3.getPayload()).isEqualTo(3);
 
 		input0Binding.unbind();
 		input1Binding.unbind();
 		input2Binding.unbind();
+		input3Binding.unbind();
 		outputBinding.unbind();
 	}
 

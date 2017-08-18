@@ -166,6 +166,15 @@ public class KafkaMessageChannelBinder extends
 						+ producerProperties.getPartitionCount() + ", smaller than the actual partition count of "
 						+ partitions.size() + " of the topic. The larger number will be used instead.");
 			}
+			/*
+			 * This is dirty; it relies on the fact that we, and the partition
+			 * interceptor, share a hard reference to the producer properties instance.
+			 * But I don't see another way to fix it since the interceptor has already
+			 * been added to the channel, and we don't have access to the channel here; if
+			 * we did, we could inject the proper partition count there.
+			 * TODO: Consider this when doing the 2.0 binder restructuring.
+			 */
+			producerProperties.setPartitionCount(partitions.size());
 		}
 
 		KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFB);
