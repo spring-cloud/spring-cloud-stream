@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent;
@@ -90,6 +91,36 @@ public class SubtypeModuleTests {
 				MessageBuilder.withPayload("{\"type\":\"typed\"}").build(),
 				RemoteApplicationEvent.class);
 		assertTrue("event is wrong type", event instanceof TypedRemoteApplicationEvent);
+	}
+
+	/**
+	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74
+	 */
+	@Test
+	public void testDeserializeAckRemoteApplicationEventWithKnownType() throws Exception {
+		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		converter.afterPropertiesSet();
+		Object event = converter.fromMessage(MessageBuilder.withPayload(
+				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent\"}")
+				.build(), RemoteApplicationEvent.class);
+		assertTrue("event is no ack", event instanceof AckRemoteApplicationEvent);
+		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
+		assertEquals("inner ack event has wrong type", TestRemoteApplicationEvent.class, ackEvent.getEvent());
+	}
+
+	/**
+	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74
+	 */
+	@Test
+	public void testDeserializeAckRemoteApplicationEventWithUnknownType() throws Exception {
+		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		converter.afterPropertiesSet();
+		Object event = converter.fromMessage(MessageBuilder.withPayload(
+				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}").build(),
+				RemoteApplicationEvent.class);
+		assertTrue("event is no ack", event instanceof AckRemoteApplicationEvent);
+		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
+		assertEquals("inner ack event has wrong type", UnknownRemoteApplicationEvent.class, ackEvent.getEvent());
 	}
 
 	@SuppressWarnings("serial")

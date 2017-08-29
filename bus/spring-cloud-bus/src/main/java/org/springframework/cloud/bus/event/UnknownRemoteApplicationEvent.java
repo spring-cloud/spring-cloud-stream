@@ -34,7 +34,8 @@ public class UnknownRemoteApplicationEvent extends RemoteApplicationEvent {
 	}
 
 	public UnknownRemoteApplicationEvent(Object source, String typeInfo, byte[] payload) {
-		super(source, null, null);
+		// Initialize originService with an empty String, to avoid NullPointer in AntPathMatcher.
+		super(source, "", null);
 		this.typeInfo = typeInfo;
 		this.payload = payload;
 	}

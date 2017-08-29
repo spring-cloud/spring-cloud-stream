@@ -43,7 +43,7 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -75,7 +75,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	private ServiceMatcher serviceMatcher;
 
 	@Autowired
-	private ChannelBindingServiceProperties bindings;
+	private BindingServiceProperties bindings;
 
 	@Autowired
 	private BusProperties bus;
