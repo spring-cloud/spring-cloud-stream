@@ -166,7 +166,7 @@ public class AbstractMessageChannelBinderTests {
 
 				@Override
 				public SimpleConsumerDestination answer(final InvocationOnMock invocation) throws Throwable {
-					return new SimpleConsumerDestination(invocation.getArgumentAt(0, String.class));
+					return new SimpleConsumerDestination(invocation.getArgument(0));
 				}
 
 			}).given(this.provisioningProvider).provisionConsumerDestination(anyString(), anyString(),
@@ -175,7 +175,7 @@ public class AbstractMessageChannelBinderTests {
 
 				@Override
 				public SimpleProducerDestination answer(final InvocationOnMock invocation) throws Throwable {
-					return new SimpleProducerDestination(invocation.getArgumentAt(0, String.class));
+					return new SimpleProducerDestination(invocation.getArgument(0));
 				}
 
 			}).given(this.provisioningProvider).provisionProducerDestination(anyString(),
