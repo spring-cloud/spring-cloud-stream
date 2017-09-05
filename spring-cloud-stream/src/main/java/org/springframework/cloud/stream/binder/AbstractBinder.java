@@ -26,7 +26,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.expression.EvaluationContext;
-import org.springframework.integration.codec.Codec;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.messaging.Message;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
@@ -60,7 +59,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private volatile AbstractApplicationContext applicationContext;
 
-	private volatile Codec codec;
 
 	private volatile EvaluationContext evaluationContext;
 
@@ -96,10 +94,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	protected ConfigurableListableBeanFactory getBeanFactory() {
 		return this.applicationContext.getBeanFactory();
-	}
-
-	public void setCodec(Codec codec) {
-		this.codec = codec;
 	}
 
 	public void setIntegrationEvaluationContext(EvaluationContext evaluationContext) {
@@ -152,19 +146,17 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
-		return MessageSerializationUtils.serializePayload(message, this.codec);
+		return MessageSerializationUtils.serializePayload(message);
 	}
 
-	protected final byte[] serializePayloadIfNecessary(Object originalPayload) {
-		return MessageSerializationUtils.serializePayload(originalPayload, this.codec);
-	}
+
 
 	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
-		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver, this.codec);
+		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver);
 	}
 
 	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
-		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver, this.codec);
+		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver);
 	}
 
 	protected String buildPartitionRoutingExpression(String expressionRoot) {

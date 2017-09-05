@@ -86,13 +86,15 @@ public class KryoMessageConverter implements SmartMessageConverter {
 	@Override
 	public Object fromMessage(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 
+		if (!canConvertFrom(message, targetClass)) {
+			return null;
+		}
+
 		if(!message.getPayload().getClass().isAssignableFrom(byte[].class)){
 			throw new MessageConversionException("This converter can only convert messages with byte[] payload");
 		}
 
-		if (!canConvertFrom(message, targetClass)) {
-			return null;
-		}
+
 
 		byte[] payload = (byte[])message.getPayload();
 
