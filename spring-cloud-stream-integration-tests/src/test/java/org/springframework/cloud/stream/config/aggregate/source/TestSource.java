@@ -27,7 +27,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.InboundChannelAdapter;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.GenericMessage;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -43,7 +44,7 @@ public class TestSource {
 		return new MessageSource<String>() {
 			@Override
 			public Message<String> receive() {
-				return new GenericMessage<>(new SimpleDateFormat("DDMMMYYYY").format(new Date()));
+				return MessageBuilder.withPayload(new SimpleDateFormat("DDMMMYYYY").format(new Date())).setHeader(MessageHeaders.CONTENT_TYPE,"text/plain").build();
 			}
 		};
 	}

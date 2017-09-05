@@ -38,6 +38,7 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 
 	public ObjectStringMessageConverter() {
 		super(new MimeType("text", "plain", Charset.forName("UTF-8")));
+		setStrictContentTypeMatch(true);
 	}
 
 	protected boolean supports(Class<?> clazz) {
@@ -65,10 +66,10 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 	protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
 		if (payload != null) {
 			if ((payload instanceof byte[])) {
-				return new String((byte[]) payload, Charset.forName("UTF-8"));
+				return payload;
 			}
 			else {
-				return payload.toString();
+				return payload.toString().getBytes();
 			}
 		}
 		else {

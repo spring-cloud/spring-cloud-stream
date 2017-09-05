@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * correctly.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ExampleTest.MyProcessor.class, properties = { "server.port=-1" })
+@SpringBootTest(classes = ExampleTest.MyProcessor.class, properties = { "server.port=-1", "--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.cloud.stream.bindings.output.contentType=text/plain" })
 @DirtiesContext
 public class ExampleTest {
 
@@ -60,8 +60,8 @@ public class ExampleTest {
 	public void testWiring() {
 		Message<String> message = new GenericMessage<>("hello");
 		this.processor.input().send(message);
-		Message<String> received = (Message<String>) this.messageCollector.forChannel(this.processor.output()).poll();
-		assertThat(received.getPayload()).isEqualTo("hello world");
+		Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(this.processor.output()).poll();
+		assertThat(received.getPayload()).isEqualTo("hello world".getBytes());
 	}
 
 	@SpringBootApplication

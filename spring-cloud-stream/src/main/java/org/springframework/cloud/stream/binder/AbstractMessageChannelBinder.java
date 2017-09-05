@@ -525,6 +525,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return destination.getName() + ".errors";
 	}
 
+	@Deprecated
 	private final class ReceivingHandler extends AbstractReplyProducingMessageHandler {
 
 		private final boolean extractEmbeddedHeaders;
@@ -574,6 +575,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
+	@Deprecated
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {
 
 		private final boolean embedHeaders;
@@ -582,7 +584,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		private final MessageHandler delegate;
 
-		private final boolean useNativeEncoding;
 
 		private SendingHandler(MessageHandler delegate, boolean embedHeaders,
 				String[] headersToEmbed, boolean useNativeEncoding) {
@@ -593,12 +594,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			this.useNativeEncoding = useNativeEncoding;
 		}
 
+		private final boolean useNativeEncoding;
+
 		@Override
 		protected void handleMessageInternal(Message<?> message) throws Exception {
 			Message<?> messageToSend = (this.useNativeEncoding) ? message
 					: serializeAndEmbedHeadersIfApplicable(message);
 			this.delegate.handleMessage(messageToSend);
 		}
+
 
 		private Message<?> serializeAndEmbedHeadersIfApplicable(Message<?> message) throws Exception {
 			MessageValues transformed = serializePayloadIfNecessary(message);

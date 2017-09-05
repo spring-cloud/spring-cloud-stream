@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.interceptor;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -31,9 +32,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.config.GlobalChannelInterceptor;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.util.MimeTypeUtils;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -48,7 +51,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 @SpringBootTest(classes = BoundChannelsInterceptedTest.Foo.class)
 public class BoundChannelsInterceptedTest {
 
-	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").build();
+	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
 
 	@Autowired
 	@Bindings(BoundChannelsInterceptedTest.Foo.class)
@@ -60,7 +63,7 @@ public class BoundChannelsInterceptedTest {
 	@Test
 	public void testBoundChannelsIntercepted() {
 		this.fooSink.input().send(TEST_MESSAGE);
-		verify(this.channelInterceptor).preSend(TEST_MESSAGE, this.fooSink.input());
+		verify(this.channelInterceptor).preSend(Mockito.any(), Mockito.eq(this.fooSink.input()));
 		verifyNoMoreInteractions(this.channelInterceptor);
 	}
 

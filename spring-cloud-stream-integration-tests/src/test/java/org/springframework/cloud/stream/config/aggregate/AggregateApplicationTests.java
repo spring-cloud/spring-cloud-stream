@@ -49,9 +49,10 @@ public class AggregateApplicationTests {
 		TestSupportBinder testSupportBinder = (TestSupportBinder) context.getBean(BinderFactory.class).getBinder(null,
 				MessageChannel.class);
 		MessageChannel processorOutput = testSupportBinder.getChannelForName("output");
-		Message<String> received = (Message<String>) (testSupportBinder.messageCollector().forChannel(processorOutput)
+		Message<byte[]> received = (Message<byte[]>) (testSupportBinder.messageCollector().forChannel(processorOutput)
 				.poll(5, TimeUnit.SECONDS));
 		Assert.assertThat(received, notNullValue());
-		Assert.assertTrue(received.getPayload().endsWith("processed"));
+		String payload = new String(received.getPayload());
+		Assert.assertTrue(payload.endsWith("processed"));
 	}
 }

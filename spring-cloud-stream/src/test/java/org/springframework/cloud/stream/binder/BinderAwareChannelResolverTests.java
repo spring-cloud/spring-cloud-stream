@@ -153,7 +153,7 @@ public class BinderAwareChannelResolverTests {
 			fail("interrupted while awaiting latch");
 		}
 		assertThat(received).hasSize(1);
-		assertThat(received.get(0).getPayload()).isEqualTo("hello");
+		assertThat(new String((byte[])received.get(0).getPayload())).isEqualTo("hello");
 		context.close();
 		assertThat(producerBindings).hasSize(1);
 		assertThat(binding.isBound()).isFalse().describedAs("Must not be bound");

@@ -32,10 +32,11 @@ import org.springframework.util.MimeTypeUtils;
 
 /**
  * A {@link org.springframework.messaging.converter.MessageConverter} to convert a
- * {@link Tuple} to a JSON String
+ * {@link Tuple} to JSON bytes
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 public class TupleJsonMessageConverter extends AbstractMessageConverter {
 
@@ -75,7 +76,7 @@ public class TupleJsonMessageConverter extends AbstractMessageConverter {
 		else {
 			json = t.toString();
 		}
-		return json;
+		return json.getBytes();
 	}
 
 	@Override

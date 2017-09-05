@@ -43,7 +43,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
-import org.springframework.tuple.Tuple;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
@@ -61,7 +61,8 @@ import org.springframework.util.StringUtils;
  * @author Maxim Kirilov
  * @author Gary Russell
  */
-public class MessageConverterConfigurer implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
+public class MessageConverterConfigurer
+		implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
 
 	private final MessageBuilderFactory messageBuilderFactory = new MutableMessageBuilderFactory();
 
@@ -73,7 +74,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		Assert.notNull(compositeMessageConverterFactory, "The message converter factory cannot be null");
+		Assert.notNull(compositeMessageConverterFactory,
+				"The message converter factory cannot be null");
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
 	}
@@ -94,7 +96,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	}
 
 	@Override
-	public void configureOutputChannel(MessageChannel messageChannel, String channelName) {
+	public void configureOutputChannel(MessageChannel messageChannel,
+			String channelName) {
 		configureMessageChannel(messageChannel, channelName, false);
 	}
 
@@ -104,11 +107,12 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 	 * @param channel message channel to set the data-type and message converters
 	 * @param channelName the channel name
 	 */
-	private void configureMessageChannel(MessageChannel channel, String channelName, boolean input) {
+	private void configureMessageChannel(MessageChannel channel, String channelName,
+			boolean input) {
 		Assert.isAssignable(AbstractMessageChannel.class, channel.getClass());
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
-		final BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(
-				channelName);
+		final BindingProperties bindingProperties = this.bindingServiceProperties
+				.getBindingProperties(channelName);
 		final String contentType = bindingProperties.getContentType();
 		ProducerProperties producerProperties = bindingProperties.getProducer();
 		if (!input && producerProperties != null && producerProperties.isPartitioned()) {
@@ -116,24 +120,26 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 					getPartitionKeyExtractorStrategy(producerProperties),
 					getPartitionSelectorStrategy(producerProperties)));
 		}
+		// TODO: Set all interceptors in the correct order for input/output channels
 		if (StringUtils.hasText(contentType)) {
-			messageChannel.addInterceptor(new ContentTypeConvertingInterceptor(contentType, input));
+			messageChannel.addInterceptor(
+					new ContentTypeConvertingInterceptor(contentType, input));
 		}
 	}
 
-	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(ProducerProperties producerProperties) {
+	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(
+			ProducerProperties producerProperties) {
 		if (producerProperties.getPartitionKeyExtractorClass() != null) {
-			return getBean(
-					producerProperties.getPartitionKeyExtractorClass().getName(),
+			return getBean(producerProperties.getPartitionKeyExtractorClass().getName(),
 					PartitionKeyExtractorStrategy.class);
 		}
 		return null;
 	}
 
-	private PartitionSelectorStrategy getPartitionSelectorStrategy(ProducerProperties producerProperties) {
+	private PartitionSelectorStrategy getPartitionSelectorStrategy(
+			ProducerProperties producerProperties) {
 		if (producerProperties.getPartitionSelectorClass() != null) {
-			return getBean(
-					producerProperties.getPartitionSelectorClass().getName(),
+			return getBean(producerProperties.getPartitionSelectorClass().getName(),
 					PartitionSelectorStrategy.class);
 		}
 		return new DefaultPartitionSelector();
@@ -149,7 +155,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 				T bean;
 				Class<?> clazz;
 				try {
-					clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
+					clazz = ClassUtils.forName(className,
+							this.beanFactory.getBeanClassLoader());
 				}
 				catch (Exception e) {
 					throw new BinderException("Failed to load class: " + className, e);
@@ -161,7 +168,8 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 					this.beanFactory.initializeBean(bean, className);
 				}
 				catch (Exception e) {
-					throw new BinderException("Failed to instantiate class: " + className, e);
+					throw new BinderException("Failed to instantiate class: " + className,
+							e);
 				}
 				return bean;
 			}
@@ -185,116 +193,69 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	}
 
-	private final class ContentTypeConvertingInterceptor extends ChannelInterceptorAdapter {
-
-		private final String contentType;
+	private final class ContentTypeConvertingInterceptor
+			extends ChannelInterceptorAdapter {
 
 		private final MimeType mimeType;
 
 		private final boolean input;
-
-		private final Class<?> klazz;
 
 		private final MessageConverter messageConverter;
 
 		private final boolean provideHint;
 
 		private ContentTypeConvertingInterceptor(String contentType, boolean input) {
-			this.contentType = contentType;
 			this.mimeType = MessageConverterUtils.getMimeType(contentType);
 			this.input = input;
-			if (MessageConverterUtils.X_JAVA_OBJECT.includes(this.mimeType)) {
-				this.klazz = MessageConverterUtils
-						.getJavaTypeForJavaObjectContentType(this.mimeType);
-			}
-			else if (this.mimeType.equals(MessageConverterUtils.X_SPRING_TUPLE)) {
-				this.klazz = Tuple.class;
-			}
-			else if (this.mimeType.getType().equals("text") || this.mimeType.getSubtype().equals(
-					"json") || this.mimeType.getSubtype().equals("xml")) {
-				this.klazz = String.class;
-			}
-			else {
-				this.klazz = byte[].class;
-			}
+
 			this.messageConverter = MessageConverterConfigurer.this.compositeMessageConverterFactory
-					.getMessageConverterForType(this.mimeType);
+					.getMessageConverterForAllRegistered();
 			this.provideHint = this.messageConverter instanceof AbstractMessageConverter;
 		}
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			// bypass conversion for ErrorMessges
+			if (message instanceof ErrorMessage) {
+				return message;
+			}
+
 			Message<?> sentMessage = null;
-			if (this.klazz.isAssignableFrom(message.getPayload().getClass())) {
-				Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-				if (contentTypeFromMessage == null) {
-					sentMessage = MessageConverterConfigurer.this.messageBuilderFactory
-							.fromMessage(message)
-							.setHeader(MessageHeaders.CONTENT_TYPE, this.contentType)
-							.build();
-				}
-				else {
-					sentMessage = message;
-				}
+			Object converted;
+			// bypass conversion for raw bytes or input channels
+			if (this.input || message.getPayload() instanceof byte[]) {
+				return MessageConverterConfigurer.this.messageBuilderFactory
+						.withPayload(message.getPayload())
+						.copyHeaders(message.getHeaders())
+						.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType)
+						.build();
 			}
 			else {
-				Object converted;
-				if (this.input) {
-					if (this.provideHint) {
-						converted = ((AbstractMessageConverter) this.messageConverter).fromMessage(message, this.klazz,
-								this.mimeType);
-						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-							converted = ((AbstractMessageConverter) this.messageConverter).fromMessage(
-									MessageConverterConfigurer.this.messageBuilderFactory.fromMessage(message)
-										.removeHeader(MessageHeaders.CONTENT_TYPE)
-										.build(), this.klazz, this.mimeType);
-						}
-					}
-					else {
-						converted = this.messageConverter.fromMessage(message, this.klazz);
-						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-							converted = this.messageConverter.fromMessage(
-									MessageConverterConfigurer.this.messageBuilderFactory.fromMessage(message)
-										.removeHeader(MessageHeaders.CONTENT_TYPE)
-										.build(), this.klazz);
-						}
-					}
+				MutableMessageHeaders headers = new MutableMessageHeaders(
+						message.getHeaders());
+				if (!headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
+					headers.put(MessageHeaders.CONTENT_TYPE, this.mimeType);
+				}
+				converted = this.messageConverter.toMessage(message.getPayload(),
+						headers);
+			}
+			if (converted != null) {
+				if (converted instanceof Message) {
+					sentMessage = (Message<?>) converted;
 				}
 				else {
-					MutableMessageHeaders headers = new MutableMessageHeaders(message.getHeaders());
-					if (this.provideHint) {
-						converted = ((AbstractMessageConverter) this.messageConverter).toMessage(message.getPayload(),
-								headers, this.mimeType);
-						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-							headers.remove(MessageHeaders.CONTENT_TYPE);
-							converted = ((AbstractMessageConverter) this.messageConverter).toMessage(message.getPayload(),
-									headers, this.mimeType);
-						}
-					}
-					else {
-						converted = this.messageConverter.toMessage(message.getPayload(), headers);
-						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-							headers.remove(MessageHeaders.CONTENT_TYPE);
-							converted = this.messageConverter.toMessage(message.getPayload(), headers);
-						}
-					}
-				}
-				if (converted != null) {
-					if (converted instanceof Message) {
-						sentMessage = (Message<?>) converted;
-					}
-					else {
-						sentMessage = MessageConverterConfigurer.this.messageBuilderFactory.withPayload(converted)
-								.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE,
-										this.mimeType)
-								.build();
-					}
+					sentMessage = MessageConverterConfigurer.this.messageBuilderFactory
+							.withPayload(converted).copyHeaders(message.getHeaders())
+							.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType)
+							.build();
 				}
 			}
 			if (sentMessage == null) {
-				throw new MessageConversionException(message, this.messageConverter.getClass().toString()
-						+ " could not convert '" + message + "' to the configured output type: '"
-						+ this.contentType + "'");
+				throw new MessageConversionException(message,
+						this.messageConverter.getClass().toString()
+								+ " could not convert '" + message
+								+ "' to the configured output type: '" + this.mimeType
+								+ "'");
 
 			}
 			return sentMessage;
@@ -312,8 +273,10 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 				PartitionSelectorStrategy partitionSelectorStrategy) {
 			this.bindingProperties = bindingProperties;
 			this.partitionHandler = new PartitionHandler(
-					ExpressionUtils.createStandardEvaluationContext(MessageConverterConfigurer.this.beanFactory),
-					this.bindingProperties.getProducer(), partitionKeyExtractorStrategy, partitionSelectorStrategy);
+					ExpressionUtils.createStandardEvaluationContext(
+							MessageConverterConfigurer.this.beanFactory),
+					this.bindingProperties.getProducer(), partitionKeyExtractorStrategy,
+					partitionSelectorStrategy);
 		}
 
 		@Override
@@ -322,16 +285,15 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 				int partition = this.partitionHandler.determinePartition(message);
 				return MessageConverterConfigurer.this.messageBuilderFactory
 						.fromMessage(message)
-						.setHeader(BinderHeaders.PARTITION_HEADER, partition)
-						.build();
+						.setHeader(BinderHeaders.PARTITION_HEADER, partition).build();
 			}
 			else {
 				return MessageConverterConfigurer.this.messageBuilderFactory
 						.fromMessage(message)
 						.setHeader(BinderHeaders.PARTITION_HEADER,
-								message.getHeaders().get(BinderHeaders.PARTITION_OVERRIDE))
-						.removeHeader(BinderHeaders.PARTITION_OVERRIDE)
-						.build();
+								message.getHeaders()
+										.get(BinderHeaders.PARTITION_OVERRIDE))
+						.removeHeader(BinderHeaders.PARTITION_OVERRIDE).build();
 			}
 		}
 	}

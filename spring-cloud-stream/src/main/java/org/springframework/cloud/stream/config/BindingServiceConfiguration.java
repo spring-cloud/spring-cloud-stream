@@ -17,17 +17,14 @@
 package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -53,6 +50,7 @@ import org.springframework.cloud.stream.converter.CompositeMessageConverterFacto
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Import;
 import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -63,13 +61,11 @@ import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.json.JsonPropertyAccessor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.tuple.spel.TuplePropertyAccessor;
-import org.springframework.util.CollectionUtils;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
@@ -79,9 +75,11 @@ import org.springframework.util.CollectionUtils;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Vinicius Carvalho
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
+@Import(ContentTypeConfiguration.class)
 public class BindingServiceConfiguration {
 
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
@@ -89,15 +87,6 @@ public class BindingServiceConfiguration {
 	public static final String ERROR_BRIDGE_CHANNEL = "errorBridgeChannel";
 
 	private static final String ERROR_KEY_NAME = "error";
-
-	@Autowired(required = false)
-	private ObjectMapper objectMapper;
-
-	/**
-	 * User defined custom message converters
-	 */
-	@Autowired(required = false)
-	private List<MessageConverter> customMessageConverters;
 
 	@Bean
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
@@ -193,14 +182,6 @@ public class BindingServiceConfiguration {
 		return new DynamicDestinationsBindable();
 	}
 
-	@Bean
-	public CompositeMessageConverterFactory compositeMessageConverterFactory() {
-		List<MessageConverter> messageConverters = new ArrayList<>();
-		if (!CollectionUtils.isEmpty(this.customMessageConverters)) {
-			messageConverters.addAll(Collections.unmodifiableCollection(this.customMessageConverters));
-		}
-		return new CompositeMessageConverterFactory(messageConverters, this.objectMapper);
-	}
 
 	@Bean
 	// provided for backwards compatibility scenarios

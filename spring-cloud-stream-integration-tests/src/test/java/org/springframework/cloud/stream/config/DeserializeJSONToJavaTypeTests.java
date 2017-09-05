@@ -64,8 +64,8 @@ public class DeserializeJSONToJavaTypeTests {
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isInstanceOf(Foo.class);
-		assertThat((Foo) received.getPayload()).hasFieldOrPropertyWithValue("name", "Bar");
+		assertThat(received.getPayload()).isInstanceOf(byte[].class);
+		assertThat((byte[]) received.getPayload()).isEqualTo("{\"name\":\"Bar\"}".getBytes());
 	}
 
 	@EnableBinding(Processor.class)

@@ -56,30 +56,30 @@ public class TextPlainConversionTest {
 	public void testTextPlainConversionOnOutput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("Bar").build());
 		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Foo{name='Bar'}");
+		assertThat(new String(received.getPayload())).isEqualTo("Foo{name='Bar'}");
 	}
 
 	@Test
 	public void testByteArrayConversionOnOutput() throws Exception {
 		testProcessor.output().send(MessageBuilder.withPayload("Bar".getBytes()).build());
 		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Bar");
+		assertThat(new String(received.getPayload())).isEqualTo("Bar");
 	}
 
 	@Test
 	public void testTextPlainConversionOnInputAndOutput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload(new Foo("Bar")).build());
 		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Foo{name='Foo{name='Bar'}'}");
+		assertThat(new String(received.getPayload())).isEqualTo("Foo{name='Foo{name='Bar'}'}");
 	}
 
 	@EnableBinding(Processor.class)

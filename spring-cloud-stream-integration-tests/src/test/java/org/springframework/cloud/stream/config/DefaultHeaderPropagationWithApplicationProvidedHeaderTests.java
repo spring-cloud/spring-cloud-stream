@@ -33,9 +33,9 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
@@ -51,8 +51,8 @@ public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@Test
-	public void testHeaderPropagationIfSetByApplication() throws Exception {
+	@Test(expected = MessageConversionException.class)
+	public void testFailedonCustomContentTypeWithoutConverter() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
 				.setHeader("foo", "fooValue")
@@ -61,11 +61,7 @@ public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-		assertThat(received.getHeaders()).containsEntry("foo", "fooValue");
-		assertThat(received.getHeaders()).containsEntry("bar", "barValue");
-		assertThat(received.getHeaders()).containsEntry(MessageHeaders.CONTENT_TYPE, "custom/header");
-		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("{'name':'foo'}");
+
 	}
 
 	@EnableBinding(Processor.class)

@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.config;
 
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,6 +34,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -40,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  * @since 1.2
  */
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -52,16 +55,23 @@ public class TextPlainToJsonConversionTest {
 	@Autowired
 	private BinderFactory binderFactory;
 
+	private ObjectMapper mapper = new ObjectMapper();
+
 	@Test
 	public void testNoContentTypeToJsonConversionOnInput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").build());
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(((Foo) received.getPayload()).getName()).isEqualTo("transformed-Bar");
+		Foo foo = mapper.readValue(received.getPayload(),Foo.class);
+		assertThat(foo.getName()).isEqualTo("transformed-Bar");
 	}
 
-	@Test
+	/**
+	 * @since 2.0: Conversion from text/plain -> json is no longer supported. Strict contentType only.
+	 * @throws Exception
+	 */
+	@Test(expected = MessageConversionException.class)
 	public void testTextPlainToJsonConversionOnInput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());

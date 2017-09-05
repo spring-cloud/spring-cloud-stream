@@ -45,12 +45,13 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
 public class StreamListenerWithAnnotatedInputOutputArgsTests {
 
 	@Test
 	public void testInputOutputArgs() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestInputOutputArgs.class, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication.run(TestInputOutputArgs.class, "--server.port=0", "--spring.cloud.stream.bindings.output.contentType=text/plain", "--spring.jmx.enabled=false");
 		sendMessageAndValidate(context);
 	}
 
@@ -68,7 +69,7 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 	@Test
 	public void testInputOutputArgsWithInvalidBindableTarget() {
 		try {
-			SpringApplication.run(TestInputOutputArgsWithInvalidBindableTarget.class, "--server.port=0");
+			SpringApplication.run(TestInputOutputArgsWithInvalidBindableTarget.class, "--server.port=0","--spring.jmx.enabled=false");
 			fail("Exception expected on using invalid bindable target as method parameter");
 		}
 		catch (BeanCreationException e) {
@@ -81,7 +82,7 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 	@Test
 	public void testInputOutputArgsWithParameterOrderChanged() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
-				.run(TestInputOutputArgsWithParameterOrderChanged.class, "--server.port=0");
+				.run(TestInputOutputArgsWithParameterOrderChanged.class, "--server.port=0", "--spring.cloud.stream.bindings.output.contentType=text/plain","--spring.jmx.enabled=false");
 		sendMessageAndValidate(context);
 	}
 
@@ -90,9 +91,9 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 		Processor processor = context.getBean(Processor.class);
 		processor.input().send(MessageBuilder.withPayload("hello").setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo("HELLO");
+		assertThat(new String(result.getPayload())).isEqualTo("HELLO");
 		context.close();
 	}
 
