@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.cloud.stream.converter;
 
 import java.io.ByteArrayOutputStream;
@@ -47,20 +63,21 @@ public class KryoMessageConverter implements SmartMessageConverter {
 
 	public static final String KRYO_MIME_TYPE = "application/x-java-object";
 
-	@Nullable
 	private ContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
 
-	protected KryoMessageConverter(List<KryoRegistrar> kryoRegistrars, boolean useReferences) {
+
+
+	public KryoMessageConverter(List<KryoRegistrar> kryoRegistrars, boolean useReferences) {
+
 		this.useReferences = useReferences;
 		this.kryoRegistrar = CollectionUtils.isEmpty(kryoRegistrars) ? null :
 				new CompositeKryoRegistrar(kryoRegistrars);
+
 		KryoFactory factory = () -> {
 			Kryo kryo = new Kryo();
-			// configure Kryo instance, customize settings
 			configureKryoInstance(kryo);
 			return kryo;
 		};
-		// Build pool with SoftReferences enabled (optional)
 		this.pool = new KryoPool.Builder(factory).softReferences().build();
 		this.supportedMimeTypes = Collections.singletonList(MimeType.valueOf(KRYO_MIME_TYPE));
 	}
