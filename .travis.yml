@@ -5,8 +5,6 @@ cache:
 language: java
 jdk:
   - oraclejdk8
-services:
-  - redis-server
 env:
   - REDIS_TIMEOUT_MULTIPLIER=3 KAFKA_TIMEOUT_MULTIPLIER=30 SCS_KAFKA_TEST_EMBEDDED=false
 before_install:
@@ -22,4 +20,5 @@ install: true
 script:
   - '[ "${TRAVIS_PULL_REQUEST}" != "false" ] || ./mvnw package -Pspring,full -U -Dmaven.test.redirectTestOutputToFile=false'
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || ./mvnw package -Pspring -U -Dmaven.test.redirectTestOutputToFile=false'
-
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
