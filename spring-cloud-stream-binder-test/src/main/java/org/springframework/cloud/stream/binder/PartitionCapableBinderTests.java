@@ -33,7 +33,8 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.support.GenericMessage;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
 		extends AbstractBinderTests<B, CP, PP> {
@@ -67,7 +69,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 				createConsumerProperties());
 
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
-		output.send(new GenericMessage<>(testPayload1.getBytes()));
+		output.send(MessageBuilder.withPayload(testPayload1).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 
 		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1).isNotNull();
@@ -80,11 +82,11 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		binding2.unbind();
 
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
-		output.send(new GenericMessage<>(testPayload2.getBytes()));
+		output.send(MessageBuilder.withPayload(testPayload2).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 
 		binding2 = binder.bindConsumer("defaultGroup.0", null, input2, createConsumerProperties());
 		String testPayload3 = "foo-" + UUID.randomUUID().toString();
-		output.send(new GenericMessage<>(testPayload3.getBytes()));
+		output.send(MessageBuilder.withPayload(testPayload3).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 
 		receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1).isNotNull();
@@ -114,7 +116,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, producerProperties);
 
 		String testPayload = "foo-" + UUID.randomUUID().toString();
-		output.send(new GenericMessage<>(testPayload.getBytes()));
+		output.send(MessageBuilder.withPayload(testPayload).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 
 		QueueChannel inbound1 = new QueueChannel();
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testDestination, "test1", inbound1,
@@ -141,7 +143,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, producerProperties);
 
 		String testPayload = "foo-" + UUID.randomUUID().toString();
-		output.send(new GenericMessage<>(testPayload.getBytes()));
+		output.send(MessageBuilder.withPayload(testPayload).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 
 		QueueChannel inbound1 = new QueueChannel();
 		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination, "test1", inbound1,
@@ -198,13 +200,14 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		catch (UnsupportedOperationException ignored) {
 		}
 
-		Message<Integer> message2 = MessageBuilder.withPayload(2)
+		Message<String> message2 = MessageBuilder.withPayload("2")
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
+				.setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN)
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, 42)
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43).build();
 		output.send(message2);
-		output.send(new GenericMessage<>(1));
-		output.send(new GenericMessage<>(0));
+		output.send(MessageBuilder.withPayload("1").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload("0").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
 
 		Message<?> receive0 = receive(input0);
 		assertThat(receive0).isNotNull();
@@ -223,19 +226,19 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		};
 
 		if (usesExplicitRouting()) {
-			assertThat(receive0.getPayload()).isEqualTo(0);
-			assertThat(receive1.getPayload()).isEqualTo(1);
-			assertThat(receive2.getPayload()).isEqualTo(2);
+			assertThat(receive0.getPayload()).isEqualTo("0".getBytes());
+			assertThat(receive1.getPayload()).isEqualTo("1".getBytes());
+			assertThat(receive2.getPayload()).isEqualTo("2".getBytes());
 			assertThat(receive2).has(correlationHeadersForPayload2);
 		}
 		else {
 			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1, receive2);
-			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder(0, 1, 2);
+			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder("0".getBytes(), "1".getBytes(), "2".getBytes());
 			Condition<Message<?>> payloadIs2 = new Condition<Message<?>>() {
 
 				@Override
 				public boolean matches(Message<?> value) {
-					return value.getPayload().equals(2);
+					return value.getPayload().equals("2".getBytes());
 				}
 			};
 			assertThat(receivedMessages).filteredOn(payloadIs2).areExactly(1, correlationHeadersForPayload2);
@@ -286,9 +289,9 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 					+ "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
 		}
 
-		output.send(new GenericMessage<>(2));
-		output.send(new GenericMessage<>(1));
-		output.send(new GenericMessage<>(0));
+		output.send(MessageBuilder.withPayload("2").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload("1").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload("0").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
 
 		Message<?> receive0 = receive(input0);
 		assertThat(receive0).isNotNull();
@@ -298,13 +301,13 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		assertThat(receive2).isNotNull();
 
 		if (usesExplicitRouting()) {
-			assertThat(receive0.getPayload()).isEqualTo(0);
-			assertThat(receive1.getPayload()).isEqualTo(1);
-			assertThat(receive2.getPayload()).isEqualTo(2);
+			assertThat(receive0.getPayload()).isEqualTo("0".getBytes());
+			assertThat(receive1.getPayload()).isEqualTo("1".getBytes());
+			assertThat(receive2.getPayload()).isEqualTo("2".getBytes());
 		}
 		else {
 			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1, receive2);
-			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder(0, 1, 2);
+			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder("0".getBytes(), "1".getBytes(), "2".getBytes());
 		}
 
 		input0Binding.unbind();

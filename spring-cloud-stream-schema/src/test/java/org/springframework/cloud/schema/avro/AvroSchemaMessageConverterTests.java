@@ -29,6 +29,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaMessageConverter;
@@ -203,6 +204,7 @@ public class AvroSchemaMessageConverterTests {
 		}
 
 		@Bean
+		@StreamMessageConverter
 		public MessageConverter userMessageConverter() throws IOException {
 			AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter(
 					MimeType.valueOf("avro/bytes"));
@@ -232,6 +234,7 @@ public class AvroSchemaMessageConverterTests {
 		}
 
 		@Bean
+		@StreamMessageConverter
 		public MessageConverter userMessageConverter() throws IOException {
 			AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter(
 					MimeType.valueOf("avro/bytes"));

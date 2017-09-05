@@ -64,8 +64,8 @@ public class DefaultHeaderPropagationTests {
 		assertThat(received).isNotNull();
 		assertThat(received.getHeaders()).containsEntry("foo", "fooValue");
 		assertThat(received.getHeaders()).containsEntry("bar", "barValue");
-		assertThat(received.getHeaders()).doesNotContainKey(MessageHeaders.CONTENT_TYPE);
-		assertThat(received.getPayload()).isEqualTo("{'name':'foo'}");
+		assertThat(received.getHeaders()).containsKeys(MessageHeaders.CONTENT_TYPE);
+		assertThat(received.getPayload()).isEqualTo("{'name':'foo'}".getBytes());
 	}
 
 	@EnableBinding(Processor.class)
@@ -73,8 +73,8 @@ public class DefaultHeaderPropagationTests {
 	public static class HeaderPropagationProcessor {
 
 		@ServiceActivator(inputChannel = "input", outputChannel = "output")
-		public String consume(String data) {
-			return data;
+		public Message<String> consume(String data) {
+			return MessageBuilder.withPayload(data).setHeader(MessageHeaders.CONTENT_TYPE,"text/plain").build();
 		}
 
 	}

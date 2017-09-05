@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -48,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
 @RunWith(Parameterized.class)
 public class StreamListenerHandlerBeanTests {
@@ -76,13 +78,13 @@ public class StreamListenerHandlerBeanTests {
 				MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
 		HandlerBean handlerBean = context.getBean(HandlerBean.class);
-		assertThat(handlerBean.receivedPojos).hasSize(1);
-		assertThat(handlerBean.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo",
+		Assertions.assertThat(handlerBean.receivedPojos).hasSize(1);
+		Assertions.assertThat(handlerBean.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo",
 				"barbar" + id);
-		Message<String> message = (Message<String>) collector.forChannel(
+		Message<byte[]> message = (Message<byte[]>) collector.forChannel(
 				processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
+		assertThat(new String(message.getPayload())).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
 		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 				.includes(MimeTypeUtils.APPLICATION_JSON));
 		context.close();

@@ -40,25 +40,32 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
 
 /**
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
 @SuppressWarnings("unchecked")
 public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 
 	@SuppressWarnings("unchecked")
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context)
+			throws InterruptedException {
 		Processor processor = context.getBean(Processor.class);
 		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		processor.input().send(MessageBuilder.withPayload(sentPayload)
+				.setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000,
+				TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
+		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase().getBytes());
 	}
 
 	@Test
 	public void testGenericFluxInputOutputArgsWithMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication
-				.run(TestGenericStringFluxInputOutputArgsWithMessageImpl1.class, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestGenericStringFluxInputOutputArgsWithMessageImpl1.class,
+				"--server.port=0", "--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		sendMessageAndValidate(context);
 		context.close();
 	}
@@ -66,11 +73,16 @@ public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 	@Test
 	public void testInvalidInputValueWithOutputMethodParameters() {
 		try {
-			SpringApplication.run(TestGenericStringFluxInputOutputArgsWithMessageImpl2.class, "--server.port=0");
+			SpringApplication.run(
+					TestGenericStringFluxInputOutputArgsWithMessageImpl2.class,
+					"--server.port=0", "--spring.jmx.enabled=false",
+					"--spring.cloud.stream.bindings.input.contentType=text/plain",
+					"--spring.cloud.stream.bindings.output.contentType=text/plain");
 			fail("Expected exception: " + INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
+			assertThat(e.getMessage())
+					.contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 	}
 
@@ -89,7 +101,8 @@ public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<A> input,
 				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload((A) m.toString().toUpperCase()).build()));
+			output.send(input.map(m -> MessageBuilder
+					.withPayload((A) m.toString().toUpperCase()).build()));
 		}
 	}
 
@@ -98,9 +111,9 @@ public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 	public static class TestGenericFluxInputOutputArgsWithMessage2<A> {
 
 		@StreamListener(Processor.INPUT)
-		public void receive(Flux<A> input,
-				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload((A) m.toString().toUpperCase()).build()));
+		public void receive(Flux<A> input, @Output(Processor.OUTPUT) FluxSender output) {
+			output.send(input.map(m -> MessageBuilder
+					.withPayload((A) m.toString().toUpperCase()).build()));
 		}
 	}
 }

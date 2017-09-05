@@ -100,13 +100,14 @@
         </module>
         <module name="RedundantImport"/>
         <module name="ReturnCount">
-            <property name="max" value="0"/>
-            <property name="tokens" value="CTOR_DEF"/>
-        </module>
-        <module name="ReturnCount">
             <property name="max" value="1"/>
             <property name="tokens" value="LAMBDA"/>
         </module>
+        <module name="ReturnCount">
+            <property name="max" value="1"/>
+            <property name="tokens" value="CTOR_DEF"/>
+        </module>
+
         <!--
         <module name="ReturnCount">
             <property name="max" value="3"/>

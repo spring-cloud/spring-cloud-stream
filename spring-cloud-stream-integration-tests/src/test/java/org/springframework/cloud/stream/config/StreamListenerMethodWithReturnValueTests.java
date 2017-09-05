@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -63,21 +64,21 @@ public class StreamListenerMethodWithReturnValueTests {
 	@SuppressWarnings("unchecked")
 	public void testReturn() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
-				.run(this.configClass, "--server.port=0");
+				.run(this.configClass, "--server.port=0","--spring.jmx.enabled=false");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		processor.input()
 				.send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
-		Message<String> message = (Message<String>) collector
+		Message<byte[]> message = (Message<byte[]>) collector
 				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		TestStringProcessor testStringProcessor = context
 				.getBean(TestStringProcessor.class);
-		assertThat(testStringProcessor.receivedPojos).hasSize(1);
-		assertThat(testStringProcessor.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
+		Assertions.assertThat(testStringProcessor.receivedPojos).hasSize(1);
+		Assertions.assertThat(testStringProcessor.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("barbar" + id);
+		assertThat(new String(message.getPayload())).contains("barbar" + id);
 		context.close();
 	}
 

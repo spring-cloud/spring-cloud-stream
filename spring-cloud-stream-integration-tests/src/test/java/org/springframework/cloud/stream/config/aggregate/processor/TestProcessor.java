@@ -21,7 +21,10 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -33,7 +36,7 @@ public class TestProcessor {
 
 	@StreamListener(Processor.INPUT)
 	@SendTo(Processor.OUTPUT)
-	public String process(String message) {
-		return message + " processed";
+	public Message<String> process(String message) {
+		return MessageBuilder.withPayload(message + " processed").setHeader(MessageHeaders.CONTENT_TYPE,"text/plain").build();
 	}
 }

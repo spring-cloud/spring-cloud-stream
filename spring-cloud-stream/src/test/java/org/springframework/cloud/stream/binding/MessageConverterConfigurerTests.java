@@ -42,7 +42,10 @@ import static org.junit.Assert.fail;
  */
 public class MessageConverterConfigurerTests {
 
-	@Test
+	/**
+	 * @since 2.0 bad contentType will result in MessageConversionException
+	 */
+	@Test(expected = MessageConversionException.class)
 	public void testConfigureOutputChannelWithBadContentType() {
 		BindingServiceProperties props = new BindingServiceProperties();
 		BindingProperties bindingProps = new BindingProperties();

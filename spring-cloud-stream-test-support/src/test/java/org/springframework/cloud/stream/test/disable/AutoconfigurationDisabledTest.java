@@ -42,7 +42,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AutoconfigurationDisabledTest.MyProcessor.class, properties = {
 		"server.port=-1",
-		"spring.cloud.stream.defaultBinder=test"
+		"spring.cloud.stream.defaultBinder=test",
+		"--spring.cloud.stream.bindings.input.contentType=text/plain",
+		"--spring.cloud.stream.bindings.output.contentType=text/plain"
 })
 @DirtiesContext
 public class AutoconfigurationDisabledTest {
@@ -57,9 +59,9 @@ public class AutoconfigurationDisabledTest {
 	public void testAutoconfigurationDisabled() throws Exception {
 		processor.input().send(MessageBuilder.withPayload("Hello").build());
 		// Since the interaction is synchronous, the result should be immediate
-		Message<?> response = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<byte[]> response = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(response).isNotNull();
-		assertThat(response.getPayload()).isEqualTo("Hello world");
+		assertThat(response.getPayload()).isEqualTo("Hello world".getBytes());
 	}
 
 	@SpringBootApplication(exclude = TestSupportBinderAutoConfiguration.class)

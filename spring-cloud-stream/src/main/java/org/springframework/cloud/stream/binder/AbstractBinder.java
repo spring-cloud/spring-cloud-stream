@@ -26,7 +26,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.expression.EvaluationContext;
-import org.springframework.integration.codec.Codec;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.messaging.Message;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
@@ -44,6 +43,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Vinicius Carvalho
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
@@ -60,7 +60,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private volatile AbstractApplicationContext applicationContext;
 
-	private volatile Codec codec;
 
 	private volatile EvaluationContext evaluationContext;
 
@@ -96,10 +95,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	protected ConfigurableListableBeanFactory getBeanFactory() {
 		return this.applicationContext.getBeanFactory();
-	}
-
-	public void setCodec(Codec codec) {
-		this.codec = codec;
 	}
 
 	public void setIntegrationEvaluationContext(EvaluationContext evaluationContext) {
@@ -151,22 +146,22 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return name + GROUP_INDEX_DELIMITER + (StringUtils.hasText(group) ? group : "default");
 	}
 
+	@Deprecated
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
-		return MessageSerializationUtils.serializePayload(message, this.codec);
+		return MessageSerializationUtils.serializePayload(message);
 	}
 
-	protected final byte[] serializePayloadIfNecessary(Object originalPayload) {
-		return MessageSerializationUtils.serializePayload(originalPayload, this.codec);
-	}
-
+	@Deprecated
 	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
-		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver, this.codec);
+		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver);
 	}
 
+	@Deprecated
 	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
-		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver, this.codec);
+		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver);
 	}
 
+	@Deprecated
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
 		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
 	}

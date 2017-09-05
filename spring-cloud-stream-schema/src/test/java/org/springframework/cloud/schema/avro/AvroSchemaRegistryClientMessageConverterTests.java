@@ -29,6 +29,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaRegistryClientMessageConverter;
@@ -160,6 +161,7 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 	public static class NoCacheConfiguration {
 		@SuppressWarnings("deprecation")
 		@Bean
+		@StreamMessageConverter
 		AvroSchemaRegistryClientMessageConverter avroSchemaRegistryClientMessageConverter() {
 			return new AvroSchemaRegistryClientMessageConverter(new DefaultSchemaRegistryClient());
 		}

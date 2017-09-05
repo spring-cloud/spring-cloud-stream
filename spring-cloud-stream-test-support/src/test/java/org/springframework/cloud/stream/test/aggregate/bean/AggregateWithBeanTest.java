@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = { "server.port=-1" })
+@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = { "server.port=-1","--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain" })
 public class AggregateWithBeanTest {
 
 	@Autowired
@@ -56,9 +56,9 @@ public class AggregateWithBeanTest {
 		Processor uppercaseProcessor = aggregateApplication.getBinding(Processor.class, "upper");
 		Processor suffixProcessor = aggregateApplication.getBinding(Processor.class, "suffix");
 		uppercaseProcessor.input().send(MessageBuilder.withPayload("Hello").build());
-		Message<?> receivedMessage = messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<byte[]> receivedMessage = (Message<byte[]>) messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(receivedMessage).isNotNull();
-		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!");
+		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!".getBytes());
 	}
 
 	@SpringBootApplication

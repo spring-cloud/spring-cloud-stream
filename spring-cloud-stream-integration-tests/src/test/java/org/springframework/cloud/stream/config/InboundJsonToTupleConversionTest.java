@@ -33,7 +33,6 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.tuple.Tuple;
 import org.springframework.tuple.TupleBuilder;
@@ -56,12 +55,13 @@ public class InboundJsonToTupleConversionTest {
 	@Test
 	public void testInboundJsonTupleConversion() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
-				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.build());
 		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
+
+		assertThat(TupleBuilder.fromString(new String((byte[])received.getPayload()))).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
 	}
 
 	@EnableBinding(Processor.class)

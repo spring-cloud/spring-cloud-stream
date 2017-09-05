@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = { ContentTypeOutboundSourceTests.TestSource.class })
@@ -53,12 +54,15 @@ public class ContentTypeOutboundSourceTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testMessageHeaderWhenNoExplicitContentTypeOnMessage() throws Exception {
-		testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null,
+		testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").setHeader(MessageHeaders.CONTENT_TYPE,"text/plain").build());
+		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null,
 				MessageChannel.class))
 						.messageCollector().forChannel(testSource.output()).poll();
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
-		assertThat(received).hasFieldOrPropertyWithValue("payload", "{\"message\":\"Hi\"}");
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).contains("text/plain");
+		Object payload = received.getPayload();
+		assertThat(payload.getClass().isAssignableFrom(byte[].class)).isTrue();
+		byte[] contents = (byte[])payload;
+		assertThat("{\"message\":\"Hi\"}").isEqualTo(new String(contents));
 	}
 
 	@EnableBinding(Source.class)
