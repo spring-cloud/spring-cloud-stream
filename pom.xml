@@ -104,7 +104,7 @@
 					<dependency>
 						<groupId>org.springframework.cloud</groupId>
 						<artifactId>spring-cloud-build-tools</artifactId>
-						<version>2.0.0.BUILD-SNAPSHOT</version>
+						<version>${spring-cloud-build.version}</version>
 					</dependency>
 				</dependencies>
 				<executions>
