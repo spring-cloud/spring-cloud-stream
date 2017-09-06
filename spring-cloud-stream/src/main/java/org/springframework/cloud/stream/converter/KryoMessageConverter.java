@@ -110,6 +110,9 @@ public class KryoMessageConverter implements SmartMessageConverter {
 	@Nullable
 	@Override
 	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+		if (!canConvertTo(payload, headers)) {
+			return null;
+		}
 		byte[] payloadToUse = serialize(payload);
 
 		MimeType mimeType = getDefaultContentType(payload);
@@ -132,6 +135,10 @@ public class KryoMessageConverter implements SmartMessageConverter {
 			builder.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, mimeType);
 		}
 		return builder.build();
+	}
+
+	private boolean canConvertTo(Object payload, MessageHeaders headers) {
+		return (supports(payload.getClass()) && supportsMimeType(headers));
 	}
 
 	@Nullable
