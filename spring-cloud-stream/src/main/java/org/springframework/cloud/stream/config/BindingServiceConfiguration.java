@@ -34,6 +34,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.annotation.StreamConverter;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
@@ -50,6 +51,7 @@ import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.converter.StreamConverterBeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -79,6 +81,7 @@ import org.springframework.util.CollectionUtils;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Vinicius Carvalho
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
@@ -97,6 +100,7 @@ public class BindingServiceConfiguration {
 	 * User defined custom message converters
 	 */
 	@Autowired(required = false)
+	@StreamConverter
 	private List<MessageConverter> customMessageConverters;
 
 	@Bean
@@ -201,6 +205,8 @@ public class BindingServiceConfiguration {
 		}
 		return new CompositeMessageConverterFactory(messageConverters, this.objectMapper);
 	}
+
+
 
 	@Bean
 	// provided for backwards compatibility scenarios

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.config.broken;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,15 +28,12 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.tuple.Tuple;
-import org.springframework.tuple.TupleBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,8 +41,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = InboundJsonToTupleConversionTest.FooProcessor.class)
-public class InboundJsonToTupleConversionTest {
+@SpringBootTest(classes = DefaultHeaderPropagationWithApplicationProvidedHeaderTests.HeaderPropagationProcessor.class,
+		webEnvironment = SpringBootTest.WebEnvironment.NONE)
+public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 
 	@Autowired
 	private Processor testProcessor;
@@ -54,26 +52,30 @@ public class InboundJsonToTupleConversionTest {
 	private BinderFactory binderFactory;
 
 	@Test
-	public void testInboundJsonTupleConversion() throws Exception {
+	public void testHeaderPropagationIfSetByApplication() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
-				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.setHeader("foo", "fooValue")
+				.setHeader("bar", "barValue")
+				.build());
 		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(received.getHeaders()).containsEntry("foo", "fooValue");
+		assertThat(received.getHeaders()).containsEntry("bar", "barValue");
+		assertThat(received.getHeaders()).containsEntry(MessageHeaders.CONTENT_TYPE, "custom/header");
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
+		assertThat(received.getPayload()).isEqualTo("{'name':'foo'}");
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/inboundjsontuple/inbound-json-tuple.properties")
-	public static class FooProcessor {
+	public static class HeaderPropagationProcessor {
 
 		@ServiceActivator(inputChannel = "input", outputChannel = "output")
-		public Tuple consume(Tuple tuple) {
-			return tuple;
+		public Message<?> consume(String data) {
+			return MessageBuilder.withPayload(data).setHeader(MessageHeaders.CONTENT_TYPE, "custom/header").build();
 		}
 
 	}
-
 }

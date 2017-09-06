@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.config.broken;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -29,14 +28,15 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.tuple.Tuple;
+import org.springframework.tuple.TupleBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,8 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = DeserializeJSONToJavaTypeTests.FooProcessor.class)
-public class DeserializeJSONToJavaTypeTests {
+@SpringBootTest(classes = InboundJsonToTupleConversionTest.FooProcessor.class)
+public class InboundJsonToTupleConversionTest {
 
 	@Autowired
 	private Processor testProcessor;
@@ -53,43 +53,27 @@ public class DeserializeJSONToJavaTypeTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@Autowired
-	private List<MessageConverter> customMessageConverters;
-
 	@Test
-	public void testMessageDeserialized() throws Exception {
-		testProcessor.input().send(
-				MessageBuilder.withPayload("{\"name\":\"Bar\"}").setHeader("contentType", "application/json").build());
+	public void testInboundJsonTupleConversion() throws Exception {
+		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
 		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isInstanceOf(Foo.class);
-		assertThat((Foo) received.getPayload()).hasFieldOrPropertyWithValue("name", "Bar");
+		assertThat(received.getPayload()).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/fooprocesor/foo-sink.properties")
-	@Configuration
+	@PropertySource("classpath:/org/springframework/cloud/stream/config/inboundjsontuple/inbound-json-tuple.properties")
 	public static class FooProcessor {
 
 		@ServiceActivator(inputChannel = "input", outputChannel = "output")
-		public Foo consume(Foo foo) {
-			return foo;
+		public Tuple consume(Tuple tuple) {
+			return tuple;
 		}
+
 	}
 
-	public static class Foo {
-
-		private String name;
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-	}
 }

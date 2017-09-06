@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.config.broken;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -32,6 +33,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.config.StreamListenerTestUtils;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -46,22 +48,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(Parameterized.class)
-public class StreamListenerMethodWithReturnValueTests {
+public class StreamListenerMethodWithReturnMessageTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerMethodWithReturnValueTests(Class<?> configClass) {
+	public StreamListenerMethodWithReturnMessageTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] { TestStringProcessor1.class, TestStringProcessor2.class });
+		return Arrays.asList(new Class[] { TestPojoWithMessageReturn1.class, TestPojoWithMessageReturn2.class });
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testReturn() throws Exception {
+	public void testReturnMessage() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
 				.run(this.configClass, "--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
@@ -70,42 +72,46 @@ public class StreamListenerMethodWithReturnValueTests {
 		processor.input()
 				.send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
-		Message<String> message = (Message<String>) collector
+		TestPojoWithMessageReturn testPojoWithMessageReturn = context
+				.getBean(TestPojoWithMessageReturn.class);
+		Assertions.assertThat(testPojoWithMessageReturn.receivedPojos).hasSize(1);
+		Assertions.assertThat(testPojoWithMessageReturn.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
+		Message<StreamListenerTestUtils.BarPojo> message = (Message<StreamListenerTestUtils.BarPojo>) collector
 				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
-		TestStringProcessor testStringProcessor = context
-				.getBean(TestStringProcessor.class);
-		assertThat(testStringProcessor.receivedPojos).hasSize(1);
-		assertThat(testStringProcessor.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("barbar" + id);
+		assertThat(message.getPayload().getBar()).isEqualTo("barbar" + id);
 		context.close();
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestStringProcessor1 extends TestStringProcessor {
+	public static class TestPojoWithMessageReturn1 extends TestPojoWithMessageReturn {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public String receive(StreamListenerTestUtils.FooPojo fooPojo) {
+		public Message<?> receive(StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
-			return fooPojo.getFoo();
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
+			barPojo.setBar(fooPojo.getFoo());
+			return MessageBuilder.withPayload(barPojo).setHeader("foo", "bar").build();
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestStringProcessor2 extends TestStringProcessor {
+	public static class TestPojoWithMessageReturn2 extends TestPojoWithMessageReturn {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public String receive(StreamListenerTestUtils.FooPojo fooPojo) {
+		public Message<?> receive(StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedPojos.add(fooPojo);
-			return fooPojo.getFoo();
+			StreamListenerTestUtils.BarPojo bazPojo = new StreamListenerTestUtils.BarPojo();
+			bazPojo.setBar(fooPojo.getFoo());
+			return MessageBuilder.withPayload(bazPojo).setHeader("foo", "bar").build();
 		}
 	}
 
-	public static class TestStringProcessor {
+	public static class TestPojoWithMessageReturn {
 		List<StreamListenerTestUtils.FooPojo> receivedPojos = new ArrayList<>();
 	}
 

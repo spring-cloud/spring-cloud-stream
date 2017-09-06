@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.config.broken;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -35,6 +36,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.config.StreamListenerTestUtils;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -86,8 +88,8 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			processor.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 					.setHeader("contentType", "application/json").build());
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
-			assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
-			assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
+			Assertions.assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
+			Assertions.assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
 			Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1,
 					TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
@@ -122,8 +124,8 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			processor.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 					.setHeader("contentType", "application/json").build());
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
-			assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
-			assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
+			Assertions.assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
+			Assertions.assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
 			Message<StreamListenerTestUtils.BarPojo> message = (Message<StreamListenerTestUtils.BarPojo>) collector
 					.forChannel(processor.output()).poll(1,
 							TimeUnit.SECONDS);

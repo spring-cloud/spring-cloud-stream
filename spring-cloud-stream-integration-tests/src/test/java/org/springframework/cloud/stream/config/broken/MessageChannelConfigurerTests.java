@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.config.broken;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

@@ -37,6 +37,7 @@ import org.springframework.util.MimeType;
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 public class CompositeMessageConverterFactory {
 
@@ -69,7 +70,6 @@ public class CompositeMessageConverterFactory {
 		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));
 
 		CustomJackson2MappingMessageConverter jsonMessageConverter = new CustomJackson2MappingMessageConverter();
-		jsonMessageConverter.setSerializedPayloadClass(String.class);
 		if (this.objectMapper != null) {
 			jsonMessageConverter.setObjectMapper(this.objectMapper);
 		}

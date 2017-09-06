@@ -28,6 +28,7 @@ import org.springframework.util.MimeType;
  * Utility class for serializing and de-serializing the message payload.
  *
  * @author Soby Chacko
+ * @author Vinicius Carvalho
  */
 public abstract class MessageSerializationUtils {
 

@@ -187,114 +187,53 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 	private final class ContentTypeConvertingInterceptor extends ChannelInterceptorAdapter {
 
-		private final String contentType;
 
 		private final MimeType mimeType;
 
 		private final boolean input;
 
-		private final Class<?> klazz;
 
 		private final MessageConverter messageConverter;
 
 		private final boolean provideHint;
 
 		private ContentTypeConvertingInterceptor(String contentType, boolean input) {
-			this.contentType = contentType;
 			this.mimeType = MessageConverterUtils.getMimeType(contentType);
 			this.input = input;
-			if (MessageConverterUtils.X_JAVA_OBJECT.includes(this.mimeType)) {
-				this.klazz = MessageConverterUtils
-						.getJavaTypeForJavaObjectContentType(this.mimeType);
-			}
-			else if (this.mimeType.equals(MessageConverterUtils.X_SPRING_TUPLE)) {
-				this.klazz = Tuple.class;
-			}
-			else if (this.mimeType.getType().equals("text") || this.mimeType.getSubtype().equals(
-					"json") || this.mimeType.getSubtype().equals("xml")) {
-				this.klazz = String.class;
-			}
-			else {
-				this.klazz = byte[].class;
-			}
-			this.messageConverter = MessageConverterConfigurer.this.compositeMessageConverterFactory
-					.getMessageConverterForType(this.mimeType);
+
+			this.messageConverter = MessageConverterConfigurer.this.compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 			this.provideHint = this.messageConverter instanceof AbstractMessageConverter;
 		}
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
 			Message<?> sentMessage = null;
-			if (this.klazz.isAssignableFrom(message.getPayload().getClass())) {
-				Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-				if (contentTypeFromMessage == null) {
-					sentMessage = MessageConverterConfigurer.this.messageBuilderFactory
-							.fromMessage(message)
-							.setHeader(MessageHeaders.CONTENT_TYPE, this.contentType)
-							.build();
-				}
-				else {
-					sentMessage = message;
-				}
+
+			Object converted;
+			if (this.input) {
+				return message;
 			}
 			else {
-				Object converted;
-				if (this.input) {
-					if (this.provideHint) {
-						converted = ((AbstractMessageConverter) this.messageConverter).fromMessage(message, this.klazz,
-								this.mimeType);
-						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-							converted = ((AbstractMessageConverter) this.messageConverter).fromMessage(
-									MessageConverterConfigurer.this.messageBuilderFactory.fromMessage(message)
-										.removeHeader(MessageHeaders.CONTENT_TYPE)
-										.build(), this.klazz, this.mimeType);
-						}
-					}
-					else {
-						converted = this.messageConverter.fromMessage(message, this.klazz);
-						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-							converted = this.messageConverter.fromMessage(
-									MessageConverterConfigurer.this.messageBuilderFactory.fromMessage(message)
-										.removeHeader(MessageHeaders.CONTENT_TYPE)
-										.build(), this.klazz);
-						}
-					}
+				MutableMessageHeaders headers = new MutableMessageHeaders(message.getHeaders());
+				converted = this.messageConverter.toMessage(message.getPayload(),
+						headers);
+
+			}
+			if (converted != null) {
+				if (converted instanceof Message) {
+					sentMessage = (Message<?>) converted;
 				}
 				else {
-					MutableMessageHeaders headers = new MutableMessageHeaders(message.getHeaders());
-					if (this.provideHint) {
-						converted = ((AbstractMessageConverter) this.messageConverter).toMessage(message.getPayload(),
-								headers, this.mimeType);
-						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-							headers.remove(MessageHeaders.CONTENT_TYPE);
-							converted = ((AbstractMessageConverter) this.messageConverter).toMessage(message.getPayload(),
-									headers, this.mimeType);
-						}
-					}
-					else {
-						converted = this.messageConverter.toMessage(message.getPayload(), headers);
-						if (converted == null && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-							headers.remove(MessageHeaders.CONTENT_TYPE);
-							converted = this.messageConverter.toMessage(message.getPayload(), headers);
-						}
-					}
-				}
-				if (converted != null) {
-					if (converted instanceof Message) {
-						sentMessage = (Message<?>) converted;
-					}
-					else {
-						sentMessage = MessageConverterConfigurer.this.messageBuilderFactory.withPayload(converted)
-								.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE,
-										this.mimeType)
-								.build();
-					}
+					sentMessage = MessageConverterConfigurer.this.messageBuilderFactory.withPayload(converted)
+							.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE,
+									this.mimeType)
+							.build();
 				}
 			}
 			if (sentMessage == null) {
 				throw new MessageConversionException(message, this.messageConverter.getClass().toString()
 						+ " could not convert '" + message + "' to the configured output type: '"
-						+ this.contentType + "'");
+						+ this.mimeType + "'");
 
 			}
 			return sentMessage;

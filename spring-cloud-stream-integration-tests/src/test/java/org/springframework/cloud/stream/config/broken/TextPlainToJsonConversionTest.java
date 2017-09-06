@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config;
+package org.springframework.cloud.stream.config.broken;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,26 +25,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
- *
  * @since 1.2
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = TextPlainConversionTest.FooProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class TextPlainConversionTest {
+@SpringBootTest(classes = TextPlainToJsonConversionTest.FooProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+public class TextPlainToJsonConversionTest {
 
 	@Autowired
 	private Processor testProcessor;
@@ -53,43 +53,34 @@ public class TextPlainConversionTest {
 	private BinderFactory binderFactory;
 
 	@Test
-	public void testTextPlainConversionOnOutput() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("Bar").build());
-		@SuppressWarnings("unchecked")
+	public void testNoContentTypeToJsonConversionOnInput() throws Exception {
+		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").build());
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Foo{name='Bar'}");
+		assertThat(((Foo) received.getPayload()).getName()).isEqualTo("transformed-Bar");
 	}
 
 	@Test
-	public void testByteArrayConversionOnOutput() throws Exception {
-		testProcessor.output().send(MessageBuilder.withPayload("Bar".getBytes()).build());
-		@SuppressWarnings("unchecked")
+	public void testTextPlainToJsonConversionOnInput() throws Exception {
+		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Bar");
-	}
-
-	@Test
-	public void testTextPlainConversionOnInputAndOutput() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload(new Foo("Bar")).build());
-		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Foo{name='Foo{name='Bar'}'}");
+		assertThat(((Foo) received.getPayload()).getName()).isEqualTo("transformed-Bar");
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/textplain/text-plain.properties")
 	public static class FooProcessor {
 
-		@ServiceActivator(inputChannel = "input", outputChannel = "output")
-		public Foo consume(String foo) {
-			return new Foo(foo);
+		@StreamListener("input")
+		@SendTo("output")
+		public Foo consume(Foo foo) {
+			Foo returnFoo = new Foo();
+			returnFoo.setName("transformed-" + foo.getName());
+			return returnFoo;
 		}
 
 	}
@@ -98,8 +89,7 @@ public class TextPlainConversionTest {
 
 		private String name;
 
-		public Foo(String name) {
-			this.name = name;
+		public Foo() {
 		}
 
 		public String getName() {

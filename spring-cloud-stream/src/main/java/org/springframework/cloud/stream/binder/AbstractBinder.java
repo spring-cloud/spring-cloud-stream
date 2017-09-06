@@ -43,6 +43,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Vinicius Carvalho
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {

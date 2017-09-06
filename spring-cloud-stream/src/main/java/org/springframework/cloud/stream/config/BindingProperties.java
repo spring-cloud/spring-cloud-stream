@@ -54,7 +54,7 @@ public class BindingProperties {
 
 	// Properties for both inbound/outbound
 
-	private String contentType;
+	private String contentType = "application/json";
 
 	private String binder;
 

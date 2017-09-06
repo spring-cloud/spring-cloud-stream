@@ -32,6 +32,11 @@ import org.springframework.messaging.converter.MessageConversionException;
 
 public class CustomJackson2MappingMessageConverter extends MappingJackson2MessageConverter{
 
+	public CustomJackson2MappingMessageConverter() {
+		super();
+		setSerializedPayloadClass(byte[].class);
+	}
+
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 		try{
