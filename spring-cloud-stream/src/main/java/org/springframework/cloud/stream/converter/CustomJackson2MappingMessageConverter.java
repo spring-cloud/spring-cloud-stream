@@ -35,6 +35,7 @@ public class CustomJackson2MappingMessageConverter extends MappingJackson2Messag
 	public CustomJackson2MappingMessageConverter() {
 		super();
 		setSerializedPayloadClass(byte[].class);
+		setStrictContentTypeMatch(true);
 	}
 
 	@Override

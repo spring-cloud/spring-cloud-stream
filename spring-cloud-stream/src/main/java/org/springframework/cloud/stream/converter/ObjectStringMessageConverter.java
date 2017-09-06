@@ -38,6 +38,7 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 
 	public ObjectStringMessageConverter() {
 		super(new MimeType("text", "plain", Charset.forName("UTF-8")));
+		setStrictContentTypeMatch(true);
 	}
 
 	protected boolean supports(Class<?> clazz) {
