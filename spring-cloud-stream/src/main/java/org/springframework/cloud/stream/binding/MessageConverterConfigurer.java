@@ -43,6 +43,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.tuple.Tuple;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -207,6 +208,9 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			if(message.getClass().isAssignableFrom(ErrorMessage.class)){
+				return message;
+			}
 			Message<?> sentMessage = null;
 
 			Object converted;
