@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
@@ -52,54 +53,75 @@ public class StreamEmitterBasicTests {
 
 	@Test
 	public void testFluxReturnAndOutputMethodLevel() throws Exception {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.register(TestFluxReturnAndOutputMethodLevel.class);
-		context.refresh();
+		ConfigurableApplicationContext context = SpringApplication.run(TestFluxReturnAndOutputMethodLevel.class,
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		receiveAndValidate(context);
 		context.close();
 	}
 
 	@Test
 	public void testVoidReturnAndOutputMethodParameter() throws Exception {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.register(TestVoidReturnAndOutputMethodParameter.class);
-		context.refresh();
+		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndOutputMethodParameter.class,
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		receiveAndValidate(context);
 		context.close();
 	}
 
 	@Test
 	public void testVoidReturnAndOutputAtMethodLevel() throws Exception {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.register(TestVoidReturnAndOutputAtMethodLevel.class);
-		context.refresh();
+		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndOutputAtMethodLevel.class,
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		receiveAndValidate(context);
 		context.close();
 	}
 
 	@Test
 	public void testVoidReturnAndMultipleOutputMethodParameters() throws Exception {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.register(TestVoidReturnAndMultipleOutputMethodParameters.class);
-		context.refresh();
+		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndMultipleOutputMethodParameters.class,
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output1.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output2.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output3.contentType=text/plain");
 		receiveAndValidateMultipleOutputs(context);
 		context.close();
 	}
 
 	@Test
 	public void testMultipleStreamEmitterMethods() throws Exception {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.register(TestMultipleStreamEmitterMethods.class);
-		context.refresh();
+		ConfigurableApplicationContext context = SpringApplication.run(TestMultipleStreamEmitterMethods.class,
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output1.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output2.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output3.contentType=text/plain");
 		receiveAndValidateMultipleOutputs(context);
 		context.close();
 	}
 
 	@Test
 	public void testSameAppContextWithMultipleStreamEmitters() throws Exception {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.register(TestSameAppContextWithMultipleStreamEmitters.class);
-		context.refresh();
+		ConfigurableApplicationContext context = SpringApplication.run(TestSameAppContextWithMultipleStreamEmitters.class,
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output1.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output2.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output3.contentType=text/plain");
 		receiveAndValidateMultiStreamEmittersInSameContext(context);
 		context.close();
 	}
@@ -108,12 +130,12 @@ public class StreamEmitterBasicTests {
 	private static void receiveAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
 		Source source = context.getBean(Source.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		List<String> messages = new ArrayList<>();
+		List<byte[]> messages = new ArrayList<>();
 		for (int i = 0; i < 1000; i++) {
-			messages.add((String) messageCollector.forChannel(source.output()).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+			messages.add((byte[]) messageCollector.forChannel(source.output()).poll(5000, TimeUnit.MILLISECONDS).getPayload());
 		}
 		for (int i = 0; i < 1000; i++) {
-			assertThat(messages.get(i)).isEqualTo("HELLO WORLD!!" + i);
+			assertThat(new String(messages.get(i))).isEqualTo("HELLO WORLD!!" + i);
 		}
 	}
 
@@ -121,7 +143,7 @@ public class StreamEmitterBasicTests {
 	private static void receiveAndValidateMultipleOutputs(ConfigurableApplicationContext context) throws InterruptedException {
 		TestMultiOutboundChannels source = context.getBean(TestMultiOutboundChannels.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		List<String> messages = new ArrayList<>();
+		List<byte[]> messages = new ArrayList<>();
 		assertMessages(source.output1(), messageCollector, messages);
 		messages.clear();
 		assertMessages(source.output2(), messageCollector, messages);
@@ -135,37 +157,37 @@ public class StreamEmitterBasicTests {
 		TestMultiOutboundChannels source1 = context1.getBean(TestMultiOutboundChannels.class);
 		MessageCollector messageCollector = context1.getBean(MessageCollector.class);
 
-		List<String> messages = new ArrayList<>();
+		List<byte[]> messages = new ArrayList<>();
 		assertMessagesX(source1.output1(), messageCollector, messages);
 		messages.clear();
 		assertMessagesY(source1.output2(), messageCollector, messages);
 		messages.clear();
 	}
 
-	private static void assertMessages(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
+	private static void assertMessages(MessageChannel channel, MessageCollector messageCollector, List<byte[]> messages) throws InterruptedException {
 		for (int i = 0; i < 1000; i++) {
-			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+			messages.add((byte[]) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
 		}
 		for (int i = 0; i < 1000; i++) {
-			assertThat(messages.get(i)).isEqualTo("Hello World!!" + i);
-		}
-	}
-
-	private static void assertMessagesX(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
-		for (int i = 0; i < 1000; i++) {
-			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
-		}
-		for (int i = 0; i < 1000; i++) {
-			assertThat(messages.get(i)).isEqualTo("Hello World!!" + i);
+			assertThat(new String(messages.get(i))).isEqualTo("Hello World!!" + i);
 		}
 	}
 
-	private static void assertMessagesY(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
+	private static void assertMessagesX(MessageChannel channel, MessageCollector messageCollector, List<byte[]> messages) throws InterruptedException {
 		for (int i = 0; i < 1000; i++) {
-			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+			messages.add((byte[]) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
 		}
 		for (int i = 0; i < 1000; i++) {
-			assertThat(messages.get(i)).isEqualTo("Hello FooBar!!" + i);
+			assertThat(new String(messages.get(i))).isEqualTo("Hello World!!" + i);
+		}
+	}
+
+	private static void assertMessagesY(MessageChannel channel, MessageCollector messageCollector, List<byte[]> messages) throws InterruptedException {
+		for (int i = 0; i < 1000; i++) {
+			messages.add((byte[]) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+		}
+		for (int i = 0; i < 1000; i++) {
+			assertThat(new String(messages.get(i))).isEqualTo("Hello FooBar!!" + i);
 		}
 	}
 

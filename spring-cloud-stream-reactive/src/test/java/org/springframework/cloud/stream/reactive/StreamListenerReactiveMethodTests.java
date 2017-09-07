@@ -52,7 +52,10 @@ public class StreamListenerReactiveMethodTests {
 	@Test
 	public void testRxJava1InvalidInputValueWithOutputMethodParameters() {
 		try {
-			SpringApplication.run(RxJava1TestInputOutputArgs.class, "--server.port=0");
+			SpringApplication.run(RxJava1TestInputOutputArgs.class, "--server.port=0",
+					"--spring.jmx.enabled=false",
+					"--spring.cloud.stream.bindings.input.contentType=text/plain",
+					"--spring.cloud.stream.bindings.output.contentType=text/plain");
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
@@ -63,7 +66,10 @@ public class StreamListenerReactiveMethodTests {
 	@Test
 	public void testMethodReturnTypeWithNoOutboundSpecified() {
 		try {
-			SpringApplication.run(ReactorTestReturn5.class, "--server.port=0");
+			SpringApplication.run(ReactorTestReturn5.class, "--server.port=0",
+					"--spring.jmx.enabled=false",
+					"--spring.cloud.stream.bindings.input.contentType=text/plain",
+					"--spring.cloud.stream.bindings.output.contentType=text/plain");
 			fail("Exception expected: " + RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
 		catch (Exception e) {

@@ -66,14 +66,17 @@ public class StreamListenerReactiveInputOutputArgsWithMessageTests {
 		String sentPayload = "hello " + UUID.randomUUID().toString();
 		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
+		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase().getBytes());
 	}
 
 	@Test
 	public void testInputOutputArgs() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		sendMessageAndValidate(context);
 		context.close();
 	}

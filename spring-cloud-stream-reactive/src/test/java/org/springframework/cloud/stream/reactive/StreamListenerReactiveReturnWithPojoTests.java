@@ -20,6 +20,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -50,6 +53,8 @@ public class StreamListenerReactiveReturnWithPojoTests {
 
 	private Class<?> configClass;
 
+	private ObjectMapper mapper = new ObjectMapper();
+
 	public StreamListenerReactiveReturnWithPojoTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
@@ -63,16 +68,18 @@ public class StreamListenerReactiveReturnWithPojoTests {
 
 	@Test
 	public void testReturnWithPojo() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0",
+				"--spring.jmx.enabled=false");
 		@SuppressWarnings("unchecked")
 		Processor processor = context.getBean(Processor.class);
 		processor.input().send(MessageBuilder.withPayload("{\"message\":\"helloPojo\"}")
 				.setHeader("contentType", "application/json").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isInstanceOf(BarPojo.class);
-		assertThat(((BarPojo) result.getPayload()).getBarMessage()).isEqualTo("helloPojo");
+		assertThat(result.getPayload()).isInstanceOf(byte[].class);
+		BarPojo barPojo = mapper.readValue(result.getPayload(),BarPojo.class);
+		assertThat(barPojo.getBarMessage()).isEqualTo("helloPojo");
 		context.close();
 	}
 
@@ -175,7 +182,8 @@ public class StreamListenerReactiveReturnWithPojoTests {
 
 		private String barMessage;
 
-		public BarPojo(String barMessage) {
+		@JsonCreator
+		public BarPojo(@JsonProperty("barMessage") String barMessage) {
 			this.barMessage = barMessage;
 		}
 
