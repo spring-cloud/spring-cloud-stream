@@ -81,7 +81,7 @@ public class ApplicationMetricsExporterTests {
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper
-				.readValue((String) message.getPayload(), ApplicationMetrics.class);
+				.readValue((byte[]) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
 		Assert.assertEquals("application", applicationMetrics.getName());
@@ -102,7 +102,7 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+		ApplicationMetrics applicationMetrics = mapper.readValue((byte[]) message.getPayload(),
 				ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
@@ -126,7 +126,7 @@ public class ApplicationMetricsExporterTests {
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper
-				.readValue((String) message.getPayload(), ApplicationMetrics.class);
+				.readValue((byte[]) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
 		Assert.assertTrue(contains("mem", applicationMetrics.getMetrics()));
@@ -150,7 +150,7 @@ public class ApplicationMetricsExporterTests {
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
 		ApplicationMetrics applicationMetrics = mapper
-				.readValue((String) message.getPayload(), ApplicationMetrics.class);
+				.readValue((byte[]) message.getPayload(), ApplicationMetrics.class);
 		Assert.assertFalse(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
 		Assert.assertTrue(contains("mem", applicationMetrics.getMetrics()));
@@ -173,7 +173,7 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+		ApplicationMetrics applicationMetrics = mapper.readValue((byte[]) message.getPayload(),
 				ApplicationMetrics.class);
 		Assert.assertFalse(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
@@ -196,7 +196,7 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+		ApplicationMetrics applicationMetrics = mapper.readValue((byte[]) message.getPayload(),
 				ApplicationMetrics.class);
 		Assert.assertFalse(contains("mem", applicationMetrics.getMetrics()));
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
@@ -229,7 +229,7 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+		ApplicationMetrics applicationMetrics = mapper.readValue((byte[]) message.getPayload(),
 				ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
@@ -265,7 +265,7 @@ public class ApplicationMetricsExporterTests {
 					.poll(10, TimeUnit.SECONDS);
 			Assert.assertNotNull(message);
 			ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-			ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+			ApplicationMetrics applicationMetrics = mapper.readValue((byte[]) message.getPayload(),
 					ApplicationMetrics.class);
 			Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 					applicationMetrics.getMetrics()));
@@ -292,7 +292,7 @@ public class ApplicationMetricsExporterTests {
 				.poll(10, TimeUnit.SECONDS);
 		Assert.assertNotNull(message);
 		ObjectMapper mapper = applicationContext.getBean(ObjectMapper.class);
-		ApplicationMetrics applicationMetrics = mapper.readValue((String) message.getPayload(),
+		ApplicationMetrics applicationMetrics = mapper.readValue((byte[]) message.getPayload(),
 				ApplicationMetrics.class);
 		Assert.assertTrue(contains("integration.channel.errorChannel.errorRate.mean",
 				applicationMetrics.getMetrics()));
