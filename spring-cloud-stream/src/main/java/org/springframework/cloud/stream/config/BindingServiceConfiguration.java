@@ -51,10 +51,10 @@ import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.converter.StreamConverterBeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Import;
 import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -85,6 +85,7 @@ import org.springframework.util.CollectionUtils;
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
+@Import(ContentTypeConfiguration.class)
 public class BindingServiceConfiguration {
 
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
@@ -92,16 +93,6 @@ public class BindingServiceConfiguration {
 	public static final String ERROR_BRIDGE_CHANNEL = "errorBridgeChannel";
 
 	private static final String ERROR_KEY_NAME = "error";
-
-	@Autowired(required = false)
-	private ObjectMapper objectMapper;
-
-	/**
-	 * User defined custom message converters
-	 */
-	@Autowired(required = false)
-	@StreamConverter
-	private List<MessageConverter> customMessageConverters;
 
 	@Bean
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
@@ -196,16 +187,6 @@ public class BindingServiceConfiguration {
 	public DynamicDestinationsBindable dynamicDestinationsBindable() {
 		return new DynamicDestinationsBindable();
 	}
-
-	@Bean
-	public CompositeMessageConverterFactory compositeMessageConverterFactory() {
-		List<MessageConverter> messageConverters = new ArrayList<>();
-		if (!CollectionUtils.isEmpty(this.customMessageConverters)) {
-			messageConverters.addAll(Collections.unmodifiableCollection(this.customMessageConverters));
-		}
-		return new CompositeMessageConverterFactory(messageConverters, this.objectMapper);
-	}
-
 
 
 	@Bean

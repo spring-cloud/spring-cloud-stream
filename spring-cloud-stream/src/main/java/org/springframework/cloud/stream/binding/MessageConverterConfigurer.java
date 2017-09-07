@@ -34,6 +34,7 @@ import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
+import org.springframework.integration.support.MutableMessageBuilder;
 import org.springframework.integration.support.MutableMessageBuilderFactory;
 import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
@@ -48,6 +49,7 @@ import org.springframework.tuple.Tuple;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -208,17 +210,30 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			if(message.getClass().isAssignableFrom(ErrorMessage.class)){
+			//bypass conversion for ErrorMessges
+			if(message instanceof ErrorMessage){
 				return message;
 			}
-			Message<?> sentMessage = null;
+			//bypass conversion for raw bytes
+			if(message.getPayload() instanceof byte[]){
+				return MessageConverterConfigurer.this.messageBuilderFactory.withPayload(message.getPayload())
+						.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_OCTET_STREAM)
+						.build();
+			}
 
+			Message<?> sentMessage = null;
 			Object converted;
+
 			if (this.input) {
-				return message;
+				return MessageConverterConfigurer.this.messageBuilderFactory.withPayload(message.getPayload())
+						.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType).build();
 			}
+
 			else {
 				MutableMessageHeaders headers = new MutableMessageHeaders(message.getHeaders());
+				if(!headers.containsKey(MessageHeaders.CONTENT_TYPE)){
+					headers.put(MessageHeaders.CONTENT_TYPE,this.mimeType);
+				}
 				converted = this.messageConverter.toMessage(message.getPayload(),
 						headers);
 
