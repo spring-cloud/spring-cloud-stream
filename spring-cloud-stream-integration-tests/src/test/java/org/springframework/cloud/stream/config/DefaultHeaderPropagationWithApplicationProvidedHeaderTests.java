@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.broken;
+package org.springframework.cloud.stream.config;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,23 +28,23 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
- *
- * @since 1.2
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = TextPlainConversionTest.FooProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class TextPlainConversionTest {
+@SpringBootTest(classes = DefaultHeaderPropagationWithApplicationProvidedHeaderTests.HeaderPropagationProcessor.class,
+		webEnvironment = SpringBootTest.WebEnvironment.NONE)
+public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 
 	@Autowired
 	private Processor testProcessor;
@@ -52,69 +52,27 @@ public class TextPlainConversionTest {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@Test
-	public void testTextPlainConversionOnOutput() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("Bar").build());
+	@Test(expected = MessageConversionException.class)
+	public void testFailedonCustomContentTypeWithoutConverter() throws Exception {
+		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.setHeader("foo", "fooValue")
+				.setHeader("bar", "barValue")
+				.build());
 		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Foo{name='Bar'}");
-	}
 
-	@Test
-	public void testByteArrayConversionOnOutput() throws Exception {
-		testProcessor.output().send(MessageBuilder.withPayload("Bar".getBytes()).build());
-		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Bar");
-	}
-
-	@Test
-	public void testTextPlainConversionOnInputAndOutput() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload(new Foo("Bar")).build());
-		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Foo{name='Foo{name='Bar'}'}");
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/textplain/text-plain.properties")
-	public static class FooProcessor {
+	public static class HeaderPropagationProcessor {
 
 		@ServiceActivator(inputChannel = "input", outputChannel = "output")
-		public Foo consume(String foo) {
-			return new Foo(foo);
+		public Message<?> consume(String data) {
+			return MessageBuilder.withPayload(data).setHeader(MessageHeaders.CONTENT_TYPE, "custom/header").build();
 		}
 
 	}
-
-	public static class Foo {
-
-		private String name;
-
-		public Foo(String name) {
-			this.name = name;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		@Override
-		public String toString() {
-			return "Foo{name='" + name + "'}";
-		}
-
-	}
-
 }

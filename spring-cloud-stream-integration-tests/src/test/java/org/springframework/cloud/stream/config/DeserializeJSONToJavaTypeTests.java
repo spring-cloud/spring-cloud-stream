@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.broken;
+package org.springframework.cloud.stream.config;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -28,12 +29,13 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.MessageConversionException;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,9 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = DefaultHeaderPropagationWithApplicationProvidedHeaderTests.HeaderPropagationProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
+@SpringBootTest(classes = DeserializeJSONToJavaTypeTests.FooProcessor.class)
+public class DeserializeJSONToJavaTypeTests {
 
 	@Autowired
 	private Processor testProcessor;
@@ -52,27 +53,43 @@ public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@Test(expected = MessageConversionException.class)
-	public void testFailedonCustomContentTypeWithoutConverter() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
-				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-				.setHeader("foo", "fooValue")
-				.setHeader("bar", "barValue")
-				.build());
+	@Autowired
+	private List<MessageConverter> customMessageConverters;
+
+	@Test
+	public void testMessageDeserialized() throws Exception {
+		testProcessor.input().send(
+				MessageBuilder.withPayload("{\"name\":\"Bar\"}").setHeader("contentType", "application/json").build());
 		@SuppressWarnings("unchecked")
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-
+		assertThat(received).isNotNull();
+		assertThat(received.getPayload()).isInstanceOf(byte[].class);
+		assertThat((byte[]) received.getPayload()).isEqualTo("{\"name\":\"Bar\"}".getBytes());
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class HeaderPropagationProcessor {
+	@PropertySource("classpath:/org/springframework/cloud/stream/config/fooprocesor/foo-sink.properties")
+	@Configuration
+	public static class FooProcessor {
 
 		@ServiceActivator(inputChannel = "input", outputChannel = "output")
-		public Message<?> consume(String data) {
-			return MessageBuilder.withPayload(data).setHeader(MessageHeaders.CONTENT_TYPE, "custom/header").build();
+		public Foo consume(Foo foo) {
+			return foo;
+		}
+	}
+
+	public static class Foo {
+
+		private String name;
+
+		public String getName() {
+			return name;
 		}
 
+		public void setName(String name) {
+			this.name = name;
+		}
 	}
 }

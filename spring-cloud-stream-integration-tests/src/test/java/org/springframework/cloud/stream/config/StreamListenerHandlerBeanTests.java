@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.broken;
+package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,82 +37,108 @@ import org.springframework.cloud.stream.config.StreamListenerTestUtils;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
 @RunWith(Parameterized.class)
-public class StreamListenerMethodWithReturnMessageTests {
+public class StreamListenerHandlerBeanTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerMethodWithReturnMessageTests(Class<?> configClass) {
+	public StreamListenerHandlerBeanTests(Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection InputConfigs() {
-		return Arrays.asList(new Class[] { TestPojoWithMessageReturn1.class, TestPojoWithMessageReturn2.class });
+		return Arrays.asList(TestHandlerBeanWithSendTo.class, TestHandlerBean2.class);
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testReturnMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication
-				.run(this.configClass, "--server.port=0");
+	public void testHandlerBean() throws Exception {
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+				"--spring.cloud.stream.bindings.output.contentType=application/json",
+				"--server.port=0");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		processor.input()
-				.send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
+		processor.input().send(
+				MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
-		TestPojoWithMessageReturn testPojoWithMessageReturn = context
-				.getBean(TestPojoWithMessageReturn.class);
-		Assertions.assertThat(testPojoWithMessageReturn.receivedPojos).hasSize(1);
-		Assertions.assertThat(testPojoWithMessageReturn.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
-		Message<StreamListenerTestUtils.BarPojo> message = (Message<StreamListenerTestUtils.BarPojo>) collector
-				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
+		HandlerBean handlerBean = context.getBean(HandlerBean.class);
+		Assertions.assertThat(handlerBean.receivedPojos).hasSize(1);
+		Assertions.assertThat(handlerBean.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo",
+				"barbar" + id);
+		Message<byte[]> message = (Message<byte[]>) collector.forChannel(
+				processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload().getBar()).isEqualTo("barbar" + id);
+		assertThat(new String(message.getPayload())).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
+		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
+				.includes(MimeTypeUtils.APPLICATION_JSON));
 		context.close();
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestPojoWithMessageReturn1 extends TestPojoWithMessageReturn {
+	public static class TestHandlerBeanWithSendTo {
 
-		@StreamListener(Processor.INPUT)
-		@SendTo(Processor.OUTPUT)
-		public Message<?> receive(StreamListenerTestUtils.FooPojo fooPojo) {
-			this.receivedPojos.add(fooPojo);
-			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
-			barPojo.setBar(fooPojo.getFoo());
-			return MessageBuilder.withPayload(barPojo).setHeader("foo", "bar").build();
+		@Bean
+		public HandlerBeanWithSendTo handlerBean() {
+			return new HandlerBeanWithSendTo();
 		}
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	public static class TestPojoWithMessageReturn2 extends TestPojoWithMessageReturn {
+	public static class TestHandlerBean2 {
 
-		@StreamListener(Processor.INPUT)
-		@Output(Processor.OUTPUT)
-		public Message<?> receive(StreamListenerTestUtils.FooPojo fooPojo) {
-			this.receivedPojos.add(fooPojo);
-			StreamListenerTestUtils.BarPojo bazPojo = new StreamListenerTestUtils.BarPojo();
-			bazPojo.setBar(fooPojo.getFoo());
-			return MessageBuilder.withPayload(bazPojo).setHeader("foo", "bar").build();
+		@Bean
+		public HandlerBeanWithOutput handlerBean() {
+			return new HandlerBeanWithOutput();
 		}
 	}
 
-	public static class TestPojoWithMessageReturn {
+	public static class HandlerBeanWithSendTo extends HandlerBean {
+
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public StreamListenerTestUtils.BarPojo receive(StreamListenerTestUtils.FooPojo fooMessage) {
+			this.receivedPojos.add(fooMessage);
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
+			barPojo.setBar(fooMessage.getFoo());
+			return barPojo;
+		}
+	}
+
+	public static class HandlerBeanWithOutput extends HandlerBean {
+
+		@StreamListener(Processor.INPUT)
+		@Output(Processor.OUTPUT)
+		public StreamListenerTestUtils.BarPojo receive(StreamListenerTestUtils.FooPojo fooMessage) {
+			this.receivedPojos.add(fooMessage);
+			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
+			barPojo.setBar(fooMessage.getFoo());
+			return barPojo;
+		}
+	}
+
+	public static class HandlerBean {
+
 		List<StreamListenerTestUtils.FooPojo> receivedPojos = new ArrayList<>();
+
 	}
 
 }

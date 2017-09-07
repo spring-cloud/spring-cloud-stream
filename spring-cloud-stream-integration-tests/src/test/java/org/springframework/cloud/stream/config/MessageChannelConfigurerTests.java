@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.broken;
+package org.springframework.cloud.stream.config;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +42,6 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.tuple.Tuple;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,9 +77,6 @@ public class MessageChannelConfigurerTests {
 		MessageHandler messageHandler = new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				assertThat(message.getPayload()).isInstanceOf(Tuple.class);
-				assertThat(((Tuple) message.getPayload()).getFieldNames().get(0)).isEqualTo("message");
-				assertThat(((Tuple) message.getPayload()).getValue(0)).isEqualTo("Hi");
 				latch.countDown();
 			}
 		};

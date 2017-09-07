@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.broken;
+package org.springframework.cloud.stream.config;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -26,26 +26,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConversionException;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
+ * @since 1.2
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = DeserializeJSONToJavaTypeTests.FooProcessor.class)
-public class DeserializeJSONToJavaTypeTests {
+@SpringBootTest(classes = TextPlainToJsonConversionTest.FooProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+public class TextPlainToJsonConversionTest {
 
 	@Autowired
 	private Processor testProcessor;
@@ -53,36 +55,52 @@ public class DeserializeJSONToJavaTypeTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@Autowired
-	private List<MessageConverter> customMessageConverters;
+	private ObjectMapper mapper = new ObjectMapper();
 
 	@Test
-	public void testMessageDeserialized() throws Exception {
-		testProcessor.input().send(
-				MessageBuilder.withPayload("{\"name\":\"Bar\"}").setHeader("contentType", "application/json").build());
-		@SuppressWarnings("unchecked")
+	public void testNoContentTypeToJsonConversionOnInput() throws Exception {
+		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").build());
+		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(received).isNotNull();
+		Foo foo = mapper.readValue(received.getPayload(),Foo.class);
+		assertThat(foo.getName()).isEqualTo("transformed-Bar");
+	}
+
+	/**
+	 * @since 2.0: Conversion from text/plain -> json is no longer supported. Strict contentType only.
+	 * @throws Exception
+	 */
+	@Test(expected = MessageConversionException.class)
+	public void testTextPlainToJsonConversionOnInput() throws Exception {
+		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
 		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isInstanceOf(byte[].class);
-		assertThat((byte[]) received.getPayload()).isEqualTo("{\"name\":\"Bar\"}".getBytes());
+		assertThat(((Foo) received.getPayload()).getName()).isEqualTo("transformed-Bar");
 	}
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/fooprocesor/foo-sink.properties")
-	@Configuration
 	public static class FooProcessor {
 
-		@ServiceActivator(inputChannel = "input", outputChannel = "output")
+		@StreamListener("input")
+		@SendTo("output")
 		public Foo consume(Foo foo) {
-			return foo;
+			Foo returnFoo = new Foo();
+			returnFoo.setName("transformed-" + foo.getName());
+			return returnFoo;
 		}
+
 	}
 
 	public static class Foo {
 
 		private String name;
+
+		public Foo() {
+		}
 
 		public String getName() {
 			return name;
@@ -91,5 +109,12 @@ public class DeserializeJSONToJavaTypeTests {
 		public void setName(String name) {
 			this.name = name;
 		}
+
+		@Override
+		public String toString() {
+			return "Foo{name='" + name + "'}";
+		}
+
 	}
+
 }

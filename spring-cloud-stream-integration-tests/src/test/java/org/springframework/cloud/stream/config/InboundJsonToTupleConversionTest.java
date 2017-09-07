@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.broken;
+package org.springframework.cloud.stream.config;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +33,6 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.tuple.Tuple;
 import org.springframework.tuple.TupleBuilder;

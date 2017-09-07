@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.broken;
+package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,7 +37,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.config.StreamListenerTestUtils;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -47,11 +47,13 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
+ *
  */
 @RunWith(StreamListenerMethodReturnWithConversionTests.class)
 @Suite.SuiteClasses({ StreamListenerMethodReturnWithConversionTests.TestReturnConversion.class,
@@ -81,7 +83,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 		@SuppressWarnings("unchecked")
 		public void testReturnConversion() throws Exception {
 			ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
-					"--spring.cloud.stream.bindings.output.contentType=application/json", "--server.port=0");
+					"--spring.cloud.stream.bindings.output.contentType=application/json", "--server.port=0","--spring.jmx.enabled=false");
 			MessageCollector collector = context.getBean(MessageCollector.class);
 			Processor processor = context.getBean(Processor.class);
 			String id = UUID.randomUUID().toString();
@@ -90,10 +92,10 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 			Assertions.assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
 			Assertions.assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
-			Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1,
+			Message<byte[]> message = (Message<byte[]>) collector.forChannel(processor.output()).poll(1,
 					TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
-			assertThat(message.getPayload()).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
+			assertThat(new String(message.getPayload())).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
 			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 					.includes(MimeTypeUtils.APPLICATION_JSON));
 			context.close();
@@ -104,6 +106,8 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 	public static class TestReturnNoConversion {
 
 		private Class<?> configClass;
+
+		private ObjectMapper mapper = new ObjectMapper();
 
 		public TestReturnNoConversion(Class<?> configClass) {
 			this.configClass = configClass;
@@ -117,7 +121,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 		@Test
 		@SuppressWarnings("unchecked")
 		public void testReturnNoConversion() throws Exception {
-			ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0");
+			ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0","--spring.jmx.enabled=false");
 			MessageCollector collector = context.getBean(MessageCollector.class);
 			Processor processor = context.getBean(Processor.class);
 			String id = UUID.randomUUID().toString();
@@ -126,12 +130,13 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 			Assertions.assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
 			Assertions.assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
-			Message<StreamListenerTestUtils.BarPojo> message = (Message<StreamListenerTestUtils.BarPojo>) collector
+			Message<byte[]> message = (Message<byte[]>) collector
 					.forChannel(processor.output()).poll(1,
 							TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
-			assertThat(message.getPayload().getBar()).isEqualTo("barbar" + id);
-			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class) == null);
+			StreamListenerTestUtils.BarPojo barPojo = mapper.readValue(message.getPayload(),StreamListenerTestUtils.BarPojo.class);
+			assertThat(barPojo.getBar()).isEqualTo("barbar" + id);
+			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class) != null);
 			context.close();
 		}
 	}

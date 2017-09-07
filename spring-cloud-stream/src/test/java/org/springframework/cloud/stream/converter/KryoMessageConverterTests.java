@@ -36,7 +36,7 @@ public class KryoMessageConverterTests {
 	@Test
 	public void convertStringType() throws Exception {
 		KryoMessageConverter kryoMessageConverter = new KryoMessageConverter(null,true);
-		Message<?> message = MessageBuilder.withPayload("foo").build();
+		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,"application/x-java-object").build();
 		Message converted = kryoMessageConverter.toMessage(message.getPayload(),message.getHeaders());
 		Assert.assertNotNull(converted);
 		Assert.assertEquals("application/x-java-object;type=java.lang.String",converted.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());

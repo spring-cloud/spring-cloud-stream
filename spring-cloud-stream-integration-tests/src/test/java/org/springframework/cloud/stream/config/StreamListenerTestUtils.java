@@ -55,6 +55,14 @@ public class StreamListenerTestUtils {
 		public void setFoo(String foo) {
 			this.foo = foo;
 		}
+
+		@Override
+		public String toString() {
+			final StringBuffer sb = new StringBuffer("FooPojo{");
+			sb.append("foo='").append(foo).append('\'');
+			sb.append('}');
+			return sb.toString();
+		}
 	}
 
 	public static class BarPojo {
@@ -67,6 +75,14 @@ public class StreamListenerTestUtils {
 
 		public void setBar(String bar) {
 			this.bar = bar;
+		}
+
+		@Override
+		public String toString() {
+			final StringBuffer sb = new StringBuffer("BarPojo{");
+			sb.append("bar='").append(bar).append('\'');
+			sb.append('}');
+			return sb.toString();
 		}
 	}
 }

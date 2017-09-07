@@ -102,7 +102,7 @@ public class ErrorBindingTests {
 		((SubscribableChannel)errorBridgeChannel).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				assertThat(message.getPayload()).isEqualTo("{\"foo\":\"bar\"}");
+				assertThat(new String((byte[])message.getPayload())).isEqualTo("{\"foo\":\"bar\"}");
 				received.set(true);
 			}
 		});
@@ -131,7 +131,7 @@ public class ErrorBindingTests {
 		((SubscribableChannel)errorBridgeChannel).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				String payload = (String) message.getPayload();
+				String payload = new String((byte[]) message.getPayload());
 				assertThat(payload.contains("cause")).isTrue();
 				assertThat(payload.contains("stackTrace")).isTrue();
 				assertThat(payload.contains("throwing exception")).isTrue();

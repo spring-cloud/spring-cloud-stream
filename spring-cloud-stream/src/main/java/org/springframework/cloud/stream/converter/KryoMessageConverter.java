@@ -121,7 +121,7 @@ public class KryoMessageConverter implements SmartMessageConverter {
 			MessageHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(headers, MessageHeaderAccessor.class);
 			if (accessor != null && accessor.isMutable()) {
 				if (mimeType != null) {
-					accessor.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, mimeType);
+					accessor.setHeader(MessageHeaders.CONTENT_TYPE, mimeType);
 				}
 				return MessageBuilder.createMessage(payloadToUse, accessor.getMessageHeaders());
 			}
@@ -132,7 +132,7 @@ public class KryoMessageConverter implements SmartMessageConverter {
 			builder.copyHeaders(headers);
 		}
 		if (mimeType != null) {
-			builder.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, mimeType);
+			builder.setHeader(MessageHeaders.CONTENT_TYPE, mimeType);
 		}
 		return builder.build();
 	}

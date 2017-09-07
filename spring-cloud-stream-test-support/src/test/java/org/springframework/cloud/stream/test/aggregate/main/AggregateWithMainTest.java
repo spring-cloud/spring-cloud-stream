@@ -46,16 +46,16 @@ public class AggregateWithMainTest {
 		ConfigurableApplicationContext context = new AggregateApplicationBuilder(MainConfiguration.class)
 				.from(UppercaseProcessor.class).namespace("upper")
 				.to(SuffixProcessor.class).namespace("suffix")
-				.run();
+				.run("--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain");
 
 		AggregateApplication aggregateAccessor = context.getBean(AggregateApplication.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
 		Processor uppercaseProcessor = aggregateAccessor.getBinding(Processor.class, "upper");
 		Processor suffixProcessor = aggregateAccessor.getBinding(Processor.class, "suffix");
 		uppercaseProcessor.input().send(MessageBuilder.withPayload("Hello").build());
-		Message<?> receivedMessage = messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<byte[]> receivedMessage = (Message<byte[]>) messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(receivedMessage).isNotNull();
-		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!");
+		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!".getBytes());
 		context.close();
 	}
 
