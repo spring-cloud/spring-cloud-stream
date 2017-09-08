@@ -72,7 +72,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidInputOnMethod() throws Exception {
 		try {
-			SpringApplication.run(TestInvalidInputOnMethod.class, "--server.port=0");
+			SpringApplication.run(TestInvalidInputOnMethod.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + INPUT_AT_STREAM_LISTENER);
 		}
 		catch (BeanCreationException e) {
@@ -83,7 +84,10 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodWithObjectAsMethodArgument() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithObjectAsMethodArgument.class,
-				"--server.port=0","--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain");
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		Processor processor = context.getBean(Processor.class);
 		final String testMessage = "testing";
 		processor.input().send(MessageBuilder.withPayload(testMessage).build());
@@ -102,7 +106,10 @@ public class StreamListenerHandlerMethodTests {
 	 */
 	public void testMethodHeadersPropagatged() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodHeadersPropagated.class,
-				"--server.port=0","--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain");
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		Processor processor = context.getBean(Processor.class);
 		final String testMessage = "testing";
 		processor.input().send(MessageBuilder.withPayload(testMessage)
@@ -119,7 +126,10 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodHeadersNotPropagatged() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodHeadersNotPropagated.class,
-				"--server.port=0","--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain");
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		Processor processor = context.getBean(Processor.class);
 		final String testMessage = "testing";
 		processor.input().send(MessageBuilder.withPayload(testMessage)
@@ -137,7 +147,10 @@ public class StreamListenerHandlerMethodTests {
 	//TODO: Handle dynamic destinations and contentType
 	public void testStreamListenerMethodWithTargetBeanFromOutside() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
-				.run(TestStreamListenerMethodWithTargetBeanFromOutside.class, "--server.port=0","--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain");
+				.run(TestStreamListenerMethodWithTargetBeanFromOutside.class, "--server.port=0",
+						"--spring.jmx.enabled=false",
+						"--spring.cloud.stream.bindings.input.contentType=text/plain",
+						"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		Sink sink = context.getBean(Sink.class);
 		final String testMessageToSend = "testing";
 		sink.input().send(MessageBuilder.withPayload(testMessageToSend).build());
@@ -154,7 +167,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidReturnTypeWithSendToAndOutput() throws Exception {
 		try {
-			SpringApplication.run(TestReturnTypeWithMultipleOutput.class, "--server.port=0");
+			SpringApplication.run(TestReturnTypeWithMultipleOutput.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 		}
 		catch (BeanCreationException e) {
@@ -165,7 +179,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidReturnTypeWithNoOutput() throws Exception {
 		try {
-			SpringApplication.run(TestInvalidReturnTypeWithNoOutput.class, "--server.port=0");
+			SpringApplication.run(TestInvalidReturnTypeWithNoOutput.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
 		catch (BeanCreationException e) {
@@ -176,7 +191,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidInputAnnotationWithNoValue() throws Exception {
 		try {
-			SpringApplication.run(TestInvalidInputAnnotationWithNoValue.class, "--server.port=0");
+			SpringApplication.run(TestInvalidInputAnnotationWithNoValue.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_INBOUND_NAME);
 		}
 		catch (BeanCreationException e) {
@@ -187,7 +203,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidOutputAnnotationWithNoValue() throws Exception {
 		try {
-			SpringApplication.run(TestInvalidOutputAnnotationWithNoValue.class, "--server.port=0");
+			SpringApplication.run(TestInvalidOutputAnnotationWithNoValue.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_OUTBOUND_NAME);
 		}
 		catch (BeanCreationException e) {
@@ -198,7 +215,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodInvalidInboundName() throws Exception {
 		try {
-			SpringApplication.run(TestMethodInvalidInboundName.class, "--server.port=0");
+			SpringApplication.run(TestMethodInvalidInboundName.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected on using invalid inbound name");
 		}
 		catch (BeanCreationException e) {
@@ -211,7 +229,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodInvalidOutboundName() throws Exception {
 		try {
-			SpringApplication.run(TestMethodInvalidOutboundName.class, "--server.port=0");
+			SpringApplication.run(TestMethodInvalidOutboundName.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected on using invalid outbound name");
 		}
 		catch (BeanCreationException e) {
@@ -223,7 +242,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testAmbiguousMethodArguments1() throws Exception {
 		try {
-			SpringApplication.run(TestAmbiguousMethodArguments1.class, "--server.port=0");
+			SpringApplication.run(TestAmbiguousMethodArguments1.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 		catch (BeanCreationException e) {
@@ -234,7 +254,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testAmbiguousMethodArguments2() throws Exception {
 		try {
-			SpringApplication.run(TestAmbiguousMethodArguments2.class, "--server.port=0");
+			SpringApplication.run(TestAmbiguousMethodArguments2.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected:" + AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 		catch (BeanCreationException e) {
@@ -245,7 +266,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodWithInputAsMethodAndParameter() throws Exception {
 		try {
-			SpringApplication.run(TestMethodWithInputAsMethodAndParameter.class, "--server.port=0");
+			SpringApplication.run(TestMethodWithInputAsMethodAndParameter.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		catch (BeanCreationException e) {
@@ -256,7 +278,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodWithOutputAsMethodAndParameter() throws Exception {
 		try {
-			SpringApplication.run(TestMethodWithOutputAsMethodAndParameter.class, "--server.port=0");
+			SpringApplication.run(TestMethodWithOutputAsMethodAndParameter.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected:" + INVALID_OUTPUT_VALUES);
 		}
 		catch (BeanCreationException e) {
@@ -267,7 +290,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodWithoutInput() throws Exception {
 		try {
-			SpringApplication.run(TestMethodWithoutInput.class, "--server.port=0");
+			SpringApplication.run(TestMethodWithoutInput.class, "--server.port=0",
+					"--spring.jmx.enabled=false");
 			fail("Exception expected when inbound target is not set");
 		}
 		catch (BeanCreationException e) {
@@ -278,7 +302,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodWithMultipleInputParameters() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithMultipleInputParameters.class,
-				"--server.port=0");
+				"--server.port=0",
+				"--spring.jmx.enabled=false");
 		Processor processor = context.getBean(Processor.class);
 		StreamListenerTestUtils.FooInboundChannel1 inboundChannel2 = context
 				.getBean(StreamListenerTestUtils.FooInboundChannel1.class);
@@ -302,7 +327,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodWithMultipleOutputParameters() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithMultipleOutputParameters.class,
-				"--server.port=0");
+				"--server.port=0",
+				"--spring.jmx.enabled=false");
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
 		StreamListenerTestUtils.FooOutboundChannel1 source2 = context
