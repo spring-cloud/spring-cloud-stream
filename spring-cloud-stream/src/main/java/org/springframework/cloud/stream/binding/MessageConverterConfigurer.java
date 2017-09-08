@@ -47,7 +47,6 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
