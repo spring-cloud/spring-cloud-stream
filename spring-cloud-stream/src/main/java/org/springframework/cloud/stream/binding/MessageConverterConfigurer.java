@@ -215,7 +215,7 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 			//bypass conversion for raw bytes
 			if(message.getPayload() instanceof byte[]){
 				return MessageConverterConfigurer.this.messageBuilderFactory.withPayload(message.getPayload())
-						.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_OCTET_STREAM)
+						.copyHeaders(message.getHeaders()).setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType)
 						.build();
 			}
 

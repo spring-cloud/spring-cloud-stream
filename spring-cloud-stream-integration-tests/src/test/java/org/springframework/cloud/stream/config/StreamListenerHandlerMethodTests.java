@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.config.broken;
+package org.springframework.cloud.stream.config;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -143,7 +143,7 @@ public class StreamListenerHandlerMethodTests {
 		context.close();
 	}
 
-	@Test
+
 	//TODO: Handle dynamic destinations and contentType
 	public void testStreamListenerMethodWithTargetBeanFromOutside() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
