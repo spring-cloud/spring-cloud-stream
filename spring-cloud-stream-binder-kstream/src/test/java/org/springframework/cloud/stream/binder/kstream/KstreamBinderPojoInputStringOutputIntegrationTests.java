@@ -85,6 +85,7 @@ public class KstreamBinderPojoInputStringOutputIntegrationTests {
 				"--spring.cloud.stream.kstream.binder.configuration.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+				"--spring.cloud.stream.kstream.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kstream.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kstream.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
@@ -108,7 +109,7 @@ public class KstreamBinderPojoInputStringOutputIntegrationTests {
 
 		@StreamListener("input")
 		@SendTo("output")
-		public KStream<?, String> process(KStream<Object, Product> input) {
+		public KStream<Integer, String> process(KStream<Object, Product> input) {
 
 			return input
 					.filter(new Predicate<Object, Product>() {
@@ -128,11 +129,11 @@ public class KstreamBinderPojoInputStringOutputIntegrationTests {
 					.groupByKey(new JsonSerde<>(Product.class), new JsonSerde<>(Product.class))
 					.count(TimeWindows.of(5000), "id-count-store")
 					.toStream()
-					.map(new KeyValueMapper<Windowed<Product>, Long, KeyValue<Object, String>>() {
+					.map(new KeyValueMapper<Windowed<Product>, Long, KeyValue<Integer, String>>() {
 
 						@Override
-						public KeyValue<Object, String> apply(Windowed<Product> key, Long value) {
-							return new KeyValue<>(null, "Count for product with ID 123: " + value);
+						public KeyValue<Integer, String> apply(Windowed<Product> key, Long value) {
+							return new KeyValue<>(key.key().id, "Count for product with ID 123: " + value);
 						}
 					});
 		}
