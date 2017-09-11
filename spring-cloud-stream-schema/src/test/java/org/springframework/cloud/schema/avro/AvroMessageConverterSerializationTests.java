@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.schema.avro;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,6 +25,10 @@ import example.avro.User;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.Encoder;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.After;
@@ -32,16 +37,18 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
-import org.springframework.cloud.stream.binder.StringConvertingContentTypeResolver;
+import org.springframework.cache.support.NoOpCacheManager;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaRegistryClientMessageConverter;
 import org.springframework.cloud.stream.schema.client.DefaultSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.cloud.stream.schema.server.SchemaRegistryServerApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -59,8 +66,8 @@ public class AvroMessageConverterSerializationTests {
 
 	@Before
 	public void setup() {
-		schemaRegistryServerContext = SpringApplication.run(
-				SchemaRegistryServerApplication.class);
+		schemaRegistryServerContext = SpringApplication
+				.run(SchemaRegistryServerApplication.class);
 	}
 
 	@After
@@ -72,31 +79,62 @@ public class AvroMessageConverterSerializationTests {
 	public void sourceWriteSameVersion() throws Exception {
 		User specificRecord = new User();
 		specificRecord.setName("joe");
-		Schema v1 = new Schema.Parser().parse(
-				AvroMessageConverterSerializationTests.class.getClassLoader().getResourceAsStream("schemas/user.avsc"));
+		Schema v1 = new Schema.Parser().parse(AvroMessageConverterSerializationTests.class
+				.getClassLoader().getResourceAsStream("schemas/user.avsc"));
 		GenericRecord genericRecord = new GenericData.Record(v1);
 		genericRecord.put("name", "joe");
 		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
-		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(client);
+		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
+				client, new NoOpCacheManager());
 		converter.setDynamicSchemaGenerationEnabled(false);
-		converter.setContentTypeResolver(new StringConvertingContentTypeResolver());
-		converter.setCacheManager(new ConcurrentMapCacheManager());
 		converter.afterPropertiesSet();
 
 		Message specificMessage = converter.toMessage(specificRecord,
-				new MutableMessageHeaders(Collections.<String, Object>emptyMap()),
+				new MutableMessageHeaders(Collections.<String, Object> emptyMap()),
 				MimeTypeUtils.parseMimeType("application/*+avro"));
-		SchemaReference specificRef = extractSchemaReference(
-				MimeTypeUtils.parseMimeType(specificMessage.getHeaders().get("contentType").toString()));
+		SchemaReference specificRef = extractSchemaReference(MimeTypeUtils.parseMimeType(
+				specificMessage.getHeaders().get("contentType").toString()));
 
 		Message genericMessage = converter.toMessage(genericRecord,
-				new MutableMessageHeaders(Collections.<String, Object>emptyMap()),
+				new MutableMessageHeaders(Collections.<String, Object> emptyMap()),
 				MimeTypeUtils.parseMimeType("application/*+avro"));
-		SchemaReference genericRef = extractSchemaReference(
-				MimeTypeUtils.parseMimeType(genericMessage.getHeaders().get("contentType").toString()));
+		SchemaReference genericRef = extractSchemaReference(MimeTypeUtils.parseMimeType(
+				genericMessage.getHeaders().get("contentType").toString()));
 
 		Assert.assertEquals(genericRef, specificRef);
 		Assert.assertEquals(1, genericRef.getVersion());
+	}
+
+	@Test
+	public void testOriginalContentTypeHeaderOnly() throws Exception {
+		User specificRecord = new User();
+		specificRecord.setName("joe");
+		Schema v1 = new Schema.Parser().parse(AvroMessageConverterSerializationTests.class
+				.getClassLoader().getResourceAsStream("schemas/user.avsc"));
+		GenericRecord genericRecord = new GenericData.Record(v1);
+		genericRecord.put("name", "joe");
+		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
+		client.register("user", "avro", v1.toString());
+		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
+				client, new NoOpCacheManager());
+		converter.setDynamicSchemaGenerationEnabled(false);
+		converter.afterPropertiesSet();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DatumWriter<User> writer = new SpecificDatumWriter<>(User.class);
+		Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
+		writer.write(specificRecord, encoder);
+		encoder.flush();
+		Message source = MessageBuilder.withPayload(baos.toByteArray())
+				.setHeader(MessageHeaders.CONTENT_TYPE,
+						MimeTypeUtils.APPLICATION_OCTET_STREAM)
+				.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE,
+						"application/vnd.user.v1+avro")
+				.build();
+		Object converted = converter.fromMessage(source, User.class);
+		Assert.assertNotNull(converted);
+		Assert.assertEquals(specificRecord.getName().toString(),
+				((User) converted).getName().toString());
+
 	}
 
 	private SchemaReference extractSchemaReference(MimeType mimeType) {

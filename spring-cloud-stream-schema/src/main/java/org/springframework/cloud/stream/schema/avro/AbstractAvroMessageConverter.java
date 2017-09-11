@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
@@ -37,7 +38,7 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecord;
 
-import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.OriginalContentTypeResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -54,11 +55,12 @@ import org.springframework.util.MimeType;
 public abstract class AbstractAvroMessageConverter extends AbstractMessageConverter {
 
 	protected AbstractAvroMessageConverter(MimeType supportedMimeType) {
-		super(supportedMimeType);
+		this(Collections.singletonList(supportedMimeType));
 	}
 
 	protected AbstractAvroMessageConverter(Collection<MimeType> supportedMimeTypes) {
 		super(supportedMimeTypes);
+		setContentTypeResolver(new OriginalContentTypeResolver());
 	}
 
 	protected static Schema parseSchema(Resource r) throws IOException {
@@ -68,29 +70,6 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	@Override
 	protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
 		return super.canConvertFrom(message, targetClass) && (message.getPayload() instanceof byte[]);
-	}
-
-	@Override
-	protected boolean supportsMimeType(MessageHeaders headers) {
-
-		for (MimeType current : getSupportedMimeTypes()) {
-			if(mimeTypeMatches(current,headers.get(MessageHeaders.CONTENT_TYPE)) || mimeTypeMatches(current,headers.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) ){
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private boolean mimeTypeMatches(MimeType reference, Object target){
-		if(target == null){
-			return !isStrictContentTypeMatch();
-		}else if(target instanceof  MimeType){
-			return reference.equals((MimeType)target);
-		}else if(target instanceof String){
-			return reference.equals(MimeType.valueOf((String)target));
-		}
-		return false;
 	}
 
 	@Override
