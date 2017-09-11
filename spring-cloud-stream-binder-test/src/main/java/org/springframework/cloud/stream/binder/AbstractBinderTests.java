@@ -203,9 +203,9 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		Message<?> inbound = receive(moduleInputChannel);
 		assertThat(inbound).isNotNull();
-		assertThat(inbound.getPayload()).isEqualTo("foo");
+		assertThat(inbound.getPayload()).isEqualTo("foo".getBytes());
 		assertThat(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
+		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
