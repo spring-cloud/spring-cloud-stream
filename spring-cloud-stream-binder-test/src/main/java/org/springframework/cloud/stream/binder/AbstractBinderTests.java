@@ -125,16 +125,16 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				outputBindingProperties.getProducer());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "testSendAndReceive", moduleInputChannel,
 				createConsumerProperties());
-		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
+		//Bypass conversion we are only testing sendReceive
+		Message<?> message = MessageBuilder.withPayload("foo".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_OCTET_STREAM)
 				.build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel.send(message);
 		Message<?> inbound = receive(moduleInputChannel);
 		assertThat(inbound).isNotNull();
-		assertThat(inbound.getPayload()).isEqualTo("foo");
-		assertThat(inbound.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("foo/bar");
+		assertThat(inbound.getPayload()).isEqualTo("foo".getBytes());
+		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -161,9 +161,9 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				createConsumerProperties());
 
 		String testPayload1 = "foo" + UUID.randomUUID().toString();
-		Message<?> message1 = MessageBuilder.withPayload(testPayload1.getBytes()).build();
+		Message<?> message1 = MessageBuilder.withPayload(testPayload1.getBytes()).setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.APPLICATION_OCTET_STREAM).build();
 		String testPayload2 = "foo" + UUID.randomUUID().toString();
-		Message<?> message2 = MessageBuilder.withPayload(testPayload2.getBytes()).build();
+		Message<?> message2 = MessageBuilder.withPayload(testPayload2.getBytes()).setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.APPLICATION_OCTET_STREAM).build();
 
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
@@ -199,7 +199,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				createConsumerProperties());
 		binderBindUnbindLatency();
 
-		Message<?> message = MessageBuilder.withPayload("foo").build();
+		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build();
 		moduleOutputChannel.send(message);
 		Message<?> inbound = receive(moduleInputChannel);
 		assertThat(inbound).isNotNull();
