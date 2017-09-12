@@ -31,11 +31,12 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
-import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -87,7 +88,9 @@ public class RabbitBinderModuleTests {
 
 	@Test
 	public void testParentConnectionFactoryInheritedByDefault() {
-		context = SpringApplication.run(SimpleProcessor.class, "--server.port=0");
+		context = new SpringApplicationBuilder(SimpleProcessor.class)
+				.web(WebApplicationType.NONE)
+				.run("--server.port=0");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
@@ -111,9 +114,11 @@ public class RabbitBinderModuleTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testParentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
-		context = SpringApplication.run(SimpleProcessor.class, "--server.port=0",
-				"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
-				"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
+		context = new SpringApplicationBuilder(SimpleProcessor.class)
+				.web(WebApplicationType.NONE)
+				.run("--server.port=0",
+					"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
+					"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
@@ -149,7 +154,8 @@ public class RabbitBinderModuleTests {
 
 	@Test
 	public void testParentConnectionFactoryInheritedIfOverridden() {
-		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class)
+		context = new SpringApplicationBuilder(SimpleProcessor.class, ConnectionFactoryConfiguration.class)
+				.web(WebApplicationType.NONE)
 				.run("--server.port=0");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
@@ -185,7 +191,9 @@ public class RabbitBinderModuleTests {
 		params.add("--spring.rabbitmq.template.retry.initial-interval=1000");
 		params.add("--spring.rabbitmq.template.retry.multiplier=1.1");
 		params.add("--spring.rabbitmq.template.retry.max-interval=3000");
-		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[params.size()]));
+		context = new SpringApplicationBuilder(SimpleProcessor.class)
+				.web(WebApplicationType.NONE)
+				.run(params.toArray(new String[params.size()]));
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		@SuppressWarnings("unchecked")
 		Binder<MessageChannel, ExtendedConsumerProperties<RabbitConsumerProperties>,
