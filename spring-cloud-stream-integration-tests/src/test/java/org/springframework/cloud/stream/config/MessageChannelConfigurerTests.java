@@ -77,11 +77,13 @@ public class MessageChannelConfigurerTests {
 		MessageHandler messageHandler = new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
+				assertThat(message.getPayload()).isInstanceOf(byte[].class);
+				assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}".getBytes());
 				latch.countDown();
 			}
 		};
 		testSink.input().subscribe(messageHandler);
-		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
+		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes()).build());
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		testSink.input().unsubscribe(messageHandler);
 	}

@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.converter;
 
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 
@@ -52,10 +51,4 @@ public class CustomJackson2MappingMessageConverter extends MappingJackson2Messag
 
 	}
 
-
-	@Nullable
-	@Override
-	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
-		return super.convertToInternal(payload, headers, conversionHint);
-	}
 }

@@ -1365,8 +1365,7 @@ The content type resolution process have been redesigned for Spring Cloud Stream
 
 Please read the migrating from 1.3 section to understand the changes when interacting with applications using versions of the framework.
 
-The framework now depends on a `contentType` to be present as a header in order to know how serialize/deserialize a payload.
-This have simplified quite a lot the decisions the framework used to make on behalf of the user, removing some bugs that would show on edge cases.
+The framework depends on a `contentType` to be present as a header in order to know how serialize/deserialize a payload.
 
 Spring Cloud Stream allows you to declaratively configure type conversion for inputs and outputs using the `spring.cloud.stream.bindings.<channelName>.content-type` property of a binding.
 Note that general type conversion may also be accomplished easily by using a transformer inside your application.
@@ -1410,7 +1409,8 @@ It will instead use the contentType header (or the default provided by the frame
 
 The `contentType` you set is a hint to activate the corresponding `MessageConverter`. The converter can then modify the contentType to augment the information, such as the case with `Kryo` and `Avro` conveters.
 
-As a rule of thumb, for outbound messages, if your payload is of `byte[]` type, the framework will skip the entire conversion logic, and just write those bytes to the wire, setting the `contentType` of the message (if absent) to the default configured for the channel.
+For outbound messages, if your payload is of typ `byte[]`, the framework will skip the conversion logic, and just write those bytes to the wire.
+In this case, if `contentType` of the message is absent,  it will set the default value specified to channel.
 
 
 [TIP]
@@ -1429,7 +1429,7 @@ private Source source;
 		byte[] data = Files.readAllBytes(f.toPath());
 		MimeType mimeType = (f.getName().endsWith("gif")) ? MimeTypeUtils.IMAGE_GIF : MimeTypeUtils.IMAGE_JPEG;
 		source.output().send(MessageBuilder.withPayload(data)
-				.setHeader(MessageHeaders.CONTENT_TYPE,mimeType)
+				.setHeader(MessageHeaders.CONTENT_TYPE, mimeType)
 				.build());
 	}
 

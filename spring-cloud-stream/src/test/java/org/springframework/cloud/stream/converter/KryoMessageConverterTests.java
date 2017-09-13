@@ -74,14 +74,14 @@ public class KryoMessageConverterTests {
 	public void readWithWrongPayloadType() throws Exception{
 		KryoMessageConverter kryoMessageConverter = new KryoMessageConverter(null,true);
 		Message message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,KryoMessageConverter.KRYO_MIME_TYPE+";type=java.lang.String").build();
-		Object result = kryoMessageConverter.fromMessage(message,String.class);
+		kryoMessageConverter.fromMessage(message,String.class);
 	}
 
 	@Test(expected = MessageConversionException.class)
 	public void readWithWrongPayloadFormat() throws Exception{
 		KryoMessageConverter kryoMessageConverter = new KryoMessageConverter(null,true);
 		Message message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE,KryoMessageConverter.KRYO_MIME_TYPE+";type=java.lang.String").build();
-		Object result = kryoMessageConverter.fromMessage(message,String.class);
+		kryoMessageConverter.fromMessage(message,String.class);
 	}
 
 }

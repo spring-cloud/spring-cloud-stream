@@ -65,14 +65,10 @@ public class KryoMessageConverter implements SmartMessageConverter {
 
 	private ContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
 
-
-
 	public KryoMessageConverter(List<KryoRegistrar> kryoRegistrars, boolean useReferences) {
-
 		this.useReferences = useReferences;
 		this.kryoRegistrar = CollectionUtils.isEmpty(kryoRegistrars) ? null :
 				new CompositeKryoRegistrar(kryoRegistrars);
-
 		KryoFactory factory = () -> {
 			Kryo kryo = new Kryo();
 			configureKryoInstance(kryo);
@@ -85,26 +81,19 @@ public class KryoMessageConverter implements SmartMessageConverter {
 	@Nullable
 	@Override
 	public Object fromMessage(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
-
 		if (!canConvertFrom(message, targetClass)) {
 			return null;
 		}
-
 		if(!message.getPayload().getClass().isAssignableFrom(byte[].class)){
 			throw new MessageConversionException("This converter can only convert messages with byte[] payload");
 		}
-
-
-
 		byte[] payload = (byte[])message.getPayload();
-
 		try {
 			return deserialize(payload, targetClass);
 		}
 		catch (IOException e) {
 			throw new MessageConversionException("Could not deserialize payload",e);
 		}
-
 	}
 
 	@Nullable
@@ -114,9 +103,7 @@ public class KryoMessageConverter implements SmartMessageConverter {
 			return null;
 		}
 		byte[] payloadToUse = serialize(payload);
-
 		MimeType mimeType = getDefaultContentType(payload);
-
 		if (headers != null) {
 			MessageHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(headers, MessageHeaderAccessor.class);
 			if (accessor != null && accessor.isMutable()) {
@@ -126,7 +113,6 @@ public class KryoMessageConverter implements SmartMessageConverter {
 				return MessageBuilder.createMessage(payloadToUse, accessor.getMessageHeaders());
 			}
 		}
-
 		MessageBuilder<?> builder = MessageBuilder.withPayload(payloadToUse);
 		if (headers != null) {
 			builder.copyHeaders(headers);

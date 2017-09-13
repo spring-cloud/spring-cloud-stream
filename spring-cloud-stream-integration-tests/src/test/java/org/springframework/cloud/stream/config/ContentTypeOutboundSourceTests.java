@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -61,9 +60,9 @@ public class ContentTypeOutboundSourceTests {
 						.messageCollector().forChannel(testSource.output()).poll();
 		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).contains("text/plain");
 		Object payload = received.getPayload();
-		Assert.assertTrue(payload.getClass().isAssignableFrom(byte[].class));
+		assertThat(payload.getClass().isAssignableFrom(byte[].class)).isTrue();
 		byte[] contents = (byte[])payload;
-		Assert.assertEquals("{\"message\":\"Hi\"}", new String(contents));
+		assertThat("{\"message\":\"Hi\"}").isEqualTo(new String(contents));
 	}
 
 	@EnableBinding(Source.class)

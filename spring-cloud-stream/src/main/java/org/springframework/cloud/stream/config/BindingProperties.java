@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -54,7 +55,7 @@ public class BindingProperties {
 
 	// Properties for both inbound/outbound
 
-	private String contentType = "application/json";
+	private String contentType = MimeTypeUtils.APPLICATION_JSON_VALUE;
 
 	private String binder;
 

@@ -120,7 +120,7 @@ public class MessageConverterConfigurer
 					getPartitionKeyExtractorStrategy(producerProperties),
 					getPartitionSelectorStrategy(producerProperties)));
 		}
-		//TODO: Set all interceptors in the correct order for input/output channels
+		// TODO: Set all interceptors in the correct order for input/output channels
 		if (StringUtils.hasText(contentType)) {
 			messageChannel.addInterceptor(
 					new ContentTypeConvertingInterceptor(contentType, input));
@@ -219,26 +219,17 @@ public class MessageConverterConfigurer
 			if (message instanceof ErrorMessage) {
 				return message;
 			}
-			// bypass conversion for raw bytes
-			if (message.getPayload() instanceof byte[]) {
-				return MessageConverterConfigurer.this.messageBuilderFactory
-						.withPayload(message.getPayload())
-						.copyHeaders(message.getHeaders())
-						.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType)
-						.build();
-			}
 
 			Message<?> sentMessage = null;
 			Object converted;
-
-			if (this.input) {
+			// bypass conversion for raw bytes or input channels
+			if (this.input || message.getPayload() instanceof byte[]) {
 				return MessageConverterConfigurer.this.messageBuilderFactory
 						.withPayload(message.getPayload())
 						.copyHeaders(message.getHeaders())
 						.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType)
 						.build();
 			}
-
 			else {
 				MutableMessageHeaders headers = new MutableMessageHeaders(
 						message.getHeaders());
@@ -247,7 +238,6 @@ public class MessageConverterConfigurer
 				}
 				converted = this.messageConverter.toMessage(message.getPayload(),
 						headers);
-
 			}
 			if (converted != null) {
 				if (converted instanceof Message) {

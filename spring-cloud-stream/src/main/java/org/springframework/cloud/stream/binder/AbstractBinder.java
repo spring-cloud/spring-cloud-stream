@@ -146,20 +146,22 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return name + GROUP_INDEX_DELIMITER + (StringUtils.hasText(group) ? group : "default");
 	}
 
+	@Deprecated
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
 		return MessageSerializationUtils.serializePayload(message);
 	}
 
-
-
+	@Deprecated
 	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
 		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver);
 	}
 
+	@Deprecated
 	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
 		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver);
 	}
 
+	@Deprecated
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
 		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
 	}

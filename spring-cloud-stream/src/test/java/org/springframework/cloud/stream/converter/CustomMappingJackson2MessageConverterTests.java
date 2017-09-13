@@ -19,12 +19,12 @@ package org.springframework.cloud.stream.converter;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Vinicius Carvalho
@@ -37,7 +37,7 @@ public class CustomMappingJackson2MessageConverterTests {
 		Message message = MessageBuilder.withPayload(payload.getBytes()).setHeader(MessageHeaders.CONTENT_TYPE,"application/json").build();
 		CustomJackson2MappingMessageConverter converter = new CustomJackson2MappingMessageConverter();
 		Object converted = converter.convertFromInternal(message, Map.class,null);
-		Assert.assertNotNull(((Map)converted).get("id"));
+		assertThat(((Map)converted).get("id")).isNotNull();
 	}
 
 	@Test
@@ -46,6 +46,8 @@ public class CustomMappingJackson2MessageConverterTests {
 		Message message = MessageBuilder.withPayload(payload.getBytes()).setHeader(MessageHeaders.CONTENT_TYPE,"application/json").build();
 		CustomJackson2MappingMessageConverter converter = new CustomJackson2MappingMessageConverter();
 		Object converted = converter.convertFromInternal(message, String.class,null);
+		assertThat(converted).isNotNull();
+		assertThat(payload).isEqualTo(new String((byte[])converted));
 	}
 
 	@Test
@@ -55,5 +57,7 @@ public class CustomMappingJackson2MessageConverterTests {
 		Message message = MessageBuilder.withPayload(payload.getBytes()).setHeader(MessageHeaders.CONTENT_TYPE,"application/json").build();
 		CustomJackson2MappingMessageConverter converter = new CustomJackson2MappingMessageConverter();
 		Object converted = converter.convertFromInternal(message, String.class,null);
+		assertThat(converted).isNotNull();
+		assertThat("foo").isEqualTo((String)converted);
 	}
 }
