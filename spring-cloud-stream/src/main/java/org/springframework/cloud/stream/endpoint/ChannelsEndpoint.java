@@ -25,8 +25,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
-import org.springframework.boot.actuate.endpoint.Endpoint;
+import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
+import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -37,21 +37,22 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
  *
  * @author Dave Syer
  * @author Ilayaperumal Gopinathan
+ * @author Vinicius Carvalho
  */
-public class ChannelsEndpoint extends AbstractEndpoint<Map<String, Object>> {
+@Endpoint(id = "channels")
+public class ChannelsEndpoint {
 
 	private List<Bindable> adapters;
 
 	private BindingServiceProperties properties;
 
 	public ChannelsEndpoint(List<Bindable> adapters, BindingServiceProperties properties) {
-		super("channels");
 		this.adapters = adapters;
 		this.properties = properties;
 	}
 
-	@Override
-	public Map<String, Object> invoke() {
+	@ReadOperation
+	public Map<String, Object> channels() {
 		ChannelsMetaData map = new ChannelsMetaData();
 		Map<String, BindingProperties> inputs = map.getInputs();
 		Map<String, BindingProperties> outputs = map.getOutputs();
