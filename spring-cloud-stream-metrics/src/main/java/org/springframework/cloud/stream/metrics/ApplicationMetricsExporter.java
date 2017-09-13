@@ -19,11 +19,11 @@ package org.springframework.cloud.stream.metrics;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.springframework.boot.actuate.endpoint.MetricsEndpoint;
-import org.springframework.boot.actuate.endpoint.MetricsEndpointMetricReader;
 import org.springframework.boot.actuate.metrics.Metric;
+import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.boot.actuate.metrics.export.Exporter;
 import org.springframework.boot.actuate.metrics.export.MetricCopyExporter;
+import org.springframework.boot.actuate.metrics.reader.MetricsEndpointMetricReader;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.ObjectUtils;
