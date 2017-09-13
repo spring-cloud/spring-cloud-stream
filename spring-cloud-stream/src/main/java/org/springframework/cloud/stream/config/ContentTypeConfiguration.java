@@ -23,7 +23,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamConverter;
+import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,7 +45,7 @@ public class ContentTypeConfiguration {
 	 * User defined custom message converters
 	 */
 	@Autowired(required = false)
-	@StreamConverter
+	@StreamMessageConverter
 	private List<MessageConverter> customMessageConverters;
 
 	@Bean

@@ -32,5 +32,5 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Qualifier
-public @interface StreamConverter {
+public @interface StreamMessageConverter {
 }
