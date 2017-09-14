@@ -89,6 +89,7 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
 import com.rabbitmq.http.client.domain.QueueInfo;
@@ -159,22 +160,7 @@ public class RabbitBinderTests extends
 				createProducerProperties());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
 				createConsumerProperties());
-
-		ConnectionFactory producerConnectionFactory =
-				TestUtils.getPropertyValue(producerBinding, "lifecycle.amqpTemplate.connectionFactory",
-						ConnectionFactory.class);
-
-		ConnectionFactory consumerConnectionFactory =
-				TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageListenerContainer.connectionFactory",
-						ConnectionFactory.class);
-
-		assertThat(producerConnectionFactory).isNotSameAs(consumerConnectionFactory);
-
-		assertThat(producerConnectionFactory.createConnection())
-				.isNotEqualTo(consumerConnectionFactory.createConnection());
-
-		Message<?> message = MessageBuilder.withPayload("bad").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
-				.build();
+		Message<?> message = MessageBuilder.withPayload("bad".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
 		final CountDownLatch latch = new CountDownLatch(3);
 		moduleInputChannel.subscribe(new MessageHandler() {
 
@@ -201,7 +187,7 @@ public class RabbitBinderTests extends
 		ExtendedProducerProperties<RabbitProducerProperties> producerProps = createProducerProperties();
 		producerProps.setErrorChannelEnabled(true);
 		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0", moduleOutputChannel, producerProps);
-		final Message<?> message = MessageBuilder.withPayload("bad").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
+		final Message<?> message = MessageBuilder.withPayload("bad".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
 				.build();
 		SubscribableChannel ec = binder.getApplicationContext().getBean("ec.0.errors", SubscribableChannel.class);
 		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();
@@ -1160,32 +1146,32 @@ public class RabbitBinderTests extends
 
 		proxy.start();
 
-		moduleOutputChannel.send(new GenericMessage<>("foo"));
-		Message<?> message = moduleInputChannel.receive(20000);
+		moduleOutputChannel.send(MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		Message<?> message = moduleInputChannel.receive(10000);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isNotNull();
 
-		noDLQOutputChannel.send(new GenericMessage<>("bar"));
+		noDLQOutputChannel.send(MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 		message = noDLQInputChannel.receive(10000);
 		assertThat(message);
-		assertThat(message.getPayload()).isEqualTo("bar");
+		assertThat(message.getPayload()).isEqualTo("bar".getBytes());
 
-		outputChannel.send(new GenericMessage<>("baz"));
+		outputChannel.send(MessageBuilder.withPayload("baz").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 		message = pubSubInputChannel.receive(10000);
 		assertThat(message);
-		assertThat(message.getPayload()).isEqualTo("baz");
+		assertThat(message.getPayload()).isEqualTo("baz".getBytes());
 		message = durablePubSubInputChannel.receive(10000);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("baz");
+		assertThat(message.getPayload()).isEqualTo("baz".getBytes());
 
-		partOutputChannel.send(new GenericMessage<>("0"));
-		partOutputChannel.send(new GenericMessage<>("1"));
+		partOutputChannel.send(MessageBuilder.withPayload("0").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		partOutputChannel.send(MessageBuilder.withPayload("1").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 		message = partInputChannel0.receive(10000);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("0");
+		assertThat(message.getPayload()).isEqualTo("0".getBytes());
 		message = partInputChannel1.receive(10000);
 		assertThat(message).isNotNull();
-		assertThat(message.getPayload()).isEqualTo("1");
+		assertThat(message.getPayload()).isEqualTo("1".getBytes());
 
 		late0ProducerBinding.unbind();
 		late0ConsumerBinding.unbind();

@@ -28,26 +28,23 @@ import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
-import org.springframework.cloud.stream.config.codec.kryo.KryoCodecAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.integration.codec.Codec;
 
 
 /**
  * Configuration class for RabbitMQ message channel binder.
  *
  * @author David Turanski
+ * @author Vinicius Carvalho
  */
 
 @Configuration
-@Import({PropertyPlaceholderAutoConfiguration.class, KryoCodecAutoConfiguration.class})
+@Import({PropertyPlaceholderAutoConfiguration.class})
 @EnableConfigurationProperties({RabbitBinderConfigurationProperties.class, RabbitExtendedBindingProperties.class})
 public class RabbitMessageChannelBinderConfiguration {
 
-	@Autowired
-	private Codec codec;
 
 	@Autowired
 	private ConnectionFactory rabbitConnectionFactory;
@@ -65,7 +62,6 @@ public class RabbitMessageChannelBinderConfiguration {
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() {
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(rabbitConnectionFactory, rabbitProperties,
 				provisioningProvider());
-		binder.setCodec(codec);
 		binder.setAdminAddresses(rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());

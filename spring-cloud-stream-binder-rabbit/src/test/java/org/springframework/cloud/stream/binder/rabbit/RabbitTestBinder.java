@@ -32,7 +32,6 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerP
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.codec.kryo.PojoCodec;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.messaging.MessageChannel;
 
@@ -64,7 +63,6 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitMessageChannelBinder binder) {
 		this.applicationContext = new AnnotationConfigApplicationContext(Config.class);
 		binder.setApplicationContext(this.applicationContext);
-		binder.setCodec(new PojoCodec());
 		this.setBinder(binder);
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 	}
