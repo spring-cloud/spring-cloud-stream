@@ -39,11 +39,9 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kstream.annotations.KStreamProcessor;
-import org.springframework.cloud.stream.binder.kstream.config.KStreamApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -115,7 +113,6 @@ public class KStreamBinderWordCountIntegrationTests {
 
 	@EnableBinding(KStreamProcessor.class)
 	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KStreamApplicationSupportProperties.class)
 	public static class WordCountProcessorApplication {
 
 		@Autowired

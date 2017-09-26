@@ -523,6 +523,34 @@ spring.cloud.stream.kstream.bindings.output.producer.keySerde=org.apache.kafka.c
 spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde
 ----
 
+timewindow.length::
+  Many streaming applications written using Kafka Streams involve windowning operations.
+  If you specify this property, there is a `org.apache.kafka.streams.kstream.TimeWindows` bean automatically provided that can be autowired in applications.
+  This property must be prefixed with `spring.cloud.stream.kstream.`.
+  A bean of type `org.apache.kafka.streams.kstream.TimeWindows` is created only if this property is provided.
+
+ Following is an example of using this property.
+ Values are provided in milliseconds.
+
+[source]
+----
+spring.cloud.stream.kstream.timeWindow.length=5000
+----
+
+timewindow.advanceBy::
+  This property goes hand in hand with `timewindow.length` and has no effect on its own.
+  If you provide this property, the generated `org.apache.kafka.streams.kstream.TimeWindows` bean will automatically conatin this information.
+  This property must be prefixed with `spring.cloud.stream.kstream.`.
+
+ Following is an example of using this property.
+ Values are provided in milliseconds.
+
+[source]
+----
+spring.cloud.stream.kstream.timeWindow.advanceBy=1000
+----
+
+
 [[kafka-error-channels]]
 == Error Channels
 
