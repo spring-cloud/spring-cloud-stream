@@ -21,7 +21,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplication;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Artem Bilan
  */
 public class AggregateWithMainTest {
 
@@ -59,13 +61,15 @@ public class AggregateWithMainTest {
 		context.close();
 	}
 
-	@SpringBootApplication
+	@SpringBootConfiguration
+	@EnableAutoConfiguration
 	public static class MainConfiguration {
+
 	}
 
 	@Configuration
 	@EnableBinding(Processor.class)
-	public static class UppercaseProcessor {
+	static class UppercaseProcessor {
 
 		@Autowired
 		Processor processor;
@@ -74,15 +78,18 @@ public class AggregateWithMainTest {
 		public String transform(String in) {
 			return in.toUpperCase();
 		}
+
 	}
 
 	@Configuration
 	@EnableBinding(Processor.class)
-	public static class SuffixProcessor {
+	static class SuffixProcessor {
 
 		@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
 		public String transform(String in) {
 			return in + " WORLD!";
 		}
+
 	}
+
 }
