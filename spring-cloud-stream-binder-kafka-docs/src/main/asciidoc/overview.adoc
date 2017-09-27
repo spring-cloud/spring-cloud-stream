@@ -563,3 +563,13 @@ The payload of the `ErrorMessage` for a send failure is a `KafkaSendFailureExcep
 * `record` - the raw `ProducerRecord` that was created from the `failedMessage`
 
 There is no automatic handling of these exceptions (such as sending to a <<kafka-dlq-processing, Dead-Letter queue>>); you can consume these exceptions with your own Spring Integration flow.
+
+
+[[kafka-metrics]]
+== Kafka Metrics
+
+Kafka binder module exposes the following metrics:
+
+`spring.cloud.stream.binder.kafka.someGroup.someTopic.lag`  - this metric indicates how many messages have not been yet consumed from given binder's topic by given consumer group.
+For example if the value of the metric `spring.cloud.stream.binder.kafka.myGroup.myTopic.lag` is `1000`, then consumer group `myGroup` has `1000` messages to waiting to be consumed from topic `myTopic`.
+This metric is particularly useful to provide auto-scaling feedback to PaaS platform of your choice.
