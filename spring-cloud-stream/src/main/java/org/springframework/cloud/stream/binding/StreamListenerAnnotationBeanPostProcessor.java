@@ -70,6 +70,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Soby Chacko
  */
 public class StreamListenerAnnotationBeanPostProcessor
 		implements BeanPostProcessor, ApplicationContextAware, BeanFactoryAware, SmartInitializingSingleton,
@@ -142,44 +143,42 @@ public class StreamListenerAnnotationBeanPostProcessor
 	@Override
 	public final Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
 		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
-		ReflectionUtils.doWithMethods(targetClass, new ReflectionUtils.MethodCallback() {
-			@Override
-			public void doWith(final Method method) throws IllegalArgumentException, IllegalAccessException {
-				StreamListener streamListener = AnnotatedElementUtils.findMergedAnnotation(method,
-						StreamListener.class);
-				if (streamListener != null && !method.isBridge()) {
-					streamListener = postProcessAnnotation(streamListener, method);
-					Assert.isTrue(method.getAnnotation(Input.class) == null,
-							StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
-					String methodAnnotatedInboundName = streamListener.value();
-					String methodAnnotatedOutboundName = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
-					int inputAnnotationCount = StreamListenerMethodUtils.inputAnnotationCount(method);
-					int outputAnnotationCount = StreamListenerMethodUtils.outputAnnotationCount(method);
-					boolean isDeclarative = checkDeclarativeMethod(method, methodAnnotatedInboundName,
-							methodAnnotatedOutboundName);
-					StreamListenerMethodUtils.validateStreamListenerMethod(method, inputAnnotationCount,
-							outputAnnotationCount, methodAnnotatedInboundName, methodAnnotatedOutboundName,
-							isDeclarative, streamListener.condition());
-					if (!method.getReturnType().equals(Void.TYPE)) {
-						if (!StringUtils.hasText(methodAnnotatedOutboundName)) {
-							if (outputAnnotationCount == 0) {
-								throw new IllegalArgumentException(
-										StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
-							}
-							Assert.isTrue((outputAnnotationCount == 1),
-									StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
+		Method[] uniqueDeclaredMethods = ReflectionUtils.getUniqueDeclaredMethods(targetClass);
+		for (Method method : uniqueDeclaredMethods) {
+			StreamListener streamListener = AnnotatedElementUtils.findMergedAnnotation(method,
+					StreamListener.class);
+			if (streamListener != null && !method.isBridge()) {
+				streamListener = postProcessAnnotation(streamListener, method);
+				Assert.isTrue(method.getAnnotation(Input.class) == null,
+						StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
+				String methodAnnotatedInboundName = streamListener.value();
+				String methodAnnotatedOutboundName = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
+				int inputAnnotationCount = StreamListenerMethodUtils.inputAnnotationCount(method);
+				int outputAnnotationCount = StreamListenerMethodUtils.outputAnnotationCount(method);
+				boolean isDeclarative = checkDeclarativeMethod(method, methodAnnotatedInboundName,
+						methodAnnotatedOutboundName);
+				StreamListenerMethodUtils.validateStreamListenerMethod(method, inputAnnotationCount,
+						outputAnnotationCount, methodAnnotatedInboundName, methodAnnotatedOutboundName,
+						isDeclarative, streamListener.condition());
+				if (!method.getReturnType().equals(Void.TYPE)) {
+					if (!StringUtils.hasText(methodAnnotatedOutboundName)) {
+						if (outputAnnotationCount == 0) {
+							throw new IllegalArgumentException(
+									StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 						}
-					}
-					if (isDeclarative) {
-						invokeSetupMethodOnListenedChannel(method, bean, methodAnnotatedInboundName,
-								methodAnnotatedOutboundName);
-					}
-					else {
-						registerHandlerMethodOnListenedChannel(method, streamListener, bean);
+						Assert.isTrue((outputAnnotationCount == 1),
+								StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 					}
 				}
+				if (isDeclarative) {
+					invokeSetupMethodOnListenedChannel(method, bean, methodAnnotatedInboundName,
+							methodAnnotatedOutboundName);
+				}
+				else {
+					registerHandlerMethodOnListenedChannel(method, streamListener, bean);
+				}
 			}
-		});
+		}
 		return bean;
 	}
 
