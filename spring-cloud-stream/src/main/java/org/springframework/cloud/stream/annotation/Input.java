@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Documented
 public @interface Input {
 
+	/**
+	 * Specify the binding target name;
+	 * used as a bean name for binding target
+	 * and as a destination name by default.
+	 * @return the binding target name
+	 */
 	String value() default "";
 
 }

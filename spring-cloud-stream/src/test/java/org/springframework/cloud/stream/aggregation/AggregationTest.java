@@ -32,8 +32,8 @@ import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoCo
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder.SourceConfigurer;
 import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
-import org.springframework.cloud.stream.aggregate.SharedChannelRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BindingTargetFactory;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -51,6 +51,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Artem Bilan
  */
 public class AggregationTest {
 
@@ -84,13 +85,14 @@ public class AggregationTest {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void testModuleAggregationUsingSharedChannelRegistry() {
 		// test backward compatibility
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--server.port=0")
 						.from(TestSource.class).to(TestProcessor.class).run();
-		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext
-				.getBean(SharedChannelRegistry.class);
+		org.springframework.cloud.stream.aggregate.SharedChannelRegistry sharedChannelRegistry =
+				aggregatedApplicationContext.getBean(org.springframework.cloud.stream.aggregate.SharedChannelRegistry.class);
 		BindingTargetFactory channelFactory = aggregatedApplicationContext
 				.getBean(BindingTargetFactory.class);
 		assertThat(channelFactory).isNotNull();
@@ -99,6 +101,7 @@ public class AggregationTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testParentArgsAndSources() {
 		List<String> argsToVerify = new ArrayList<>();
 		argsToVerify.add("--foo1=bar1");
@@ -113,7 +116,6 @@ public class AggregationTest {
 				.namespace("foo").to(TestProcessor.class).namespace("bar")
 				.run("--foo3=bar3", "--server.port=0");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		@SuppressWarnings("unchecked")
 		final List<String> parentArgs = (List<String>) aggregateApplicationBuilderAccessor.getPropertyValue(
 				"parentArgs");
 		assertThat(parentArgs).containsExactlyInAnyOrder(argsToVerify.toArray(new String[argsToVerify.size()]));
@@ -125,8 +127,8 @@ public class AggregationTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testParentArgsAndSourcesWithWebDisabled() {
-		List<String> argsToVerify = new ArrayList<>();
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
@@ -155,7 +157,8 @@ public class AggregationTest {
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
 				new String[] { "--foo1=bar1" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -185,7 +188,8 @@ public class AggregationTest {
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
 				new String[] { "--fooValue=bara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -215,7 +219,8 @@ public class AggregationTest {
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
 				new String[] { "--fooValue=bara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -247,7 +252,8 @@ public class AggregationTest {
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
 				new String[] { "--fooValue=bara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -279,9 +285,8 @@ public class AggregationTest {
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
 				new String[] { "--foo-value=sysbara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
-				.getPropertyValue("processorConfigurers");
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer :
+				((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue(
 						"processorConfigurers"))) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -329,13 +334,14 @@ public class AggregationTest {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void testNamespaces() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--server.port=0")
 						.from(TestSource.class).namespace("foo").to(TestProcessor.class)
 						.namespace("bar").run();
-		SharedChannelRegistry sharedChannelRegistry = aggregatedApplicationContext
-				.getBean(SharedChannelRegistry.class);
+		org.springframework.cloud.stream.aggregate.SharedChannelRegistry sharedChannelRegistry =
+				aggregatedApplicationContext.getBean(org.springframework.cloud.stream.aggregate.SharedChannelRegistry.class);
 		BindingTargetFactory channelFactory = aggregatedApplicationContext
 				.getBean(BindingTargetFactory.class);
 		Object fooOutput = sharedChannelRegistry.get("foo.output");
@@ -353,13 +359,19 @@ public class AggregationTest {
 	public void testBindableProxyFactoryCaching() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(
 				MockBinderRegistryConfiguration.class,
-				TestSource.class, TestProcessor.class);
+				TestSource2.class, TestProcessor.class);
 		Map<String, BindableProxyFactory> factories = context.getBeansOfType(BindableProxyFactory.class);
 		assertThat(factories).hasSize(2);
 
 		Map<String, Source> sources = context.getBeansOfType(Source.class);
-		assertThat(sources).hasSize(2);
+		assertThat(sources).hasSize(1);
 		for (Source source : sources.values()) {
+			source.output();
+		}
+
+		Map<String, FooSource> fooSources = context.getBeansOfType(FooSource.class);
+		assertThat(fooSources).hasSize(1);
+		for (FooSource source : fooSources.values()) {
 			source.output();
 		}
 
@@ -375,6 +387,9 @@ public class AggregationTest {
 			ReflectionUtils.makeAccessible(field);
 			Map<?, ?> targetCache = (Map<?, ?>) ReflectionUtils.getField(field, factory);
 			if (factory.getObjectType() == Source.class) {
+				assertThat(targetCache).hasSize(1);
+			}
+			if (factory.getObjectType() == FooSource.class) {
 				assertThat(targetCache).hasSize(1);
 			}
 			else if (factory.getObjectType() == Processor.class) {
@@ -398,6 +413,20 @@ public class AggregationTest {
 	public static class TestProcessor {
 
 	}
+
+	public interface FooSource {
+
+		@Output("fooOutput")
+		MessageChannel output();
+
+	}
+
+	@EnableBinding(FooSource.class)
+	@EnableAutoConfiguration
+	public static class TestSource2 {
+
+	}
+
 
 	@Configuration
 	public static class DummyConfig {

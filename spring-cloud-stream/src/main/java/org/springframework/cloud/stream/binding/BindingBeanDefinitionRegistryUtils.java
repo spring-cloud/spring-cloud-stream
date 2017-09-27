@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
@@ -36,6 +37,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Marius Bogoevici
  * @author Dave Syer
+ * @author Artem Bilan
  */
 public abstract class BindingBeanDefinitionRegistryUtils {
 
@@ -56,6 +58,11 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 	private static void registerBindingTargetBeanDefinition(Class<? extends Annotation> qualifier,
 			String qualifierValue, String name, String bindingTargetInterfaceBeanName,
 			String bindingTargetInterfaceMethodName, BeanDefinitionRegistry registry) {
+
+		if (registry.containsBeanDefinition(name)) {
+			throw new BeanDefinitionStoreException(bindingTargetInterfaceBeanName, name,
+					"bean definition with this name already exists - " + registry.getBeanDefinition(name));
+		}
 
 		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
 		rootBeanDefinition.setFactoryBeanName(bindingTargetInterfaceBeanName);
