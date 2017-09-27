@@ -55,6 +55,7 @@ import static org.junit.Assert.assertTrue;
  * @author Ilayaperumal Gopinathan
  * @author Artem Bilan
  * @author Janne Valkealahti
+ * @author Artem Bilan
  */
 public class AggregationTest {
 
@@ -253,8 +254,9 @@ public class AggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
-				new String[] { "--fooValue=bara", "--foo-value=bara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+				new String[] { "--fooValue=bara" }));
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
+				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -286,7 +288,8 @@ public class AggregationTest {
 				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
 						.getArgs(),
 				new String[] { "--foo-value=sysbara" }));
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer :
+				((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue(
 						"processorConfigurers"))) {
 			if (processorConfigurer.getNamespace().equals("b")) {
