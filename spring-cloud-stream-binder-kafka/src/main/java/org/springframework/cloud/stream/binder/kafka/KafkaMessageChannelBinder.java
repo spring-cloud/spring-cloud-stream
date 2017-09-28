@@ -21,12 +21,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -154,10 +157,16 @@ public class KafkaMessageChannelBinder extends
 				producerProperties.getPartitionCount(),
 				false,
 				new Callable<Collection<PartitionInfo>>() {
+
 					@Override
 					public Collection<PartitionInfo> call() throws Exception {
-						return producerFB.createProducer().partitionsFor(destination.getName());
+						Producer<byte[], byte[]> producer = producerFB.createProducer();
+						List<PartitionInfo> partitionsFor = producer.partitionsFor(destination.getName());
+						producer.close();
+						producerFB.destroy();
+						return partitionsFor;
 					}
+
 				});
 		this.topicsInUse.put(destination.getName(), new TopicInformation(null, partitions));
 		if (producerProperties.getPartitionCount() < partitions.size()) {
@@ -238,10 +247,15 @@ public class KafkaMessageChannelBinder extends
 		Collection<PartitionInfo> allPartitions = provisioningProvider.getPartitionsForTopic(partitionCount,
 				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
 				new Callable<Collection<PartitionInfo>>() {
+
 					@Override
 					public Collection<PartitionInfo> call() throws Exception {
-						return consumerFactory.createConsumer().partitionsFor(destination.getName());
+						Consumer<?, ?> consumer = consumerFactory.createConsumer();
+						List<PartitionInfo> partitionsFor = consumer.partitionsFor(destination.getName());
+						consumer.close();
+						return partitionsFor;
 					}
+
 				});
 
 		Collection<PartitionInfo> listenedPartitions;
