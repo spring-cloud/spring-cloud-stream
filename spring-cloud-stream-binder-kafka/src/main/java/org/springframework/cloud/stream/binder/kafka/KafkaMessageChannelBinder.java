@@ -37,6 +37,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.utils.Utils;
 
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
@@ -97,8 +98,7 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  * @author Doug Saus
  */
 public class KafkaMessageChannelBinder extends
-		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>,
-					ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
+		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
@@ -150,31 +150,24 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	protected MessageHandler createProducerMessageHandler(final ProducerDestination destination,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, MessageChannel errorChannel)
-					throws Exception {
+			throws Exception {
 		/*
-		 * IMPORTANT: With a transactional binder, individual producer properties for
-		 * Kafka are ignored; the global binder
-		 * (spring.cloud.stream.kafka.binder.transaction.producer.*) properties are used
-		 * instead, for all producers. A binder is transactional when
+		 * IMPORTANT: With a transactional binder, individual producer properties for Kafka are
+		 * ignored; the global binder (spring.cloud.stream.kafka.binder.transaction.producer.*)
+		 * properties are used instead, for all producers. A binder is transactional when
 		 * 'spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix' has text.
 		 */
 		final ProducerFactory<byte[], byte[]> producerFB = this.transactionManager != null
-						? this.transactionManager.getProducerFactory()
-						: getProducerFactory(null, producerProperties);
+				? this.transactionManager.getProducerFactory()
+				: getProducerFactory(null, producerProperties);
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
-				producerProperties.getPartitionCount(),
-				false,
-				new Callable<Collection<PartitionInfo>>() {
-
-					@Override
-					public Collection<PartitionInfo> call() throws Exception {
-						Producer<byte[], byte[]> producer = producerFB.createProducer();
-						List<PartitionInfo> partitionsFor = producer.partitionsFor(destination.getName());
-						producer.close();
-						producerFB.destroy();
-						return partitionsFor;
-					}
-
+				producerProperties.getPartitionCount(), false,
+				() -> {
+					Producer<byte[], byte[]> producer = producerFB.createProducer();
+					List<PartitionInfo> partitionsFor = producer.partitionsFor(destination.getName());
+					producer.close();
+					((DisposableBean) producerFB).destroy();
+					return partitionsFor;
 				});
 		this.topicsInUse.put(destination.getName(), new TopicInformation(null, partitions));
 		if (producerProperties.getPartitionCount() < partitions.size()) {
@@ -184,12 +177,11 @@ public class KafkaMessageChannelBinder extends
 						+ partitions.size() + " of the topic. The larger number will be used instead.");
 			}
 			/*
-			 * This is dirty; it relies on the fact that we, and the partition
-			 * interceptor, share a hard reference to the producer properties instance.
-			 * But I don't see another way to fix it since the interceptor has already
-			 * been added to the channel, and we don't have access to the channel here; if
-			 * we did, we could inject the proper partition count there.
-			 * TODO: Consider this when doing the 2.0 binder restructuring.
+			 * This is dirty; it relies on the fact that we, and the partition interceptor, share a
+			 * hard reference to the producer properties instance. But I don't see another way to fix
+			 * it since the interceptor has already been added to the channel, and we don't have
+			 * access to the channel here; if we did, we could inject the proper partition count
+			 * there. TODO: Consider this when doing the 2.0 binder restructuring.
 			 */
 			producerProperties.setPartitionCount(partitions.size());
 		}
@@ -212,7 +204,8 @@ public class KafkaMessageChannelBinder extends
 			if (!patterns.contains("!" + MessageHeaders.ID)) {
 				patterns.add(0, "!" + MessageHeaders.ID);
 			}
-			DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper(patterns.toArray(new String[patterns.size()]));
+			DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper(
+					patterns.toArray(new String[patterns.size()]));
 			handler.setHeaderMapper(headerMapper);
 		}
 		return handler;
@@ -270,16 +263,11 @@ public class KafkaMessageChannelBinder extends
 
 		Collection<PartitionInfo> allPartitions = provisioningProvider.getPartitionsForTopic(partitionCount,
 				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
-				new Callable<Collection<PartitionInfo>>() {
-
-					@Override
-					public Collection<PartitionInfo> call() throws Exception {
-						Consumer<?, ?> consumer = consumerFactory.createConsumer();
-						List<PartitionInfo> partitionsFor = consumer.partitionsFor(destination.getName());
-						consumer.close();
-						return partitionsFor;
-					}
-
+				() -> {
+					Consumer<?, ?> consumer = consumerFactory.createConsumer();
+					List<PartitionInfo> partitionsFor = consumer.partitionsFor(destination.getName());
+					consumer.close();
+					return partitionsFor;
 				});
 
 		Collection<PartitionInfo> listenedPartitions;
@@ -313,9 +301,8 @@ public class KafkaMessageChannelBinder extends
 		}
 		int concurrency = Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
 		@SuppressWarnings("rawtypes")
-		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
-				new ConcurrentMessageListenerContainer(
-						consumerFactory, containerProperties) {
+		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer = new ConcurrentMessageListenerContainer(
+				consumerFactory, containerProperties) {
 
 			@Override
 			public void stop(Runnable callback) {
@@ -379,7 +366,8 @@ public class KafkaMessageChannelBinder extends
 				final byte[] key = record.key() != null ? Utils.toArray(ByteBuffer.wrap((byte[]) record.key()))
 						: null;
 				final byte[] payload = record.value() != null
-						? Utils.toArray(ByteBuffer.wrap((byte[]) record.value())) : null;
+						? Utils.toArray(ByteBuffer.wrap((byte[]) record.value()))
+						: null;
 				String dlqName = StringUtils.hasText(extendedConsumerProperties.getExtension().getDlqName())
 						? extendedConsumerProperties.getExtension().getDlqName()
 						: "error." + destination.getName() + "." + group;
