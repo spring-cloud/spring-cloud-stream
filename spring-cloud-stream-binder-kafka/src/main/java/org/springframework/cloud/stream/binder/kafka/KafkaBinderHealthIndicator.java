@@ -19,6 +19,13 @@ package org.springframework.cloud.stream.binder.kafka;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.PartitionInfo;
@@ -33,12 +40,17 @@ import org.springframework.kafka.core.ConsumerFactory;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  * @author Henryk Konsek
+ * @author Gary Russell
  */
 public class KafkaBinderHealthIndicator implements HealthIndicator {
+
+	private static final int DEFAULT_TIMEOUT = 60;
 
 	private final KafkaMessageChannelBinder binder;
 
 	private final ConsumerFactory<?, ?> consumerFactory;
+
+	private int timeout = DEFAULT_TIMEOUT;
 
 	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder,
 			ConsumerFactory<?, ?> consumerFactory) {
@@ -47,28 +59,67 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 	}
 
+	/**
+	 * Set the timeout in seconds to retrieve health information.
+	 * @param timeout the timeout - default 60.
+	 */
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+
 	@Override
 	public Health health() {
-		try (Consumer<?, ?> metadataConsumer = consumerFactory.createConsumer()) {
-			Set<String> downMessages = new HashSet<>();
-			for (String topic : this.binder.getTopicsInUse().keySet()) {
-				List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
-				for (PartitionInfo partitionInfo : partitionInfos) {
-					if (this.binder.getTopicsInUse().get(topic).getPartitionInfos().contains(partitionInfo)
-							&& partitionInfo.leader()
-									.id() == -1) {
-						downMessages.add(partitionInfo.toString());
+		ExecutorService exec = Executors.newSingleThreadExecutor();
+		Future<Health> future = exec.submit(new Callable<Health>() {
+
+			@Override
+			public Health call() {
+				try (Consumer<?, ?> metadataConsumer = consumerFactory.createConsumer()) {
+					Set<String> downMessages = new HashSet<>();
+					for (String topic : KafkaBinderHealthIndicator.this.binder.getTopicsInUse().keySet()) {
+						List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
+						for (PartitionInfo partitionInfo : partitionInfos) {
+							if (KafkaBinderHealthIndicator.this.binder.getTopicsInUse().get(topic).getPartitionInfos()
+									.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
+								downMessages.add(partitionInfo.toString());
+							}
+						}
+					}
+					if (downMessages.isEmpty()) {
+						return Health.up().build();
+					}
+					else {
+						return Health.down()
+							.withDetail("Following partitions in use have no leaders: ", downMessages.toString())
+							.build();
 					}
 				}
+				catch (Exception e) {
+					return Health.down(e).build();
+				}
 			}
-			if (downMessages.isEmpty()) {
-				return Health.up().build();
-			}
-			return Health.down().withDetail("Following partitions in use have no leaders: ", downMessages.toString())
+
+		});
+		try {
+			return future.get(this.timeout, TimeUnit.SECONDS);
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return Health.down()
+					.withDetail("Interrupted while waiting for partition information in", this.timeout + " seconds")
 					.build();
 		}
-		catch (Exception e) {
+		catch (ExecutionException e) {
 			return Health.down(e).build();
 		}
+		catch (TimeoutException e) {
+			return Health.down()
+					.withDetail("Failed to retrieve partition information in", this.timeout + " seconds")
+					.build();
+		}
+		finally {
+			exec.shutdownNow();
+		}
 	}
+
 }

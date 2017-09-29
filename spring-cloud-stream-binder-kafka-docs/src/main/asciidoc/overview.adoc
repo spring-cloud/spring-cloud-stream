@@ -73,6 +73,11 @@ spring.cloud.stream.kafka.binder.headers::
   The list of custom headers that will be transported by the binder.
 +
 Default: empty.
+spring.cloud.stream.kafka.binder.healthTimeout::
+  The time to wait to get partition information in seconds; default 60.
+  Health will report as down if this timer expires.
++
+Default: 10.
 spring.cloud.stream.kafka.binder.offsetUpdateTimeWindow::
   The frequency, in milliseconds, with which offsets are saved.
 Ignored if `0`.

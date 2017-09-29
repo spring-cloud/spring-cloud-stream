@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Gary Russell
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
@@ -87,6 +88,11 @@ public class KafkaBinderConfigurationProperties {
 	private int minPartitionCount = 1;
 
 	private int queueSize = 8192;
+
+	/**
+	 * Time to wait to get partition information in seconds; default 60.
+	 */
+	private int healthTimeout = 60;
 
 	private JaasLoginModuleConfiguration jaas;
 
@@ -226,6 +232,14 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setMinPartitionCount(int minPartitionCount) {
 		this.minPartitionCount = minPartitionCount;
+	}
+
+	public int getHealthTimeout() {
+		return this.healthTimeout;
+	}
+
+	public void setHealthTimeout(int healthTimeout) {
+		this.healthTimeout = healthTimeout;
 	}
 
 	public int getQueueSize() {
