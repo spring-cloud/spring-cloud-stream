@@ -5,7 +5,7 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
-	<version>Ditmars.RELEASE</version>
+	<version>Ditmars.BUILD-SNAPSHOT</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
