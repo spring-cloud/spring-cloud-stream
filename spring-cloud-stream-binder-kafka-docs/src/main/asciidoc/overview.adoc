@@ -528,34 +528,6 @@ spring.cloud.stream.kstream.bindings.output.producer.keySerde=org.apache.kafka.c
 spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde
 ----
 
-timewindow.length::
-  Many streaming applications written using Kafka Streams involve windowning operations.
-  If you specify this property, there is a `org.apache.kafka.streams.kstream.TimeWindows` bean automatically provided that can be autowired in applications.
-  This property must be prefixed with `spring.cloud.stream.kstream.`.
-  A bean of type `org.apache.kafka.streams.kstream.TimeWindows` is created only if this property is provided.
-
- Following is an example of using this property.
- Values are provided in milliseconds.
-
-[source]
-----
-spring.cloud.stream.kstream.timeWindow.length=5000
-----
-
-timewindow.advanceBy::
-  This property goes hand in hand with `timewindow.length` and has no effect on its own.
-  If you provide this property, the generated `org.apache.kafka.streams.kstream.TimeWindows` bean will automatically conatin this information.
-  This property must be prefixed with `spring.cloud.stream.kstream.`.
-
- Following is an example of using this property.
- Values are provided in milliseconds.
-
-[source]
-----
-spring.cloud.stream.kstream.timeWindow.advanceBy=1000
-----
-
-
 [[kafka-error-channels]]
 == Error Channels
 
@@ -568,13 +540,3 @@ The payload of the `ErrorMessage` for a send failure is a `KafkaSendFailureExcep
 * `record` - the raw `ProducerRecord` that was created from the `failedMessage`
 
 There is no automatic handling of these exceptions (such as sending to a <<kafka-dlq-processing, Dead-Letter queue>>); you can consume these exceptions with your own Spring Integration flow.
-
-
-[[kafka-metrics]]
-== Kafka Metrics
-
-Kafka binder module exposes the following metrics:
-
-`spring.cloud.stream.binder.kafka.someGroup.someTopic.lag`  - this metric indicates how many messages have not been yet consumed from given binder's topic by given consumer group.
-For example if the value of the metric `spring.cloud.stream.binder.kafka.myGroup.myTopic.lag` is `1000`, then consumer group `myGroup` has `1000` messages to waiting to be consumed from topic `myTopic`.
-This metric is particularly useful to provide auto-scaling feedback to PaaS platform of your choice.

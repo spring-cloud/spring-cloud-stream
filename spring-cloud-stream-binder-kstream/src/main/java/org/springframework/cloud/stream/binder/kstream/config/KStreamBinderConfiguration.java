@@ -18,27 +18,22 @@ package org.springframework.cloud.stream.binder.kstream.config;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.streams.StreamsConfig;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
-import org.springframework.cloud.stream.binder.kafka.admin.Kafka09AdminUtilsOperation;
-import org.springframework.cloud.stream.binder.kafka.admin.Kafka10AdminUtilsOperation;
+import org.springframework.cloud.stream.binder.kafka.admin.KafkaAdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kstream.KStreamBinder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Condition;
-import org.springframework.context.annotation.ConditionContext;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
  * @author Marius Bogoevici
+ * @author Gary Russell
  */
 @Configuration
 @EnableConfigurationProperties(KStreamExtendedBindingProperties.class)
@@ -63,34 +58,10 @@ public class KStreamBinderConfiguration {
 	}
 
 	@Bean(name = "adminUtilsOperation")
-	@Conditional(Kafka09Present.class)
-	@ConditionalOnClass(name = "kafka.admin.AdminUtils")
-	public AdminUtilsOperation kafka09AdminUtilsOperation() {
-		logger.info("AdminUtils selected: Kafka 0.9 AdminUtils");
-		return new Kafka09AdminUtilsOperation();
-	}
-
-	@Bean(name = "adminUtilsOperation")
-	@Conditional(Kafka10Present.class)
 	@ConditionalOnClass(name = "kafka.admin.AdminUtils")
 	public AdminUtilsOperation kafka10AdminUtilsOperation() {
 		logger.info("AdminUtils selected: Kafka 0.10 AdminUtils");
-		return new Kafka10AdminUtilsOperation();
+		return new KafkaAdminUtilsOperation();
 	}
 
-	static class Kafka10Present implements Condition {
-
-		@Override
-		public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
-			return AppInfoParser.getVersion().startsWith("0.10");
-		}
-	}
-
-	static class Kafka09Present implements Condition {
-
-		@Override
-		public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
-			return AppInfoParser.getVersion().startsWith("0.9");
-		}
-	}
 }

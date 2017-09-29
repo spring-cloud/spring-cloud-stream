@@ -42,10 +42,11 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.Spy;
-import org.springframework.cloud.stream.binder.kafka.admin.Kafka10AdminUtilsOperation;
+import org.springframework.cloud.stream.binder.kafka.admin.KafkaAdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
+import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.kafka.core.ConsumerFactory;
@@ -55,14 +56,17 @@ import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.MimeTypeUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Integration tests for the {@link KafkaMessageChannelBinder}.
- * 
+ *
  * This test specifically tests for the 0.10.1.x version of Kafka.
  *
  * @author Eric Bottard
@@ -70,16 +74,16 @@ import static org.junit.Assert.assertTrue;
  * @author Mark Fisher
  * @author Ilayaperumal Gopinathan
  */
-public class Kafka_0_10_1_BinderTests extends Kafka_0_10_2_BinderTests {
+public class KafkaBinderTests extends AbstractKafkaBinderTests {
 
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
 	@ClassRule
 	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 10);
 
-	private Kafka10TestBinder binder;
+	private KafkaTestBinder binder;
 
-	private Kafka10AdminUtilsOperation adminUtilsOperation = new Kafka10AdminUtilsOperation();
+	private final KafkaAdminUtilsOperation adminUtilsOperation = new KafkaAdminUtilsOperation();
 
 	@Override
 	protected void binderBindUnbindLatency() throws InterruptedException {
@@ -87,14 +91,15 @@ public class Kafka_0_10_1_BinderTests extends Kafka_0_10_2_BinderTests {
 	}
 
 	@Override
-	protected Kafka10TestBinder getBinder() {
+	protected KafkaTestBinder getBinder() {
 		if (binder == null) {
 			KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
-			binder = new Kafka10TestBinder(binderConfiguration);
+			binder = new KafkaTestBinder(binderConfiguration);
 		}
 		return binder;
 	}
 
+	@Override
 	protected KafkaBinderConfigurationProperties createConfigurationProperties() {
 		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
 		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
@@ -139,7 +144,7 @@ public class Kafka_0_10_1_BinderTests extends Kafka_0_10_2_BinderTests {
 
 	@Override
 	protected Binder getBinder(KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties) {
-		return new Kafka10TestBinder(kafkaBinderConfigurationProperties);
+		return new KafkaTestBinder(kafkaBinderConfigurationProperties);
 	}
 
 	@Before
@@ -186,6 +191,8 @@ public class Kafka_0_10_1_BinderTests extends Kafka_0_10_2_BinderTests {
 				configurationProperties.getZkSessionTimeout(), configurationProperties.getZkConnectionTimeout(),
 				ZKStringSerializer$.MODULE$);
 		final ZkUtils zkUtils = new ZkUtils(zkClient, null, false);
+
+
 		Map<String, Object> schemaRegistryProps = new HashMap<>();
 		schemaRegistryProps.put("kafkastore.connection.url", configurationProperties.getZkConnectionString());
 		schemaRegistryProps.put("listeners", "http://0.0.0.0:8082");
@@ -238,4 +245,81 @@ public class Kafka_0_10_1_BinderTests extends Kafka_0_10_2_BinderTests {
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
+
+	@Override
+	public void testSendAndReceiveWithExplicitConsumerGroupWithRawMode() {
+		// raw mode no longer needed
+	}
+
+	@Override
+	public void testSendAndReceiveWithRawModeAndStringPayload() {
+		// raw mode no longer needed
+	}
+
+	@Test
+	@Override
+	@SuppressWarnings("unchecked")
+	public void testSendAndReceiveNoOriginalContentType() throws Exception {
+		Binder binder = getBinder();
+
+		BindingProperties producerBindingProperties = createProducerBindingProperties(
+				createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				producerBindingProperties);
+		QueueChannel moduleInputChannel = new QueueChannel();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bar.0",
+				moduleOutputChannel, producerBindingProperties.getProducer());
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().setTrustedPackages(new String[] {"org.springframework.util"});
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bar.0",
+				"testSendAndReceiveNoOriginalContentType", moduleInputChannel,
+				consumerProperties);
+		binderBindUnbindLatency();
+
+		//TODO: Will have to fix the MimeType to convert to byte array once this issue has been resolved:
+		//https://github.com/spring-projects/spring-kafka/issues/424
+		Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload("foo".getBytes())
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN_VALUE.getBytes()).build();
+		moduleOutputChannel.send(message);
+		Message<?> inbound = receive(moduleInputChannel);
+		assertThat(inbound).isNotNull();
+		assertThat(inbound.getPayload()).isEqualTo("foo".getBytes());
+		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE.getBytes());
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@Test
+	@Override
+	@SuppressWarnings("unchecked")
+	public void testSendAndReceive() throws Exception {
+		Binder binder = getBinder();
+		BindingProperties outputBindingProperties = createProducerBindingProperties(
+				createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				outputBindingProperties);
+		QueueChannel moduleInputChannel = new QueueChannel();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0",
+				moduleOutputChannel, outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0",
+				"testSendAndReceive", moduleInputChannel, createConsumerProperties());
+		// Bypass conversion we are only testing sendReceive
+		Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload("foo".getBytes())
+				.setHeader(MessageHeaders.CONTENT_TYPE,
+						MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE.getBytes())
+				.build();
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+		moduleOutputChannel.send(message);
+		Message<?> inbound = receive(moduleInputChannel);
+		assertThat(inbound).isNotNull();
+		assertThat(inbound.getPayload()).isEqualTo("foo".getBytes());
+		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo(MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE.getBytes());
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
 }

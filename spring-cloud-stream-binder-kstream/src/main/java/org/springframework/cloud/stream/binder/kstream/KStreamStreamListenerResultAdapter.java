@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.messaging.Message;
@@ -40,15 +39,12 @@ public class KStreamStreamListenerResultAdapter implements StreamListenerResultA
 	@Override
 	@SuppressWarnings("unchecked")
 	public Closeable adapt(KStream streamListenerResult, KStreamBoundElementFactory.KStreamWrapper boundElement) {
-		boundElement.wrap(streamListenerResult.map(new KeyValueMapper() {
-			@Override
-			public Object apply(Object k, Object v) {
-				if (v instanceof Message<?>) {
-					return new KeyValue<>(k, v);
-				}
-				else {
-					return new KeyValue<>(k, MessageBuilder.withPayload(v).build());
-				}
+		boundElement.wrap(streamListenerResult.map((k, v) -> {
+			if (v instanceof Message<?>) {
+				return new KeyValue<>(k, v);
+			}
+			else {
+				return new KeyValue<>(k, MessageBuilder.withPayload(v).build());
 			}
 		}));
 		return new NoOpCloseable();

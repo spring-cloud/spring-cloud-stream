@@ -25,7 +25,7 @@ import org.apache.kafka.common.requests.MetadataResponse;
 /**
  * @author Soby Chacko
  */
-public class Kafka10AdminUtilsOperation implements AdminUtilsOperation {
+public class KafkaAdminUtilsOperation implements AdminUtilsOperation {
 
 	public void invokeAddPartitions(ZkUtils zkUtils, String topic, int numPartitions,
 									String replicaAssignmentStr, boolean checkBrokerAvailable) {

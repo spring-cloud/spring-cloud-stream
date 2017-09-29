@@ -16,16 +16,17 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
-import org.springframework.expression.Expression;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
+import org.springframework.expression.Expression;
+
 /**
  * @author Marius Bogoevici
  * @author Henryk Konsek
+ * @author Gary Russell
  */
 public class KafkaProducerProperties {
 
@@ -38,6 +39,8 @@ public class KafkaProducerProperties {
 	private int batchTimeout;
 
 	private Expression messageKeyExpression;
+
+	private String[] headerPatterns;
 
 	private Map<String, String> configuration = new HashMap<>();
 
@@ -80,6 +83,14 @@ public class KafkaProducerProperties {
 
 	public void setMessageKeyExpression(Expression messageKeyExpression) {
 		this.messageKeyExpression = messageKeyExpression;
+	}
+
+	public String[] getHeaderPatterns() {
+		return this.headerPatterns;
+	}
+
+	public void setHeaderPatterns(String[] headerPatterns) {
+		this.headerPatterns = headerPatterns;
 	}
 
 	public Map<String, String> getConfiguration() {

@@ -63,10 +63,10 @@ public class KafkaBinderConfigurationPropertiesTest {
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = new ExtendedProducerProperties<>(
 				kafkaProducerProperties);
 		Method getProducerFactoryMethod = KafkaMessageChannelBinder.class.getDeclaredMethod("getProducerFactory",
-				ExtendedProducerProperties.class);
+				String.class, ExtendedProducerProperties.class);
 		getProducerFactoryMethod.setAccessible(true);
 		DefaultKafkaProducerFactory producerFactory = (DefaultKafkaProducerFactory) getProducerFactoryMethod
-				.invoke(this.kafkaMessageChannelBinder, producerProperties);
+				.invoke(this.kafkaMessageChannelBinder, "bar", producerProperties);
 		Field producerFactoryConfigField = ReflectionUtils.findField(DefaultKafkaProducerFactory.class, "configs",
 				Map.class);
 		ReflectionUtils.makeAccessible(producerFactoryConfigField);

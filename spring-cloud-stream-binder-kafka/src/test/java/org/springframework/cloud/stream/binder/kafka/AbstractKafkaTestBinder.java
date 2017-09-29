@@ -21,9 +21,6 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.context.ApplicationContext;
-import org.springframework.integration.codec.Codec;
-import org.springframework.integration.codec.kryo.PojoCodec;
-import org.springframework.integration.tuple.TupleKryoRegistrar;
 
 /**
  * @author Soby Chacko
@@ -47,9 +44,4 @@ public abstract class AbstractKafkaTestBinder extends
 		return this.applicationContext;
 	}
 
-	protected static Codec getCodec() {
-		return new PojoCodec(new TupleKryoRegistrar());
-	}
-
 }
-

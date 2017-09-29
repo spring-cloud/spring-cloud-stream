@@ -43,6 +43,8 @@ public class KafkaConsumerProperties {
 
 	private int recoveryInterval = 5000;
 
+	private String[] trustedPackages;
+
 	private Map<String, String> configuration = new HashMap<>();
 
 	public boolean isAutoCommitOffset() {
@@ -122,5 +124,13 @@ public class KafkaConsumerProperties {
 
 	public void setDlqName(String dlqName) {
 		this.dlqName = dlqName;
+	}
+
+	public String[] getTrustedPackages() {
+		return trustedPackages;
+	}
+
+	public void setTrustedPackages(String[] trustedPackages) {
+		this.trustedPackages = trustedPackages;
 	}
 }

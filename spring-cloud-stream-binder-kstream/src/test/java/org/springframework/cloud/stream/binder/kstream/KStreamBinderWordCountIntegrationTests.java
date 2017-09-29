@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.kstream;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -27,10 +26,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 import org.apache.kafka.streams.kstream.TimeWindows;
-import org.apache.kafka.streams.kstream.ValueMapper;
-import org.apache.kafka.streams.kstream.Windowed;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -39,9 +35,11 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kstream.annotations.KStreamProcessor;
+import org.springframework.cloud.stream.binder.kstream.config.KStreamApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -56,6 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Gary Russell
  */
 public class KStreamBinderWordCountIntegrationTests {
 
@@ -92,13 +91,18 @@ public class KStreamBinderWordCountIntegrationTests {
 				"--spring.cloud.stream.kstream.binder.configuration.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+				"--spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$ByteArraySerde",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kstream.timeWindow.length=5000",
 				"--spring.cloud.stream.kstream.timeWindow.advanceBy=0",
 				"--spring.cloud.stream.kstream.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kstream.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
-		receiveAndValidate(context);
-		context.close();
+		try {
+			receiveAndValidate(context);
+		}
+		finally {
+			context.close();
+		}
 	}
 
 	private void receiveAndValidate(ConfigurableApplicationContext context) throws Exception{
@@ -113,6 +117,7 @@ public class KStreamBinderWordCountIntegrationTests {
 
 	@EnableBinding(KStreamProcessor.class)
 	@EnableAutoConfiguration
+	@EnableConfigurationProperties(KStreamApplicationSupportProperties.class)
 	public static class WordCountProcessorApplication {
 
 		@Autowired
@@ -123,30 +128,12 @@ public class KStreamBinderWordCountIntegrationTests {
 		public KStream<?, WordCount> process(KStream<Object, String> input) {
 
 			return input
-					.flatMapValues(new ValueMapper<String, Iterable<String>>() {
-
-						@Override
-						public List<String> apply(String value) {
-							return Arrays.asList(value.toLowerCase().split("\\W+"));
-						}
-					})
-					.map(new KeyValueMapper<Object, String, KeyValue<String, String>>() {
-
-						@Override
-						public KeyValue<String, String> apply(Object key, String value) {
-							return new KeyValue<>(value, value);
-						}
-					})
+					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Serdes.String(), Serdes.String())
-					.count(timeWindows, "WordCounts")
+					.count(timeWindows, "foo-WordCounts")
 					.toStream()
-					.map(new KeyValueMapper<Windowed<String>, Long, KeyValue<Object, WordCount>>() {
-
-						@Override
-						public KeyValue<Object, WordCount> apply(Windowed<String> key, Long value) {
-							return new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end())));
-						}
-					});
+					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
 		}
 
 	}

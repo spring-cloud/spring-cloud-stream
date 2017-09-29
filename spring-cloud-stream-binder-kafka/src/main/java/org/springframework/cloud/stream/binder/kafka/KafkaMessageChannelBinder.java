@@ -21,16 +21,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -61,16 +62,20 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.config.ContainerProperties;
+import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
-import org.springframework.messaging.Message;
+import org.springframework.kafka.support.converter.MessagingMessageConverter;
+import org.springframework.kafka.transaction.KafkaTransactionManager;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -93,12 +98,14 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  */
 public class KafkaMessageChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>,
-			ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
+					ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
 	private final Map<String, TopicInformation> topicsInUse = new HashMap<>();
+
+	private final KafkaTransactionManager<byte[], byte[]> transactionManager;
 
 	private ProducerListener<byte[], byte[]> producerListener;
 
@@ -106,24 +113,16 @@ public class KafkaMessageChannelBinder extends
 
 	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
-		super(false, headersToMap(configurationProperties), provisioningProvider);
+		super(true, null, provisioningProvider);
 		this.configurationProperties = configurationProperties;
-	}
-
-	private static String[] headersToMap(KafkaBinderConfigurationProperties configurationProperties) {
-		String[] headersToMap;
-		if (ObjectUtils.isEmpty(configurationProperties.getHeaders())) {
-			headersToMap = BinderHeaders.STANDARD_HEADERS;
+		if (StringUtils.hasText(configurationProperties.getTransaction().getTransactionIdPrefix())) {
+			this.transactionManager = new KafkaTransactionManager<>(
+					getProducerFactory(configurationProperties.getTransaction().getTransactionIdPrefix(),
+							new ExtendedProducerProperties<>(configurationProperties.getTransaction().getProducer())));
 		}
 		else {
-			String[] combinedHeadersToMap = Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0,
-					BinderHeaders.STANDARD_HEADERS.length + configurationProperties.getHeaders().length);
-			System.arraycopy(configurationProperties.getHeaders(), 0, combinedHeadersToMap,
-					BinderHeaders.STANDARD_HEADERS.length,
-					configurationProperties.getHeaders().length);
-			headersToMap = combinedHeadersToMap;
+			this.transactionManager = null;
 		}
-		return headersToMap;
 	}
 
 	public void setExtendedBindingProperties(KafkaExtendedBindingProperties extendedBindingProperties) {
@@ -152,7 +151,16 @@ public class KafkaMessageChannelBinder extends
 	protected MessageHandler createProducerMessageHandler(final ProducerDestination destination,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, MessageChannel errorChannel)
 					throws Exception {
-		final DefaultKafkaProducerFactory<byte[], byte[]> producerFB = getProducerFactory(producerProperties);
+		/*
+		 * IMPORTANT: With a transactional binder, individual producer properties for
+		 * Kafka are ignored; the global binder
+		 * (spring.cloud.stream.kafka.binder.transaction.producer.*) properties are used
+		 * instead, for all producers. A binder is transactional when
+		 * 'spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix' has text.
+		 */
+		final ProducerFactory<byte[], byte[]> producerFB = this.transactionManager != null
+						? this.transactionManager.getProducerFactory()
+						: getProducerFactory(null, producerProperties);
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
 				producerProperties.getPartitionCount(),
 				false,
@@ -195,10 +203,22 @@ public class KafkaMessageChannelBinder extends
 		if (errorChannel != null) {
 			handler.setSendFailureChannel(errorChannel);
 		}
+		String[] headerPatterns = producerProperties.getExtension().getHeaderPatterns();
+		if (headerPatterns != null && headerPatterns.length > 0) {
+			List<String> patterns = new LinkedList<>(Arrays.asList(headerPatterns));
+			if (!patterns.contains("!" + MessageHeaders.TIMESTAMP)) {
+				patterns.add(0, "!" + MessageHeaders.TIMESTAMP);
+			}
+			if (!patterns.contains("!" + MessageHeaders.ID)) {
+				patterns.add(0, "!" + MessageHeaders.ID);
+			}
+			DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper(patterns.toArray(new String[patterns.size()]));
+			handler.setHeaderMapper(headerMapper);
+		}
 		return handler;
 	}
 
-	private DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
+	private DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(String transactionIdPrefix,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ProducerConfig.RETRIES_CONFIG, 0);
@@ -227,7 +247,11 @@ public class KafkaMessageChannelBinder extends
 		if (!ObjectUtils.isEmpty(producerProperties.getExtension().getConfiguration())) {
 			props.putAll(producerProperties.getExtension().getConfiguration());
 		}
-		return new DefaultKafkaProducerFactory<>(props);
+		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(props);
+		if (transactionIdPrefix != null) {
+			producerFactory.setTransactionIdPrefix(transactionIdPrefix);
+		}
+		return producerFactory;
 	}
 
 	@Override
@@ -284,6 +308,9 @@ public class KafkaMessageChannelBinder extends
 				|| extendedConsumerProperties.getExtension().isAutoRebalanceEnabled()
 						? new ContainerProperties(destination.getName())
 						: new ContainerProperties(topicPartitionInitialOffsets);
+		if (this.transactionManager != null) {
+			containerProperties.setTransactionManager(this.transactionManager);
+		}
 		int concurrency = Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
 		@SuppressWarnings("rawtypes")
 		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
@@ -312,6 +339,14 @@ public class KafkaMessageChannelBinder extends
 		}
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter<>(
 				messageListenerContainer);
+		MessagingMessageConverter messageConverter = new MessagingMessageConverter();
+		DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper();
+		String[] trustedPackages = extendedConsumerProperties.getExtension().getTrustedPackages();
+		if (!StringUtils.isEmpty(trustedPackages)) {
+			headerMapper.addTrustedPackages(trustedPackages);
+		}
+		messageConverter.setHeaderMapper(headerMapper);
+		kafkaMessageDrivenChannelAdapter.setMessageConverter(messageConverter);
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination, consumerGroup,
 				extendedConsumerProperties);
@@ -334,48 +369,46 @@ public class KafkaMessageChannelBinder extends
 	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
-			DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = getProducerFactory(
-					new ExtendedProducerProperties<>(new KafkaProducerProperties()));
+			ProducerFactory<byte[], byte[]> producerFactory = this.transactionManager != null
+					? this.transactionManager.getProducerFactory()
+					: getProducerFactory(null, new ExtendedProducerProperties<>(new KafkaProducerProperties()));
 			final KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
-			return new MessageHandler() {
+			return message -> {
+				final ConsumerRecord<?, ?> record = message.getHeaders()
+						.get(KafkaHeaders.RAW_DATA, ConsumerRecord.class);
+				final byte[] key = record.key() != null ? Utils.toArray(ByteBuffer.wrap((byte[]) record.key()))
+						: null;
+				final byte[] payload = record.value() != null
+						? Utils.toArray(ByteBuffer.wrap((byte[]) record.value())) : null;
+				String dlqName = StringUtils.hasText(extendedConsumerProperties.getExtension().getDlqName())
+						? extendedConsumerProperties.getExtension().getDlqName()
+						: "error." + destination.getName() + "." + group;
+				ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>(dlqName, record.partition(),
+						key, payload, record.headers());
+				ListenableFuture<SendResult<byte[], byte[]>> sentDlq = kafkaTemplate.send(producerRecord);
+				sentDlq.addCallback(new ListenableFutureCallback<SendResult<byte[], byte[]>>() {
+					StringBuilder sb = new StringBuilder().append(" a message with key='")
+							.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50)).append("'")
+							.append(" and payload='")
+							.append(toDisplayString(ObjectUtils.nullSafeToString(payload), 50))
+							.append("'").append(" received from ")
+							.append(record.partition());
 
-				@Override
-				public void handleMessage(Message<?> message) throws MessagingException {
-					final ConsumerRecord<?, ?> record = message.getHeaders()
-							.get(KafkaMessageDrivenChannelAdapter.KAFKA_RAW_DATA, ConsumerRecord.class);
-					final byte[] key = record.key() != null ? Utils.toArray(ByteBuffer.wrap((byte[]) record.key()))
-							: null;
-					final byte[] payload = record.value() != null
-							? Utils.toArray(ByteBuffer.wrap((byte[]) record.value())) : null;
-					String dlqName = StringUtils.hasText(extendedConsumerProperties.getExtension().getDlqName())
-							? extendedConsumerProperties.getExtension().getDlqName()
-							: "error." + destination.getName() + "." + group;
-					ListenableFuture<SendResult<byte[], byte[]>> sentDlq = kafkaTemplate.send(dlqName,
-							record.partition(), key, payload);
-					sentDlq.addCallback(new ListenableFutureCallback<SendResult<byte[], byte[]>>() {
-						StringBuilder sb = new StringBuilder().append(" a message with key='")
-								.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50)).append("'")
-								.append(" and payload='")
-								.append(toDisplayString(ObjectUtils.nullSafeToString(payload), 50))
-								.append("'").append(" received from ")
-								.append(record.partition());
+					@Override
+					public void onFailure(Throwable ex) {
+						KafkaMessageChannelBinder.this.logger.error(
+								"Error sending to DLQ " + sb.toString(), ex);
+					}
 
-						@Override
-						public void onFailure(Throwable ex) {
-							KafkaMessageChannelBinder.this.logger.error(
-									"Error sending to DLQ " + sb.toString(), ex);
+					@Override
+					public void onSuccess(SendResult<byte[], byte[]> result) {
+						if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
+							KafkaMessageChannelBinder.this.logger.debug(
+									"Sent to DLQ " + sb.toString());
 						}
+					}
 
-						@Override
-						public void onSuccess(SendResult<byte[], byte[]> result) {
-							if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
-								KafkaMessageChannelBinder.this.logger.debug(
-										"Sent to DLQ " + sb.toString());
-							}
-						}
-
-					});
-				}
+				});
 			};
 		}
 		return null;
@@ -439,11 +472,11 @@ public class KafkaMessageChannelBinder extends
 
 		private boolean running = true;
 
-		private final DefaultKafkaProducerFactory<byte[], byte[]> producerFactory;
+		private final ProducerFactory<byte[], byte[]> producerFactory;
 
 		ProducerConfigurationMessageHandler(KafkaTemplate<byte[], byte[]> kafkaTemplate, String topic,
 				ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
-				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory) {
+				ProducerFactory<byte[], byte[]> producerFactory) {
 			super(kafkaTemplate);
 			setTopicExpression(new LiteralExpression(topic));
 			setMessageKeyExpression(producerProperties.getExtension().getMessageKeyExpression());
@@ -471,7 +504,9 @@ public class KafkaMessageChannelBinder extends
 
 		@Override
 		public void stop() {
-			producerFactory.stop();
+			if (this.producerFactory instanceof Lifecycle) {
+				((Lifecycle) producerFactory).stop();
+			}
 			this.running = false;
 		}
 

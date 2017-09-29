@@ -16,11 +16,12 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.Node;
@@ -31,7 +32,6 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import org.springframework.boot.actuate.metrics.Metric;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -61,6 +61,8 @@ public class KafkaBinderMetricsTest {
 	@Mock
 	private KafkaMessageChannelBinder binder;
 
+	private MeterRegistry meterRegistry = new SimpleMeterRegistry();
+
 	private Map<String, TopicInformation> topicsInUse = new HashMap<>();
 
 	@Mock
@@ -82,11 +84,10 @@ public class KafkaBinderMetricsTest {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
 		given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
-		Collection<Metric<?>> collectedMetrics = metrics.metrics();
-		assertThat(collectedMetrics).hasSize(1);
-		assertThat(collectedMetrics.iterator().next().getName())
-				.isEqualTo(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
-		assertThat(collectedMetrics.iterator().next().getValue()).isEqualTo(500L);
+		metrics.bindTo(meterRegistry);
+		assertThat(meterRegistry.getMeters()).hasSize(1);
+		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
+		assertThat(group.gauge().get().value()).isEqualTo(500.0);
 	}
 
 	@Test
@@ -99,11 +100,10 @@ public class KafkaBinderMetricsTest {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0), new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
 		given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
-		Collection<Metric<?>> collectedMetrics = metrics.metrics();
-		assertThat(collectedMetrics).hasSize(1);
-		assertThat(collectedMetrics.iterator().next().getName())
-				.isEqualTo(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
-		assertThat(collectedMetrics.iterator().next().getValue()).isEqualTo(1000L);
+		metrics.bindTo(meterRegistry);
+		assertThat(meterRegistry.getMeters()).hasSize(1);
+		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
+		assertThat(group.gauge().get().value()).isEqualTo(1000.0);
 	}
 
 	@Test
@@ -111,19 +111,18 @@ public class KafkaBinderMetricsTest {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
 		given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
-		Collection<Metric<?>> collectedMetrics = metrics.metrics();
-		assertThat(collectedMetrics).hasSize(1);
-		assertThat(collectedMetrics.iterator().next().getName())
-				.isEqualTo(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
-		assertThat(collectedMetrics.iterator().next().getValue()).isEqualTo(1000L);
+		metrics.bindTo(meterRegistry);
+		assertThat(meterRegistry.getMeters()).hasSize(1);
+		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
+		assertThat(group.gauge().get().value()).isEqualTo(1000.0);
 	}
 
 	@Test
 	public void shouldNotCalculateLagForProducerTopics() {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new TopicInformation(null, partitions));
-		Collection<Metric<?>> collectedMetrics = metrics.metrics();
-		assertThat(collectedMetrics).isEmpty();
+		metrics.bindTo(meterRegistry);
+		assertThat(meterRegistry.getMeters()).isEmpty();
 	}
 
 	private List<PartitionInfo> partitions(Node... nodes) {

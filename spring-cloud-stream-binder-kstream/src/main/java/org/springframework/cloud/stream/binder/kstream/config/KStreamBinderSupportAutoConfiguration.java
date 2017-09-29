@@ -33,7 +33,6 @@ import org.springframework.cloud.stream.binder.kstream.KStreamStreamListenerResu
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
-import org.springframework.integration.codec.Codec;
 import org.springframework.kafka.annotation.KafkaStreamsDefaultConfiguration;
 import org.springframework.kafka.core.KStreamBuilderFactoryBean;
 import org.springframework.util.ObjectUtils;
@@ -70,10 +69,9 @@ public class KStreamBinderSupportAutoConfiguration {
 	public StreamsConfig streamsConfig(KafkaBinderConfigurationProperties binderConfigurationProperties) {
 		Properties props = new Properties();
 		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, binderConfigurationProperties.getKafkaConnectionString());
-		props.put(StreamsConfig.KEY_SERDE_CLASS_CONFIG, Serdes.ByteArraySerde.class.getName());
-		props.put(StreamsConfig.VALUE_SERDE_CLASS_CONFIG, Serdes.ByteArraySerde.class.getName());
+		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.ByteArraySerde.class.getName());
+		props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.ByteArraySerde.class.getName());
 		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "default");
-		props.put(StreamsConfig.ZOOKEEPER_CONNECT_CONFIG, binderConfigurationProperties.getZkConnectionString());
 		if (!ObjectUtils.isEmpty(binderConfigurationProperties.getConfiguration())) {
 			props.putAll(binderConfigurationProperties.getConfiguration());
 		}
@@ -94,9 +92,9 @@ public class KStreamBinderSupportAutoConfiguration {
 
 	@Bean
 	public KStreamBoundElementFactory kStreamBindableTargetFactory(KStreamBuilder kStreamBuilder,
-			BindingServiceProperties bindingServiceProperties, Codec codec,
+			BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new KStreamBoundElementFactory(kStreamBuilder, bindingServiceProperties, codec,
+		return new KStreamBoundElementFactory(kStreamBuilder, bindingServiceProperties,
 				compositeMessageConverterFactory);
 	}
 

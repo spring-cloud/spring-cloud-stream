@@ -26,6 +26,8 @@ include::overview.adoc[]
 
 include::dlq.adoc[]
 
+include::metrics.adoc[]
+
 = Appendices
 [appendix]
 include::building.adoc[]

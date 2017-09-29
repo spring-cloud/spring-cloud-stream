@@ -23,18 +23,13 @@ import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
-import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
-import org.springframework.cloud.stream.binder.EmbeddedHeaderUtils;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
-import org.springframework.cloud.stream.binder.HeaderMode;
-import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
@@ -43,8 +38,6 @@ import org.springframework.cloud.stream.binder.kstream.config.KStreamConsumerPro
 import org.springframework.cloud.stream.binder.kstream.config.KStreamExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamProducerProperties;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
@@ -53,8 +46,6 @@ import org.springframework.util.StringUtils;
 public class KStreamBinder extends
 		AbstractBinder<KStream<Object, Object>, ExtendedConsumerProperties<KStreamConsumerProperties>, ExtendedProducerProperties<KStreamProducerProperties>>
 		implements ExtendedPropertiesBinder<KStream<Object, Object>, KStreamConsumerProperties, KStreamProducerProperties> {
-
-	private String[] headers;
 
 	private final KafkaTopicProvisioner kafkaTopicProvisioner;
 
@@ -67,7 +58,6 @@ public class KStreamBinder extends
 	public KStreamBinder(KafkaBinderConfigurationProperties binderConfigurationProperties, KafkaTopicProvisioner kafkaTopicProvisioner,
 						KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
-		this.headers = EmbeddedHeaderUtils.headersToEmbed(binderConfigurationProperties.getHeaders());
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kStreamExtendedBindingProperties = kStreamExtendedBindingProperties;
 		this.streamsConfig = streamsConfig;
@@ -90,43 +80,13 @@ public class KStreamBinder extends
 		ExtendedProducerProperties<KafkaProducerProperties> extendedProducerProperties = new ExtendedProducerProperties<KafkaProducerProperties>(
 				new KafkaProducerProperties());
 		this.kafkaTopicProvisioner.provisionProducerDestination(name, extendedProducerProperties);
-		if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
-			outboundBindTarget = outboundBindTarget.map(new KeyValueMapper<Object, Object, KeyValue<Object, Object>>() {
-				@Override
-				public KeyValue<Object, Object> apply(Object k, Object v) {
-					if (v instanceof Message) {
-						try {
-							return new KeyValue<>(k, (Object) KStreamBinder.this.serializeAndEmbedHeadersIfApplicable((Message<?>) v));
-						}
-						catch (Exception e) {
-							throw new IllegalArgumentException(e);
-						}
-					}
-					else {
-						throw new IllegalArgumentException("Wrong type of message " + v);
-					}
-				}
-			});
+		if (!properties.isUseNativeEncoding()) {
+			outboundBindTarget = outboundBindTarget
+					.map((k, v) -> KeyValue.pair(k, (Object) KStreamBinder.this.serializePayloadIfNecessary((Message<?>) v)));
 		}
 		else {
-			if (!properties.isUseNativeEncoding()) {
-				outboundBindTarget = outboundBindTarget
-						.map(new KeyValueMapper<Object, Object, KeyValue<Object, Object>>() {
-							@Override
-							public KeyValue<Object, Object> apply(Object k, Object v) {
-								return KeyValue.pair(k, (Object) KStreamBinder.this.serializePayloadIfNecessary((Message<?>) v));
-							}
-						});
-			}
-			else {
-				outboundBindTarget = outboundBindTarget
-						.map(new KeyValueMapper<Object, Object, KeyValue<Object, Object>>() {
-							@Override
-							public KeyValue<Object, Object> apply(Object k, Object v) {
-								return KeyValue.pair(k, ((Message<?>) v).getPayload());
-							}
-						});
-			}
+			outboundBindTarget = outboundBindTarget
+					.map((k, v) -> KeyValue.pair(k, ((Message<Object>) v).getPayload()));
 		}
 		if (!properties.isUseNativeEncoding() || StringUtils.hasText(properties.getExtension().getKeySerde()) || StringUtils.hasText(properties.getExtension().getValueSerde())) {
 			try {
@@ -165,24 +125,6 @@ public class KStreamBinder extends
 			outboundBindTarget.to(name);
 		}
 		return new DefaultBinding<>(name, null, outboundBindTarget, null);
-	}
-
-	private byte[] serializeAndEmbedHeadersIfApplicable(Message<?> message) throws Exception {
-		MessageValues transformed = serializePayloadIfNecessary(message);
-		byte[] payload;
-
-		Object contentType = transformed.get(MessageHeaders.CONTENT_TYPE);
-		// transform content type headers to String, so that they can be properly embedded
-		// in JSON
-		if (contentType instanceof MimeType) {
-			transformed.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
-		}
-		Object originalContentType = transformed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-		if (originalContentType instanceof MimeType) {
-			transformed.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
-		}
-		payload = EmbeddedHeaderUtils.embedHeaders(transformed, headers);
-		return payload;
 	}
 
 	@Override

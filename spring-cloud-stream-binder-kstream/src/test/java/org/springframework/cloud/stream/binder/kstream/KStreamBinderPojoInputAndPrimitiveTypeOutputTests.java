@@ -18,16 +18,13 @@ package org.springframework.cloud.stream.binder.kstream;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
-import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.TimeWindows;
-import org.apache.kafka.streams.kstream.Windowed;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -52,20 +49,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  *
  * @author Soby Chacko
+ * @author Gary Russell
  */
 public class KStreamBinderPojoInputAndPrimitiveTypeOutputTests {
 
 	@ClassRule
 	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "counts-id");
 
-	private static Consumer<Integer, Long> consumer;
+	private static Consumer<Integer, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id", "false", embeddedKafka);
-		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
+		//consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Deserializer.class.getName());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<Integer, Long> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
 	}
@@ -88,12 +86,16 @@ public class KStreamBinderPojoInputAndPrimitiveTypeOutputTests {
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
 				"--spring.cloud.stream.kstream.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
-				"--spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$ByteArraySerde",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kstream.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kstream.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
-		receiveAndValidateFoo(context);
-		context.close();
+		try {
+			receiveAndValidateFoo(context);
+		}
+		finally {
+			context.close();
+		}
 	}
 
 	private void receiveAndValidateFoo(ConfigurableApplicationContext context) throws Exception{
@@ -102,10 +104,12 @@ public class KStreamBinderPojoInputAndPrimitiveTypeOutputTests {
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic("foos");
 		template.sendDefault("{\"id\":\"123\"}");
-		ConsumerRecord<Integer, Long> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
+		ConsumerRecord<Integer, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
 
 		assertThat(cr.key().equals(123));
-		assertThat(cr.value().equals(1L));
+		ObjectMapper om = new ObjectMapper();
+		Long aLong = om.readValue(cr.value(), Long.class);
+		assertThat(aLong.equals(1L));
 	}
 
 	@EnableBinding(KStreamProcessor.class)
@@ -116,30 +120,12 @@ public class KStreamBinderPojoInputAndPrimitiveTypeOutputTests {
 		@SendTo("output")
 		public KStream<Integer, Long> process(KStream<Object, Product> input) {
 			return input
-					.filter(new Predicate<Object, Product>() {
-
-						@Override
-						public boolean test(Object key, Product product) {
-							return product.getId() == 123;
-						}
-					})
-					.map(new KeyValueMapper<Object, Product, KeyValue<Product, Product>>() {
-
-						@Override
-						public KeyValue<Product, Product> apply(Object key, Product value) {
-							return new KeyValue<>(value, value);
-						}
-					})
+					.filter((key, product) -> product.getId() == 123)
+					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(new JsonSerde<>(Product.class), new JsonSerde<>(Product.class))
 					.count(TimeWindows.of(5000), "id-count-store")
 					.toStream()
-					.map(new KeyValueMapper<Windowed<Product>, Long, KeyValue<Integer, Long>>() {
-
-						@Override
-						public KeyValue<Integer, Long> apply(Windowed<Product> key, Long value) {
-							return new KeyValue<>(key.key().id, value);
-						}
-					});
+					.map((key, value) -> new KeyValue<>(key.key().id, value));
 		}
 	}
 

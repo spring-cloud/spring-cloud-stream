@@ -40,6 +40,8 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
 
+	private final Transaction transaction = new Transaction();
+
 	@Autowired(required = false)
 	private KafkaProperties kafkaProperties;
 
@@ -95,6 +97,10 @@ public class KafkaBinderConfigurationProperties {
 	private int healthTimeout = 60;
 
 	private JaasLoginModuleConfiguration jaas;
+
+	public Transaction getTransaction() {
+		return this.transaction;
+	}
 
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
@@ -350,6 +356,26 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setJaas(JaasLoginModuleConfiguration jaas) {
 		this.jaas = jaas;
+	}
+
+	public static class Transaction {
+
+		private final KafkaProducerProperties producer = new KafkaProducerProperties();
+
+		private String transactionIdPrefix;
+
+		public String getTransactionIdPrefix() {
+			return this.transactionIdPrefix;
+		}
+
+		public void setTransactionIdPrefix(String transactionIdPrefix) {
+			this.transactionIdPrefix = transactionIdPrefix;
+		}
+
+		public KafkaProducerProperties getProducer() {
+			return this.producer;
+		}
+
 	}
 
 }

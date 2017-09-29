@@ -15,12 +15,13 @@
  */
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.MeterBinder;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -30,8 +31,6 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.boot.actuate.endpoint.PublicMetrics;
-import org.springframework.boot.actuate.metrics.Metric;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -42,7 +41,7 @@ import org.springframework.util.ObjectUtils;
  *
  * @author Henryk Konsek
  */
-public class KafkaBinderMetrics implements PublicMetrics {
+public class KafkaBinderMetrics implements MeterBinder {
 
 	private final static Logger LOG = LoggerFactory.getLogger(KafkaBinderMetrics.class);
 
@@ -68,8 +67,7 @@ public class KafkaBinderMetrics implements PublicMetrics {
 	}
 
 	@Override
-	public Collection<Metric<?>> metrics() {
-		List<Metric<?>> metrics = new LinkedList<>();
+	public void bindTo(MeterRegistry registry) {
 		for (Map.Entry<String, KafkaMessageChannelBinder.TopicInformation> topicInfo : this.binder.getTopicsInUse()
 				.entrySet()) {
 			if (!topicInfo.getValue().isConsumerTopic()) {
@@ -96,13 +94,12 @@ public class KafkaBinderMetrics implements PublicMetrics {
 						lag += endOffset.getValue();
 					}
 				}
-				metrics.add(new Metric<>(String.format("%s.%s.%s.lag", METRIC_PREFIX, group, topic), lag));
+				registry.gauge(String.format("%s.%s.%s.lag", METRIC_PREFIX, group, topic), lag);
 			}
 			catch (Exception e) {
 				LOG.debug("Cannot generate metric for topic: " + topic, e);
 			}
 		}
-		return metrics;
 	}
 
 	private ConsumerFactory<?, ?> createConsumerFactory(String group) {

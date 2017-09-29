@@ -40,8 +40,6 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
-import org.springframework.retry.RetryCallback;
-import org.springframework.retry.RetryContext;
 import org.springframework.retry.RetryOperations;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
@@ -203,29 +201,25 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 				final int effectivePartitionCount = Math.max(this.configurationProperties.getMinPartitionCount(),
 						partitionCount);
 
-				this.metadataRetryOperations.execute(new RetryCallback<Object, RuntimeException>() {
+				this.metadataRetryOperations.execute(context -> {
 
-					@Override
-					public Object doWithRetry(RetryContext context) throws RuntimeException {
-
-						try {
-							adminUtilsOperation.invokeCreateTopic(zkUtils, topicName, effectivePartitionCount,
-									configurationProperties.getReplicationFactor(), new Properties());
-						}
-						catch (Exception e) {
-							String exceptionClass = e.getClass().getName();
-							if (exceptionClass.equals("kafka.common.TopicExistsException")
-									|| exceptionClass.equals("org.apache.kafka.common.errors.TopicExistsException")) {
-								if (logger.isWarnEnabled()) {
-									logger.warn("Attempt to create topic: " + topicName + ". Topic already exists.");
-								}
-							}
-							else {
-								throw e;
-							}
-						}
-						return null;
+					try {
+						adminUtilsOperation.invokeCreateTopic(zkUtils, topicName, effectivePartitionCount,
+								configurationProperties.getReplicationFactor(), new Properties());
 					}
+					catch (Exception e) {
+						String exceptionClass = e.getClass().getName();
+						if (exceptionClass.equals("kafka.common.TopicExistsException")
+								|| exceptionClass.equals("org.apache.kafka.common.errors.TopicExistsException")) {
+							if (logger.isWarnEnabled()) {
+								logger.warn("Attempt to create topic: " + topicName + ". Topic already exists.");
+							}
+						}
+						else {
+							throw e;
+						}
+					}
+					return null;
 				});
 			}
 			else {
@@ -243,27 +237,23 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 														final Callable<Collection<PartitionInfo>> callable) {
 		try {
 			return this.metadataRetryOperations
-					.execute(new RetryCallback<Collection<PartitionInfo>, Exception>() {
-
-						@Override
-						public Collection<PartitionInfo> doWithRetry(RetryContext context) throws Exception {
-							Collection<PartitionInfo> partitions = callable.call();
-							// do a sanity check on the partition set
-							int partitionSize = partitions.size();
-							if (partitionSize < partitionCount) {
-								if (tolerateLowerPartitionsOnBroker) {
-									logger.warn("The number of expected partitions was: " + partitionCount + ", but "
-											+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
-											+ "There will be " + (partitionCount - partitionSize) + " idle consumers");
-								}
-								else {
-									throw new IllegalStateException("The number of expected partitions was: "
-											+ partitionCount + ", but " + partitionSize
-											+ (partitionSize > 1 ? " have " : " has ") + "been found instead");
-								}
+					.execute(context -> {
+						Collection<PartitionInfo> partitions = callable.call();
+						// do a sanity check on the partition set
+						int partitionSize = partitions.size();
+						if (partitionSize < partitionCount) {
+							if (tolerateLowerPartitionsOnBroker) {
+								logger.warn("The number of expected partitions was: " + partitionCount + ", but "
+										+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
+										+ "There will be " + (partitionCount - partitionSize) + " idle consumers");
 							}
-							return partitions;
+							else {
+								throw new IllegalStateException("The number of expected partitions was: "
+										+ partitionCount + ", but " + partitionSize
+										+ (partitionSize > 1 ? " have " : " has ") + "been found instead");
+							}
 						}
+						return partitions;
 					});
 		}
 		catch (Exception e) {
