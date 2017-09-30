@@ -19,7 +19,7 @@
     <properties>
         <main.basedir>${basedir}/../..</main.basedir>
         <kafka.version>0.11.0.0</kafka.version>
-        <spring-kafka.version>2.0.0.BUILD-SNAPSHOT</spring-kafka.version>
+        <spring-kafka.version>2.0.1.BUILD-SNAPSHOT</spring-kafka.version>
     </properties>
 
     <dependencies>
