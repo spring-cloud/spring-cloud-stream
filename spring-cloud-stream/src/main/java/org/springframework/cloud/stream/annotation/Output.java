@@ -24,12 +24,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.stream.messaging.Source;
 
 /**
  * Indicates that an output binding target will be created by the framework.
  *
  * @author Dave Syer
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 
 @Qualifier
@@ -42,4 +44,7 @@ public @interface Output {
 
 	String value() default "";
 
+	String destination() default Source.OUTPUT;
+
+	String contentType() default "";
 }

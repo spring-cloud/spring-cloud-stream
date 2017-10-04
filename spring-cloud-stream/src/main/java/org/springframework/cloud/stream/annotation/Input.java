@@ -24,12 +24,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.stream.messaging.Sink;
 
 /**
  * Indicates that an input binding target will be created by the framework.
  *
  * @author Dave Syer
  * @author Marius Bogoevici
+ * @author Vinicius Carvalho
  */
 
 @Qualifier
@@ -41,5 +43,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public @interface Input {
 
 	String value() default "";
+
+	String destination() default Sink.INPUT;
+
+	String[] contentType() default {};
 
 }
