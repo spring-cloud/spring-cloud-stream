@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.config;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Ilayaperumal Gopinathan
  */
 @Configuration
-@ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.Endpoint")
+@ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.annotation.Endpoint")
 @ConditionalOnBean(BindingService.class)
 @AutoConfigureAfter(EndpointAutoConfiguration.class)
 public class ChannelsEndpointAutoConfiguration {

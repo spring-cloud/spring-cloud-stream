@@ -28,9 +28,7 @@ import java.util.Set;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
-import org.springframework.boot.actuate.endpoint.MetricReaderPublicMetrics;
-import org.springframework.boot.actuate.endpoint.MetricsEndpoint;
+import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
@@ -46,7 +44,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
-import org.springframework.integration.monitor.IntegrationMBeanExporter;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -58,6 +55,7 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Venil Noronha
  * @author Janne Valkealahti
+ * @author Vinicius Carvalho
  */
 @EnableBinding
 public class AggregateApplicationBuilder implements AggregateApplication, ApplicationContextAware,
@@ -419,16 +417,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 							e);
 				}
 			}
-			// Register metrics if JMX enabled and exporter avalable
-			if (BeanFactoryUtils.beansOfTypeIncludingAncestors(AggregateApplicationBuilder.this.parentContext,
-					IntegrationMBeanExporter.class).size() > 0) {
-				BeanFactoryUtils
-						.beanOfTypeIncludingAncestors(AggregateApplicationBuilder.this.parentContext,
-								MetricsEndpoint.class)
-						.registerPublicMetrics(
-								new MetricReaderPublicMetrics(new NamespaceAwareSpringIntegrationMetricReader(
-										this.namespace, childContext.getBean(IntegrationMBeanExporter.class))));
-			}
+
 		}
 
 		public AggregateApplication build() {
