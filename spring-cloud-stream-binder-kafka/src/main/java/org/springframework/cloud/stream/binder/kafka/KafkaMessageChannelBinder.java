@@ -39,7 +39,6 @@ import org.apache.kafka.common.utils.Utils;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
-import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
@@ -85,7 +84,7 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 
 /**
- * A {@link Binder} that uses Kafka as the underlying middleware.
+ * A {@link org.springframework.cloud.stream.binder.Binder} that uses Kafka as the underlying middleware.
  *
  * @author Eric Bottard
  * @author Marius Bogoevici

@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.properties;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.security.auth.login.AppConfigurationEntry;
 
 import org.springframework.util.Assert;

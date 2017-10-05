@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.ArrayList;
@@ -36,12 +37,7 @@ import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.T
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
-import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyCollectionOf;
-import static org.springframework.cloud.stream.binder.kafka.KafkaBinderMetrics.METRIC_PREFIX;
 
 /**
  * @author Henryk Konsek
@@ -71,22 +67,22 @@ public class KafkaBinderMetricsTest {
 	@Before
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
-		given(consumerFactory.createConsumer()).willReturn(consumer);
-		given(binder.getTopicsInUse()).willReturn(topicsInUse);
+		org.mockito.BDDMockito.given(consumerFactory.createConsumer()).willReturn(consumer);
+		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
 		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties, consumerFactory);
-		given(consumer.endOffsets(anyCollectionOf(TopicPartition.class)))
-				.willReturn(singletonMap(new TopicPartition(TEST_TOPIC, 0), 1000L));
+		org.mockito.BDDMockito.given(consumer.endOffsets(org.mockito.Matchers.anyCollectionOf(TopicPartition.class)))
+				.willReturn(java.util.Collections.singletonMap(new TopicPartition(TEST_TOPIC, 0), 1000L));
 	}
 
 	@Test
 	public void shouldIndicateLag() {
-		given(consumer.committed(any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
+		org.mockito.BDDMockito.given(consumer.committed(org.mockito.Matchers.any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
-		given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
+		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
 		assertThat(group.gauge().get().value()).isEqualTo(500.0);
 	}
 
@@ -95,14 +91,14 @@ public class KafkaBinderMetricsTest {
 		Map<TopicPartition, Long> endOffsets = new HashMap<>();
 		endOffsets.put(new TopicPartition(TEST_TOPIC, 0), 1000L);
 		endOffsets.put(new TopicPartition(TEST_TOPIC, 1), 1000L);
-		given(consumer.endOffsets(anyCollectionOf(TopicPartition.class))).willReturn(endOffsets);
-		given(consumer.committed(any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
+		org.mockito.BDDMockito.given(consumer.endOffsets(org.mockito.Matchers.anyCollectionOf(TopicPartition.class))).willReturn(endOffsets);
+		org.mockito.BDDMockito.given(consumer.committed(org.mockito.Matchers.any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0), new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
-		given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
+		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
 		assertThat(group.gauge().get().value()).isEqualTo(1000.0);
 	}
 
@@ -110,10 +106,10 @@ public class KafkaBinderMetricsTest {
 	public void shouldIndicateFullLagForNotCommittedGroups() {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
-		given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", METRIC_PREFIX, "group", TEST_TOPIC));
+		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
 		assertThat(group.gauge().get().value()).isEqualTo(1000.0);
 	}
 

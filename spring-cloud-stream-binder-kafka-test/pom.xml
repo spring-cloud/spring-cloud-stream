@@ -4,10 +4,7 @@
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-stream-binder-kafka-parent</artifactId>
-        <version>2.0.0.M1</version>
-=======
         <version>2.0.0.BUILD-SNAPSHOT</version>
->>>>>>> Set version to 2.0.0.BUILD-SNAPSHOT
     </parent>
     <artifactId>spring-cloud-stream-binder-kafka-test</artifactId>
     <description>Spring Cloud Stream Kafka Binder Tests</description>
@@ -65,13 +62,6 @@
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-jmx</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream-binder-kafka-0.10.2-test</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>

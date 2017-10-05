@@ -40,12 +40,14 @@ public class KStreamStreamListenerResultAdapter implements StreamListenerResultA
 	@SuppressWarnings("unchecked")
 	public Closeable adapt(KStream streamListenerResult, KStreamBoundElementFactory.KStreamWrapper boundElement) {
 		boundElement.wrap(streamListenerResult.map((k, v) -> {
+			KeyValue<Object, Object> keyValue;
 			if (v instanceof Message<?>) {
-				return new KeyValue<>(k, v);
+				keyValue = new KeyValue<>(k, v);
 			}
 			else {
-				return new KeyValue<>(k, MessageBuilder.withPayload(v).build());
+				keyValue = new KeyValue<>(k, MessageBuilder.withPayload(v).build());
 			}
+			return keyValue;
 		}));
 		return new NoOpCloseable();
 	}

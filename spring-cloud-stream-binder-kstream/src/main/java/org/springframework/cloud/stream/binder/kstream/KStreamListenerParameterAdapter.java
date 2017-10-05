@@ -53,22 +53,26 @@ public class KStreamListenerParameterAdapter implements StreamListenerParameterA
 				? (resolvableType.getGeneric(1).getRawClass()) : Object.class;
 
 		return bindingTarget.map((KeyValueMapper) (o, o2) -> {
+			KeyValue<Object, Object> keyValue;
 			if (valueClass.isAssignableFrom(o2.getClass())) {
-				return new KeyValue<>(o, o2);
+				keyValue =  new KeyValue<>(o, o2);
 			}
 			else if (o2 instanceof Message) {
 				if (valueClass.isAssignableFrom(((Message) o2).getPayload().getClass())) {
-					return new KeyValue<>(o, ((Message) o2).getPayload());
+					keyValue = new KeyValue<>(o, ((Message) o2).getPayload());
 				}
-				return new KeyValue<>(o, messageConverter.fromMessage((Message) o2, valueClass));
+				else {
+					keyValue = new KeyValue<>(o, messageConverter.fromMessage((Message) o2, valueClass));
+				}
 			}
 			else if(o2 instanceof String || o2 instanceof byte[]) {
 				Message<Object> message = MessageBuilder.withPayload(o2).build();
-				return new KeyValue<>(o, messageConverter.fromMessage(message, valueClass));
+				keyValue =  new KeyValue<>(o, messageConverter.fromMessage(message, valueClass));
 			}
 			else {
-				return new KeyValue<>(o, o2);
+				keyValue =  new KeyValue<>(o, o2);
 			}
+			return keyValue;
 		});
 	}
 

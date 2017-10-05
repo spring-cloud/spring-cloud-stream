@@ -60,16 +60,18 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 	public KStream createInput(String name) {
 		KStream<Object, Object> stream = kStreamBuilder.stream(bindingServiceProperties.getBindingDestination(name));
 		stream = stream.map((key, value) -> {
-
+			KeyValue<Object, Object> keyValue;
 			BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(name);
 			String contentType = bindingProperties.getContentType();
 			if (!StringUtils.isEmpty(contentType)) {
-
 				Message<Object> message = MessageBuilder.withPayload(value)
 						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
-				return new KeyValue<>(key, message);
+				keyValue = new KeyValue<>(key, message);
 			}
-			return new KeyValue<>(key, value);
+			else {
+				keyValue = new KeyValue<>(key, value);
+			}
+			return keyValue;
 		});
 		return stream;
 	}
@@ -87,12 +89,12 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 		return (KStream) proxyFactory.getProxy();
 	}
 
-	interface KStreamWrapper {
+	public interface KStreamWrapper {
 
 		void wrap(KStream<Object, Object> delegate);
 	}
 
-	static class KStreamWrapperHandler implements KStreamWrapper, MethodInterceptor {
+	private static class KStreamWrapperHandler implements KStreamWrapper, MethodInterceptor {
 
 		private KStream<Object, Object> delegate;
 
@@ -100,7 +102,7 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 		private final BindingServiceProperties bindingServiceProperties;
 		private String name;
 
-		public KStreamWrapperHandler(MessageConverter messageConverter,
+		KStreamWrapperHandler(MessageConverter messageConverter,
 									BindingServiceProperties bindingServiceProperties,
 									String name) {
 			this.messageConverter = messageConverter;
