@@ -790,6 +790,8 @@ A possible alternative is to provide the source, sink or processor configuration
 ----
 package com.app.mysink;
 
+// Imports omitted
+
 @SpringBootApplication
 @EnableBinding(Sink.class)
 public class SinkApplication {
@@ -813,7 +815,7 @@ package com.app.myprocessor;
 @EnableBinding(Processor.class)
 public class ProcessorApplication {
 
-	@Transformer
+	@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
 	public String loggerSink(String payload) {
 		return payload.toUpperCase();
 	}
