@@ -31,6 +31,7 @@ import org.springframework.validation.annotation.Validated;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Soby Chacko
  */
 @JsonInclude(Include.NON_DEFAULT)
 @Validated
@@ -56,6 +57,8 @@ public class BindingProperties {
 	// Properties for both inbound/outbound
 
 	private String contentType = MimeTypeUtils.APPLICATION_JSON_VALUE;
+
+	private boolean legacyContentTypeHeaderEnabled = false;
 
 	private String binder;
 
@@ -85,6 +88,14 @@ public class BindingProperties {
 
 	public void setContentType(String contentType) {
 		this.contentType = contentType;
+	}
+
+	public boolean isLegacyContentTypeHeaderEnabled() {
+		return legacyContentTypeHeaderEnabled;
+	}
+
+	public void setLegacyContentTypeHeaderEnabled(boolean legacyContentTypeHeaderEnabled) {
+		this.legacyContentTypeHeaderEnabled = legacyContentTypeHeaderEnabled;
 	}
 
 	public String getBinder() {

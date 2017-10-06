@@ -20,6 +20,7 @@ import java.util.Collections;
 
 import org.junit.Test;
 
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -95,6 +96,27 @@ public class MessageConverterConfigurerTests {
 		catch (MessageConversionException e) {
 			assertThat(e.getMessage()).endsWith("to the configured output type: 'foo/bar'");
 		}
+	}
+
+	@Test
+	public void testConfigureInputChannelWithLegacyContentType() {
+		BindingServiceProperties props = new BindingServiceProperties();
+		BindingProperties bindingProps = new BindingProperties();
+		bindingProps.setContentType("foo/bar");
+		bindingProps.setLegacyContentTypeHeaderEnabled(true);
+		props.setBindings(Collections.singletonMap("foo", bindingProps));
+		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
+				Collections.<MessageConverter>emptyList(), null);
+		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
+		QueueChannel in = new QueueChannel();
+		configurer.configureInputChannel(in, "foo");
+		Foo foo = new Foo();
+		in.send(new GenericMessage<>(foo,
+				Collections.singletonMap(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")));
+		Message<?> received = in.receive(0);
+		assertThat(received).isNotNull();
+		assertThat(received.getPayload()).isEqualTo(foo);
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
 	}
 
 	public static class Foo {

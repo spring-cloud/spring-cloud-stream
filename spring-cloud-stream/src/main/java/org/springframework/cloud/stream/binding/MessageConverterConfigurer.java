@@ -60,6 +60,7 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Maxim Kirilov
  * @author Gary Russell
+ * @author Soby Chacko
  */
 public class MessageConverterConfigurer
 		implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
@@ -119,6 +120,9 @@ public class MessageConverterConfigurer
 			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,
 					getPartitionKeyExtractorStrategy(producerProperties),
 					getPartitionSelectorStrategy(producerProperties)));
+		}
+		if (input && bindingProperties.isLegacyContentTypeHeaderEnabled()) {
+			messageChannel.addInterceptor(new LegacyContentTypeHeaderInterceptor());
 		}
 		// TODO: Set all interceptors in the correct order for input/output channels
 		if (StringUtils.hasText(contentType)) {
@@ -296,6 +300,21 @@ public class MessageConverterConfigurer
 						.removeHeader(BinderHeaders.PARTITION_OVERRIDE).build();
 			}
 		}
+	}
+
+	private final class LegacyContentTypeHeaderInterceptor extends ChannelInterceptorAdapter {
+
+		@Override
+		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			Object originalContentType = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			if (originalContentType != null) {
+				return MessageConverterConfigurer.this.messageBuilderFactory
+						.fromMessage(message)
+						.setHeader(MessageHeaders.CONTENT_TYPE, originalContentType).build();
+			}
+			return message;
+		}
+
 	}
 
 }
