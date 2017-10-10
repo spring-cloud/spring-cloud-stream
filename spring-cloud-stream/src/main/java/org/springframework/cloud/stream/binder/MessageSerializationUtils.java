@@ -147,6 +147,9 @@ public abstract class MessageSerializationUtils {
 		}
 		else {
 			String className = JavaClassMimeTypeUtils.classNameFromMimeType(contentType);
+			if (className == null) {
+				return bytes;
+			}
 			try {
 				// Cache types to avoid unnecessary ClassUtils.forName calls.
 				Class<?> targetType = payloadTypeCache.get(className);
