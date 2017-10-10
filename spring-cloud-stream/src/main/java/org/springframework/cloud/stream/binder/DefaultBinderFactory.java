@@ -191,7 +191,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			List<Class<?>> configurationClasses = new ArrayList<Class<?>>(
 					Arrays.asList(binderType.getConfigurationClasses()));
 			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder()
-					.sources(configurationClasses.toArray(new Class<?>[] {})).bannerMode(Mode.OFF).web(false);
+					.sources(configurationClasses.toArray(new Class<?>[] {}))
+					.bannerMode(Mode.OFF)
+					.logStartupInfo(false)
+					.web(false);
 			// If the environment is not customized and a main context is available, we
 			// will set the latter as parent.
 			// This ensures that the defaults and user-defined customizations (e.g. custom
