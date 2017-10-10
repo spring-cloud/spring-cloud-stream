@@ -334,9 +334,11 @@ public class RabbitBinderTests extends
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.getExtension().setExchangeType(ExchangeTypes.DIRECT);
 		properties.getExtension().setBindingRoutingKey("foo");
+		properties.getExtension().setQueueNameGroupOnly(true);
 //		properties.getExtension().setDelayedExchange(true); // requires delayed message exchange plugin; tested locally
 
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser2", "infra",
+		String group = "infra";
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser2", group,
 				createBindableChannel("input", new BindingProperties()), properties);
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
@@ -344,6 +346,7 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
+		assertThat(container.getQueueNames()[0]).isEqualTo(group);
 		RabbitManagementTemplate rmt = new RabbitManagementTemplate();
 		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", "propsUser2");
 		int n = 0;
@@ -353,7 +356,7 @@ public class RabbitBinderTests extends
 		}
 		assertThat(bindings.size()).isEqualTo(1);
 		assertThat(bindings.get(0).getExchange()).isEqualTo("propsUser2");
-		assertThat(bindings.get(0).getDestination()).isEqualTo("propsUser2.infra");
+		assertThat(bindings.get(0).getDestination()).isEqualTo(group);
 		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
 
 //		// TODO: AMQP-696

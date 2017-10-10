@@ -95,7 +95,8 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 		}
 		Binding binding = null;
 		for (String requiredGroupName : producerProperties.getRequiredGroups()) {
-			String baseQueueName = exchangeName + "." + requiredGroupName;
+			String baseQueueName = producerProperties.getExtension().isQueueNameGroupOnly()
+					? requiredGroupName : (exchangeName + "." + requiredGroupName);
 			if (!producerProperties.isPartitioned()) {
 				Queue queue = new Queue(baseQueueName, true, false, false,
 						queueArgs(baseQueueName, producerProperties.getExtension(), false));
@@ -126,10 +127,11 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 	}
 
 	@Override
-	public ConsumerDestination provisionConsumerDestination(String name, String group, ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+	public ConsumerDestination provisionConsumerDestination(String name, String group,
+			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
 		boolean anonymous = !StringUtils.hasText(group);
-		String baseQueueName = anonymous ? groupedName(name, ANONYMOUS_GROUP_NAME_GENERATOR.generateName())
-				: groupedName(name, group);
+		String  baseQueueName = anonymous ? groupedName(name, ANONYMOUS_GROUP_NAME_GENERATOR.generateName())
+					: properties.getExtension().isQueueNameGroupOnly() ? group : groupedName(name, group);
 		if (this.logger.isInfoEnabled()) {
 			this.logger.info("declaring queue for inbound: " + baseQueueName + ", bound to: " + name);
 		}

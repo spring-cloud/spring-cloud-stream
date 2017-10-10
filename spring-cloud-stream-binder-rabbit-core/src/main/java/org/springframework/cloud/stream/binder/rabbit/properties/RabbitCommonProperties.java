@@ -55,6 +55,11 @@ public abstract class RabbitCommonProperties {
 	private boolean delayedExchange = false;
 
 	/**
+	 * set to true to name the queue with only the group; default is destination.group
+	 */
+	private boolean queueNameGroupOnly = false;
+
+	/**
 	 * whether to bind a queue (or queues when partitioned) to the exchange
 	 */
 	private boolean bindQueue = true;
@@ -197,6 +202,14 @@ public abstract class RabbitCommonProperties {
 
 	public void setDelayedExchange(boolean delayedExchange) {
 		this.delayedExchange = delayedExchange;
+	}
+
+	public boolean isQueueNameGroupOnly() {
+		return this.queueNameGroupOnly;
+	}
+
+	public void setQueueNameGroupOnly(boolean queueNameGroupOnly) {
+		this.queueNameGroupOnly = queueNameGroupOnly;
 	}
 
 	public boolean isBindQueue() {
