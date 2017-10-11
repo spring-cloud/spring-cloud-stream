@@ -178,7 +178,7 @@ Partitioning can thus be used whether the broker itself is naturally partitioned
 .Spring Cloud Stream Partitioning
 image::SCSt-partitioning.png[width=300,scaledwidth="50%"]
 
-Partitioning is a critical concept in stateful processing, where it is critiical, for either performance or consistency reasons, to ensure that all related data is processed together.
+Partitioning is a critical concept in stateful processing, where it is critical, for either performance or consistency reasons, to ensure that all related data is processed together.
 For example, in the time-windowed average calculation example, it is important that all measurements from any given sensor are processed by the same application instance.
 
 [NOTE]
@@ -454,7 +454,7 @@ publish error messages to a broker destination named "myErrors", provide the fol
 
 Starting with _version 1.3_, some `MessageChannel` - based binders publish errors to a discrete error channel for each destination.
 In addition, these error channels are bridged to the global Spring Integration `errorChannel` mentioned above.
-You can therefore consume errors for specific destinations and/or for all destinations, using a standard Spring Integration flow (`IntegrationFlow`, `@ServiceActivator`, etc).
+You can therefore consume errors for specific destinations and/or for all destinations, using a standard Spring Integration flow (`IntegrationFlow`, `@ServiceActivator`, etc.).
 
 On the consumer side, the listener thread catches any exceptions and forwards an `ErrorMessage` to the destination's error channel.
 The payload of the message is a `MessagingException` with the normal `failedMessage` and `cause` properties.
@@ -885,7 +885,7 @@ public class SampleAggregateApplication {
 }
 ----
 
-Once the 'namespace' is set for the individual applications, the application properties with the `namespace` as prefix can be passed to the aggregate application using any supported property source (commandline, environment properties etc.,)
+Once the 'namespace' is set for the individual applications, the application properties with the `namespace` as prefix can be passed to the aggregate application using any supported property source (commandline, environment properties etc.).
 
 For instance, to override the default `fixedDelay` and `debug` properties of 'source' and 'sink' applications:
 
@@ -915,7 +915,7 @@ public class SampleAggregateApplication {
 ----
 
 
-The binding properties like `--spring.cloud.stream.bindings.output.destination=processor-output` need to be specified as one of the external configuration properties (cmdline arg etc.,).
+The binding properties like `--spring.cloud.stream.bindings.output.destination=processor-output` need to be specified as one of the external configuration properties (cmdline arg etc.).
 
 
 == Binders
@@ -1500,7 +1500,7 @@ Remember, the MessageHeader always takes precedence over the annotation or prope
 |===
 |`content-type` header | MessageConverter | Supported target type | Comments
 
-|applicaiton/json
+|application/json
 |CustomMappingJackson2MessageConverter
 | POJO or String
 |
