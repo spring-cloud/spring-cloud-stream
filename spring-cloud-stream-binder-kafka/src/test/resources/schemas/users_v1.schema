@@ -1,8 +1,0 @@
-{"namespace": "org.springframework.cloud.stream.binder.kafka",
-  "type": "record",
-  "name": "User1",
-  "fields": [
-    {"name": "name", "type": "string"},
-    {"name": "favoriteColor", "type": "string"}
-  ]
-}

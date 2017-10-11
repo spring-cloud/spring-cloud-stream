@@ -40,7 +40,7 @@ import org.springframework.kafka.support.ProducerListener;
 public class KafkaTestBinder extends AbstractKafkaTestBinder {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration) {
+	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration) {
 		try {
 			AdminUtilsOperation adminUtilsOperation = new KafkaAdminUtilsOperation();
 			KafkaTopicProvisioner provisioningProvider =
