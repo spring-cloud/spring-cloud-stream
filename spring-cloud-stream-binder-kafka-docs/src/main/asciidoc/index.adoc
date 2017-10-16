@@ -1,6 +1,6 @@
 [[spring-cloud-stream-binder-kafka-reference]]
 = Spring Cloud Stream Kafka Binder Reference Guide
-Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Henryk Konsek
+Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Henryk Konsek, Gary Russell
 :doctype: book
 :toc:
 :toclevels: 4
@@ -25,6 +25,8 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 include::overview.adoc[]
 
 include::dlq.adoc[]
+
+include::partitions.adoc[]
 
 = Appendices
 [appendix]
