@@ -41,6 +41,7 @@ import org.springframework.kafka.core.ConsumerFactory;
  * @author Marius Bogoevici
  * @author Henryk Konsek
  * @author Gary Russell
+ * @author Laur Aliste
  */
 public class KafkaBinderHealthIndicator implements HealthIndicator {
 
@@ -52,15 +53,16 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 	private int timeout = DEFAULT_TIMEOUT;
 
-	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder,
-			ConsumerFactory<?, ?> consumerFactory) {
+	private Consumer<?, ?> metadataConsumer;
+
+	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder, ConsumerFactory<?, ?> consumerFactory) {
 		this.binder = binder;
 		this.consumerFactory = consumerFactory;
-
 	}
 
 	/**
 	 * Set the timeout in seconds to retrieve health information.
+	 *
 	 * @param timeout the timeout - default 60.
 	 */
 	public void setTimeout(int timeout) {
@@ -74,7 +76,10 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 			@Override
 			public Health call() {
-				try (Consumer<?, ?> metadataConsumer = consumerFactory.createConsumer()) {
+				try {
+					if (metadataConsumer == null) {
+						metadataConsumer = consumerFactory.createConsumer();
+					}
 					Set<String> downMessages = new HashSet<>();
 					for (String topic : KafkaBinderHealthIndicator.this.binder.getTopicsInUse().keySet()) {
 						List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);

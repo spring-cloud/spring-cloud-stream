@@ -22,11 +22,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -40,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Barry Commins
  * @author Gary Russell
+ * @author Laur Aliste
  */
 public class KafkaBinderHealthIndicatorTest {
 
@@ -74,7 +77,6 @@ public class KafkaBinderHealthIndicatorTest {
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
-		org.mockito.Mockito.verify(this.consumer).close();
 	}
 
 	@Test
@@ -103,6 +105,33 @@ public class KafkaBinderHealthIndicatorTest {
 		this.indicator.setTimeout(1);
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+	}
+
+	@Test
+	public void createsConsumerOnceWhenInvokedMultipleTimes() {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group", partitions));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
+
+		indicator.health();
+		Health health = indicator.health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.UP);
+		org.mockito.Mockito.verify(this.consumerFactory).createConsumer();
+	}
+
+	@Test
+	public void consumerCreationFailsFirstTime() {
+		org.mockito.BDDMockito.given(consumerFactory.createConsumer()).willThrow(KafkaException.class)
+				.willReturn(consumer);
+
+		Health health = indicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+
+		health = indicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.UP);
+
+		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2)).createConsumer();
 	}
 
 	private List<PartitionInfo> partitions(Node leader) {
