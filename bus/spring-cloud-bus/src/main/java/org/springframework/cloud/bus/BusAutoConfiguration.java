@@ -20,14 +20,13 @@ package org.springframework.cloud.bus;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.endpoint.Endpoint;
+import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.trace.TraceRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.bus.endpoint.BusEndpoint;
 import org.springframework.cloud.bus.endpoint.EnvironmentBusEndpoint;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
@@ -177,15 +176,6 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	}
 
 	@Configuration
-	@ConditionalOnClass(Endpoint.class)
-	protected static class BusEndpointConfiguration {
-		@Bean
-		public BusEndpoint busEndpoint() {
-			return new BusEndpoint();
-		}
-	}
-
-	@Configuration
 	@ConditionalOnClass({ Endpoint.class, RefreshScope.class })
 	@ConditionalOnBean(ContextRefresher.class)
 	protected static class BusRefreshConfiguration {
@@ -200,9 +190,8 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		@ConditionalOnProperty(value = "endpoints.spring.cloud.bus.refresh.enabled", matchIfMissing = true)
 		protected static class BusRefreshEndpointConfiguration {
 			@Bean
-			public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context,
-					BusEndpoint busEndpoint) {
-				return new RefreshBusEndpoint(context, context.getId(), busEndpoint);
+			public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context) {
+				return new RefreshBusEndpoint(context, context.getId());
 			}
 		}
 
@@ -238,8 +227,8 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		protected static class EnvironmentBusEndpointConfiguration {
 			@Bean
 			public EnvironmentBusEndpoint environmentBusEndpoint(
-					ApplicationContext context, BusEndpoint busEndpoint) {
-				return new EnvironmentBusEndpoint(context, context.getId(), busEndpoint);
+					ApplicationContext context) {
+				return new EnvironmentBusEndpoint(context, context.getId());
 			}
 		}
 	}

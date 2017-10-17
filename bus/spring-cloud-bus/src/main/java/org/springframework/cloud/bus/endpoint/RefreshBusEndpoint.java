@@ -17,32 +17,30 @@
 
 package org.springframework.cloud.bus.endpoint;
 
+import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
+import org.springframework.boot.actuate.endpoint.annotation.Selector;
+import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-import org.springframework.jmx.export.annotation.ManagedResource;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * @author Spencer Gibb
  */
-@ManagedResource
+@Endpoint(id = "bus-refresh") //TODO: document new id
 public class RefreshBusEndpoint extends AbstractBusEndpoint {
 
-	public RefreshBusEndpoint(ApplicationEventPublisher context, String id,
-			BusEndpoint delegate) {
-		super(context, id, delegate);
+	public RefreshBusEndpoint(ApplicationEventPublisher context, String id) {
+		super(context, id);
 	}
 
-	@RequestMapping(value = "refresh", method = RequestMethod.POST)
-	@ResponseBody
-	@ManagedOperation
-	public void refresh(
-			@RequestParam(value = "destination", required = false) String destination) {
+	@WriteOperation
+	public void refresh(@Selector String destination) { //TODO: document destination
 		publish(new RefreshRemoteApplicationEvent(this, getInstanceId(), destination));
+	}
+
+	@WriteOperation
+	public void refresh() {
+		publish(new RefreshRemoteApplicationEvent(this, getInstanceId(), null));
 	}
 
 }
