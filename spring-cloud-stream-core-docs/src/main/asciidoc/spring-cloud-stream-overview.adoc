@@ -1165,7 +1165,7 @@ Default: null (the default binder will be used, if one exists).
 
 The following binding properties are available for input bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.consumer.`, e.g. `spring.cloud.stream.bindings.input.consumer.concurrency=3`.
 
-Default values can be set by using the prefix `spring.cloud.stream.default.consumer`, e.g. `spring.cloud.stream.default.consumer.headerMode=raw`.
+Default values can be set by using the prefix `spring.cloud.stream.default.consumer`, e.g. `spring.cloud.stream.default.consumer.headerMode=none`.
 
 concurrency::
   The concurrency of the inbound consumer.
@@ -1176,11 +1176,13 @@ partitioned::
 +
 Default: `false`.
 headerMode::
-    When set to `raw`, disables header parsing on input.
+    When set to `none`, disables header parsing on input.
 Effective only for messaging middleware that does not support message headers natively and requires header embedding.
-Useful when inbound data is coming from outside Spring Cloud Stream applications.
+This option is useful when consuming data from non-Spring Cloud Stream applications when native headers are not supported.
+When set to `headers`, uses the middleware's native header mechanism.
+When set to `embeddedHeaders`, embeds headers into the message payload.
 +
-Default: `embeddedHeaders`.
+Default: depends on binder implementation.
 maxAttempts::
   If processing fails, the number of attempts to process the message (including the first).
   Set to 1 to disable retry.
@@ -1252,16 +1254,18 @@ Default: `1`.
 requiredGroups::
   A comma-separated list of groups to which the producer must ensure message delivery even if they start after it has been created (e.g., by pre-creating durable queues in RabbitMQ).
 headerMode::
-  When set to `raw`, disables header embedding on output.
+  When set to `none`, disables header embedding on output.
 Effective only for messaging middleware that does not support message headers natively and requires header embedding.
-Useful when producing data for non-Spring Cloud Stream applications.
+This option is useful when producing data for non-Spring Cloud Stream applications when native headers are not supported.
+When set to `headers`, uses the middleware's native header mechanism.
+When set to `embeddedHeaders`, embeds headers into the message payload.
 +
-Default: `embeddedHeaders`.
+Default: Depends on binder implementation.
 useNativeEncoding::
   When set to `true`, the outbound message is serialized directly by client library, which must be configured correspondingly (e.g. setting an appropriate Kafka producer value serializer).
 When this configuration is being used, the outbound message marshalling is not based on the `contentType` of the binding.
 When native encoding is used, it is the responsibility of the consumer to use appropriate decoder (ex: Kafka consumer value de-serializer) to deserialize the inbound message.
-Also, when native encoding/decoding is used the `headerMode` property is ignored and headers will not be embedded into the message.
+Also, when native encoding/decoding is used the `headerMode=embeddedHeaders` property is ignored and headers will not be embedded into the message.
 +
 Default: `false`.
 errorChannelEnabled::

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class ConsumerProperties {
@@ -45,7 +46,7 @@ public class ConsumerProperties {
 
 	private double backOffMultiplier = 2.0;
 
-	private HeaderMode headerMode = HeaderMode.embeddedHeaders;
+	private HeaderMode headerMode;
 
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {

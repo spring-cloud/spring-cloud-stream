@@ -74,22 +74,21 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	protected final PP provisioningProvider;
 
 	/**
-	 * Indicates whether the implementation and the message broker have native support for
-	 * message headers. If false, headers will be embedded in the message payloads.
-	 */
-	private final boolean supportsHeadersNatively;
-
-	/**
-	 * Indicates what headers are to be embedded in the payload if
-	 * {@link #supportsHeadersNatively} is true.
+	 * Indicates which headers are to be embedded in the payload if
+	 * a binding requires embedding headers.
 	 */
 	private final String[] headersToEmbed;
 
-	public AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
+	public AbstractMessageChannelBinder(String[] headersToEmbed,
 			PP provisioningProvider) {
-		this.supportsHeadersNatively = supportsHeadersNatively;
 		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
 		this.provisioningProvider = provisioningProvider;
+	}
+
+	@Deprecated
+	protected AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
+			PP provisioningProvider) {
+		this(headersToEmbed, provisioningProvider);
 	}
 
 	/**
@@ -141,7 +140,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			((Lifecycle) producerMessageHandler).start();
 		}
 		((SubscribableChannel) outputChannel).subscribe(
-				new SendingHandler(producerMessageHandler, !this.supportsHeadersNatively && HeaderMode.embeddedHeaders
+				new SendingHandler(producerMessageHandler, HeaderMode.embeddedHeaders
 						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
 						producerProperties.isUseNativeEncoding()));
 
@@ -225,7 +224,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			final ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group,
 					properties);
 			final boolean extractEmbeddedHeaders = HeaderMode.embeddedHeaders.equals(
-					properties.getHeaderMode()) && !this.supportsHeadersNatively;
+					properties.getHeaderMode());
 			ReceivingHandler rh = new ReceivingHandler(extractEmbeddedHeaders);
 			rh.setOutputChannel(inputChannel);
 			final FixedSubscriberChannel bridge = new FixedSubscriberChannel(rh);
@@ -525,7 +524,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return destination.getName() + ".errors";
 	}
 
-	@Deprecated
 	private final class ReceivingHandler extends AbstractReplyProducingMessageHandler {
 
 		private final boolean extractEmbeddedHeaders;
@@ -575,7 +573,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
-	@Deprecated
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {
 
 		private final boolean embedHeaders;
