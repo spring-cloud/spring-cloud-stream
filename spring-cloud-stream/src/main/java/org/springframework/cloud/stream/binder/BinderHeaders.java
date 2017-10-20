@@ -61,7 +61,14 @@ public final class BinderHeaders {
 	 */
 	public static final String PARTITION_OVERRIDE = PREFIX + "partitionOverride";
 
+	/**
+	 * Indicates that an incoming message has native headers.
+	 * @since 2.0
+	 */
+	public static final String NATIVE_HEADERS_PRESENT = PREFIX + "nativeHeadersPresent";
+
 	private BinderHeaders() {
+		super();
 	}
 
 }

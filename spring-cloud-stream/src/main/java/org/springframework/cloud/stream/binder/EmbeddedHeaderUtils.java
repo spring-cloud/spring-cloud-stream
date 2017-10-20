@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,7 +23,6 @@ import java.util.Map;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.support.json.Jackson2JsonObjectMapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -111,10 +109,7 @@ public abstract class EmbeddedHeaderUtils {
 			MessageHeaders requestHeaders) throws Exception {
 		ByteBuffer byteBuffer = ByteBuffer.wrap(payload);
 		int headerCount = byteBuffer.get() & 0xff;
-		if (headerCount < 255) {
-			return oldExtractHeaders(byteBuffer, payload, headerCount, copyRequestHeaders, requestHeaders);
-		}
-		else {
+		if (headerCount == 0xff) {
 			headerCount = byteBuffer.get() & 0xff;
 			Map<String, Object> headers = new HashMap<String, Object>();
 			for (int i = 0; i < headerCount; i++) {
@@ -131,6 +126,9 @@ public abstract class EmbeddedHeaderUtils {
 			byteBuffer.get(newPayload);
 			return buildMessageValues(newPayload, headers, copyRequestHeaders, requestHeaders);
 		}
+		else {
+			return buildMessageValues(payload, new HashMap<>(), copyRequestHeaders, requestHeaders);
+		}
 	}
 
 	/**
@@ -144,29 +142,6 @@ public abstract class EmbeddedHeaderUtils {
 	 */
 	public static MessageValues extractHeaders(byte[] payload) throws Exception {
 		return extractHeaders(payload, false, null);
-	}
-
-	private static MessageValues oldExtractHeaders(ByteBuffer byteBuffer, byte[] bytes, int headerCount,
-			boolean copyRequestHeaders, MessageHeaders requestHeaders) throws UnsupportedEncodingException {
-		Map<String, Object> headers = new HashMap<String, Object>();
-		for (int i = 0; i < headerCount; i++) {
-			int len = byteBuffer.get();
-			String headerName = new String(bytes, byteBuffer.position(), len, "UTF-8");
-			byteBuffer.position(byteBuffer.position() + len);
-			len = byteBuffer.get() & 0xff;
-			String headerValue = new String(bytes, byteBuffer.position(), len, "UTF-8");
-			byteBuffer.position(byteBuffer.position() + len);
-			if (IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER.equals(headerName)
-					|| IntegrationMessageHeaderAccessor.SEQUENCE_SIZE.equals(headerName)) {
-				headers.put(headerName, Integer.parseInt(headerValue));
-			}
-			else {
-				headers.put(headerName, headerValue);
-			}
-		}
-		byte[] newPayload = new byte[byteBuffer.remaining()];
-		byteBuffer.get(newPayload);
-		return buildMessageValues(newPayload, headers, copyRequestHeaders, requestHeaders);
 	}
 
 	private static MessageValues buildMessageValues(byte[] payload, Map<String, Object> headers,
@@ -191,6 +166,16 @@ public abstract class EmbeddedHeaderUtils {
 			headersToMap = combinedHeadersToMap;
 		}
 		return headersToMap;
+	}
+
+	/**
+	 * Return true if the bytes might have embedded headers.
+	 * (First byte is 0xff and long enough for at least one header).
+	 * @param bytes the array.
+	 * @return true if it may have embedded headers.
+	 */
+	public static boolean mayHaveEmbeddedHeaders(byte[] bytes) {
+		return bytes.length > 8 && (bytes[0] & 0xff) == 0xff;
 	}
 
 }
