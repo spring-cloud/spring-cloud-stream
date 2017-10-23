@@ -540,13 +540,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				return requestMessage;
 			}
 			MessageValues messageValues;
-			if (this.extractEmbeddedHeaders) {
+			if (this.extractEmbeddedHeaders
+					&& !requestMessage.getHeaders().containsKey(BinderHeaders.NATIVE_HEADERS_PRESENT)
+					&& EmbeddedHeaderUtils.mayHaveEmbeddedHeaders((byte[]) requestMessage.getPayload())) {
 				try {
 					messageValues = EmbeddedHeaderUtils.extractHeaders((Message<byte[]>) requestMessage,
 							true);
 				}
 				catch (Exception e) {
-					AbstractMessageChannelBinder.this.logger.error(
+					AbstractMessageChannelBinder.this.logger.debug(
 							EmbeddedHeaderUtils.decodeExceptionMessage(
 									requestMessage),
 							e);
