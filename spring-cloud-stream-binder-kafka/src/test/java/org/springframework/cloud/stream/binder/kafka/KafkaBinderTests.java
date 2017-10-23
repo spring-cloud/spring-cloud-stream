@@ -19,7 +19,9 @@ package org.springframework.cloud.stream.binder.kafka;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +32,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
-
 import org.I0Itec.zkclient.ZkClient;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -91,6 +92,7 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
 import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -108,10 +110,15 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SettableListenableFuture;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 
 
 /**
@@ -1759,7 +1766,7 @@ public class KafkaBinderTests extends
 	public void testPartitionedModuleJavaWithRawMode() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
-		properties.setHeaderMode(HeaderMode.raw);
+		properties.setHeaderMode(HeaderMode.none);
 		properties.setPartitionKeyExtractorClass(RawKafkaPartitionTestSupport.class);
 		properties.setPartitionSelectorClass(RawKafkaPartitionTestSupport.class);
 		properties.setPartitionCount(6);
@@ -1773,7 +1780,7 @@ public class KafkaBinderTests extends
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setInstanceIndex(0);
 		consumerProperties.setPartitioned(true);
-		consumerProperties.setHeaderMode(HeaderMode.raw);
+		consumerProperties.setHeaderMode(HeaderMode.none);
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
@@ -1815,7 +1822,7 @@ public class KafkaBinderTests extends
 		properties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload[0]"));
 		properties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
 		properties.setPartitionCount(6);
-		properties.setHeaderMode(HeaderMode.raw);
+		properties.setHeaderMode(HeaderMode.none);
 
 		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(properties));
 		output.setBeanName("test.output");
@@ -1833,7 +1840,7 @@ public class KafkaBinderTests extends
 		consumerProperties.setInstanceIndex(0);
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setPartitioned(true);
-		consumerProperties.setHeaderMode(HeaderMode.raw);
+		consumerProperties.setHeaderMode(HeaderMode.none);
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0S");
@@ -1875,11 +1882,11 @@ public class KafkaBinderTests extends
 		DirectChannel moduleOutputChannel = new DirectChannel();
 		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
-		producerProperties.setHeaderMode(HeaderMode.raw);
+		producerProperties.setHeaderMode(HeaderMode.none);
 		Binding<MessageChannel> producerBinding = binder.bindProducer("raw.0", moduleOutputChannel,
 				producerProperties);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		consumerProperties.setHeaderMode(HeaderMode.raw);
+		consumerProperties.setHeaderMode(HeaderMode.none);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("raw.0", "test", moduleInputChannel,
 				consumerProperties);
 		Message<?> message = org.springframework.integration.support.MessageBuilder
@@ -1894,6 +1901,95 @@ public class KafkaBinderTests extends
 		consumerBinding.unbind();
 	}
 
+	/*
+	 * Verify that a consumer configured to handle embedded headers can handle
+	 * all three variants.
+	 */
+	@Test
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public void testSendAndReceiveWithMixedMode() throws Exception {
+		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
+		binderConfiguration.setHeaders("foo");
+		Binder binder = getBinder(binderConfiguration);
+		QueueChannel moduleInputChannel = new QueueChannel();
+		DirectChannel moduleOutputChannel1 = new DirectChannel();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties1 = createProducerProperties();
+		producerProperties1.setHeaderMode(HeaderMode.embeddedHeaders);
+		Binding<MessageChannel> producerBinding1 = binder.bindProducer("mixed.0", moduleOutputChannel1,
+				producerProperties1);
+
+		DirectChannel moduleOutputChannel2 = new DirectChannel();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties2 = createProducerProperties();
+		producerProperties2.setHeaderMode(HeaderMode.headers);
+		Binding<MessageChannel> producerBinding2 = binder.bindProducer("mixed.0", moduleOutputChannel2,
+				producerProperties2);
+
+		DirectChannel moduleOutputChannel3 = new DirectChannel();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties3 = createProducerProperties();
+		producerProperties3.setHeaderMode(HeaderMode.none);
+		Binding<MessageChannel> producerBinding3 = binder.bindProducer("mixed.0", moduleOutputChannel3,
+				producerProperties3);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setHeaderMode(HeaderMode.embeddedHeaders);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("mixed.0", "test", moduleInputChannel,
+				consumerProperties);
+		Message<?> message = org.springframework.integration.support.MessageBuilder
+				.withPayload("testSendAndReceiveWithMixedMode".getBytes())
+				.setHeader("foo", "bar")
+				.build();
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+		moduleOutputChannel1.send(message);
+		moduleOutputChannel2.send(message);
+		moduleOutputChannel3.send(message);
+		Message<?> inbound = receive(moduleInputChannel, 10_000);
+		assertThat(inbound).isNotNull();
+		assertThat(new String((byte[]) inbound.getPayload())).isEqualTo("testSendAndReceiveWithMixedMode");
+		assertThat(inbound.getHeaders().get("foo")).isEqualTo("bar");
+		assertThat(inbound.getHeaders().get(BinderHeaders.NATIVE_HEADERS_PRESENT)).isNull();
+		inbound = receive(moduleInputChannel);
+		assertThat(inbound).isNotNull();
+		assertThat(new String((byte[]) inbound.getPayload())).isEqualTo("testSendAndReceiveWithMixedMode");
+		assertThat(inbound.getHeaders().get("foo")).isEqualTo("bar");
+		assertThat(inbound.getHeaders().get(BinderHeaders.NATIVE_HEADERS_PRESENT)).isEqualTo(Boolean.TRUE);
+		inbound = receive(moduleInputChannel);
+		assertThat(inbound).isNotNull();
+		assertThat(new String((byte[]) inbound.getPayload())).isEqualTo("testSendAndReceiveWithMixedMode");
+		assertThat(inbound.getHeaders().get("foo")).isNull();
+		assertThat(inbound.getHeaders().get(BinderHeaders.NATIVE_HEADERS_PRESENT)).isNull();
+
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("testSendAndReceiveWithMixedMode", "false",
+				embeddedKafka);
+		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+		DefaultKafkaConsumerFactory cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		Consumer consumer = cf.createConsumer();
+		consumer.subscribe(Collections.singletonList("mixed.0"));
+
+		ConsumerRecords records = consumer.poll(10_1000);
+		Iterator<ConsumerRecord> iterator = records.iterator();
+		ConsumerRecord record = iterator.next();
+		byte[] value = (byte[]) record.value();
+		assertThat(value[0] & 0xff).isEqualTo(0xff);
+		assertThat(record.headers().toArray().length).isEqualTo(0);
+		record = iterator.next();
+		value = (byte[]) record.value();
+		assertThat(value[0] & 0xff).isNotEqualTo(0xff);
+		assertThat(record.headers().toArray().length).isEqualTo(2);
+		record = iterator.next();
+		value = (byte[]) record.value();
+		assertThat(value[0] & 0xff).isNotEqualTo(0xff);
+		assertThat(record.headers().toArray().length).isEqualTo(0);
+		consumer.close();
+
+		producerBinding1.unbind();
+		producerBinding2.unbind();
+		producerBinding3.unbind();
+		consumerBinding.unbind();
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testProducerErrorChannel() throws Exception {
@@ -1901,7 +1997,7 @@ public class KafkaBinderTests extends
 		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
 		ExtendedProducerProperties<KafkaProducerProperties> producerProps = new ExtendedProducerProperties<>(
 				new KafkaProducerProperties());
-		producerProps.setHeaderMode(HeaderMode.raw);
+		producerProps.setHeaderMode(HeaderMode.none);
 		producerProps.setErrorChannelEnabled(true);
 		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0", moduleOutputChannel, producerProps);
 		final Message<?> message = MessageBuilder.withPayload("bad").setHeader(MessageHeaders.CONTENT_TYPE, "application/json")

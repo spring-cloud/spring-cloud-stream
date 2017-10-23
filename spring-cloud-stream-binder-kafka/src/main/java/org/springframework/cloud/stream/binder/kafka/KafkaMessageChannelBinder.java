@@ -33,6 +33,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.utils.Utils;
@@ -43,6 +44,7 @@ import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
@@ -67,6 +69,7 @@ import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.config.ContainerProperties;
 import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
+import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.support.SendResult;
@@ -112,7 +115,7 @@ public class KafkaMessageChannelBinder extends
 
 	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
-		super(true, null, provisioningProvider);
+		super(headersToMap(configurationProperties), provisioningProvider);
 		this.configurationProperties = configurationProperties;
 		if (StringUtils.hasText(configurationProperties.getTransaction().getTransactionIdPrefix())) {
 			this.transactionManager = new KafkaTransactionManager<>(
@@ -122,6 +125,22 @@ public class KafkaMessageChannelBinder extends
 		else {
 			this.transactionManager = null;
 		}
+	}
+
+	private static String[] headersToMap(KafkaBinderConfigurationProperties configurationProperties) {
+		String[] headersToMap;
+		if (ObjectUtils.isEmpty(configurationProperties.getHeaders())) {
+			headersToMap = BinderHeaders.STANDARD_HEADERS;
+		}
+		else {
+			String[] combinedHeadersToMap = Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0,
+					BinderHeaders.STANDARD_HEADERS.length + configurationProperties.getHeaders().length);
+			System.arraycopy(configurationProperties.getHeaders(), 0, combinedHeadersToMap,
+					BinderHeaders.STANDARD_HEADERS.length,
+					configurationProperties.getHeaders().length);
+			headersToMap = combinedHeadersToMap;
+		}
+		return headersToMap;
 	}
 
 	public void setExtendedBindingProperties(KafkaExtendedBindingProperties extendedBindingProperties) {
@@ -194,19 +213,37 @@ public class KafkaMessageChannelBinder extends
 		if (errorChannel != null) {
 			handler.setSendFailureChannel(errorChannel);
 		}
-		String[] headerPatterns = producerProperties.getExtension().getHeaderPatterns();
-		if (headerPatterns != null && headerPatterns.length > 0) {
-			List<String> patterns = new LinkedList<>(Arrays.asList(headerPatterns));
-			if (!patterns.contains("!" + MessageHeaders.TIMESTAMP)) {
-				patterns.add(0, "!" + MessageHeaders.TIMESTAMP);
-			}
-			if (!patterns.contains("!" + MessageHeaders.ID)) {
-				patterns.add(0, "!" + MessageHeaders.ID);
-			}
-			DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper(
-					patterns.toArray(new String[patterns.size()]));
-			handler.setHeaderMapper(headerMapper);
+		KafkaHeaderMapper mapper = null;
+		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
+			mapper = getApplicationContext().getBean(this.configurationProperties.getHeaderMapperBeanName(),
+					KafkaHeaderMapper.class);
 		}
+		/*
+		 *  Even if the user configures a bean, we must not use it if the header
+		 *  mode is not the default (headers); setting the mapper to null
+		 *  disables populating headers in the message handler.
+		 */
+		if (producerProperties.getHeaderMode() != null
+				&& !HeaderMode.headers.equals(producerProperties.getHeaderMode())) {
+			mapper = null;
+		}
+		else if (mapper == null) {
+			String[] headerPatterns = producerProperties.getExtension().getHeaderPatterns();
+			if (headerPatterns != null && headerPatterns.length > 0) {
+				List<String> patterns = new LinkedList<>(Arrays.asList(headerPatterns));
+				if (!patterns.contains("!" + MessageHeaders.TIMESTAMP)) {
+					patterns.add(0, "!" + MessageHeaders.TIMESTAMP);
+				}
+				if (!patterns.contains("!" + MessageHeaders.ID)) {
+					patterns.add(0, "!" + MessageHeaders.ID);
+				}
+				mapper = new DefaultKafkaHeaderMapper(patterns.toArray(new String[patterns.size()]));
+			}
+			else {
+				mapper = new DefaultKafkaHeaderMapper();
+			}
+		}
+		handler.setHeaderMapper(mapper);
 		return handler;
 	}
 
@@ -326,12 +363,30 @@ public class KafkaMessageChannelBinder extends
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter<>(
 				messageListenerContainer);
 		MessagingMessageConverter messageConverter = new MessagingMessageConverter();
-		DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper();
-		String[] trustedPackages = extendedConsumerProperties.getExtension().getTrustedPackages();
-		if (!StringUtils.isEmpty(trustedPackages)) {
-			headerMapper.addTrustedPackages(trustedPackages);
+		KafkaHeaderMapper mapper = null;
+		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
+			mapper = getApplicationContext().getBean(this.configurationProperties.getHeaderMapperBeanName(),
+					KafkaHeaderMapper.class);
 		}
-		messageConverter.setHeaderMapper(headerMapper);
+		if (mapper == null) {
+			DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper() {
+
+				@Override
+				public void toHeaders(Headers source, Map<String, Object> headers) {
+					super.toHeaders(source, headers);
+					if (headers.size() > 0) {
+						headers.put(BinderHeaders.NATIVE_HEADERS_PRESENT, Boolean.TRUE);
+					}
+				}
+
+			};
+			String[] trustedPackages = extendedConsumerProperties.getExtension().getTrustedPackages();
+			if (!StringUtils.isEmpty(trustedPackages)) {
+				headerMapper.addTrustedPackages(trustedPackages);
+			}
+			mapper = headerMapper;
+		}
+		messageConverter.setHeaderMapper(mapper);
 		kafkaMessageDrivenChannelAdapter.setMessageConverter(messageConverter);
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination, consumerGroup,

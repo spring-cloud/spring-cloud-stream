@@ -27,6 +27,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -97,6 +98,11 @@ public class KafkaBinderConfigurationProperties {
 	private int healthTimeout = 60;
 
 	private JaasLoginModuleConfiguration jaas;
+
+	/**
+	 * The bean name of a custom header mapper to use instead of a {@link DefaultKafkaHeaderMapper}.
+	 */
+	private String headerMapperBeanName;
 
 	public Transaction getTransaction() {
 		return this.transaction;
@@ -356,6 +362,14 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setJaas(JaasLoginModuleConfiguration jaas) {
 		this.jaas = jaas;
+	}
+
+	public String getHeaderMapperBeanName() {
+		return this.headerMapperBeanName;
+	}
+
+	public void setHeaderMapperBeanName(String headerMapperBeanName) {
+		this.headerMapperBeanName = headerMapperBeanName;
 	}
 
 	public static class Transaction {
