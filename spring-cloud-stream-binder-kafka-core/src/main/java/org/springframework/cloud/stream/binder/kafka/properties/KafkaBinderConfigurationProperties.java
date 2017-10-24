@@ -27,7 +27,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
