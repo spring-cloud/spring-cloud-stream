@@ -51,6 +51,7 @@ import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedBindingProperties;
@@ -293,6 +294,8 @@ public class RabbitMessageChannelBinder
 	protected MessageHandler createProducerMessageHandler(final ProducerDestination producerDestination,
 			ExtendedProducerProperties<RabbitProducerProperties> producerProperties, MessageChannel errorChannel)
 			throws Exception {
+		Assert.state(!producerProperties.getHeaderMode().equals(HeaderMode.embeddedHeaders),
+				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String prefix = producerProperties.getExtension().getPrefix();
 		String exchangeName = producerDestination.getName();
 		String destination = StringUtils.isEmpty(prefix) ? exchangeName : exchangeName.substring(prefix.length());
@@ -370,6 +373,8 @@ public class RabbitMessageChannelBinder
 	@Override
 	protected MessageProducer createConsumerEndpoint(ConsumerDestination consumerDestination, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+		Assert.state(!properties.getHeaderMode().equals(HeaderMode.embeddedHeaders),
+				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String destination = consumerDestination.getName();
 		SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(
 				this.connectionFactory);
