@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.schema.avro;
 
+import java.lang.reflect.Constructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -29,6 +31,7 @@ import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Marius Bogoevici
@@ -63,6 +66,21 @@ public class AvroMessageConverterAutoConfiguration {
 		}
 		avroSchemaRegistryClientMessageConverter.setPrefix(this.avroMessageConverterProperties.getPrefix());
 		avroSchemaRegistryClientMessageConverter.setCacheManager(cacheManager());
+
+		try {
+			Class clazz = this.avroMessageConverterProperties.getSubjectNamingStrategy();
+			Constructor constructor = ReflectionUtils.accessibleConstructor(clazz);
+
+			avroSchemaRegistryClientMessageConverter.setSubjectNamingStrategy(
+					(SubjectNamingStrategy) constructor.newInstance()
+			);
+		} catch (Exception ex) {
+			throw new IllegalStateException("Unable to create SubjectNamingStrategy " +
+					this.avroMessageConverterProperties.getSubjectNamingStrategy().toString(),
+					ex
+			);
+		}
+
 		return avroSchemaRegistryClientMessageConverter;
 	}
 
