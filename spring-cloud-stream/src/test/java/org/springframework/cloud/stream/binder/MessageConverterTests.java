@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.nio.BufferUnderflowException;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -113,18 +115,8 @@ public class MessageConverterTests {
 	}
 
 	@Test
-	public void testCanDecodeOldFormat() throws Exception {
-		byte[] bytes = "\u0002\u0003foo\u0003bar\u0003baz\u0004quxxHello".getBytes("UTF-8");
-		Message<byte[]> message = new GenericMessage<>(bytes);
-		MessageValues extracted = EmbeddedHeaderUtils.extractHeaders(message, false);
-		assertThat(new String((byte[]) extracted.getPayload())).isEqualTo("Hello");
-		assertThat(extracted.get("foo")).isEqualTo("bar");
-		assertThat(extracted.get("baz")).isEqualTo("quxx");
-	}
-
-	@Test
 	public void testBadDecode() throws Exception {
-		byte[] bytes = "\u0002\u0003foo\u0020bar\u0003baz\u0004quxxHello".getBytes("UTF-8");
+		byte[] bytes = new byte[] { (byte) 0xff, 99 };
 		Message<byte[]> message = new GenericMessage<>(bytes);
 		try {
 			EmbeddedHeaderUtils.extractHeaders(message, false);
@@ -132,10 +124,9 @@ public class MessageConverterTests {
 		}
 		catch (Exception e) {
 			String s = EmbeddedHeaderUtils.decodeExceptionMessage(message);
-			assertThat(e).isInstanceOf(StringIndexOutOfBoundsException.class);
-			assertThat(s).startsWith("Could not convert message: 0203666F6F");
+			assertThat(e).isInstanceOf(BufferUnderflowException.class);
+			assertThat(s).startsWith("Could not convert message: FF63");
 		}
-
 	}
 
 }
