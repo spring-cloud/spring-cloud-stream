@@ -34,6 +34,8 @@ public class AvroMessageConverterProperties {
 
 	private String prefix = "vnd";
 
+	private Class<? extends SubjectNamingStrategy> subjectNamingStrategy = DefaultSubjectNamingStrategy.class;
+
 	public Resource getReaderSchema() {
 		return this.readerSchema;
 	}
@@ -66,5 +68,14 @@ public class AvroMessageConverterProperties {
 
 	public void setPrefix(String prefix) {
 		this.prefix = prefix;
+	}
+
+	public Class<?> getSubjectNamingStrategy() {
+		return subjectNamingStrategy;
+	}
+
+	public void setSubjectNamingStrategy(Class<? extends SubjectNamingStrategy>  subjectNamingStrategy) {
+		Assert.notNull(subjectNamingStrategy, "cannot be null");
+		this.subjectNamingStrategy = subjectNamingStrategy;
 	}
 }

@@ -28,7 +28,11 @@ import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
+
+import java.lang.reflect.Constructor;
 
 /**
  * @author Marius Bogoevici
@@ -63,6 +67,21 @@ public class AvroMessageConverterAutoConfiguration {
 		}
 		avroSchemaRegistryClientMessageConverter.setPrefix(this.avroMessageConverterProperties.getPrefix());
 		avroSchemaRegistryClientMessageConverter.setCacheManager(cacheManager());
+
+		try {
+			Class clazz = this.avroMessageConverterProperties.getSubjectNamingStrategy();
+			Constructor constructor = ReflectionUtils.accessibleConstructor(clazz);
+
+			avroSchemaRegistryClientMessageConverter.setSubjectNamingStrategy(
+					(SubjectNamingStrategy) constructor.newInstance()
+			);
+		} catch (Exception ex) {
+			throw new IllegalStateException("Unable to create SubjectNamingStrategy " +
+					this.avroMessageConverterProperties.getSubjectNamingStrategy().toString(),
+					ex
+			);
+		}
+
 		return avroSchemaRegistryClientMessageConverter;
 	}
 
