@@ -254,6 +254,9 @@ public class RabbitBinderTests extends
 		properties.getExtension().setRequeueRejected(true);
 		properties.getExtension().setTransacted(true);
 		properties.getExtension().setExclusive(true);
+		properties.getExtension().setMissingQueuesFatal(true);
+		properties.getExtension().setFailedDeclarationRetryInterval(1500L);
+		properties.getExtension().setQueueDeclarationRetries(23);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("props.0", null,
 				createBindableChannel("input", new BindingProperties()), properties);
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
@@ -268,6 +271,9 @@ public class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected", Boolean.class)).isTrue();
 		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(1);
 		assertThat(TestUtils.getPropertyValue(container, "txSize")).isEqualTo(1);
+		assertThat(TestUtils.getPropertyValue(container, "missingQueuesFatal", Boolean.class)).isTrue();
+		assertThat(TestUtils.getPropertyValue(container, "failedDeclarationRetryInterval")).isEqualTo(1500L);
+		assertThat(TestUtils.getPropertyValue(container, "declarationRetries")).isEqualTo(23);
 		RetryTemplate retry = TestUtils.getPropertyValue(endpoint, "retryTemplate", RetryTemplate.class);
 		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts")).isEqualTo(3);
 		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval")).isEqualTo(1000L);
@@ -320,6 +326,7 @@ public class RabbitBinderTests extends
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
+		assertThat(TestUtils.getPropertyValue(container, "missingQueuesFatal", Boolean.class)).isFalse();
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();

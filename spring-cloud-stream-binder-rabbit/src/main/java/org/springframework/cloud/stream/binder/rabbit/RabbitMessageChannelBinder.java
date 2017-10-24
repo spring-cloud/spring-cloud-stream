@@ -394,8 +394,17 @@ public class RabbitMessageChannelBinder
 		listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(consumerDestination.getName() + "-"));
 		listenerContainer.setQueueNames(consumerDestination.getName());
 		listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
-		listenerContainer.setMessagePropertiesConverter(RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
+		listenerContainer.setMessagePropertiesConverter(
+				RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
 		listenerContainer.setExclusive(properties.getExtension().isExclusive());
+		listenerContainer.setMissingQueuesFatal(properties.getExtension().getMissingQueuesFatal());
+		if (properties.getExtension().getQueueDeclarationRetries() != null) {
+			listenerContainer.setDeclarationRetries(properties.getExtension().getQueueDeclarationRetries());
+		}
+		if (properties.getExtension().getFailedDeclarationRetryInterval() != null) {
+			listenerContainer.setFailedDeclarationRetryInterval(
+					properties.getExtension().getFailedDeclarationRetryInterval());
+		}
 		listenerContainer.afterPropertiesSet();
 
 		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);

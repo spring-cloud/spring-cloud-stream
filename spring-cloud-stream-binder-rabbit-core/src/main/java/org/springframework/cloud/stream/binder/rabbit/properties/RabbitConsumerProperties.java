@@ -55,6 +55,12 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	 */
 	private boolean exclusive;
 
+	private boolean missingQueuesFatal = false;
+
+	private Integer queueDeclarationRetries;
+
+	private Long  failedDeclarationRetryInterval;
+
 	public boolean isTransacted() {
 		return transacted;
 	}
@@ -171,6 +177,30 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setExclusive(boolean exclusive) {
 		this.exclusive = exclusive;
+	}
+
+	public boolean getMissingQueuesFatal() {
+		return this.missingQueuesFatal;
+	}
+
+	public void setMissingQueuesFatal(boolean missingQueuesFatal) {
+		this.missingQueuesFatal = missingQueuesFatal;
+	}
+
+	public Integer getQueueDeclarationRetries() {
+		return this.queueDeclarationRetries;
+	}
+
+	public void setQueueDeclarationRetries(Integer queueDeclarationRetries) {
+		this.queueDeclarationRetries = queueDeclarationRetries;
+	}
+
+	public Long getFailedDeclarationRetryInterval() {
+		return this.failedDeclarationRetryInterval;
+	}
+
+	public void setFailedDeclarationRetryInterval(Long failedDeclarationRetryInterval) {
+		this.failedDeclarationRetryInterval = failedDeclarationRetryInterval;
 	}
 
 }

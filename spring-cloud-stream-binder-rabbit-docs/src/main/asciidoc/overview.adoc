@@ -198,6 +198,10 @@ expires::
   how long before an unused queue is deleted (ms)
 +
 Default: `no expiration`
+failedDeclarationRetryInterval::
+  The interval (ms) between attempts to consume from a queue if it is missing.
++
+Default: 5000
 headerPatterns::
   Patterns for headers to be mapped from inbound messages.
 +
@@ -224,6 +228,11 @@ maxPriority::
   maximum priority of messages in the queue (0-255)
 +
 Default:: `none`
+missingQueuesFatal::
+  If the queue cannot be found, treat the condition as fatal and stop the listener container.
+  Defaults to `false` so that the container keeps trying to consume from the queue, for example when using a cluster and the node hosting a non HA queue is down.
++
+Default:: `false`
 prefetch::
   Prefetch count.
 +
@@ -232,6 +241,11 @@ prefix::
   A prefix to be added to the name of the `destination` and queues.
 +
 Default: "".
+queueDeclarationRetries::
+  The number of times to retry consuming from a queue if it is missing.
+  Only relevant if `missingQueuesFatal` is `true`; otherwise the container keeps retrying indefinitely.
++
+Default:: `3`
 queueNameGroupOnly::
   When true, consume from a queue with a name equal to the `group`; otherwise the queue name is `destination.group`.
   This is useful, for example, when using Spring Cloud Stream to consume from an existing RabbitMQ queue.
