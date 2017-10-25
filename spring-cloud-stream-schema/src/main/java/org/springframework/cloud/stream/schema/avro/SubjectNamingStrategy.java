@@ -7,10 +7,10 @@ import org.apache.avro.Schema;
  */
 public interface SubjectNamingStrategy {
 
-    /**
-     * Takes the Avro schema on input and returns the generated subject under which the schema should be registered.
-     * @param schema
-     * @return subject name
-     */
-    String toSubject(Schema schema);
+	/**
+	 * Takes the Avro schema on input and returns the generated subject under which the schema should be registered.
+	 * @param schema
+	 * @return subject name
+	 */
+	String toSubject(Schema schema);
 }

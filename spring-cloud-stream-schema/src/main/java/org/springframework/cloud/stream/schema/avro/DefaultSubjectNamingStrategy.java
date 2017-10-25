@@ -7,8 +7,8 @@ import org.apache.avro.Schema;
  */
 public class DefaultSubjectNamingStrategy implements SubjectNamingStrategy {
 
-    @Override
-    public String toSubject(Schema schema) {
-        return schema.getName().toLowerCase();
-    }
+	@Override
+	public String toSubject(Schema schema) {
+		return schema.getName().toLowerCase();
+	}
 }
