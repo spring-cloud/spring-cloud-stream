@@ -31,6 +31,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,7 +104,6 @@ public class MessageConverterConfigurerTests {
 		BindingServiceProperties props = new BindingServiceProperties();
 		BindingProperties bindingProps = new BindingProperties();
 		bindingProps.setContentType("foo/bar");
-		bindingProps.setLegacyContentTypeHeaderEnabled(true);
 		props.setBindings(Collections.singletonMap("foo", bindingProps));
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
 				Collections.<MessageConverter>emptyList(), null);
@@ -111,8 +111,11 @@ public class MessageConverterConfigurerTests {
 		QueueChannel in = new QueueChannel();
 		configurer.configureInputChannel(in, "foo");
 		Foo foo = new Foo();
-		in.send(new GenericMessage<>(foo,
-				Collections.singletonMap(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")));
+		in.send(
+				MessageBuilder.withPayload(foo)
+					.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
+					.setHeader(BinderHeaders.SCST_VERSION, "1.x")
+					.build());
 		Message<?> received = in.receive(0);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo(foo);
