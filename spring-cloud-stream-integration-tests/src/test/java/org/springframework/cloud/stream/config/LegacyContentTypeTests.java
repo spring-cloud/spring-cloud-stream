@@ -28,7 +28,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
@@ -61,14 +60,16 @@ public class LegacyContentTypeTests {
 			}
 		};
 		testSink.input().subscribe(messageHandler);
-		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes()).setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json").build());
+		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes())
+							.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
+							.setHeader(BinderHeaders.SCST_VERSION, "1.x")
+							.build());
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		testSink.input().unsubscribe(messageHandler);
 	}
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/channel/legacy-sink-channel-configurers.properties")
 	public static class LegacyTestSink {
 
 	}

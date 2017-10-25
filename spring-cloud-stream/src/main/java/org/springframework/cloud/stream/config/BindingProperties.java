@@ -58,8 +58,6 @@ public class BindingProperties {
 
 	private String contentType = MimeTypeUtils.APPLICATION_JSON_VALUE;
 
-	private boolean legacyContentTypeHeaderEnabled = false;
-
 	private String binder;
 
 	private ConsumerProperties consumer;
@@ -88,14 +86,6 @@ public class BindingProperties {
 
 	public void setContentType(String contentType) {
 		this.contentType = contentType;
-	}
-
-	public boolean isLegacyContentTypeHeaderEnabled() {
-		return legacyContentTypeHeaderEnabled;
-	}
-
-	public void setLegacyContentTypeHeaderEnabled(boolean legacyContentTypeHeaderEnabled) {
-		this.legacyContentTypeHeaderEnabled = legacyContentTypeHeaderEnabled;
 	}
 
 	public String getBinder() {

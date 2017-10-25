@@ -23,6 +23,7 @@ import org.springframework.messaging.MessageHeaders;
  * Spring Integration message headers for Spring Cloud Stream.
  * @author Gary Russell
  * @author David Turanski
+ * @author Soby Chacko
  */
 public final class BinderHeaders {
 
@@ -66,6 +67,13 @@ public final class BinderHeaders {
 	 * @since 2.0
 	 */
 	public static final String NATIVE_HEADERS_PRESENT = PREFIX + "nativeHeadersPresent";
+
+	/**
+	 * Indicates the Spring Cloud Stream version.
+	 * Used for determining if legacy content type check supported or not.
+	 * @since 2.0
+	 */
+	public static final String SCST_VERSION = PREFIX + "version";
 
 	private BinderHeaders() {
 		super();

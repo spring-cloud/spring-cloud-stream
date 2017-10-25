@@ -16,13 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.ContentTypeResolver;
-import org.springframework.util.MimeType;
 
 /**
  * Utility class for serializing and de-serializing the message payload.
@@ -31,8 +26,6 @@ import org.springframework.util.MimeType;
  * @author Vinicius Carvalho
  */
 public abstract class MessageSerializationUtils {
-
-	private static final Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
 
 	/**
 	 * Serialize the message payload unless it is a byte array.
@@ -48,26 +41,5 @@ public abstract class MessageSerializationUtils {
 		messageValues.put(MessageHeaders.CONTENT_TYPE, originalContentType);
 		return messageValues;
 	}
-
-
-
-	/**
-	 * De-serialize the message payload if necessary.
-	 *
-	 * @param messageValues message with the payload to deserialize
-	 * @param contentTypeResolver used for resolving the mime type.
-	 * @return Deserialized Message.
-	 */
-	public static MessageValues deserializePayload(MessageValues messageValues, ContentTypeResolver contentTypeResolver) {
-		Object payload = messageValues.getPayload();
-		MimeType contentType = contentTypeResolver.resolve(new MessageHeaders(messageValues.getHeaders()));
-		if (payload != null) {
-			messageValues.setPayload(payload);
-			messageValues.put(MessageHeaders.CONTENT_TYPE, contentType);
-		}
-		return messageValues;
-	}
-
-
 
 }
