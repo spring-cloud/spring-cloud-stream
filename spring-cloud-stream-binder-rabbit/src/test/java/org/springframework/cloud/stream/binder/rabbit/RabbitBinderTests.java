@@ -16,6 +16,13 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,12 +34,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
 
+import com.rabbitmq.http.client.domain.QueueInfo;
+
 import org.apache.commons.logging.Log;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.mockito.ArgumentCaptor;
-
 import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -91,15 +99,6 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
-
-import com.rabbitmq.http.client.domain.QueueInfo;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Mark Fisher
@@ -1203,7 +1202,7 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
-	public void testBadUserDeclarationsFatal() {
+	public void testBadUserDeclarationsFatal() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ConfigurableApplicationContext context = binder.getApplicationContext();
 		ConfigurableListableBeanFactory bf = context.getBeanFactory();
@@ -1224,7 +1223,7 @@ public class RabbitBinderTests extends
 		// the mis-configured queue should be fatal
 		Binding<?> binding = null;
 		try {
-			binding = binder.bindConsumer("input", "baddecls", new DirectChannel(), createConsumerProperties());
+			binding = binder.bindConsumer("input", "baddecls", this.createBindableChannel("input", new BindingProperties()), createConsumerProperties());
 			fail("Expected exception");
 		}
 		catch (BinderException e) {
