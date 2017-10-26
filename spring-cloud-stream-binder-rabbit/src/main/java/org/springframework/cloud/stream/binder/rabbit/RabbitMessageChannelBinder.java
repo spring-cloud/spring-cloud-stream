@@ -294,7 +294,7 @@ public class RabbitMessageChannelBinder
 	protected MessageHandler createProducerMessageHandler(final ProducerDestination producerDestination,
 			ExtendedProducerProperties<RabbitProducerProperties> producerProperties, MessageChannel errorChannel)
 			throws Exception {
-		Assert.state(!producerProperties.getHeaderMode().equals(HeaderMode.embeddedHeaders),
+		Assert.state(!HeaderMode.embeddedHeaders.equals(producerProperties.getHeaderMode()),
 				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String prefix = producerProperties.getExtension().getPrefix();
 		String exchangeName = producerDestination.getName();
@@ -373,7 +373,7 @@ public class RabbitMessageChannelBinder
 	@Override
 	protected MessageProducer createConsumerEndpoint(ConsumerDestination consumerDestination, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
-		Assert.state(!properties.getHeaderMode().equals(HeaderMode.embeddedHeaders),
+		Assert.state(!HeaderMode.embeddedHeaders.equals(properties.getHeaderMode()),
 				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String destination = consumerDestination.getName();
 		SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(
