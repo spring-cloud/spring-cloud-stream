@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package org.springframework.cloud.stream.binder;
 
+
 import java.util.HashSet;
 import java.util.Set;
 
+import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Abstract class that adds test support for {@link Binder}.
@@ -27,6 +31,7 @@ import org.springframework.messaging.MessageChannel;
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  */
 public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
 		implements Binder<MessageChannel, CP, PP> {
@@ -38,12 +43,14 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel,
 			CP properties) {
+		this.checkChannelIsConfigured(moduleInputChannel);
 		queues.add(name);
 		return binder.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
 	@Override
 	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel, PP properties) {
+		this.checkChannelIsConfigured(moduleOutputChannel);
 		queues.add(name);
 		return binder.bindProducer(name, moduleOutputChannel, properties);
 	}
@@ -68,4 +75,15 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 		this.binder = binder;
 	}
 
+	/*
+	 * This will ensure that any MessageChannel that was passed to one of the bind*()
+	 * methods was properly configured (i.e., interceptors, converters etc).
+	 * see org.springframework.cloud.stream.binding.MessageConverterConfigurer
+	 */
+	private void checkChannelIsConfigured(MessageChannel messageChannel) {
+		if (messageChannel instanceof AbstractSubscribableChannel){
+			Assert.isTrue(!CollectionUtils.isEmpty(((AbstractSubscribableChannel)messageChannel).getChannelInterceptors()),
+					"'messageChannel' appears to be misconfigured. Consider creating channel via AbstractBinderTest.createBindableChannel(..)");
+		}
+	}
 }
