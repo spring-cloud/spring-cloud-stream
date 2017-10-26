@@ -121,7 +121,7 @@ public class MessageConverterConfigurer
 					getPartitionKeyExtractorStrategy(producerProperties),
 					getPartitionSelectorStrategy(producerProperties)));
 		}
-		if (input && bindingProperties.isLegacyContentTypeHeaderEnabled()) {
+		if (input) {
 			messageChannel.addInterceptor(new LegacyContentTypeHeaderInterceptor());
 		}
 		// TODO: Set all interceptors in the correct order for input/output channels
@@ -306,11 +306,12 @@ public class MessageConverterConfigurer
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			Object originalContentType = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			if (originalContentType != null) {
-				return MessageConverterConfigurer.this.messageBuilderFactory
+			if (!message.getHeaders().containsKey(BinderHeaders.SCST_VERSION) ||
+					!message.getHeaders().get(BinderHeaders.SCST_VERSION).equals("2.x")) {
+				Object originalContentType = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+				return originalContentType != null ? MessageConverterConfigurer.this.messageBuilderFactory
 						.fromMessage(message)
-						.setHeader(MessageHeaders.CONTENT_TYPE, originalContentType).build();
+						.setHeader(MessageHeaders.CONTENT_TYPE, originalContentType).build() : message;
 			}
 			return message;
 		}
