@@ -90,15 +90,15 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	public void testClean() throws Exception {
 		Binder binder = getBinder();
 		Binding<MessageChannel> foo0ProducerBinding = binder.bindProducer("foo.0",
-				new DirectChannel(), createProducerProperties());
+				this.createBindableChannel("output", new BindingProperties()), createProducerProperties());
 		Binding<MessageChannel> foo0ConsumerBinding = binder.bindConsumer("foo.0",
-				"testClean", new DirectChannel(), createConsumerProperties());
+				"testClean", this.createBindableChannel("input", new BindingProperties()), createConsumerProperties());
 		Binding<MessageChannel> foo1ProducerBinding = binder.bindProducer("foo.1",
-				new DirectChannel(), createProducerProperties());
+				this.createBindableChannel("output", new BindingProperties()), createProducerProperties());
 		Binding<MessageChannel> foo1ConsumerBinding = binder.bindConsumer("foo.1",
-				"testClean", new DirectChannel(), createConsumerProperties());
+				"testClean", this.createBindableChannel("input", new BindingProperties()), createConsumerProperties());
 		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer("foo.2",
-				new DirectChannel(), createProducerProperties());
+				this.createBindableChannel("output", new BindingProperties()), createProducerProperties());
 		foo0ProducerBinding.unbind();
 		assertThat(TestUtils
 				.getPropertyValue(foo0ProducerBinding, "lifecycle", Lifecycle.class)
