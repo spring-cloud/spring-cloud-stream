@@ -22,9 +22,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.integration.annotation.Transformer;
@@ -46,13 +44,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ExampleTest {
 
 	@Autowired
-	private BinderFactory binderFactory;
-
-	@Autowired
 	private MessageCollector messageCollector;
 
 	@Autowired
-	@Bindings(MyProcessor.class)
 	private Processor processor;
 
 	@Test
@@ -60,8 +54,8 @@ public class ExampleTest {
 	public void testWiring() {
 		Message<String> message = new GenericMessage<>("hello");
 		this.processor.input().send(message);
-		Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(this.processor.output()).poll();
-		assertThat(received.getPayload()).isEqualTo("hello world".getBytes());
+		Message<String> received = (Message<String>) this.messageCollector.forChannel(this.processor.output()).poll();
+		assertThat(received.getPayload()).isEqualTo("hello world");
 	}
 
 	@SpringBootApplication

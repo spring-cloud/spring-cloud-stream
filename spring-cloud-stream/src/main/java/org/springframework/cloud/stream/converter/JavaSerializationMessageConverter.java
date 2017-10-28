@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 
 /**
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 public class JavaSerializationMessageConverter extends AbstractMessageConverter {
 
@@ -39,7 +40,10 @@ public class JavaSerializationMessageConverter extends AbstractMessageConverter 
 
 	@Override
 	protected boolean supports(Class<?> clazz) {
-		return Serializable.class.isAssignableFrom(clazz);
+		if (clazz != null){
+			return Serializable.class.isAssignableFrom(clazz);
+		}
+		return true;
 	}
 
 	@Override

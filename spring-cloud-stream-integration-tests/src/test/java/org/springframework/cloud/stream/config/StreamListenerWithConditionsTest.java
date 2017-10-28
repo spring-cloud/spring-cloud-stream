@@ -44,7 +44,6 @@ import static org.assertj.core.api.Assertions.fail;
 public class StreamListenerWithConditionsTest {
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void testAnnotatedArgumentsWithConditionalClass() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class,
 				"--server.port=0");
@@ -72,7 +71,6 @@ public class StreamListenerWithConditionsTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void testConditionalFailsWithReturnValue() throws Exception {
 		try {
 			ConfigurableApplicationContext context = SpringApplication.run(
@@ -89,7 +87,6 @@ public class StreamListenerWithConditionsTest {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void testConditionalFailsWithDeclarativeMethod() throws Exception {
 		try {
 			ConfigurableApplicationContext context = SpringApplication.run(

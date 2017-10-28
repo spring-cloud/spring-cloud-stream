@@ -33,12 +33,14 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import static org.junit.Assert.assertEquals;
 
 
 /**
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = DefaultHeaderPropagationWithApplicationProvidedHeaderTests.HeaderPropagationProcessor.class,
@@ -51,17 +53,18 @@ public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@Test(expected = MessageConversionException.class)
-	public void testFailedonCustomContentTypeWithoutConverter() throws Exception {
+	@Test
+	public void testHeaderPropagationIfSetByApplication() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
 				.setHeader("foo", "fooValue")
 				.setHeader("bar", "barValue")
 				.build());
 		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-
+		assertEquals("fooValue", received.getHeaders().get("foo"));
+		assertEquals("barValue", received.getHeaders().get("bar"));
 	}
 
 	@EnableBinding(Processor.class)

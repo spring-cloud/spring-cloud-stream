@@ -71,6 +71,7 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 public class StreamListenerAnnotationBeanPostProcessor
 		implements BeanPostProcessor, ApplicationContextAware, BeanFactoryAware, SmartInitializingSingleton,
@@ -198,7 +199,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 			String methodAnnotatedOutboundName) {
 		int methodArgumentsLength = method.getParameterTypes().length;
 		for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+			MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
 			if (methodParameter.hasParameterAnnotation(Input.class)) {
 				String inboundName = (String) AnnotationUtils
 						.getValue(methodParameter.getParameterAnnotation(Input.class));
@@ -260,7 +261,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 			String outboundName) {
 		Object[] arguments = new Object[method.getParameterTypes().length];
 		for (int parameterIndex = 0; parameterIndex < arguments.length; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+			MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
 			Class<?> parameterType = methodParameter.getParameterType();
 			Object targetReferenceValue = null;
 			if (methodParameter.hasParameterAnnotation(Input.class)) {
@@ -300,8 +301,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 				Object result = method.invoke(bean, arguments);
 				if (!StringUtils.hasText(outboundName)) {
 					for (int parameterIndex = 0; parameterIndex < method.getParameterTypes().length; parameterIndex++) {
-						MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method,
-								parameterIndex);
+						MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
 						if (methodParameter.hasParameterAnnotation(Output.class)) {
 							outboundName = methodParameter.getParameterAnnotation(Output.class).value();
 						}
@@ -390,6 +390,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 			handler.setApplicationContext(this.applicationContext);
 			handler.setChannelResolver(this.binderAwareChannelResolver);
 			handler.afterPropertiesSet();
+			this.applicationContext.getBeanFactory().registerSingleton(handler.getClass().getSimpleName() + handler.hashCode(), handler);
 			applicationContext.getBean(mappedBindingEntry.getKey(), SubscribableChannel.class).subscribe(handler);
 		}
 		this.mappedListenerMethods.clear();

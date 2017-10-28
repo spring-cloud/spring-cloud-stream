@@ -55,13 +55,14 @@ public class AutoconfigurationDisabledTest {
 	@Autowired
 	public Processor processor;
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testAutoconfigurationDisabled() throws Exception {
 		processor.input().send(MessageBuilder.withPayload("Hello").build());
 		// Since the interaction is synchronous, the result should be immediate
-		Message<byte[]> response = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> response = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(response).isNotNull();
-		assertThat(response.getPayload()).isEqualTo("Hello world".getBytes());
+		assertThat(response.getPayload()).isEqualTo("Hello world");
 	}
 
 	@SpringBootApplication(exclude = TestSupportBinderAutoConfiguration.class)

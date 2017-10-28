@@ -42,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class AggregateWithMainTest {
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testAggregateApplication() throws InterruptedException {
 		// emulate a main method
@@ -55,9 +56,9 @@ public class AggregateWithMainTest {
 		Processor uppercaseProcessor = aggregateAccessor.getBinding(Processor.class, "upper");
 		Processor suffixProcessor = aggregateAccessor.getBinding(Processor.class, "suffix");
 		uppercaseProcessor.input().send(MessageBuilder.withPayload("Hello").build());
-		Message<byte[]> receivedMessage = (Message<byte[]>) messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> receivedMessage = (Message<String>) messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(receivedMessage).isNotNull();
-		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!".getBytes());
+		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!");
 		context.close();
 	}
 

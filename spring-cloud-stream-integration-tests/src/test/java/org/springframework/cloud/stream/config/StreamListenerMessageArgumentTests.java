@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 @RunWith(Parameterized.class)
 public class StreamListenerMessageArgumentTests {
@@ -56,7 +57,7 @@ public class StreamListenerMessageArgumentTests {
 	}
 
 	@Parameterized.Parameters
-	public static Collection InputConfigs() {
+	public static Collection<?> InputConfigs() {
 		return Arrays.asList(new Class[] { TestPojoWithMessageArgument1.class, TestPojoWithMessageArgument2.class });
 	}
 
@@ -74,10 +75,10 @@ public class StreamListenerMessageArgumentTests {
 				.getBean(TestPojoWithMessageArgument.class);
 		assertThat(testPojoWithMessageArgument.receivedMessages).hasSize(1);
 		assertThat(testPojoWithMessageArgument.receivedMessages.get(0).getPayload()).isEqualTo("barbar" + id);
-		Message<byte[]> message = (Message<byte[]>) collector
+		Message<String> message = (Message<String>) collector
 				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
-		assertThat(new String(message.getPayload())).contains("barbar" + id);
+		assertThat(message.getPayload()).contains("barbar" + id);
 		context.close();
 	}
 

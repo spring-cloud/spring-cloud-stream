@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = { LegacyContentTypeTests.LegacyTestSink.class})
@@ -53,9 +54,9 @@ public class LegacyContentTypeTests {
 		MessageHandler messageHandler = new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				assertThat(message.getPayload()).isInstanceOf(byte[].class);
-				assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}".getBytes());
-				assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
+				assertThat(message.getPayload()).isInstanceOf(String.class);
+				assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}");
+				assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
 				latch.countDown();
 			}
 		};

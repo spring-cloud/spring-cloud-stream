@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 public class StreamListenerWithAnnotatedInputOutputArgsTests {
 
@@ -86,14 +87,14 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 		sendMessageAndValidate(context);
 	}
 
+	@SuppressWarnings("unchecked")
 	private void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
-		@SuppressWarnings("unchecked")
 		Processor processor = context.getBean(Processor.class);
 		processor.input().send(MessageBuilder.withPayload("hello").setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(new String(result.getPayload())).isEqualTo("HELLO");
+		assertThat(result.getPayload()).isEqualTo("HELLO");
 		context.close();
 	}
 

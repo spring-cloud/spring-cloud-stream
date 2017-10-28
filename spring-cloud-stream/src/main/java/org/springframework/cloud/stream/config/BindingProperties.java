@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -32,6 +31,7 @@ import org.springframework.validation.annotation.Validated;
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 @JsonInclude(Include.NON_DEFAULT)
 @Validated
@@ -56,7 +56,7 @@ public class BindingProperties {
 
 	// Properties for both inbound/outbound
 
-	private String contentType = MimeTypeUtils.APPLICATION_JSON_VALUE;
+	private String contentType = "application/json";
 
 	private String binder;
 
@@ -117,6 +117,7 @@ public class BindingProperties {
 		return consumer == null || producer == null;
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("destination=" + this.destination);

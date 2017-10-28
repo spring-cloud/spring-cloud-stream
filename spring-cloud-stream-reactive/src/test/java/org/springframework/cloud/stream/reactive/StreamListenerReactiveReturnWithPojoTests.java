@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Oleg Zhurakousky
  */
 @RunWith(Parameterized.class)
 public class StreamListenerReactiveReturnWithPojoTests {
@@ -60,24 +61,23 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	}
 
 	@Parameterized.Parameters
-	public static Collection InputConfigs() {
+	public static Collection<?> InputConfigs() {
 		return Arrays.asList(new Class[] { ReactorTestReturnWithPojo1.class, ReactorTestReturnWithPojo2.class,
 				ReactorTestReturnWithPojo3.class, ReactorTestReturnWithPojo4.class, RxJava1TestReturnWithPojo1.class,
 				RxJava1TestReturnWithPojo2.class, RxJava1TestReturnWithPojo3.class, RxJava1TestReturnWithPojo4.class });
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testReturnWithPojo() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0",
 				"--spring.jmx.enabled=false");
-		@SuppressWarnings("unchecked")
 		Processor processor = context.getBean(Processor.class);
 		processor.input().send(MessageBuilder.withPayload("{\"message\":\"helloPojo\"}")
 				.setHeader("contentType", "application/json").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(result.getPayload()).isInstanceOf(byte[].class);
 		BarPojo barPojo = mapper.readValue(result.getPayload(),BarPojo.class);
 		assertThat(barPojo.getBarMessage()).isEqualTo("helloPojo");
 		context.close();

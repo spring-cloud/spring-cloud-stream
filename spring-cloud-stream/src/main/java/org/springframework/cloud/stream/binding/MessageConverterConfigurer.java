@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -39,14 +41,15 @@ import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.AbstractMessageConverter;
-import org.springframework.messaging.converter.MessageConversionException;
+import org.springframework.messaging.converter.DefaultContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.ErrorMessage;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -61,6 +64,7 @@ import org.springframework.util.StringUtils;
  * @author Maxim Kirilov
  * @author Gary Russell
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 public class MessageConverterConfigurer
 		implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
@@ -114,7 +118,7 @@ public class MessageConverterConfigurer
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
 		final BindingProperties bindingProperties = this.bindingServiceProperties
 				.getBindingProperties(channelName);
-		final String contentType = bindingProperties.getContentType();
+		String contentType = bindingProperties.getContentType();
 		ProducerProperties producerProperties = bindingProperties.getProducer();
 		if (!input && producerProperties != null && producerProperties.isPartitioned()) {
 			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,
@@ -122,7 +126,7 @@ public class MessageConverterConfigurer
 					getPartitionSelectorStrategy(producerProperties)));
 		}
 		if (input) {
-			messageChannel.addInterceptor(new LegacyContentTypeHeaderInterceptor());
+			messageChannel.addInterceptor(new InboundMessageConvertingInterceptor());
 		}
 		// TODO: Set all interceptors in the correct order for input/output channels
 		if (StringUtils.hasText(contentType)) {
@@ -194,7 +198,6 @@ public class MessageConverterConfigurer
 			}
 			return Math.abs(hashCode);
 		}
-
 	}
 
 	private final class ContentTypeConvertingInterceptor
@@ -206,15 +209,12 @@ public class MessageConverterConfigurer
 
 		private final MessageConverter messageConverter;
 
-		private final boolean provideHint;
-
 		private ContentTypeConvertingInterceptor(String contentType, boolean input) {
 			this.mimeType = MessageConverterUtils.getMimeType(contentType);
 			this.input = input;
 
 			this.messageConverter = MessageConverterConfigurer.this.compositeMessageConverterFactory
 					.getMessageConverterForAllRegistered();
-			this.provideHint = this.messageConverter instanceof AbstractMessageConverter;
 		}
 
 		@Override
@@ -224,7 +224,7 @@ public class MessageConverterConfigurer
 				return message;
 			}
 
-			Message<?> sentMessage = null;
+			Message<?> sentMessage = message;
 			Object converted;
 			// bypass conversion for raw bytes or input channels
 			if (this.input || message.getPayload() instanceof byte[]) {
@@ -253,14 +253,6 @@ public class MessageConverterConfigurer
 							.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType)
 							.build();
 				}
-			}
-			if (sentMessage == null) {
-				throw new MessageConversionException(message,
-						this.messageConverter.getClass().toString()
-								+ " could not convert '" + message
-								+ "' to the configured output type: '" + this.mimeType
-								+ "'");
-
 			}
 			return sentMessage;
 		}
@@ -302,20 +294,77 @@ public class MessageConverterConfigurer
 		}
 	}
 
-	private final class LegacyContentTypeHeaderInterceptor extends ChannelInterceptorAdapter {
+	public final static class InboundMessageConvertingInterceptor extends ChannelInterceptorAdapter {
+
+		private final DefaultContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
+		private final CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory();
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			if (!message.getHeaders().containsKey(BinderHeaders.SCST_VERSION) ||
-					!message.getHeaders().get(BinderHeaders.SCST_VERSION).equals("2.x")) {
-				Object originalContentType = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-				return originalContentType != null ? MessageConverterConfigurer.this.messageBuilderFactory
-						.fromMessage(message)
-						.setHeader(MessageHeaders.CONTENT_TYPE, originalContentType).build() : message;
+			Class<?> targetClass = null;
+			MessageConverter converter = null;
+			MimeType contentType = message.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+						? MimeType.valueOf((String)message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE))
+								: contentTypeResolver.resolve(message.getHeaders());
+
+			if (contentType != null){
+				if (equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType) ||
+						equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType)) {
+					// for Java and Kryo de-serialization we need to reset the content type
+					message = MessageBuilder.fromMessage(message).setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
+					converter = equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType)
+							? converterFactory.getMessageConverterForType(contentType)
+									: converterFactory.getMessageConverterForAllRegistered();
+					String targetClassName = contentType.getParameter("type");
+					if (StringUtils.hasText(targetClassName)) {
+						try {
+							targetClass = Class.forName(targetClassName, false, Thread.currentThread().getContextClassLoader());
+						}
+						catch (Exception e) {
+							throw new IllegalStateException("Failed to determine class name for contentType: "
+									+ message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE), e);
+						}
+					}
+				}
 			}
+
+			Object payload;
+			if (converter != null){
+				Assert.isTrue(!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType) && targetClass == null),
+						"Can not deserialize into message since 'contentType` has not "
+							+ "being encoded with the actual target type."
+							+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
+				payload = converter.fromMessage(message, targetClass);
+			}
+			else {
+				MimeType deserializeContentType = contentTypeResolver.resolve(message.getHeaders());
+				if (deserializeContentType == null) {
+					deserializeContentType = contentType;
+				}
+				payload = deserializeContentType == null ? message.getPayload() : this.deserializePayload(message.getPayload(), deserializeContentType);
+			}
+			message = MessageBuilder.withPayload(payload)
+					.copyHeaders(message.getHeaders())
+					.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
+					.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+					.build();
 			return message;
 		}
 
+		private Object deserializePayload(Object payload, MimeType contentType) {
+			if (payload instanceof byte[] && ("text".equalsIgnoreCase(contentType.getType()) ||
+					equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentType))) {
+				payload = new String((byte[])payload, StandardCharsets.UTF_8);
+			}
+			return payload;
+		}
+	}
+
+	/*
+	 * Candidate to go into some utils class
+	 */
+	private static boolean equalTypeAndSubType(MimeType m1, MimeType m2) {
+		return m1 != null && m2 != null && m1.getType().equalsIgnoreCase(m2.getType()) && m1.getSubtype().equalsIgnoreCase(m2.getSubtype());
 	}
 
 }

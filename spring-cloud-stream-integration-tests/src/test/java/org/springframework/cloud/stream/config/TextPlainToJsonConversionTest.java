@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  * @since 1.2
  */
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -57,10 +58,11 @@ public class TextPlainToJsonConversionTest {
 
 	private ObjectMapper mapper = new ObjectMapper();
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testNoContentTypeToJsonConversionOnInput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").build());
-		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		Foo foo = mapper.readValue(received.getPayload(),Foo.class);
@@ -75,10 +77,6 @@ public class TextPlainToJsonConversionTest {
 	public void testTextPlainToJsonConversionOnInput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-		assertThat(received).isNotNull();
-		assertThat(((Foo) received.getPayload()).getName()).isEqualTo("transformed-Bar");
 	}
 
 	@EnableBinding(Processor.class)
