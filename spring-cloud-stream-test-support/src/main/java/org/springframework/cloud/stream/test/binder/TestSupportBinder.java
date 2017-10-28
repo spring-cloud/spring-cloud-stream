@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.test.matcher.MessageQueueMatcher;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -47,6 +49,7 @@ import org.springframework.util.Assert;
  * @author Eric Bottard
  * @author Gary Russell
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  * @see MessageQueueMatcher
  */
 public class TestSupportBinder implements Binder<MessageChannel, ConsumerProperties, ProducerProperties> {
@@ -97,6 +100,8 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 		private final Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
 
 		private BlockingQueue<Message<?>> register(MessageChannel channel) {
+			// we need to add this intercepter to ensure MessageCollector's compatibility with previous versions of SCSt
+			((AbstractMessageChannel)channel).addInterceptor(new MessageConverterConfigurer.LegacyContentTypeHeaderInterceptor());
 			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
 			Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
 			results.put(channel, result);

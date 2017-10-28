@@ -23,10 +23,13 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.MessageSerializationUtils;
+import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.StringConvertingContentTypeResolver;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -39,11 +42,11 @@ import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.ErrorMessage;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
@@ -61,6 +64,7 @@ import org.springframework.util.StringUtils;
  * @author Maxim Kirilov
  * @author Gary Russell
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 public class MessageConverterConfigurer
 		implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
@@ -206,15 +210,12 @@ public class MessageConverterConfigurer
 
 		private final MessageConverter messageConverter;
 
-		private final boolean provideHint;
-
 		private ContentTypeConvertingInterceptor(String contentType, boolean input) {
 			this.mimeType = MessageConverterUtils.getMimeType(contentType);
 			this.input = input;
 
 			this.messageConverter = MessageConverterConfigurer.this.compositeMessageConverterFactory
 					.getMessageConverterForAllRegistered();
-			this.provideHint = this.messageConverter instanceof AbstractMessageConverter;
 		}
 
 		@Override
@@ -302,20 +303,16 @@ public class MessageConverterConfigurer
 		}
 	}
 
-	private final class LegacyContentTypeHeaderInterceptor extends ChannelInterceptorAdapter {
+	public final static class LegacyContentTypeHeaderInterceptor extends ChannelInterceptorAdapter {
+
+		protected final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			if (!message.getHeaders().containsKey(BinderHeaders.SCST_VERSION) ||
-					!message.getHeaders().get(BinderHeaders.SCST_VERSION).equals("2.x")) {
-				Object originalContentType = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-				return originalContentType != null ? MessageConverterConfigurer.this.messageBuilderFactory
-						.fromMessage(message)
-						.setHeader(MessageHeaders.CONTENT_TYPE, originalContentType).build() : message;
-			}
+			MessageValues newMessageValues = MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver);
+			message = MessageBuilder.withPayload(newMessageValues.getPayload()).copyHeaders(newMessageValues.getHeaders()).build();
 			return message;
 		}
-
 	}
 
 }

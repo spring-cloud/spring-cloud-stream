@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package org.springframework.cloud.stream.binder;
 
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,8 +39,11 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.PollableChannel;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author David Turanski
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 @SuppressWarnings("unchecked")
 public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> {
@@ -87,6 +94,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	}
 
 	@Test
+	@SuppressWarnings("rawtypes")
 	public void testClean() throws Exception {
 		Binder binder = getBinder();
 		Binding<MessageChannel> foo0ProducerBinding = binder.bindProducer("foo.0",
@@ -121,36 +129,52 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				.isRunning()).isFalse();
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testSendAndReceive() throws Exception {
 		Binder binder = getBinder();
-		BindingProperties outputBindingProperties = createProducerBindingProperties(
-				createProducerProperties());
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				outputBindingProperties);
-		QueueChannel moduleInputChannel = new QueueChannel();
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0",
-				moduleOutputChannel, outputBindingProperties.getProducer());
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0",
-				"testSendAndReceive", moduleInputChannel, createConsumerProperties());
-		// Bypass conversion we are only testing sendReceive
-		Message<?> message = MessageBuilder.withPayload("foo".getBytes())
-				.setHeader(MessageHeaders.CONTENT_TYPE,
-						MimeTypeUtils.APPLICATION_OCTET_STREAM)
+		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output", outputBindingProperties);
+
+		BindingProperties inputBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", inputBindingProperties);
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel,
+				outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "testSendAndReceive", moduleInputChannel,
+				createConsumerProperties());
+		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
 				.build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
+
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<Message<String>> inboundMessageRef = new AtomicReference<Message<String>>();
+		moduleInputChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				try {
+					inboundMessageRef.set((Message<String>) message);
+				}
+				finally {
+					latch.countDown();
+				}
+			}
+		});
+
 		moduleOutputChannel.send(message);
-		Message<?> inbound = receive(moduleInputChannel);
-		assertThat(inbound).isNotNull();
-		assertThat(inbound.getPayload()).isEqualTo("foo".getBytes());
-		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE))
-				.isEqualTo(MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE);
+		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
+
+		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo");
+		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("foo/bar");
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
 
 	@Test
+	@SuppressWarnings("rawtypes")
 	public void testSendAndReceiveMultipleTopics() throws Exception {
 		Binder binder = getBinder();
 
@@ -206,6 +230,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	}
 
 	@Test
+	@SuppressWarnings("rawtypes")
 	public void testSendAndReceiveNoOriginalContentType() throws Exception {
 		Binder binder = getBinder();
 
@@ -254,6 +279,12 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	protected DirectChannel createBindableChannel(String channelName,
 			BindingProperties bindingProperties) throws Exception {
+		// The 'channelName.contains("input")' is strictly for convenience to avoid modifications in multiple tests
+		return this.createBindableChannel(channelName, bindingProperties, channelName.contains("input"));
+	}
+
+	protected DirectChannel createBindableChannel(String channelName,
+			BindingProperties bindingProperties, boolean inputChannel) throws Exception {
 		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
 		bindingServiceProperties.getBindings().put(channelName, bindingProperties);
 		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
@@ -268,7 +299,12 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				new CompositeMessageConverterFactory(null, null));
 		messageConverterConfigurer.setBeanFactory(applicationContext.getBeanFactory());
 		messageConverterConfigurer.afterPropertiesSet();
-		messageConverterConfigurer.configureOutputChannel(channel, channelName);
+		if (inputChannel){
+			messageConverterConfigurer.configureInputChannel(channel, channelName);
+		}
+		else {
+			messageConverterConfigurer.configureOutputChannel(channel, channelName);
+		}
 		return channel;
 	}
 
