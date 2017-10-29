@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
+@SuppressWarnings("unchecked")
 public class ContentTypeTests {
 
 	private ObjectMapper mapper = new ObjectMapper();
@@ -71,7 +73,7 @@ public class ContentTypeTests {
 			Source source = context.getBean(Source.class);
 			User user = new User("Alice");
 			source.output().send(MessageBuilder.withPayload(user).build());
-			Message<byte[]> message = (Message<byte[]>) collector
+			Message<String> message = (Message<String>) collector
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
 			User received = mapper.readValue(message.getPayload(), User.class);
 			assertThat(
@@ -91,12 +93,12 @@ public class ContentTypeTests {
 			User user = new User("Alice");
 			String json = mapper.writeValueAsString(user);
 			source.output().send(MessageBuilder.withPayload(user).build());
-			Message<byte[]> message = (Message<byte[]>) collector
+			Message<String> message = (Message<String>) collector
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
 			assertThat(
 					message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 							.includes(MimeTypeUtils.APPLICATION_JSON));
-			assertThat(json.getBytes()).isEqualTo(message.getPayload());
+			assertThat(json).isEqualTo(message.getPayload());
 		}
 	}
 
@@ -108,17 +110,17 @@ public class ContentTypeTests {
 			MessageCollector collector = context.getBean(MessageCollector.class);
 			Source source = context.getBean(Source.class);
 			source.output().send(MessageBuilder.withPayload("foo").build());
-			Message<byte[]> message = (Message<byte[]>) collector
+			Message<String> message = (Message<String>) collector
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
 			assertThat(
 					message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 							.includes(MimeTypeUtils.APPLICATION_JSON));
-			assertThat("\"foo\"".getBytes()).isEqualTo(message.getPayload());
+			assertThat("\"foo\"").isEqualTo(message.getPayload());
 		}
 	}
 
 	@Test
-	public void testSendBynaryDataWithoutContentType() throws Exception {
+	public void testSendBynaryData() throws Exception {
 		try (ConfigurableApplicationContext context = SpringApplication.run(
 				SourceApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false")) {
@@ -126,7 +128,7 @@ public class ContentTypeTests {
 			MessageCollector collector = context.getBean(MessageCollector.class);
 			Source source = context.getBean(Source.class);
 			byte[] data = new byte[] { 0, 1, 2, 3 };
-			source.output().send(MessageBuilder.withPayload(data).build());
+			source.output().send(MessageBuilder.withPayload(data).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_OCTET_STREAM).build());
 			Message<byte[]> message = (Message<byte[]>) collector
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
 			assertThat(
@@ -188,7 +190,7 @@ public class ContentTypeTests {
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
 			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 					.includes(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT));
-			ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) (message.getPayload()));
+			ByteArrayInputStream bis = new ByteArrayInputStream((message.getPayload()));
 			User received = (User) new ObjectInputStream(bis).readObject();
 			assertThat(user.getName()).isEqualTo(received.getName());
 		}
@@ -227,11 +229,11 @@ public class ContentTypeTests {
 			Source source = context.getBean(Source.class);
 			User user = new User("Alice");
 			source.output().send(MessageBuilder.withPayload(user).build());
-			Message<byte[]> message = (Message<byte[]>) collector
+			Message<String> message = (Message<String>) collector
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
 			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 					.includes(MimeTypeUtils.TEXT_PLAIN));
-			assertThat(message.getPayload()).isEqualTo(user.toString().getBytes());
+			assertThat(message.getPayload()).isEqualTo(user.toString());
 		}
 	}
 
@@ -374,7 +376,7 @@ public class ContentTypeTests {
 	@SpringBootApplication
 	public static class SinkApplication {
 
-		public LinkedList arguments = new LinkedList();
+		public LinkedList<? super Object> arguments = new LinkedList<>();
 
 		@StreamListener("POJO_INPUT")
 		public void receive(User user, @Headers Map<String, Object> headers){
@@ -414,6 +416,7 @@ public class ContentTypeTests {
 
 	}
 
+	@SuppressWarnings("serial")
 	public static class User implements Serializable {
 
 		private String name;

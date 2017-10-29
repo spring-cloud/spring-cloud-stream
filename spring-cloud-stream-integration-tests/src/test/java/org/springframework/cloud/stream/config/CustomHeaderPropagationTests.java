@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CustomHeaderPropagationTests.HeaderPropagationProcessor.class,
@@ -65,13 +66,13 @@ public class CustomHeaderPropagationTests {
 				.setHeader("bar", "barValue")
 				.build());
 		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(10, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		assertThat(received.getHeaders()).containsEntry("foo", "fooValue");
 		assertThat(received.getHeaders()).doesNotContainKey("bar");
 		assertThat(received.getHeaders()).containsKeys(MessageHeaders.CONTENT_TYPE);
-		assertThat(new String((byte[])received.getPayload())).isEqualTo("{'name':'foo'}");
+		assertThat(new String(received.getPayload())).isEqualTo("{'name':'foo'}");
 	}
 
 	@EnableBinding(Processor.class)

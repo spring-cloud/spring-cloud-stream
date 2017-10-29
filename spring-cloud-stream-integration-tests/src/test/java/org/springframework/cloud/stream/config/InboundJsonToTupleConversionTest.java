@@ -41,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = InboundJsonToTupleConversionTest.FooProcessor.class)
@@ -57,11 +58,11 @@ public class InboundJsonToTupleConversionTest {
 		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
 				.build());
 		@SuppressWarnings("unchecked")
-		Message<?> received = ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 
-		assertThat(TupleBuilder.fromString(new String((byte[])received.getPayload()))).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
+		assertThat(TupleBuilder.fromString(new String(received.getPayload()))).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
 	}
 
 	@EnableBinding(Processor.class)

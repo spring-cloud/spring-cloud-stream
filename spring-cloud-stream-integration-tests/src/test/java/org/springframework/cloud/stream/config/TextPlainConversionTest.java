@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  *
  * @since 1.2
  */
@@ -56,30 +57,30 @@ public class TextPlainConversionTest {
 	public void testTextPlainConversionOnOutput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload("Bar").build());
 		@SuppressWarnings("unchecked")
-		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(new String(received.getPayload())).isEqualTo("Foo{name='Bar'}");
+		assertThat(received.getPayload()).isEqualTo("Foo{name='Bar'}");
 	}
 
 	@Test
 	public void testByteArrayConversionOnOutput() throws Exception {
 		testProcessor.output().send(MessageBuilder.withPayload("Bar".getBytes()).build());
 		@SuppressWarnings("unchecked")
-		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<String> received = (Message<String>)((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(new String(received.getPayload())).isEqualTo("Bar");
+		assertThat(received.getPayload()).isEqualTo("Bar");
 	}
 
 	@Test
 	public void testTextPlainConversionOnInputAndOutput() throws Exception {
 		testProcessor.input().send(MessageBuilder.withPayload(new Foo("Bar")).build());
 		@SuppressWarnings("unchecked")
-		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(new String(received.getPayload())).isEqualTo("Foo{name='Foo{name='Bar'}'}");
+		assertThat(received.getPayload()).isEqualTo("Foo{name='Foo{name='Bar'}'}");
 	}
 
 	@EnableBinding(Processor.class)

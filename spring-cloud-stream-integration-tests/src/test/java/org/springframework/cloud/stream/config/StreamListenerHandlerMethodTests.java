@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -65,6 +64,7 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 public class StreamListenerHandlerMethodTests {
 
@@ -80,6 +80,7 @@ public class StreamListenerHandlerMethodTests {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testMethodWithObjectAsMethodArgument() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithObjectAsMethodArgument.class,
@@ -91,12 +92,13 @@ public class StreamListenerHandlerMethodTests {
 		final String testMessage = "testing";
 		processor.input().send(MessageBuilder.withPayload(testMessage).build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(new String(result.getPayload())).isEqualTo(testMessage.toUpperCase());
+		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
 		context.close();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	/**
 	 * @since 2.0 : This test is an example of the new behavior of 2.0 when it comes to contentType handling.
@@ -115,13 +117,14 @@ public class StreamListenerHandlerMethodTests {
 				.setHeader("foo", "bar")
 				.build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(new String(result.getPayload())).isEqualTo(testMessage.toUpperCase());
+		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
 		assertThat(result.getHeaders().get("foo")).isEqualTo("bar");
 		context.close();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testMethodHeadersNotPropagatged() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(TestMethodHeadersNotPropagated.class,
@@ -135,15 +138,16 @@ public class StreamListenerHandlerMethodTests {
 				.setHeader("foo", "bar")
 				.build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		assertThat(new String(result.getPayload())).isEqualTo(testMessage.toUpperCase());
+		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
 		assertThat(result.getHeaders().get("foo")).isNull();
 		context.close();
 	}
 
 
 	//TODO: Handle dynamic destinations and contentType
+	@SuppressWarnings("unchecked")
 	public void testStreamListenerMethodWithTargetBeanFromOutside() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
 				.run(TestStreamListenerMethodWithTargetBeanFromOutside.class, "--server.port=0",
@@ -156,10 +160,10 @@ public class StreamListenerHandlerMethodTests {
 		DirectChannel directChannel = (DirectChannel) context.getBean(testMessageToSend.toUpperCase(),
 				MessageChannel.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<byte[]> result = (Message<byte[]>) messageCollector.forChannel(directChannel).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector.forChannel(directChannel).poll(1000, TimeUnit.MILLISECONDS);
 		sink.input().send(MessageBuilder.withPayload(testMessageToSend).build());
 		assertThat(result).isNotNull();
-		assertThat(new String(result.getPayload())).isEqualTo(testMessageToSend.toUpperCase());
+		assertThat(result.getPayload()).isEqualTo(testMessageToSend.toUpperCase());
 		context.close();
 	}
 
@@ -306,12 +310,11 @@ public class StreamListenerHandlerMethodTests {
 		Processor processor = context.getBean(Processor.class);
 		StreamListenerTestUtils.FooInboundChannel1 inboundChannel2 = context
 				.getBean(StreamListenerTestUtils.FooInboundChannel1.class);
-		String id = UUID.randomUUID().toString();
 		final CountDownLatch latch = new CountDownLatch(2);
 		((SubscribableChannel) processor.output()).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				Assert.isTrue(message.getPayload().equals("footesting") || message.getPayload().equals("BARTESTING"));
+				Assert.isTrue(message.getPayload().equals("footesting") || message.getPayload().equals("BARTESTING"), "Assert failed");
 				latch.countDown();
 			}
 		});
@@ -329,23 +332,22 @@ public class StreamListenerHandlerMethodTests {
 				"--server.port=0",
 				"--spring.jmx.enabled=false");
 		Processor processor = context.getBean(Processor.class);
-		String id = UUID.randomUUID().toString();
 		StreamListenerTestUtils.FooOutboundChannel1 source2 = context
 				.getBean(StreamListenerTestUtils.FooOutboundChannel1.class);
 		final CountDownLatch latch = new CountDownLatch(2);
 		((SubscribableChannel) processor.output()).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				Assert.isTrue(message.getPayload().equals("testing"));
-				Assert.isTrue(message.getHeaders().get("output").equals("output2"));
+				Assert.isTrue(message.getPayload().equals("testing"), "Assert failed");
+				Assert.isTrue(message.getHeaders().get("output").equals("output2"), "Assert failed");
 				latch.countDown();
 			}
 		});
 		((SubscribableChannel) source2.output()).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				Assert.isTrue(message.getPayload().equals("TESTING"));
-				Assert.isTrue(message.getHeaders().get("output").equals("output1"));
+				Assert.isTrue(message.getPayload().equals("TESTING"), "Assert failed");
+				Assert.isTrue(message.getHeaders().get("output").equals("output1"), "Assert failed");
 				latch.countDown();
 			}
 		});

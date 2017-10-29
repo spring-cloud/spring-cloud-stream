@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  *
  */
 @RunWith(StreamListenerMethodReturnWithConversionTests.class)
@@ -75,7 +76,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 		}
 
 		@Parameterized.Parameters
-		public static Collection InputConfigs() {
+		public static Collection<?> InputConfigs() {
 			return Arrays.asList(new Class[] { TestPojoWithMimeType1.class, TestPojoWithMimeType2.class });
 		}
 
@@ -92,7 +93,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 			Assertions.assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
 			Assertions.assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
-			Message<byte[]> message = (Message<byte[]>) collector.forChannel(processor.output()).poll(1,
+			Message<String> message = (Message<String>) collector.forChannel(processor.output()).poll(1,
 					TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
 			assertThat(new String(message.getPayload())).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
@@ -114,7 +115,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 		}
 
 		@Parameterized.Parameters
-		public static Collection InputConfigs() {
+		public static Collection<?> InputConfigs() {
 			return Arrays.asList(new Class[] { TestPojoWithMimeType1.class, TestPojoWithMimeType2.class });
 		}
 
@@ -130,7 +131,7 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 			TestPojoWithMimeType testPojoWithMimeType = context.getBean(TestPojoWithMimeType.class);
 			Assertions.assertThat(testPojoWithMimeType.receivedPojos).hasSize(1);
 			Assertions.assertThat(testPojoWithMimeType.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
-			Message<byte[]> message = (Message<byte[]>) collector
+			Message<String> message = (Message<String>) collector
 					.forChannel(processor.output()).poll(1,
 							TimeUnit.SECONDS);
 			assertThat(message).isNotNull();
