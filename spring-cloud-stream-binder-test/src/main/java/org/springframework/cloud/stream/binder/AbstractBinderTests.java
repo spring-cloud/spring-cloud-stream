@@ -238,7 +238,8 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				createProducerProperties());
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				producerBindingProperties);
-		QueueChannel moduleInputChannel = new QueueChannel();
+		BindingProperties inputBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", inputBindingProperties);
 		Binding<MessageChannel> producerBinding = binder.bindProducer("bar.0",
 				moduleOutputChannel, producerBindingProperties.getProducer());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bar.0",
@@ -249,10 +250,26 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Message<?> message = MessageBuilder.withPayload("foo")
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 		moduleOutputChannel.send(message);
-		Message<?> inbound = receive(moduleInputChannel);
-		assertThat(inbound).isNotNull();
-		assertThat(inbound.getPayload()).isEqualTo("foo".getBytes());
-		assertThat(inbound.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
+		moduleInputChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				try {
+					inboundMessageRef.set((Message<byte[]>) message);
+				}
+				finally {
+					latch.countDown();
+				}
+			}
+		});
+
+		moduleOutputChannel.send(message);
+		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
+		assertThat(inboundMessageRef.get()).isNotNull();
+		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo".getBytes());
+		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
 				.isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
 		producerBinding.unbind();
 		consumerBinding.unbind();

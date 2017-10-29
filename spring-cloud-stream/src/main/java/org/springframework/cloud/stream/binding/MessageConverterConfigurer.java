@@ -42,7 +42,6 @@ import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.ErrorMessage;
@@ -50,7 +49,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -119,7 +117,7 @@ public class MessageConverterConfigurer
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
 		final BindingProperties bindingProperties = this.bindingServiceProperties
 				.getBindingProperties(channelName);
-		//final String contentType = StringUtils.hasText(bindingProperties.getContentType()) ? bindingProperties.getContentType() : MimeTypeUtils.APPLICATION_JSON_VALUE;
+		String contentType = bindingProperties.getContentType();
 		ProducerProperties producerProperties = bindingProperties.getProducer();
 		if (!input && producerProperties != null && producerProperties.isPartitioned()) {
 			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,
@@ -130,11 +128,10 @@ public class MessageConverterConfigurer
 			messageChannel.addInterceptor(new LegacyContentTypeHeaderInterceptor());
 		}
 		// TODO: Set all interceptors in the correct order for input/output channels
-		//if (StringUtils.hasText(contentType)) {
-		String contentType = StringUtils.hasText(bindingProperties.getContentType()) ? bindingProperties.getContentType() : MimeTypeUtils.APPLICATION_JSON_VALUE;
-		messageChannel.addInterceptor(
-				new ContentTypeConvertingInterceptor(contentType, input));
-		//}
+		if (StringUtils.hasText(contentType)) {
+			messageChannel.addInterceptor(
+					new ContentTypeConvertingInterceptor(contentType, input));
+		}
 	}
 
 	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(
@@ -227,7 +224,7 @@ public class MessageConverterConfigurer
 				return message;
 			}
 
-			Message<?> sentMessage = null;
+			Message<?> sentMessage = message;
 			Object converted;
 			// bypass conversion for raw bytes or input channels
 			if (this.input || message.getPayload() instanceof byte[]) {
@@ -256,14 +253,6 @@ public class MessageConverterConfigurer
 							.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType)
 							.build();
 				}
-			}
-			if (sentMessage == null) {
-				throw new MessageConversionException(message,
-						this.messageConverter.getClass().toString()
-								+ " could not convert '" + message
-								+ "' to the configured output type: '" + this.mimeType
-								+ "'");
-
 			}
 			return sentMessage;
 		}
