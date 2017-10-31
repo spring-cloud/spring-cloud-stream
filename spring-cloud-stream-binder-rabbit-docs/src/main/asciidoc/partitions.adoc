@@ -1,6 +1,6 @@
 == Partitioning with the RabbitMQ Binder
 
-RabbitMQ does support partitioning natively.
+RabbitMQ does not support partitioning natively.
 
 Sometimes it is advantageous to send data to specific partitions, for example when you want to strictly order message processing - all messages for a particular customer should go to the same partition.
 
