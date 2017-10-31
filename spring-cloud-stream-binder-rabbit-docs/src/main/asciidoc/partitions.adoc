@@ -8,6 +8,7 @@ The `RabbitMessageChannelBinder` provides partitioning by binding a queue for ea
 
 The following illustrates how to configure the producer and consumer side:
 
+.Producer
 [source, java]
 ----
 @SpringBootApplication
@@ -67,10 +68,19 @@ The `required-groups` property is only required if you need the consumer queues 
 Otherwise, any messages sent to a partition will be lost until the corresponding consumer is deployed.
 ====
 
-IMPORTANT: The `RabbitMessageChannelBinder` does not support dynamic scaling; there must be at least one consumer per partition.
-The consumer's `instanceIndex` is used to indicate which partition will be consumed.
-On platforms such as Cloud Foundry there can only be one instance with an `instanceIndex`.
+This configuration provisions a topic exchange:
 
+image::part-exchange.png[scaledwidth="50%"]
+
+and these queues bound to that exchange:
+
+image::part-queues.png[scaledwidth="50%"]
+
+with these bindings:
+
+image::part-bindings.png[scaledwidth="50%"]
+
+.Consumer
 [source, java]
 ----
 @SpringBootApplication
@@ -105,3 +115,7 @@ public class RabbitPartitionConsumerApplication {
                 partitioned: true
                 instance-index: 0
 ----
+
+IMPORTANT: The `RabbitMessageChannelBinder` does not support dynamic scaling; there must be at least one consumer per partition.
+The consumer's `instanceIndex` is used to indicate which partition will be consumed.
+On platforms such as Cloud Foundry there can only be one instance with an `instanceIndex`.
