@@ -27,6 +27,7 @@ include::overview.adoc[]
 
 include::dlq.adoc[]
 
+include::partitions.adoc[]
 
 = Appendices
 [appendix]

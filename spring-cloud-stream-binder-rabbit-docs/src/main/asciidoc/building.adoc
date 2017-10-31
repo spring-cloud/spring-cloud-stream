@@ -8,8 +8,9 @@
 To build the source you will need to install JDK {jdkversion}.
 
 The build uses the Maven wrapper so you don't have to install a specific
-version of Maven. To enable the tests, you should have Kafka server 0.9 or above running
-before building. See below for more information on running the servers.
+version of Maven. To enable the tests, you should have RabbitMQ server running
+on localhost and the default port (5672)
+before building.
 
 The main build command is
 

@@ -1,0 +1,107 @@
+== Partitioning with the RabbitMQ Binder
+
+RabbitMQ does support partitioning natively.
+
+Sometimes it is advantageous to send data to specific partitions, for example when you want to strictly order message processing - all messages for a particular customer should go to the same partition.
+
+The `RabbitMessageChannelBinder` provides partitioning by binding a queue for each partition to the destination exchange.
+
+The following illustrates how to configure the producer and consumer side:
+
+[source, java]
+----
+@SpringBootApplication
+@EnableBinding(Source.class)
+public class RabbitPartitionProducerApplication {
+
+    private static final Random RANDOM = new Random(System.currentTimeMillis());
+
+    private static final String[] data = new String[] {
+            "foo1", "bar1", "qux1",
+            "foo2", "bar2", "qux2",
+            "foo3", "bar3", "qux3",
+            "foo4", "bar4", "qux4",
+            };
+
+    public static void main(String[] args) {
+        new SpringApplicationBuilder(RabbitPartitionProducerApplication.class)
+            .web(false)
+            .run(args);
+    }
+
+    @InboundChannelAdapter(channel = Source.OUTPUT, poller = @Poller(fixedRate = "5000"))
+    public Message<?> generate() {
+        String value = data[RANDOM.nextInt(data.length)];
+        System.out.println("Sending: " + value);
+        return MessageBuilder.withPayload(value)
+                .setHeader("partitionKey", value)
+                .build();
+    }
+
+}
+----
+
+.application.yml
+[source, yaml]
+----
+    spring:
+      cloud:
+        stream:
+          bindings:
+            output:
+              destination: partitioned.destination
+              producer:
+                partitioned: true
+                partition-key-expression: headers['partitionKey']
+                partition-count: 2
+                required-groups:
+                - myGroup
+----
+
+[NOTE]
+====
+The above configuration uses the default partitioning (`key.hashCode() % partitionCount`).
+This may or may not provide a suitably balanced algorithm, depending on the key values; you can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
+
+The `required-groups` property is only required if you need the consumer queues to be provisioned when the producer is deployed.
+Otherwise, any messages sent to a partition will be lost until the corresponding consumer is deployed.
+====
+
+IMPORTANT: The `RabbitMessageChannelBinder` does not support dynamic scaling; there must be at least one consumer per partition.
+The consumer's `instanceIndex` is used to indicate which partition will be consumed.
+On platforms such as Cloud Foundry there can only be one instance with an `instanceIndex`.
+
+[source, java]
+----
+@SpringBootApplication
+@EnableBinding(Sink.class)
+public class RabbitPartitionConsumerApplication {
+
+    public static void main(String[] args) {
+        new SpringApplicationBuilder(RabbitPartitionConsumerApplication.class)
+            .web(false)
+            .run(args);
+    }
+
+    @StreamListener(Sink.INPUT)
+    public void listen(@Payload String in, @Header(AmqpHeaders.CONSUMER_QUEUE) String queue) {
+        System.out.println(in + " received from queue " + queue);
+    }
+
+}
+----
+
+.application.yml
+[source, yaml]
+----
+    spring:
+      cloud:
+        stream:
+          bindings:
+            input:
+              destination: partitioned.destination
+              group: myGroup
+              consumer:
+                partitioned: true
+                instance-index: 0
+----
