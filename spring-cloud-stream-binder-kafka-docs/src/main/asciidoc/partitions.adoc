@@ -2,7 +2,7 @@
 
 Apache Kafka supports topic partitioning natively.
 
-Sometimes it is advantageous to send data to specific partitions, for example when you want to strictly order message processing - all messsages for a particular customer should go to the same partition.
+Sometimes it is advantageous to send data to specific partitions, for example when you want to strictly order message processing - all messages for a particular customer should go to the same partition.
 
 The following illustrates how to configure the producer and consumer side:
 
