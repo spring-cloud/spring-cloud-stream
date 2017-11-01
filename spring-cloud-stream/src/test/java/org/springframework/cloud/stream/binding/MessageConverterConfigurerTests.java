@@ -120,7 +120,7 @@ public class MessageConverterConfigurerTests {
 		Message<?> received = in.receive(0);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo(foo);
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
 	}
 
 	public static class Foo {

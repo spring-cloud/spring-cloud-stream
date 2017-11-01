@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -23,13 +25,10 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.MessageSerializationUtils;
-import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.cloud.stream.binder.StringConvertingContentTypeResolver;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -42,6 +41,7 @@ import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.DefaultContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.ErrorMessage;
@@ -49,6 +49,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -125,7 +126,7 @@ public class MessageConverterConfigurer
 					getPartitionSelectorStrategy(producerProperties)));
 		}
 		if (input) {
-			messageChannel.addInterceptor(new LegacyContentTypeHeaderInterceptor());
+			messageChannel.addInterceptor(new InbondMessageConvertingInterceprtor());
 		}
 		// TODO: Set all interceptors in the correct order for input/output channels
 		if (StringUtils.hasText(contentType)) {
@@ -294,15 +295,77 @@ public class MessageConverterConfigurer
 		}
 	}
 
-	public final static class LegacyContentTypeHeaderInterceptor extends ChannelInterceptorAdapter {
+	public final static class InbondMessageConvertingInterceprtor extends ChannelInterceptorAdapter {
 
-		protected final StringConvertingContentTypeResolver contentTypeResolver = new StringConvertingContentTypeResolver();
+		private final DefaultContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
+		private final CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory();
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			MessageValues newMessageValues = MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver);
-			message = MessageBuilder.withPayload(newMessageValues.getPayload()).copyHeaders(newMessageValues.getHeaders()).build();
+			Class<?> targetClass = null;
+			MessageConverter converter = null;
+			MimeType contentType = message.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+						? MimeType.valueOf((String)message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE))
+								: contentTypeResolver.resolve(message.getHeaders());
+
+			if (contentType != null){
+				if (contentType.equals(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT) ||
+						(contentType.getType().equals(MessageConverterUtils.X_JAVA_OBJECT.getType())
+								&& contentType.getSubtype().equals(MessageConverterUtils.X_JAVA_OBJECT.getSubtype()))){
+					// for Java and Kryo de-serialization we need to reset the content type
+					message = MessageBuilder.fromMessage(message).setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
+					converter = contentType.equals(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT)
+							? converterFactory.getMessageConverterForType(contentType)
+									: converterFactory.getMessageConverterForAllRegistered();
+					String targetClassName = contentType.getParameter("type");
+					if (StringUtils.hasText(targetClassName)) {
+						try {
+							targetClass = Class.forName(targetClassName, false, Thread.currentThread().getContextClassLoader());
+						}
+						catch (Exception e) {
+							throw new IllegalStateException("Failed to determine class name for contentType: "
+									+ message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE), e);
+						}
+					}
+				}
+			}
+
+			if (converter != null){
+				if (contentType.equals(MessageConverterUtils.X_JAVA_OBJECT) && targetClass == null){
+					throw new IllegalStateException("Can not deserialize into message since 'contentType` has not "
+							+ "being encoded with the actual target type."
+							+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
+				}
+				Object payload = converter.fromMessage(message, targetClass);
+				contentType = targetClass == null ? MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT : MessageConverterUtils.X_JAVA_OBJECT;
+				message = MessageBuilder.withPayload(payload)
+						.copyHeaders(message.getHeaders())
+						.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
+						.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+						.build();
+			}
+			else {
+				contentType = contentType == null ? contentTypeResolver.resolve(message.getHeaders()) : contentType;
+				MimeType deserializeContentType = contentTypeResolver.resolve(message.getHeaders());
+				Object payload = this.deserializePayload(message.getPayload(), deserializeContentType != null ? deserializeContentType : contentType);
+				message = MessageBuilder.withPayload(payload)
+						.copyHeaders(message.getHeaders())
+						.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
+						.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+						.build();
+			}
 			return message;
+		}
+
+		private Object deserializePayload(Object payload, MimeType contentType) {
+			if (payload instanceof byte[]) {
+				if (contentType != null && !MimeTypeUtils.APPLICATION_OCTET_STREAM.equals(contentType)){
+					if ("text".equalsIgnoreCase(contentType.getType()) || MimeTypeUtils.APPLICATION_JSON.equals(contentType)) {
+						payload = new String((byte[])payload, StandardCharsets.UTF_8);
+					}
+				}
+			}
+			return payload;
 		}
 	}
 

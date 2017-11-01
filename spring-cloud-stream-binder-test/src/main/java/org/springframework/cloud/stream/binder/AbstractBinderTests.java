@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
+
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -25,11 +28,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.After;
 import org.junit.Test;
-
+import org.springframework.boot.SpringApplication;
+import org.springframework.cloud.binder.apps.Employee;
+import org.springframework.cloud.binder.apps.Station;
+import org.springframework.cloud.binder.apps.StreamListenerExpectingEmployee;
+import org.springframework.cloud.binder.apps.StreamListenerExpectingStation;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.binding.StreamListenerMessageHandler;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.GenericApplicationContext;
@@ -40,13 +49,12 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHandlingException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
@@ -168,7 +176,112 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo");
 		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("foo/bar");
+		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("foo/bar");
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	private class Foo {
+		private String name;
+
+		@SuppressWarnings("unused")
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testSendAndReceiveKryo() throws Exception {
+		Binder binder = getBinder();
+		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output", outputBindingProperties);
+
+		BindingProperties inputBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", inputBindingProperties);
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel,
+				outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "testSendAndReceiveKryo", moduleInputChannel,
+				createConsumerProperties());
+		Foo foo = new Foo();
+		foo.setName("Bill");
+		Message<?> message = MessageBuilder.withPayload(foo).setHeader(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_OBJECT)
+				.build();
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<Message<Foo>> inboundMessageRef = new AtomicReference<Message<Foo>>();
+		moduleInputChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				try {
+					inboundMessageRef.set((Message<Foo>) message);
+				}
+				finally {
+					latch.countDown();
+				}
+			}
+		});
+
+		moduleOutputChannel.send(message);
+		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
+
+		assertThat(inboundMessageRef.get().getPayload()).isInstanceOf(Foo.class);
+		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MessageConverterUtils.X_JAVA_OBJECT);
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testSendAndReceiveJavaSerialization() throws Exception {
+		Binder binder = getBinder();
+		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output", outputBindingProperties);
+
+		BindingProperties inputBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", inputBindingProperties);
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.0", moduleOutputChannel,
+				outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.0", "testSendAndReceiveJavaSerialization", moduleInputChannel,
+				createConsumerProperties());
+		SerializableFoo foo = new SerializableFoo();
+		Message<?> message = MessageBuilder.withPayload(foo).setHeader(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT)
+				.build();
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<Message<SerializableFoo>> inboundMessageRef = new AtomicReference<Message<SerializableFoo>>();
+		moduleInputChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				try {
+					inboundMessageRef.set((Message<SerializableFoo>) message);
+				}
+				finally {
+					latch.countDown();
+				}
+			}
+		});
+
+		moduleOutputChannel.send(message);
+		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
+
+		assertThat(inboundMessageRef.get().getPayload()).isInstanceOf(SerializableFoo.class);
+		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
+		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -251,13 +364,13 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 		moduleOutputChannel.send(message);
 		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
+		AtomicReference<Message<String>> inboundMessageRef = new AtomicReference<Message<String>>();
 		moduleInputChannel.subscribe(new MessageHandler() {
 
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				try {
-					inboundMessageRef.set((Message<byte[]>) message);
+					inboundMessageRef.set((Message<String>) message);
 				}
 				finally {
 					latch.countDown();
@@ -268,7 +381,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 		assertThat(inboundMessageRef.get()).isNotNull();
-		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo".getBytes());
+		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo");
 		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
 				.isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
 		producerBinding.unbind();
@@ -346,4 +459,122 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	 * to see messages sent after connection creation.
 	 */
 	public abstract Spy spyOn(final String name);
+
+
+	@SuppressWarnings("rawtypes")
+	//@Test
+	public void testStreamListenerDefaultContentType() throws Exception {
+		System.setProperty("enable-station", "true");
+
+		ConfigurableApplicationContext context = SpringApplication.run(StreamListenerExpectingStation.class, new String[]{});
+		context.getBeanFactory().registerSingleton(StreamListenerExpectingStation.replyChannelName, new QueueChannel());
+		StreamListenerMessageHandler streamListener = context.getBean(StreamListenerMessageHandler.class);
+		streamListener.setOutputChannelName(StreamListenerExpectingStation.replyChannelName);
+
+		Binder binder = getBinder();
+		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0", moduleOutputChannel,
+				createProducerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
+				createConsumerProperties());
+
+		Station station = new Station();
+		Message<?> message = MessageBuilder.withPayload(station).build();
+		moduleInputChannel.subscribe(streamListener);
+		moduleOutputChannel.send(message);
+
+		QueueChannel replyChannel = context.getBean(StreamListenerExpectingStation.replyChannelName, QueueChannel.class);
+
+		Message<?> replyMessage = replyChannel.receive(5000);
+		assertTrue(replyMessage.getPayload() instanceof Station);
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings("rawtypes")
+	//@Test
+	public void testStreamListenerKryo() throws Exception {
+		System.setProperty("enable-station", "true");
+		ConfigurableApplicationContext context = SpringApplication.run(StreamListenerExpectingStation.class, new String[]{});
+		context.getBeanFactory().registerSingleton(StreamListenerExpectingStation.replyChannelName, new QueueChannel());
+		StreamListenerMessageHandler streamListener = context.getBean(StreamListenerMessageHandler.class);
+		streamListener.setOutputChannelName(StreamListenerExpectingStation.replyChannelName);
+
+		Binder binder = getBinder();
+		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0", moduleOutputChannel,
+				createProducerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
+				createConsumerProperties());
+
+		Station station = new Station();
+		Message<?> message = MessageBuilder.withPayload(station).setHeader(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_OBJECT).build();
+		moduleInputChannel.subscribe(streamListener);
+		moduleOutputChannel.send(message);
+
+		QueueChannel replyChannel = context.getBean(StreamListenerExpectingStation.replyChannelName, QueueChannel.class);
+
+		Message<?> replyMessage = replyChannel.receive(5000);
+		assertTrue(replyMessage.getPayload() instanceof Station);
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings("rawtypes")
+	//@Test
+	public void testStreamListenerWithJavaSerializationSerializable() throws Exception {
+		System.setProperty("enable-employee", "true");
+		ConfigurableApplicationContext context = SpringApplication.run(StreamListenerExpectingEmployee.class, new String[]{});
+		context.getBeanFactory().registerSingleton(StreamListenerExpectingStation.replyChannelName, new QueueChannel());
+		StreamListenerMessageHandler streamListener = context.getBean(StreamListenerMessageHandler.class);
+		streamListener.setOutputChannelName(StreamListenerExpectingStation.replyChannelName);
+
+		Binder binder = getBinder();
+		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0", moduleOutputChannel,
+				createProducerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
+				createConsumerProperties());
+
+		Message<?> message = MessageBuilder.withPayload(new Employee("Oleg")).setHeader(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT).build();
+		moduleInputChannel.subscribe(streamListener);
+		moduleOutputChannel.send(message);
+
+		QueueChannel replyChannel = context.getBean(StreamListenerExpectingStation.replyChannelName, QueueChannel.class);
+
+		Message<?> replyMessage = replyChannel.receive(5000);
+		assertTrue(replyMessage.getPayload() instanceof Employee);
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings("rawtypes")
+	//@Test(expected=MessageHandlingException.class)
+	public void testStreamListenerJavaSerializationNonSerializable() throws Exception {
+		System.setProperty("enable-station", "true");
+		ConfigurableApplicationContext context = SpringApplication.run(StreamListenerExpectingStation.class, new String[]{});
+		context.getBeanFactory().registerSingleton(StreamListenerExpectingStation.replyChannelName, new QueueChannel());
+		StreamListenerMessageHandler streamListener = context.getBean(StreamListenerMessageHandler.class);
+		streamListener.setOutputChannelName(StreamListenerExpectingStation.replyChannelName);
+
+		Binder binder = getBinder();
+		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0", moduleOutputChannel,
+				createProducerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
+				createConsumerProperties());
+		try {
+			Station station = new Station();
+			Message<?> message = MessageBuilder.withPayload(station).setHeader(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT).build();
+			moduleOutputChannel.send(message);
+		}
+		finally {
+			producerBinding.unbind();
+			consumerBinding.unbind();
+		}
+	}
 }

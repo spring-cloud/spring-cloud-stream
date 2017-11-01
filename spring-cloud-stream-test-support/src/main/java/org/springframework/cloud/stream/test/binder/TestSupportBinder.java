@@ -101,7 +101,7 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 
 		private BlockingQueue<Message<?>> register(MessageChannel channel) {
 			// we need to add this intercepter to ensure MessageCollector's compatibility with previous versions of SCSt
-			((AbstractMessageChannel)channel).addInterceptor(new MessageConverterConfigurer.LegacyContentTypeHeaderInterceptor());
+			((AbstractMessageChannel)channel).addInterceptor(new MessageConverterConfigurer.InbondMessageConvertingInterceprtor());
 			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
 			Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
 			results.put(channel, result);

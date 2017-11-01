@@ -16,9 +16,7 @@
 
 package org.springframework.cloud.stream.config.contentType;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.LinkedList;
@@ -30,6 +28,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -44,6 +43,7 @@ import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.handler.annotation.Headers;
@@ -186,12 +186,11 @@ public class ContentTypeTests {
 			Source source = context.getBean(Source.class);
 			User user = new User("Alice");
 			source.output().send(MessageBuilder.withPayload(user).build());
-			Message<byte[]> message = (Message<byte[]>) collector
+			Message<User> message = (Message<User>) collector
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
 			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 					.includes(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT));
-			ByteArrayInputStream bis = new ByteArrayInputStream((message.getPayload()));
-			User received = (User) new ObjectInputStream(bis).readObject();
+			User received = message.getPayload();
 			assertThat(user.getName()).isEqualTo(received.getName());
 		}
 	}
@@ -203,15 +202,12 @@ public class ContentTypeTests {
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.output.contentType=application/x-java-object")) {
 			MessageCollector collector = context.getBean(MessageCollector.class);
-			Kryo kryo = new Kryo();
 			Source source = context.getBean(Source.class);
 			User user = new User("Alice");
 			source.output().send(MessageBuilder.withPayload(user).build());
-			Message<byte[]> message = (Message<byte[]>) collector
+			Message<User> message = (Message<User>) collector
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
-			com.esotericsoftware.kryo.io.Input input = new com.esotericsoftware.kryo.io.Input(new ByteArrayInputStream(message.getPayload()));
-			User received = kryo.readObject(input,User.class);
-			input.close();
+			User received = message.getPayload();
 			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 					.includes(MimeType.valueOf(KryoMessageConverter.KRYO_MIME_TYPE)));
 			assertThat(user.getName()).isEqualTo(received.getName());
@@ -320,7 +316,7 @@ public class ContentTypeTests {
 		}
 	}
 
-	@Test
+	@Test(expected=MessageDeliveryException.class)
 	public void testReceiveKryoWithHeadersOverridingDefault() throws Exception{
 		try (ConfigurableApplicationContext context = SpringApplication.run(
 				SinkApplication.class, "--server.port=0",
