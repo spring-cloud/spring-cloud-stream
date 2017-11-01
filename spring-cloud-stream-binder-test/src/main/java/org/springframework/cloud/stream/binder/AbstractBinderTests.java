@@ -577,4 +577,39 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 			consumerBinding.unbind();
 		}
 	}
+
+
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void foo() throws Exception {
+		System.setProperty("enable-station", "true");
+		ConfigurableApplicationContext context = SpringApplication.run(StreamListenerExpectingStation.class, new String[]{});
+		context.getBeanFactory().registerSingleton(StreamListenerExpectingStation.replyChannelName, new QueueChannel());
+		StreamListenerMessageHandler streamListener = context.getBean(StreamListenerMessageHandler.class);
+		streamListener.setOutputChannelName(StreamListenerExpectingStation.replyChannelName);
+
+		Binder binder = getBinder();
+		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0", moduleOutputChannel,
+				createProducerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
+				createConsumerProperties());
+
+		String value = "{\"readings\":[{\"stationid\":\"fgh\","
+				+ "\"customerid\":\"12345\",\"timestamp\":null},{\"stationid\":\"hjk\",\"customerid\":\"222\",\"timestamp\":null}]}";
+
+		Message<?> message = MessageBuilder.withPayload(value)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
+		moduleInputChannel.subscribe(streamListener);
+		moduleOutputChannel.send(message);
+
+		QueueChannel replyChannel = context.getBean(StreamListenerExpectingStation.replyChannelName, QueueChannel.class);
+
+		Message<?> replyMessage = replyChannel.receive(5000);
+		assertTrue(replyMessage.getPayload() instanceof Station);
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
 }

@@ -309,9 +309,7 @@ public class MessageConverterConfigurer
 								: contentTypeResolver.resolve(message.getHeaders());
 
 			if (contentType != null){
-				if (contentType.equals(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT) ||
-						(contentType.getType().equals(MessageConverterUtils.X_JAVA_OBJECT.getType())
-								&& contentType.getSubtype().equals(MessageConverterUtils.X_JAVA_OBJECT.getSubtype()))){
+				if (contentType.equals(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT) || equalMimeTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType)){
 					// for Java and Kryo de-serialization we need to reset the content type
 					message = MessageBuilder.fromMessage(message).setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
 					converter = contentType.equals(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT)
@@ -330,43 +328,45 @@ public class MessageConverterConfigurer
 				}
 			}
 
+			Object payload;
 			if (converter != null){
-				if (contentType.equals(MessageConverterUtils.X_JAVA_OBJECT) && targetClass == null){
-					throw new IllegalStateException("Can not deserialize into message since 'contentType` has not "
+				Assert.isTrue(!(equalMimeTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType) && targetClass == null),
+						"Can not deserialize into message since 'contentType` has not "
 							+ "being encoded with the actual target type."
 							+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
-				}
-				Object payload = converter.fromMessage(message, targetClass);
+				payload = converter.fromMessage(message, targetClass);
 				contentType = targetClass == null ? MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT : MessageConverterUtils.X_JAVA_OBJECT;
-				message = MessageBuilder.withPayload(payload)
-						.copyHeaders(message.getHeaders())
-						.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-						.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-						.build();
 			}
 			else {
 				contentType = contentType == null ? contentTypeResolver.resolve(message.getHeaders()) : contentType;
 				MimeType deserializeContentType = contentTypeResolver.resolve(message.getHeaders());
-				Object payload = this.deserializePayload(message.getPayload(), deserializeContentType != null ? deserializeContentType : contentType);
-				message = MessageBuilder.withPayload(payload)
-						.copyHeaders(message.getHeaders())
-						.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-						.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-						.build();
+				payload = this.deserializePayload(message.getPayload(), deserializeContentType != null ? deserializeContentType : contentType);
 			}
+			message = MessageBuilder.withPayload(payload)
+					.copyHeaders(message.getHeaders())
+					.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
+					.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+					.build();
 			return message;
 		}
 
 		private Object deserializePayload(Object payload, MimeType contentType) {
 			if (payload instanceof byte[]) {
-				if (contentType != null && !MimeTypeUtils.APPLICATION_OCTET_STREAM.equals(contentType)){
-					if ("text".equalsIgnoreCase(contentType.getType()) || MimeTypeUtils.APPLICATION_JSON.equals(contentType)) {
+				if (contentType != null && !equalMimeTypeAndSubType(MimeTypeUtils.APPLICATION_OCTET_STREAM, contentType)){
+					if ("text".equalsIgnoreCase(contentType.getType()) || equalMimeTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentType)) {
 						payload = new String((byte[])payload, StandardCharsets.UTF_8);
 					}
 				}
 			}
 			return payload;
 		}
+	}
+
+	/*
+	 * Candidate to go into some utils class
+	 */
+	private static boolean equalMimeTypeAndSubType(MimeType m1, MimeType m2) {
+		return m1.getType().equals(m2.getType()) && m1.getSubtype().equals(m2.getSubtype());
 	}
 
 }

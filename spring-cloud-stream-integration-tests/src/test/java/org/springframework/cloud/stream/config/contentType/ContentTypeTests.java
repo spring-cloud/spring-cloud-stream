@@ -115,7 +115,7 @@ public class ContentTypeTests {
 			assertThat(
 					message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 							.includes(MimeTypeUtils.APPLICATION_JSON));
-			assertThat("\"foo\"").isEqualTo(message.getPayload());
+			assertThat("foo").isEqualTo(message.getPayload());
 		}
 	}
 
