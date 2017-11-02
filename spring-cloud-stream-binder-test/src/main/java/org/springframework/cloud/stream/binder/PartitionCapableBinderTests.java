@@ -57,16 +57,16 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		B binder = getBinder();
 		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
 		DirectChannel output = createBindableChannel("output", producerBindingProperties);
-		Binding<MessageChannel> producerBinding = binder.bindProducer("defaultGroup.0", output,
-				(PP) producerBindingProperties.getProducer());
+		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("defaultGroup%s0",
+				getDestinationNameDelimiter()), output, (PP) producerBindingProperties.getProducer());
 
 		QueueChannel input1 = new QueueChannel();
-		Binding<MessageChannel> binding1 = binder.bindConsumer("defaultGroup.0", null, input1,
-				createConsumerProperties());
+		Binding<MessageChannel> binding1 = binder.bindConsumer(String.format("defaultGroup%s0",
+				getDestinationNameDelimiter()), null, input1, createConsumerProperties());
 
 		QueueChannel input2 = new QueueChannel();
-		Binding<MessageChannel> binding2 = binder.bindConsumer("defaultGroup.0", null, input2,
-				createConsumerProperties());
+		Binding<MessageChannel> binding2 = binder.bindConsumer(String.format("defaultGroup%s0",
+				getDestinationNameDelimiter()), null, input2, createConsumerProperties());
 
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
 		output.send(MessageBuilder.withPayload(testPayload1).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
@@ -84,7 +84,8 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
 		output.send(MessageBuilder.withPayload(testPayload2).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 
-		binding2 = binder.bindConsumer("defaultGroup.0", null, input2, createConsumerProperties());
+		binding2 = binder.bindConsumer(String.format("defaultGroup%s0", getDestinationNameDelimiter()), null, input2,
+				createConsumerProperties());
 		String testPayload3 = "foo-" + UUID.randomUUID().toString();
 		output.send(MessageBuilder.withPayload(testPayload3).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
 
@@ -175,15 +176,18 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0S");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer("part.0", "testPartitionedModuleSpEL", input0, consumerProperties);
+		Binding<MessageChannel> input0Binding = binder.bindConsumer(String.format("part%s0",
+				getDestinationNameDelimiter()), "testPartitionedModuleSpEL", input0, consumerProperties);
 		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1S");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("part.0", "testPartitionedModuleSpEL", input1, consumerProperties);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer(String.format("part%s0",
+				getDestinationNameDelimiter()), "testPartitionedModuleSpEL", input1, consumerProperties);
 		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2S");
-		Binding<MessageChannel> input2Binding = binder.bindConsumer("part.0", "testPartitionedModuleSpEL", input2, consumerProperties);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(String.format("part%s0",
+				getDestinationNameDelimiter()), "testPartitionedModuleSpEL", input2, consumerProperties);
 
 		PP producerProperties = createProducerProperties();
 		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
@@ -192,7 +196,8 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 		output.setBeanName("test.output");
-		Binding<MessageChannel> outputBinding = binder.bindProducer("part.0", output, producerProperties);
+		Binding<MessageChannel> outputBinding = binder.bindProducer(String.format("part%s0",
+				getDestinationNameDelimiter()), output, producerProperties);
 		try {
 			Object endpoint = extractEndpoint(outputBinding);
 			checkRkExpressionForPartitionedModuleSpEL(endpoint);
@@ -252,7 +257,8 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 	protected void checkRkExpressionForPartitionedModuleSpEL(Object endpoint) {
 		assertThat(getEndpointRouting(endpoint))
-				.contains(getExpectedRoutingBaseDestination("part.0", "test") + "-' + headers['partition']");
+				.contains(getExpectedRoutingBaseDestination(String.format("part%s0", getDestinationNameDelimiter()),
+						"test") + "-' + headers['partition']");
 	}
 
 	@Test
@@ -266,15 +272,18 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer("partJ.0", "testPartitionedModuleJava", input0, consumerProperties);
+		Binding<MessageChannel> input0Binding = binder.bindConsumer(String.format("partJ%s0",
+				getDestinationNameDelimiter()), "testPartitionedModuleJava", input0, consumerProperties);
 		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1J");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("partJ.0", "testPartitionedModuleJava", input1, consumerProperties);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer(String.format("partJ%s0",
+				getDestinationNameDelimiter()), "testPartitionedModuleJava", input1, consumerProperties);
 		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2J");
-		Binding<MessageChannel> input2Binding = binder.bindConsumer("partJ.0", "testPartitionedModuleJava", input2, consumerProperties);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(String.format("partJ%s0",
+				getDestinationNameDelimiter()), "testPartitionedModuleJava", input2, consumerProperties);
 
 		PP producerProperties = createProducerProperties();
 		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
@@ -285,7 +294,8 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
 		if (usesExplicitRouting()) {
 			Object endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint)).contains(getExpectedRoutingBaseDestination("partJ.0", "testPartitionedModuleJava")
+			assertThat(getEndpointRouting(endpoint)).contains(getExpectedRoutingBaseDestination(
+					String.format("partJ%s0", getDestinationNameDelimiter()), "testPartitionedModuleJava")
 					+ "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
 		}
 
