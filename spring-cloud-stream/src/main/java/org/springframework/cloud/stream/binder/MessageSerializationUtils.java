@@ -135,7 +135,7 @@ public abstract class MessageSerializationUtils {
 
 	private static Object deserializePayload(byte[] bytes, MimeType contentType,
 									Map<String, Class<?>> payloadTypeCache, Codec codec) {
-		if ("text".equalsIgnoreCase(contentType.getType()) || MimeTypeUtils.APPLICATION_JSON.equals(contentType)) {
+		if ("text".equalsIgnoreCase(contentType.getType()) || equalMimeTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentType)) {
 			try {
 				return new String(bytes, "UTF-8");
 			}
@@ -165,5 +165,12 @@ public abstract class MessageSerializationUtils {
 				throw new SerializationFailedException(errorMessage, e);
 			}
 		}
+	}
+
+	/*
+	 * Candidate to go into some utils class
+	 */
+	private static boolean equalMimeTypeAndSubType(MimeType m1, MimeType m2) {
+		return m1.getType().equals(m2.getType()) && m1.getSubtype().equals(m2.getSubtype());
 	}
 }
