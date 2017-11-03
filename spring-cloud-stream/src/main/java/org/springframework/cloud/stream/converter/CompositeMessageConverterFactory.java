@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -44,6 +45,7 @@ import org.springframework.util.MimeType;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 public class CompositeMessageConverterFactory {
 
