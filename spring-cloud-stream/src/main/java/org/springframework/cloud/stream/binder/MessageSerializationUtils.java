@@ -16,58 +16,54 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.ContentTypeResolver;
-import org.springframework.util.MimeType;
+import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Utility class for serializing and de-serializing the message payload.
  *
  * @author Soby Chacko
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
+@Deprecated
 public abstract class MessageSerializationUtils {
-
-	private static final Map<String, Class<?>> payloadTypeCache = new ConcurrentHashMap<>();
 
 	/**
 	 * Serialize the message payload unless it is a byte array.
 	 *
 	 * @param message the message with the payload to serialize
-	 * @return the Message with teh serialized payload
+	 * @return the Message with the serialized payload
 	 */
 	public static MessageValues serializePayload(Message<?> message) {
 		Object originalPayload = message.getPayload();
+		boolean setOriginalContentType = (originalPayload instanceof String);
+		Assert.isTrue(originalPayload instanceof byte[] || originalPayload instanceof String,
+				"Failed to convert message's payload. No suitable converter found for provided contentType: "
+						+ message.getHeaders().get(MessageHeaders.CONTENT_TYPE) + " and paylod: " + originalPayload);
 		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+		// Pass content type as String since some transport adapters will exclude
+		// CONTENT_TYPE Header otherwise
+		String contentType = null;
+		if (originalContentType != null) {
+			contentType = setOriginalContentType ? JavaClassMimeTypeUtils.mimeTypeFromObject(originalPayload,
+					ObjectUtils.nullSafeToString(originalContentType)).toString() : originalContentType.toString() ;
+		}
+
+		Object payload = originalPayload instanceof byte[] ? originalPayload : ((String) originalPayload).getBytes(StandardCharsets.UTF_8);
 		MessageValues messageValues = new MessageValues(message);
-		messageValues.setPayload(originalPayload);
-		messageValues.put(MessageHeaders.CONTENT_TYPE, originalContentType);
-		return messageValues;
-	}
-
-
-
-	/**
-	 * De-serialize the message payload if necessary.
-	 *
-	 * @param messageValues message with the payload to deserialize
-	 * @param contentTypeResolver used for resolving the mime type.
-	 * @return Deserialized Message.
-	 */
-	public static MessageValues deserializePayload(MessageValues messageValues, ContentTypeResolver contentTypeResolver) {
-		Object payload = messageValues.getPayload();
-		MimeType contentType = contentTypeResolver.resolve(new MessageHeaders(messageValues.getHeaders()));
-		if (payload != null) {
-			messageValues.setPayload(payload);
+		messageValues.setPayload(payload);
+		if (StringUtils.hasText(contentType)) {
 			messageValues.put(MessageHeaders.CONTENT_TYPE, contentType);
+			if (originalContentType != null && !originalContentType.toString().equals(contentType.toString())) {
+				messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
+			}
 		}
 		return messageValues;
 	}
-
-
-
 }

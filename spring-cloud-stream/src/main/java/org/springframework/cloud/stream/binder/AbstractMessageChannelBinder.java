@@ -45,13 +45,12 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 
 /**
  * {@link AbstractBinder} that serves as base class for {@link MessageChannel} binders.
  * Implementors must implement the following methods:
  * <ul>
- * <li>{@link #createProducerMessageHandler(ProducerDestination, ProducerProperties)}</li>
+ * <li>{@link #createProducerMessageHandler(ProducerDestination, ProducerProperties, MessageChannel)}</li>
  * <li>{@link #createConsumerEndpoint(ConsumerDestination, String, ConsumerProperties)}
  * </li>
  * </ul>
@@ -94,7 +93,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	/**
 	 * Binds an outbound channel to a given destination. The implementation delegates to
 	 * {@link ProvisioningProvider#provisionProducerDestination(String, ProducerProperties)}
-	 * and {@link #createProducerMessageHandler(ProducerDestination, ProducerProperties)}
+	 * and {@link #createProducerMessageHandler(ProducerDestination, ProducerProperties, MessageChannel)}
 	 * for handling the middleware specific logic. If the returned producer message
 	 * handler is an {@link InitializingBean} then
 	 * {@link InitializingBean#afterPropertiesSet()} will be called on it. Similarly, if
@@ -535,14 +534,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		@Override
 		@SuppressWarnings("unchecked")
 		protected Object handleRequestMessage(Message<?> requestMessage) {
-			if (!(requestMessage.getPayload() instanceof byte[])
-					&& !requestMessage.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
+			if (!(requestMessage.getPayload() instanceof byte[])) {
 				return requestMessage;
 			}
-			MessageValues messageValues;
 			if (this.extractEmbeddedHeaders
 					&& !requestMessage.getHeaders().containsKey(BinderHeaders.NATIVE_HEADERS_PRESENT)
 					&& EmbeddedHeaderUtils.mayHaveEmbeddedHeaders((byte[]) requestMessage.getPayload())) {
+				MessageValues messageValues;
 				try {
 					messageValues = EmbeddedHeaderUtils.extractHeaders((Message<byte[]>) requestMessage,
 							true);
@@ -554,18 +552,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 							e);
 					messageValues = new MessageValues(requestMessage);
 				}
-				messageValues = deserializePayloadIfNecessary(messageValues);
+				return messageValues.toMessage();
 			}
 			else {
-				MimeType contentType = AbstractMessageChannelBinder.this.contentTypeResolver.resolve(requestMessage.getHeaders());
-				if (contentType != null && !MimeTypeUtils.APPLICATION_OCTET_STREAM.equals(contentType)) {
-					messageValues = deserializePayloadIfNecessary(requestMessage);
-				}
-				else {
-					return requestMessage;
-				}
+				return requestMessage;
 			}
-			return messageValues.toMessage();
 		}
 
 		@Override

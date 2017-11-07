@@ -52,13 +52,14 @@ public class AggregateWithBeanTest {
 	public AggregateApplication aggregateApplication;
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testAggregateApplication() throws InterruptedException {
 		Processor uppercaseProcessor = aggregateApplication.getBinding(Processor.class, "upper");
 		Processor suffixProcessor = aggregateApplication.getBinding(Processor.class, "suffix");
 		uppercaseProcessor.input().send(MessageBuilder.withPayload("Hello").build());
-		Message<byte[]> receivedMessage = (Message<byte[]>) messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> receivedMessage = (Message<String>) messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(receivedMessage).isNotNull();
-		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!".getBytes());
+		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!");
 	}
 
 	@SpringBootApplication

@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  * @author Artem Bilan
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 public class StreamEmitterBasicTests {
 
@@ -125,24 +126,22 @@ public class StreamEmitterBasicTests {
 		context.close();
 	}
 
-	@SuppressWarnings("unchecked")
 	private static void receiveAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
 		Source source = context.getBean(Source.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		List<byte[]> messages = new ArrayList<>();
+		List<String> messages = new ArrayList<>();
 		for (int i = 0; i < 1000; i++) {
-			messages.add((byte[]) messageCollector.forChannel(source.output()).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+			messages.add((String) messageCollector.forChannel(source.output()).poll(5000, TimeUnit.MILLISECONDS).getPayload());
 		}
 		for (int i = 0; i < 1000; i++) {
 			assertThat(new String(messages.get(i))).isEqualTo("HELLO WORLD!!" + i);
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private static void receiveAndValidateMultipleOutputs(ConfigurableApplicationContext context) throws InterruptedException {
 		TestMultiOutboundChannels source = context.getBean(TestMultiOutboundChannels.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		List<byte[]> messages = new ArrayList<>();
+		List<String> messages = new ArrayList<>();
 		assertMessages(source.output1(), messageCollector, messages);
 		messages.clear();
 		assertMessages(source.output2(), messageCollector, messages);
@@ -151,39 +150,38 @@ public class StreamEmitterBasicTests {
 		messages.clear();
 	}
 
-	@SuppressWarnings("unchecked")
 	private static void receiveAndValidateMultiStreamEmittersInSameContext(ConfigurableApplicationContext context1) throws InterruptedException {
 		TestMultiOutboundChannels source1 = context1.getBean(TestMultiOutboundChannels.class);
 		MessageCollector messageCollector = context1.getBean(MessageCollector.class);
 
-		List<byte[]> messages = new ArrayList<>();
+		List<String> messages = new ArrayList<>();
 		assertMessagesX(source1.output1(), messageCollector, messages);
 		messages.clear();
 		assertMessagesY(source1.output2(), messageCollector, messages);
 		messages.clear();
 	}
 
-	private static void assertMessages(MessageChannel channel, MessageCollector messageCollector, List<byte[]> messages) throws InterruptedException {
+	private static void assertMessages(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
 		for (int i = 0; i < 1000; i++) {
-			messages.add((byte[]) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
 		}
 		for (int i = 0; i < 1000; i++) {
 			assertThat(new String(messages.get(i))).isEqualTo("Hello World!!" + i);
 		}
 	}
 
-	private static void assertMessagesX(MessageChannel channel, MessageCollector messageCollector, List<byte[]> messages) throws InterruptedException {
+	private static void assertMessagesX(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
 		for (int i = 0; i < 1000; i++) {
-			messages.add((byte[]) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
 		}
 		for (int i = 0; i < 1000; i++) {
 			assertThat(new String(messages.get(i))).isEqualTo("Hello World!!" + i);
 		}
 	}
 
-	private static void assertMessagesY(MessageChannel channel, MessageCollector messageCollector, List<byte[]> messages) throws InterruptedException {
+	private static void assertMessagesY(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
 		for (int i = 0; i < 1000; i++) {
-			messages.add((byte[]) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
+			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
 		}
 		for (int i = 0; i < 1000; i++) {
 			assertThat(new String(messages.get(i))).isEqualTo("Hello FooBar!!" + i);

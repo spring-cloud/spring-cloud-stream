@@ -152,16 +152,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	@Deprecated
-	protected final MessageValues deserializePayloadIfNecessary(Message<?> message) {
-		return MessageSerializationUtils.deserializePayload(new MessageValues(message), this.contentTypeResolver);
-	}
-
-	@Deprecated
-	protected final MessageValues deserializePayloadIfNecessary(MessageValues messageValues) {
-		return MessageSerializationUtils.deserializePayload(messageValues, this.contentTypeResolver);
-	}
-
-	@Deprecated
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
 		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
 	}

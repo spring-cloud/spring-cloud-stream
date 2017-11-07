@@ -28,7 +28,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
@@ -40,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = { LegacyContentTypeTests.LegacyTestSink.class})
@@ -54,21 +54,23 @@ public class LegacyContentTypeTests {
 		MessageHandler messageHandler = new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				assertThat(message.getPayload()).isInstanceOf(byte[].class);
-				assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}".getBytes());
-				assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
+				assertThat(message.getPayload()).isInstanceOf(String.class);
+				assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}");
+				assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
 				latch.countDown();
 			}
 		};
 		testSink.input().subscribe(messageHandler);
-		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes()).setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json").build());
+		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes())
+							.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
+							.setHeader(BinderHeaders.SCST_VERSION, "1.x")
+							.build());
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		testSink.input().unsubscribe(messageHandler);
 	}
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	@PropertySource("classpath:/org/springframework/cloud/stream/config/channel/legacy-sink-channel-configurers.properties")
 	public static class LegacyTestSink {
 
 	}
