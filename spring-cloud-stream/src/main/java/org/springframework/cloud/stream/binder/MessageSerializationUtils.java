@@ -22,6 +22,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Utility class for serializing and de-serializing the message payload.
@@ -48,15 +49,20 @@ public abstract class MessageSerializationUtils {
 		Object originalContentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 		// Pass content type as String since some transport adapters will exclude
 		// CONTENT_TYPE Header otherwise
-		String contentType = setOriginalContentType ? JavaClassMimeTypeUtils.mimeTypeFromObject(originalPayload,
-				ObjectUtils.nullSafeToString(originalContentType)).toString() : originalContentType.toString() ;
+		String contentType = null;
+		if (originalContentType != null) {
+			contentType = setOriginalContentType ? JavaClassMimeTypeUtils.mimeTypeFromObject(originalPayload,
+					ObjectUtils.nullSafeToString(originalContentType)).toString() : originalContentType.toString() ;
+		}
 
 		Object payload = originalPayload instanceof byte[] ? originalPayload : ((String) originalPayload).getBytes(StandardCharsets.UTF_8);
 		MessageValues messageValues = new MessageValues(message);
 		messageValues.setPayload(payload);
-		messageValues.put(MessageHeaders.CONTENT_TYPE, contentType);
-		if (originalContentType != null && !originalContentType.toString().equals(contentType.toString())) {
-			messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
+		if (StringUtils.hasText(contentType)) {
+			messageValues.put(MessageHeaders.CONTENT_TYPE, contentType);
+			if (originalContentType != null && !originalContentType.toString().equals(contentType.toString())) {
+				messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
+			}
 		}
 		return messageValues;
 	}
