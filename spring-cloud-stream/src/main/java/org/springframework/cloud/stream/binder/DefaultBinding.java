@@ -42,7 +42,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	/**
 	 * Creates an instance that associates a given name, group and binding target with an
 	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
-	 * 
+	 *
 	 * @param name the name of the binding target
 	 * @param group the group (only for input targets)
 	 * @param target the binding target
@@ -71,6 +71,10 @@ public class DefaultBinding<T> implements Binding<T> {
 			this.lifecycle.stop();
 		}
 		afterUnbind();
+	}
+
+	Lifecycle getEndpoint() {
+		return this.lifecycle;
 	}
 
 	/**
