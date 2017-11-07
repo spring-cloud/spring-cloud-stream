@@ -28,13 +28,11 @@ import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.integration.channel.FixedSubscriberChannel;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
-import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.handler.AbstractMessageHandler;
-import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
 import org.springframework.integration.support.ErrorMessageStrategy;
@@ -43,6 +41,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
@@ -60,6 +59,7 @@ import org.springframework.util.MimeType;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  * @since 1.1
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
@@ -156,7 +156,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				}
 				catch (Exception e) {
 					AbstractMessageChannelBinder.this.logger
-							.error("Exception thrown while unbinding " + this.toString(), e);
+							.error("Exception thrown while unbinding " + toString(), e);
 				}
 				afterUnbindProducer(producerDestination, producerProperties);
 			}
@@ -220,39 +220,33 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			final C properties) throws BinderException {
 		MessageProducer consumerEndpoint = null;
 		try {
-			final ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group,
-					properties);
-			final boolean extractEmbeddedHeaders = HeaderMode.embeddedHeaders.equals(
-					properties.getHeaderMode());
-			ReceivingHandler rh = new ReceivingHandler(extractEmbeddedHeaders);
-			rh.setOutputChannel(inputChannel);
-			final FixedSubscriberChannel bridge = new FixedSubscriberChannel(rh);
-			bridge.setBeanName("bridge." + name);
+			ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
+
+			if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
+				enhanceMessageChannel(inputChannel);
+			}
 			consumerEndpoint = createConsumerEndpoint(destination, group, properties);
-			consumerEndpoint.setOutputChannel(bridge);
+			consumerEndpoint.setOutputChannel(inputChannel);
 			if (consumerEndpoint instanceof InitializingBean) {
 				((InitializingBean) consumerEndpoint).afterPropertiesSet();
 			}
 			if (consumerEndpoint instanceof Lifecycle) {
 				((Lifecycle) consumerEndpoint).start();
 			}
-			final Object endpoint = consumerEndpoint;
-			EventDrivenConsumer edc = new EventDrivenConsumer(bridge, rh);
-			edc.setBeanName("inbound." + groupedName(name, group));
-			edc.start();
+
 			return new DefaultBinding<MessageChannel>(name, group, inputChannel,
-					endpoint instanceof Lifecycle ? (Lifecycle) endpoint : null) {
+					consumerEndpoint instanceof Lifecycle ? (Lifecycle) consumerEndpoint : null) {
 
 				@Override
 				protected void afterUnbind() {
 					try {
-						if (endpoint instanceof DisposableBean) {
-							((DisposableBean) endpoint).destroy();
+						if (getEndpoint() instanceof DisposableBean) {
+							((DisposableBean) getEndpoint()).destroy();
 						}
 					}
 					catch (Exception e) {
 						AbstractMessageChannelBinder.this.logger
-								.error("Exception thrown while unbinding " + this.toString(), e);
+								.error("Exception thrown while unbinding " + toString(), e);
 					}
 					afterUnbindConsumer(destination, this.group, properties);
 					destroyErrorInfrastructure(destination, group, properties);
@@ -274,6 +268,30 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				throw new BinderException("Exception thrown while starting consumer: ", e);
 			}
 		}
+	}
+
+	private void enhanceMessageChannel(MessageChannel inputChannel) {
+		((AbstractMessageChannel)inputChannel).addInterceptor(new ChannelInterceptorAdapter() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				if (message.getPayload() instanceof byte[]) {
+					if (!message.getHeaders().containsKey(BinderHeaders.NATIVE_HEADERS_PRESENT)
+							&& EmbeddedHeaderUtils.mayHaveEmbeddedHeaders((byte[]) message.getPayload())) {
+						MessageValues messageValues;
+						try {
+							messageValues = EmbeddedHeaderUtils.extractHeaders((Message<byte[]>) message, true);
+						}
+						catch (Exception e) {
+							logger.debug(EmbeddedHeaderUtils.decodeExceptionMessage(message),e);
+							messageValues = new MessageValues(message);
+						}
+						return messageValues.toMessage();
+					}
+				}
+				return message;
+			}
+		});
 	}
 
 	/**
@@ -523,49 +541,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return destination.getName() + ".errors";
 	}
 
-	private final class ReceivingHandler extends AbstractReplyProducingMessageHandler {
-
-		private final boolean extractEmbeddedHeaders;
-
-		private ReceivingHandler(boolean extractEmbeddedHeaders) {
-			this.extractEmbeddedHeaders = extractEmbeddedHeaders;
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		protected Object handleRequestMessage(Message<?> requestMessage) {
-			if (!(requestMessage.getPayload() instanceof byte[])) {
-				return requestMessage;
-			}
-			if (this.extractEmbeddedHeaders
-					&& !requestMessage.getHeaders().containsKey(BinderHeaders.NATIVE_HEADERS_PRESENT)
-					&& EmbeddedHeaderUtils.mayHaveEmbeddedHeaders((byte[]) requestMessage.getPayload())) {
-				MessageValues messageValues;
-				try {
-					messageValues = EmbeddedHeaderUtils.extractHeaders((Message<byte[]>) requestMessage,
-							true);
-				}
-				catch (Exception e) {
-					AbstractMessageChannelBinder.this.logger.debug(
-							EmbeddedHeaderUtils.decodeExceptionMessage(
-									requestMessage),
-							e);
-					messageValues = new MessageValues(requestMessage);
-				}
-				return messageValues.toMessage();
-			}
-			else {
-				return requestMessage;
-			}
-		}
-
-		@Override
-		protected boolean shouldCopyRequestHeaders() {
-			// prevent the message from being copied again in superclass
-			return false;
-		}
-	}
-
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {
 
 		private final boolean embedHeaders;
@@ -578,7 +553,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		private SendingHandler(MessageHandler delegate, boolean embedHeaders,
 				String[] headersToEmbed, boolean useNativeEncoding) {
 			this.delegate = delegate;
-			this.setBeanFactory(AbstractMessageChannelBinder.this.getBeanFactory());
+			setBeanFactory(AbstractMessageChannelBinder.this.getBeanFactory());
 			this.embedHeaders = embedHeaders;
 			this.embeddedHeaders = headersToEmbed;
 			this.useNativeEncoding = useNativeEncoding;
@@ -594,6 +569,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 
 
+		@SuppressWarnings("deprecation")
 		private Message<?> serializeAndEmbedHeadersIfApplicable(Message<?> message) throws Exception {
 			MessageValues transformed = serializePayloadIfNecessary(message);
 			byte[] payload;
