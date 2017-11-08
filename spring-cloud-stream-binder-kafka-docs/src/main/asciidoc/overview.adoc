@@ -120,7 +120,18 @@ spring.cloud.stream.kafka.binder.socketBufferSize::
   Size (in bytes) of the socket buffer to be used by the Kafka consumers.
 +
 Default: `2097152`.
+spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix::
+  Enable transactions in the binder; see `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/html/_reference.html#transactions[Transactions] in the `spring-kafka` documentation.
+  When transactions are enabled, individual `producer` properties are ignored and all producers use the `spring.cloud.stream.kafka.binder.transaction.producer.*` properties.
++
+Default `null` (no transactions)
+spring.cloud.stream.kafka.binder.transaction.producer.*::
+  Global producer properties for producers in a transactional binder.
+  See `spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix` and <<kafka-producer-properties>> and the general producer properties supported by all binders.
++
+Default: See individual producer properties.
 
+[[kafka-consumer-properties]]
 === Kafka Consumer Properties
 
 The following properties are available for Kafka consumers only and
@@ -174,6 +185,7 @@ dlqName::
 +
 Default: null (If not specified, messages that result in errors will be forwarded to a topic named `error.<destination>.<group>`).
 
+[[kafka-producer-properties]]
 === Kafka Producer Properties
 
 The following properties are available for Kafka producers only and
@@ -197,6 +209,14 @@ messageKeyExpression::
 For example `headers.key` or `payload.myKey`.
 +
 Default: `none`.
+headerPatterns::
+  A comma-delimited list of simple patterns to match spring-messaging headers to be mapped to the kafka `Headers` in the `ProducerRecord`.
+  Patterns can begin or end with the wildcard character (asterisk).
+  Patterns can be negated by prefixing with `!`; matching stops after the first match (positive or negative).
+  For example `!foo,fo*` will pass `fox` but not `foo`.
+  `id` and `timestamp` are never mapped.
++
+Default: `*` (all headers - except the `id` and `timestamp`)
 configuration::
   Map with a key/value pair containing generic Kafka producer properties.
 +
