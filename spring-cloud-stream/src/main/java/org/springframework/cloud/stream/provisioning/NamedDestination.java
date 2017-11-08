@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package org.springframework.cloud.stream.provisioning;
 
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-
 /**
- * Represents a ConsumerDestination that provides the information about the destination
- * that is physically provisioned through
- * {@link ProvisioningProvider#provisionConsumerDestination(String, String, ConsumerProperties)}
- *
- * @author Soby Chacko
  * @author Oleg Zhurakousky
  *
- * @since 1.2
  */
-public interface ConsumerDestination extends NamedDestination {
+interface NamedDestination {
+
+	/**
+	 * Provides the destination name.
+	 *
+	 * @return destination name
+	 */
+	String getName();
 }
