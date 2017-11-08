@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +37,7 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.DataBinder;
@@ -63,15 +65,24 @@ public class BindingService {
 
 	private final Map<String, List<Binding<?>>> consumerBindings = new HashMap<>();
 
+	private final TaskScheduler taskScheduler;
+
 	private final BinderFactory binderFactory;
 
 	public BindingService(
 			BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory) {
+		this(bindingServiceProperties, binderFactory, null);
+	}
+
+	public BindingService(
+			BindingServiceProperties bindingServiceProperties,
+			BinderFactory binderFactory, TaskScheduler taskScheduler) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.binderFactory = binderFactory;
 		this.validator = new CustomValidatorBean();
 		this.validator.afterPropertiesSet();
+		this.taskScheduler = taskScheduler;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -95,14 +106,54 @@ public class BindingService {
 		}
 		validate(consumerProperties);
 		for (String target : bindingTargets) {
-			Binding<T> binding = binder.bindConsumer(target,
-					bindingServiceProperties.getGroup(inputName), input,
-					consumerProperties);
+			Binding<T> binding = doBindConsumer(input, inputName, binder, consumerProperties, target);
 			bindings.add(binding);
 		}
 		bindings = Collections.unmodifiableCollection(bindings);
 		this.consumerBindings.put(inputName, new ArrayList<Binding<?>>(bindings));
 		return bindings;
+	}
+
+	public <T> Binding<T> doBindConsumer(T input, String inputName, Binder<T, ConsumerProperties, ?> binder,
+			ConsumerProperties consumerProperties, String target) {
+		if (this.taskScheduler == null || this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
+			return binder.bindConsumer(target,
+					this.bindingServiceProperties.getGroup(inputName), input,
+					consumerProperties);
+		}
+		else {
+			try {
+				return binder.bindConsumer(target,
+						this.bindingServiceProperties.getGroup(inputName), input,
+						consumerProperties);
+			}
+			catch (RuntimeException e) {
+				LateBinding<T> late = new LateBinding<T>();
+				rescheduleConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
+				return late;
+			}
+		}
+	}
+
+	public <T> void rescheduleConsumerBinding(final T input, final String inputName,
+			final Binder<T, ConsumerProperties, ?> binder, final ConsumerProperties consumerProperties,
+			final String target, final LateBinding<T> late, RuntimeException exception) {
+		if (exception instanceof IllegalStateException || exception instanceof IllegalArgumentException) {
+			throw exception;
+		}
+		this.log.error("Failed to create consumer binding; retrying in " +
+			this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
+		this.taskScheduler.schedule(() -> {
+			try {
+				late.setDelegate(binder.bindConsumer(target,
+					this.bindingServiceProperties.getGroup(inputName), input,
+					consumerProperties));
+			}
+			catch (RuntimeException e) {
+				rescheduleConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
+			}
+		}, new Date(System.currentTimeMillis() +
+				this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -122,8 +173,7 @@ public class BindingService {
 			producerProperties = extendedProducerProperties;
 		}
 		validate(producerProperties);
-		Binding<T> binding = binder.bindProducer(bindingTarget, output,
-				producerProperties);
+		Binding<T> binding = doBindProducer(output, bindingTarget, binder, producerProperties);
 		this.producerBindings.put(outputName, binding);
 		return binding;
 	}
@@ -137,6 +187,42 @@ public class BindingService {
 		else {
 			return null;
 		}
+	}
+
+	public <T> Binding<T> doBindProducer(T output, String bindingTarget, Binder<T, ?, ProducerProperties> binder,
+			ProducerProperties producerProperties) {
+		if (this.taskScheduler == null || this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
+			return binder.bindProducer(bindingTarget, output, producerProperties);
+		}
+		else {
+			try {
+				return binder.bindProducer(bindingTarget, output, producerProperties);
+			}
+			catch (RuntimeException e) {
+				LateBinding<T> late = new LateBinding<T>();
+				rescheduleProducerBinding(output, bindingTarget, binder, producerProperties, late, e);
+				return late;
+			}
+		}
+	}
+
+	public <T> void rescheduleProducerBinding(final T output, final String bindingTarget,
+			final Binder<T, ?, ProducerProperties> binder, final ProducerProperties producerProperties,
+			final LateBinding<T> late, final RuntimeException exception) {
+		if (exception instanceof IllegalStateException || exception instanceof IllegalArgumentException) {
+			throw exception;
+		}
+		this.log.error("Failed to create producer binding; retrying in " +
+				this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
+		this.taskScheduler.schedule(() -> {
+			try {
+				late.delegate = binder.bindProducer(bindingTarget, output, producerProperties);
+			}
+			catch (RuntimeException e) {
+				rescheduleProducerBinding(output, bindingTarget, binder, producerProperties, late, e);
+			}
+		}, new Date(System.currentTimeMillis() +
+				this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
 	}
 
 	public void unbindConsumers(String inputName) {
@@ -188,4 +274,39 @@ public class BindingService {
 			throw new IllegalStateException(dataBinder.getBindingResult().toString());
 		}
 	}
+
+	private static class LateBinding<T> implements Binding<T> {
+
+		private volatile Binding<T> delegate;
+
+		private volatile boolean unbound;
+
+		LateBinding() {
+			super();
+		}
+
+		public synchronized void setDelegate(Binding<T> delegate) {
+			if (this.unbound) {
+				delegate.unbind();
+			}
+			else {
+				this.delegate = delegate;
+			}
+		}
+
+		@Override
+		public synchronized void unbind() {
+			this.unbound = true;
+			if (this.delegate != null) {
+				this.delegate.unbind();
+			}
+		}
+
+		@Override
+		public String toString() {
+			return "LateBinding [delegate=" + this.delegate + "]";
+		}
+
+	}
+
 }
