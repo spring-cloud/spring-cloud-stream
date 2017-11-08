@@ -34,8 +34,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
+
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -464,6 +466,12 @@ public class KafkaBinderTests extends
 		assertThat(receivedMessage).isNotNull();
 		assertThat(receivedMessage.getPayload()).isEqualTo(testMessagePayload.getBytes());
 		assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
+		assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
+				.isEqualTo(producerName.getBytes(StandardCharsets.UTF_8));
+		assertThat(new String((byte[]) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
+				.startsWith("failed to send Message to channel 'input'");
+		assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
+				.isNotNull();
 		binderBindUnbindLatency();
 
 		// verify we got a message on the dedicated error channel and the global (via bridge)

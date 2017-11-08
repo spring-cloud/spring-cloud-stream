@@ -16,7 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,6 +37,8 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.header.Headers;
+import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.utils.Utils;
@@ -102,6 +107,13 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
 public class KafkaMessageChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
+
+	public static final String X_EXCEPTION_STACKTRACE = "x-exception-stacktrace";
+
+	public static final String X_EXCEPTION_MESSAGE = "x-exception-message";
+
+	public static final String X_ORIGINAL_TOPIC = "x-original-topic";
+
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
@@ -425,8 +437,19 @@ public class KafkaMessageChannelBinder extends
 				String dlqName = StringUtils.hasText(extendedConsumerProperties.getExtension().getDlqName())
 						? extendedConsumerProperties.getExtension().getDlqName()
 						: "error." + destination.getName() + "." + group;
+
+				Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
+				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
+						record.topic().getBytes(StandardCharsets.UTF_8)));
+				if (message.getPayload() instanceof Throwable) {
+					Throwable throwable = (Throwable) message.getPayload();
+					kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
+							throwable.getMessage().getBytes(StandardCharsets.UTF_8)));
+					kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
+							getStackTraceAsString(throwable).getBytes(StandardCharsets.UTF_8)));
+				}
 				ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>(dlqName, record.partition(),
-						key, payload, record.headers());
+						key, payload, kafkaHeaders);
 				ListenableFuture<SendResult<byte[], byte[]>> sentDlq = kafkaTemplate.send(producerRecord);
 				sentDlq.addCallback(new ListenableFutureCallback<SendResult<byte[], byte[]>>() {
 					StringBuilder sb = new StringBuilder().append(" a message with key='")
@@ -507,6 +530,13 @@ public class KafkaMessageChannelBinder extends
 			return original;
 		}
 		return original.substring(0, maxCharacters) + "...";
+	}
+
+	private String getStackTraceAsString(Throwable cause) {
+		StringWriter stringWriter = new StringWriter();
+		PrintWriter printWriter = new PrintWriter(stringWriter, true);
+		cause.printStackTrace(printWriter);
+		return stringWriter.getBuffer().toString();
 	}
 
 	private final class ProducerConfigurationMessageHandler extends KafkaProducerMessageHandler<byte[], byte[]>
