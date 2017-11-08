@@ -48,6 +48,8 @@ import org.springframework.util.Assert;
 @JsonInclude(Include.NON_DEFAULT)
 public class BindingServiceProperties implements ApplicationContextAware, InitializingBean {
 
+	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
+
 	private ConversionService conversionService;
 
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
@@ -65,6 +67,8 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	private String[] dynamicDestinations = new String[0];
 
 	private ConfigurableApplicationContext applicationContext;
+
+	private int bindingRetryInterval = DEFAULT_BINDING_RETRY_INTERVAL;
 
 	public Map<String, BindingProperties> getBindings() {
 		return this.bindings;
@@ -212,6 +216,14 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 
 	public String getBindingDestination(String bindingName) {
 		return getBindingProperties(bindingName).getDestination();
+	}
+
+	public int getBindingRetryInterval() {
+		return this.bindingRetryInterval;
+	}
+
+	public void setBindingRetryInterval(int bindingRetryInterval) {
+		this.bindingRetryInterval = bindingRetryInterval;
 	}
 
 	public void updateProducerProperties(String bindingName, ProducerProperties producerProperties) {

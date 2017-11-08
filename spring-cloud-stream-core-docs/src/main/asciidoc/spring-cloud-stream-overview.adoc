@@ -1123,6 +1123,12 @@ The typical usage of this property is to be nested in a customized environment <
 +
 Default: false.
 
+spring.cloud.stream.bindingRetryInterval::
+  The interval (seconds) between retrying binding creation when, for example, the binder doesn't support late binding and the broker is down (e.g. Apache Kafka).
+Set to zero to treat such conditions as fatal, preventing the application from starting.
++
+Default: 30
+
 [[binding-properties]]
 === Binding Properties
 
