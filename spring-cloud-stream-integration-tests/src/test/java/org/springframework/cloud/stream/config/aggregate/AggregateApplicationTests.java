@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.config.aggregate;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,6 +42,11 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 public class AggregateApplicationTests {
+
+	@Before
+	public void before() {
+		System.setProperty("server.port", "0");
+	}
 
 	@Test
 	@SuppressWarnings("unchecked")

@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -50,6 +51,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+
+
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -60,6 +63,11 @@ import static org.junit.Assert.assertTrue;
 public class AggregationTest {
 
 	private ConfigurableApplicationContext aggregatedApplicationContext;
+
+	@Before
+	public void before() {
+		System.setProperty("server.port", "0");
+	}
 
 	@After
 	public void closeContext() {
@@ -245,6 +253,7 @@ public class AggregationTest {
 				MockBinderRegistryConfiguration.class);
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
+		System.setProperty("server.port", "0");
 		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar")
 				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
@@ -278,6 +287,7 @@ public class AggregationTest {
 				MockBinderRegistryConfiguration.class);
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
+		System.setProperty("server.port", "0");
 		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar")
 				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
