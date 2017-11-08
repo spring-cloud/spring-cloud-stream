@@ -283,7 +283,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 							messageValues = EmbeddedHeaderUtils.extractHeaders((Message<byte[]>) message, true);
 						}
 						catch (Exception e) {
-							logger.debug(EmbeddedHeaderUtils.decodeExceptionMessage(message),e);
+							/*
+							 * debug() rather then error() since we don't know for sure that it
+							 * really is a message with embedded headers, it just meets the
+							 * criteria in EmbeddedHeaderUtils.mayHaveEmbeddedHeaders().
+							 */
+							if (logger.isDebugEnabled()) {
+								logger.debug(EmbeddedHeaderUtils.decodeExceptionMessage(message),e);
+							}
 							messageValues = new MessageValues(message);
 						}
 						return messageValues.toMessage();
