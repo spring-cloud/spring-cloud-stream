@@ -36,6 +36,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-connectors-core</artifactId>
+			<version>2.0.0.RELEASE</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
