@@ -38,7 +38,6 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -50,6 +49,7 @@ import static org.junit.Assert.assertNull;
 /**
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Soby Chacko
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = { MessageChannelConfigurerTests.TestSink.class,
@@ -74,13 +74,10 @@ public class MessageChannelConfigurerTests {
 	@Test
 	public void testMessageConverterConfigurer() throws Exception {
 		final CountDownLatch latch = new CountDownLatch(1);
-		MessageHandler messageHandler = new MessageHandler() {
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				assertThat(message.getPayload()).isInstanceOf(byte[].class);
-				assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}".getBytes());
-				latch.countDown();
-			}
+		MessageHandler messageHandler = message -> {
+			assertThat(message.getPayload()).isInstanceOf(byte[].class);
+			assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}".getBytes());
+			latch.countDown();
 		};
 		testSink.input().subscribe(messageHandler);
 		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes()).build());

@@ -25,6 +25,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
@@ -125,13 +126,16 @@ public class MessageConverterConfigurer
 					getPartitionKeyExtractorStrategy(producerProperties),
 					getPartitionSelectorStrategy(producerProperties)));
 		}
-		if (input) {
-			messageChannel.addInterceptor(new InboundMessageConvertingInterceptor());
-		}
-		// TODO: Set all interceptors in the correct order for input/output channels
+		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if (StringUtils.hasText(contentType)) {
-			messageChannel.addInterceptor(
-					new ContentTypeConvertingInterceptor(contentType, input));
+			if ((!input && (producerProperties == null || !producerProperties.isUseNativeEncoding())) ||
+					(input && (consumerProperties == null || !consumerProperties.isUseNativeDecoding()))) {
+				messageChannel.addInterceptor(
+						new ContentTypeConvertingInterceptor(contentType, input));
+			}
+		}
+		if (input && (consumerProperties == null || !consumerProperties.isUseNativeDecoding())) {
+			messageChannel.addInterceptor(new InboundMessageConvertingInterceptor());
 		}
 	}
 
@@ -331,8 +335,8 @@ public class MessageConverterConfigurer
 			Object payload;
 			if (converter != null){
 				Assert.isTrue(!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType) && targetClass == null),
-						"Can not deserialize into message since 'contentType` has not "
-							+ "being encoded with the actual target type."
+						"Cannot deserialize into message since 'contentType` is not "
+							+ "encoded with the actual target type."
 							+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
 				payload = converter.fromMessage(message, targetClass);
 			}

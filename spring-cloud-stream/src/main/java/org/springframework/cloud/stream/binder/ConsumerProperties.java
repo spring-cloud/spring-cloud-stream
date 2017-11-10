@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Soby Chacko
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class ConsumerProperties {
@@ -47,6 +48,8 @@ public class ConsumerProperties {
 	private double backOffMultiplier = 2.0;
 
 	private HeaderMode headerMode;
+
+	private boolean useNativeDecoding = false;
 
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
@@ -125,5 +128,13 @@ public class ConsumerProperties {
 
 	public void setHeaderMode(HeaderMode headerMode) {
 		this.headerMode = headerMode;
+	}
+
+	public boolean isUseNativeDecoding() {
+		return useNativeDecoding;
+	}
+
+	public void setUseNativeDecoding(boolean useNativeDecoding) {
+		this.useNativeDecoding = useNativeDecoding;
 	}
 }
