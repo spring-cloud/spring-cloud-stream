@@ -50,6 +50,7 @@ import org.springframework.util.Assert;
  * @author Gary Russell
  * @author Mark Fisher
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  * @see MessageQueueMatcher
  */
 public class TestSupportBinder implements Binder<MessageChannel, ConsumerProperties, ProducerProperties> {
@@ -71,7 +72,7 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 	@Override
 	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget,
 			ProducerProperties properties) {
-		final BlockingQueue<Message<?>> queue = messageCollector.register(outboundBindTarget);
+		final BlockingQueue<Message<?>> queue = messageCollector.register(outboundBindTarget, properties.isUseNativeEncoding());
 		((SubscribableChannel) outboundBindTarget).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
@@ -99,9 +100,12 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 
 		private final Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
 
-		private BlockingQueue<Message<?>> register(MessageChannel channel) {
-			// we need to add this intercepter to ensure MessageCollector's compatibility with previous versions of SCSt
-			((AbstractMessageChannel)channel).addInterceptor(new MessageConverterConfigurer.InboundMessageConvertingInterceptor());
+		private BlockingQueue<Message<?>> register(MessageChannel channel, boolean useNativeEncoding) {
+			// we need to add this interceptor to ensure MessageCollector's compatibility with
+			// previous versions of SCSt when native encoding is disabled.
+			if (!useNativeEncoding) {
+				((AbstractMessageChannel) channel).addInterceptor(new MessageConverterConfigurer.InboundMessageConvertingInterceptor());
+			}
 			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
 			Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
 			results.put(channel, result);

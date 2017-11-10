@@ -18,17 +18,13 @@ package org.springframework.cloud.stream.config.contentType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -297,7 +293,7 @@ public class ContentTypeTests {
 		try (ConfigurableApplicationContext context = SpringApplication.run(
 				SinkApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.pojo_input.contentType=application/x-java-object"
+				"--spring.cloud.stream.bindings.pojo_input.contentType=application/x-java-object;type=org.springframework.cloud.stream.config.contentType.User"
 				)) {
 			TestSink testSink = context.getBean(TestSink.class);
 			SinkApplication sourceApp = context.getBean(SinkApplication.class);
@@ -412,33 +408,6 @@ public class ContentTypeTests {
 
 	}
 
-	@SuppressWarnings("serial")
-	public static class User implements Serializable {
 
-		private String name;
-
-		public User(){}
-
-		@JsonCreator
-		public User(@JsonProperty("name") String name) {
-			this.name = name;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		@Override
-		public String toString() {
-			final StringBuffer sb = new StringBuffer("User{");
-			sb.append("name='").append(name).append('\'');
-			sb.append('}');
-			return sb.toString();
-		}
-	}
 
 }
