@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.stub2;
+package org.springframework.cloud.stream.binder.integration;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
 
 /**
- * @author Marius Bogoevici
+ *
+ * @author Oleg Zhurakousky
+ *
  */
-@Configuration
-public class StubBinder2ConfigurationA {
+public class SourceDestination extends AbstractDestination {
 
-	@Bean
-	@ConditionalOnMissingBean
-	public Binder<?, ?, ?> binder(StubBinder2Dependency dependency) {
-		return new StubBinder2(dependency);
+	public void send(Message<?> message) {
+		this.getChannel().send(message);
 	}
 }

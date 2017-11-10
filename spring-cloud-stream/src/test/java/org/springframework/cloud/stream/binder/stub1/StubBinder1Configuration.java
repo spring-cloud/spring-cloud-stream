@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.stub1;
 
 import org.springframework.boot.actuate.health.ApplicationHealthIndicator;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
@@ -33,6 +34,7 @@ public class StubBinder1Configuration {
 
 	@Bean
 	@ConfigurationProperties("binder1")
+	@ConditionalOnMissingBean
 	public Binder<?, ?, ?> binder() {
 		return new StubBinder1();
 	}

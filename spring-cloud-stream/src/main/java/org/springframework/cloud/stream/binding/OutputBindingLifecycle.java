@@ -18,99 +18,17 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.Map;
 
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.SmartLifecycle;
-
 /**
  * Coordinates binding/unbinding of output binding targets in accordance to the lifecycle
  * of the host context.
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Oleg Zhurakousky
  */
-public class OutputBindingLifecycle implements SmartLifecycle, ApplicationContextAware {
+public class OutputBindingLifecycle extends AbstractBindingLifecycle {
 
-	private volatile boolean running;
-
-	private ConfigurableApplicationContext applicationContext;
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
-		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-	}
-
-	@Override
-	public void start() {
-		if (!running) {
-
-			// retrieve the BindingService lazily, avoiding early initialization
-			try {
-				BindingService bindingService = this.applicationContext
-						.getBean(BindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
-				for (Bindable bindable : bindables.values()) {
-					bindable.bindOutputs(bindingService);
-				}
-			}
-			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform binding, no proper implementation found", e);
-			}
-			this.running = true;
-		}
-	}
-
-	@Override
-	public void stop() {
-		if (running) {
-			try {
-				// retrieve the BindingService lazily, avoiding early
-				// initialization
-				BindingService bindingService = this.applicationContext
-						.getBean(BindingService.class);
-				Map<String, Bindable> bindables = this.applicationContext
-						.getBeansOfType(Bindable.class);
-				for (Bindable bindable : bindables.values()) {
-					bindable.unbindOutputs(bindingService);
-				}
-			}
-			catch (BeansException e) {
-				throw new IllegalStateException(
-						"Cannot perform unbinding, no proper implementation found", e);
-			}
-			this.running = false;
-		}
-	}
-
-	@Override
-	public boolean isRunning() {
-		return running;
-	}
-
-	@Override
-	public boolean isAutoStartup() {
-		return true;
-	}
-
-	@Override
-	public void stop(Runnable callback) {
-		stop();
-		if (callback != null) {
-			callback.run();
-		}
-	}
-
-	/**
-	 * Return a low value so that this bean is started after receiving Lifecycle beans are
-	 * started. Beans that need to start before bindings will set a lower phase value.
-	 */
-	@Override
-	public int getPhase() {
-		return Integer.MIN_VALUE + 1000;
+	public OutputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
+		super(bindingService, bindables, false);
 	}
 }

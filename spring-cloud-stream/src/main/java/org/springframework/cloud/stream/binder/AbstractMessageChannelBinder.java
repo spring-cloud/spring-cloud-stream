@@ -78,6 +78,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private final String[] headersToEmbed;
 
+	public AbstractMessageChannelBinder(PP provisioningProvider) {
+		this(new String[0], provisioningProvider);
+	}
+
 	public AbstractMessageChannelBinder(String[] headersToEmbed,
 			PP provisioningProvider) {
 		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
