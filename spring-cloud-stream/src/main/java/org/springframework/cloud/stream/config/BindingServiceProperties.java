@@ -168,10 +168,11 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 
 	public ConsumerProperties getConsumerProperties(String inputBindingName) {
 		Assert.notNull(inputBindingName, "The input binding name cannot be null");
-		ConsumerProperties consumerProperties = getBindingProperties(inputBindingName)
-				.getConsumer();
+		BindingProperties bindingProperties = getBindingProperties(inputBindingName);
+		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if (consumerProperties == null) {
 			consumerProperties = new ConsumerProperties();
+			bindingProperties.setConsumer(consumerProperties);
 		}
 		// propagate instance count and instance index if not already set
 		if (consumerProperties.getInstanceCount() < 0) {
@@ -185,10 +186,11 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 
 	public ProducerProperties getProducerProperties(String outputBindingName) {
 		Assert.notNull(outputBindingName, "The output binding name cannot be null");
-		ProducerProperties producerProperties = getBindingProperties(outputBindingName)
-				.getProducer();
+		BindingProperties bindingProperties = getBindingProperties(outputBindingName);
+		ProducerProperties producerProperties = bindingProperties.getProducer();
 		if (producerProperties == null) {
 			producerProperties = new ProducerProperties();
+			bindingProperties.setProducer(producerProperties);
 		}
 		return producerProperties;
 	}
@@ -211,4 +213,11 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	public String getBindingDestination(String bindingName) {
 		return getBindingProperties(bindingName).getDestination();
 	}
+
+	public void updateProducerProperties(String bindingName, ProducerProperties producerProperties) {
+		if (this.bindings.containsKey(bindingName)) {
+			this.bindings.get(bindingName).setProducer(producerProperties);
+		}
+	}
+
 }

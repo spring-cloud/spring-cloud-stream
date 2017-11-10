@@ -22,9 +22,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -40,6 +42,8 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -53,12 +57,14 @@ import org.springframework.messaging.core.DestinationResolutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Matchers.matches;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -196,25 +202,46 @@ public class BindingServiceTests {
 		binderFactory.destroy();
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void checkDynamicBinding() {
 		BindingServiceProperties properties = new BindingServiceProperties();
+		BindingProperties bindingProperties = new BindingProperties();
+		bindingProperties.setProducer(new ProducerProperties());
+		properties.setBindings(Collections.singletonMap("foo", bindingProperties));
 		DefaultBinderFactory binderFactory = createMockBinderFactory();
-		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		@SuppressWarnings("unchecked")
+		final ExtendedPropertiesBinder binder = mock(ExtendedPropertiesBinder.class);
+		Properties extendedProps = new Properties();
+		when(binder.getExtendedProducerProperties(anyString())).thenReturn(extendedProps);
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
-		@SuppressWarnings("unchecked")
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
 		when(binder.bindProducer(matches("foo"), any(DirectChannel.class),
 				any(ProducerProperties.class))).thenReturn(mockBinding);
-		BindingService bindingService = new BindingService(properties, binderFactory);
-		SubscribableChannelBindingTargetFactory bindableSubscribableChannelFactory = new SubscribableChannelBindingTargetFactory(
-				new MessageConverterConfigurer(properties, new CompositeMessageConverterFactory()));
+		BindingService bindingService = new BindingService(properties, binderFactory) {
+
+			@Override
+			protected <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
+				return binder;
+			}
+
+		};
+		SubscribableChannelBindingTargetFactory bindableSubscribableChannelFactory =
+				new SubscribableChannelBindingTargetFactory(
+						new MessageConverterConfigurer(properties, new CompositeMessageConverterFactory()));
+		final AtomicBoolean callbackInvoked = new AtomicBoolean();
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(
 				bindingService, bindableSubscribableChannelFactory,
-				new DynamicDestinationsBindable());
-		ConfigurableListableBeanFactory beanFactory = mock(
-				ConfigurableListableBeanFactory.class);
+				new DynamicDestinationsBindable(),
+				(name, channel, props, extended) -> {
+					callbackInvoked.set(true);
+					assertThat(name).isEqualTo("foo");
+					assertThat(channel).isNotNull();
+					assertThat(props).isNotNull();
+					assertThat(extended).isSameAs(extendedProps);
+					props.setUseNativeEncoding(true);
+					extendedProps.setProperty("bar", "baz");
+				});
+		ConfigurableListableBeanFactory beanFactory = mock(ConfigurableListableBeanFactory.class);
 		when(beanFactory.getBean("foo", MessageChannel.class))
 				.thenThrow(new NoSuchBeanDefinitionException(MessageChannel.class));
 		when(beanFactory.getBean("bar", MessageChannel.class))
@@ -239,8 +266,12 @@ public class BindingServiceTests {
 		resolver.setBeanFactory(beanFactory);
 		MessageChannel resolved = resolver.resolveDestination("foo");
 		assertThat(resolved).isSameAs(dynamic.get());
-		verify(binder).bindProducer(eq("foo"), eq(dynamic.get()),
-				any(ProducerProperties.class));
+		ArgumentCaptor<ProducerProperties> captor = ArgumentCaptor.forClass(ProducerProperties.class);
+		verify(binder).bindProducer(eq("foo"), eq(dynamic.get()), captor.capture());
+		assertThat(captor.getValue().isUseNativeEncoding()).isTrue();
+		assertThat(captor.getValue()).isInstanceOf(ExtendedProducerProperties.class);
+		assertThat(((ExtendedProducerProperties) captor.getValue()).getExtension()).isSameAs(extendedProps);
+		doReturn(dynamic.get()).when(beanFactory).getBean("foo", MessageChannel.class);
 		properties.setDynamicDestinations(new String[] { "foo" });
 		resolved = resolver.resolveDestination("foo");
 		assertThat(resolved).isSameAs(dynamic.get());

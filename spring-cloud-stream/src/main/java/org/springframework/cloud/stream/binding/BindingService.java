@@ -63,7 +63,7 @@ public class BindingService {
 
 	private final Map<String, List<Binding<?>>> consumerBindings = new HashMap<>();
 
-	private BinderFactory binderFactory;
+	private final BinderFactory binderFactory;
 
 	public BindingService(
 			BindingServiceProperties bindingServiceProperties,
@@ -74,7 +74,7 @@ public class BindingService {
 		this.validator.afterPropertiesSet();
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <T> Collection<Binding<T>> bindConsumer(T input, String inputName) {
 		String bindingTarget = this.bindingServiceProperties
 				.getBindingDestination(inputName);
@@ -105,7 +105,7 @@ public class BindingService {
 		return bindings;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <T> Binding<T> bindProducer(T output, String outputName) {
 		String bindingTarget = this.bindingServiceProperties
 				.getBindingDestination(outputName);
@@ -126,6 +126,17 @@ public class BindingService {
 				producerProperties);
 		this.producerBindings.put(outputName, binding);
 		return binding;
+	}
+
+	@SuppressWarnings("rawtypes")
+	public Object getExtendedProducerProperties(Object output, String outputName) {
+		Binder binder =  getBinder(outputName, output.getClass());
+		if (binder instanceof ExtendedPropertiesBinder) {
+			return ((ExtendedPropertiesBinder) binder).getExtendedProducerProperties(outputName);
+		}
+		else {
+			return null;
+		}
 	}
 
 	public void unbindConsumers(String inputName) {
@@ -150,7 +161,7 @@ public class BindingService {
 		}
 	}
 
-	private <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
+	protected <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
 		String binderConfigurationName = this.bindingServiceProperties.getBinder(channelName);
 		return binderFactory.getBinder(binderConfigurationName, bindableType);
 	}
