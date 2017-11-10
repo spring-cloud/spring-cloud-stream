@@ -24,6 +24,7 @@ import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
 
 /**
  * @author Marius Bogoevici
+ * @author Gary Russell
  */
 @ConfigurationProperties("spring.cloud.stream.kafka")
 public class KafkaExtendedBindingProperties
@@ -40,22 +41,45 @@ public class KafkaExtendedBindingProperties
 	}
 
 	@Override
-	public KafkaConsumerProperties getExtendedConsumerProperties(String channelName) {
-		if (this.bindings.containsKey(channelName) && this.bindings.get(channelName).getConsumer() != null) {
-			return this.bindings.get(channelName).getConsumer();
+	public synchronized KafkaConsumerProperties getExtendedConsumerProperties(String channelName) {
+		if (bindings.containsKey(channelName)) {
+			if (bindings.get(channelName).getConsumer() != null) {
+				return bindings.get(channelName).getConsumer();
+			}
+			else {
+				KafkaConsumerProperties properties = new KafkaConsumerProperties();
+				this.bindings.get(channelName).setConsumer(properties);
+				return properties;
+			}
 		}
 		else {
-			return new KafkaConsumerProperties();
+			KafkaConsumerProperties properties = new KafkaConsumerProperties();
+			KafkaBindingProperties rbp = new KafkaBindingProperties();
+			rbp.setConsumer(properties);
+			bindings.put(channelName, rbp);
+			return properties;
 		}
 	}
 
 	@Override
-	public KafkaProducerProperties getExtendedProducerProperties(String channelName) {
-		if (this.bindings.containsKey(channelName) && this.bindings.get(channelName).getProducer() != null) {
-			return this.bindings.get(channelName).getProducer();
+	public synchronized KafkaProducerProperties getExtendedProducerProperties(String channelName) {
+		if (bindings.containsKey(channelName)) {
+			if (bindings.get(channelName).getProducer() != null) {
+				return bindings.get(channelName).getProducer();
+			}
+			else {
+				KafkaProducerProperties properties = new KafkaProducerProperties();
+				this.bindings.get(channelName).setProducer(properties);
+				return properties;
+			}
 		}
 		else {
-			return new KafkaProducerProperties();
+			KafkaProducerProperties properties = new KafkaProducerProperties();
+			KafkaBindingProperties rbp = new KafkaBindingProperties();
+			rbp.setProducer(properties);
+			bindings.put(channelName, rbp);
+			return properties;
 		}
 	}
+
 }
