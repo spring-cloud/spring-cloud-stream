@@ -97,8 +97,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return this.applicationContext.getBeanFactory();
 	}
 
-	public void setIntegrationEvaluationContext(EvaluationContext evaluationContext) {
-		this.evaluationContext = evaluationContext;
+	protected EvaluationContext getEvaluationContext() {
+		return this.evaluationContext;
 	}
 
 	@Override
