@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -41,7 +41,6 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.utils.Utils;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
@@ -422,21 +421,36 @@ public class KafkaMessageChannelBinder extends
 	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
-			ProducerFactory<byte[], byte[]> producerFactory = this.transactionManager != null
+			ProducerFactory<?,?> producerFactory = this.transactionManager != null
 					? this.transactionManager.getProducerFactory()
-					: getProducerFactory(null, new ExtendedProducerProperties<>(new KafkaProducerProperties()));
-			final KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+					: getProducerFactory(null,
+						new ExtendedProducerProperties<>(extendedConsumerProperties.getExtension().getDlqProducerProperties()));
+			final KafkaTemplate<?,?> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+			String dlqName = StringUtils.hasText(extendedConsumerProperties.getExtension().getDlqName())
+					? extendedConsumerProperties.getExtension().getDlqName()
+					: "error." + destination.getName() + "." + group;
+
+			@SuppressWarnings({"unchecked", "raw"})
+			DlqSender<?,?> dlqSender = new DlqSender(kafkaTemplate, dlqName);
+
 			return message -> {
 				final ConsumerRecord<?, ?> record = message.getHeaders()
 						.get(KafkaHeaders.RAW_DATA, ConsumerRecord.class);
-				final byte[] key = record.key() != null ? Utils.toArray(ByteBuffer.wrap((byte[]) record.key()))
-						: null;
-				final byte[] payload = record.value() != null
-						? Utils.toArray(ByteBuffer.wrap((byte[]) record.value()))
-						: null;
-				String dlqName = StringUtils.hasText(extendedConsumerProperties.getExtension().getDlqName())
-						? extendedConsumerProperties.getExtension().getDlqName()
-						: "error." + destination.getName() + "." + group;
+
+				if (extendedConsumerProperties.isUseNativeDecoding()) {
+					if (record != null) {
+						Map<String, String> configuration = extendedConsumerProperties.getExtension().getDlqProducerProperties().getConfiguration();
+						if (record.key() != null && !record.key().getClass().isInstance(byte[].class)) {
+							ensureDlqMessageCanBeProperlySerialized(
+									configuration,
+									(Map<String, String> config) -> !config.containsKey("key.serializer"), "Key");
+						}
+						if (record.value() != null && !record.value().getClass().isInstance(byte[].class)) {
+							ensureDlqMessageCanBeProperlySerialized(configuration,
+									(Map<String, String> config) -> !config.containsKey("value.serializer"), "Payload");
+						}
+					}
+				}
 
 				Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
 				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
@@ -448,35 +462,19 @@ public class KafkaMessageChannelBinder extends
 					kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
 							getStackTraceAsString(throwable).getBytes(StandardCharsets.UTF_8)));
 				}
-				ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>(dlqName, record.partition(),
-						key, payload, kafkaHeaders);
-				ListenableFuture<SendResult<byte[], byte[]>> sentDlq = kafkaTemplate.send(producerRecord);
-				sentDlq.addCallback(new ListenableFutureCallback<SendResult<byte[], byte[]>>() {
-					StringBuilder sb = new StringBuilder().append(" a message with key='")
-							.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50)).append("'")
-							.append(" and payload='")
-							.append(toDisplayString(ObjectUtils.nullSafeToString(payload), 50))
-							.append("'").append(" received from ")
-							.append(record.partition());
-
-					@Override
-					public void onFailure(Throwable ex) {
-						KafkaMessageChannelBinder.this.logger.error(
-								"Error sending to DLQ " + sb.toString(), ex);
-					}
-
-					@Override
-					public void onSuccess(SendResult<byte[], byte[]> result) {
-						if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
-							KafkaMessageChannelBinder.this.logger.debug(
-									"Sent to DLQ " + sb.toString());
-						}
-					}
-
-				});
+				dlqSender.sendToDlq(record, kafkaHeaders);
 			};
 		}
 		return null;
+	}
+
+	private static void ensureDlqMessageCanBeProperlySerialized(Map<String, String> configuration,
+																Predicate<Map<String, String>> configPredicate,
+																String dataType) {
+			if (CollectionUtils.isEmpty(configuration) || configPredicate.test(configuration)) {
+				throw new IllegalArgumentException("Native decoding is used on the consumer. " +
+						dataType + " is not byte[] and no serializer is set on the DLQ producer.");
+			}
 	}
 
 	private ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous, String consumerGroup,
@@ -613,4 +611,56 @@ public class KafkaMessageChannelBinder extends
 
 	}
 
+	private final class DlqSender<K,V> {
+
+		private final KafkaTemplate<K,V> kafkaTemplate;
+		private final String dlqName;
+
+		DlqSender(KafkaTemplate<K, V> kafkaTemplate, String dlqName) {
+			this.kafkaTemplate = kafkaTemplate;
+			this.dlqName = dlqName;
+		}
+
+		@SuppressWarnings("unchecked")
+		public void sendToDlq(ConsumerRecord<?,?> consumerRecord, Headers headers) {
+			K key = (K)consumerRecord.key();
+			V value = (V)consumerRecord.value();
+			ProducerRecord<K,V> producerRecord = new ProducerRecord<>(this.dlqName, consumerRecord.partition(),
+					key, value, headers);
+
+			StringBuilder sb = new StringBuilder().append(" a message with key='")
+					.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50)).append("'")
+					.append(" and payload='")
+					.append(toDisplayString(ObjectUtils.nullSafeToString(value), 50))
+					.append("'").append(" received from ")
+					.append(consumerRecord.partition());
+			ListenableFuture<SendResult<K, V>> sentDlq = null;
+			try {
+				sentDlq = this.kafkaTemplate.send(producerRecord);
+				sentDlq.addCallback(new ListenableFutureCallback<SendResult<K, V>>() {
+
+					@Override
+					public void onFailure(Throwable ex) {
+						KafkaMessageChannelBinder.this.logger.error(
+								"Error sending to DLQ " + sb.toString(), ex);
+					}
+
+					@Override
+					public void onSuccess(SendResult<K, V> result) {
+						if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
+							KafkaMessageChannelBinder.this.logger.debug(
+									"Sent to DLQ " + sb.toString());
+						}
+					}
+				});
+			}
+			catch (Exception ex) {
+				if (sentDlq == null) {
+					KafkaMessageChannelBinder.this.logger.error(
+							"Error sending to DLQ " + sb.toString(), ex);
+				}
+			}
+
+		}
+	}
 }

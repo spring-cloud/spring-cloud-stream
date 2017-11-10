@@ -122,9 +122,6 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-
-
-
 /**
  * @author Soby Chacko
  * @author Ilayaperumal Gopinathan
@@ -391,6 +388,147 @@ public class KafkaBinderTests extends
 		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo");
 		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE))
 				.isEqualTo(MimeTypeUtils.APPLICATION_OCTET_STREAM);
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testDlqWithNativeSerializationEnabledOnDlqProducer() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+
+		//Native serialization for producer
+		producerProperties.setUseNativeEncoding(true);
+		Map<String, String> producerConfig = new HashMap<>();
+		producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+		producerProperties.getExtension().setConfiguration(producerConfig);
+
+		BindingProperties outputBindingProperties = createProducerBindingProperties(
+				producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				outputBindingProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+
+		//Native Deserialization for consumer
+		consumerProperties.setUseNativeDecoding(true);
+		Map<String, String> consumerConfig = new HashMap<>();
+		consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+		consumerProperties.getExtension().setConfiguration(consumerConfig);
+
+		//Setting dlq producer properties on the consumer
+		consumerProperties.getExtension().setDlqProducerProperties(producerProperties.getExtension());
+		consumerProperties.getExtension().setEnableDlq(true);
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.bar",
+				moduleOutputChannel, outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar",
+				"testDlqWithNativeEncoding-1", moduleInputChannel, consumerProperties);
+
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+
+		//Consumer for the DLQ destination
+		QueueChannel dlqChannel = new QueueChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
+		dlqConsumerProperties.setMaxAttempts(1);
+
+		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
+				"error.foo.bar." + "testDlqWithNativeEncoding-1", null, dlqChannel, dlqConsumerProperties);
+		binderBindUnbindLatency();
+
+		Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload("foo")
+				.build();
+
+		moduleOutputChannel.send(message);
+
+		Message<?> receivedMessage = receive(dlqChannel, 5);
+		assertThat(receivedMessage).isNotNull();
+		assertThat(receivedMessage.getPayload()).isEqualTo("foo".getBytes());
+		assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
+		assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
+				.isEqualTo("foo.bar".getBytes(StandardCharsets.UTF_8));
+		assertThat(new String((byte[]) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
+				.startsWith("failed to send Message to channel 'input'");
+		assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
+				.isNotNull();
+		binderBindUnbindLatency();
+
+		dlqConsumerBinding.unbind();
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testDlqWithNativeDecodingOnConsumerButMissingSerializerOnDlqProducer() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		//Native serialization for producer
+		producerProperties.setUseNativeEncoding(true);
+		Map<String, String> producerConfig = new HashMap<>();
+		producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+		producerProperties.getExtension().setConfiguration(producerConfig);
+		BindingProperties outputBindingProperties = createProducerBindingProperties(
+				producerProperties);
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				outputBindingProperties);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		//Native Deserialization for consumer
+		consumerProperties.setUseNativeDecoding(true);
+
+		Map<String, String> consumerConfig = new HashMap<>();
+		consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+		//No Dlq producer properties set on the consumer with a native serializer. This should cause an error for DLQ sending.
+
+		consumerProperties.getExtension().setConfiguration(consumerConfig);
+		consumerProperties.getExtension().setEnableDlq(true);
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.bar",
+				moduleOutputChannel, outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar",
+				"testDlqWithNativeEncoding-2", moduleInputChannel, consumerProperties);
+
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+
+		//Consumer for the DLQ destination
+		QueueChannel dlqChannel = new QueueChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
+		dlqConsumerProperties.setMaxAttempts(1);
+
+		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
+				"error.foo.bar." + "testDlqWithNativeEncoding-2", null, dlqChannel, dlqConsumerProperties);
+		binderBindUnbindLatency();
+
+		Message<?> message = org.springframework.integration.support.MessageBuilder.withPayload("foo")
+				.build();
+
+		moduleOutputChannel.send(message);
+
+		Message<?> receivedMessage = receive(dlqChannel, 5);
+		//Ensure that we didn't receive anything on DLQ because of serializer config missing
+		//on dlq producer while native Decoding is enabled.
+		assertThat(receivedMessage).isNull();
+
+		binderBindUnbindLatency();
+
+		dlqConsumerBinding.unbind();
+
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -2307,7 +2445,7 @@ public class KafkaBinderTests extends
 						return future;
 					}
 
-		});
+				});
 
 		moduleOutputChannel.send(message);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();

@@ -22,6 +22,7 @@ import java.util.Map;
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Soby Chacko
  *
  * <p>
  * Thanks to Laszlo Szabo for providing the initial patch for generic property support.
@@ -40,6 +41,8 @@ public class KafkaConsumerProperties {
 	private boolean enableDlq;
 
 	private String dlqName;
+
+	private KafkaProducerProperties dlqProducerProperties = new KafkaProducerProperties();
 
 	private int recoveryInterval = 5000;
 
@@ -132,5 +135,13 @@ public class KafkaConsumerProperties {
 
 	public void setTrustedPackages(String[] trustedPackages) {
 		this.trustedPackages = trustedPackages;
+	}
+
+	public KafkaProducerProperties getDlqProducerProperties() {
+		return dlqProducerProperties;
+	}
+
+	public void setDlqProducerProperties(KafkaProducerProperties dlqProducerProperties) {
+		this.dlqProducerProperties = dlqProducerProperties;
 	}
 }

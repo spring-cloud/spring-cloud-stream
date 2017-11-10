@@ -186,6 +186,11 @@ dlqName::
   The name of the DLQ topic to receive the error messages.
 +
 Default: null (If not specified, messages that result in errors will be forwarded to a topic named `error.<destination>.<group>`).
+dlqProducerProperties::
+  Using this, dlq specific producer properties can be set.
+  All the properties available through kafka producer properties can be set through this property.
++
+Default: Default Kafka producer properties.
 
 [[kafka-producer-properties]]
 === Kafka Producer Properties
