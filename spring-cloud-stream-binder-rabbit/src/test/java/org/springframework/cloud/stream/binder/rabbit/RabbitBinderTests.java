@@ -16,14 +16,8 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.lang.reflect.Constructor;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,22 +28,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
 
-import com.rabbitmq.http.client.domain.QueueInfo;
-
 import org.apache.commons.logging.Log;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.mockito.ArgumentCaptor;
+
 import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -87,6 +82,7 @@ import org.springframework.integration.amqp.support.ReturnedAmqpMessageException
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.expression.ValueExpression;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -94,11 +90,21 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
+
+import com.rabbitmq.http.client.domain.QueueInfo;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Mark Fisher
@@ -1037,7 +1043,7 @@ public class RabbitBinderTests extends
 		producerProperties.getExtension().setCompress(true);
 		producerProperties.setRequiredGroups("default");
 
-		DirectChannel output = createBindableChannel("input", createProducerBindingProperties(producerProperties));
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 		output.setBeanName("batchingProducer");
 		Binding<MessageChannel> producerBinding = binder.bindProducer("batching.0", output, producerProperties);
 
@@ -1237,6 +1243,87 @@ public class RabbitBinderTests extends
 		}
 	}
 
+	@Test
+	public void testRoutingKeyExpression() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension().setRoutingKeyExpression("payload.field");
+
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		output.setBeanName("rkeProducer");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("rke", output, producerProperties);
+
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		Queue queue = new AnonymousQueue();
+		TopicExchange exchange = new TopicExchange("rke");
+		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with("rkeTest");
+		admin.declareQueue(queue);
+		admin.declareBinding(binding);
+
+		output.addInterceptor(new ChannelInterceptorAdapter() {
+
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				assertThat(message.getHeaders().get(RabbitExpressionEvaluatingInterceptor.ROUTING_KEY_HEADER))
+					.isEqualTo("rkeTest");
+				return message;
+			}
+
+		});
+
+		output.send(new GenericMessage<>(new Pojo("rkeTest")));
+
+		Object out = spyOn(queue.getName()).receive(false);
+		assertThat(out).isInstanceOf(byte[].class);
+		assertThat(new String((byte[]) out, StandardCharsets.UTF_8)).isEqualTo("{\"field\":\"rkeTest\"}");
+
+		producerBinding.unbind();
+	}
+
+	@Test
+	public void testRoutingKeyExpressionPartitionedAndDelay() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension().setRoutingKeyExpression("payload.field");
+		// requires delayed message exchange plugin; tested locally
+//		producerProperties.getExtension().setDelayedExchange(true);
+		producerProperties.getExtension().setDelayExpression("1000");
+		producerProperties.setPartitionKeyExpression(new ValueExpression<>(0));
+
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		output.setBeanName("rkeProducer");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("rkep", output, producerProperties);
+
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		Queue queue = new AnonymousQueue();
+		TopicExchange exchange = new TopicExchange("rkep");
+		org.springframework.amqp.core.Binding binding =
+				BindingBuilder.bind(queue).to(exchange).with("rkepTest-0");
+		admin.declareQueue(queue);
+		admin.declareBinding(binding);
+
+		output.addInterceptor(new ChannelInterceptorAdapter() {
+
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				assertThat(message.getHeaders().get(RabbitExpressionEvaluatingInterceptor.ROUTING_KEY_HEADER))
+					.isEqualTo("rkepTest");
+				assertThat(message.getHeaders().get(RabbitExpressionEvaluatingInterceptor.DELAY_HEADER))
+					.isEqualTo(1000);
+				return message;
+			}
+
+		});
+
+		output.send(new GenericMessage<>(new Pojo("rkepTest")));
+
+		Object out = spyOn(queue.getName()).receive(false);
+		assertThat(out).isInstanceOf(byte[].class);
+		assertThat(new String((byte[]) out, StandardCharsets.UTF_8)).isEqualTo("{\"field\":\"rkepTest\"}");
+
+		producerBinding.unbind();
+	}
+
 	private SimpleMessageListenerContainer verifyContainer(Lifecycle endpoint) {
 		SimpleMessageListenerContainer container;
 		RetryTemplate retry;
@@ -1332,6 +1419,31 @@ public class RabbitBinderTests extends
 		@Override
 		public int selectPartition(Object key, int partitionCount) {
 			return 0;
+		}
+
+	}
+
+	public static class Pojo {
+
+		private String field;
+
+		public Pojo() {
+			super();
+		}
+
+
+		public Pojo(String field) {
+			this.field = field;
+		}
+
+
+		public String getField() {
+			return this.field;
+		}
+
+
+		public void setField(String field) {
+			this.field = field;
 		}
 
 	}

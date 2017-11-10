@@ -64,6 +64,7 @@ import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.AmqpMessageHeaderErrorMessageStrategy;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.support.DefaultErrorMessageStrategy;
@@ -303,13 +304,20 @@ public class RabbitMessageChannelBinder
 				buildRabbitTemplate(producerProperties.getExtension(), errorChannel != null));
 		endpoint.setExchangeName(producerDestination.getName());
 		RabbitProducerProperties extendedProperties = producerProperties.getExtension();
+		boolean expresssionInterceptorNeeded = expresssionInterceptorNeeded(extendedProperties);
 		String routingKeyExpression = extendedProperties.getRoutingKeyExpression();
 		if (!producerProperties.isPartitioned()) {
 			if (routingKeyExpression == null) {
 				endpoint.setRoutingKey(destination);
 			}
 			else {
-				endpoint.setRoutingKeyExpressionString(routingKeyExpression);
+				if (expresssionInterceptorNeeded) {
+					endpoint.setRoutingKeyExpressionString("headers['"
+							+ RabbitExpressionEvaluatingInterceptor.ROUTING_KEY_HEADER + "']");
+				}
+				else {
+					endpoint.setRoutingKeyExpressionString(routingKeyExpression);
+				}
 			}
 		}
 		else {
@@ -317,11 +325,24 @@ public class RabbitMessageChannelBinder
 				endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(destination, false));
 			}
 			else {
-				endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(routingKeyExpression, true));
+				if (expresssionInterceptorNeeded) {
+					endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression("headers['"
+							+ RabbitExpressionEvaluatingInterceptor.ROUTING_KEY_HEADER + "']", true));
+				}
+				else {
+					endpoint.setRoutingKeyExpressionString(buildPartitionRoutingExpression(routingKeyExpression,
+							true));
+				}
 			}
 		}
 		if (extendedProperties.getDelayExpression() != null) {
-			endpoint.setDelayExpressionString(extendedProperties.getDelayExpression());
+			if (expresssionInterceptorNeeded) {
+				endpoint.setDelayExpressionString("headers['"
+						+ RabbitExpressionEvaluatingInterceptor.DELAY_HEADER + "']");
+			}
+			else {
+				endpoint.setDelayExpressionString(extendedProperties.getDelayExpression());
+			}
 		}
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.outboundMapper();
 		List<String> headerPatterns = new ArrayList<>(extendedProperties.getHeaderPatterns().length + 1);
@@ -340,6 +361,25 @@ public class RabbitMessageChannelBinder
 		}
 		endpoint.afterPropertiesSet();
 		return endpoint;
+	}
+
+
+	@Override
+	protected void postProcessOutputChannel(MessageChannel outputChannel,
+			ExtendedProducerProperties<RabbitProducerProperties> producerProperties) {
+		RabbitProducerProperties extendedProperties = producerProperties.getExtension();
+		if (expresssionInterceptorNeeded(extendedProperties)) {
+			((AbstractMessageChannel) outputChannel).addInterceptor(0,
+					new RabbitExpressionEvaluatingInterceptor(extendedProperties.getRoutingKeyExpression(),
+							extendedProperties.getDelayExpression(), getEvaluationContext()));
+		}
+	}
+
+	public boolean expresssionInterceptorNeeded(RabbitProducerProperties extendedProperties) {
+		return extendedProperties.getRoutingKeyExpression() != null
+					&& extendedProperties.getRoutingKeyExpression().contains("payload")
+				|| (extendedProperties.getDelayExpression() != null
+					&& extendedProperties.getDelayExpression().contains("payload"));
 	}
 
 	private void checkConnectionFactoryIsErrorCapable() {
