@@ -191,6 +191,16 @@ dlqProducerProperties::
   All the properties available through kafka producer properties can be set through this property.
 +
 Default: Default Kafka producer properties.
+standardHeaders::
+  Indicates which standard headers are populated by the inbound channel adapter.
+  `none`, `id`, `timestamp` or `both`.
+  Useful if using native deserialization and the first component to receive a message needs an `id` (such as an aggregator that is configured to use a JDBC message store).
++
+Default: `none`
+converterBeanName::
+  The name of a bean that implements `RecordMessageConverter`; used in the inbound channel adapter to replace the default `MessagingMessageConverter`.
++
+Default: `null`
 
 [[kafka-producer-properties]]
 === Kafka Producer Properties

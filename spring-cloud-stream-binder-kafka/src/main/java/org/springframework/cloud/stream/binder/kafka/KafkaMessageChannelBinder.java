@@ -43,6 +43,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -51,6 +52,7 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties.StandardHeaders;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
@@ -373,7 +375,25 @@ public class KafkaMessageChannelBinder extends
 		}
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter<>(
 				messageListenerContainer);
-		MessagingMessageConverter messageConverter = new MessagingMessageConverter();
+		MessagingMessageConverter messageConverter;
+		if (extendedConsumerProperties.getExtension().getConverterBeanName() == null) {
+			messageConverter = new MessagingMessageConverter();
+			StandardHeaders standardHeaders = extendedConsumerProperties.getExtension().getStandardHeaders();
+			messageConverter.setGenerateMessageId(StandardHeaders.id.equals(standardHeaders)
+					|| StandardHeaders.both.equals(standardHeaders));
+			messageConverter.setGenerateTimestamp(StandardHeaders.timestamp.equals(standardHeaders)
+					|| StandardHeaders.both.equals(standardHeaders));
+		}
+		else {
+			try {
+				messageConverter = getApplicationContext().getBean(
+					extendedConsumerProperties.getExtension().getConverterBeanName(),
+						MessagingMessageConverter.class);
+			}
+			catch (NoSuchBeanDefinitionException e) {
+				throw new IllegalStateException("Converter bean not present in application context", e);
+			}
+		}
 		KafkaHeaderMapper mapper = null;
 		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
 			mapper = getApplicationContext().getBean(this.configurationProperties.getHeaderMapperBeanName(),
