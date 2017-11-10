@@ -39,22 +39,45 @@ public class RabbitExtendedBindingProperties implements ExtendedBindingPropertie
 	}
 
 	@Override
-	public RabbitConsumerProperties getExtendedConsumerProperties(String channelName) {
-		if (bindings.containsKey(channelName) && bindings.get(channelName).getConsumer() != null) {
-			return bindings.get(channelName).getConsumer();
+	public synchronized RabbitConsumerProperties getExtendedConsumerProperties(String channelName) {
+		if (bindings.containsKey(channelName)) {
+			if (bindings.get(channelName).getConsumer() != null) {
+				return bindings.get(channelName).getConsumer();
+			}
+			else {
+				RabbitConsumerProperties properties = new RabbitConsumerProperties();
+				this.bindings.get(channelName).setConsumer(properties);
+				return properties;
+			}
 		}
 		else {
-			return new RabbitConsumerProperties();
+			RabbitConsumerProperties properties = new RabbitConsumerProperties();
+			RabbitBindingProperties rbp = new RabbitBindingProperties();
+			rbp.setConsumer(properties);
+			bindings.put(channelName, rbp);
+			return properties;
 		}
 	}
 
 	@Override
-	public RabbitProducerProperties getExtendedProducerProperties(String channelName) {
-		if (bindings.containsKey(channelName) && bindings.get(channelName).getProducer() != null) {
-			return bindings.get(channelName).getProducer();
+	public synchronized RabbitProducerProperties getExtendedProducerProperties(String channelName) {
+		if (bindings.containsKey(channelName)) {
+			if (bindings.get(channelName).getProducer() != null) {
+				return bindings.get(channelName).getProducer();
+			}
+			else {
+				RabbitProducerProperties properties = new RabbitProducerProperties();
+				this.bindings.get(channelName).setProducer(properties);
+				return properties;
+			}
 		}
 		else {
-			return new RabbitProducerProperties();
+			RabbitProducerProperties properties = new RabbitProducerProperties();
+			RabbitBindingProperties rbp = new RabbitBindingProperties();
+			rbp.setProducer(properties);
+			bindings.put(channelName, rbp);
+			return properties;
 		}
 	}
+
 }
