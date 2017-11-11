@@ -37,14 +37,14 @@ public class EnvironmentBusEndpoint extends AbstractBusEndpoint {
 	}
 
 	@WriteOperation
-	public void env(String name, String value, @Selector String destination) { //TODO: document params
+	public void busEnvWithDestination(String name, String value, @Selector String destination) { //TODO: document params
 		Map<String, String> params = Collections.singletonMap(name, value);
 		publish(new EnvironmentChangeRemoteApplicationEvent(this, getInstanceId(),
 				destination, params));
 	}
 
 	@WriteOperation
-	public void env(String name, String value) { //TODO: document params
+	public void busEnv(String name, String value) { //TODO: document params
 		Map<String, String> params = Collections.singletonMap(name, value);
 		publish(new EnvironmentChangeRemoteApplicationEvent(this, getInstanceId(),
 				null, params));
