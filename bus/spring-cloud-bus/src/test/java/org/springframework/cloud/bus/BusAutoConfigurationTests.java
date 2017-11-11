@@ -111,7 +111,7 @@ public class BusAutoConfigurationTests {
 		OutboundMessageHandlerConfiguration outbound = this.context
 				.getBean(OutboundMessageHandlerConfiguration.class);
 		outbound.latch.await(2000L, TimeUnit.MILLISECONDS);
-		String message = new String((byte[]) outbound.message.getPayload()); //FIXME: byte[] vs string
+		String message = (String) outbound.message.getPayload();
 		assertTrue("Wrong ackId: " + message,
 				message.contains("\"ackId\":\"" + refresh.getId()));
 	}
