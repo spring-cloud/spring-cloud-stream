@@ -49,7 +49,7 @@ public class ConsumerProperties {
 
 	private HeaderMode headerMode;
 
-	private boolean useNativeDecoding = false;
+	private boolean useNativeDecoding;
 
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
