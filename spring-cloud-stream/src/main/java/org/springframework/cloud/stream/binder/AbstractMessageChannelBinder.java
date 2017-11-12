@@ -138,6 +138,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (producerMessageHandler instanceof Lifecycle) {
 			((Lifecycle) producerMessageHandler).start();
 		}
+		postProcessOutputChannel(outputChannel, producerProperties);
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, HeaderMode.embeddedHeaders
 						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
@@ -161,6 +162,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				afterUnbindProducer(producerDestination, producerProperties);
 			}
 		};
+	}
+
+	/**
+	 * Allows subclasses to perform post processing on the channel - for example to
+	 * add more interceptors.
+	 * @param outputChannel the channel.
+	 * @param producerProperties the producer properties.
+	 */
+	protected void postProcessOutputChannel(MessageChannel outputChannel, P producerProperties) {
+		// default no-op
 	}
 
 	/**
