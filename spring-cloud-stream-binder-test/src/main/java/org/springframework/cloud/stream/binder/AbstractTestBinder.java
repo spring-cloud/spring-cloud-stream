@@ -43,7 +43,7 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel,
 			CP properties) {
-		this.checkChannelIsConfigured(moduleInputChannel);
+		this.checkChannelIsConfigured(moduleInputChannel, properties);
 		queues.add(name);
 		return binder.bindConsumer(name, group, moduleInputChannel, properties);
 	}
@@ -79,8 +79,8 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 	 * methods was properly configured (i.e., interceptors, converters etc).
 	 * see org.springframework.cloud.stream.binding.MessageConverterConfigurer
 	 */
-	private void checkChannelIsConfigured(MessageChannel messageChannel) {
-		if (messageChannel instanceof AbstractSubscribableChannel){
+	private void checkChannelIsConfigured(MessageChannel messageChannel, CP properties) {
+		if (messageChannel instanceof AbstractSubscribableChannel && !properties.isUseNativeDecoding()){
 			Assert.isTrue(!CollectionUtils.isEmpty(((AbstractSubscribableChannel)messageChannel).getChannelInterceptors()),
 					"'messageChannel' appears to be misconfigured. Consider creating channel via AbstractBinderTest.createBindableChannel(..)");
 		}
