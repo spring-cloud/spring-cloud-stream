@@ -45,7 +45,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	private final DynamicDestinationsBindable dynamicDestinationsBindable;
 
 	@SuppressWarnings("rawtypes")
-	private final NewBindingCallback newBindingCallback;
+	private final NewDestinationBindingCallback newBindingCallback;
 
 	private ConfigurableListableBeanFactory beanFactory;
 
@@ -58,7 +58,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	@SuppressWarnings("rawtypes")
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
-			DynamicDestinationsBindable dynamicDestinationsBindable, NewBindingCallback callback) {
+			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 		Assert.notNull(bindingService, "'bindingService' cannot be null");
 		Assert.notNull(bindingTargetFactory, "'bindingTargetFactory' cannot be null");
@@ -136,7 +136,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	 *
 	 */
 	@FunctionalInterface
-	public interface NewBindingCallback<T> {
+	public interface NewDestinationBindingCallback<T> {
 
 		/**
 		 * Configure the properties or channel before binding.
@@ -144,7 +144,8 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		 * @param channel the channel that is about to be bound.
 		 * @param producerProperties the producer properties.
 		 * @param extendedProducerProperties the extended producer properties (type
-		 * depends on binder type).
+		 * depends on binder type and may be null if the binder doesn't support
+		 * extended properties).
 		 */
 		void configure(String channelName, MessageChannel channel, ProducerProperties producerProperties,
 				T extendedProducerProperties);
