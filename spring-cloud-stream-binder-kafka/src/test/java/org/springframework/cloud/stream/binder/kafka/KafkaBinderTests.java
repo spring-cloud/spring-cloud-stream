@@ -2156,10 +2156,10 @@ public class KafkaBinderTests extends
 		moduleOutputChannel.send(message);
 
 		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<>();
+		AtomicReference<Message<String>> inboundMessageRef = new AtomicReference<>();
 		moduleInputChannel.subscribe(message1 -> {
 			try {
-				inboundMessageRef.set((Message<byte[]>) message1);
+				inboundMessageRef.set((Message<String>) message1);
 			}
 			finally {
 				latch.countDown();
@@ -2168,7 +2168,7 @@ public class KafkaBinderTests extends
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 
 		assertThat(inboundMessageRef.get()).isNotNull();
-		assertThat(new String(inboundMessageRef.get().getPayload(), StandardCharsets.UTF_8)).isEqualTo("testSendAndReceiveWithRawMode");
+		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("testSendAndReceiveWithRawMode");
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
