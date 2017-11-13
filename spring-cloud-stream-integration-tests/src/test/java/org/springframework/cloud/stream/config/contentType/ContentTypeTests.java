@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;

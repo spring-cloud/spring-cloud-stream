@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.test.binder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -24,18 +25,28 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.cloud.stream.test.matcher.MessageQueueMatcher;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.converter.DefaultContentTypeResolver;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * A minimal binder that
@@ -104,7 +115,7 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 			// we need to add this interceptor to ensure MessageCollector's compatibility with
 			// previous versions of SCSt when native encoding is disabled.
 			if (!useNativeEncoding) {
-				((AbstractMessageChannel) channel).addInterceptor(new MessageConverterConfigurer.InboundMessageConvertingInterceptor());
+				((AbstractMessageChannel) channel).addInterceptor(new InboundMessageConvertingInterceptor());
 			}
 			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
 			Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
@@ -144,6 +155,88 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 			if (messageCollector != null) {
 				messageCollector.unregister(target);
 			}
+		}
+	}
+
+	/**
+	 * This is really an interceptor to maintain MessageCollector's backward compatibility
+	 * with the behavior established in 1.3
+	 * - BINDER_ORIGINAL_CONTENT_TYPE
+	 * - Kryo and Java deserialization
+	 * - byte[] to String conversion
+	 * - etc
+	 */
+	private final static class InboundMessageConvertingInterceptor extends ChannelInterceptorAdapter {
+
+		private final DefaultContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
+		private final CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory();
+
+		@Override
+		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			Class<?> targetClass = null;
+			MessageConverter converter = null;
+			MimeType contentType = message.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+						? MimeType.valueOf((String)message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE))
+								: contentTypeResolver.resolve(message.getHeaders());
+
+			if (contentType != null){
+				if (equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType) ||
+						equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType)) {
+					// for Java and Kryo de-serialization we need to reset the content type
+					message = MessageBuilder.fromMessage(message).setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
+					converter = equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType)
+							? converterFactory.getMessageConverterForType(contentType)
+									: converterFactory.getMessageConverterForAllRegistered();
+					String targetClassName = contentType.getParameter("type");
+					if (StringUtils.hasText(targetClassName)) {
+						try {
+							targetClass = Class.forName(targetClassName, false, Thread.currentThread().getContextClassLoader());
+						}
+						catch (Exception e) {
+							throw new IllegalStateException("Failed to determine class name for contentType: "
+									+ message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE), e);
+						}
+					}
+				}
+
+			}
+
+			Object payload;
+			if (converter != null){
+				Assert.isTrue(!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType) && targetClass == null),
+						"Cannot deserialize into message since 'contentType` is not "
+							+ "encoded with the actual target type."
+							+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
+				payload = converter.fromMessage(message, targetClass);
+			}
+			else {
+				MimeType deserializeContentType = contentTypeResolver.resolve(message.getHeaders());
+				if (deserializeContentType == null) {
+					deserializeContentType = contentType;
+				}
+				payload = deserializeContentType == null ? message.getPayload() : this.deserializePayload(message.getPayload(), deserializeContentType);
+			}
+			message = MessageBuilder.withPayload(payload)
+					.copyHeaders(message.getHeaders())
+					.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
+					.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+					.build();
+			return message;
+		}
+
+		private Object deserializePayload(Object payload, MimeType contentType) {
+			if (payload instanceof byte[] && ("text".equalsIgnoreCase(contentType.getType()) ||
+					equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentType))) {
+				payload = new String((byte[])payload, StandardCharsets.UTF_8);
+			}
+			return payload;
+		}
+
+		/*
+		 * Candidate to go into some utils class
+		 */
+		private static boolean equalTypeAndSubType(MimeType m1, MimeType m2) {
+			return m1 != null && m2 != null && m1.getType().equalsIgnoreCase(m2.getType()) && m1.getSubtype().equalsIgnoreCase(m2.getSubtype());
 		}
 	}
 }

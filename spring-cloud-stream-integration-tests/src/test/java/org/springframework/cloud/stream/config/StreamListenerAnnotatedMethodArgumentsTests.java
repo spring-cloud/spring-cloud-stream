@@ -61,7 +61,7 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
-				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue").build());
+				.setHeader("contentType", MimeType.valueOf("application/json")).setHeader("testHeader", "testValue").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments).hasSize(3);
 		assertThat(testPojoWithAnnotatedArguments.receivedArguments.get(0))
 				.isInstanceOf(StreamListenerTestUtils.FooPojo.class);
