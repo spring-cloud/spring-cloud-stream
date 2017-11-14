@@ -41,6 +41,7 @@ import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaRegistryClientMessageConverter;
+import org.springframework.cloud.stream.schema.avro.DefaultSubjectNamingStrategy;
 import org.springframework.cloud.stream.schema.client.DefaultSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.cloud.stream.schema.server.SchemaRegistryServerApplication;
@@ -86,6 +87,8 @@ public class AvroMessageConverterSerializationTests {
 		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
 		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
 				client, new NoOpCacheManager());
+
+		converter.setSubjectNamingStrategy(new DefaultSubjectNamingStrategy());
 		converter.setDynamicSchemaGenerationEnabled(false);
 		converter.afterPropertiesSet();
 

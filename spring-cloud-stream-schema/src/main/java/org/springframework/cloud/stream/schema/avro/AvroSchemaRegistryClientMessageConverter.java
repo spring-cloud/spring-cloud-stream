@@ -100,6 +100,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private String prefix = "vnd";
 
+	private SubjectNamingStrategy subjectNamingStrategy;
+
 	/**
 	 * @deprecated as of release 1.2.2 in favor of
 	 * {@link #AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient, CacheManager)}
@@ -205,7 +207,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	protected String toSubject(Schema schema) {
-		return schema.getName().toLowerCase();
+		return subjectNamingStrategy.toSubject(schema);
 	}
 
 	@Override
@@ -346,5 +348,9 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	public void setCacheManager(CacheManager cacheManager) {
 		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
 		this.cacheManager = cacheManager;
+	}
+
+	public void setSubjectNamingStrategy(SubjectNamingStrategy subjectNamingStrategy) {
+		this.subjectNamingStrategy = subjectNamingStrategy;
 	}
 }
