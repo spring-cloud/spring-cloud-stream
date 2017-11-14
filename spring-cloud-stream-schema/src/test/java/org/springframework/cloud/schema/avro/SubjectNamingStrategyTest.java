@@ -31,6 +31,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,7 +62,7 @@ public class SubjectNamingStrategyTest {
 		Message<?> message = barSourceMessageCollector.forChannel(source.output()).poll(1000, TimeUnit.MILLISECONDS);
 
 		assertThat(message.getHeaders().get("contentType"))
-				.isEqualTo("application/vnd.org.springframework.cloud.schema.avro.User1.v1+avro");
+				.isEqualTo(MimeType.valueOf("application/vnd.org.springframework.cloud.schema.avro.User1.v1+avro"));
 	}
 
 	@EnableBinding(Source.class)
