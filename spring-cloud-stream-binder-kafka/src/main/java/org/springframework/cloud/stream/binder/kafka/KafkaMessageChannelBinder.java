@@ -439,9 +439,10 @@ public class KafkaMessageChannelBinder extends
 				final ConsumerRecord<?, ?> record = message.getHeaders()
 						.get(KafkaHeaders.RAW_DATA, ConsumerRecord.class);
 
-				if (this.transactionManager == null && extendedConsumerProperties.isUseNativeDecoding()) {
+				if (extendedConsumerProperties.isUseNativeDecoding()) {
 					if (record != null) {
-						Map<String, String> configuration = dlqProducerProperties.getConfiguration();
+						Map<String, String> configuration = this.transactionManager == null ? dlqProducerProperties.getConfiguration()
+								: this.configurationProperties.getTransaction().getProducer().getConfiguration();
 						if (record.key() != null && !record.key().getClass().isInstance(byte[].class)) {
 							ensureDlqMessageCanBeProperlySerialized(
 									configuration,
