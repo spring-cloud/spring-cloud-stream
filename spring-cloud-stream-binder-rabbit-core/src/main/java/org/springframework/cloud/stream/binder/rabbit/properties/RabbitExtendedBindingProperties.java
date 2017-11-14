@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
 
 /**
  * @author Marius Bogoevici
+ * @author Gary Russell
+ * @author Oleg Zhurakousky
  */
 @ConfigurationProperties("spring.cloud.stream.rabbit")
 public class RabbitExtendedBindingProperties implements ExtendedBindingProperties<RabbitConsumerProperties, RabbitProducerProperties> {
@@ -40,44 +42,44 @@ public class RabbitExtendedBindingProperties implements ExtendedBindingPropertie
 
 	@Override
 	public synchronized RabbitConsumerProperties getExtendedConsumerProperties(String channelName) {
+		RabbitConsumerProperties properties;
 		if (bindings.containsKey(channelName)) {
 			if (bindings.get(channelName).getConsumer() != null) {
-				return bindings.get(channelName).getConsumer();
+				properties = bindings.get(channelName).getConsumer();
 			}
 			else {
-				RabbitConsumerProperties properties = new RabbitConsumerProperties();
+				properties = new RabbitConsumerProperties();
 				this.bindings.get(channelName).setConsumer(properties);
-				return properties;
 			}
 		}
 		else {
-			RabbitConsumerProperties properties = new RabbitConsumerProperties();
+			properties = new RabbitConsumerProperties();
 			RabbitBindingProperties rbp = new RabbitBindingProperties();
 			rbp.setConsumer(properties);
 			bindings.put(channelName, rbp);
-			return properties;
 		}
+		return properties;
 	}
 
 	@Override
 	public synchronized RabbitProducerProperties getExtendedProducerProperties(String channelName) {
+		RabbitProducerProperties properties;
 		if (bindings.containsKey(channelName)) {
 			if (bindings.get(channelName).getProducer() != null) {
-				return bindings.get(channelName).getProducer();
+				properties = bindings.get(channelName).getProducer();
 			}
 			else {
-				RabbitProducerProperties properties = new RabbitProducerProperties();
+				properties = new RabbitProducerProperties();
 				this.bindings.get(channelName).setProducer(properties);
-				return properties;
 			}
 		}
 		else {
-			RabbitProducerProperties properties = new RabbitProducerProperties();
+			properties = new RabbitProducerProperties();
 			RabbitBindingProperties rbp = new RabbitBindingProperties();
 			rbp.setProducer(properties);
 			bindings.put(channelName, rbp);
-			return properties;
 		}
+		return properties;
 	}
 
 }
