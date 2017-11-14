@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binding;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
@@ -43,16 +44,27 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	private final DynamicDestinationsBindable dynamicDestinationsBindable;
 
+	@SuppressWarnings("rawtypes")
+	private final NewDestinationBindingCallback newBindingCallback;
+
 	private ConfigurableListableBeanFactory beanFactory;
 
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
+		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, null);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public BinderAwareChannelResolver(BindingService bindingService,
+			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
+			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 		Assert.notNull(bindingService, "'bindingService' cannot be null");
 		Assert.notNull(bindingTargetFactory, "'bindingTargetFactory' cannot be null");
 		this.bindingService = bindingService;
 		this.bindingTargetFactory = bindingTargetFactory;
+		this.newBindingCallback = callback;
 	}
 
 	@Override
@@ -63,6 +75,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public MessageChannel resolveDestination(String channelName) {
 		try {
@@ -93,6 +106,16 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 					channel = this.bindingTargetFactory.createOutput(channelName);
 					this.beanFactory.registerSingleton(channelName, channel);
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
+					if (this.newBindingCallback != null) {
+						ProducerProperties producerProperties = this.bindingService.getBindingServiceProperties()
+								.getProducerProperties(channelName);
+						Object extendedProducerProperties =
+								this.bindingService.getExtendedProducerProperties(channel, channelName);
+						this.newBindingCallback.configure(channelName, channel, producerProperties,
+								extendedProducerProperties);
+						this.bindingService.getBindingServiceProperties().updateProducerProperties(channelName,
+								producerProperties);
+					}
 					Binding<MessageChannel> binding = this.bindingService.bindProducer(channel, channelName);
 					this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
 				}
@@ -103,4 +126,30 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			return channel;
 		}
 	}
+
+	/**
+	 * Configure a new destination before it is bound.
+	 * @param <T> the extended properties type. If you need to support dynamic binding
+	 * with multiple binders, use {@link Object} and cast as needed.
+	 *
+	 * @since 2.0
+	 *
+	 */
+	@FunctionalInterface
+	public interface NewDestinationBindingCallback<T> {
+
+		/**
+		 * Configure the properties or channel before binding.
+		 * @param channelName the name of the new channel.
+		 * @param channel the channel that is about to be bound.
+		 * @param producerProperties the producer properties.
+		 * @param extendedProducerProperties the extended producer properties (type
+		 * depends on binder type and may be null if the binder doesn't support
+		 * extended properties).
+		 */
+		void configure(String channelName, MessageChannel channel, ProducerProperties producerProperties,
+				T extendedProducerProperties);
+
+	}
+
 }

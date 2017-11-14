@@ -1282,7 +1282,7 @@ This is useful, for example, when the target destination needs to be determined 
 Applications can do so by using the `BinderAwareChannelResolver` bean, registered automatically by the `@EnableBinding` annotation.
 
 The property 'spring.cloud.stream.dynamicDestinations' can be used for restricting the dynamic destination names to a set known beforehand (whitelisting).
-If the property is not set, any destination can be bound dynamicaly.
+If the property is not set, any destination can be bound dynamically.
 
 The `BinderAwareChannelResolver` can be used directly as in the following example, in which a REST controller uses a path variable to decide the target channel.
 
@@ -1359,6 +1359,35 @@ public class SourceWithDynamicDestination {
 	}
 }
 ----
+
+The https://github.com/spring-cloud-stream-app-starters/router[Router Sink Application] uses this technique to create the destinations on-demand.
+
+If the channel names are known in advance, you can configure the producer properties as with any other destination.
+Alternatively, if you register a `NewBindingCallback<>` bean, it will be invoked just before the binding is created.
+The callback takes the generic type of the extended producer properties used by the binder; it has one method:
+
+[source, java]
+----
+void configure(String channelName, MessageChannel channel, ProducerProperties producerProperties,
+        T extendedProducerProperties);
+----
+
+The following is an example using the RabbitMQ binder:
+
+[source, xml]
+----
+@Bean
+public NewBindingCallback<RabbitProducerProperties> dynamicConfigurer() {
+    return (name, channel, props, extended) -> {
+        props.setRequiredGroups("bindThisQueue");
+        extended.setQueueNameGroupOnly(true);
+        extended.setAutoBindDlq(true);
+        extended.setDeadLetterQueueName("myDLQ");
+    };
+}
+----
+
+NOTE: If you need to support dynamic destinations with multiple binder types, use `Object` for the generic type and cast the `extended` argument as needed.
 
 [[contenttypemanagement]]
 == Content Type and Transformation
