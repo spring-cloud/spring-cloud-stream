@@ -520,7 +520,7 @@ public class KafkaBinderTests extends
 
 		moduleOutputChannel.send(message);
 
-		Message<?> receivedMessage = receive(dlqChannel, 5);
+		Message<?> receivedMessage = dlqChannel.receive(5000);
 		//Ensure that we didn't receive anything on DLQ because of serializer config missing
 		//on dlq producer while native Decoding is enabled.
 		assertThat(receivedMessage).isNull();
