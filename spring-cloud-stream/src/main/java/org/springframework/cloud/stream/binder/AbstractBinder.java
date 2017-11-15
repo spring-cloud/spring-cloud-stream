@@ -146,9 +146,14 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return name + GROUP_INDEX_DELIMITER + (StringUtils.hasText(group) ? group : "default");
 	}
 
+	/**
+	 * Deprecated as of v2.0. Doesn't do anything other then returns an instance
+	 * of {@link MessageValues} built from {@link Message}. Remains primarily for
+	 * backward compatibility and will be removed in the next major release.
+	 */
 	@Deprecated
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
-		return MessageSerializationUtils.serializePayload(message);
+		return new MessageValues(message);
 	}
 
 	@Deprecated

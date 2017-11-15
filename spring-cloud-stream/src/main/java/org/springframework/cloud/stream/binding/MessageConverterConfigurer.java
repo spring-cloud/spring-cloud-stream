@@ -26,6 +26,8 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.JavaClassMimeTypeUtils;
+import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
@@ -52,6 +54,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -354,8 +357,37 @@ public class MessageConverterConfigurer
 					.copyHeaders(headers)
 					.build();
 				}
+				postProcessedMessage = this.finishPreSend(postProcessedMessage);
 			}
 			return postProcessedMessage;
+		}
+
+		/**
+		 * This is strictly to support 1.3 semantics where BINDER_ORIGINAL_CONTENT_TYPE header
+		 * needs to be set for certain cases and String payloads needs to be converted to byte[].
+		 *
+		 * Factored out of what was left of MessageSerializationUtils.
+		 */
+		// deprecated at the get go as a reminder to remove at v3.0
+		@Deprecated
+		private Message<?> finishPreSend(Message<?> message) {
+			String oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE) ? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString() : null;
+			String ct = oct;
+			if (message.getPayload() instanceof String) {
+				ct = JavaClassMimeTypeUtils.mimeTypeFromObject(message.getPayload(), ObjectUtils.nullSafeToString(oct)).toString();
+			}
+			MessageValues messageValues = new MessageValues(message);
+			Object payload = message.getPayload();
+			if (payload instanceof String) {
+				payload = ((String)payload).getBytes(StandardCharsets.UTF_8);
+			}
+
+			messageValues.setPayload(payload);
+			if (ct != null && !ct.equals(oct)) {
+				messageValues.put(MessageHeaders.CONTENT_TYPE, ct);
+				messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, oct);
+			}
+			return messageValues.toMessage();
 		}
 	}
 

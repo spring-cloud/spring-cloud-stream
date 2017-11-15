@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -43,7 +42,6 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.util.Assert;
-import org.springframework.util.MimeType;
 
 /**
  * {@link AbstractBinder} that serves as base class for {@link MessageChannel} binders.
@@ -595,11 +593,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				Object contentType = transformed.get(MessageHeaders.CONTENT_TYPE);
 				// transform content type headers to String, so that they can be properly
 				// embedded in JSON
-				if (contentType instanceof MimeType) {
+				if (contentType != null) {
 					transformed.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
 				}
 				Object originalContentType = transformed.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-				if (originalContentType instanceof MimeType) {
+				if (originalContentType != null) {
 					transformed.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, originalContentType.toString());
 				}
 				payload = EmbeddedHeaderUtils.embedHeaders(transformed, this.embeddedHeaders);
