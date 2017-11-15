@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder.integration;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import org.springframework.beans.factory.BeanFactory;
@@ -34,14 +32,13 @@ import org.springframework.core.AttributeAccessor;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.BridgeHandler;
+import org.springframework.integration.support.DefaultErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
-import org.springframework.integration.support.ErrorMessageUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
@@ -55,12 +52,13 @@ import org.springframework.util.StringUtils;
  * It is useful for localized demos and testing.
  * <p>
  * This binder extends from the same base class ({@link AbstractMessageChannelBinder}) as
- * other binders (i.e., Rabbit, Kafka etc). Interaction with this binder is done via a pair of named {@link MessageChannel}s.
+ * other binders (i.e., Rabbit, Kafka etc). Interaction with this binder is done via source
+ * and target destination which emulate real binder's destinations (i.e., Kafka topic)
  * <br>
- * The names of the channels are:
+ * The destination classes are
  * <ul>
- * <li>{@link SpringIntegrationBinderConfiguration#BINDER_INPUT}</li>
- * <li>{@link SpringIntegrationBinderConfiguration#BINDER_OUTPUT}</li>
+ * <li>{@link SourceDestination}</li>
+ * <li>{@link TargetDestination}</li>
  * </ul>
  * Simply autowire them in your your application and send/receive messages.
  * </p>
@@ -119,7 +117,7 @@ class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder<Consum
 	@Override
 	protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group, ConsumerProperties properties)
 			throws Exception {
-		ErrorMessageStrategy errorMessageStrategy = new IntegrationHeaderErrorMessageStrategy();
+		ErrorMessageStrategy errorMessageStrategy = new DefaultErrorMessageStrategy();
 		SubscribableChannel siBinderInputChannel = ((SpringIntegrationConsumerDestination)destination).getChannel();
 
 		IntegrationMessageListeningContainer messageListenerContainer = new IntegrationMessageListeningContainer();
@@ -256,19 +254,4 @@ class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder<Consum
 			}
 		}
 	}
-
-	/**
-	 * Implementation of ErrorMessageStrategy used by this binder.
-	 * Modeled after the one in Rabbit binder although doesn't do much, so a placeholder for now .
-	 */
-	private static class IntegrationHeaderErrorMessageStrategy implements ErrorMessageStrategy {
-		@Override
-		public ErrorMessage buildErrorMessage(Throwable throwable, AttributeAccessor context) {
-			Object inputMessage = context == null ? null
-					: context.getAttribute(ErrorMessageUtils.INPUT_MESSAGE_CONTEXT_KEY);
-			Map<String, Object> headers = new HashMap<String, Object>();
-			return new ErrorMessage(throwable, headers, inputMessage instanceof Message ? (Message<?>) inputMessage : null);
-		}
-	}
-
 }

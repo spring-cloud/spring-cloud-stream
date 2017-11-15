@@ -53,10 +53,11 @@ class SpringIntegrationProvisioner implements ProvisioningProvider<ConsumerPrope
 	private TargetDestination target;
 
 	/**
-	 * Will provision consumer destination as SI {@link PublishSubscribeChannel} thus
-	 * allowing registration of multiple handlers.
-	 * This allows a convenience to both register a subscriber to a channel as well as
-	 * use {@link TargetDestination#receive()} to get a {@link Message} for additional assertions.
+	 * Will provision producer destination as an SI {@link PublishSubscribeChannel}.
+	 * <br>
+	 * This provides convenience of registering additional subscriber (handler in the test method)
+	 * along side of being able to call {@link TargetDestination#receive()} to get a
+	 * {@link Message} for additional assertions.
 	 */
 	@Override
 	public ProducerDestination provisionProducerDestination(String name, ProducerProperties properties) throws ProvisioningException {

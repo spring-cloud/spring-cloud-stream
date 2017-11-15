@@ -16,12 +16,11 @@
 
 package org.springframework.cloud.stream.binder.integration;
 
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
 
 /**
  * Implementation of binder endpoint that represents the target destination
@@ -34,24 +33,32 @@ import org.springframework.messaging.MessagingException;
  */
 public class TargetDestination extends AbstractDestination {
 
-	private Queue<Message<?>> messages;
+	private BlockingQueue<Message<?>> messages;
 
 	/**
-	 * Allows to receive {@link Message}s that have been received by a {@link TargetDestination}.
+	 * Allows to access {@link Message}s received by this {@link TargetDestination}.
+	 * @param timeout how long to wait before giving up
+	 */
+	public Message<?> receive(long timeout) {
+		try {
+			return this.messages.poll(timeout, TimeUnit.MILLISECONDS);
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		return null;
+	}
+
+	/**
+	 * Allows to access {@link Message}s received by this {@link TargetDestination}.
 	 */
 	public Message<?> receive() {
-		return messages.poll();
+		return this.receive(0);
 	}
 
 	@Override
 	void afterChannelIsSet() {
-		this.messages = new ArrayBlockingQueue<>(1000);
-		this.getChannel().subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				messages.offer(message);
-			}
-		});
+		this.messages = new LinkedTransferQueue<>();
+		this.getChannel().subscribe(message -> messages.offer(message));
 	}
 }

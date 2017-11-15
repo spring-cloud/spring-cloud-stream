@@ -18,7 +18,7 @@ package org.springframework.cloud.stream.binder.integration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -70,10 +70,8 @@ public class SpringIntegrationBinderConfiguration<T> {
 
 	@Bean
 	public BinderTypeRegistry binderTypeRegistry() {
-		BinderType bt = new BinderType(NAME, new Class[] {SpringIntegrationBinderConfiguration.class});
-		Map<String, BinderType> binderTypes = new HashMap<>();
-		binderTypes.put(NAME, bt);
-		BinderTypeRegistry btr = new DefaultBinderTypeRegistry(binderTypes);
+		BinderType binderType = new BinderType(NAME, new Class[] {SpringIntegrationBinderConfiguration.class});
+		BinderTypeRegistry btr = new DefaultBinderTypeRegistry(Collections.singletonMap(NAME, binderType));
 		return btr;
 	}
 
