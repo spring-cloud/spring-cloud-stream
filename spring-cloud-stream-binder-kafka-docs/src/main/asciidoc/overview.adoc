@@ -201,6 +201,12 @@ converterBeanName::
   The name of a bean that implements `RecordMessageConverter`; used in the inbound channel adapter to replace the default `MessagingMessageConverter`.
 +
 Default: `null`
+idleEventInterval::
+  The interval, in milliseconds between events indicating that no messages have recently been received.
+  Use an `ApplicationListener<ListenerContainerIdleEvent>` to receive these events.
+  See <<pause-resume>> for a usage example.
++
+Default: `30000`
 
 [[kafka-producer-properties]]
 === Kafka Producer Properties
@@ -375,6 +381,46 @@ Exercise caution when using the `autoCreateTopics` and `autoAddPartitions` if us
 Usually applications may use principals that do not have administrative rights in Kafka and Zookeeper, and relying on Spring Cloud Stream to create/modify topics may fail.
 In secure environments, we strongly recommend creating topics and managing ACLs administratively using Kafka tooling.
 ====
+
+[[pause-resume]]
+==== Example: Pausing and Resuming the Consumer
+
+If you wish to suspend consumption, but not cause a partition rebalance, you can pause and resume the consumer.
+This is facilitated by adding the `Consumer` as a parameter to your `@StreamListener`.
+To resume, you need an `ApplicationListener` for `ListenerContainerIdleEvent` s; the frequency at which events are published is controlled by the `idleEventInterval` property.
+Since the consumer is not thread-safe, you must call these methods on the calling thread.
+
+The following simple application shows how to pause and resume.
+
+[source, java]
+----
+@SpringBootApplication
+@EnableBinding(Sink.class)
+public class Application {
+
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+
+	@StreamListener(Sink.INPUT)
+	public void in(String in, @Header(KafkaHeaders.CONSUMER) Consumer<?, ?> consumer) {
+		System.out.println(in);
+		consumer.pause(Collections.singleton(new TopicPartition("myTopic", 0)));
+	}
+
+	@Bean
+	public ApplicationListener<ListenerContainerIdleEvent> idleListener() {
+		return event -> {
+			System.out.println(event);
+			if (event.getConsumer().paused().size() > 0) {
+				event.getConsumer().resume(event.getConsumer().paused());
+			}
+		};
+	}
+
+}
+----
+
 
 ==== Using the binder with Apache Kafka 0.10
 

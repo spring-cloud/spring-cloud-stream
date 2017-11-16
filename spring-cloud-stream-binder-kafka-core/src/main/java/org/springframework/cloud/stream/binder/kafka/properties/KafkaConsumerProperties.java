@@ -75,6 +75,8 @@ public class KafkaConsumerProperties {
 
 	private String converterBeanName;
 
+	private long idleEventInterval = 30_000;
+
 	private Map<String, String> configuration = new HashMap<>();
 
 	public boolean isAutoCommitOffset() {
@@ -170,6 +172,14 @@ public class KafkaConsumerProperties {
 
 	public void setConverterBeanName(String converterBeanName) {
 		this.converterBeanName = converterBeanName;
+	}
+
+	public long getIdleEventInterval() {
+		return this.idleEventInterval;
+	}
+
+	public void setIdleEventInterval(long idleEventInterval) {
+		this.idleEventInterval = idleEventInterval;
 	}
 
 }

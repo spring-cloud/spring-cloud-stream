@@ -348,10 +348,11 @@ public class KafkaMessageChannelBinder extends
 		if (this.transactionManager != null) {
 			containerProperties.setTransactionManager(this.transactionManager);
 		}
+		containerProperties.setIdleEventInterval(extendedConsumerProperties.getExtension().getIdleEventInterval());
 		int concurrency = Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
 		@SuppressWarnings("rawtypes")
-		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer = new ConcurrentMessageListenerContainer(
-				consumerFactory, containerProperties) {
+		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
+				new ConcurrentMessageListenerContainer(consumerFactory, containerProperties) {
 
 			@Override
 			public void stop(Runnable callback) {
@@ -360,6 +361,9 @@ public class KafkaMessageChannelBinder extends
 
 		};
 		messageListenerContainer.setConcurrency(concurrency);
+		// these won't be needed if the container is made a bean
+		messageListenerContainer.setApplicationEventPublisher(getApplicationContext());
+		messageListenerContainer.setBeanName(destination.getName() + ".container");
 		if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
 			messageListenerContainer.getContainerProperties()
 					.setAckMode(AbstractMessageListenerContainer.AckMode.MANUAL);
@@ -373,8 +377,8 @@ public class KafkaMessageChannelBinder extends
 			this.logger.debug(
 					"Listened partitions: " + StringUtils.collectionToCommaDelimitedString(listenedPartitions));
 		}
-		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter<>(
-				messageListenerContainer);
+		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter =
+				new KafkaMessageDrivenChannelAdapter<>(messageListenerContainer);
 		MessagingMessageConverter messageConverter;
 		if (extendedConsumerProperties.getExtension().getConverterBeanName() == null) {
 			messageConverter = new MessagingMessageConverter();
