@@ -42,8 +42,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KStreamBuilderFactoryBean;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -118,7 +118,7 @@ public class KStreamInteractiveQueryIntegrationTests {
 	public static class ProductCountApplication {
 
 		@Autowired
-		private KStreamBuilderFactoryBean kStreamBuilderFactoryBean;
+		private StreamsBuilderFactoryBean kStreamBuilderFactoryBean;
 
 		@StreamListener("input")
 		@SendTo("output")
@@ -134,14 +134,14 @@ public class KStreamInteractiveQueryIntegrationTests {
 		}
 
 		@Bean
-		public Foo foo(KStreamBuilderFactoryBean kStreamBuilderFactoryBean) {
+		public Foo foo(StreamsBuilderFactoryBean kStreamBuilderFactoryBean) {
 			return new Foo(kStreamBuilderFactoryBean);
 		}
 
 		static class Foo {
-			KStreamBuilderFactoryBean kStreamBuilderFactoryBean;
+			StreamsBuilderFactoryBean kStreamBuilderFactoryBean;
 
-			Foo(KStreamBuilderFactoryBean kStreamBuilderFactoryBean) {
+			Foo(StreamsBuilderFactoryBean kStreamBuilderFactoryBean) {
 				this.kStreamBuilderFactoryBean = kStreamBuilderFactoryBean;
 			}
 

@@ -609,26 +609,26 @@ public class KafkaMessageChannelBinder extends
 		}
 	}
 
-	public static class TopicInformation {
+	static class TopicInformation {
 
 		private final String consumerGroup;
 
 		private final Collection<PartitionInfo> partitionInfos;
 
-		public TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos) {
+		TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos) {
 			this.consumerGroup = consumerGroup;
 			this.partitionInfos = partitionInfos;
 		}
 
-		public String getConsumerGroup() {
+		String getConsumerGroup() {
 			return consumerGroup;
 		}
 
-		public boolean isConsumerTopic() {
+		boolean isConsumerTopic() {
 			return consumerGroup != null;
 		}
 
-		public Collection<PartitionInfo> getPartitionInfos() {
+		Collection<PartitionInfo> getPartitionInfos() {
 			return partitionInfos;
 		}
 
@@ -645,7 +645,7 @@ public class KafkaMessageChannelBinder extends
 		}
 
 		@SuppressWarnings("unchecked")
-		public void sendToDlq(ConsumerRecord<?,?> consumerRecord, Headers headers) {
+		void sendToDlq(ConsumerRecord<?, ?> consumerRecord, Headers headers) {
 			K key = (K)consumerRecord.key();
 			V value = (V)consumerRecord.value();
 			ProducerRecord<K,V> producerRecord = new ProducerRecord<>(this.dlqName, consumerRecord.partition(),

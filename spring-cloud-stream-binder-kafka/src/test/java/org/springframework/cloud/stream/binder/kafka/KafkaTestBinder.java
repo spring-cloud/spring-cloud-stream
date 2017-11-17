@@ -17,8 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
-import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
-import org.springframework.cloud.stream.binder.kafka.admin.KafkaAdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
@@ -31,6 +29,7 @@ import org.springframework.kafka.support.ProducerListener;
 
 /**
  * Test support class for {@link KafkaMessageChannelBinder}.
+ *
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author David Turanski
@@ -39,16 +38,11 @@ import org.springframework.kafka.support.ProducerListener;
  */
 public class KafkaTestBinder extends AbstractKafkaTestBinder {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration) {
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration, KafkaTopicProvisioner kafkaTopicProvisioner) {
 		try {
-			AdminUtilsOperation adminUtilsOperation = new KafkaAdminUtilsOperation();
-			KafkaTopicProvisioner provisioningProvider =
-					new KafkaTopicProvisioner(binderConfiguration, adminUtilsOperation);
-			provisioningProvider.afterPropertiesSet();
-
 			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(binderConfiguration,
-					provisioningProvider) {
+					kafkaTopicProvisioner) {
 
 				/*
 				 * Some tests use multiple instance indexes for the same topic; we need to make
@@ -56,7 +50,7 @@ public class KafkaTestBinder extends AbstractKafkaTestBinder {
 				 */
 				@Override
 				protected String errorsBaseName(ConsumerDestination destination, String group,
-						ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+												ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
 					return super.errorsBaseName(destination, group, consumerProperties) + "-"
 							+ consumerProperties.getInstanceIndex();
 				}

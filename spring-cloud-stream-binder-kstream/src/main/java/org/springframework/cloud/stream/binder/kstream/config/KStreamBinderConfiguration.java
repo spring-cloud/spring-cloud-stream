@@ -21,10 +21,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.streams.StreamsConfig;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
-import org.springframework.cloud.stream.binder.kafka.admin.KafkaAdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kstream.KStreamBinder;
@@ -39,14 +37,14 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(KStreamExtendedBindingProperties.class)
 public class KStreamBinderConfiguration {
 
-	@Autowired(required = false)
-	private AdminUtilsOperation adminUtilsOperation;
-
 	private static final Log logger = LogFactory.getLog(KStreamBinderConfiguration.class);
+
+	@Autowired
+	private KafkaProperties kafkaProperties;
 
 	@Bean
 	public KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties binderConfigurationProperties) {
-		return new KafkaTopicProvisioner(binderConfigurationProperties, adminUtilsOperation);
+		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties);
 	}
 
 	@Bean
@@ -55,13 +53,6 @@ public class KStreamBinderConfiguration {
 			KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig) {
 		return new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner, kStreamExtendedBindingProperties,
 				streamsConfig);
-	}
-
-	@Bean(name = "adminUtilsOperation")
-	@ConditionalOnClass(name = "kafka.admin.AdminUtils")
-	public AdminUtilsOperation kafka10AdminUtilsOperation() {
-		logger.info("AdminUtils selected: Kafka 0.10 AdminUtils");
-		return new KafkaAdminUtilsOperation();
 	}
 
 }

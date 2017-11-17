@@ -19,8 +19,8 @@ package org.springframework.cloud.stream.binder.kstream.config;
 import java.util.Properties;
 
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.KStreamBuilder;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
@@ -34,7 +34,7 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.annotation.KafkaStreamsDefaultConfiguration;
-import org.springframework.kafka.core.KStreamBuilderFactoryBean;
+import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -48,18 +48,18 @@ public class KStreamBinderSupportAutoConfiguration {
 		return new KafkaBinderConfigurationProperties();
 	}
 
-	@Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_KSTREAM_BUILDER_BEAN_NAME)
-	public KStreamBuilderFactoryBean defaultKStreamBuilder(
+	@Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_BUILDER_BEAN_NAME)
+	public StreamsBuilderFactoryBean defaultKafkaStreamBuilder(
 			@Qualifier(KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME) ObjectProvider<StreamsConfig> streamsConfigProvider) {
 		StreamsConfig streamsConfig = streamsConfigProvider.getIfAvailable();
 		if (streamsConfig != null) {
-			KStreamBuilderFactoryBean kStreamBuilderFactoryBean = new KStreamBuilderFactoryBean(streamsConfig);
+			StreamsBuilderFactoryBean kStreamBuilderFactoryBean = new StreamsBuilderFactoryBean(streamsConfig);
 			kStreamBuilderFactoryBean.setPhase(Integer.MAX_VALUE - 500);
 			return kStreamBuilderFactoryBean;
 		}
 		else {
 			throw new UnsatisfiedDependencyException(KafkaStreamsDefaultConfiguration.class.getName(),
-					KafkaStreamsDefaultConfiguration.DEFAULT_KSTREAM_BUILDER_BEAN_NAME, "streamsConfig",
+					KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_BUILDER_BEAN_NAME, "streamsConfig",
 					"There is no '" + KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME
 							+ "' StreamsConfig bean in the application context.\n");
 		}
@@ -79,19 +79,19 @@ public class KStreamBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public KStreamStreamListenerResultAdapter kStreamStreamListenerResultAdapter() {
+	public KStreamStreamListenerResultAdapter kafkaStreamStreamListenerResultAdapter() {
 		return new KStreamStreamListenerResultAdapter();
 	}
 
 	@Bean
-	public KStreamListenerParameterAdapter kStreamListenerParameterAdapter(
+	public KStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter(
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		return new KStreamListenerParameterAdapter(
 				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 	}
 
 	@Bean
-	public KStreamBoundElementFactory kStreamBindableTargetFactory(KStreamBuilder kStreamBuilder,
+	public KStreamBoundElementFactory kafkaStreamBindableTargetFactory(StreamsBuilder kStreamBuilder,
 			BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		return new KStreamBoundElementFactory(kStreamBuilder, bindingServiceProperties,

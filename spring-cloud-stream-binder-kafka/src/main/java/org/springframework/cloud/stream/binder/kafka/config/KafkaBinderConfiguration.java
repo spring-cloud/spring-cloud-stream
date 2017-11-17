@@ -27,16 +27,14 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderMetrics;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
-import org.springframework.cloud.stream.binder.kafka.admin.AdminUtilsOperation;
-import org.springframework.cloud.stream.binder.kafka.admin.KafkaAdminUtilsOperation;
 import org.springframework.cloud.stream.binder.kafka.properties.JaasLoginModuleConfiguration;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
@@ -81,12 +79,12 @@ public class KafkaBinderConfiguration {
 	@Autowired
 	private ApplicationContext context;
 
-	@Autowired(required = false)
-	private AdminUtilsOperation adminUtilsOperation;
+	@Autowired
+	private KafkaProperties kafkaProperties;
 
 	@Bean
 	KafkaTopicProvisioner provisioningProvider() {
-		return new KafkaTopicProvisioner(this.configurationProperties, this.adminUtilsOperation);
+		return new KafkaTopicProvisioner(this.configurationProperties, this.kafkaProperties);
 	}
 
 	@Bean
@@ -125,12 +123,6 @@ public class KafkaBinderConfiguration {
 	@Bean
 	public MeterBinder kafkaBinderMetrics(KafkaMessageChannelBinder kafkaMessageChannelBinder) {
 		return new KafkaBinderMetrics(kafkaMessageChannelBinder, configurationProperties);
-	}
-
-	@Bean(name = "adminUtilsOperation")
-	@ConditionalOnClass(name = "kafka.admin.AdminUtils")
-	public AdminUtilsOperation kafka10AdminUtilsOperation() {
-		return new KafkaAdminUtilsOperation();
 	}
 
 	@Bean

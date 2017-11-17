@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
@@ -47,7 +48,8 @@ import static org.junit.Assert.assertTrue;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { KafkaBinderConfiguration.class, KafkaBinderConfigurationPropertiesTest.class })
+@SpringBootTest(classes = { KafkaBinderConfiguration.class, KafkaAutoConfiguration.class,
+		KafkaBinderConfigurationPropertiesTest.class })
 @TestPropertySource(locations = "classpath:binder-config.properties")
 public class KafkaBinderConfigurationPropertiesTest {
 

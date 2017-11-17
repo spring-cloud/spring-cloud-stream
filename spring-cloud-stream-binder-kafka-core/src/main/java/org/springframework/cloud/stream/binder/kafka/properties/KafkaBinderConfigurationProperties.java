@@ -40,6 +40,8 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
 
+	private static final String DEFAULT_KAFKA_CONNECTION_STRING = "localhost:9092";
+
 	private final Transaction transaction = new Transaction();
 
 	@Autowired(required = false)
@@ -99,7 +101,7 @@ public class KafkaBinderConfigurationProperties {
 	private JaasLoginModuleConfiguration jaas;
 
 	/**
-	 * The bean name of a custom header mapper to use instead of a {@link DefaultKafkaHeaderMapper}.
+	 * The bean name of a custom header mapper to use instead of a {@link org.springframework.kafka.support.DefaultKafkaHeaderMapper}.
 	 */
 	private String headerMapperBeanName;
 
@@ -113,6 +115,10 @@ public class KafkaBinderConfigurationProperties {
 
 	public String getKafkaConnectionString() {
 		return toConnectionString(this.brokers, this.defaultBrokerPort);
+	}
+
+	public String getDefaultKafkaConnectionString() {
+		return DEFAULT_KAFKA_CONNECTION_STRING;
 	}
 
 	public String[] getHeaders() {

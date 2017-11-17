@@ -19,8 +19,8 @@ package org.springframework.cloud.stream.binder.kstream;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.KeyValueMapper;
 
 import org.springframework.aop.framework.ProxyFactory;
@@ -42,13 +42,13 @@ import org.springframework.util.StringUtils;
  */
 public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 
-	private final KStreamBuilder kStreamBuilder;
+	private final StreamsBuilder kStreamBuilder;
 
 	private final BindingServiceProperties bindingServiceProperties;
 
 	private CompositeMessageConverterFactory compositeMessageConverterFactory;
 
-	public KStreamBoundElementFactory(KStreamBuilder streamBuilder, BindingServiceProperties bindingServiceProperties,
+	public KStreamBoundElementFactory(StreamsBuilder streamBuilder, BindingServiceProperties bindingServiceProperties,
 									CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		super(KStream.class);
 		this.bindingServiceProperties = bindingServiceProperties;
