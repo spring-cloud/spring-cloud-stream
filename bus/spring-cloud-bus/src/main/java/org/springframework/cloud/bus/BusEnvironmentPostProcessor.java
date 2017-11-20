@@ -46,7 +46,13 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 				+ ".content-type",
 				environment.getProperty("spring.cloud.bus.content-type",
 						"application/json"));
+		map.put("spring.cloud.bus.id", getDefaultServiceId(environment));
 		addOrReplace(environment.getPropertySources(), map);
+	}
+
+	// TODO: move this to commons
+	private String getDefaultServiceId(ConfigurableEnvironment environment) {
+		return "${vcap.application.name:${spring.application.name:${spring.application.name:application}}}:${vcap.application.instance_index:${spring.application.index:${local.server.port:${server.port:0}}}}:${vcap.application.instance_id:${random.value}}";
 	}
 
 	private void addOrReplace(MutablePropertySources propertySources,

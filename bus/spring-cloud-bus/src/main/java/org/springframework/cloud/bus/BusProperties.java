@@ -46,7 +46,10 @@ public class BusProperties {
 	 * Name of Spring Cloud Stream destination for messages.
 	 */
 	private String destination = "springCloudBus";
-
+	/**
+	 * The identifier for this application instance.
+	 */
+	private String id = "application";
 	/**
 	 * Flag to indicate that the bus is enabled.
 	 */
@@ -82,6 +85,14 @@ public class BusProperties {
 
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	public static class Env {

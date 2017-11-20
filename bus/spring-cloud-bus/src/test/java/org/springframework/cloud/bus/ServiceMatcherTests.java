@@ -22,8 +22,8 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import org.springframework.cloud.bus.event.EnvironmentChangeRemoteApplicationEvent;
-import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.util.AntPathMatcher;
 
 import static org.hamcrest.Matchers.is;
@@ -38,14 +38,13 @@ public class ServiceMatcherTests {
 	private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
 	private ServiceMatcher matcher = new ServiceMatcher();
-	private StaticApplicationContext context = new StaticApplicationContext();
+	private BusProperties context = new BusProperties();
 
 	@Before
 	public void init() {
 		context.setId("one:two:8888");
-		context.refresh();
 		matcher.setMatcher(new DefaultBusPathMatcher(new AntPathMatcher(":")));
-		matcher.setApplicationContext(context);
+		matcher.setBusProperties(context);
 	}
 
 	@Test

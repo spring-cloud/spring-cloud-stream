@@ -15,15 +15,21 @@ include::quickstart.adoc[]
 
 == Addressing an Instance
 
-The HTTP endpoints accept a "destination" parameter, e.g. "/bus/refresh?destination=customers:9000", where the destination is an `ApplicationContext` ID. If the ID is owned by an instance on the Bus then it will process the message and all other instances will ignore it. Spring Boot sets the ID for you in the `ContextIdApplicationContextInitializer` to a combination of the `spring.application.name`, active profiles and `server.port` by default.
+Each instance of the application has a service ID, whose value can be set using `spring.cloud.bus.id`, and whose value is expected to be a colon-separated list of identifiers, in order of least specific to most specific. The default value is constructed from the environment as a combination of the `spring.application.name` and `server.port` (or `spring.application.index` if set). The default value of the ID is constructed in the form `app:index:id` where:
+
+* `app` is the `vcap.application.name` if it exists, or `spring.application.name`
+* `index` is the `vcap.application.instance_index` if it exists, or else `spring.application.index`, or else `local.server.port` (or `server.port` or `0`).
+* `id` is the `vcap.application.instance_id` if it exists, or else a random value.
+
+The HTTP endpoints accept a "destination" parameter, e.g. "/bus/refresh?destination=customers:9000", where the destination is a service ID. If the ID is owned by an instance on the Bus then it will process the message and all other instances will ignore it.
 
 == Addressing all instances of a service
 
-The "destination" parameter is used in a Spring `PathMatcher` (with the path separator as a colon `:`) to determine if an instance will process the message.   Using the example from above, "/bus/refresh?destination=customers:**" will  target  all instances of the "customers" service regardless of the profiles and ports set as the `ApplicationContext` ID.
+The "destination" parameter is used in a Spring `PathMatcher` (with the path separator as a colon `:`) to determine if an instance will process the message.   Using the example from above, "/bus/refresh?destination=customers:**" will  target  all instances of the "customers" service regardless of the rest of the service ID.
 
-== Application Context ID must be unique
+== Service ID must be unique
 
-The bus tries to eliminate processing an event twice, once from the original `ApplicationEvent` and once from the queue.  To do this, it checks the sending application context id againts the current application context id.  If multiple instances of a service have the same application context id, events will not be processed.  Running on a local machine, each service will be on a different port and that will be part of the application context id.  Cloud Foundry supplies an index to differentiate.  To ensure that the application context id is the unique, set `spring.application.index` to something unique for each instance of a service.  For example, in lattice, set `spring.application.index=${INSTANCE_INDEX}` in application.properties (or bootstrap.properties if using configserver).
+The bus tries to eliminate processing an event twice, once from the original `ApplicationEvent` and once from the queue.  To do this, it checks the sending service ID againts the current service ID.  If multiple instances of a service have the same ID, events will not be processed.  Running on a local machine, each service will be on a different port and that will be part of the ID.  Cloud Foundry supplies an index to differentiate.  To ensure that the ID is unique outside Cloud Foundry, set `spring.application.index` to something unique for each instance of a service.
 
 == Customizing the Message Broker
 

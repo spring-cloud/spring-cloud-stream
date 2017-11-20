@@ -167,9 +167,11 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		}
 
 		@Bean
-		public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher) {
+		public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher,
+				BusProperties bus) {
 			ServiceMatcher serviceMatcher = new ServiceMatcher();
 			serviceMatcher.setMatcher(pathMatcher);
+			serviceMatcher.setBusProperties(bus);
 			return serviceMatcher;
 		}
 
@@ -190,8 +192,9 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		@ConditionalOnProperty(value = "endpoints.spring.cloud.bus.refresh.enabled", matchIfMissing = true)
 		protected static class BusRefreshEndpointConfiguration {
 			@Bean
-			public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context) {
-				return new RefreshBusEndpoint(context, context.getId());
+			public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context,
+					BusProperties bus) {
+				return new RefreshBusEndpoint(context, bus.getId());
 			}
 		}
 
@@ -227,8 +230,8 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		protected static class EnvironmentBusEndpointConfiguration {
 			@Bean
 			public EnvironmentBusEndpoint environmentBusEndpoint(
-					ApplicationContext context) {
-				return new EnvironmentBusEndpoint(context, context.getId());
+					ApplicationContext context, BusProperties bus) {
+				return new EnvironmentBusEndpoint(context, bus.getId());
 			}
 		}
 	}
