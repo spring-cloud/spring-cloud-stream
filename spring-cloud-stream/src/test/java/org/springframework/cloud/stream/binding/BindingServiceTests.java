@@ -473,7 +473,7 @@ public class BindingServiceTests {
 	private DefaultBinderFactory createMockBinderFactory() {
 		BinderTypeRegistry binderTypeRegistry = createMockBinderTypeRegistry();
 		return new DefaultBinderFactory(
-				Collections.singletonMap("mock", new BinderConfiguration("mock", new Properties(), true, true)),
+				Collections.singletonMap("mock", new BinderConfiguration("mock", new HashMap<>(), true, true)),
 				binderTypeRegistry);
 	}
 

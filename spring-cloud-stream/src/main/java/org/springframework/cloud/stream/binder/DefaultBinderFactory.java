@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
@@ -169,7 +168,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			}
 			BinderType binderType = this.binderTypeRegistry.get(binderConfiguration.getBinderType());
 			Assert.notNull(binderType, "Binder type " + binderConfiguration.getBinderType() + " is not defined");
-			Properties binderProperties = binderConfiguration.getProperties();
+			Map<Object, Object> binderProperties = binderConfiguration.getProperties();
 			// Convert all properties to arguments, so that they receive maximum
 			// precedence
 			ArrayList<String> args = new ArrayList<>();

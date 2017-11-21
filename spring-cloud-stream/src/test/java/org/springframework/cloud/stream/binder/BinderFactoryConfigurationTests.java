@@ -163,20 +163,6 @@ public class BinderFactoryConfigurationTests {
 	}
 
 	@Test
-	public void loadBinderTypeRegistryWithOneCustomBinderAndIsolatedEnvironment() throws Exception {
-		ConfigurableApplicationContext context = createBinderTestContext(
-				new String[] { "binder1" }, "binder1.name=foo",
-				"spring.cloud.stream.binders.custom.type=binder1",
-				"spring.cloud.stream.binders.custom.environment.foo=bar",
-				"spring.cloud.stream.binders.custom.inheritEnvironment=false");
-
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-
-		Binder binder1 = binderFactory.getBinder("custom", MessageChannel.class);
-		assertThat(binder1).hasFieldOrPropertyWithValue("name", null);
-	}
-
-	@Test
 	public void loadBinderTypeRegistryWithTwoBinders() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" });
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
@@ -208,11 +194,9 @@ public class BinderFactoryConfigurationTests {
 
 	@Test
 	public void loadBinderTypeRegistryWithCustomNonDefaultCandidate() throws Exception {
-
 		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] { "binder1" },
 				"spring.cloud.stream.binders.custom.type=binder1",
-				"spring.cloud.stream.binders.custom.environment.binder1.name=foo",
 				"spring.cloud.stream.binders.custom.defaultCandidate=false",
 				"spring.cloud.stream.binders.custom.inheritEnvironment=false");
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
@@ -231,11 +215,6 @@ public class BinderFactoryConfigurationTests {
 		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
 		assertThat(binder1).isSameAs(defaultBinder);
-
-		Binder custom = binderFactory.getBinder("custom", MessageChannel.class);
-		assertThat(custom).isInstanceOf(StubBinder1.class);
-		assertThat(custom).isNotSameAs(defaultBinder);
-		assertThat(((StubBinder1) custom).getName()).isEqualTo("foo");
 	}
 
 	@Test
