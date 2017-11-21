@@ -131,7 +131,7 @@ public class BinderFactoryConfiguration {
 			for (Map.Entry<String, BinderType> binderEntry : binderTypeRegistry.getAll().entrySet()) {
 				if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
 					binderConfigurations.put(binderEntry.getKey(), new BinderConfiguration(binderEntry.getKey(),
-							new Properties(), true, true));
+							new HashMap<>(), true, true));
 				}
 			}
 		}
