@@ -40,7 +40,7 @@ public class StreamListenerMethodUtils {
 	protected static int inputAnnotationCount(Method method) {
 		int inputAnnotationCount = 0;
 		for (int parameterIndex = 0; parameterIndex < method.getParameterTypes().length; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+			MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
 			if (methodParameter.hasParameterAnnotation(Input.class)) {
 				inputAnnotationCount++;
 			}
@@ -51,7 +51,7 @@ public class StreamListenerMethodUtils {
 	protected static int outputAnnotationCount(Method method) {
 		int outputAnnotationCount = 0;
 		for (int parameterIndex = 0; parameterIndex < method.getParameterTypes().length; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+			MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
 			if (methodParameter.hasParameterAnnotation(Output.class)) {
 				outputAnnotationCount++;
 			}
@@ -90,7 +90,7 @@ public class StreamListenerMethodUtils {
 			Assert.isTrue(!StringUtils.hasText(condition),
 					StreamListenerErrorMessages.CONDITION_ON_DECLARATIVE_METHOD);
 			for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
-				MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+				MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
 				if (methodParameter.hasParameterAnnotation(Input.class)) {
 					String inboundName = (String) AnnotationUtils
 							.getValue(methodParameter.getParameterAnnotation(Input.class));
@@ -115,7 +115,7 @@ public class StreamListenerMethodUtils {
 			int numAnnotatedMethodParameters = 0;
 			int numPayloadAnnotations = 0;
 			for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
-				MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+				MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
 				if (methodParameter.hasParameterAnnotations()) {
 					numAnnotatedMethodParameters++;
 				}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import org.springframework.util.StringUtils;
  * @author Venil Noronha
  * @author Janne Valkealahti
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 @EnableBinding
 public class AggregateApplicationBuilder implements AggregateApplication, ApplicationContextAware,
@@ -189,7 +190,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			apps.add(sinkConfigurer);
 		}
 		LinkedHashMap<Class<?>, String> appsToEmbed = new LinkedHashMap<>();
-		LinkedHashMap<AppConfigurer, String> appConfigurers = new LinkedHashMap<>();
+		LinkedHashMap<AppConfigurer<?>, String> appConfigurers = new LinkedHashMap<>();
 		for (int i = 0; i < apps.size(); i++) {
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			Class<?> appToEmbed = appConfigurer.getApp();
@@ -218,16 +219,14 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 				SharedBindingTargetRegistry sharedBindingTargetRegistry = new SharedBindingTargetRegistry();
 				this.parentContext.getBeanFactory().registerSingleton("sharedBindingTargetRegistry",
 						sharedBindingTargetRegistry);
-				this.parentContext.getBeanFactory().registerSingleton("sharedChannelRegistry",
-						new SharedChannelRegistry(sharedBindingTargetRegistry));
 			}
 		}
 		SharedBindingTargetRegistry sharedBindingTargetRegistry = this.parentContext
 				.getBean(SharedBindingTargetRegistry.class);
 		AggregateApplicationUtils.prepareSharedBindingTargetRegistry(sharedBindingTargetRegistry, appsToEmbed);
-		for (Map.Entry<AppConfigurer, String> appConfigurerEntry : appConfigurers.entrySet()) {
+		for (Map.Entry<AppConfigurer<?>, String> appConfigurerEntry : appConfigurers.entrySet()) {
 
-			AppConfigurer appConfigurer = appConfigurerEntry.getKey();
+			AppConfigurer<?> appConfigurer = appConfigurerEntry.getKey();
 			if (appConfigurerEntry.getValue() == null) {
 				continue;
 			}
@@ -301,12 +300,6 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		@ConditionalOnMissingBean(SharedBindingTargetRegistry.class)
 		public SharedBindingTargetRegistry sharedBindingTargetRegistry() {
 			return new SharedBindingTargetRegistry();
-		}
-
-		@Bean
-		@ConditionalOnMissingBean(SharedChannelRegistry.class)
-		public SharedChannelRegistry sharedChannelRegistry(SharedBindingTargetRegistry sharedBindingTargetRegistry) {
-			return new SharedChannelRegistry(sharedBindingTargetRegistry);
 		}
 	}
 

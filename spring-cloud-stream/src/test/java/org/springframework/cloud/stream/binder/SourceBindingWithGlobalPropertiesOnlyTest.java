@@ -44,7 +44,6 @@ public class SourceBindingWithGlobalPropertiesOnlyTest {
 	@Autowired
 	private BindingServiceProperties bindingServiceProperties;
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testGlobalPropertiesSet() {
 		BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(Source.OUTPUT);

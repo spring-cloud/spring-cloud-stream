@@ -74,7 +74,6 @@ public class AbstractMessageChannelBinderTests {
 		ErrorInfrastructure errorInfra = binder.errorInfrastructure;
 		SubscribableChannel errorChannel = errorInfra.getErrorChannel();
 		assertThat(errorChannel).isNotNull();
-		@SuppressWarnings("unchecked")
 		Set<MessageHandler> handlers = TestUtils.getPropertyValue(errorChannel, "dispatcher.handlers", Set.class);
 		assertThat(handlers.size()).isEqualTo(2);
 		Iterator<MessageHandler> iterator = handlers.iterator();
@@ -125,7 +124,6 @@ public class AbstractMessageChannelBinderTests {
 		ErrorInfrastructure errorInfra = binder.errorInfrastructure;
 		SubscribableChannel errorChannel = errorInfra.getErrorChannel();
 		assertThat(errorChannel).isNotNull();
-		@SuppressWarnings("unchecked")
 		Set<MessageHandler> handlers = TestUtils.getPropertyValue(errorChannel, "dispatcher.handlers", Set.class);
 		assertThat(handlers.size()).isEqualTo(2);
 		Iterator<MessageHandler> iterator = handlers.iterator();
@@ -154,9 +152,8 @@ public class AbstractMessageChannelBinderTests {
 			this(false);
 		}
 
-		@SuppressWarnings("unchecked")
 		StubMessageChannelBinder(boolean hasRecoverer) {
-			super(true, null, Mockito.mock(ProvisioningProvider.class));
+			super(null, Mockito.mock(ProvisioningProvider.class));
 			mockProvisioner();
 			this.hasRecoverer = hasRecoverer;
 		}

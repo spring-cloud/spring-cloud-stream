@@ -393,7 +393,7 @@ public class BindingServiceTests {
 		assertThat(bindableType).isSameAs(SomeBindableType.class);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testLateBindingConsumer() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
@@ -432,7 +432,7 @@ public class BindingServiceTests {
 		binderFactory.destroy();
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testLateBindingProducer() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();

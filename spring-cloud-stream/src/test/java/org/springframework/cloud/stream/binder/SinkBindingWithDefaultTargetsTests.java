@@ -51,7 +51,7 @@ public class SinkBindingWithDefaultTargetsTests {
 	@Autowired
 	private Sink testSink;
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testSourceOutputChannelBound() {
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);

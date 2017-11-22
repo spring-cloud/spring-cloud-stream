@@ -40,7 +40,6 @@ import static org.hamcrest.Matchers.hasProperty;
 /**
  * @author Marius Bogoevici
  */
-@SuppressWarnings("Duplicates")
 public class BinderConfigurationParsingTests {
 
 	private static ClassLoader classLoader = BinderConfigurationParsingTests.class.getClassLoader();
@@ -63,6 +62,7 @@ public class BinderConfigurationParsingTests {
 						hasProperty("configurationClasses", hasItemInArray(StubBinder1Configuration.class)))));
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testParseTwoBindersConfigurations() throws Exception {
 		// this is just checking that resources are passed and classes are loaded properly

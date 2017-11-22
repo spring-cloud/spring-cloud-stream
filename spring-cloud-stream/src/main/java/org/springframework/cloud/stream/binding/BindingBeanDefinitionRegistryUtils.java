@@ -39,6 +39,7 @@ import org.springframework.util.StringUtils;
  * @author Dave Syer
  * @author Artem Bilan
  */
+@SuppressWarnings("deprecation")
 public abstract class BindingBeanDefinitionRegistryUtils {
 
 	public static void registerInputBindingTargetBeanDefinition(String qualifierValue, String name,
@@ -93,6 +94,10 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		});
 	}
 
+	/**
+	 * @deprecated as of version 2.0 based on deprecated {@link Bindings} annotation.
+	 */
+	@Deprecated
 	public static void registerBindingTargetsQualifiedBeanDefinitions(Class<?> parent, Class<?> type,
 			final BeanDefinitionRegistry registry) {
 

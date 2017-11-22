@@ -49,7 +49,7 @@ public class ProcessorBindingWithBindingTargetsTests {
 	@Autowired
 	private Processor testProcessor;
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testSourceOutputChannelBound() {
 		final Binder binder = binderFactory.getBinder(null, MessageChannel.class);

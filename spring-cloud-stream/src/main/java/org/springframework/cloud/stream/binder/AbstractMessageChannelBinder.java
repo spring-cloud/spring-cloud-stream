@@ -82,6 +82,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		this.provisioningProvider = provisioningProvider;
 	}
 
+	/**
+	 * @deprecated  As of release 2.0. Please use other constructors.
+	 */
 	@Deprecated
 	protected AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
 			PP provisioningProvider) {
@@ -95,7 +98,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * for handling the middleware specific logic. If the returned producer message
 	 * handler is an {@link InitializingBean} then
 	 * {@link InitializingBean#afterPropertiesSet()} will be called on it. Similarly, if
-	 * the returned producer message handler e ndpoint is a {@link Lifecycle}, then
+	 * the returned producer message handler endpoint is a {@link Lifecycle}, then
 	 * {@link Lifecycle#start()} will be called on it.
 	 *
 	 * @param destination the name of the destination

@@ -23,6 +23,7 @@ import java.net.URLClassLoader;
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -66,18 +67,18 @@ public class BinderFactoryConfigurationTests {
 		return new SpringApplicationBuilder(SimpleApplication.class)
 				.resourceLoader(new DefaultResourceLoader(classLoader))
 				.properties(properties)
-				.web(false)
+				.web(WebApplicationType.NONE)
 				.run();
 	}
 
-	private static ConfigurableApplicationContext createBinderTestContextWithSources(Class[] sources,
+	private static ConfigurableApplicationContext createBinderTestContextWithSources(Class<?>[] sources,
 			String[] additionalClasspathDirectories,
 			String... properties) throws IOException {
 		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
 		return new SpringApplicationBuilder(sources)
 				.resourceLoader(new DefaultResourceLoader(classLoader))
 				.properties(properties)
-				.web(false)
+				.web(WebApplicationType.NONE)
 				.run();
 	}
 
@@ -115,6 +116,7 @@ public class BinderFactoryConfigurationTests {
 				"spring.cloud.stream.internal.selfContained=true");
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void loadBinderTypeRegistryWithOneBinder() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
@@ -136,6 +138,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(defaultBinder).isSameAs(binder1);
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void loadBinderTypeRegistryWithOneBinderAndSharedEnvironment() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
@@ -147,6 +150,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void loadBinderTypeRegistryWithOneCustomBinderAndSharedEnvironment() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
@@ -162,6 +166,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(binderFactory.getBinder(null, MessageChannel.class)).isSameAs(binder1);
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void loadBinderTypeRegistryWithTwoBinders() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" });
@@ -192,6 +197,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void loadBinderTypeRegistryWithCustomNonDefaultCandidate() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
@@ -217,6 +223,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(binder1).isSameAs(defaultBinder);
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void loadDefaultBinderWithTwoBinders() throws Exception {
 

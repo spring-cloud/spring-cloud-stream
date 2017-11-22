@@ -188,7 +188,12 @@ public class BindingServiceConfiguration {
 	}
 
 
+	/**
+	 *
+	 * @deprecated as of version 2.0
+	 */
 	@Bean
+	@Deprecated
 	// provided for backwards compatibility scenarios
 	public ChannelBindingServiceProperties channelBindingServiceProperties(
 			BindingServiceProperties bindingServiceProperties) {

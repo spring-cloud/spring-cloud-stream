@@ -41,14 +41,13 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 @SpringBootTest(classes = SourceBindingWithDefaultsTests.TestSource.class)
 public class SourceBindingWithDefaultsTests {
 
-	@SuppressWarnings("rawtypes")
 	@Autowired
 	private BinderFactory binderFactory;
 
 	@Autowired
 	private Source testSource;
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testSourceOutputChannelBound() {
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);

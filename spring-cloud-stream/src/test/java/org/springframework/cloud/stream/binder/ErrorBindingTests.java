@@ -48,37 +48,35 @@ import static org.mockito.Matchers.same;
  */
 public class ErrorBindingTests {
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testErrorChannelNotBoundByDefault() {
-
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class,
 				"--server.port=0");
 		BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
 
-		@SuppressWarnings("unchecked")
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 
-		Mockito.verify(binder).bindConsumer(eq("input"), isNull(String.class), any(MessageChannel.class),
+		Mockito.verify(binder).bindConsumer(eq("input"), isNull(), any(MessageChannel.class),
 				any(ConsumerProperties.class));
 		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class), any(ProducerProperties.class));
 		Mockito.verifyNoMoreInteractions(binder);
 		applicationContext.close();
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testErrorChannelBoundIfConfigured() {
-
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class,
 				"--spring.cloud.stream.bindings.error.destination=foo", "--server.port=0");
 		BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class, MessageChannel.class);
 
-		@SuppressWarnings("unchecked")
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 
 		MessageChannel errorChannel = applicationContext.getBean(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL,
 				MessageChannel.class);
 
-		Mockito.verify(binder).bindConsumer(eq("input"), isNull(String.class), any(MessageChannel.class),
+		Mockito.verify(binder).bindConsumer(eq("input"), isNull(), any(MessageChannel.class),
 				any(ConsumerProperties.class));
 		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class), any(ProducerProperties.class));
 		Mockito.verify(binder).bindProducer(eq("foo"), same(errorChannel), any(ProducerProperties.class));
@@ -139,9 +137,6 @@ public class ErrorBindingTests {
 			}
 		});
 
-		Foo foo = new Foo();
-		foo.setFoo("bar");
-
 		errorChannel.send(new GenericMessage<>(new Exception("throwing exception")));
 		assertThat(received.get()).isTrue();
 		applicationContext.close();
@@ -157,6 +152,7 @@ public class ErrorBindingTests {
 	private class Foo {
 		String foo;
 
+		@SuppressWarnings("unused") // used json ser/deser
 		public String getFoo() {
 			return foo;
 		}

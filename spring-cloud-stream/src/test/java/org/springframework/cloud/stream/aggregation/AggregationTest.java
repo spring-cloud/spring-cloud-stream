@@ -97,16 +97,13 @@ public class AggregationTest {
 	}
 
 	@Test
-	@SuppressWarnings("deprecation")
 	public void testModuleAggregationUsingSharedChannelRegistry() {
 		// test backward compatibility
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--server.port=0")
 						.from(TestSource.class).to(TestProcessor.class).run();
-		org.springframework.cloud.stream.aggregate.SharedChannelRegistry sharedChannelRegistry =
-				aggregatedApplicationContext.getBean(org.springframework.cloud.stream.aggregate.SharedChannelRegistry.class);
-		BindingTargetFactory channelFactory = aggregatedApplicationContext
-				.getBean(BindingTargetFactory.class);
+		SharedBindingTargetRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedBindingTargetRegistry.class);
+		BindingTargetFactory channelFactory = aggregatedApplicationContext.getBean(BindingTargetFactory.class);
 		assertThat(channelFactory).isNotNull();
 		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();
@@ -346,22 +343,17 @@ public class AggregationTest {
 	}
 
 	@Test
-	@SuppressWarnings("deprecation")
 	public void testNamespaces() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--server.port=0")
 						.from(TestSource.class).namespace("foo").to(TestProcessor.class)
 						.namespace("bar").run();
-		org.springframework.cloud.stream.aggregate.SharedChannelRegistry sharedChannelRegistry =
-				aggregatedApplicationContext.getBean(org.springframework.cloud.stream.aggregate.SharedChannelRegistry.class);
-		BindingTargetFactory channelFactory = aggregatedApplicationContext
-				.getBean(BindingTargetFactory.class);
-		Object fooOutput = sharedChannelRegistry.get("foo.output");
+		SharedBindingTargetRegistry sharedChannelRegistry = aggregatedApplicationContext.getBean(SharedBindingTargetRegistry.class);
+		BindingTargetFactory channelFactory = aggregatedApplicationContext.getBean(BindingTargetFactory.class);
+		MessageChannel fooOutput = sharedChannelRegistry.get("foo.output", MessageChannel.class);
 		assertThat(fooOutput).isNotNull();
-		assertThat(fooOutput).isInstanceOf(MessageChannel.class);
-		Object barInput = sharedChannelRegistry.get("bar.input");
+		Object barInput = sharedChannelRegistry.get("bar.input", MessageChannel.class);
 		assertThat(barInput).isNotNull();
-		assertThat(barInput).isInstanceOf(MessageChannel.class);
 		assertThat(channelFactory).isNotNull();
 		assertThat(sharedChannelRegistry.getAll().keySet()).hasSize(2);
 		aggregatedApplicationContext.close();

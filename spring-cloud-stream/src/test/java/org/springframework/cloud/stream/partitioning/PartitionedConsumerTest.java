@@ -25,7 +25,6 @@ import org.mockito.ArgumentMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -57,11 +56,10 @@ public class PartitionedConsumerTest {
 	private BinderFactory binderFactory;
 
 	@Autowired
-	@Bindings(TestSink.class)
 	private Sink testSink;
 
 	@Test
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	public void testBindingPartitionedConsumer() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor.forClass(ConsumerProperties.class);

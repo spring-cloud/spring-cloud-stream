@@ -57,7 +57,6 @@ public class CustomPartitionedProducerTest {
 	private Source testSource;
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void testCustomPartitionedProducer() {
 		DirectChannel messageChannel = (DirectChannel) this.testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {

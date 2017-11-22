@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
@@ -46,6 +45,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * Verifies that interceptors used by modules are applied correctly to generated channels.
  *
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = BoundChannelsInterceptedTest.Foo.class)
@@ -54,16 +54,15 @@ public class BoundChannelsInterceptedTest {
 	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
 
 	@Autowired
-	@Bindings(BoundChannelsInterceptedTest.Foo.class)
-	public Sink fooSink;
+	private Sink sink;
 
 	@Autowired
 	ChannelInterceptor channelInterceptor;
 
 	@Test
 	public void testBoundChannelsIntercepted() {
-		this.fooSink.input().send(TEST_MESSAGE);
-		verify(this.channelInterceptor).preSend(Mockito.any(), Mockito.eq(this.fooSink.input()));
+		sink.input().send(TEST_MESSAGE);
+		verify(this.channelInterceptor).preSend(Mockito.any(), Mockito.eq(this.sink.input()));
 		verifyNoMoreInteractions(this.channelInterceptor);
 	}
 

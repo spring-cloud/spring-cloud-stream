@@ -25,7 +25,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.ChannelBindingServiceProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
@@ -35,6 +35,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SourceBindingWithGlobalPropertiesTest.TestSource.class, properties = {
@@ -45,12 +46,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class SourceBindingWithGlobalPropertiesTest {
 
 	@Autowired
-	private ChannelBindingServiceProperties channelBindingServiceProperties;
+	private BindingServiceProperties serviceProperties;
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testGlobalPropertiesSet() {
-		BindingProperties bindingProperties = channelBindingServiceProperties.getBindingProperties(Source.OUTPUT);
+		BindingProperties bindingProperties = serviceProperties.getBindingProperties(Source.OUTPUT);
 		Assertions.assertThat(bindingProperties.getContentType()).isEqualTo("application/json");
 		Assertions.assertThat(bindingProperties.getDestination()).isEqualTo("ticktock");
 		Assertions.assertThat(bindingProperties.getProducer().getRequiredGroups()).containsExactly("someGroup");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import org.springframework.messaging.MessageChannel;
  * {@link SharedChannelRegistry} in previous versions and will be removed in the future.
  *
  * @author Marius Bogoevici
- * @deprecated in favour of {@link SharedBindingTargetRegistry}
+ * @deprecated in favor of {@link SharedBindingTargetRegistry}. Will be removed in 3.0.
+ * Not currently used by the framework.
  */
 @Deprecated
 public class SharedChannelRegistry {

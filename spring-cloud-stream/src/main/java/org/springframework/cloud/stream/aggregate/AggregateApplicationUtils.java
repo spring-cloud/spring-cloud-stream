@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import org.springframework.boot.Banner.Mode;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.internal.InternalPropertyNames;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -44,7 +45,7 @@ abstract class AggregateApplicationUtils {
 			String[] args, final boolean selfContained, boolean webEnvironment,
 			boolean headless) {
 		SpringApplicationBuilder aggregatorParentConfiguration = new SpringApplicationBuilder();
-		aggregatorParentConfiguration.sources(sources).web(webEnvironment)
+		aggregatorParentConfiguration.sources(sources).web(WebApplicationType.NONE)
 				.headless(headless)
 				.properties("spring.jmx.default-domain="
 						+ AggregateApplicationBuilder.ParentConfiguration.class.getName(),
@@ -60,7 +61,7 @@ abstract class AggregateApplicationUtils {
 	protected static SpringApplicationBuilder embedApp(
 			ConfigurableApplicationContext parentContext, String namespace,
 			Class<?> app) {
-		return new SpringApplicationBuilder(app).web(false).main(app).bannerMode(Mode.OFF)
+		return new SpringApplicationBuilder(app).web(WebApplicationType.NONE).main(app).bannerMode(Mode.OFF)
 				.properties("spring.jmx.default-domain=" + namespace)
 				.properties(
 						InternalPropertyNames.NAMESPACE_PROPERTY_NAME + "=" + namespace)

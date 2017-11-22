@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
@@ -66,9 +67,10 @@ public class HealthIndicatorsConfigurationTests {
 				BinderFactoryConfigurationTests.class.getClassLoader());
 		return new SpringApplicationBuilder(SimpleSource.class)
 				.resourceLoader(new DefaultResourceLoader(classLoader))
-				.properties(properties).web(false).run();
+				.properties(properties).web(WebApplicationType.NONE).run();
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void healthIndicatorsCheck() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" },
@@ -93,6 +95,7 @@ public class HealthIndicatorsConfigurationTests {
 		context.close();
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void healthIndicatorsCheckWhenDisabled() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(

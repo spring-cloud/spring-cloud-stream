@@ -53,7 +53,7 @@ public abstract class StreamAnnotationCommonMethodUtils {
 	public static int outputAnnotationCount(Method method) {
 		int outputAnnotationCount = 0;
 		for (int parameterIndex = 0; parameterIndex < method.getParameterTypes().length; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forMethodOrConstructor(method, parameterIndex);
+			MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
 			if (methodParameter.hasParameterAnnotation(Output.class)) {
 				outputAnnotationCount++;
 			}

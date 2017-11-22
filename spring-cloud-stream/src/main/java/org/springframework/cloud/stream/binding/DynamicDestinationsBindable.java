@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,9 +36,9 @@ public final class DynamicDestinationsBindable extends BindableAdapter {
 	/**
 	 * Map containing dynamic channel names and their bindings.
 	 */
-	private Map<String, Binding> outputBindings = new HashMap<>();
+	private Map<String, Binding<?>> outputBindings = new HashMap<>();
 
-	public void addOutputBinding(String name, Binding binding) {
+	public void addOutputBinding(String name, Binding<?> binding) {
 		this.outputBindings.put(name, binding);
 	}
 
@@ -49,7 +49,7 @@ public final class DynamicDestinationsBindable extends BindableAdapter {
 
 	@Override
 	public void unbindOutputs(BindingService adapter) {
-		for (Map.Entry<String, Binding> entry : outputBindings.entrySet()) {
+		for (Map.Entry<String, Binding<?>> entry : outputBindings.entrySet()) {
 			entry.getValue().unbind();
 		}
 		outputBindings.clear();

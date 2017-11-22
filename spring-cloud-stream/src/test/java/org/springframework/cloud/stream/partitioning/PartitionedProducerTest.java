@@ -48,7 +48,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 @SpringBootTest(classes = PartitionedProducerTest.TestSource.class)
 public class PartitionedProducerTest {
 
-	@SuppressWarnings("rawtypes")
 	@Autowired
 	private BinderFactory binderFactory;
 
@@ -56,7 +55,7 @@ public class PartitionedProducerTest {
 	private Source testSource;
 
 	@Test
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	public void testBindingPartitionedProducer() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		ArgumentCaptor<ProducerProperties> argumentCaptor = ArgumentCaptor.forClass(ProducerProperties.class);

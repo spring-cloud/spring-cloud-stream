@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
@@ -37,6 +38,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
 
 /**
  * Default {@link BinderFactory} implementation.
@@ -160,6 +162,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		return binderInstance;
 	}
 
+	@SuppressWarnings("unchecked")
 	private <T> Binder<T, ?, ?> getBinderInstance(String configurationName) {
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
 			BinderConfiguration binderConfiguration = this.binderConfigurations.get(configurationName);
@@ -193,7 +196,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					.sources(configurationClasses.toArray(new Class<?>[] {}))
 					.bannerMode(Mode.OFF)
 					.logStartupInfo(false)
-					.web(false);
+					.web(WebApplicationType.NONE);
 			// If the environment is not customized and a main context is available, we
 			// will set the latter as parent.
 			// This ensures that the defaults and user-defined customizations (e.g. custom
@@ -214,7 +217,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			}
 			ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
 					.run(args.toArray(new String[args.size()]));
-			@SuppressWarnings("unchecked")
 			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
 			if (this.listeners != null) {
 				for (Listener binderFactoryListener : listeners) {

@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.config;
 
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binding.BindingBeanDefinitionRegistryUtils;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -27,11 +28,13 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
 
 /**
+ * @deprecated as ov version 2.0 based on deprecation of {@link Bindings} anntoation
+ *
  * @author Marius Bogoevici
  * @author Dave Syer
  * @author Artem Bilan
  */
-
+@Deprecated
 public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 
 	@Override

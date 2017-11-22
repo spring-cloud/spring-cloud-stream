@@ -83,7 +83,7 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 	@Override
 	public T get(Object key) {
 		if (!this.delegate.containsKey(key) && key instanceof String) {
-			T entry = BeanUtils.instantiate(entryClass);
+			T entry = BeanUtils.instantiateClass(entryClass);
 			Binder binder = new Binder(ConfigurationPropertySources.get(environment),new PropertySourcesPlaceholdersResolver(environment),this.conversionService);
 			binder.bind(defaultsPrefix, Bindable.ofInstance(entry));
 			this.delegate.put((String) key, entry);

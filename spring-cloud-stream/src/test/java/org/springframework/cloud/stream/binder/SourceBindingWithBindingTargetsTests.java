@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 @SpringBootTest(classes = SourceBindingWithBindingTargetsTests.TestSource.class)
 public class SourceBindingWithBindingTargetsTests {
 
-	@SuppressWarnings("rawtypes")
 	@Autowired
 	private BinderFactory binderFactory;
 
@@ -57,7 +56,7 @@ public class SourceBindingWithBindingTargetsTests {
 	@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)
 	private PublishSubscribeChannel errorChannel;
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testSourceOutputChannelBound() {
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);

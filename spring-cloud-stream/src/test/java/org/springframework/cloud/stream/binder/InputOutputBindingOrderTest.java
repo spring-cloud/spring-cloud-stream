@@ -45,7 +45,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 public class InputOutputBindingOrderTest {
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testInputOutputBindingOrder() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
@@ -83,7 +82,7 @@ public class InputOutputBindingOrderTest {
 		private boolean running;
 
 		@Override
-		@SuppressWarnings({ "unchecked", "rawtypes" })
+		@SuppressWarnings("rawtypes")
 		public synchronized void start() {
 			Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 			verify(binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.<ProducerProperties>any());

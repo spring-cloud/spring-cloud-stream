@@ -49,7 +49,7 @@ public class ArbitraryInterfaceWithBindingTargetsTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);

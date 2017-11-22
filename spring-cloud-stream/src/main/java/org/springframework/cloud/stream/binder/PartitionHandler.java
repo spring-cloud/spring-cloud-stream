@@ -109,8 +109,4 @@ public class PartitionHandler {
 		return this.partitionKeyExtractorStrategy.extractKey(message);
 	}
 
-	private int invokePartitionSelector(Object key) {
-		return this.partitionSelectorStrategy.selectPartition(key, producerProperties.getPartitionCount());
-	}
-
 }
