@@ -216,7 +216,7 @@ public class BindingService {
 				this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
 		this.taskScheduler.schedule(() -> {
 			try {
-				late.delegate = binder.bindProducer(bindingTarget, output, producerProperties);
+				late.setDelegate(binder.bindProducer(bindingTarget, output, producerProperties));
 			}
 			catch (RuntimeException e) {
 				rescheduleProducerBinding(output, bindingTarget, binder, producerProperties, late, e);
@@ -277,9 +277,9 @@ public class BindingService {
 
 	private static class LateBinding<T> implements Binding<T> {
 
-		private volatile Binding<T> delegate;
+		private Binding<T> delegate;
 
-		private volatile boolean unbound;
+		private boolean unbound;
 
 		LateBinding() {
 			super();
