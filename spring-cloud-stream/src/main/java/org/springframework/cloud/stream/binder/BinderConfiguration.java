@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -30,7 +31,7 @@ public class BinderConfiguration {
 
 	private final String binderType;
 
-	private final Properties properties;
+	private final Map<Object, Object> properties;
 
 	private final boolean inheritEnvironment;
 
@@ -44,7 +45,7 @@ public class BinderConfiguration {
 	 * @param defaultCandidate whether the binder should be considered as a candidate when
 	 * determining a default
 	 */
-	public BinderConfiguration(String binderType, Properties properties, boolean inheritEnvironment,
+	public BinderConfiguration(String binderType, Map<Object, Object> properties, boolean inheritEnvironment,
 			boolean defaultCandidate) {
 		this.binderType = binderType;
 		this.properties = properties;
@@ -56,7 +57,7 @@ public class BinderConfiguration {
 		return binderType;
 	}
 
-	public Properties getProperties() {
+	public Map<Object, Object> getProperties() {
 		return properties;
 	}
 

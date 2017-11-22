@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,21 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
  * Contains the properties of a binder.
  *
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 public class BinderProperties {
 
 	private String type;
 
-	private Properties environment = new Properties();
+	private Map<Object, Object> environment = new HashMap<>();
 
 	private boolean inheritEnvironment = true;
 
@@ -41,11 +44,20 @@ public class BinderProperties {
 		this.type = name;
 	}
 
-	public Properties getEnvironment() {
+	public Map<Object, Object> getEnvironment() {
 		return environment;
 	}
 
+	/**
+	 * @deprecated  As of release 1.3, replaced by {@link #setEnvironment(Map)}
+	 */
+	@Deprecated
 	public void setEnvironment(Properties environment) {
+		this.environment.clear();
+		this.environment.putAll(environment);
+	}
+
+	public void setEnvironment(Map<Object, Object> environment) {
 		this.environment = environment;
 	}
 
