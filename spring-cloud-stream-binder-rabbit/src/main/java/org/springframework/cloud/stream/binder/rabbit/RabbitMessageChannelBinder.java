@@ -229,7 +229,7 @@ public class RabbitMessageChannelBinder
 				factory.setVirtualHost(config.determineVirtualHost());
 			}
 			if (config.getRequestedHeartbeat() != null) {
-				factory.setRequestedHeartbeat(config.getRequestedHeartbeat());
+				factory.setRequestedHeartbeat((int)config.getRequestedHeartbeat().getSeconds());
 			}
 			RabbitProperties.Ssl ssl = config.getSsl();
 			if (ssl.isEnabled()) {
@@ -243,7 +243,7 @@ public class RabbitMessageChannelBinder
 				factory.setTrustStorePassphrase(ssl.getTrustStorePassword());
 			}
 			if (config.getConnectionTimeout() != null) {
-				factory.setConnectionTimeout(config.getConnectionTimeout());
+				factory.setConnectionTimeout((int)config.getConnectionTimeout().getSeconds());
 			}
 			factory.afterPropertiesSet();
 
