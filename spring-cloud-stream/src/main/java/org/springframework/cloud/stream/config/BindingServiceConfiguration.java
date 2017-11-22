@@ -65,6 +65,7 @@ import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.tuple.spel.TuplePropertyAccessor;
 
 /**
@@ -82,7 +83,8 @@ import org.springframework.tuple.spel.TuplePropertyAccessor;
 @Import(ContentTypeConfiguration.class)
 public class BindingServiceConfiguration {
 
-	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
+	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =
+			"streamListenerAnnotationBeanPostProcessor";
 
 	public static final String ERROR_BRIDGE_CHANNEL = "errorBridgeChannel";
 
@@ -108,8 +110,8 @@ public class BindingServiceConfiguration {
 	// already exists).
 	@ConditionalOnMissingBean(BindingService.class)
 	public BindingService bindingService(BindingServiceProperties bindingServiceProperties,
-			BinderFactory binderFactory) {
-		return new BindingService(bindingServiceProperties, binderFactory);
+			BinderFactory binderFactory, TaskScheduler taskScheduler) {
+		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler);
 	}
 
 	@Bean
