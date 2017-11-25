@@ -127,6 +127,7 @@ class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder<Consum
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination, groupName, properties);
 		if (properties.getMaxAttempts() > 1) {
 			adapter.setRetryTemplate(buildRetryTemplate(properties));
+			adapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
 		}
 		else {
 			adapter.setErrorMessageStrategy(errorMessageStrategy);

@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
+import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.BindingService;
@@ -136,14 +137,14 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	@DependsOn("bindingService")
-	public OutputBindingLifecycle outputBindingLifecycle() {
-		return new OutputBindingLifecycle();
+	public OutputBindingLifecycle outputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
+		return new OutputBindingLifecycle(bindingService, bindables);
 	}
 
 	@Bean
 	@DependsOn("bindingService")
-	public InputBindingLifecycle inputBindingLifecycle() {
-		return new InputBindingLifecycle();
+	public InputBindingLifecycle inputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
+		return new InputBindingLifecycle(bindingService, bindables);
 	}
 
 	@Bean
