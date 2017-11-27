@@ -26,9 +26,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.BeanInitializationException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,16 +72,19 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  */
 public class StreamListenerAnnotationBeanPostProcessor
-		implements BeanPostProcessor, ApplicationContextAware, BeanFactoryAware, SmartInitializingSingleton,
-		InitializingBean {
+		implements BeanPostProcessor, ApplicationContextAware, BeanFactoryAware, SmartInitializingSingleton {
 
 	private static final SpelExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
 
 	private final MultiValueMap<String, StreamListenerHandlerMethodMapping> mappedListenerMethods = new LinkedMultiValueMap<>();
 
-	private final List<StreamListenerParameterAdapter<?, Object>> streamListenerParameterAdapters = new ArrayList<>();
+	@Autowired(required=false)
+	@Lazy
+	private List<StreamListenerParameterAdapter<?,?>> streamListenerParameterAdapters;
 
-	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
+	@Autowired(required=false)
+	@Lazy
+	private List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters;
 
 	@Autowired
 	@Lazy
@@ -117,22 +118,6 @@ public class StreamListenerAnnotationBeanPostProcessor
 		if (beanFactory instanceof ConfigurableListableBeanFactory) {
 			this.resolver = ((ConfigurableListableBeanFactory) beanFactory).getBeanExpressionResolver();
 			this.expressionContext = new BeanExpressionContext((ConfigurableListableBeanFactory) beanFactory, null);
-		}
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		Map<String, StreamListenerParameterAdapter> parameterAdapterMap = BeanFactoryUtils
-				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerParameterAdapter.class);
-		for (StreamListenerParameterAdapter parameterAdapter : parameterAdapterMap.values()) {
-			this.streamListenerParameterAdapters.add(parameterAdapter);
-		}
-		Map<String, StreamListenerResultAdapter> resultAdapterMap = BeanFactoryUtils
-				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerResultAdapter.class);
-		this.streamListenerResultAdapters.add(new MessageChannelStreamListenerResultAdapter());
-		for (StreamListenerResultAdapter resultAdapter : resultAdapterMap.values()) {
-			this.streamListenerResultAdapters.add(resultAdapter);
 		}
 	}
 
@@ -243,7 +228,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 		if (!this.streamListenerParameterAdapters.isEmpty()) {
 			try {
 				Object targetBean = this.applicationContext.getBean(targetBeanName);
-				for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
+				for (StreamListenerParameterAdapter<?, ?> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
 					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
 						return true;
 					}
@@ -277,7 +262,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 				Assert.isInstanceOf(String.class, targetReferenceValue, "Annotation value must be a String");
 				Object targetBean = this.applicationContext.getBean((String) targetReferenceValue);
 				// Iterate existing parameter adapters first
-				for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
+				for (StreamListenerParameterAdapter streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
 					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
 						arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean, methodParameter);
 						break;
