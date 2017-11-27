@@ -23,10 +23,12 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Role;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.support.converter.ConfigurableCompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
@@ -36,6 +38,7 @@ import org.springframework.util.CollectionUtils;
  * @author Vinicius Carvalho
  */
 @Configuration
+@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class ContentTypeConfiguration {
 
 	@Autowired(required = false)
