@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,22 +138,18 @@ public class BindingService {
 	public <T> void rescheduleConsumerBinding(final T input, final String inputName,
 			final Binder<T, ConsumerProperties, ?> binder, final ConsumerProperties consumerProperties,
 			final String target, final LateBinding<T> late, RuntimeException exception) {
-		if (exception instanceof IllegalStateException || exception instanceof IllegalArgumentException) {
-			throw exception;
-		}
+		assertNotIllegalException(exception);
 		this.log.error("Failed to create consumer binding; retrying in " +
 			this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
-		this.taskScheduler.schedule(() -> {
+		this.scheduleTask(() -> {
 			try {
 				late.setDelegate(binder.bindConsumer(target,
-					this.bindingServiceProperties.getGroup(inputName), input,
-					consumerProperties));
+						this.bindingServiceProperties.getGroup(inputName), input, consumerProperties));
 			}
 			catch (RuntimeException e) {
 				rescheduleConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
 			}
-		}, new Date(System.currentTimeMillis() +
-				this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
+		});
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -209,20 +205,17 @@ public class BindingService {
 	public <T> void rescheduleProducerBinding(final T output, final String bindingTarget,
 			final Binder<T, ?, ProducerProperties> binder, final ProducerProperties producerProperties,
 			final LateBinding<T> late, final RuntimeException exception) {
-		if (exception instanceof IllegalStateException || exception instanceof IllegalArgumentException) {
-			throw exception;
-		}
+		assertNotIllegalException(exception);
 		this.log.error("Failed to create producer binding; retrying in " +
 				this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
-		this.taskScheduler.schedule(() -> {
+		this.scheduleTask(() -> {
 			try {
 				late.setDelegate(binder.bindProducer(bindingTarget, output, producerProperties));
 			}
 			catch (RuntimeException e) {
 				rescheduleProducerBinding(output, bindingTarget, binder, producerProperties, late, e);
 			}
-		}, new Date(System.currentTimeMillis() +
-				this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
+		});
 	}
 
 	public void unbindConsumers(String inputName) {
@@ -247,11 +240,6 @@ public class BindingService {
 		}
 	}
 
-	protected <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
-		String binderConfigurationName = this.bindingServiceProperties.getBinder(channelName);
-		return binderFactory.getBinder(binderConfigurationName, bindableType);
-	}
-
 	/**
 	 * Provided for backwards compatibility. Will be removed in a future version.
 	 *
@@ -266,12 +254,28 @@ public class BindingService {
 		return this.bindingServiceProperties;
 	}
 
+	protected <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
+		String binderConfigurationName = this.bindingServiceProperties.getBinder(channelName);
+		return binderFactory.getBinder(binderConfigurationName, bindableType);
+	}
+
 	private void validate(Object properties) {
 		DataBinder dataBinder = new DataBinder(properties);
 		dataBinder.setValidator(validator);
 		dataBinder.validate();
 		if (dataBinder.getBindingResult().hasErrors()) {
 			throw new IllegalStateException(dataBinder.getBindingResult().toString());
+		}
+	}
+
+	private void scheduleTask(Runnable task) {
+		this.taskScheduler.schedule(task, new Date(System.currentTimeMillis() +
+				this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
+	}
+
+	private void assertNotIllegalException(RuntimeException exception) throws RuntimeException {
+		if (exception instanceof IllegalStateException || exception instanceof IllegalArgumentException) {
+			throw exception;
 		}
 	}
 
