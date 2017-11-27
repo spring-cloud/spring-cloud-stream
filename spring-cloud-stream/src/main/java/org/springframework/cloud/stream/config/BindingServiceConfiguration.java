@@ -25,6 +25,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -41,6 +42,7 @@ import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
+import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResultAdapter;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
@@ -51,6 +53,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Role;
 import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -82,6 +85,7 @@ import org.springframework.tuple.spel.TuplePropertyAccessor;
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
 @Import(ContentTypeConfiguration.class)
+@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class BindingServiceConfiguration {
 
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =
@@ -90,6 +94,11 @@ public class BindingServiceConfiguration {
 	public static final String ERROR_BRIDGE_CHANNEL = "errorBridgeChannel";
 
 	private static final String ERROR_KEY_NAME = "error";
+
+	@Bean
+	public MessageChannelStreamListenerResultAdapter messageChannelStreamListenerResultAdapter() {
+		return new MessageChannelStreamListenerResultAdapter();
+	}
 
 	@Bean
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
