@@ -146,9 +146,7 @@ public class BinderFactoryConfiguration {
 	public BinderTypeRegistry binderTypeRegistry(ConfigurableApplicationContext configurableApplicationContext) {
 		Map<String, BinderType> binderTypes = new HashMap<>();
 		ClassLoader classLoader = configurableApplicationContext.getClassLoader();
-		if (classLoader == null) {
-			classLoader = BinderFactoryConfiguration.class.getClassLoader();
-		}
+		// the above can never be null since it will default to ClassUtils.getDefaultClassLoader(..)
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
 			if (!Boolean.valueOf(this.selfContained) && (resources == null || !resources.hasMoreElements())) {
