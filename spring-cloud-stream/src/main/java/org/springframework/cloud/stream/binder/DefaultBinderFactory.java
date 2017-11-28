@@ -16,13 +16,14 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
@@ -51,11 +52,11 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private final Map<String, BinderConfiguration> binderConfigurations;
 
-	private final Map<String, BinderInstanceHolder> binderInstanceCache = new HashMap<>();
+	private final Map<String, Entry<Binder<?, ?, ?>, ConfigurableApplicationContext>> binderInstanceCache = new HashMap<>();
 
 	private volatile ConfigurableApplicationContext context;
 
-	private Map<String, String> defaultBinderForBindingTargetType = new HashMap<>();
+	private final Map<String, String> defaultBinderForBindingTargetType = new HashMap<>();
 
 	private Collection<Listener> listeners;
 
@@ -85,10 +86,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	@Override
 	public void destroy() throws Exception {
-		for (Map.Entry<String, BinderInstanceHolder> entry : this.binderInstanceCache.entrySet()) {
-			BinderInstanceHolder binderInstanceHolder = entry.getValue();
-			binderInstanceHolder.getBinderContext().close();
-		}
+		this.binderInstanceCache.values().stream().map(e -> e.getValue()).forEach(ctx -> ctx.close());
 		this.defaultBinderForBindingTargetType.clear();
 	}
 
@@ -163,10 +161,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain.") : "";
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
 			args.add("--spring.main.applicationContextClass=" + AnnotationConfigApplicationContext.class.getName());
-			List<Class<?>> configurationClasses = new ArrayList<Class<?>>(
-					Arrays.asList(binderType.getConfigurationClasses()));
 			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder()
-					.sources(configurationClasses.toArray(new Class<?>[] {}))
+					.sources(binderType.getConfigurationClasses())
 					.bannerMode(Mode.OFF)
 					.logStartupInfo(false)
 					.web(WebApplicationType.NONE);
@@ -194,9 +190,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					binderFactoryListener.afterBinderContextInitialized(configurationName, binderProducingContext);
 				}
 			}
-			this.binderInstanceCache.put(configurationName, new BinderInstanceHolder(binder, binderProducingContext));
+			this.binderInstanceCache.put(configurationName, new SimpleImmutableEntry<>(binder, binderProducingContext));
 		}
-		return (Binder<T, ?, ?>) this.binderInstanceCache.get(configurationName).getBinderInstance();
+		return (Binder<T, ?, ?>) this.binderInstanceCache.get(configurationName).getKey();
 	}
 
 	/**
@@ -216,29 +212,5 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		 */
 		void afterBinderContextInitialized(String configurationName,
 				ConfigurableApplicationContext binderContext);
-	}
-
-	/**
-	 * Utility class for storing {@link Binder} instances, along with their associated
-	 * contexts.
-	 */
-	private static final class BinderInstanceHolder {
-
-		private final Binder<?, ?, ?> binderInstance;
-
-		private final ConfigurableApplicationContext binderContext;
-
-		private BinderInstanceHolder(Binder<?, ?, ?> binderInstance, ConfigurableApplicationContext binderContext) {
-			this.binderInstance = binderInstance;
-			this.binderContext = binderContext;
-		}
-
-		public Binder<?, ?, ?> getBinderInstance() {
-			return this.binderInstance;
-		}
-
-		public ConfigurableApplicationContext getBinderContext() {
-			return this.binderContext;
-		}
 	}
 }
