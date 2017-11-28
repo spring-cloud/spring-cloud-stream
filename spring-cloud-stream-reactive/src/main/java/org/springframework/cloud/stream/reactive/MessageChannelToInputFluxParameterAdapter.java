@@ -47,7 +47,7 @@ public class MessageChannelToInputFluxParameterAdapter
 
 	@Override
 	public boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter) {
-		return SubscribableChannel.class.isAssignableFrom(bindingTargetType)
+		return MessageChannel.class.isAssignableFrom(bindingTargetType)
 				&& Flux.class.isAssignableFrom(methodParameter.getParameterType());
 	}
 

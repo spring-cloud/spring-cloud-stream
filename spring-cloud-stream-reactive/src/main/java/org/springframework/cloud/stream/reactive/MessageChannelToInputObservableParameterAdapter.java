@@ -41,8 +41,9 @@ public class MessageChannelToInputObservableParameterAdapter
 		this.messageChannelToInputFluxArgumentAdapter = messageChannelToInputFluxArgumentAdapter;
 	}
 
+	@Override
 	public boolean supports(Class<?> bindingTargetType, MethodParameter methodParameter) {
-		return SubscribableChannel.class.isAssignableFrom(bindingTargetType)
+		return MessageChannel.class.isAssignableFrom(bindingTargetType)
 				&& Observable.class.isAssignableFrom(methodParameter.getParameterType());
 	}
 
