@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <artifactId>spring-cloud-bus-parent</artifactId>
-    <version>2.0.0.BUILD-SNAPSHOT</version>
-    <packaging>pom</packaging>
+	<artifactId>spring-cloud-bus-parent</artifactId>
+	<version>2.0.0.BUILD-SNAPSHOT</version>
+	<packaging>pom</packaging>
 
-    <name>spring-cloud-bus-parent</name>
-    <description>Spring Cloud Bus Parent</description>
+	<name>spring-cloud-bus-parent</name>
+	<description>Spring Cloud Bus Parent</description>
 
-    <parent>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-build</artifactId>
-        <version>2.0.0.BUILD-SNAPSHOT</version>
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
+	<parent>
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-build</artifactId>
+		<version>2.0.0.BUILD-SNAPSHOT</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
 
-    <modules>
-        <module>spring-cloud-bus-dependencies</module>
-        <module>spring-cloud-bus</module>
+	<modules>
+		<module>spring-cloud-bus-dependencies</module>
+		<module>spring-cloud-bus</module>
 		<module>spring-cloud-bus-tests</module>
 		<module>spring-cloud-starter-bus-amqp</module>
 		<module>spring-cloud-starter-bus-kafka</module>
-        <module>docs</module>
-    </modules>
+		<module>docs</module>
+	</modules>
 
 	<properties>
-		<spring-cloud-commons.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-commons.version>
-        <spring-cloud-stream.version>Elmhurst.BUILD-SNAPSHOT</spring-cloud-stream.version>
-        <bintray.package>bus</bintray.package>
-    </properties>
+		<spring-cloud-commons.version>2.0.0.RELEASE</spring-cloud-commons.version>
+		<spring-cloud-stream.version>Elmhurst.RELEASE</spring-cloud-stream.version>
+		<bintray.package>bus</bintray.package>
+	</properties>
 
 	<build>
 		<plugins>
@@ -109,8 +109,8 @@
 			</pluginRepositories>
 		</profile>
 	</profiles>
-    <dependencyManagement>
-        <dependencies>
+	<dependencyManagement>
+		<dependencies>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-bus-dependencies</artifactId>
@@ -132,14 +132,14 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-        </dependencies>
-    </dependencyManagement>
+		</dependencies>
+	</dependencyManagement>
 
-    <scm>
-        <url>https://github.com/spring-cloud/spring-cloud-bus</url>
-        <connection>scm:git:git://github.com/spring-cloud/spring-cloud-bus.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/spring-cloud/spring-cloud-bus.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
+	<scm>
+		<url>https://github.com/spring-cloud/spring-cloud-bus</url>
+		<connection>scm:git:git://github.com/spring-cloud/spring-cloud-bus.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/spring-cloud/spring-cloud-bus.git</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
 
 </project>

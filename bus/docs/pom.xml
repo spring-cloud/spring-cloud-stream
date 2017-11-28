@@ -12,26 +12,26 @@
 	<name>Spring Cloud Bus Docs</name>
 	<description>Spring Cloud Docs</description>
 	<properties>
-        <docs.main>spring-cloud-bus</docs.main>
+		<docs.main>spring-cloud-bus</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
 		<docs.whitelisted.branches>1.1.x</docs.whitelisted.branches>
 	</properties>
  	<build>
 		<plugins>
-	        <plugin>
-		      <!--skip deploy (this is just a test module) -->
-		      <artifactId>maven-deploy-plugin</artifactId>
-		      <configuration>
-		        <skip>true</skip>
-		      </configuration>
-	        </plugin>
+			<plugin>
+			  <!--skip deploy (this is just a test module) -->
+			  <artifactId>maven-deploy-plugin</artifactId>
+			  <configuration>
+				<skip>true</skip>
+			  </configuration>
+			</plugin>
 		</plugins>
 	</build>
-    <profiles>
+	<profiles>
 		<profile>
 			<id>docs</id>
-            <build>
-               <plugins>
+			<build>
+			   <plugins>
 				   <plugin>
 					   <groupId>org.apache.maven.plugins</groupId>
 					   <artifactId>maven-dependency-plugin</artifactId>
@@ -55,8 +55,8 @@
 					   <artifactId>build-helper-maven-plugin</artifactId>
 					   <inherited>false</inherited>
 				   </plugin>
-              </plugins>
-            </build>
+			  </plugins>
+			</build>
 		</profile>
-    </profiles>
+	</profiles>
 </project>
