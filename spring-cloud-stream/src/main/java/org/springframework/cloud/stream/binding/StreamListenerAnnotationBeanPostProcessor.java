@@ -27,7 +27,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanInitializationException;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanExpressionContext;
@@ -209,28 +208,18 @@ public class StreamListenerAnnotationBeanPostProcessor
 	}
 
 	private boolean isDeclarativeMethodParameter(String targetBeanName, MethodParameter methodParameter) {
-		try {
+		if (this.applicationContext.containsBean(targetBeanName)) {
 			Class<?> targetBeanClass = this.applicationContext.getType(targetBeanName);
 			if (!methodParameter.getParameterType().equals(Object.class)
-					&& (targetBeanClass.isAssignableFrom(methodParameter.getParameterType()) ||
-							methodParameter.getParameterType().isAssignableFrom(targetBeanClass))) {
+					&& (methodParameter.getParameterType().isAssignableFrom(targetBeanClass) || targetBeanClass.isAssignableFrom(methodParameter.getParameterType()))) {
 				return true;
 			}
-		}
-		catch (NoSuchBeanDefinitionException e) {
-			// ignore as the bean definition might not exist yet.
-		}
-		if (!this.streamListenerParameterAdapters.isEmpty()) {
-			try {
-				Object targetBean = this.applicationContext.getBean(targetBeanName);
+			else if (!this.streamListenerParameterAdapters.isEmpty()) {
 				for (StreamListenerParameterAdapter<?, ?> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
-					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
+					if (streamListenerParameterAdapter.supports(targetBeanClass, methodParameter)) {
 						return true;
 					}
 				}
-			}
-			catch (BeansException e) {
-				// ignore as the bean definition might not exist yet.
 			}
 		}
 		return false;
