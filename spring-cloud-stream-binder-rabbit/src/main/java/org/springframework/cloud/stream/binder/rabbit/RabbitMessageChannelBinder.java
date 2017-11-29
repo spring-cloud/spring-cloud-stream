@@ -139,7 +139,7 @@ public class RabbitMessageChannelBinder
 
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory, RabbitProperties rabbitProperties,
 			RabbitExchangeQueueProvisioner provisioningProvider) {
-		super(true, new String[0], provisioningProvider);
+		super(new String[0], provisioningProvider);
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		Assert.notNull(rabbitProperties, "rabbitProperties must not be null");
 		this.connectionFactory = connectionFactory;

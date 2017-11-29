@@ -145,7 +145,6 @@ public class RabbitBinderModuleTests {
 				CompositeHealthIndicator.class);
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
 		assertThat(bindersHealthIndicator).isNotNull();
-		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("indicators");
 		assertThat(healthIndicators).containsKey("rabbit");

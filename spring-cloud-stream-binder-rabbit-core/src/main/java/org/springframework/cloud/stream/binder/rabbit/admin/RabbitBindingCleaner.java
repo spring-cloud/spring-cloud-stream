@@ -119,7 +119,6 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		URI uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
 				.pathSegment("queues", "{vhost}")
 				.buildAndExpand(vhost).encode().toUri();
-		@SuppressWarnings("unchecked")
 		List<Map<String, Object>> queues = restTemplate.getForObject(uri, List.class);
 		return queues;
 	}
@@ -139,7 +138,6 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private List<String> findExchanges(String adminUri, String vhost, String binderPrefix, String entity,
 			RestTemplate restTemplate) {
 		List<String> removedExchanges = new ArrayList<>();

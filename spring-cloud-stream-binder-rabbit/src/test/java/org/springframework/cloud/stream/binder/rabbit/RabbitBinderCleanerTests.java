@@ -139,7 +139,6 @@ public class RabbitBinderCleanerTests {
 
 				Object consumers = null;
 				while (n++ < 100 && (consumers == null || consumers.equals(Integer.valueOf(state)))) {
-					@SuppressWarnings("unchecked")
 					Map<String, Object> queueInfo = template.getForObject(uri, Map.class);
 					consumers = queueInfo.get("consumers");
 					if (consumers == null || consumers.equals(Integer.valueOf(state))) {
