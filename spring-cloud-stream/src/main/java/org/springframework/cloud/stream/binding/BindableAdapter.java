@@ -23,7 +23,10 @@ import java.util.Set;
  * Default adapter implementation for {@Bindable}.
  *
  * @author Ilayaperumal Gopinathan
+ *
+ * @deprecated as of version 2.0. Use {@link Bindable} interface instead.
  */
+@Deprecated
 public class BindableAdapter implements Bindable {
 
 	@Override

@@ -31,12 +31,12 @@ import org.springframework.cloud.stream.binder.Binding;
  *
  * @author Ilayaperumal Gopinathan
  */
-public final class DynamicDestinationsBindable extends BindableAdapter {
+public final class DynamicDestinationsBindable implements Bindable {
 
 	/**
 	 * Map containing dynamic channel names and their bindings.
 	 */
-	private Map<String, Binding<?>> outputBindings = new HashMap<>();
+	private final Map<String, Binding<?>> outputBindings = new HashMap<>();
 
 	public void addOutputBinding(String name, Binding<?> binding) {
 		this.outputBindings.put(name, binding);
