@@ -107,6 +107,15 @@ public class StreamListenerMethodUtils {
 						StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 			}
 		}
+
+		if (!method.getReturnType().equals(Void.TYPE)) {
+			if (!StringUtils.hasText(methodAnnotatedOutboundName)) {
+				if (outputAnnotationCount == 0) {
+					throw new IllegalArgumentException(StreamListenerErrorMessages.RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
+				}
+				Assert.isTrue((outputAnnotationCount == 1), StreamListenerErrorMessages.RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
+			}
+		}
 	}
 
 	protected static void validateStreamListenerMessageHandler(Method method) {
