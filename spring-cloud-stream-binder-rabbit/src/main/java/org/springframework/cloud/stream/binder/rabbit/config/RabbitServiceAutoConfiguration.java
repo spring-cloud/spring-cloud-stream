@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 
 /**
@@ -45,6 +46,7 @@ import org.springframework.context.annotation.Profile;
  * @author Eric Bottard
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Artem Bilan
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
@@ -67,6 +69,7 @@ public class RabbitServiceAutoConfiguration {
 		protected static class CloudConnectors {
 
 			@Bean
+			@ConditionalOnMissingBean
 			public Cloud cloud() {
 				return new CloudFactory().getCloud();
 			}
@@ -76,7 +79,8 @@ public class RabbitServiceAutoConfiguration {
 			 * set to {@code true}.
 			 */
 			@Configuration
-			@ConditionalOnProperty(value = "spring.cloud.stream.overrideCloudConnectors", havingValue = "false", matchIfMissing = true)
+			@ConditionalOnProperty(value = "spring.cloud.stream.overrideCloudConnectors",
+					havingValue = "false", matchIfMissing = true)
 			// Required to parse Rabbit properties which are passed to the binder for
 			// clustering. We need to enable it here explicitly as the default Rabbit
 			// configuration is not triggered.
@@ -91,8 +95,19 @@ public class RabbitServiceAutoConfiguration {
 				 * @return the {@link ConnectionFactory} used by the binder.
 				 */
 				@Bean
-				@ConditionalOnMissingBean(ConnectionFactory.class)
+				@Primary
 				ConnectionFactory rabbitConnectionFactory(Cloud cloud) {
+					return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
+				}
+
+				/**
+				 * Creates a {@link ConnectionFactory} for non-transactional producers
+				 * using the singleton service connector.
+				 * @param cloud {@link Cloud} instance to be used for accessing services.
+				 * @return the {@link ConnectionFactory} used by the binder for non-transactional producers.
+				 */
+				@Bean
+				ConnectionFactory producerConnectionFactory(Cloud cloud) {
 					return cloud.getSingletonServiceConnector(ConnectionFactory.class, null);
 				}
 
@@ -106,25 +121,29 @@ public class RabbitServiceAutoConfiguration {
 			/**
 			 * Configuration to be used if
 			 * {@code spring.cloud.stream.overrideCloudConnectors} is set to {@code true}.
-			 * Defers to Spring Boot Autoconfiguration.
+			 * Defers to Spring Boot auto-configuration.
 			 */
 			@Configuration
 			@ConditionalOnProperty("spring.cloud.stream.overrideCloudConnectors")
 			@Import(RabbitAutoConfiguration.class)
 			protected static class OverrideCloudConnectors {
+
 			}
+
 		}
 
 		@Configuration
 		@ConditionalOnMissingClass("org.springframework.cloud.Cloud")
 		@Import(RabbitAutoConfiguration.class)
 		protected static class NoCloudConnectors {
+
 		}
+
 	}
 
 	/**
 	 * Configuration to be used when the cloud profile is not set. Defer to Spring Boot
-	 * autoconfiguration.
+	 * auto-configuration.
 	 */
 	@Configuration
 	@Profile("!cloud")
@@ -140,5 +159,7 @@ public class RabbitServiceAutoConfiguration {
 		public HealthIndicator binderHealthIndicator(RabbitTemplate rabbitTemplate) {
 			return new RabbitHealthIndicator(rabbitTemplate);
 		}
+
 	}
+
 }
