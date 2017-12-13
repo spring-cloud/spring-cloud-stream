@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -62,7 +61,7 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 			SpringApplication.run(TestInputOutputArgsWithMoreParameters.class, "--server.port=0");
 			fail("Expected exception: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
-		catch (BeanCreationException e) {
+		catch (IllegalArgumentException e) {
 			assertThat(e.getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
@@ -73,10 +72,8 @@ public class StreamListenerWithAnnotatedInputOutputArgsTests {
 			SpringApplication.run(TestInputOutputArgsWithInvalidBindableTarget.class, "--server.port=0","--spring.jmx.enabled=false");
 			fail("Exception expected on using invalid bindable target as method parameter");
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause()).isInstanceOf(IllegalArgumentException.class);
-			assertThat(e.getCause())
-					.hasMessageContaining(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 

@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -75,8 +74,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + INPUT_AT_STREAM_LISTENER);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(INPUT_AT_STREAM_LISTENER);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(INPUT_AT_STREAM_LISTENER);
 		}
 	}
 
@@ -174,8 +173,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 		}
 	}
 
@@ -186,8 +185,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
 	}
 
@@ -198,8 +197,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_INBOUND_NAME);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(INVALID_INBOUND_NAME);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(INVALID_INBOUND_NAME);
 		}
 	}
 
@@ -210,8 +209,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_OUTBOUND_NAME);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(INVALID_OUTBOUND_NAME);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(INVALID_OUTBOUND_NAME);
 		}
 	}
 
@@ -222,10 +221,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected on using invalid inbound name");
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause()).isInstanceOf(IllegalArgumentException.class);
-			assertThat(e.getCause())
-					.hasMessageContaining(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
@@ -236,9 +233,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected on using invalid outbound name");
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause()).isInstanceOf(NoSuchBeanDefinitionException.class);
-			assertThat(e.getCause()).hasMessageContaining("'invalid'");
+		catch (NoSuchBeanDefinitionException e) {
+			assertThat(e.getMessage()).contains("invalid");
 		}
 	}
 
@@ -249,8 +245,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 	}
 
@@ -261,8 +257,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected:" + AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 	}
 
@@ -273,8 +269,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
@@ -285,8 +281,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected:" + INVALID_OUTPUT_VALUES);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).startsWith(INVALID_OUTPUT_VALUES);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).startsWith(INVALID_OUTPUT_VALUES);
 		}
 	}
 
@@ -297,8 +293,8 @@ public class StreamListenerHandlerMethodTests {
 					"--spring.jmx.enabled=false");
 			fail("Exception expected when inbound target is not set");
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(NO_INPUT_DESTINATION);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(NO_INPUT_DESTINATION);
 		}
 	}
 

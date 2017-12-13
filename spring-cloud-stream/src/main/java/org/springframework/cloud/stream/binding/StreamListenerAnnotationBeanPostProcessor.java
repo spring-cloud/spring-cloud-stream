@@ -18,8 +18,11 @@ package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import reactor.core.publisher.Flux;
 
@@ -28,7 +31,6 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanExpressionContext;
 import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -39,7 +41,6 @@ import org.springframework.cloud.stream.config.SpringIntegrationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -59,8 +60,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-
-
 /**
  * {@link BeanPostProcessor} that handles {@link StreamListener} annotations found on bean
  * methods.
@@ -70,31 +69,27 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  */
-public class StreamListenerAnnotationBeanPostProcessor
-		implements BeanPostProcessor, ApplicationContextAware, SmartInitializingSingleton {
+public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProcessor, ApplicationContextAware, SmartInitializingSingleton {
 
 	private static final SpelExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
 
 	private final MultiValueMap<String, StreamListenerHandlerMethodMapping> mappedListenerMethods = new LinkedMultiValueMap<>();
 
-	@Autowired(required=false)
-	@Lazy
-	private List<StreamListenerParameterAdapter<?,?>> streamListenerParameterAdapters;
+	// == dependencies that are injected in 'afterSingletonsInstantiated' to avoid early initialization
+	@SuppressWarnings("rawtypes")
+	private Collection<StreamListenerParameterAdapter> streamListenerParameterAdapters;
 
-	@Autowired(required=false)
-	@Lazy
-	private List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters;
+	@SuppressWarnings("rawtypes")
+	private Collection<StreamListenerResultAdapter> streamListenerResultAdapters;
 
-	@Autowired
-	@Lazy
 	private DestinationResolver<MessageChannel> binderAwareChannelResolver;
 
-	@Autowired
-	@Lazy
 	private MessageHandlerMethodFactory messageHandlerMethodFactory;
 
-	@Autowired
 	private SpringIntegrationProperties springIntegrationProperties;
+	// == end dependencies
+
+	private final Set<Runnable> streamListenerCallbacks = new HashSet<>();
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -112,38 +107,94 @@ public class StreamListenerAnnotationBeanPostProcessor
 	}
 
 	@Override
+	public final void afterSingletonsInstantiated() {
+		this.injectAndPostProcessDependencies();
+		this.evaluationContext = IntegrationContextUtils.getEvaluationContext(this.applicationContext.getBeanFactory());
+		for (Map.Entry<String, List<StreamListenerHandlerMethodMapping>> mappedBindingEntry : mappedListenerMethods
+				.entrySet()) {
+			ArrayList<DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper> handlers = new ArrayList<>();
+			for (StreamListenerHandlerMethodMapping mapping : mappedBindingEntry.getValue()) {
+				final InvocableHandlerMethod invocableHandlerMethod = this.messageHandlerMethodFactory
+						.createInvocableHandlerMethod(mapping.getTargetBean(),
+								checkProxy(mapping.getMethod(), mapping.getTargetBean()));
+				StreamListenerMessageHandler streamListenerMessageHandler = new StreamListenerMessageHandler(
+						invocableHandlerMethod, resolveExpressionAsBoolean(mapping.getCopyHeaders(), "copyHeaders"),
+						springIntegrationProperties.getMessageHandlerNotPropagatedHeaders());
+				streamListenerMessageHandler.setApplicationContext(this.applicationContext);
+				streamListenerMessageHandler.setBeanFactory(this.applicationContext.getBeanFactory());
+				if (StringUtils.hasText(mapping.getDefaultOutputChannel())) {
+					streamListenerMessageHandler.setOutputChannelName(mapping.getDefaultOutputChannel());
+				}
+				streamListenerMessageHandler.afterPropertiesSet();
+				if (StringUtils.hasText(mapping.getCondition())) {
+					String conditionAsString = resolveExpressionAsString(mapping.getCondition(), "condition");
+					Expression condition = SPEL_EXPRESSION_PARSER.parseExpression(conditionAsString);
+					handlers.add(
+							new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper(
+									condition, streamListenerMessageHandler));
+				}
+				else {
+					handlers.add(
+							new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper(
+									null, streamListenerMessageHandler));
+				}
+			}
+			if (handlers.size() > 1) {
+				for (DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper handler : handlers) {
+					Assert.isTrue(handler.isVoid(), StreamListenerErrorMessages.MULTIPLE_VALUE_RETURNING_METHODS);
+				}
+			}
+			AbstractReplyProducingMessageHandler handler;
+
+			if (handlers.size() > 1 || handlers.get(0).getCondition() != null) {
+				handler = new DispatchingStreamListenerMessageHandler(handlers, this.evaluationContext);
+			}
+			else {
+				handler = handlers.get(0).getStreamListenerMessageHandler();
+			}
+			handler.setApplicationContext(this.applicationContext);
+			handler.setChannelResolver(this.binderAwareChannelResolver);
+			handler.afterPropertiesSet();
+			this.applicationContext.getBeanFactory().registerSingleton(handler.getClass().getSimpleName() + handler.hashCode(), handler);
+			applicationContext.getBean(mappedBindingEntry.getKey(), SubscribableChannel.class).subscribe(handler);
+		}
+		this.mappedListenerMethods.clear();
+	}
+
+	@Override
 	public final Object postProcessAfterInitialization(Object bean, final String beanName) throws BeansException {
 		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
 		Method[] uniqueDeclaredMethods = ReflectionUtils.getUniqueDeclaredMethods(targetClass);
 		for (Method method : uniqueDeclaredMethods) {
 			StreamListener streamListener = AnnotatedElementUtils.findMergedAnnotation(method, StreamListener.class);
 			if (streamListener != null && !method.isBridge()) {
-				Assert.isTrue(method.getAnnotation(Input.class) == null, StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
-				this.doPostProcess(streamListener, method, bean);
+				streamListenerCallbacks.add(() -> {
+					Assert.isTrue(method.getAnnotation(Input.class) == null, StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
+					this.doPostProcess(streamListener, method, bean);
+				});
 			}
 		}
 		return bean;
 	}
 
-	private void doPostProcess(StreamListener streamListener, Method method, Object bean) {
-		streamListener = postProcessAnnotation(streamListener, method);
-
-		String methodAnnotatedInboundName = streamListener.value();
-		String methodAnnotatedOutboundName = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
-
-		int inputAnnotationCount = StreamListenerMethodUtils.inputAnnotationCount(method);
-		int outputAnnotationCount = StreamListenerMethodUtils.outputAnnotationCount(method);
-		boolean isDeclarative = checkDeclarativeMethod(method, methodAnnotatedInboundName, methodAnnotatedOutboundName);
-		StreamListenerMethodUtils.validateStreamListenerMethod(method,
-				inputAnnotationCount, outputAnnotationCount,
-				methodAnnotatedInboundName, methodAnnotatedOutboundName,
-				isDeclarative, streamListener.condition());
-		if (isDeclarative) {
-			invokeSetupMethodOnListenedChannel(method, bean, methodAnnotatedInboundName, methodAnnotatedOutboundName);
+	protected final void registerHandlerMethodOnListenedChannel(Method method, StreamListener streamListener, Object bean) {
+		Assert.hasText(streamListener.value(), "The binding name cannot be null");
+		if (!StringUtils.hasText(streamListener.value())) {
+			throw new BeanInitializationException("A bound component name must be specified");
+		}
+		final String defaultOutputChannel = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
+		if (Void.TYPE.equals(method.getReturnType())) {
+			Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
+					"An output channel cannot be specified for a method that does not return a value");
 		}
 		else {
-			registerHandlerMethodOnListenedChannel(method, streamListener, bean);
+			Assert.isTrue(!StringUtils.isEmpty(defaultOutputChannel),
+					"An output channel must be specified for a method that can return a value");
 		}
+		StreamListenerMethodUtils.validateStreamListenerMessageHandler(method);
+		mappedListenerMethods.add(streamListener.value(),
+				new StreamListenerHandlerMethodMapping(bean, method, streamListener.condition(), defaultOutputChannel,
+						streamListener.copyHeaders()));
 	}
 
 	/**
@@ -200,6 +251,7 @@ public class StreamListenerAnnotationBeanPostProcessor
 	 * there is a {@link StreamListenerParameterAdapter} (i.e., {@link Flux}). Declarative method is invoked only
 	 * once during initialization phase.
 	 */
+	@SuppressWarnings("unchecked")
 	private boolean isDeclarativeMethodParameter(String targetBeanName, MethodParameter methodParameter) {
 		boolean declarative = false;
 		if (!methodParameter.getParameterType().isAssignableFrom(Object.class) && this.applicationContext.containsBean(targetBeanName)) {
@@ -277,78 +329,25 @@ public class StreamListenerAnnotationBeanPostProcessor
 		}
 	}
 
-	protected final void registerHandlerMethodOnListenedChannel(Method method, StreamListener streamListener, Object bean) {
-		Assert.hasText(streamListener.value(), "The binding name cannot be null");
-		if (!StringUtils.hasText(streamListener.value())) {
-			throw new BeanInitializationException("A bound component name must be specified");
-		}
-		final String defaultOutputChannel = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
-		if (Void.TYPE.equals(method.getReturnType())) {
-			Assert.isTrue(StringUtils.isEmpty(defaultOutputChannel),
-					"An output channel cannot be specified for a method that does not return a value");
+	private void doPostProcess(StreamListener streamListener, Method method, Object bean) {
+		streamListener = postProcessAnnotation(streamListener, method);
+
+		String methodAnnotatedInboundName = streamListener.value();
+		String methodAnnotatedOutboundName = StreamListenerMethodUtils.getOutboundBindingTargetName(method);
+
+		int inputAnnotationCount = StreamListenerMethodUtils.inputAnnotationCount(method);
+		int outputAnnotationCount = StreamListenerMethodUtils.outputAnnotationCount(method);
+		boolean isDeclarative = checkDeclarativeMethod(method, methodAnnotatedInboundName, methodAnnotatedOutboundName);
+		StreamListenerMethodUtils.validateStreamListenerMethod(method,
+				inputAnnotationCount, outputAnnotationCount,
+				methodAnnotatedInboundName, methodAnnotatedOutboundName,
+				isDeclarative, streamListener.condition());
+		if (isDeclarative) {
+			invokeSetupMethodOnListenedChannel(method, bean, methodAnnotatedInboundName, methodAnnotatedOutboundName);
 		}
 		else {
-			Assert.isTrue(!StringUtils.isEmpty(defaultOutputChannel),
-					"An output channel must be specified for a method that can return a value");
+			registerHandlerMethodOnListenedChannel(method, streamListener, bean);
 		}
-		StreamListenerMethodUtils.validateStreamListenerMessageHandler(method);
-		mappedListenerMethods.add(streamListener.value(),
-				new StreamListenerHandlerMethodMapping(bean, method, streamListener.condition(), defaultOutputChannel,
-						streamListener.copyHeaders()));
-	}
-
-	@Override
-	public final void afterSingletonsInstantiated() {
-		this.evaluationContext = IntegrationContextUtils.getEvaluationContext(this.applicationContext.getBeanFactory());
-		for (Map.Entry<String, List<StreamListenerHandlerMethodMapping>> mappedBindingEntry : mappedListenerMethods
-				.entrySet()) {
-			ArrayList<DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper> handlers = new ArrayList<>();
-			for (StreamListenerHandlerMethodMapping mapping : mappedBindingEntry.getValue()) {
-				final InvocableHandlerMethod invocableHandlerMethod = this.messageHandlerMethodFactory
-						.createInvocableHandlerMethod(mapping.getTargetBean(),
-								checkProxy(mapping.getMethod(), mapping.getTargetBean()));
-				StreamListenerMessageHandler streamListenerMessageHandler = new StreamListenerMessageHandler(
-						invocableHandlerMethod, resolveExpressionAsBoolean(mapping.getCopyHeaders(), "copyHeaders"),
-						springIntegrationProperties.getMessageHandlerNotPropagatedHeaders());
-				streamListenerMessageHandler.setApplicationContext(this.applicationContext);
-				streamListenerMessageHandler.setBeanFactory(this.applicationContext.getBeanFactory());
-				if (StringUtils.hasText(mapping.getDefaultOutputChannel())) {
-					streamListenerMessageHandler.setOutputChannelName(mapping.getDefaultOutputChannel());
-				}
-				streamListenerMessageHandler.afterPropertiesSet();
-				if (StringUtils.hasText(mapping.getCondition())) {
-					String conditionAsString = resolveExpressionAsString(mapping.getCondition(), "condition");
-					Expression condition = SPEL_EXPRESSION_PARSER.parseExpression(conditionAsString);
-					handlers.add(
-							new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper(
-									condition, streamListenerMessageHandler));
-				}
-				else {
-					handlers.add(
-							new DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper(
-									null, streamListenerMessageHandler));
-				}
-			}
-			if (handlers.size() > 1) {
-				for (DispatchingStreamListenerMessageHandler.ConditionalStreamListenerMessageHandlerWrapper handler : handlers) {
-					Assert.isTrue(handler.isVoid(), StreamListenerErrorMessages.MULTIPLE_VALUE_RETURNING_METHODS);
-				}
-			}
-			AbstractReplyProducingMessageHandler handler;
-
-			if (handlers.size() > 1 || handlers.get(0).getCondition() != null) {
-				handler = new DispatchingStreamListenerMessageHandler(handlers, this.evaluationContext);
-			}
-			else {
-				handler = handlers.get(0).getStreamListenerMessageHandler();
-			}
-			handler.setApplicationContext(this.applicationContext);
-			handler.setChannelResolver(this.binderAwareChannelResolver);
-			handler.afterPropertiesSet();
-			this.applicationContext.getBeanFactory().registerSingleton(handler.getClass().getSimpleName() + handler.hashCode(), handler);
-			applicationContext.getBean(mappedBindingEntry.getKey(), SubscribableChannel.class).subscribe(handler);
-		}
-		this.mappedListenerMethods.clear();
 	}
 
 	private Method checkProxy(Method methodArg, Object bean) {
@@ -418,6 +417,18 @@ public class StreamListenerAnnotationBeanPostProcessor
 			resolvedValue = (String) this.resolver.evaluate(resolvedValue, this.expressionContext);
 		}
 		return resolvedValue;
+	}
+
+	/**
+	 * This operations ensures that required dependencies are not accidently injected early given that this bean is BPP.
+	 */
+	private void injectAndPostProcessDependencies() {
+		this.streamListenerParameterAdapters = this.applicationContext.getBeansOfType(StreamListenerParameterAdapter.class).values();
+		this.streamListenerResultAdapters = this.applicationContext.getBeansOfType(StreamListenerResultAdapter.class).values();
+		this.binderAwareChannelResolver = this.applicationContext.getBean(DestinationResolver.class);
+		this.messageHandlerMethodFactory = this.applicationContext.getBean(MessageHandlerMethodFactory.class);
+		this.springIntegrationProperties = this.applicationContext.getBean(SpringIntegrationProperties.class);
+		this.streamListenerCallbacks.forEach(r -> r.run());
 	}
 
 	private class StreamListenerHandlerMethodMapping {

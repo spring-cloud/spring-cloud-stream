@@ -23,7 +23,6 @@ import java.util.UUID;
 
 import org.junit.Test;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -82,8 +81,8 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 			SpringApplication.run(TestPojoWithInvalidInputAnnotatedArgument.class, "--server.port=0");
 			fail("Exception expected: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
-		catch (BeanCreationException e) {
-			assertThat(e.getCause().getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
