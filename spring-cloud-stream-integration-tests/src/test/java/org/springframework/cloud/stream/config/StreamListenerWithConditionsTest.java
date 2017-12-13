@@ -22,7 +22,6 @@ import java.util.UUID;
 
 import org.junit.Test;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -81,10 +80,8 @@ public class StreamListenerWithConditionsTest {
 			context.close();
 			fail("Context creation failure expected");
 		}
-		catch (BeanCreationException e) {
-			assertThat(e).hasRootCauseInstanceOf(IllegalArgumentException.class);
-			assertThat(e.getCause())
-					.hasMessageContaining(StreamListenerErrorMessages.CONDITION_ON_METHOD_RETURNING_VALUE);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(StreamListenerErrorMessages.CONDITION_ON_METHOD_RETURNING_VALUE);
 		}
 	}
 
@@ -98,9 +95,8 @@ public class StreamListenerWithConditionsTest {
 			context.close();
 			fail("Context creation failure expected");
 		}
-		catch (BeanCreationException e) {
-			assertThat(e).hasRootCauseInstanceOf(IllegalArgumentException.class);
-			assertThat(e.getCause()).hasMessageContaining(StreamListenerErrorMessages.CONDITION_ON_DECLARATIVE_METHOD);
+		catch (IllegalArgumentException e) {
+			assertThat(e.getMessage()).contains(StreamListenerErrorMessages.CONDITION_ON_DECLARATIVE_METHOD);
 		}
 	}
 
