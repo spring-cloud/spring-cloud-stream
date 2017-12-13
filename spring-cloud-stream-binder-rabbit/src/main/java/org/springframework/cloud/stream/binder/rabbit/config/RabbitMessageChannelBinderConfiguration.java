@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.cloud.stream.binder.rabbit.config;
+
+import java.time.Duration;
 
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -43,8 +45,8 @@ import org.springframework.context.annotation.Import;
  * @author David Turanski
  * @author Vinicius Carvalho
  * @author Artem Bilan
+ * @author Oleg Zhurakousky
  */
-
 @Configuration
 @Import({ PropertyPlaceholderAutoConfiguration.class })
 @EnableConfigurationProperties({ RabbitBinderConfigurationProperties.class, RabbitExtendedBindingProperties.class })
@@ -81,22 +83,15 @@ public class RabbitMessageChannelBinderConfiguration {
 		return binder;
 	}
 
-	private ConnectionFactory obtainProducerConnectionFactory(
-			ObjectProvider<ConnectionFactory> connectionFactoryObjectProvider) throws Exception {
-
-		ConnectionFactory connectionFactory = connectionFactoryObjectProvider.getIfAvailable();
-
-		if (connectionFactory != null) {
-			return connectionFactory;
-		}
-		else {
-			CachingConnectionFactory producerConnectionFactory = buildProducerConnectionFactory();
-			producerConnectionFactory.setApplicationContext(this.applicationContext);
-			this.applicationContext.addApplicationListener(producerConnectionFactory);
-			producerConnectionFactory.afterPropertiesSet();
-
-			return producerConnectionFactory;
-		}
+	private ConnectionFactory obtainProducerConnectionFactory(ObjectProvider<ConnectionFactory> connectionFactoryObjectProvider) {
+		return connectionFactoryObjectProvider.getIfAvailable(() -> {
+			try {
+				return buildProducerConnectionFactory();
+			}
+			catch (Exception e) {
+				throw new IllegalStateException(e);
+			}
+		});
 	}
 
 	/**
@@ -110,21 +105,26 @@ public class RabbitMessageChannelBinderConfiguration {
 		}
 		else {
 			RabbitConnectionFactoryBean factory = new RabbitConnectionFactoryBean();
-			if (this.rabbitProperties.determineHost() != null) {
-				factory.setHost(this.rabbitProperties.determineHost());
+			String host = this.rabbitProperties.determineHost();
+			if (host != null) {
+				factory.setHost(host);
 			}
 			factory.setPort(this.rabbitProperties.determinePort());
-			if (this.rabbitProperties.determineUsername() != null) {
-				factory.setUsername(this.rabbitProperties.determineUsername());
+			String user = this.rabbitProperties.determineUsername();
+			if (user != null) {
+				factory.setUsername(user);
 			}
-			if (this.rabbitProperties.determinePassword() != null) {
-				factory.setPassword(this.rabbitProperties.determinePassword());
+			String password = this.rabbitProperties.determinePassword();
+			if (password != null) {
+				factory.setPassword(password);
 			}
-			if (this.rabbitProperties.determineVirtualHost() != null) {
-				factory.setVirtualHost(this.rabbitProperties.determineVirtualHost());
+			String vHost = this.rabbitProperties.determineVirtualHost();
+			if (vHost != null) {
+				factory.setVirtualHost(vHost);
 			}
-			if (this.rabbitProperties.getRequestedHeartbeat() != null) {
-				factory.setRequestedHeartbeat((int)this.rabbitProperties.getRequestedHeartbeat().getSeconds());
+			Duration requestedHeartbeatDuration =  this.rabbitProperties.getRequestedHeartbeat();
+			if (requestedHeartbeatDuration != null) {
+				factory.setRequestedHeartbeat((int)requestedHeartbeatDuration.getSeconds());
 			}
 			RabbitProperties.Ssl ssl = this.rabbitProperties.getSsl();
 			if (ssl.isEnabled()) {
@@ -137,8 +137,9 @@ public class RabbitMessageChannelBinderConfiguration {
 				factory.setTrustStore(ssl.getTrustStore());
 				factory.setTrustStorePassphrase(ssl.getTrustStorePassword());
 			}
-			if (this.rabbitProperties.getConnectionTimeout() != null) {
-				factory.setConnectionTimeout((int)this.rabbitProperties.getConnectionTimeout().getSeconds());
+			Duration connectionTimeoutDuration = this.rabbitProperties.getConnectionTimeout();
+			if (connectionTimeoutDuration != null) {
+				factory.setConnectionTimeout((int)connectionTimeoutDuration.getSeconds());
 			}
 			factory.afterPropertiesSet();
 
@@ -150,12 +151,10 @@ public class RabbitMessageChannelBinderConfiguration {
 		connectionFactory.setPublisherConfirms(this.rabbitProperties.isPublisherConfirms());
 		connectionFactory.setPublisherReturns(this.rabbitProperties.isPublisherReturns());
 		if (this.rabbitProperties.getCache().getChannel().getSize() != null) {
-			connectionFactory
-					.setChannelCacheSize(this.rabbitProperties.getCache().getChannel().getSize());
+			connectionFactory.setChannelCacheSize(this.rabbitProperties.getCache().getChannel().getSize());
 		}
 		if (this.rabbitProperties.getCache().getConnection().getMode() != null) {
-			connectionFactory
-					.setCacheMode(this.rabbitProperties.getCache().getConnection().getMode());
+			connectionFactory.setCacheMode(this.rabbitProperties.getCache().getConnection().getMode());
 		}
 		if (this.rabbitProperties.getCache().getConnection().getSize() != null) {
 			connectionFactory.setConnectionCacheSize(
@@ -165,6 +164,9 @@ public class RabbitMessageChannelBinderConfiguration {
 			connectionFactory.setChannelCheckoutTimeout(
 					this.rabbitProperties.getCache().getChannel().getCheckoutTimeout());
 		}
+		connectionFactory.setApplicationContext(this.applicationContext);
+		this.applicationContext.addApplicationListener(connectionFactory);
+		connectionFactory.afterPropertiesSet();
 		return connectionFactory;
 	}
 
