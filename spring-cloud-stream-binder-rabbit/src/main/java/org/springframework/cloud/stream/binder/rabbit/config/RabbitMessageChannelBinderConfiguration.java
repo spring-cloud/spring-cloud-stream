@@ -24,9 +24,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -68,13 +66,10 @@ public class RabbitMessageChannelBinderConfiguration {
 	private RabbitExtendedBindingProperties rabbitExtendedBindingProperties;
 
 	@Bean
-	RabbitMessageChannelBinder rabbitMessageChannelBinder(
-			@Qualifier("producerConnectionFactory") ObjectProvider<ConnectionFactory> producerConnectionFactory)
-			throws Exception {
-
+	RabbitMessageChannelBinder rabbitMessageChannelBinder() throws Exception {
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(this.rabbitConnectionFactory,
 				this.rabbitProperties, provisioningProvider());
-		binder.setProducerConnectionFactory(obtainProducerConnectionFactory(producerConnectionFactory));
+		binder.setProducerConnectionFactory(buildProducerConnectionFactory());
 		binder.setAdminAddresses(this.rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());
@@ -83,25 +78,14 @@ public class RabbitMessageChannelBinderConfiguration {
 		return binder;
 	}
 
-	private ConnectionFactory obtainProducerConnectionFactory(ObjectProvider<ConnectionFactory> connectionFactoryObjectProvider) {
-		return connectionFactoryObjectProvider.getIfAvailable(() -> {
-			try {
-				return buildProducerConnectionFactory();
-			}
-			catch (Exception e) {
-				throw new IllegalStateException(e);
-			}
-		});
-	}
-
 	/**
 	 * @see org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration.RabbitConnectionFactoryCreator
 	 */
 	private CachingConnectionFactory buildProducerConnectionFactory() throws Exception {
 		com.rabbitmq.client.ConnectionFactory rabbitConnectionFactory;
 		if (this.rabbitConnectionFactory instanceof CachingConnectionFactory) {
-			rabbitConnectionFactory =
-					((CachingConnectionFactory) this.rabbitConnectionFactory).getRabbitConnectionFactory();
+			rabbitConnectionFactory = ((CachingConnectionFactory) this.rabbitConnectionFactory)
+					.getRabbitConnectionFactory();
 		}
 		else {
 			RabbitConnectionFactoryBean factory = new RabbitConnectionFactoryBean();
@@ -122,9 +106,9 @@ public class RabbitMessageChannelBinderConfiguration {
 			if (vHost != null) {
 				factory.setVirtualHost(vHost);
 			}
-			Duration requestedHeartbeatDuration =  this.rabbitProperties.getRequestedHeartbeat();
+			Duration requestedHeartbeatDuration = this.rabbitProperties.getRequestedHeartbeat();
 			if (requestedHeartbeatDuration != null) {
-				factory.setRequestedHeartbeat((int)requestedHeartbeatDuration.getSeconds());
+				factory.setRequestedHeartbeat((int) requestedHeartbeatDuration.getSeconds());
 			}
 			RabbitProperties.Ssl ssl = this.rabbitProperties.getSsl();
 			if (ssl.isEnabled()) {
@@ -139,7 +123,7 @@ public class RabbitMessageChannelBinderConfiguration {
 			}
 			Duration connectionTimeoutDuration = this.rabbitProperties.getConnectionTimeout();
 			if (connectionTimeoutDuration != null) {
-				factory.setConnectionTimeout((int)connectionTimeoutDuration.getSeconds());
+				factory.setConnectionTimeout((int) connectionTimeoutDuration.getSeconds());
 			}
 			factory.afterPropertiesSet();
 
@@ -147,26 +131,10 @@ public class RabbitMessageChannelBinderConfiguration {
 		}
 
 		CachingConnectionFactory connectionFactory = new CachingConnectionFactory(rabbitConnectionFactory);
-		connectionFactory.setAddresses(this.rabbitProperties.determineAddresses());
-		connectionFactory.setPublisherConfirms(this.rabbitProperties.isPublisherConfirms());
-		connectionFactory.setPublisherReturns(this.rabbitProperties.isPublisherReturns());
-		if (this.rabbitProperties.getCache().getChannel().getSize() != null) {
-			connectionFactory.setChannelCacheSize(this.rabbitProperties.getCache().getChannel().getSize());
-		}
-		if (this.rabbitProperties.getCache().getConnection().getMode() != null) {
-			connectionFactory.setCacheMode(this.rabbitProperties.getCache().getConnection().getMode());
-		}
-		if (this.rabbitProperties.getCache().getConnection().getSize() != null) {
-			connectionFactory.setConnectionCacheSize(
-					this.rabbitProperties.getCache().getConnection().getSize());
-		}
-		if (this.rabbitProperties.getCache().getChannel().getCheckoutTimeout() != null) {
-			connectionFactory.setChannelCheckoutTimeout(
-					this.rabbitProperties.getCache().getChannel().getCheckoutTimeout());
-		}
-		connectionFactory.setApplicationContext(this.applicationContext);
-		this.applicationContext.addApplicationListener(connectionFactory);
-		connectionFactory.afterPropertiesSet();
+
+		RabbitServiceAutoConfiguration.configureCachingConnectionFactory(connectionFactory, this.applicationContext,
+				this.rabbitProperties);
+
 		return connectionFactory;
 	}
 

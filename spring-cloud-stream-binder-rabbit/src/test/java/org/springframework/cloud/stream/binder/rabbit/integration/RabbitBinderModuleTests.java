@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.rabbit.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
@@ -262,7 +261,7 @@ public class RabbitBinderModuleTests {
 
 		Cloud cloud = this.context.getBean(Cloud.class);
 
-		verify(cloud, times(2)).getSingletonServiceConnector(ConnectionFactory.class, null);
+		verify(cloud).getSingletonServiceConnector(ConnectionFactory.class, null);
 	}
 
 	@EnableBinding(Processor.class)
@@ -286,7 +285,7 @@ public class RabbitBinderModuleTests {
 		public Cloud cloud() {
 			Cloud cloud = mock(Cloud.class);
 
-			willReturn(mock(ConnectionFactory.class), mock(ConnectionFactory.class))
+			willReturn(new CachingConnectionFactory())
 							.given(cloud)
 							.getSingletonServiceConnector(ConnectionFactory.class, null);
 
