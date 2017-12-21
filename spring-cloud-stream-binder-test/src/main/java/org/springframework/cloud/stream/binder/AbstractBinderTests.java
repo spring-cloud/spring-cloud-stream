@@ -166,7 +166,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("foo%s0",
 				getDestinationNameDelimiter()), moduleOutputChannel, outputBindingProperties.getProducer());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("foo%s0",
-				getDestinationNameDelimiter()), "testSendAndReceive", moduleInputChannel, createConsumerProperties());
+				getDestinationNameDelimiter()), "testSendAndReceive", moduleInputChannel, inputBindingProperties.getConsumer());
 		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
 				.build();
 		// Let the consumer actually bind to the producer before sending a msg
@@ -224,7 +224,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("foo%s0x",
 				getDestinationNameDelimiter()), moduleOutputChannel, outputBindingProperties.getProducer());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("foo%s0x",
-				getDestinationNameDelimiter()), "testSendAndReceiveKryo", moduleInputChannel, createConsumerProperties());
+				getDestinationNameDelimiter()), "testSendAndReceiveKryo", moduleInputChannel, inputBindingProperties.getConsumer());
 		Foo foo = new Foo();
 		foo.setName("Bill");
 		Message<?> message = MessageBuilder.withPayload(foo).setHeader(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_OBJECT)
@@ -271,7 +271,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				getDestinationNameDelimiter()), moduleOutputChannel, outputBindingProperties.getProducer());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("foo%s0y",
 				getDestinationNameDelimiter()), "testSendAndReceiveJavaSerialization", moduleInputChannel,
-				createConsumerProperties());
+				inputBindingProperties.getConsumer());
 		SerializableFoo foo = new SerializableFoo();
 		Message<?> message =
 				MessageBuilder.withPayload(foo)
@@ -310,17 +310,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	public void testSendAndReceiveMultipleTopics() throws Exception {
 		Binder binder = getBinder();
 
-		DirectChannel moduleOutputChannel1 = createBindableChannel("output1",
-				createProducerBindingProperties(createProducerProperties()));
-		DirectChannel moduleOutputChannel2 = createBindableChannel("output2",
-				createProducerBindingProperties(createProducerProperties()));
+		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
+
+		DirectChannel moduleOutputChannel1 = createBindableChannel("output1", producerBindingProperties);
+
+		DirectChannel moduleOutputChannel2 = createBindableChannel("output2", producerBindingProperties);
 
 		QueueChannel moduleInputChannel = new QueueChannel();
 
 		Binding<MessageChannel> producerBinding1 = binder.bindProducer(String.format("foo%sxy",
-				getDestinationNameDelimiter()), moduleOutputChannel1, createProducerProperties());
+				getDestinationNameDelimiter()), moduleOutputChannel1, producerBindingProperties.getProducer());
 		Binding<MessageChannel> producerBinding2 = binder.bindProducer(String.format("foo%syz",
-				getDestinationNameDelimiter()), moduleOutputChannel2, createProducerProperties());
+
+				getDestinationNameDelimiter()), moduleOutputChannel2, producerBindingProperties.getProducer());
 
 		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(String.format("foo%sxy",
 				getDestinationNameDelimiter()), "testSendAndReceiveMultipleTopics", moduleInputChannel,
@@ -497,16 +499,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		Binder binder = getBinder();
 
-		PP producerProperties = createProducerProperties();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
-		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
+		BindingProperties consumerBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", consumerBindingProperties);
+
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0a",
-				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+				getDestinationNameDelimiter()), moduleOutputChannel, producerBindingProperties.getProducer());
+
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0a",
-				getDestinationNameDelimiter()), "test-1", moduleInputChannel, createConsumerProperties());
+				getDestinationNameDelimiter()), "test-1", moduleInputChannel, consumerBindingProperties.getConsumer());
 
 		Station station = new Station();
 		Message<?> message = MessageBuilder.withPayload(station).build();
@@ -529,18 +534,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		Binder binder = getBinder();
 
-		PP producerProperties = createProducerProperties();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
-		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
+		BindingProperties consumerBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", consumerBindingProperties);
 
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0b",
-				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+				getDestinationNameDelimiter()), moduleOutputChannel, producerBindingProperties.getProducer());
 
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0b",
-				getDestinationNameDelimiter()), "test-2", moduleInputChannel, createConsumerProperties());
+				getDestinationNameDelimiter()), "test-2", moduleInputChannel, consumerBindingProperties.getConsumer());
 
 		Station station = new Station();
 		Message<?> message = MessageBuilder.withPayload(station).setHeader(
@@ -561,17 +567,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	public void testStreamListenerJavaSerializationNonSerializable() throws Exception {
 		Binder binder = getBinder();
 
-		PP producerProperties = createProducerProperties();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
-		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
+		BindingProperties consumerBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", consumerBindingProperties);
 
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0c",
-				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+				getDestinationNameDelimiter()), moduleOutputChannel, producerBindingProperties.getProducer());
+
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0c",
-				getDestinationNameDelimiter()), "test-3", moduleInputChannel, createConsumerProperties());
+				getDestinationNameDelimiter()), "test-3", moduleInputChannel, consumerBindingProperties.getConsumer());
 		try {
 			Station station = new Station();
 			Message<?> message = MessageBuilder.withPayload(station)
@@ -593,18 +601,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				AbstractBinderTests.class, "echoStation", Station.class);
 		Binder binder = getBinder();
 
-		PP producerProperties = createProducerProperties();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
-		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
+		BindingProperties consumerBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", consumerBindingProperties);
 
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0d",
-				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+				getDestinationNameDelimiter()), moduleOutputChannel, producerBindingProperties.getProducer());
 
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0d",
-				getDestinationNameDelimiter()), "test-4", moduleInputChannel, createConsumerProperties());
+				getDestinationNameDelimiter()), "test-4", moduleInputChannel, consumerBindingProperties.getConsumer());
 
 		String value = "{\"readings\":[{\"stationid\":\"fgh\","
 				+ "\"customerid\":\"12345\",\"timestamp\":null},{\"stationid\":\"hjk\",\"customerid\":\"222\",\"timestamp\":null}]}";
@@ -632,18 +641,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				AbstractBinderTests.class, "echoStationString", String.class);
 		Binder binder = getBinder();
 
-		PP producerProperties = createProducerProperties();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
-		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
+		BindingProperties consumerBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", consumerBindingProperties);
 
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0e",
-				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+				getDestinationNameDelimiter()), moduleOutputChannel, producerBindingProperties.getProducer());
 
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0e",
-				getDestinationNameDelimiter()), "test-5", moduleInputChannel, createConsumerProperties());
+				getDestinationNameDelimiter()), "test-5", moduleInputChannel, consumerBindingProperties.getConsumer());
 
 		String value = "{\"readings\":[{\"stationid\":\"fgh\","
 				+ "\"customerid\":\"12345\",\"timestamp\":null},{\"stationid\":\"hjk\",\"customerid\":\"222\",\"timestamp\":null}]}";
@@ -671,18 +681,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				AbstractBinderTests.class, "echoStation", Station.class);
 		Binder binder = getBinder();
 
-		PP producerProperties = createProducerProperties();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
-		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
+		BindingProperties consumerBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", consumerBindingProperties);
 
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0f",
-				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+				getDestinationNameDelimiter()), moduleOutputChannel, producerBindingProperties.getProducer());
 
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0f",
-				getDestinationNameDelimiter()), "test-6", moduleInputChannel, createConsumerProperties());
+				getDestinationNameDelimiter()), "test-6", moduleInputChannel, consumerBindingProperties.getConsumer());
 
 		Readings r1 = new Readings();
 		r1.setCustomerid("123");
