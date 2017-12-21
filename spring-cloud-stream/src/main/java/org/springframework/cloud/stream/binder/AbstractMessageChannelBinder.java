@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.apache.commons.logging.Log;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -25,8 +27,6 @@ import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.Lifecycle;
-import org.springframework.expression.ExpressionParser;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
@@ -54,16 +54,20 @@ import org.springframework.util.Assert;
  *
  * @param <C> the consumer properties type
  * @param <P> the producer properties type
+ *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Soby Chacko
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
+ *
  * @since 1.1
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
 		extends AbstractBinder<MessageChannel, C, P> {
 
-	protected static final ExpressionParser EXPRESSION_PARSER = new SpelExpressionParser();
+	private final EmbeddedHeadersChannelInterceptor embeddedHeadersChannelInterceptor =
+			new EmbeddedHeadersChannelInterceptor(this.logger);
 
 	/**
 	 * {@link ProvisioningProvider} delegated by the downstream binder implementations.
@@ -83,7 +87,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	/**
-	 * @deprecated  As of release 2.0. Please use other constructors.
+	 * @deprecated As of release 2.0. Please use other constructors.
 	 */
 	@Deprecated
 	protected AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
@@ -283,34 +287,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	private void enhanceMessageChannel(MessageChannel inputChannel) {
-		((AbstractMessageChannel)inputChannel).addInterceptor(new ChannelInterceptorAdapter() {
-			@SuppressWarnings("unchecked")
-			@Override
-			public Message<?> preSend(Message<?> message, MessageChannel channel) {
-				if (message.getPayload() instanceof byte[]) {
-					if (!message.getHeaders().containsKey(BinderHeaders.NATIVE_HEADERS_PRESENT)
-							&& EmbeddedHeaderUtils.mayHaveEmbeddedHeaders((byte[]) message.getPayload())) {
-						MessageValues messageValues;
-						try {
-							messageValues = EmbeddedHeaderUtils.extractHeaders((Message<byte[]>) message, true);
-						}
-						catch (Exception e) {
-							/*
-							 * debug() rather then error() since we don't know for sure that it
-							 * really is a message with embedded headers, it just meets the
-							 * criteria in EmbeddedHeaderUtils.mayHaveEmbeddedHeaders().
-							 */
-							if (logger.isDebugEnabled()) {
-								logger.debug(EmbeddedHeaderUtils.decodeExceptionMessage(message),e);
-							}
-							messageValues = new MessageValues(message);
-						}
-						return messageValues.toMessage();
-					}
-				}
-				return message;
-			}
-		});
+		((AbstractMessageChannel) inputChannel).addInterceptor(0, this.embeddedHeadersChannelInterceptor);
 	}
 
 	/**
@@ -656,6 +633,43 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		public MessageHandler getHandler() {
 			return this.handler;
+		}
+
+	}
+
+	private static final class EmbeddedHeadersChannelInterceptor extends ChannelInterceptorAdapter {
+
+		protected final Log logger;
+
+		EmbeddedHeadersChannelInterceptor(Log logger) {
+			this.logger = logger;
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			if (message.getPayload() instanceof byte[] &&
+					!message.getHeaders().containsKey(BinderHeaders.NATIVE_HEADERS_PRESENT)
+					&& EmbeddedHeaderUtils.mayHaveEmbeddedHeaders((byte[]) message.getPayload())) {
+
+				MessageValues messageValues;
+				try {
+					messageValues = EmbeddedHeaderUtils.extractHeaders((Message<byte[]>) message, true);
+				}
+				catch (Exception e) {
+					/*
+					 * debug() rather then error() since we don't know for sure that it
+					 * really is a message with embedded headers, it just meets the
+					 * criteria in EmbeddedHeaderUtils.mayHaveEmbeddedHeaders().
+					 */
+					if (logger.isDebugEnabled()) {
+						logger.debug(EmbeddedHeaderUtils.decodeExceptionMessage(message), e);
+					}
+					messageValues = new MessageValues(message);
+				}
+				return messageValues.toMessage();
+			}
+			return message;
 		}
 
 	}
