@@ -73,6 +73,7 @@ import static org.junit.Assert.assertTrue;
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
  * @author Jacob Severson
+ * @author Artem Bilan
  */
 @SuppressWarnings("unchecked")
 public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties> {
@@ -197,6 +198,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	}
 
 	private class Foo {
+
 		private String name;
 
 		@SuppressWarnings("unused")
@@ -250,7 +252,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		assertThat(inboundMessageRef.get().getPayload()).isInstanceOf(Foo.class);
 		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		assertTrue(equalTypeAndSubType((MimeType)inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE), MessageConverterUtils.X_JAVA_OBJECT));
+		assertTrue(equalTypeAndSubType((MimeType) inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE), MessageConverterUtils.X_JAVA_OBJECT));
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -271,8 +273,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				getDestinationNameDelimiter()), "testSendAndReceiveJavaSerialization", moduleInputChannel,
 				createConsumerProperties());
 		SerializableFoo foo = new SerializableFoo();
-		Message<?> message = MessageBuilder.withPayload(foo).setHeader(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT)
-				.build();
+		Message<?> message =
+				MessageBuilder.withPayload(foo)
+						.setHeader(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT)
+						.build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 
@@ -444,7 +448,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				new CompositeMessageConverterFactory(null, null));
 		messageConverterConfigurer.setBeanFactory(applicationContext.getBeanFactory());
 		messageConverterConfigurer.afterPropertiesSet();
-		if (inputChannel){
+		if (inputChannel) {
 			messageConverterConfigurer.configureInputChannel(channel, channelName);
 		}
 		else {
@@ -492,12 +496,15 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				AbstractBinderTests.class, "echoStation", Station.class);
 
 		Binder binder = getBinder();
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				new BindingProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				new BindingProperties());
+
+		PP producerProperties = createProducerProperties();
+
+		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0a",
-				getDestinationNameDelimiter()), moduleOutputChannel, createProducerProperties());
+				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0a",
 				getDestinationNameDelimiter()), "test-1", moduleInputChannel, createConsumerProperties());
 
@@ -521,12 +528,17 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				AbstractBinderTests.class, "echoStation", Station.class);
 
 		Binder binder = getBinder();
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				new BindingProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				new BindingProperties());
+
+		PP producerProperties = createProducerProperties();
+
+		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0b",
-				getDestinationNameDelimiter()), moduleOutputChannel, createProducerProperties());
+				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0b",
 				getDestinationNameDelimiter()), "test-2", moduleInputChannel, createConsumerProperties());
 
@@ -548,12 +560,16 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	@Test(expected = MessageHandlingException.class)
 	public void testStreamListenerJavaSerializationNonSerializable() throws Exception {
 		Binder binder = getBinder();
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				new BindingProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				new BindingProperties());
+
+		PP producerProperties = createProducerProperties();
+
+		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0c",
-				getDestinationNameDelimiter()), moduleOutputChannel, createProducerProperties());
+				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0c",
 				getDestinationNameDelimiter()), "test-3", moduleInputChannel, createConsumerProperties());
 		try {
@@ -576,12 +592,17 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		StreamListenerMessageHandler handler = this.buildStreamListener(
 				AbstractBinderTests.class, "echoStation", Station.class);
 		Binder binder = getBinder();
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				new BindingProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				new BindingProperties());
+
+		PP producerProperties = createProducerProperties();
+
+		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0d",
-				getDestinationNameDelimiter()), moduleOutputChannel, createProducerProperties());
+				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0d",
 				getDestinationNameDelimiter()), "test-4", moduleInputChannel, createConsumerProperties());
 
@@ -610,12 +631,17 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		StreamListenerMessageHandler handler = this.buildStreamListener(
 				AbstractBinderTests.class, "echoStationString", String.class);
 		Binder binder = getBinder();
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				new BindingProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				new BindingProperties());
+
+		PP producerProperties = createProducerProperties();
+
+		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0e",
-				getDestinationNameDelimiter()), moduleOutputChannel, createProducerProperties());
+				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0e",
 				getDestinationNameDelimiter()), "test-5", moduleInputChannel, createConsumerProperties());
 
@@ -644,12 +670,17 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		StreamListenerMessageHandler handler = this.buildStreamListener(
 				AbstractBinderTests.class, "echoStation", Station.class);
 		Binder binder = getBinder();
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				new BindingProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				new BindingProperties());
+
+		PP producerProperties = createProducerProperties();
+
+		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output", producerBindingProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input", producerBindingProperties);
+
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("bad%s0f",
-				getDestinationNameDelimiter()), moduleOutputChannel, createProducerProperties());
+				getDestinationNameDelimiter()), moduleOutputChannel, producerProperties);
+
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("bad%s0f",
 				getDestinationNameDelimiter()), "test-6", moduleInputChannel, createConsumerProperties());
 
@@ -710,7 +741,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				StreamListenerMessageHandler.class, InvocableHandlerMethod.class,
 				boolean.class, String[].class);
 		StreamListenerMessageHandler handler = (StreamListenerMessageHandler) c
-				.newInstance(method, false, new String[] {});
+				.newInstance(method, false, new String[] { });
 		handler.setOutputChannelName(channelName);
 		handler.setBeanFactory(context);
 		handler.afterPropertiesSet();
@@ -732,8 +763,11 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		@SuppressWarnings("serial")
 		public static class Readings implements Serializable {
+
 			public String stationid;
+
 			public String customerid;
+
 			public String timestamp;
 
 			public String getStationid() {
