@@ -51,7 +51,6 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Marius Bogoevici
  * @author Soby Chacko
  * @author Gary Russell
@@ -90,8 +89,6 @@ public class KStreamBinderWordCountIntegrationTests {
 				"--spring.cloud.stream.kstream.binder.configuration.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kstream.binder.configuration.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
-				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
-				"--spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$ByteArraySerde",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kstream.timeWindow.length=5000",
 				"--spring.cloud.stream.kstream.timeWindow.advanceBy=0",
@@ -99,13 +96,12 @@ public class KStreamBinderWordCountIntegrationTests {
 				"--spring.cloud.stream.kstream.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 		try {
 			receiveAndValidate(context);
-		}
-		finally {
+		} finally {
 			context.close();
 		}
 	}
 
-	private void receiveAndValidate(ConfigurableApplicationContext context) throws Exception{
+	private void receiveAndValidate(ConfigurableApplicationContext context) throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);

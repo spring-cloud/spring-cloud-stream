@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kstream;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.kafka.streams.KeyValue;
@@ -24,11 +27,11 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KeyValueMapper;
 
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
@@ -39,6 +42,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 
@@ -103,8 +107,8 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 		private String name;
 
 		KStreamWrapperHandler(MessageConverter messageConverter,
-									BindingServiceProperties bindingServiceProperties,
-									String name) {
+							BindingServiceProperties bindingServiceProperties,
+							String name) {
 			this.messageConverter = messageConverter;
 			this.bindingServiceProperties = bindingServiceProperties;
 			this.name = name;
@@ -113,15 +117,18 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 		public void wrap(KStream<Object, Object> delegate) {
 			Assert.notNull(delegate, "delegate cannot be null");
 			Assert.isNull(this.delegate, "delegate already set to " + this.delegate);
-			if (messageConverter != null) {
+			ProducerProperties producer = bindingServiceProperties.getBindingProperties(name).getProducer();
+
+			if (messageConverter != null && !producer.isUseNativeEncoding()) {
 				KeyValueMapper<Object, Object, KeyValue<Object, Object>> keyValueMapper = (k, v) -> {
 					Message<?> message = (Message<?>) v;
 					BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(name);
 					String contentType = bindingProperties.getContentType();
-					MutableMessageHeaders messageHeaders = new MutableMessageHeaders(((Message<?>) v).getHeaders());
+					Map<String, Object> headers = new HashMap<>(((Message<?>) v).getHeaders());
 					if (!StringUtils.isEmpty(contentType)) {
-						messageHeaders.put(MessageHeaders.CONTENT_TYPE, contentType);
+						headers.put(MessageHeaders.CONTENT_TYPE, contentType);
 					}
+					MessageHeaders messageHeaders = new MessageHeaders(headers);
 					return new KeyValue<>(k,
 							messageConverter.toMessage(message.getPayload(),
 									messageHeaders));

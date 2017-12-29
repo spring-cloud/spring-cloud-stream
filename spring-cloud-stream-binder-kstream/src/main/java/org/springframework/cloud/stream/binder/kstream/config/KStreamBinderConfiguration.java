@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author Marius Bogoevici
  * @author Gary Russell
+ * @author Soby Chacko
  */
 @Configuration
 @EnableConfigurationProperties(KStreamExtendedBindingProperties.class)
@@ -48,10 +49,9 @@ public class KStreamBinderConfiguration {
 	}
 
 	@Bean
-	public KStreamBinder kStreamBinder(KafkaBinderConfigurationProperties binderConfigurationProperties,
-			KafkaTopicProvisioner kafkaTopicProvisioner,
-			KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig) {
-		return new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner, kStreamExtendedBindingProperties,
+	public KStreamBinder kStreamBinder(KafkaTopicProvisioner kafkaTopicProvisioner,
+									KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig) {
+		return new KStreamBinder(kafkaTopicProvisioner, kStreamExtendedBindingProperties,
 				streamsConfig);
 	}
 
