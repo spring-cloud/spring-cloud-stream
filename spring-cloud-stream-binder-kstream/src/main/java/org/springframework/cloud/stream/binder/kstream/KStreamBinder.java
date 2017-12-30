@@ -31,6 +31,7 @@ import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
@@ -54,8 +55,12 @@ public class KStreamBinder extends
 
 	private final StreamsConfig streamsConfig;
 
-	public KStreamBinder(KafkaTopicProvisioner kafkaTopicProvisioner,
+	private final KafkaBinderConfigurationProperties binderConfigurationProperties;
+
+	public KStreamBinder(KafkaBinderConfigurationProperties binderConfigurationProperties,
+						KafkaTopicProvisioner kafkaTopicProvisioner,
 						KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig) {
+		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kStreamExtendedBindingProperties = kStreamExtendedBindingProperties;
 		this.streamsConfig = streamsConfig;
@@ -94,6 +99,11 @@ public class KStreamBinder extends
 						((Configurable) keySerde).configure(streamsConfig.originals());
 					}
 				}
+				else {
+					keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("key.serde") ?
+							Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("key.serde"), Serde.class) : Serdes.ByteArray();
+				}
+
 				if (StringUtils.hasText(properties.getExtension().getValueSerde())) {
 					valueSerde = Utils.newInstance(properties.getExtension().getValueSerde(), Serde.class);
 					if (valueSerde instanceof Configurable) {

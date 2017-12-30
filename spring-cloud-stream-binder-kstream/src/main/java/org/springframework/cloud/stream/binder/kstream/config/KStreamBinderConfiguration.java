@@ -49,9 +49,10 @@ public class KStreamBinderConfiguration {
 	}
 
 	@Bean
-	public KStreamBinder kStreamBinder(KafkaTopicProvisioner kafkaTopicProvisioner,
+	public KStreamBinder kStreamBinder(KafkaBinderConfigurationProperties binderConfigurationProperties,
+									KafkaTopicProvisioner kafkaTopicProvisioner,
 									KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig) {
-		return new KStreamBinder(kafkaTopicProvisioner, kStreamExtendedBindingProperties,
+		return new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner, kStreamExtendedBindingProperties,
 				streamsConfig);
 	}
 
