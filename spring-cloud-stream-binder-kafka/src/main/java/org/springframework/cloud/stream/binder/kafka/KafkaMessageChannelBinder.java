@@ -66,6 +66,7 @@ import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAd
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.integration.kafka.support.RawRecordHeaderErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -82,9 +83,12 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -122,6 +126,8 @@ public class KafkaMessageChannelBinder extends
 
 	private final KafkaTransactionManager<byte[], byte[]> transactionManager;
 
+	private final TransactionTemplate transactionTemplate;
+
 	private ProducerListener<byte[], byte[]> producerListener;
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
@@ -134,9 +140,11 @@ public class KafkaMessageChannelBinder extends
 			this.transactionManager = new KafkaTransactionManager<>(
 					getProducerFactory(configurationProperties.getTransaction().getTransactionIdPrefix(),
 							new ExtendedProducerProperties<>(configurationProperties.getTransaction().getProducer())));
+			this.transactionTemplate = new TransactionTemplate(this.transactionManager);
 		}
 		else {
 			this.transactionManager = null;
+			this.transactionTemplate = null;
 		}
 	}
 
@@ -260,7 +268,7 @@ public class KafkaMessageChannelBinder extends
 		return handler;
 	}
 
-	private DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(String transactionIdPrefix,
+	protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(String transactionIdPrefix,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ProducerConfig.RETRIES_CONFIG, 0);
@@ -611,6 +619,26 @@ public class KafkaMessageChannelBinder extends
 		public boolean isRunning() {
 			return this.running;
 		}
+
+		@Override
+		protected void handleMessageInternal(Message<?> message) throws Exception {
+			if (KafkaMessageChannelBinder.this.transactionTemplate != null
+					&& !TransactionSynchronizationManager.isActualTransactionActive()) {
+				KafkaMessageChannelBinder.this.transactionTemplate.execute(s -> {
+					try {
+						super.handleMessageInternal(message);
+					}
+					catch (Exception e) {
+						throw new KafkaException("Exception on transactional send", e);
+					}
+					return null;
+				});
+			}
+			else {
+				super.handleMessageInternal(message);
+			}
+		}
+
 	}
 
 	static class TopicInformation {

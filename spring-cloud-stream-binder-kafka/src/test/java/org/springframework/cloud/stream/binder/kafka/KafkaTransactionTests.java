@@ -1,0 +1,97 @@
+/*
+ * Copyright 2018 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.cloud.stream.binder.kafka;
+
+import java.util.Collections;
+
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.mockito.InOrder;
+
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.messaging.support.GenericMessage;
+import org.springframework.retry.support.RetryTemplate;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.willReturn;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+
+/**
+ * @author Gary Russell
+ * @since 2.0
+ *
+ */
+public class KafkaTransactionTests {
+
+	@ClassRule
+	public static final KafkaEmbedded embeddedKafka = new KafkaEmbedded(1);
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testProducerRunsInTx() {
+		KafkaProperties kafkaProperties = new KafkaProperties();
+		kafkaProperties.setBootstrapServers(Collections.singletonList(embeddedKafka.getBrokersAsString()));
+		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties();
+		configurationProperties.getTransaction().setTransactionIdPrefix("foo-");
+		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(configurationProperties, kafkaProperties);
+		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
+		final Producer mockProducer = mock(Producer.class);
+		willReturn(Collections.singletonList(new TopicPartition("foo", 0))).given(mockProducer).partitionsFor(anyString());
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties, provisioningProvider) {
+
+			@Override
+			protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(String transactionIdPrefix,
+					ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
+				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory =
+						spy(super.getProducerFactory(transactionIdPrefix, producerProperties));
+				willReturn(mockProducer).given(producerFactory).createProducer();
+				return producerFactory;
+			}
+
+		};
+		GenericApplicationContext applicationContext = new GenericApplicationContext();
+		applicationContext.refresh();
+		binder.setApplicationContext(applicationContext);
+		DirectChannel channel = new DirectChannel();
+		KafkaProducerProperties extension = new KafkaProducerProperties();
+		ExtendedProducerProperties<KafkaProducerProperties> properties = new ExtendedProducerProperties<>(extension);
+		binder.bindProducer("foo", channel, properties);
+		channel.send(new GenericMessage<>("foo".getBytes()));
+		InOrder inOrder = inOrder(mockProducer);
+		inOrder.verify(mockProducer).beginTransaction();
+		inOrder.verify(mockProducer).send(any(ProducerRecord.class), any(Callback.class));
+		inOrder.verify(mockProducer).commitTransaction();
+		inOrder.verify(mockProducer).close();
+		inOrder.verifyNoMoreInteractions();
+	}
+
+}

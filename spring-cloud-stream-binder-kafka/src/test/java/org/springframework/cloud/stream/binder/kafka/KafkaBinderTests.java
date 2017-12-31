@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -1815,8 +1816,6 @@ public class KafkaBinderTests extends
 			String testTopicName = UUID.randomUUID().toString();
 			producerBinding = binder.bindProducer(testTopicName, output,
 					producerBindingProperties.getProducer());
-			String testPayload1 = "foo1-" + UUID.randomUUID().toString();
-			output.send(new GenericMessage<>(testPayload1));
 			ExtendedConsumerProperties<KafkaConsumerProperties> firstConsumerProperties = createConsumerProperties();
 			consumerBinding = binder.bindConsumer(testTopicName, "startOffsets", input1,
 					firstConsumerProperties);
@@ -1831,12 +1830,12 @@ public class KafkaBinderTests extends
 				}
 			};
 			input1.subscribe(messageHandler);
-			Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
+			String testPayload1 = "foo1-" + UUID.randomUUID().toString();
+			output.send(new GenericMessage<>(testPayload1));
+			Assert.isTrue(latch.await(15, TimeUnit.SECONDS), "Failed to receive message");
 
 			assertThat(inboundMessageRef1.get()).isNotNull();
 			assertThat(inboundMessageRef1.get().getPayload()).isNotNull();
-			String testPayload2 = "foo2-" + UUID.randomUUID().toString();
-			output.send(new GenericMessage<>(testPayload2.getBytes()));
 			input1.unsubscribe(messageHandler);
 			CountDownLatch latch1 = new CountDownLatch(1);
 			AtomicReference<Message<String>> inboundMessageRef2 = new AtomicReference<>();
@@ -1849,14 +1848,14 @@ public class KafkaBinderTests extends
 				}
 			};
 			input1.subscribe(messageHandler1);
-			Assert.isTrue(latch1.await(5, TimeUnit.SECONDS), "Failed to receive message");
+			String testPayload2 = "foo2-" + UUID.randomUUID().toString();
+			output.send(new GenericMessage<>(testPayload2.getBytes()));
+			Assert.isTrue(latch1.await(15, TimeUnit.SECONDS), "Failed to receive message");
 			assertThat(inboundMessageRef2.get()).isNotNull();
 			assertThat(inboundMessageRef2.get().getPayload()).isNotNull();
 			consumerBinding.unbind();
 
 			Thread.sleep(2000);
-			String testPayload3 = "foo3-" + UUID.randomUUID().toString();
-			output.send(new GenericMessage<>(testPayload3.getBytes()));
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 			consumerBinding = binder.bindConsumer(testTopicName, "startOffsets", input1, consumerProperties);
 			input1.unsubscribe(messageHandler1);
@@ -1871,7 +1870,9 @@ public class KafkaBinderTests extends
 				}
 			};
 			input1.subscribe(messageHandler2);
-			Assert.isTrue(latch2.await(5, TimeUnit.SECONDS), "Failed to receive message");
+			String testPayload3 = "foo3-" + UUID.randomUUID().toString();
+			output.send(new GenericMessage<>(testPayload3.getBytes()));
+			Assert.isTrue(latch2.await(15, TimeUnit.SECONDS), "Failed to receive message");
 			assertThat(inboundMessageRef3.get()).isNotNull();
 			assertThat(new String(inboundMessageRef3.get().getPayload())).isEqualTo(testPayload3);
 		}
