@@ -251,13 +251,19 @@ public class RabbitBinderModuleTests {
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
 		ConnectionFactory connectionFactory = this.context.getBean(ConnectionFactory.class);
+
 		assertThat(binderConnectionFactory).isNotSameAs(connectionFactory);
 
 		ConnectionFactory producerConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("producerConnectionFactory");
+
 		assertThat(producerConnectionFactory).isNotSameAs(connectionFactory);
 
-		assertThat(binderConnectionFactory).isNotSameAs(connectionFactory);
+		assertThat(binderConnectionFactory).isNotSameAs(producerConnectionFactory);
+
+		assertThat(TestUtils.getPropertyValue(connectionFactory, "addresses")).isNotNull();
+		assertThat(TestUtils.getPropertyValue(binderConnectionFactory, "addresses")).isNull();
+		assertThat(TestUtils.getPropertyValue(producerConnectionFactory, "addresses")).isNull();
 
 		Cloud cloud = this.context.getBean(Cloud.class);
 
