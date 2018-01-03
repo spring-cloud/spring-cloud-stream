@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -71,6 +71,7 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.tuple.spel.TuplePropertyAccessor;
+import org.springframework.util.ClassUtils;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
@@ -81,6 +82,7 @@ import org.springframework.tuple.spel.TuplePropertyAccessor;
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  * @author Vinicius Carvalho
+ * @author Artem Bilan
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
@@ -214,8 +216,6 @@ public class BindingServiceConfiguration {
 	@Configuration
 	protected static class PostProcessorConfiguration {
 
-		private BinderAwareChannelResolver binderAwareChannelResolver;
-
 		/**
 		 * Adds property accessors for use in SpEL expression evaluation
 		 */
@@ -245,51 +245,75 @@ public class BindingServiceConfiguration {
 				public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 					return bean;
 				}
+
 			};
 		}
 
 		@Bean
 		@ConditionalOnMissingBean(BinderAwareRouterBeanPostProcessor.class)
-		public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
-				final ConfigurableListableBeanFactory beanFactory) {
+		public static BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(BeanFactory beanFactory) {
 			// IMPORTANT: Lazy delegate to avoid instantiating all of the above early
 			return new BinderAwareRouterBeanPostProcessor(new DestinationResolver<MessageChannel>() {
 
+				private BinderAwareChannelResolver binderAwareChannelResolver;
+
 				@Override
 				public MessageChannel resolveDestination(String name) throws DestinationResolutionException {
-					if (PostProcessorConfiguration.this.binderAwareChannelResolver == null) {
-						PostProcessorConfiguration.this.binderAwareChannelResolver = BeanFactoryUtils
-								.beanOfType(beanFactory, BinderAwareChannelResolver.class);
+					if (this.binderAwareChannelResolver == null) {
+						this.binderAwareChannelResolver = beanFactory.getBean(BinderAwareChannelResolver.class);
 					}
-					return PostProcessorConfiguration.this.binderAwareChannelResolver.resolveDestination(name);
+					return this.binderAwareChannelResolver.resolveDestination(name);
 				}
 
 			});
 		}
 
 		@Bean
-		public static BeanPostProcessor messageHandlerHeaderPropagationBeanPostProcessor(
-				final SpringIntegrationProperties springIntegrationProperties) {
-			return new BeanPostProcessor() {
+		public static BeanPostProcessor messageHandlerHeaderPropagationBeanPostProcessor() {
+			return new NotPropagatedHeadersBeanPostProcessor();
+		}
 
-				@Override
-				public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-					// TODO: Filter out beans created by SCSt (not currently necessary)
-					Class<?> beanClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
-					if (AbstractReplyProducingMessageHandler.class.isAssignableFrom(beanClass)) {
-						AbstractReplyProducingMessageHandler messageHandler = (AbstractReplyProducingMessageHandler) bean;
-						messageHandler.addNotPropagatedHeaders(
-								springIntegrationProperties.getMessageHandlerNotPropagatedHeaders());
-					}
-					return bean;
+
+		private static final class NotPropagatedHeadersBeanPostProcessor
+				implements BeanPostProcessor, BeanFactoryAware, SmartInitializingSingleton {
+
+			private final List<AbstractReplyProducingMessageHandler> producingMessageHandlers = new ArrayList<>();
+
+			private BeanFactory beanFactory;
+
+			@Override
+			public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+				this.beanFactory = beanFactory;
+			}
+
+			@Override
+			public void afterSingletonsInstantiated() {
+				SpringIntegrationProperties springIntegrationProperties =
+						this.beanFactory.getBean(SpringIntegrationProperties.class);
+
+				for (AbstractReplyProducingMessageHandler producingMessageHandler : producingMessageHandlers) {
+					producingMessageHandler.addNotPropagatedHeaders(
+							springIntegrationProperties.getMessageHandlerNotPropagatedHeaders());
 				}
 
-				@Override
-				public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-					return bean;
-				}
+				this.producingMessageHandlers.clear();
+			}
 
-			};
+			@Override
+			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+				// TODO: Filter out beans created by SCSt (not currently necessary)
+				Class<?> beanClass = ClassUtils.getUserClass(bean);
+				if (AbstractReplyProducingMessageHandler.class.isAssignableFrom(beanClass)) {
+					this.producingMessageHandlers.add((AbstractReplyProducingMessageHandler) bean);
+				}
+				return bean;
+			}
+
+			@Override
+			public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+				return bean;
+			}
+
 		}
 
 	}
