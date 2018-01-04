@@ -20,8 +20,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -30,9 +30,8 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.BeanInitializationException;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
@@ -63,13 +62,15 @@ import org.springframework.util.StringUtils;
  * @since 1.3.0
  */
 public class StreamEmitterAnnotationBeanPostProcessor
-		implements BeanPostProcessor, InitializingBean, ApplicationContextAware, SmartLifecycle {
+		implements BeanPostProcessor, SmartInitializingSingleton, ApplicationContextAware, SmartLifecycle {
 
 	private static final Log log = LogFactory.getLog(StreamEmitterAnnotationBeanPostProcessor.class);
 
-	private final List<StreamListenerParameterAdapter<?, Object>> streamListenerParameterAdapters = new ArrayList<>();
+	@SuppressWarnings("rawtypes")
+	private Collection<StreamListenerParameterAdapter> parameterAdapters;
 
-	private final List<StreamListenerResultAdapter<?, ?>> streamListenerResultAdapters = new ArrayList<>();
+	@SuppressWarnings("rawtypes")
+	private Collection<StreamListenerResultAdapter> resultAdapters;
 
 	private final List<Closeable> closeableFluxResources = new ArrayList<>();
 
@@ -89,20 +90,10 @@ public class StreamEmitterAnnotationBeanPostProcessor
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public void afterPropertiesSet() throws Exception {
-		Map<String, StreamListenerParameterAdapter> parameterAdapterMap = BeanFactoryUtils
-				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerParameterAdapter.class);
-		parameterAdapterMap.values().iterator().forEachRemaining(this.streamListenerParameterAdapters::add);
-		Map<String, StreamListenerResultAdapter> resultAdapterMap = BeanFactoryUtils
-				.beansOfTypeIncludingAncestors(this.applicationContext, StreamListenerResultAdapter.class);
-		this.streamListenerResultAdapters.add(new MessageChannelStreamListenerResultAdapter());
-		resultAdapterMap.values().iterator().forEachRemaining(this.streamListenerResultAdapters::add);
-	}
-
-	@Override
-	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-		return bean;
+	public void afterSingletonsInstantiated() {
+		this.parameterAdapters = this.applicationContext.getBeansOfType(StreamListenerParameterAdapter.class).values();
+		this.resultAdapters = new ArrayList<>(this.applicationContext.getBeansOfType(StreamListenerResultAdapter.class).values());
+		this.resultAdapters.add(new MessageChannelStreamListenerResultAdapter());
 	}
 
 	@Override
@@ -156,7 +147,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 			}
 			if (targetReferenceValue != null) {
 				targetBean = this.applicationContext.getBean((String) targetReferenceValue);
-				for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.streamListenerParameterAdapters) {
+				for (StreamListenerParameterAdapter<?, Object> streamListenerParameterAdapter : this.parameterAdapters) {
 					if (streamListenerParameterAdapter.supports(targetBean.getClass(), methodParameter)) {
 						arguments[parameterIndex] = streamListenerParameterAdapter.adapt(targetBean,
 								methodParameter);
@@ -186,7 +177,7 @@ public class StreamEmitterAnnotationBeanPostProcessor
 				targetBean = this.applicationContext.getBean(outboundName);
 			}
 			boolean streamListenerResultAdapterFound = false;
-			for (StreamListenerResultAdapter streamListenerResultAdapter : this.streamListenerResultAdapters) {
+			for (StreamListenerResultAdapter streamListenerResultAdapter : this.resultAdapters) {
 				if (streamListenerResultAdapter.supports(result.getClass(), targetBean.getClass())) {
 					Closeable fluxDisposable = streamListenerResultAdapter.adapt(result, targetBean);
 					closeableFluxResources.add(fluxDisposable);
