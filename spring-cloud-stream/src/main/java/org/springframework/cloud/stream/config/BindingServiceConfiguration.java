@@ -16,19 +16,15 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.beans.Introspector;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -72,7 +68,7 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.tuple.spel.TuplePropertyAccessor;
-import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
@@ -84,7 +80,9 @@ import org.springframework.util.ClassUtils;
  * @author Gary Russell
  * @author Vinicius Carvalho
  * @author Artem Bilan
+ * @author Oleg Zhurakousky
  */
+@SuppressWarnings("deprecation")
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
 @Import(ContentTypeConfiguration.class)
@@ -220,86 +218,37 @@ public class BindingServiceConfiguration {
 		return new BinderAwareRouterBeanPostProcessor(routers, channelResolver);
 	}
 
-	// IMPORTANT: Nested class to avoid instantiating all of the above early
-	@Configuration
-	protected static class PostProcessorConfiguration {
-
-		/**
-		 * Adds property accessors for use in SpEL expression evaluation
-		 */
-		@Bean
-		public static BeanPostProcessor propertyAccessorBeanPostProcessor() {
-			final Map<String, PropertyAccessor> accessors = new HashMap<>();
-			accessors.put("tuplePropertyAccessor", new TuplePropertyAccessor());
-			accessors.put("jsonPropertyAccessor", new JsonPropertyAccessor());
-			return new BeanPostProcessor() {
-
-				@Override
-				public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-					if (IntegrationContextUtils.INTEGRATION_EVALUATION_CONTEXT_BEAN_NAME.equals(beanName)) {
-						IntegrationEvaluationContextFactoryBean factoryBean = (IntegrationEvaluationContextFactoryBean) bean;
-						Map<String, PropertyAccessor> factoryBeanAccessors = factoryBean.getPropertyAccessors();
-						for (Map.Entry<String, PropertyAccessor> entry : accessors.entrySet()) {
-							if (!factoryBeanAccessors.containsKey(entry.getKey())) {
-								factoryBeanAccessors.put(entry.getKey(), entry.getValue());
-							}
-						}
-						factoryBean.setPropertyAccessors(factoryBeanAccessors);
+	@Bean
+	public InitializingBean propertyAccessorInjector(IntegrationEvaluationContextFactoryBean[] iecfbs) {
+		return new InitializingBean() {
+			@Override
+			public void afterPropertiesSet() throws Exception {
+				TuplePropertyAccessor tpa = new TuplePropertyAccessor();
+				JsonPropertyAccessor jpa = new JsonPropertyAccessor();
+				if (iecfbs != null) {
+					for (IntegrationEvaluationContextFactoryBean iecfb : iecfbs) {
+						Map<String, PropertyAccessor> factoryBeanAccessors = iecfb.getPropertyAccessors();
+						factoryBeanAccessors.put(Introspector.decapitalize(tpa.getClass().getSimpleName()), tpa);
+						factoryBeanAccessors.put(Introspector.decapitalize(jpa.getClass().getSimpleName()), jpa);
 					}
-					return bean;
 				}
-
-			};
-		}
-
-		@Bean
-		public static BeanPostProcessor messageHandlerHeaderPropagationBeanPostProcessor() {
-			return new NotPropagatedHeadersBeanPostProcessor();
-		}
-
-
-		private static final class NotPropagatedHeadersBeanPostProcessor
-				implements BeanPostProcessor, BeanFactoryAware, SmartInitializingSingleton {
-
-			private final List<AbstractReplyProducingMessageHandler> producingMessageHandlers = new ArrayList<>();
-
-			private BeanFactory beanFactory;
-
-			@Override
-			public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-				this.beanFactory = beanFactory;
 			}
-
-			@Override
-			public void afterSingletonsInstantiated() {
-				SpringIntegrationProperties springIntegrationProperties =
-						this.beanFactory.getBean(SpringIntegrationProperties.class);
-
-				for (AbstractReplyProducingMessageHandler producingMessageHandler : producingMessageHandlers) {
-					producingMessageHandler.addNotPropagatedHeaders(
-							springIntegrationProperties.getMessageHandlerNotPropagatedHeaders());
-				}
-
-				this.producingMessageHandlers.clear();
-			}
-
-			@Override
-			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-				// TODO: Filter out beans created by SCSt (not currently necessary)
-				Class<?> beanClass = ClassUtils.getUserClass(bean);
-				if (AbstractReplyProducingMessageHandler.class.isAssignableFrom(beanClass)) {
-					this.producingMessageHandlers.add((AbstractReplyProducingMessageHandler) bean);
-				}
-				return bean;
-			}
-
-			@Override
-			public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-				return bean;
-			}
-
-		}
-
+		};
 	}
 
+	@Bean
+	public static InitializingBean messageHandlerHeaderPropagationBeanPostProcessor(@Autowired(required=false) List<AbstractReplyProducingMessageHandler> producingMessageHandlers,
+			@Autowired SpringIntegrationProperties springIntegrationProperties) {
+		return new InitializingBean() {
+			@Override
+			public void afterPropertiesSet() throws Exception {
+				if (!CollectionUtils.isEmpty(producingMessageHandlers)) {
+					String[] messageHandlerNotPropagatedHeaders = springIntegrationProperties.getMessageHandlerNotPropagatedHeaders();
+					for (AbstractReplyProducingMessageHandler producingMessageHandler : producingMessageHandlers) {
+						producingMessageHandler.addNotPropagatedHeaders(messageHandlerNotPropagatedHeaders);
+					}
+				}
+			}
+		};
+	}
 }
