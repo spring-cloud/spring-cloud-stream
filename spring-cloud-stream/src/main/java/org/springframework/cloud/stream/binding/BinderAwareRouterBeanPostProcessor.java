@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.messaging.MessageChannel;
@@ -28,21 +27,19 @@ import org.springframework.messaging.core.DestinationResolver;
  *
  * @author Mark Fisher
  * @author Gary Russell
+ * @author Oleg Zhurakousky
+ *
+ * @deprecated as of 2.0, will be renamed/replaced as it is no longer a BPP and naming is a bit confusing
  */
-public class BinderAwareRouterBeanPostProcessor implements BeanPostProcessor {
+@Deprecated
+public class BinderAwareRouterBeanPostProcessor {
 
-	private final DestinationResolver<MessageChannel> channelResolver;
-
-	public BinderAwareRouterBeanPostProcessor(DestinationResolver<MessageChannel> channelResolver) {
-		this.channelResolver = channelResolver;
-	}
-
-	@Override
-	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-		if (bean instanceof AbstractMappingMessageRouter) {
-			((AbstractMappingMessageRouter) bean).setChannelResolver(this.channelResolver);
+	public BinderAwareRouterBeanPostProcessor(AbstractMappingMessageRouter[] routers, DestinationResolver<MessageChannel> channelResolver) {
+		if (routers != null) {
+			for (AbstractMappingMessageRouter router : routers) {
+				router.setChannelResolver(channelResolver);
+			}
 		}
-		return bean;
 	}
 
 }

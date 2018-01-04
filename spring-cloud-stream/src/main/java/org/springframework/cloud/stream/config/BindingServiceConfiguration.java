@@ -25,6 +25,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -62,10 +63,10 @@ import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.json.JsonPropertyAccessor;
+import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
@@ -212,6 +213,13 @@ public class BindingServiceConfiguration {
 		return new ChannelBindingServiceProperties(bindingServiceProperties);
 	}
 
+	@Bean
+	@ConditionalOnMissingBean
+	public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(@Autowired(required=false) AbstractMappingMessageRouter[] routers,
+			@Autowired(required=false)DestinationResolver<MessageChannel> channelResolver) {
+		return new BinderAwareRouterBeanPostProcessor(routers, channelResolver);
+	}
+
 	// IMPORTANT: Nested class to avoid instantiating all of the above early
 	@Configuration
 	protected static class PostProcessorConfiguration {
@@ -241,31 +249,7 @@ public class BindingServiceConfiguration {
 					return bean;
 				}
 
-				@Override
-				public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-					return bean;
-				}
-
 			};
-		}
-
-		@Bean
-		@ConditionalOnMissingBean(BinderAwareRouterBeanPostProcessor.class)
-		public static BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(BeanFactory beanFactory) {
-			// IMPORTANT: Lazy delegate to avoid instantiating all of the above early
-			return new BinderAwareRouterBeanPostProcessor(new DestinationResolver<MessageChannel>() {
-
-				private BinderAwareChannelResolver binderAwareChannelResolver;
-
-				@Override
-				public MessageChannel resolveDestination(String name) throws DestinationResolutionException {
-					if (this.binderAwareChannelResolver == null) {
-						this.binderAwareChannelResolver = beanFactory.getBean(BinderAwareChannelResolver.class);
-					}
-					return this.binderAwareChannelResolver.resolveDestination(name);
-				}
-
-			});
 		}
 
 		@Bean
