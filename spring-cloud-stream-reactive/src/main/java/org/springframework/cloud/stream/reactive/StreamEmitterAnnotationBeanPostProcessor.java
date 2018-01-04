@@ -109,6 +109,11 @@ public class StreamEmitterAnnotationBeanPostProcessor
 	}
 
 	@Override
+	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		return bean;
+	}
+
+	@Override
 	public void start() {
 		try {
 			lock.lock();
