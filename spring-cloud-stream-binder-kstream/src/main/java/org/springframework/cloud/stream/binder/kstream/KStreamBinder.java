@@ -23,6 +23,8 @@ import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KeyValueMapper;
+import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.Produced;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
@@ -38,7 +40,7 @@ import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProv
 import org.springframework.cloud.stream.binder.kstream.config.KStreamConsumerProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamProducerProperties;
-import org.springframework.messaging.Message;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -57,20 +59,27 @@ public class KStreamBinder extends
 
 	private final KafkaBinderConfigurationProperties binderConfigurationProperties;
 
+	private Predicate[] predicates;
+
+	private final MessageConversionDelegate messageConversionDelegate;
+
 	public KStreamBinder(KafkaBinderConfigurationProperties binderConfigurationProperties,
 						KafkaTopicProvisioner kafkaTopicProvisioner,
-						KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig) {
+						KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig,
+						MessageConversionDelegate messageConversionDelegate) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kStreamExtendedBindingProperties = kStreamExtendedBindingProperties;
 		this.streamsConfig = streamsConfig;
+		this.messageConversionDelegate = messageConversionDelegate;
 	}
 
 	@Override
 	protected Binding<KStream<Object, Object>> doBindConsumer(String name, String group,
-															KStream<Object, Object> inputTarget, ExtendedConsumerProperties<KStreamConsumerProperties> properties) {
+															KStream<Object, Object> inputTarget,
+															ExtendedConsumerProperties<KStreamConsumerProperties> properties) {
 
-		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<KafkaConsumerProperties>(
+		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<>(
 				new KafkaConsumerProperties());
 		this.kafkaTopicProvisioner.provisionConsumerDestination(name, group, extendedConsumerProperties);
 		return new DefaultBinding<>(name, group, inputTarget, null);
@@ -80,19 +89,43 @@ public class KStreamBinder extends
 	@SuppressWarnings("unchecked")
 	protected Binding<KStream<Object, Object>> doBindProducer(String name, KStream<Object, Object> outboundBindTarget,
 															ExtendedProducerProperties<KStreamProducerProperties> properties) {
-		ExtendedProducerProperties<KafkaProducerProperties> extendedProducerProperties = new ExtendedProducerProperties<KafkaProducerProperties>(
+		ExtendedProducerProperties<KafkaProducerProperties> extendedProducerProperties = new ExtendedProducerProperties<>(
 				new KafkaProducerProperties());
 		this.kafkaTopicProvisioner.provisionProducerDestination(name, extendedProducerProperties);
-		outboundBindTarget = outboundBindTarget
-				.map((k, v) -> KeyValue.pair(k, ((Message<Object>) v).getPayload()));
 
-		Serde<?> keySerde = Serdes.ByteArray();
-		Serde<?> valueSerde = Serdes.ByteArray();
-		if (properties.isUseNativeEncoding()) {
-			outboundBindTarget.to(name, Produced.with((Serde<Object>) keySerde, (Serde<Object>) valueSerde));
+		String[] branches = new String[]{};
+		if (predicates != null && predicates.length > 0) {
+			String additionalBranches = properties.getExtension().getAdditionalBranches();
+			if (!StringUtils.hasText(additionalBranches)) {
+				Assert.isTrue(predicates.length == 1, "More than 1 predicate bean found, but no additional output branches");
+			}
+			else {
+				branches = StringUtils.commaDelimitedListToStringArray(additionalBranches);
+				Assert.isTrue(branches.length + 1 >= predicates.length,
+						"Number of output topics and org.apache.kafka.streams.kstream.Predicate[] beans don't match");
+				for (String branch : branches) {
+					this.kafkaTopicProvisioner.provisionProducerDestination(branch, extendedProducerProperties);
+				}
+			}
 		}
-		else {
-			try {
+
+		Serde<?> keySerde = getKeySerde(properties);
+		Serde<?> valueSerde = getValueSerde(properties);
+
+		to(properties.isUseNativeEncoding(), name, outboundBindTarget, (Serde<Object>) keySerde, (Serde<Object>) valueSerde, branches);
+
+		return new DefaultBinding<>(name, null, outboundBindTarget, null);
+	}
+
+	private Serde<?> getKeySerde(ExtendedProducerProperties<KStreamProducerProperties> properties) {
+		Serde<?> keySerde;
+		try {
+			if (properties.isUseNativeEncoding()) {
+				keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("key.serde") ?
+						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("key.serde"), Serde.class) : Serdes.ByteArray();
+
+			}
+			else {
 				if (StringUtils.hasText(properties.getExtension().getKeySerde())) {
 					keySerde = Utils.newInstance(properties.getExtension().getKeySerde(), Serde.class);
 					if (keySerde instanceof Configurable) {
@@ -103,6 +136,23 @@ public class KStreamBinder extends
 					keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("key.serde") ?
 							Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("key.serde"), Serde.class) : Serdes.ByteArray();
 				}
+			}
+		}
+		catch (ClassNotFoundException e) {
+			throw new IllegalStateException("Serde class not found: ", e);
+		}
+		return keySerde;
+	}
+
+	private Serde<?> getValueSerde(ExtendedProducerProperties<KStreamProducerProperties> properties) {
+		Serde<?> valueSerde;
+		try {
+			if (properties.isUseNativeEncoding()) {
+				valueSerde = this.binderConfigurationProperties.getConfiguration().containsKey("value.serde") ?
+						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("value.serde"), Serde.class) : Serdes.ByteArray();
+
+			}
+			else {
 
 				if (StringUtils.hasText(properties.getExtension().getValueSerde())) {
 					valueSerde = Utils.newInstance(properties.getExtension().getValueSerde(), Serde.class);
@@ -110,12 +160,53 @@ public class KStreamBinder extends
 						((Configurable) valueSerde).configure(streamsConfig.originals());
 					}
 				}
-				outboundBindTarget.to(name, Produced.with((Serde<Object>) keySerde, (Serde<Object>) valueSerde));
-			} catch (ClassNotFoundException e) {
-				throw new IllegalStateException("Serde class not found: ", e);
+				else {
+					valueSerde = Serdes.ByteArray();
+				}
 			}
 		}
-		return new DefaultBinding<>(name, null, outboundBindTarget, null);
+		catch (ClassNotFoundException e) {
+			throw new IllegalStateException("Serde class not found: ", e);
+		}
+		return valueSerde;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void to(boolean isNativeEncoding, String name, KStream<Object, Object> outboundBindTarget,
+				Serde<Object> keySerde, Serde<Object> valueSerde, String[] branches) {
+		KeyValueMapper<Object, Object, KeyValue<Object, Object>> keyValueMapper = null;
+		if (!isNativeEncoding) {
+			keyValueMapper = messageConversionDelegate.outboundKeyValueMapper(name);
+		}
+		if (predicates != null && predicates.length > 0) {
+			KStream[] toBranches = outboundBindTarget.branch(predicates);
+			String[] topics = getOutputTopicsInProperOrder(name, branches);
+			for (int i = 0; i < toBranches.length; i++) {
+				if (!isNativeEncoding) {
+					toBranches[i].map(keyValueMapper).to(topics[i], Produced.with(keySerde, valueSerde));
+				}
+				else {
+					toBranches[i].to(topics[i], Produced.with(keySerde, valueSerde));
+				}
+			}
+		} else {
+			if (!isNativeEncoding) {
+				outboundBindTarget.map(keyValueMapper).to(name, Produced.with(keySerde, valueSerde));
+			}
+			else {
+				outboundBindTarget.to(name, Produced.with(keySerde, valueSerde));
+			}
+		}
+	}
+
+	private static String[] getOutputTopicsInProperOrder(String name, String[] branches) {
+		String[] topics = new String[branches.length + 1];
+		topics[0] = name;
+		int j = 1;
+		for (String branch : branches) {
+			topics[j++] = branch;
+		}
+		return topics;
 	}
 
 	@Override
@@ -126,6 +217,10 @@ public class KStreamBinder extends
 	@Override
 	public KStreamProducerProperties getExtendedProducerProperties(String channelName) {
 		return this.kStreamExtendedBindingProperties.getExtendedProducerProperties(channelName);
+	}
+
+	public void setPredicates(Predicate[] predicates) {
+		this.predicates = predicates;
 	}
 
 }

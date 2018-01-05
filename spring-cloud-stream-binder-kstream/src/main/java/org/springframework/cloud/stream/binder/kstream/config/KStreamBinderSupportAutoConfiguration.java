@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kstream.KStreamBoundElementFactory;
 import org.springframework.cloud.stream.binder.kstream.KStreamListenerParameterAdapter;
 import org.springframework.cloud.stream.binder.kstream.KStreamStreamListenerResultAdapter;
+import org.springframework.cloud.stream.binder.kstream.MessageConversionDelegate;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
@@ -39,6 +40,7 @@ import org.springframework.util.ObjectUtils;
 
 /**
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 public class KStreamBinderSupportAutoConfiguration {
 
@@ -56,8 +58,7 @@ public class KStreamBinderSupportAutoConfiguration {
 			StreamsBuilderFactoryBean kStreamBuilderFactoryBean = new StreamsBuilderFactoryBean(streamsConfig);
 			kStreamBuilderFactoryBean.setPhase(Integer.MAX_VALUE - 500);
 			return kStreamBuilderFactoryBean;
-		}
-		else {
+		} else {
 			throw new UnsatisfiedDependencyException(KafkaStreamsDefaultConfiguration.class.getName(),
 					KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_BUILDER_BEAN_NAME, "streamsConfig",
 					"There is no '" + KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME
@@ -85,17 +86,20 @@ public class KStreamBinderSupportAutoConfiguration {
 
 	@Bean
 	public KStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter(
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new KStreamListenerParameterAdapter(
-				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+			MessageConversionDelegate messageConversionDelegate) {
+		return new KStreamListenerParameterAdapter(messageConversionDelegate);
+	}
+
+	@Bean
+	public MessageConversionDelegate messageConversionDelegate(BindingServiceProperties bindingServiceProperties,
+															CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		return new MessageConversionDelegate(bindingServiceProperties, compositeMessageConverterFactory);
 	}
 
 	@Bean
 	public KStreamBoundElementFactory kafkaStreamBindableTargetFactory(StreamsBuilder kStreamBuilder,
-			BindingServiceProperties bindingServiceProperties,
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new KStreamBoundElementFactory(kStreamBuilder, bindingServiceProperties,
-				compositeMessageConverterFactory);
+																	BindingServiceProperties bindingServiceProperties) {
+		return new KStreamBoundElementFactory(kStreamBuilder, bindingServiceProperties);
 	}
 
 }

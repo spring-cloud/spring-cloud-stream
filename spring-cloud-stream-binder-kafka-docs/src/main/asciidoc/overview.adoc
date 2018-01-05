@@ -524,7 +524,8 @@ Spring Cloud Stream Kafka support also includes a binder specifically designed f
 Using this binder, applications can be written that leverage the Kafka Streams API.
 For more information on Kafka Streams, see https://kafka.apache.org/documentation/streams/developer-guide[Kafka Streams API Developer Manual]
 
-Kafka Streams support in Spring Cloud Stream is based on the foundations provided by the Spring Kafka project. For details on that support, see http://docs.spring.io/spring-kafka/reference/html/_reference.html#kafka-streams[Kafaka Streams Support in Spring Kafka].
+Kafka Streams support in Spring Cloud Stream is based on the foundations provided by the Spring Kafka project.
+For details on that support, see http://docs.spring.io/spring-kafka/reference/html/_reference.html#kafka-streams[Kafaka Streams Support in Spring Kafka].
 
 Here are the maven coordinates for the Spring Cloud Stream KStream binder artifact.
 
@@ -536,8 +537,8 @@ Here are the maven coordinates for the Spring Cloud Stream KStream binder artifa
 </dependency>
 ----
 
-In addition to leveraging the Spring Cloud Stream programming model which is based on Spring Boot, one of the main other benefits that the KStream binder provides is the fact that it avoids the boilerplate configuration that one needs to write when using the Kafka Streams API directly.
-High level streams DSL provided through the Kafka Streams API can be used through Spring Cloud Stream in the current support.
+High level streams DSL provided through the Kafka Streams API can be used through Spring Cloud Stream support.
+Kafka Streams applications using the Spring Cloud Stream support can only be written using the processor model, i.e. messages read from an inbound topic and messages written to an outbound topic.
 
 === Usage example of high level streams DSL
 
@@ -553,36 +554,134 @@ public class WordCountProcessorApplication {
 	@SendTo("output")
 	public KStream<?, String> process(KStream<?, String> input) {
 		return input
-				.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
-				.map((key, word) -> new KeyValue<>(word, word))
-				.groupByKey(Serdes.String(), Serdes.String())
-				.count(TimeWindows.of(5000), "store-name")
-				.toStream()
-				.map((w, c) -> new KeyValue<>(null, "Count for " + w.key() + ": " + c));
-	}
+                .flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+                .groupBy((key, value) -> value)
+                .windowedBy(TimeWindows.of(5000))
+                .count(Materialized.as("WordCounts-multi"))
+                .toStream()
+                .map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
+    }
 
 	public static void main(String[] args) {
 		SpringApplication.run(WordCountProcessorApplication.class, args);
 	}
 ----
 
-If you build it as Spring Boot runnable fat jar, you can run the above example in the following way:
+If you build it as a Spring Boot uber jar, you can run the above example in the following way:
 
 [source]
 ----
 java -jar uber.jar  --spring.cloud.stream.bindings.input.destination=words --spring.cloud.stream.bindings.output.destination=counts
 ----
 
-This means that the application will listen from the incoming Kafka topic words and write to the output topic counts.
+This means that the application will listen from the incoming Kafka topic `words` and write to the output topic `counts`.
 
 Spring Cloud Stream will ensure that the messages from both the incoming and outgoing topics are bound as KStream objects.
-As one may observe, the developer can exclusively focus on the business aspects of the code, i.e. writing the logic required in the processor rather than setting up the streams specific configuration required by the Kafka Streams infrastructure.
-All those boilerplate is handled by Spring Cloud Stream behind the scenes.
+Applications can exclusively focus on the business aspects of the code, i.e. writing the logic required in the processor rather than setting up the streams specific configuration required by the Kafka Streams infrastructure.
+All such interactions are handled by the framework.
+
+=== Message conversion in Spring Cloud Stream Kafka Streams applications
+
+If the following property is set (default is false), the framework skips all message conversions on the outbound (producer) side and it is then done by Kafka itself.
+
+`spring.cloud.stream.bindings.output.producer.useNativeEncoding`.
+
+Similarly, if the following property is set (default is false), any message conversion is skipped on the inbound (consumer) side and natively done by Kafka.
+
+`spring.cloud.stream.bindings.input.consumer.useNativeDecoding`.
+
+When native encoding is disabled, then the messages on the outbound are converted by Spring Cloud Stream using the provided contentType.
+If no contentType is set by the application, it defaults to `application/json`.
+
+By default, all the out of the box message converters, serialize the data as `byte[]` encoding the proper contentType.
+In most situations, this is what you want to do, but if other formats than `byte[]` are desired, then ann appropriate message converter needs to be registered in the context and corresponding contentType specified as a property.
+When doing this way, Serdes should be overridden on the producer using the following property.
+
+`spring.cloud.stream.kstream.bindings.output.producer.valueSerde`.
+
+Keys will not get converted, but if the Serdes are different for keys from what is given as the common Serde, you can override that using the following property.
+
+`spring.cloud.stream.kstream.bindings.output.producer.keySerde`.
+
+=== Support for branching in Kafka Streams API
+
+Kafka Streams allow outbound data to be split into multiple topics based on some predicates.
+Spring Cloud Stream Kafka Streams binder provides support for this feature without losing the overall programming model exposed through `StreamListener` in the end user application.
+You write the application in the usual way as demonstrated above in the word count example.
+The actual splitting and branching into multiple topics are done by the framework behind the scenes.
+When using the branching feature, you are required to do two things.
+First, you need to provide the following property that specifies the extra branches (topics) in the order.
+The first topic will always be the one specified through the main outbound destination.
+
+`spring.cloud.stream.kstream.bindings.output.producer.additionalBranches=foo,bar`
+
+If your main output destination is foobar provided through `spring.cloud.stream.bindings.output.destination=foobar`, then your 3 output branches (topics) are foobar, foo and bar.
+
+Second, you need to provide a `Bean` in your application context, that returns a `org.apache.kafka.streams.kstream.Predicate[]`.
+The presence of this bean is the trigger to the framework to perform branching into multiple topics.
+The individual Predicates in this bean, should match with the output branches in the same order.
+Each Predicate should get its own output branch, otherwise, it fails.
+If you provide more output branches than there are Predicates, that is fine, but the number of branches cannot be less than the Predicates.
+
+Here is an example:
+
+[source]
+----
+@EnableBinding(KStreamProcessor.class)
+@EnableAutoConfiguration
+public static class WordCountProcessorApplication {
+
+    @Autowired
+    private TimeWindows timeWindows;
+
+    @StreamListener("input")
+    @SendTo("output")
+    public KStream<?, WordCount> process(KStream<Object, String> input) {
+        return input
+                .flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+                .groupBy((key, value) -> value)
+                .windowedBy(timeWindows)
+                .count(Materialized.as("WordCounts-1"))
+                .toStream()
+                .map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
+    }
+
+    @Bean
+    public Predicate[] predicates() {
+        Predicate<?, WordCount> isEnglish = (k, v) -> v.word.equals("english");
+        Predicate<?, WordCount> isFrench =  (k, v) -> v.word.equals("french");
+        Predicate<?, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
+        return new Predicate[] {isEnglish, isFrench, isSpanish};
+    }
+
+}
+----
+
+Then in the properties:
+
+[source]
+----
+spring.cloud.stream.bindings.output.contentType: application/json
+spring.cloud.stream.kstream.binder.configuration.commit.interval.ms: 1000
+spring.cloud.stream.kstream.binder.configuration:
+  key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+  value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+spring.cloud.stream.bindings.output:
+  destination: foobar
+  producer:
+    headerMode: raw
+spring.cloud.stream.kstream.bindings.output.producer.additionalBranches: foo,bar
+spring.cloud.stream.bindings.input:
+  destination: words
+  consumer:
+    headerMode: raw
+----
 
 === Support for interactive queries
 
 If access to the `KafkaStreams` is needed for interactive queries, the internal `KafkaStreams` instance can be accessed via `KStreamBuilderFactoryBean.getKafkaStreams()`.
-You can autowire the `KStreamBuilderFactoryBean` instance provided by the KStream binder. Then you can get `KafkaStreams` instance from it and retrieve the underlying store, execute queries on it, etc.
+You can autowire the `KStreamBuilderFactoryBean` instance provided by the KStream binder.
+Then you get `KafkaStreams` instance from it and retrieve the underlying store, execute queries on it, etc.
 
 === Kafka Streams properties
 
@@ -599,7 +698,7 @@ spring.cloud.stream.kstream.binder.configuration.value.serde=org.apache.kafka.co
 spring.cloud.stream.kstream.binder.configuration.commit.interval.ms=1000
 ----
 
-  For more information about all the properties that may go into streams configuration, see StreamsConfig JavaDocs.
+For more information about all the properties that may go into streams configuration, see StreamsConfig JavaDocs.
 
 There can also be binding specific properties.
 
@@ -609,6 +708,24 @@ For instance, you can use a different Serde for your input or output destination
 ----
 spring.cloud.stream.kstream.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde
 spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde
+----
+
+Additional output branches:
+
+[source]
+----
+spring.cloud.stream.kstream.bindings.output.producer.additionalBranches (comma separated values)
+----
+
+TimeWindow properties:
+
+[source]
+----
+spring.cloud.stream.kstream.timeWindow.length (milliseconds)
+
+When this property is given, you can autowire a `TimeWindows` bean into the application.
+
+spring.cloud.stream.kstream.timeWindow.advanceBy (milliseconds)
 ----
 
 [[kafka-error-channels]]

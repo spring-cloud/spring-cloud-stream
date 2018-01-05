@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,20 @@
 
 package org.springframework.cloud.stream.binder.kstream;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 
 import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
-import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
@@ -50,14 +42,10 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 
 	private final BindingServiceProperties bindingServiceProperties;
 
-	private CompositeMessageConverterFactory compositeMessageConverterFactory;
-
-	public KStreamBoundElementFactory(StreamsBuilder streamBuilder, BindingServiceProperties bindingServiceProperties,
-									CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public KStreamBoundElementFactory(StreamsBuilder kStreamBuilder, BindingServiceProperties bindingServiceProperties) {
 		super(KStream.class);
 		this.bindingServiceProperties = bindingServiceProperties;
-		this.kStreamBuilder = streamBuilder;
-		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
+		this.kStreamBuilder = kStreamBuilder;
 	}
 
 	@Override
@@ -67,7 +55,7 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 			KeyValue<Object, Object> keyValue;
 			BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(name);
 			String contentType = bindingProperties.getContentType();
-			if (!StringUtils.isEmpty(contentType)) {
+			if (!StringUtils.isEmpty(contentType) && !bindingProperties.getConsumer().isUseNativeDecoding()) {
 				Message<Object> message = MessageBuilder.withPayload(value)
 						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
 				keyValue = new KeyValue<>(key, message);
@@ -83,13 +71,9 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 	@Override
 	@SuppressWarnings("unchecked")
 	public KStream createOutput(final String name) {
-		BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(name);
-		String contentType = bindingProperties.getContentType();
-		MessageConverter messageConverter = StringUtils.hasText(contentType) ? compositeMessageConverterFactory
-				.getMessageConverterForType(MimeType.valueOf(contentType)) : null;
-		KStreamWrapperHandler handler = new KStreamWrapperHandler(messageConverter, bindingServiceProperties, name);
+		KStreamWrapperHandler wrapper= new KStreamWrapperHandler();
 		ProxyFactory proxyFactory = new ProxyFactory(KStreamWrapper.class, KStream.class);
-		proxyFactory.addAdvice(handler);
+		proxyFactory.addAdvice(wrapper);
 		return (KStream) proxyFactory.getProxy();
 	}
 
@@ -102,39 +86,9 @@ public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KSt
 
 		private KStream<Object, Object> delegate;
 
-		private final MessageConverter messageConverter;
-		private final BindingServiceProperties bindingServiceProperties;
-		private String name;
-
-		KStreamWrapperHandler(MessageConverter messageConverter,
-							BindingServiceProperties bindingServiceProperties,
-							String name) {
-			this.messageConverter = messageConverter;
-			this.bindingServiceProperties = bindingServiceProperties;
-			this.name = name;
-		}
-
 		public void wrap(KStream<Object, Object> delegate) {
 			Assert.notNull(delegate, "delegate cannot be null");
 			Assert.isNull(this.delegate, "delegate already set to " + this.delegate);
-			ProducerProperties producer = bindingServiceProperties.getBindingProperties(name).getProducer();
-
-			if (messageConverter != null && !producer.isUseNativeEncoding()) {
-				KeyValueMapper<Object, Object, KeyValue<Object, Object>> keyValueMapper = (k, v) -> {
-					Message<?> message = (Message<?>) v;
-					BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(name);
-					String contentType = bindingProperties.getContentType();
-					Map<String, Object> headers = new HashMap<>(((Message<?>) v).getHeaders());
-					if (!StringUtils.isEmpty(contentType)) {
-						headers.put(MessageHeaders.CONTENT_TYPE, contentType);
-					}
-					MessageHeaders messageHeaders = new MessageHeaders(headers);
-					return new KeyValue<>(k,
-							messageConverter.toMessage(message.getPayload(),
-									messageHeaders));
-				};
-				delegate = delegate.map(keyValueMapper);
-			}
 			this.delegate = delegate;
 		}
 

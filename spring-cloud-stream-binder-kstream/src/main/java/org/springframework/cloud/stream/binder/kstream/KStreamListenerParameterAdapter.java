@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,11 @@
 
 package org.springframework.cloud.stream.binder.kstream;
 
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.converter.MessageConverter;
-import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * @author Marius Bogoevici
@@ -33,10 +28,10 @@ import org.springframework.messaging.support.MessageBuilder;
  */
 public class KStreamListenerParameterAdapter implements StreamListenerParameterAdapter<KStream<?,?>, KStream<?, ?>> {
 
-	private final MessageConverter messageConverter;
+	private final MessageConversionDelegate messageConversionDelegate;
 
-	public KStreamListenerParameterAdapter(MessageConverter messageConverter) {
-		this.messageConverter = messageConverter;
+	public KStreamListenerParameterAdapter(MessageConversionDelegate messageConversionDelegate) {
+		this.messageConversionDelegate = messageConversionDelegate;
 	}
 
 	@Override
@@ -52,28 +47,7 @@ public class KStreamListenerParameterAdapter implements StreamListenerParameterA
 		final Class<?> valueClass = (resolvableType.getGeneric(1).getRawClass() != null)
 				? (resolvableType.getGeneric(1).getRawClass()) : Object.class;
 
-		return bindingTarget.map((KeyValueMapper) (o, o2) -> {
-			KeyValue<Object, Object> keyValue;
-			if (valueClass.isAssignableFrom(o2.getClass())) {
-				keyValue =  new KeyValue<>(o, o2);
-			}
-			else if (o2 instanceof Message) {
-				if (valueClass.isAssignableFrom(((Message) o2).getPayload().getClass())) {
-					keyValue = new KeyValue<>(o, ((Message) o2).getPayload());
-				}
-				else {
-					keyValue = new KeyValue<>(o, messageConverter.fromMessage((Message) o2, valueClass));
-				}
-			}
-			else if(o2 instanceof String || o2 instanceof byte[]) {
-				Message<Object> message = MessageBuilder.withPayload(o2).build();
-				keyValue =  new KeyValue<>(o, messageConverter.fromMessage(message, valueClass));
-			}
-			else {
-				keyValue =  new KeyValue<>(o, o2);
-			}
-			return keyValue;
-		});
+		return bindingTarget.map(messageConversionDelegate.inboundKeyValueMapper(valueClass));
 	}
 
 }
