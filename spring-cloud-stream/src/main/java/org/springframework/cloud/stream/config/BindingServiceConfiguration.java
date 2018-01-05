@@ -54,6 +54,7 @@ import org.springframework.context.annotation.Role;
 import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.integration.config.HandlerMethodArgumentResolversHolder;
 import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
@@ -96,17 +97,18 @@ public class BindingServiceConfiguration {
 
 	private static final String ERROR_KEY_NAME = "error";
 
+
 	@Bean
 	public MessageChannelStreamListenerResultAdapter messageChannelStreamListenerResultAdapter() {
 		return new MessageChannelStreamListenerResultAdapter();
 	}
 
 	@Bean
-	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
+	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory
-				.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		messageHandlerMethodFactory.setCustomArgumentResolvers(ahmar.getResolvers());
 		return messageHandlerMethodFactory;
 	}
 
@@ -119,7 +121,7 @@ public class BindingServiceConfiguration {
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
 	// it is used to detect a BindingService in the parent context (which we know
 	// already exists).
-	@ConditionalOnMissingBean(BindingService.class)
+	@ConditionalOnMissingBean
 	public BindingService bindingService(BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory, TaskScheduler taskScheduler) {
 		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler);
