@@ -225,7 +225,9 @@ public class MessageConverterConfigurer implements MessageChannelConfigurer, Bea
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
 			Message<?> sentMessage = null;
-			if (this.klazz.isAssignableFrom(message.getPayload().getClass())) {
+			if (this.klazz.isAssignableFrom(message.getPayload().getClass()) ||
+					(this.klazz.isAssignableFrom(String.class) && message.getPayload() instanceof byte[]
+							&& !message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE) && !this.contentType.equals("text/plain"))) {
 				Object contentTypeFromMessage = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 				if (contentTypeFromMessage == null) {
 					sentMessage = MessageConverterConfigurer.this.messageBuilderFactory
