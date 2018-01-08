@@ -33,6 +33,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.support.GenericMessage;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Sort of a TCK test suite to validate payload conversion is
  * done properly by interacting with binder's input/output destinations
@@ -45,14 +47,14 @@ import org.springframework.messaging.support.GenericMessage;
  */
 public class BinderConversionTests {
 	@Test
-	public void test() {
+	public void testWithJsonAndDefaultChannelType() {
 		ApplicationContext context = new SpringApplicationBuilder(ApplicationJsonDefaultType.class).web(false)
 				.run("--spring.cloud.stream.default.contentType=application/json", "--spring.jmx.enabled=false");
 		SourceDestination source = context.getBean(SourceDestination.class);
 		TargetDestination target = context.getBean(TargetDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
-		System.out.println(new String((byte[])target.receive().getPayload(), StandardCharsets.UTF_8));
+		assertEquals(jsonPayload, new String((byte[])target.receive().getPayload(), StandardCharsets.UTF_8));
 	}
 
 	@SpringBootApplication
