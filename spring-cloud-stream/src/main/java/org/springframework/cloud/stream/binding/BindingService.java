@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.PollableConsumerBinder;
+import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.scheduling.TaskScheduler;
@@ -106,7 +108,13 @@ public class BindingService {
 		}
 		validate(consumerProperties);
 		for (String target : bindingTargets) {
-			Binding<T> binding = doBindConsumer(input, inputName, binder, consumerProperties, target);
+			Binding<T> binding;
+			if (input instanceof PollableSource) {
+				binding = doBindPollableConsumer(input, inputName, binder, consumerProperties, target);
+			}
+			else {
+				binding = doBindConsumer(input, inputName, binder, consumerProperties, target);
+			}
 			bindings.add(binding);
 		}
 		bindings = Collections.unmodifiableCollection(bindings);
@@ -148,6 +156,47 @@ public class BindingService {
 			}
 			catch (RuntimeException e) {
 				rescheduleConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
+			}
+		});
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public <T> Binding<T> doBindPollableConsumer(T input, String inputName, Binder<T, ConsumerProperties, ?> binder,
+			ConsumerProperties consumerProperties, String target) {
+		if (this.taskScheduler == null || this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
+			return ((PollableConsumerBinder) binder).bindPollableConsumer(target,
+					this.bindingServiceProperties.getGroup(inputName), (PollableSource) input,
+					consumerProperties);
+		}
+		else {
+			try {
+				return ((PollableConsumerBinder) binder).bindPollableConsumer(target,
+						this.bindingServiceProperties.getGroup(inputName), (PollableSource) input,
+						consumerProperties);
+			}
+			catch (RuntimeException e) {
+				LateBinding<T> late = new LateBinding<T>();
+				reschedulePollableConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
+				return late;
+			}
+		}
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public <T> void reschedulePollableConsumerBinding(final T input, final String inputName,
+			final Binder<T, ConsumerProperties, ?> binder, final ConsumerProperties consumerProperties,
+			final String target, final LateBinding<T> late, RuntimeException exception) {
+		assertNotIllegalException(exception);
+		this.log.error("Failed to create consumer binding; retrying in " +
+			this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
+		this.scheduleTask(() -> {
+			try {
+				late.setDelegate(((PollableConsumerBinder) binder).bindPollableConsumer(target,
+						this.bindingServiceProperties.getGroup(inputName), (PollableSource) input,
+						consumerProperties));
+			}
+			catch (RuntimeException e) {
+				reschedulePollableConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
 			}
 		});
 	}

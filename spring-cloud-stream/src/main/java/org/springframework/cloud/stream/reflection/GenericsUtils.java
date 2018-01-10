@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,31 @@
 
 package org.springframework.cloud.stream.reflection;
 
+import java.lang.reflect.Type;
+
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.PollableConsumerBinder;
+import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * Internal utilities for handling generics.
  *
  * @author Marius Bogoevici
+ * @author Gary Russell
  */
-public abstract class GenericsUtils {
+public final class GenericsUtils {
+
+	private GenericsUtils() {
+		super();
+	}
 
 	/**
-	 * For a specific class that implements or extends a parametrized type returns the
+	 * For a specific class that implements or extends a parameterized type, return the
 	 * parameter of that interface at a given position. For example, for this class:
-	 * 
+	 *
 	 * <pre>
 	 * {@code
 	 * class MessageChannelBinder implements Binder<MessageChannel, ?, ?>
@@ -86,4 +97,48 @@ public abstract class GenericsUtils {
 		}
 		return bindableType;
 	}
+
+	/**
+	 * Return the generic type of PollableSource to determine if it is appropriate
+	 * for the binder.
+	 * e.g., with PollableMessageSource extends PollableSource<MessageHandler>
+	 * and  AbstractMessageChannelBinder
+	 *             implements PollableConsumerBinder<MessageHandler, C>
+	 * We're checking that the the generic type (MessageHandler) matches.
+	 *
+	 * @param binderInstance the binder.
+	 * @param bindingTargetType the binding target type.
+	 * @return
+	 */
+	@SuppressWarnings("rawtypes")
+	public static boolean checkCompatiblePollableBinder(Binder binderInstance, Class<?> bindingTargetType) {
+		Class<?>[] binderInterfaces = ClassUtils.getAllInterfaces(binderInstance);
+		for (Class<?> intf : binderInterfaces) {
+			if (PollableConsumerBinder.class.isAssignableFrom(intf)) {
+				Class<?>[] targetInterfaces = ClassUtils.getAllInterfacesForClass(bindingTargetType);
+				Class<?> psType = findPollableSourceType(targetInterfaces);
+				if (psType != null) {
+					return getParameterType(binderInstance.getClass(), intf, 0)
+							.isAssignableFrom(psType);
+				}
+			}
+		}
+		return false;
+	}
+
+	private static Class<?> findPollableSourceType(Class<?>[] targetInterfaces) {
+		for (Class<?> targetIntf : targetInterfaces) {
+			if (PollableSource.class.isAssignableFrom(targetIntf)) {
+				Type[] supers = targetIntf.getGenericInterfaces();
+				for (Type type : supers) {
+					ResolvableType resolvableType = ResolvableType.forType(type);
+					if (resolvableType.getRawClass().equals(PollableSource.class)) {
+						return resolvableType.getGeneric(0).getRawClass();
+					}
+				}
+			}
+		}
+		return null;
+	}
+
 }

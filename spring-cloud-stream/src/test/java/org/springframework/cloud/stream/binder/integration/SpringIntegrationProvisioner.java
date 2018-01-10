@@ -42,7 +42,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Oleg Zhurakousky
  *
  */
-class SpringIntegrationProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
+public class SpringIntegrationProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
 
 	private final Map<String, SubscribableChannel> provisionedDestinations = new HashMap<>();
 
@@ -72,7 +72,9 @@ class SpringIntegrationProvisioner implements ProvisioningProvider<ConsumerPrope
 	@Override
 	public ConsumerDestination provisionConsumerDestination(String name, String group, ConsumerProperties properties) throws ProvisioningException {
 		SubscribableChannel destination = this.provisionDestination(name, false);
-		this.source.setChannel(destination);
+		if (this.source != null) {
+			this.source.setChannel(destination);
+		}
 		return new SpringIntegrationConsumerDestination(name, destination);
 	}
 

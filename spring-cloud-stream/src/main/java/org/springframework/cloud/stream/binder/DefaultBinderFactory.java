@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
@@ -136,9 +137,25 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			configurationName = name;
 		}
 		Binder<T, ?, ?> binderInstance = getBinderInstance(configurationName);
-		Assert.state(GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0).isAssignableFrom(bindingTargetType),
+		Assert.state(verifyBinderTypeMatchesTarget(binderInstance, bindingTargetType),
 				"The binder '" + configurationName + "' cannot bind a " + bindingTargetType.getName());
 		return binderInstance;
+	}
+
+	/**
+	 * Return true if the binder is a {@link PollableConsumerBinder} and the target type
+	 * is a {@link PollableSource} and their generic types match (e.g. MessageHandler), OR
+	 * if it's a {@link Binder} and the target matches the binder's generic type.
+	 * @param binderInstance the binder.
+	 * @param bindingTargetType the binding target type.
+	 * @return true if the conditions match.
+	 */
+	private <T> boolean verifyBinderTypeMatchesTarget(Binder<T, ?, ?> binderInstance,
+			Class<? extends T> bindingTargetType) {
+		return (binderInstance instanceof PollableConsumerBinder
+				&& GenericsUtils.checkCompatiblePollableBinder(binderInstance, bindingTargetType))
+			|| GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0)
+					.isAssignableFrom(bindingTargetType);
 	}
 
 	@SuppressWarnings("unchecked")
