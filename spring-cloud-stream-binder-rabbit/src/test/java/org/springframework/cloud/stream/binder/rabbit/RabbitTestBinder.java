@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@ import java.util.Set;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.cloud.stream.binder.AbstractTestBinder;
+import org.springframework.cloud.stream.binder.AbstractPollableConsumerTestBinder;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
@@ -34,6 +35,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 
 /**
  * Test support class for {@link RabbitMessageChannelBinder}.
@@ -43,7 +45,9 @@ import org.springframework.messaging.MessageChannel;
  * @author David Turanski
  * @author Mark Fisher
  */
-public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
+public class RabbitTestBinder extends
+		AbstractPollableConsumerTestBinder<RabbitMessageChannelBinder,
+		ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
 	private final RabbitAdmin rabbitAdmin;
 
@@ -64,7 +68,7 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 		this.applicationContext = new AnnotationConfigApplicationContext(Config.class);
 		binder.setApplicationContext(this.applicationContext);
 		binder.setProducerConnectionFactory(connectionFactory);
-		this.setBinder(binder);
+		this.setPollableConsumerBinder(binder);
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 	}
 
@@ -74,6 +78,20 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 
 	@Override
 	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel,
+			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+		captureConsumerResources(name, group, properties);
+		return super.bindConsumer(name, group, moduleInputChannel, properties);
+	}
+
+	@Override
+	public Binding<PollableSource<MessageHandler>> bindPollableConsumer(String name, String group,
+			PollableSource<MessageHandler> inboundBindTarget,
+			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+		captureConsumerResources(name, group, properties);
+		return super.bindPollableConsumer(name, group, inboundBindTarget, properties);
+	}
+
+	private void captureConsumerResources(String name, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
 		if (group != null) {
 			if (properties.getExtension().isQueueNameGroupOnly()) {
@@ -86,7 +104,6 @@ public class RabbitTestBinder extends AbstractTestBinder<RabbitMessageChannelBin
 		this.exchanges.add(properties.getExtension().getPrefix() + name);
 		this.prefixes.add(properties.getExtension().getPrefix());
 		deadLetters(properties.getExtension());
-		return super.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
 	@Override

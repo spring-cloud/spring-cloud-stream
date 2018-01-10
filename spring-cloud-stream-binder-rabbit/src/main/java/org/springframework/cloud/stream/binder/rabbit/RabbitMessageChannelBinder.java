@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties.Retry;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
@@ -60,14 +61,18 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
+import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.AmqpMessageHeaderErrorMessageStrategy;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.integration.support.AcknowledgmentCallback;
+import org.springframework.integration.support.AcknowledgmentCallback.Status;
 import org.springframework.integration.support.DefaultErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
+import org.springframework.integration.support.StaticMessageHeaderAccessor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
@@ -306,7 +311,7 @@ public class RabbitMessageChannelBinder
 		}
 	}
 
-	public boolean expressionInterceptorNeeded(RabbitProducerProperties extendedProperties) {
+	private boolean expressionInterceptorNeeded(RabbitProducerProperties extendedProperties) {
 		return extendedProperties.getRoutingKeyExpression() != null
 					&& extendedProperties.getRoutingKeyExpression().contains("payload")
 				|| (extendedProperties.getDelayExpression() != null
@@ -363,7 +368,7 @@ public class RabbitMessageChannelBinder
 		listenerContainer.setRecoveryInterval(properties.getExtension().getRecoveryInterval());
 		listenerContainer.setTxSize(properties.getExtension().getTxSize());
 		listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(consumerDestination.getName() + "-"));
-		listenerContainer.setQueueNames(consumerDestination.getName());
+		listenerContainer.setQueueNames(destination);
 		listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
 		listenerContainer.setMessagePropertiesConverter(
 				RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
@@ -396,6 +401,25 @@ public class RabbitMessageChannelBinder
 			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
 		return adapter;
+	}
+
+	@Override
+	protected PolledConsumerResources createPolledConsumerResources(String name, String group, ConsumerDestination destination,
+			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
+		AmqpMessageSource source = new AmqpMessageSource(this.connectionFactory, destination.getName());
+		source.setRawMessageHeader(true);
+		return new PolledConsumerResources(source,
+				registerErrorInfrastructure(destination, group, consumerProperties, true));
+	}
+
+	@Override
+	protected void postProcessPollableSource(DefaultPollableMessageSource bindingTarget) {
+		bindingTarget.setAttributesProvider((accessor, message) -> {
+			Object rawMessage = message.getHeaders().get(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE);
+			if (rawMessage != null) {
+				accessor.setAttribute(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE, rawMessage);
+			}
+		});
 	}
 
 	@Override
@@ -479,6 +503,44 @@ public class RabbitMessageChannelBinder
 		else {
 			return super.getErrorMessageHandler(destination, group, properties);
 		}
+	}
+
+
+	@Override
+	protected MessageHandler getPolledConsumerErrorMessageHandler(ConsumerDestination destination, String group,
+			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+		MessageHandler handler = getErrorMessageHandler(destination, group, properties);
+		if (handler != null) {
+			return handler;
+		}
+		final MessageHandler superHandler = super.getErrorMessageHandler(destination, group, properties);
+		return message -> {
+			Message amqpMessage = (Message) message.getHeaders()
+					.get(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE);
+			if (!(message instanceof ErrorMessage)) {
+				logger.error("Expected an ErrorMessage, not a " + message.getClass().toString() + " for: "
+						+ message);
+			}
+			else if (amqpMessage == null) {
+				if (superHandler != null) {
+					superHandler.handleMessage(message);
+				}
+			}
+			else {
+				if (message.getPayload() instanceof MessagingException) {
+					AcknowledgmentCallback ack = StaticMessageHeaderAccessor.getAcknowledgmentCallback(
+							((MessagingException) message.getPayload()).getFailedMessage());
+					if (ack != null) {
+						if (properties.getExtension().isRequeueRejected()) {
+							ack.acknowledge(Status.REQUEUE);
+						}
+						else {
+							ack.acknowledge(Status.REJECT);
+						}
+					}
+				}
+			}
+		};
 	}
 
 	@Override

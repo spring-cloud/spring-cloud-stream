@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,12 +60,14 @@ import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
+import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
@@ -87,6 +89,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHandlingException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
@@ -1322,6 +1325,112 @@ public class RabbitBinderTests extends
 		assertThat(new String((byte[]) out, StandardCharsets.UTF_8)).isEqualTo("{\"field\":\"rkepTest\"}");
 
 		producerBinding.unbind();
+	}
+
+	@Test
+	public void testPolledConsumer() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable", "group",
+				inboundBindTarget, createConsumerProperties());
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("pollable.group", "testPollable");
+		boolean polled = inboundBindTarget.poll(m -> {
+			assertThat(m.getPayload()).isEqualTo("testPollable");
+		});
+		int n = 0;
+		while (n++ < 100 && !polled) {
+			polled = inboundBindTarget.poll(m -> {
+				assertThat(m.getPayload()).isEqualTo("testPollable");
+			});
+		}
+		assertThat(polled).isTrue();
+		binding.unbind();
+	}
+
+	@Test
+	public void testPolledConsumerWithDlq() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.setMaxAttempts(2);
+		properties.setBackOffInitialInterval(0);
+		properties.getExtension().setAutoBindDlq(true);
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlq", "group",
+				inboundBindTarget, properties);
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("pollableDlq.group", "testPollable");
+		try {
+			int n = 0;
+			while (n++ < 100) {
+				inboundBindTarget.poll(m -> {
+					throw new RuntimeException("test DLQ");
+				});
+				Thread.sleep(100);
+			}
+		}
+		catch (MessageHandlingException e) {
+			assertThat(e.getCause().getCause().getCause().getCause().getCause().getMessage()).isEqualTo("test DLQ");
+		}
+		org.springframework.amqp.core.Message deadLetter = template.receive("pollableDlq.group.dlq", 10_000);
+		assertThat(deadLetter).isNotNull();
+		binding.unbind();
+	}
+
+	@Test
+	public void testPolledConsumerWithDlqNoRetry() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.setMaxAttempts(1);
+//		properties.getExtension().setRequeueRejected(true); // loops, correctly
+		properties.getExtension().setAutoBindDlq(true);
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlqNoRetry", "group",
+				inboundBindTarget, properties);
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("pollableDlqNoRetry.group", "testPollable");
+		try {
+			int n = 0;
+			while (n++ < 100) {
+				inboundBindTarget.poll(m -> {
+					throw new RuntimeException("test DLQ");
+				});
+				Thread.sleep(100);
+			}
+		}
+		catch (MessageHandlingException e) {
+			assertThat(e.getCause().getMessage()).isEqualTo("test DLQ");
+		}
+		org.springframework.amqp.core.Message deadLetter = template.receive("pollableDlqNoRetry.group.dlq", 10_000);
+		assertThat(deadLetter).isNotNull();
+		binding.unbind();
+	}
+
+	@Test
+	public void testPolledConsumerWithDlqRePub() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.setMaxAttempts(2);
+		properties.setBackOffInitialInterval(0);
+		properties.getExtension().setAutoBindDlq(true);
+		properties.getExtension().setRepublishToDlq(true);
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlqRePub", "group",
+				inboundBindTarget, properties);
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("pollableDlqRePub.group", "testPollable");
+		boolean polled = false;
+		int n = 0;
+		while (n++ < 100 && !polled) {
+			Thread.sleep(100);
+			polled = inboundBindTarget.poll(m -> {
+				throw new RuntimeException("test DLQ");
+			});
+		}
+		assertThat(polled).isTrue();
+		org.springframework.amqp.core.Message deadLetter = template.receive("pollableDlqRePub.group.dlq", 10_000);
+		assertThat(deadLetter).isNotNull();
+		binding.unbind();
 	}
 
 	private SimpleMessageListenerContainer verifyContainer(Lifecycle endpoint) {
