@@ -35,7 +35,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
  * The default implementation of a {@link PollableMessageSource}.
  *
  * @author Gary Russell
- * @since 5.0
+ * @since 2.0
  *
  */
 public class DefaultPollableMessageSource implements PollableMessageSource, Lifecycle {
@@ -62,7 +62,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 					for (ChannelInterceptor interceptor : this.interceptors) {
 						received = interceptor.preSend(received, null);
 						if (received == null) {
-							break;
+							return null;
 						}
 					}
 					return received;
