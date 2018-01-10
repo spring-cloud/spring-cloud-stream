@@ -39,6 +39,7 @@ import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResultAdapter;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
@@ -130,6 +131,12 @@ public class BindingServiceConfiguration {
 	public SubscribableChannelBindingTargetFactory channelFactory(
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
 		return new SubscribableChannelBindingTargetFactory(compositeMessageChannelConfigurer);
+	}
+
+	@Bean
+	public MessageSourceBindingTargetFactory messageSourceFactory(
+			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new MessageSourceBindingTargetFactory(compositeMessageChannelConfigurer);
 	}
 
 	@Bean

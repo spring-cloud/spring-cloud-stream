@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,14 @@ import org.springframework.util.Assert;
  * Internal utilities for handling generics.
  *
  * @author Marius Bogoevici
+ * @author Gary Russell
  */
 public abstract class GenericsUtils {
 
 	/**
-	 * For a specific class that implements or extends a parametrized type returns the
+	 * For a specific class that implements or extends a parameterized type, return the
 	 * parameter of that interface at a given position. For example, for this class:
-	 * 
+	 *
 	 * <pre>
 	 * {@code
 	 * class MessageChannelBinder implements Binder<MessageChannel, ?, ?>

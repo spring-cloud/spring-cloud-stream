@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,11 @@ import org.mockito.Mockito;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.integration.SpringIntegrationBinderConfiguration;
-import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
+import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -70,19 +70,20 @@ public class BinderAwareChannelResolverTests {
 
 	protected volatile Binder<MessageChannel, ConsumerProperties, ProducerProperties> binder;
 
-	protected volatile AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory;
+	protected volatile SubscribableChannelBindingTargetFactory bindingTargetFactory;
 
 	protected volatile BindingServiceProperties bindingServiceProperties;
 
 	protected volatile DynamicDestinationsBindable dynamicDestinationsBindable;
 
+	@SuppressWarnings("unchecked")
 	@Before
 	public void setupContext() throws Exception {
 		this.context = new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration()).web(WebApplicationType.NONE).run();
 		this.resolver = context.getBean(BinderAwareChannelResolver.class);
 		this.binder = context.getBean(Binder.class);
 		this.bindingServiceProperties = context.getBean(BindingServiceProperties.class);
-		this.bindingTargetFactory = context.getBean(AbstractBindingTargetFactory.class);
+		this.bindingTargetFactory = context.getBean(SubscribableChannelBindingTargetFactory.class);
 	}
 
 	@Test

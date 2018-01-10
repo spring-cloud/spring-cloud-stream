@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
@@ -60,11 +61,12 @@ import org.springframework.util.Assert;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  * @author Artem Bilan
+ * @author Gary Russell
  *
  * @since 1.1
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
-		extends AbstractBinder<MessageChannel, C, P> {
+		extends AbstractBinder<MessageChannel, C, P> implements PollableConsumerBinder<MessageHandler, C> {
 
 	private final EmbeddedHeadersChannelInterceptor embeddedHeadersChannelInterceptor =
 			new EmbeddedHeadersChannelInterceptor(this.logger);
@@ -284,6 +286,34 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				throw new BinderException("Exception thrown while starting consumer: ", e);
 			}
 		}
+	}
+
+
+	@Override
+	public Binding<PollableSource<MessageHandler>> bindPollableConsumer(String name, String group,
+			final PollableSource<MessageHandler> inboundBindTarget, C properties) {
+		Assert.isInstanceOf(DefaultPollableMessageSource.class, inboundBindTarget);
+		DefaultPollableMessageSource bindingTarget = (DefaultPollableMessageSource) inboundBindTarget;
+		ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group,
+				properties);
+		if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
+			bindingTarget.addInterceptor(0, this.embeddedHeadersChannelInterceptor);
+		}
+		MessageSource<?> source = createMessageSource(name, group, destination, properties);
+		bindingTarget.setSource(source);
+		return new Binding<PollableSource<MessageHandler>>() {
+
+			@Override
+			public void unbind() {
+				// nothing to do
+			}
+
+		};
+	}
+
+	protected MessageSource<?> createMessageSource(String name, String group,
+			ConsumerDestination destination, C consumerProperties) {
+		throw new UnsupportedOperationException("This binder does not support pollable consumers");
 	}
 
 	private void enhanceMessageChannel(MessageChannel inputChannel) {

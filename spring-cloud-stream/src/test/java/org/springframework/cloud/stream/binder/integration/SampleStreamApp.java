@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,17 @@ package org.springframework.cloud.stream.binder.integration;
 
 import java.nio.charset.StandardCharsets;
 
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
@@ -37,10 +41,11 @@ import static org.junit.Assert.assertEquals;
  * Sample spring cloud stream application that demonstrates the usage of {@link SpringIntegrationChannelBinder}.
  *
  * @author Oleg Zhurakousky
+ * @author Gary Russell
  *
  */
 @SpringBootApplication
-@EnableBinding(Processor.class)
+@EnableBinding(SampleStreamApp.PolledConsumer.class)
 @Import(SpringIntegrationBinderConfiguration.class)
 public class SampleStreamApp {
 
@@ -55,6 +60,13 @@ public class SampleStreamApp {
 		assertEquals("Hello", new String((byte[])message.getPayload(), StandardCharsets.UTF_8));
 	}
 
+	@Bean
+	public ApplicationRunner runner(PollableMessageSource pollableSource) {
+		return args -> pollableSource.poll(message -> {
+			System.out.println("Polled payload: " + message.getPayload());
+		});
+	}
+
 	@StreamListener(Processor.INPUT)
 	@SendTo(Processor.OUTPUT)
 	public String receive(String value) {
@@ -66,6 +78,14 @@ public class SampleStreamApp {
 	public void error(String value) {
 		System.out.println("Handling ERROR payload: " + value);
 	}
+
+	public interface PolledConsumer extends Processor {
+
+		@Input("pollableSource")
+		PollableMessageSource pollableSource();
+
+	}
+
 }
 
 

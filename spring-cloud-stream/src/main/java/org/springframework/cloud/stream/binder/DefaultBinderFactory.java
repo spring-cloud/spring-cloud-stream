@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.lang.reflect.Type;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,9 +36,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -47,6 +50,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Gary Russell
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
@@ -136,9 +140,52 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			configurationName = name;
 		}
 		Binder<T, ?, ?> binderInstance = getBinderInstance(configurationName);
-		Assert.state(GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0).isAssignableFrom(bindingTargetType),
+		Assert.state(
+				(binderInstance instanceof PollableConsumerBinder
+						&& checkCompatiblePollableBinder(binderInstance, bindingTargetType))
+					|| GenericsUtils.getParameterType(binderInstance.getClass(), Binder.class, 0)
+							.isAssignableFrom(bindingTargetType),
 				"The binder '" + configurationName + "' cannot bind a " + bindingTargetType.getName());
 		return binderInstance;
+	}
+
+	/*
+	 * Return the generic type of PollableSource to determine if it is appropriate
+	 * for the selected binder.
+	 * e.g. PollableMessageSource extends PollableSource<MessageHandler>
+	 * and  AbstractMessageChannelBinder
+	 *             implements PollableConsumerBinder<MessageHandler, C>
+	 * We're checking the the generic (MessageHandler) matches.
+	 */
+	@SuppressWarnings("rawtypes")
+	public boolean checkCompatiblePollableBinder(Binder binderInstance, Class<?> bindingTargetType) {
+		Class<?>[] binderInterfaces = ClassUtils.getAllInterfaces(binderInstance);
+		for (Class<?> intf : binderInterfaces) {
+			if (PollableConsumerBinder.class.isAssignableFrom(intf)) {
+				Class<?>[] targetInterfaces = ClassUtils.getAllInterfacesForClass(bindingTargetType);
+				Class<?> psType = findPollableSourceType(targetInterfaces);
+				if (psType != null) {
+					return GenericsUtils.getParameterType(binderInstance.getClass(), intf, 0)
+							.isAssignableFrom(psType);
+				}
+			}
+		}
+		return false;
+	}
+
+	private Class<?> findPollableSourceType(Class<?>[] targetInterfaces) {
+		for (Class<?> targetIntf : targetInterfaces) {
+			if (PollableSource.class.isAssignableFrom(targetIntf)) {
+				Type[] supers = targetIntf.getGenericInterfaces();
+				for (Type type : supers) {
+					ResolvableType resolvableType = ResolvableType.forType(type);
+					if (resolvableType.getRawClass().equals(PollableSource.class)) {
+						return resolvableType.getGeneric(0).getRawClass();
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	@SuppressWarnings("unchecked")

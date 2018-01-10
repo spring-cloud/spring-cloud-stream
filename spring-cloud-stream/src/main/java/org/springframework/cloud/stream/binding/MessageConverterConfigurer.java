@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,13 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.JavaClassMimeTypeUtils;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
+import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -72,7 +74,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  */
 public class MessageConverterConfigurer
-		implements MessageChannelConfigurer, BeanFactoryAware, InitializingBean {
+		implements MessageChannelAndSourceConfigurer, BeanFactoryAware, InitializingBean {
 
 	private final MessageBuilderFactory messageBuilderFactory = new MutableMessageBuilderFactory();
 
@@ -109,6 +111,18 @@ public class MessageConverterConfigurer
 	public void configureOutputChannel(MessageChannel messageChannel,
 			String channelName) {
 		configureMessageChannel(messageChannel, channelName, false);
+	}
+
+	@Override
+	public void configurePolledMessageSource(PollableMessageSource binding, String name) {
+		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(name);
+		String contentType = bindingProperties.getContentType();
+		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
+		if ((consumerProperties == null || !consumerProperties.isUseNativeDecoding())
+				&& binding instanceof DefaultPollableMessageSource) {
+			((DefaultPollableMessageSource) binding).addInterceptor(
+					new InboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverterFactory));
+		}
 	}
 
 	/**
