@@ -608,26 +608,16 @@ Keys will not get converted, but if the Serdes are different for keys from what 
 Kafka Streams allow outbound data to be split into multiple topics based on some predicates.
 Spring Cloud Stream Kafka Streams binder provides support for this feature without losing the overall programming model exposed through `StreamListener` in the end user application.
 You write the application in the usual way as demonstrated above in the word count example.
-The actual splitting and branching into multiple topics are done by the framework behind the scenes.
-When using the branching feature, you are required to do two things.
-First, you need to provide the following property that specifies the extra branches (topics) in the order.
-The first topic will always be the one specified through the main outbound destination.
-
-`spring.cloud.stream.kstream.bindings.output.producer.additionalBranches=foo,bar`
-
-If your main output destination is foobar provided through `spring.cloud.stream.bindings.output.destination=foobar`, then your 3 output branches (topics) are foobar, foo and bar.
-
-Second, you need to provide a `Bean` in your application context, that returns a `org.apache.kafka.streams.kstream.Predicate[]`.
-The presence of this bean is the trigger to the framework to perform branching into multiple topics.
-The individual Predicates in this bean, should match with the output branches in the same order.
-Each Predicate should get its own output branch, otherwise, it fails.
-If you provide more output branches than there are Predicates, that is fine, but the number of branches cannot be less than the Predicates.
+When using the branching feature, you are required to do a few things.
+First, you need to make sure that your return type is `KStream[]` instead of a regular `KStream`.
+Then you need to use the `SendTo` annotation containing the output bindings in the order (example below).
+For each of these output bindings, you need to configure destination, content-type etc. as required by any other standard Spring Cloud Stream application
 
 Here is an example:
 
 [source]
 ----
-@EnableBinding(KStreamProcessor.class)
+@EnableBinding(KStreamProcessorWithBranches.class)
 @EnableAutoConfiguration
 public static class WordCountProcessorApplication {
 
@@ -635,25 +625,37 @@ public static class WordCountProcessorApplication {
     private TimeWindows timeWindows;
 
     @StreamListener("input")
-    @SendTo("output")
-    public KStream<?, WordCount> process(KStream<Object, String> input) {
-        return input
-                .flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
-                .groupBy((key, value) -> value)
-                .windowedBy(timeWindows)
-                .count(Materialized.as("WordCounts-1"))
-                .toStream()
-                .map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
+    @SendTo({"output1","output2","output3})
+    public KStream<?, WordCount>[] process(KStream<Object, String> input) {
+
+			Predicate<Object, WordCount> isEnglish = (k, v) -> v.word.equals("english");
+			Predicate<Object, WordCount> isFrench =  (k, v) -> v.word.equals("french");
+			Predicate<Object, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
+
+			return input
+					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.groupBy((key, value) -> value)
+					.windowedBy(timeWindows)
+					.count(Materialized.as("WordCounts-1"))
+					.toStream()
+					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))))
+					.branch(isEnglish, isFrench, isSpanish);
     }
 
-    @Bean
-    public Predicate[] predicates() {
-        Predicate<?, WordCount> isEnglish = (k, v) -> v.word.equals("english");
-        Predicate<?, WordCount> isFrench =  (k, v) -> v.word.equals("french");
-        Predicate<?, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
-        return new Predicate[] {isEnglish, isFrench, isSpanish};
-    }
+    interface KStreamProcessorWithBranches {
 
+    		@Input("input")
+    		KStream<?, ?> input();
+
+    		@Output("output1")
+    		KStream<?, ?> output1();
+
+    		@Output("output2")
+    		KStream<?, ?> output2();
+
+    		@Output("output3")
+    		KStream<?, ?> output3();
+    	}
 }
 ----
 
@@ -661,16 +663,25 @@ Then in the properties:
 
 [source]
 ----
-spring.cloud.stream.bindings.output.contentType: application/json
+spring.cloud.stream.bindings.output1.contentType: application/json
+spring.cloud.stream.bindings.output2.contentType: application/json
+spring.cloud.stream.bindings.output3.contentType: application/json
 spring.cloud.stream.kstream.binder.configuration.commit.interval.ms: 1000
 spring.cloud.stream.kstream.binder.configuration:
   key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
   value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-spring.cloud.stream.bindings.output:
-  destination: foobar
+spring.cloud.stream.bindings.output1:
+  destination: foo
   producer:
     headerMode: raw
-spring.cloud.stream.kstream.bindings.output.producer.additionalBranches: foo,bar
+spring.cloud.stream.bindings.output2:
+  destination: bar
+  producer:
+    headerMode: raw
+spring.cloud.stream.bindings.output3:
+  destination: fox
+  producer:
+    headerMode: raw
 spring.cloud.stream.bindings.input:
   destination: words
   consumer:
@@ -708,13 +719,6 @@ For instance, you can use a different Serde for your input or output destination
 ----
 spring.cloud.stream.kstream.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde
 spring.cloud.stream.kstream.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde
-----
-
-Additional output branches:
-
-[source]
-----
-spring.cloud.stream.kstream.bindings.output.producer.additionalBranches (comma separated values)
 ----
 
 TimeWindow properties:

@@ -24,7 +24,6 @@ import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KeyValueMapper;
-import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.Produced;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
@@ -40,7 +39,6 @@ import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProv
 import org.springframework.cloud.stream.binder.kstream.config.KStreamConsumerProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamProducerProperties;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -58,8 +56,6 @@ public class KStreamBinder extends
 	private final StreamsConfig streamsConfig;
 
 	private final KafkaBinderConfigurationProperties binderConfigurationProperties;
-
-	private Predicate[] predicates;
 
 	private final MessageConversionDelegate messageConversionDelegate;
 
@@ -93,26 +89,10 @@ public class KStreamBinder extends
 				new KafkaProducerProperties());
 		this.kafkaTopicProvisioner.provisionProducerDestination(name, extendedProducerProperties);
 
-		String[] branches = new String[]{};
-		if (predicates != null && predicates.length > 0) {
-			String additionalBranches = properties.getExtension().getAdditionalBranches();
-			if (!StringUtils.hasText(additionalBranches)) {
-				Assert.isTrue(predicates.length == 1, "More than 1 predicate bean found, but no additional output branches");
-			}
-			else {
-				branches = StringUtils.commaDelimitedListToStringArray(additionalBranches);
-				Assert.isTrue(branches.length + 1 >= predicates.length,
-						"Number of output topics and org.apache.kafka.streams.kstream.Predicate[] beans don't match");
-				for (String branch : branches) {
-					this.kafkaTopicProvisioner.provisionProducerDestination(branch, extendedProducerProperties);
-				}
-			}
-		}
-
 		Serde<?> keySerde = getKeySerde(properties);
 		Serde<?> valueSerde = getValueSerde(properties);
 
-		to(properties.isUseNativeEncoding(), name, outboundBindTarget, (Serde<Object>) keySerde, (Serde<Object>) valueSerde, branches);
+		to(properties.isUseNativeEncoding(), name, outboundBindTarget, (Serde<Object>) keySerde, (Serde<Object>) valueSerde);
 
 		return new DefaultBinding<>(name, null, outboundBindTarget, null);
 	}
@@ -173,40 +153,17 @@ public class KStreamBinder extends
 
 	@SuppressWarnings("unchecked")
 	private void to(boolean isNativeEncoding, String name, KStream<Object, Object> outboundBindTarget,
-				Serde<Object> keySerde, Serde<Object> valueSerde, String[] branches) {
+				Serde<Object> keySerde, Serde<Object> valueSerde) {
 		KeyValueMapper<Object, Object, KeyValue<Object, Object>> keyValueMapper = null;
 		if (!isNativeEncoding) {
 			keyValueMapper = messageConversionDelegate.outboundKeyValueMapper(name);
 		}
-		if (predicates != null && predicates.length > 0) {
-			KStream[] toBranches = outboundBindTarget.branch(predicates);
-			String[] topics = getOutputTopicsInProperOrder(name, branches);
-			for (int i = 0; i < toBranches.length; i++) {
-				if (!isNativeEncoding) {
-					toBranches[i].map(keyValueMapper).to(topics[i], Produced.with(keySerde, valueSerde));
-				}
-				else {
-					toBranches[i].to(topics[i], Produced.with(keySerde, valueSerde));
-				}
-			}
-		} else {
-			if (!isNativeEncoding) {
+		if (!isNativeEncoding) {
 				outboundBindTarget.map(keyValueMapper).to(name, Produced.with(keySerde, valueSerde));
 			}
-			else {
-				outboundBindTarget.to(name, Produced.with(keySerde, valueSerde));
-			}
+		else {
+			outboundBindTarget.to(name, Produced.with(keySerde, valueSerde));
 		}
-	}
-
-	private static String[] getOutputTopicsInProperOrder(String name, String[] branches) {
-		String[] topics = new String[branches.length + 1];
-		topics[0] = name;
-		int j = 1;
-		for (String branch : branches) {
-			topics[j++] = branch;
-		}
-		return topics;
 	}
 
 	@Override
@@ -218,9 +175,4 @@ public class KStreamBinder extends
 	public KStreamProducerProperties getExtendedProducerProperties(String channelName) {
 		return this.kStreamExtendedBindingProperties.getExtendedProducerProperties(channelName);
 	}
-
-	public void setPredicates(Predicate[] predicates) {
-		this.predicates = predicates;
-	}
-
 }

@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.kstream.config;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.Predicate;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -45,9 +44,6 @@ public class KStreamBinderConfiguration {
 	@Autowired
 	private KafkaProperties kafkaProperties;
 
-	@Autowired(required = false)
-	private Predicate[] predicates;
-
 	@Bean
 	public KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties binderConfigurationProperties) {
 		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties);
@@ -60,9 +56,6 @@ public class KStreamBinderConfiguration {
 									MessageConversionDelegate messageConversionDelegate) {
 		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner, kStreamExtendedBindingProperties,
 				streamsConfig, messageConversionDelegate);
-		if (predicates != null) {
-			kStreamBinder.setPredicates(predicates);
-		}
 		return kStreamBinder;
 	}
 

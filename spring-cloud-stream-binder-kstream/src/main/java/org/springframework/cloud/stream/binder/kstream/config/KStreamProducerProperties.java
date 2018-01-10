@@ -22,13 +22,4 @@ package org.springframework.cloud.stream.binder.kstream.config;
  */
 public class KStreamProducerProperties extends KStreamCommonProperties {
 
-	private String additionalBranches;
-
-	public String getAdditionalBranches() {
-		return additionalBranches;
-	}
-
-	public void setAdditionalBranches(String additionalBranches) {
-		this.additionalBranches = additionalBranches;
-	}
 }

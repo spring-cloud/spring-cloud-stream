@@ -38,11 +38,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kstream.annotations.KStreamProcessor;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -85,12 +85,15 @@ public class WordCountMultipleBranchesIntegrationTests {
 
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.cloud.stream.bindings.input.destination=words",
-				"--spring.cloud.stream.bindings.output.destination=counts",
-				"--spring.cloud.stream.bindings.output.contentType=application/json",
+				"--spring.cloud.stream.bindings.output1.destination=counts",
+				"--spring.cloud.stream.bindings.output1.contentType=application/json",
+				"--spring.cloud.stream.bindings.output2.destination=foo",
+				"--spring.cloud.stream.bindings.output2.contentType=application/json",
+				"--spring.cloud.stream.bindings.output3.destination=bar",
+				"--spring.cloud.stream.bindings.output3.contentType=application/json",
 				"--spring.cloud.stream.kstream.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kstream.binder.configuration.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kstream.binder.configuration.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kstream.bindings.output.producer.additionalBranches=foo,bar",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kstream.timeWindow.length=5000",
@@ -125,7 +128,7 @@ public class WordCountMultipleBranchesIntegrationTests {
 		assertThat(cr.value().contains("\"word\":\"spanish\",\"count\":3")).isTrue();
 	}
 
-	@EnableBinding(KStreamProcessor.class)
+	@EnableBinding(KStreamProcessorX.class)
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(KStreamApplicationSupportProperties.class)
 	public static class WordCountProcessorApplication {
@@ -134,25 +137,38 @@ public class WordCountMultipleBranchesIntegrationTests {
 		private TimeWindows timeWindows;
 
 		@StreamListener("input")
-		@SendTo("output")
-		public KStream<?, WordCount> process(KStream<Object, String> input) {
+		@SendTo({"output1","output2","output3"})
+		@SuppressWarnings("unchecked")
+		public KStream<?, WordCount>[] process(KStream<Object, String> input) {
+
+			Predicate<Object, WordCount> isEnglish = (k, v) -> v.word.equals("english");
+			Predicate<Object, WordCount> isFrench =  (k, v) -> v.word.equals("french");
+			Predicate<Object, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
+
 			return input
 					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.groupBy((key, value) -> value)
 					.windowedBy(timeWindows)
 					.count(Materialized.as("WordCounts-multi"))
 					.toStream()
-					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
+					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))))
+					.branch(isEnglish, isFrench, isSpanish);
 		}
+	}
 
-		@Bean
-		public Predicate[] predicates() {
-			Predicate<?, WordCount> isEnglish = (k, v) -> v.word.equals("english");
-			Predicate<?, WordCount> isFrench =  (k, v) -> v.word.equals("french");
-			Predicate<?, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
-			return new Predicate[] {isEnglish, isFrench, isSpanish};
-		}
+	interface KStreamProcessorX {
 
+		@Input("input")
+		KStream<?, ?> input();
+
+		@Output("output1")
+		KStream<?, ?> output1();
+
+		@Output("output2")
+		KStream<?, ?> output2();
+
+		@Output("output3")
+		KStream<?, ?> output3();
 	}
 
 	static class WordCount {

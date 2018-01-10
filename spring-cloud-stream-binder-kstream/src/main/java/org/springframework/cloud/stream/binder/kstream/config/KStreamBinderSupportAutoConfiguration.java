@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kstream.config;
 
+import java.util.Collection;
 import java.util.Properties;
 
 import org.apache.kafka.common.serialization.Serdes;
@@ -29,8 +30,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kstream.KStreamBoundElementFactory;
 import org.springframework.cloud.stream.binder.kstream.KStreamListenerParameterAdapter;
+import org.springframework.cloud.stream.binder.kstream.KStreamListenerSetupMethodOrchestrator;
 import org.springframework.cloud.stream.binder.kstream.KStreamStreamListenerResultAdapter;
 import org.springframework.cloud.stream.binder.kstream.MessageConversionDelegate;
+import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
@@ -88,6 +91,13 @@ public class KStreamBinderSupportAutoConfiguration {
 	public KStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter(
 			MessageConversionDelegate messageConversionDelegate) {
 		return new KStreamListenerParameterAdapter(messageConversionDelegate);
+	}
+
+	@Bean
+	public KStreamListenerSetupMethodOrchestrator kStreamListenerSetupMethodOrchestrator(
+			KStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter,
+			Collection<StreamListenerResultAdapter> streamListenerResultAdapters){
+		return new KStreamListenerSetupMethodOrchestrator(kafkaStreamListenerParameterAdapter, streamListenerResultAdapters);
 	}
 
 	@Bean
