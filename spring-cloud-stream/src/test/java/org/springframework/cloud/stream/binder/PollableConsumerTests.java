@@ -56,7 +56,7 @@ public class PollableConsumerTests {
 		});
 		binder.bindPollableConsumer("foo", "bar", pollableSource, new ExtendedConsumerProperties<>(null));
 		assertThat(pollableSource.poll(received -> {
-			assertThat(received.getPayload()).isEqualTo("FOO");
+			assertThat(received.getPayload()).isEqualTo("POLLED DATA");
 			assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("text/plain");
 		})).isTrue();
 	}
