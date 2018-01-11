@@ -315,6 +315,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			bindingTarget.setRetryTemplate(buildRetryTemplate(properties));
 			bindingTarget.setRecoveryCallback(getRecoveryCallback(resources.getErrorInfrastructure(), properties));
 		}
+		postProcessPollableSource(bindingTarget);
 		return new DefaultBinding<PollableSource<MessageHandler>>(name, group, inboundBindTarget,
 				resources.getSource() instanceof Lifecycle ? (Lifecycle) resources.getSource() : null) {
 
@@ -325,6 +326,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 
 		};
+	}
+
+	protected void postProcessPollableSource(DefaultPollableMessageSource bindingTarget) {
 	}
 
 	/**
