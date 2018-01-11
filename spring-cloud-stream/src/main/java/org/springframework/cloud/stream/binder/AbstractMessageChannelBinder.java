@@ -42,6 +42,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
 
 /**
@@ -299,19 +300,44 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
 			bindingTarget.addInterceptor(0, this.embeddedHeadersChannelInterceptor);
 		}
-		MessageSource<?> source = createMessageSource(name, group, destination, properties);
-		bindingTarget.setSource(source);
-		return new Binding<PollableSource<MessageHandler>>() {
+		final PolledConsumerResources resources = createPolledConsumerResources(name, group, destination, properties);
+		bindingTarget.setSource(resources.getSource());
+		if (resources.getErrorInfrastructure() != null) {
+			if (resources.getErrorInfrastructure().getErrorChannel() != null) {
+				bindingTarget.setErrorChannel(resources.getErrorInfrastructure().getErrorChannel());
+			}
+			ErrorMessageStrategy ems = getErrorMessageStrategy();
+			if (ems != null) {
+				bindingTarget.setErrorMessageStrategy(ems);
+			}
+		}
+		if (properties.getMaxAttempts() > 1) {
+			bindingTarget.setRetryTemplate(buildRetryTemplate(properties));
+			bindingTarget.setRecoveryCallback(getRecoveryCallback(resources.getErrorInfrastructure(), properties));
+		}
+		return new DefaultBinding<PollableSource<MessageHandler>>(name, group, inboundBindTarget,
+				resources.getSource() instanceof Lifecycle ? (Lifecycle) resources.getSource() : null) {
 
 			@Override
-			public void unbind() {
-				// nothing to do
+			public void afterUnbind() {
+				afterUnbindConsumer(destination, this.group, properties);
+				destroyErrorInfrastructure(destination, group, properties);
 			}
 
 		};
 	}
 
-	protected MessageSource<?> createMessageSource(String name, String group,
+	/**
+	 * Implementations can override the default {@link ErrorMessageSendingRecoverer}.
+	 * @param errorInfrastructure the infrastructure.
+	 * @param properties the consumer properties.
+	 * @return the recoverer.
+	 */
+	protected RecoveryCallback<Object> getRecoveryCallback(ErrorInfrastructure errorInfrastructure, C properties) {
+		return errorInfrastructure.getRecoverer();
+	}
+
+	protected PolledConsumerResources createPolledConsumerResources(String name, String group,
 			ConsumerDestination destination, C consumerProperties) {
 		throw new UnsupportedOperationException("This binder does not support pollable consumers");
 	}
@@ -700,6 +726,27 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				return messageValues.toMessage();
 			}
 			return message;
+		}
+
+	}
+
+	protected static class PolledConsumerResources {
+
+		private final MessageSource<?> source;
+
+		private final ErrorInfrastructure errorInfrastructure;
+
+		public PolledConsumerResources(MessageSource<?> source, ErrorInfrastructure errorInfrastructure) {
+			this.source = source;
+			this.errorInfrastructure = errorInfrastructure;
+		}
+
+		MessageSource<?> getSource() {
+			return this.source;
+		}
+
+		ErrorInfrastructure getErrorInfrastructure() {
+			return this.errorInfrastructure;
 		}
 
 	}

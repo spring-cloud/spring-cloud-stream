@@ -26,10 +26,17 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.NameMatchMethodPointcutAdvisor;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.endpoint.MessageSourcePollingTemplate;
+import org.springframework.integration.support.DefaultErrorMessageStrategy;
+import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.retry.RecoveryCallback;
+import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.Assert;
 
 /**
  * The default implementation of a {@link PollableMessageSource}.
@@ -42,9 +49,19 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	private final List<ChannelInterceptor> interceptors = new ArrayList<>();
 
+	private final MessagingTemplate messagingTemplate = new MessagingTemplate();
+
 	private MessageSource<?> source;
 
 	private MessageSourcePollingTemplate pollingTemplate;
+
+	private RetryTemplate retryTemplate;
+
+	private RecoveryCallback<Object> recoveryCallback;
+
+	private MessageChannel errorChannel;
+
+	private ErrorMessageStrategy errorMessageStrategy = new DefaultErrorMessageStrategy();
 
 	private volatile boolean running;
 
@@ -80,6 +97,23 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		this.pollingTemplate = new MessageSourcePollingTemplate(this.source);
 	}
 
+	public void setRetryTemplate(RetryTemplate retryTemplate) {
+		this.retryTemplate = retryTemplate;
+	}
+
+	public void setRecoveryCallback(RecoveryCallback<Object> recoveryCallback) {
+		this.recoveryCallback = recoveryCallback;
+	}
+
+	public void setErrorChannel(MessageChannel errorChannel) {
+		this.errorChannel = errorChannel;
+	}
+
+	public void setErrorMessageStrategy(ErrorMessageStrategy errorMessageStrategy) {
+		Assert.notNull(errorMessageStrategy, "'errorMessageStrategy' cannot be null");
+		this.errorMessageStrategy = errorMessageStrategy;
+	}
+
 	public void addInterceptor(ChannelInterceptor interceptor) {
 		this.interceptors.add(interceptor);
 	}
@@ -111,7 +145,25 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	@Override
 	public boolean poll(MessageHandler handler) {
-		return this.pollingTemplate.poll(handler);
+		if (this.retryTemplate == null && this.errorChannel == null) {
+			return this.pollingTemplate.poll(handler);
+		}
+		else if (this.retryTemplate == null) {
+			try {
+				return this.pollingTemplate.poll(handler);
+			}
+			catch (Exception e) {
+				this.messagingTemplate.send(this.errorMessageStrategy.buildErrorMessage(e, null));
+				return false;
+			}
+		}
+		else {
+			Object result = this.retryTemplate.execute(context -> {
+				return this.pollingTemplate.poll(handler);
+			}, this.recoveryCallback);
+			// a null result means the recovery callback handled the error
+			return result instanceof Boolean ? (Boolean) result : true;
+		}
 	}
 
 }

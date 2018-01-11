@@ -107,6 +107,8 @@ public class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder
 	@Autowired
 	private BeanFactory beanFactory;
 
+	private Message<?> lastError;
+
 	private MessageSource<?> messageSourceDelegate = () -> new GenericMessage<>("polled data",
 			Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "text/plain"));
 
@@ -120,6 +122,14 @@ public class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder
 	 */
 	public void setMessageSourceDelegate(MessageSource<?> messageSourceDelegate) {
 		this.messageSourceDelegate = messageSourceDelegate;
+	}
+
+	public Message<?> getLastError() {
+		return this.lastError;
+	}
+
+	public void setLastError(Message<?> lastError) {
+		this.lastError = lastError;
 	}
 
 	@Override
@@ -157,9 +167,19 @@ public class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder
 	}
 
 	@Override
-	protected MessageSource<?> createMessageSource(String name, String group, ConsumerDestination destination,
+	protected PolledConsumerResources createPolledConsumerResources(String name, String group, ConsumerDestination destination,
 			ConsumerProperties consumerProperties) {
-		return this.messageSourceDelegate;
+		return new PolledConsumerResources(this.messageSourceDelegate,
+				registerErrorInfrastructure(destination, group, consumerProperties));
+	}
+
+	@Override
+	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination, String group,
+			ConsumerProperties consumerProperties) {
+		return m -> {
+			this.logger.debug("Error handled: " + m);
+			this.lastError = m;
+		};
 	}
 
 	/**
