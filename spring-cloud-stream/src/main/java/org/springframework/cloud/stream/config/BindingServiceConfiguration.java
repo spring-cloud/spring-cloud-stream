@@ -140,6 +140,7 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
 	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer(
 			MessageConverterConfigurer messageConverterConfigurer) {
 		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
