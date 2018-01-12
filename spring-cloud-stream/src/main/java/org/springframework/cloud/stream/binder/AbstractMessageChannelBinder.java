@@ -313,7 +313,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		if (properties.getMaxAttempts() > 1) {
 			bindingTarget.setRetryTemplate(buildRetryTemplate(properties));
-			bindingTarget.setRecoveryCallback(getRecoveryCallback(resources.getErrorInfrastructure(), properties));
+			bindingTarget.setRecoveryCallback(
+					getPolledConsumerRecoveryCallback(resources.getErrorInfrastructure(), properties));
 		}
 		postProcessPollableSource(bindingTarget);
 		return new DefaultBinding<PollableSource<MessageHandler>>(name, group, inboundBindTarget,
@@ -337,7 +338,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @param properties the consumer properties.
 	 * @return the recoverer.
 	 */
-	protected RecoveryCallback<Object> getRecoveryCallback(ErrorInfrastructure errorInfrastructure, C properties) {
+	protected RecoveryCallback<Object> getPolledConsumerRecoveryCallback(ErrorInfrastructure errorInfrastructure,
+			C properties) {
 		return errorInfrastructure.getRecoverer();
 	}
 
