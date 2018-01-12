@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,11 +67,13 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
+import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.TestUtils;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
@@ -95,6 +97,7 @@ import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandle
 import org.springframework.integration.kafka.support.KafkaSendFailureException;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
@@ -109,6 +112,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHandlingException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
@@ -143,7 +147,7 @@ public class KafkaBinderTests extends
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
 	@ClassRule
-	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 10);
+	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 10, "error.pollableDlq.group");
 
 	private KafkaTestBinder binder;
 
@@ -2406,6 +2410,62 @@ public class KafkaBinderTests extends
 		producerBinding2.unbind();
 		producerBinding3.unbind();
 		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testPolledConsumer() throws Exception {
+		KafkaTestBinder binder = getBinder();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		binder.bindPollableConsumer("pollable", "group", inboundBindTarget, createConsumerProperties());
+		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
+		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
+		template.send("pollable", "testPollable");
+		boolean polled = inboundBindTarget.poll(m -> {
+			assertThat(m.getPayload()).isEqualTo("testPollable");
+		});
+		int n = 0;
+		while (n++ < 100 && !polled) {
+			polled = inboundBindTarget.poll(m -> {
+				assertThat(m.getPayload()).isEqualTo("testPollable".getBytes());
+			});
+		}
+		assertThat(polled).isTrue();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testPolledConsumerWithDlq() throws Exception {
+		KafkaTestBinder binder = getBinder();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		ExtendedConsumerProperties<KafkaConsumerProperties> properties = createConsumerProperties();
+		properties.setMaxAttempts(2);
+		properties.setBackOffInitialInterval(0);
+		properties.getExtension().setEnableDlq(true);
+		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
+		binder.bindPollableConsumer("pollableDlq", "group", inboundBindTarget, properties);
+		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
+		template.send("pollableDlq", "testPollableDLQ");
+		try {
+			int n = 0;
+			while (n++ < 100) {
+				inboundBindTarget.poll(m -> {
+					throw new RuntimeException("test DLQ");
+				});
+				Thread.sleep(100);
+			}
+		}
+		catch (MessageHandlingException e) {
+			assertThat(e.getCause().getMessage()).isEqualTo("test DLQ");
+		}
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("dlq", "false", embeddedKafka);
+		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		ConsumerFactory cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		Consumer consumer = cf.createConsumer();
+		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "error.pollableDlq.group");
+		ConsumerRecord deadLetter = KafkaTestUtils.getSingleRecord(consumer, "error.pollableDlq.group");
+		assertThat(deadLetter).isNotNull();
+		assertThat(deadLetter.value()).isEqualTo("testPollableDLQ");
 	}
 
 	private final class FailingInvocationCountingMessageHandler implements MessageHandler {

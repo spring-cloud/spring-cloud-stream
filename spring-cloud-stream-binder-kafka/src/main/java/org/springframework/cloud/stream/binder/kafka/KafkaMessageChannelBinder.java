@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 the original author or authors.
+ * Copyright 2014-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
@@ -46,6 +49,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
@@ -63,9 +67,13 @@ import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
+import org.springframework.integration.kafka.inbound.KafkaMessageSource;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.integration.kafka.support.RawRecordHeaderErrorMessageStrategy;
+import org.springframework.integration.support.AcknowledgmentCallback;
+import org.springframework.integration.support.AcknowledgmentCallback.Status;
 import org.springframework.integration.support.ErrorMessageStrategy;
+import org.springframework.integration.support.StaticMessageHeaderAccessor;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -87,6 +95,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
@@ -122,7 +132,7 @@ public class KafkaMessageChannelBinder extends
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
-	private final Map<String, TopicInformation> topicsInUse = new HashMap<>();
+	private final Map<String, TopicInformation> topicsInUse = new ConcurrentHashMap<>();
 
 	private final KafkaTransactionManager<byte[], byte[]> transactionManager;
 
@@ -318,14 +328,8 @@ public class KafkaMessageChannelBinder extends
 		int partitionCount = extendedConsumerProperties.getInstanceCount()
 				* extendedConsumerProperties.getConcurrency();
 
-		Collection<PartitionInfo> allPartitions = provisioningProvider.getPartitionsForTopic(partitionCount,
-				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
-				() -> {
-					Consumer<?, ?> consumer = consumerFactory.createConsumer();
-					List<PartitionInfo> partitionsFor = consumer.partitionsFor(destination.getName());
-					consumer.close();
-					return partitionsFor;
-				});
+		Collection<PartitionInfo> allPartitions = getPartitionInfo(destination, extendedConsumerProperties,
+				consumerFactory, partitionCount);
 
 		Collection<PartitionInfo> listenedPartitions;
 
@@ -387,6 +391,68 @@ public class KafkaMessageChannelBinder extends
 		}
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter =
 				new KafkaMessageDrivenChannelAdapter<>(messageListenerContainer);
+		kafkaMessageDrivenChannelAdapter.setMessageConverter(getMessageConverter(extendedConsumerProperties));
+		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
+		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination, consumerGroup,
+				extendedConsumerProperties);
+		if (extendedConsumerProperties.getMaxAttempts() > 1) {
+			kafkaMessageDrivenChannelAdapter.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
+			kafkaMessageDrivenChannelAdapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
+		}
+		else {
+			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
+		}
+		return kafkaMessageDrivenChannelAdapter;
+	}
+
+	@Override
+	protected PolledConsumerResources createPolledConsumerResources(String name, String group,
+			ConsumerDestination destination, ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+		boolean anonymous = !StringUtils.hasText(group);
+		Assert.isTrue(!anonymous || !consumerProperties.getExtension().isEnableDlq(),
+				"DLQ support is not available for anonymous subscriptions");
+		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
+		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(anonymous, consumerGroup,
+				consumerProperties);
+		KafkaMessageSource<?, ?> source = new KafkaMessageSource<>(consumerFactory, destination.getName());
+		source.setMessageConverter(getMessageConverter(consumerProperties));
+		source.setRawMessageHeader(consumerProperties.getExtension().isEnableDlq());
+
+		// I copied this from the regular consumer - it looks bogus to me - includes all partitions
+		// not just the ones this binding is listening to; doesn't seem right for a health check.
+		Collection<PartitionInfo> partitionInfos = getPartitionInfo(destination, consumerProperties, consumerFactory,
+				-1);
+		this.topicsInUse.put(destination.getName(), new TopicInformation(group, partitionInfos));
+
+		source.setRebalanceListener(new ConsumerRebalanceListener() {
+
+			@Override
+			public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+				KafkaMessageChannelBinder.this.logger.info("Revoked: " + partitions);
+			}
+
+			@Override
+			public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+				KafkaMessageChannelBinder.this.logger.info("Assigned: " + partitions);
+			}
+
+		});
+		return new PolledConsumerResources(source,
+				registerErrorInfrastructure(destination, group, consumerProperties, true));
+	}
+
+	@Override
+	protected void postProcessPollableSource(DefaultPollableMessageSource bindingTarget) {
+		bindingTarget.setAttributesProvider((accessor, message) -> {
+			Object rawMessage = message.getHeaders().get(KafkaHeaders.RAW_DATA);
+			if (rawMessage != null) {
+				accessor.setAttribute(KafkaHeaders.RAW_DATA, rawMessage);
+			}
+		});
+	}
+
+	private MessagingMessageConverter getMessageConverter(
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 		MessagingMessageConverter messageConverter;
 		if (extendedConsumerProperties.getExtension().getConverterBeanName() == null) {
 			messageConverter = new MessagingMessageConverter();
@@ -406,6 +472,12 @@ public class KafkaMessageChannelBinder extends
 				throw new IllegalStateException("Converter bean not present in application context", e);
 			}
 		}
+		messageConverter.setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
+		return messageConverter;
+	}
+
+	private KafkaHeaderMapper getHeaderMapper(
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 		KafkaHeaderMapper mapper = null;
 		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
 			mapper = getApplicationContext().getBean(this.configurationProperties.getHeaderMapperBeanName(),
@@ -429,19 +501,21 @@ public class KafkaMessageChannelBinder extends
 			}
 			mapper = headerMapper;
 		}
-		messageConverter.setHeaderMapper(mapper);
-		kafkaMessageDrivenChannelAdapter.setMessageConverter(messageConverter);
-		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
-		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination, consumerGroup,
-				extendedConsumerProperties);
-		if (extendedConsumerProperties.getMaxAttempts() > 1) {
-			kafkaMessageDrivenChannelAdapter.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
-			kafkaMessageDrivenChannelAdapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
-		}
-		else {
-			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
-		}
-		return kafkaMessageDrivenChannelAdapter;
+		return mapper;
+	}
+
+	private Collection<PartitionInfo> getPartitionInfo(final ConsumerDestination destination,
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
+			final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
+		Collection<PartitionInfo> allPartitions = provisioningProvider.getPartitionsForTopic(partitionCount,
+				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
+				() -> {
+					Consumer<?, ?> consumer = consumerFactory.createConsumer();
+					List<PartitionInfo> partitionsFor = consumer.partitionsFor(destination.getName());
+					consumer.close();
+					return partitionsFor;
+				});
+		return allPartitions;
 	}
 
 	@Override
@@ -451,8 +525,8 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
-			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
-		KafkaConsumerProperties kafkaConsumerProperties = extendedConsumerProperties.getExtension();
+			final ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+		KafkaConsumerProperties kafkaConsumerProperties = properties.getExtension();
 		if (kafkaConsumerProperties.isEnableDlq()) {
 			KafkaProducerProperties dlqProducerProperties = kafkaConsumerProperties.getDlqProducerProperties();
 			ProducerFactory<?,?> producerFactory = this.transactionManager != null
@@ -471,7 +545,7 @@ public class KafkaMessageChannelBinder extends
 				final ConsumerRecord<?, ?> record = message.getHeaders()
 						.get(KafkaHeaders.RAW_DATA, ConsumerRecord.class);
 
-				if (extendedConsumerProperties.isUseNativeDecoding()) {
+				if (properties.isUseNativeDecoding()) {
 					if (record != null) {
 						Map<String, String> configuration = this.transactionManager == null ? dlqProducerProperties.getConfiguration()
 								: this.configurationProperties.getTransaction().getProducer().getConfiguration();
@@ -487,6 +561,10 @@ public class KafkaMessageChannelBinder extends
 					}
 				}
 
+				if (record == null) {
+					this.logger.error("No raw record; cannot send to DLQ: " + message);
+					return;
+				}
 				Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
 				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
 						record.topic().getBytes(StandardCharsets.UTF_8)));
@@ -501,6 +579,41 @@ public class KafkaMessageChannelBinder extends
 			};
 		}
 		return null;
+	}
+
+	@Override
+	protected MessageHandler getPolledConsumerErrorMessageHandler(ConsumerDestination destination, String group,
+			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+		if (properties.getExtension().isEnableDlq()) {
+			return getErrorMessageHandler(destination, group, properties);
+		}
+		final MessageHandler superHandler = super.getErrorMessageHandler(destination, group, properties);
+		return message -> {
+			ConsumerRecord<?, ?> record = (ConsumerRecord<?, ?>) message.getHeaders().get(KafkaHeaders.RAW_DATA);
+			if (!(message instanceof ErrorMessage)) {
+				logger.error("Expected an ErrorMessage, not a " + message.getClass().toString() + " for: "
+						+ message);
+			}
+			else if (record == null) {
+				if (superHandler != null) {
+					superHandler.handleMessage(message);
+				}
+			}
+			else {
+				if (message.getPayload() instanceof MessagingException) {
+					AcknowledgmentCallback ack = StaticMessageHeaderAccessor.getAcknowledgmentCallback(
+							((MessagingException) message.getPayload()).getFailedMessage());
+					if (ack != null) {
+						if (isAutoCommitOnError(properties)) {
+							ack.acknowledge(Status.REJECT);
+						}
+						else {
+							ack.acknowledge(Status.REQUEUE);
+						}
+					}
+				}
+			}
+		};
 	}
 
 	private static void ensureDlqMessageCanBeProperlySerialized(Map<String, String> configuration,
