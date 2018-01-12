@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.integration;
 
+import java.util.Collections;
 import java.util.function.Consumer;
 
 import org.springframework.beans.factory.BeanFactory;
@@ -30,6 +31,7 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.core.AttributeAccessor;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.support.DefaultErrorMessageStrategy;
@@ -37,8 +39,10 @@ import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
@@ -94,15 +98,38 @@ import org.springframework.util.StringUtils;
  * </pre>
  *
  * @author Oleg Zhurakousky
+ * @author Gary Russell
+ *
  */
-class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder<ConsumerProperties,
+public class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder<ConsumerProperties,
 	ProducerProperties, SpringIntegrationProvisioner> {
 
 	@Autowired
 	private BeanFactory beanFactory;
 
-	SpringIntegrationChannelBinder(SpringIntegrationProvisioner provisioningProvider) {
+	private Message<?> lastError;
+
+	private MessageSource<?> messageSourceDelegate = () -> new GenericMessage<>("polled data",
+			Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "text/plain"));
+
+	public SpringIntegrationChannelBinder(SpringIntegrationProvisioner provisioningProvider) {
 		super(new String[] {}, provisioningProvider);
+	}
+
+	/**
+	 * Set a delegate {@link MessageSource} for pollable consumers.
+	 * @param messageSourceDelegate the delegate.
+	 */
+	public void setMessageSourceDelegate(MessageSource<?> messageSourceDelegate) {
+		this.messageSourceDelegate = messageSourceDelegate;
+	}
+
+	public Message<?> getLastError() {
+		return this.lastError;
+	}
+
+	public void setLastError(Message<?> lastError) {
+		this.lastError = lastError;
 	}
 
 	@Override
@@ -137,6 +164,22 @@ class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder<Consum
 		siBinderInputChannel.subscribe(messageListenerContainer);
 
 		return adapter;
+	}
+
+	@Override
+	protected PolledConsumerResources createPolledConsumerResources(String name, String group, ConsumerDestination destination,
+			ConsumerProperties consumerProperties) {
+		return new PolledConsumerResources(this.messageSourceDelegate,
+				registerErrorInfrastructure(destination, group, consumerProperties));
+	}
+
+	@Override
+	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination, String group,
+			ConsumerProperties consumerProperties) {
+		return m -> {
+			this.logger.debug("Error handled: " + m);
+			this.lastError = m;
+		};
 	}
 
 	/**

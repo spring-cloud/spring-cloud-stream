@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
@@ -41,6 +42,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
 
 /**
@@ -60,11 +62,12 @@ import org.springframework.util.Assert;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  * @author Artem Bilan
+ * @author Gary Russell
  *
  * @since 1.1
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
-		extends AbstractBinder<MessageChannel, C, P> {
+		extends AbstractBinder<MessageChannel, C, P> implements PollableConsumerBinder<MessageHandler, C> {
 
 	private final EmbeddedHeadersChannelInterceptor embeddedHeadersChannelInterceptor =
 			new EmbeddedHeadersChannelInterceptor(this.logger);
@@ -286,6 +289,65 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
+
+	@Override
+	public Binding<PollableSource<MessageHandler>> bindPollableConsumer(String name, String group,
+			final PollableSource<MessageHandler> inboundBindTarget, C properties) {
+		Assert.isInstanceOf(DefaultPollableMessageSource.class, inboundBindTarget);
+		DefaultPollableMessageSource bindingTarget = (DefaultPollableMessageSource) inboundBindTarget;
+		ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group,
+				properties);
+		if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
+			bindingTarget.addInterceptor(0, this.embeddedHeadersChannelInterceptor);
+		}
+		final PolledConsumerResources resources = createPolledConsumerResources(name, group, destination, properties);
+		bindingTarget.setSource(resources.getSource());
+		if (resources.getErrorInfrastructure() != null) {
+			if (resources.getErrorInfrastructure().getErrorChannel() != null) {
+				bindingTarget.setErrorChannel(resources.getErrorInfrastructure().getErrorChannel());
+			}
+			ErrorMessageStrategy ems = getErrorMessageStrategy();
+			if (ems != null) {
+				bindingTarget.setErrorMessageStrategy(ems);
+			}
+		}
+		if (properties.getMaxAttempts() > 1) {
+			bindingTarget.setRetryTemplate(buildRetryTemplate(properties));
+			bindingTarget.setRecoveryCallback(
+					getPolledConsumerRecoveryCallback(resources.getErrorInfrastructure(), properties));
+		}
+		postProcessPollableSource(bindingTarget);
+		return new DefaultBinding<PollableSource<MessageHandler>>(name, group, inboundBindTarget,
+				resources.getSource() instanceof Lifecycle ? (Lifecycle) resources.getSource() : null) {
+
+			@Override
+			public void afterUnbind() {
+				afterUnbindConsumer(destination, this.group, properties);
+				destroyErrorInfrastructure(destination, group, properties);
+			}
+
+		};
+	}
+
+	protected void postProcessPollableSource(DefaultPollableMessageSource bindingTarget) {
+	}
+
+	/**
+	 * Implementations can override the default {@link ErrorMessageSendingRecoverer}.
+	 * @param errorInfrastructure the infrastructure.
+	 * @param properties the consumer properties.
+	 * @return the recoverer.
+	 */
+	protected RecoveryCallback<Object> getPolledConsumerRecoveryCallback(ErrorInfrastructure errorInfrastructure,
+			C properties) {
+		return errorInfrastructure.getRecoverer();
+	}
+
+	protected PolledConsumerResources createPolledConsumerResources(String name, String group,
+			ConsumerDestination destination, C consumerProperties) {
+		throw new UnsupportedOperationException("This binder does not support pollable consumers");
+	}
+
 	private void enhanceMessageChannel(MessageChannel inputChannel) {
 		((AbstractMessageChannel) inputChannel).addInterceptor(0, this.embeddedHeadersChannelInterceptor);
 	}
@@ -363,6 +425,23 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	protected final ErrorInfrastructure registerErrorInfrastructure(ConsumerDestination destination, String group,
 			C consumerProperties) {
+
+		return registerErrorInfrastructure(destination, group, consumerProperties, false);
+	}
+
+	/**
+	 * Build an errorChannelRecoverer that writes to a pub/sub channel for the destination
+	 * when an exception is thrown to a consumer.
+	 * @param destination the destination.
+	 * @param group the group.
+	 * @param consumerProperties the properties.
+	 * @param true if this is for a polled consumer.
+	 * @return the ErrorInfrastructure which is a holder for the error channel, the recoverer and the
+	 * message handler that is subscribed to the channel.
+	 */
+	protected final ErrorInfrastructure registerErrorInfrastructure(ConsumerDestination destination, String group,
+			C consumerProperties, boolean polled) {
+
 		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
 		ConfigurableListableBeanFactory beanFactory = getApplicationContext().getBeanFactory();
 		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
@@ -390,7 +469,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		String recovererBeanName = getErrorRecovererName(destination, group, consumerProperties);
 		beanFactory.registerSingleton(recovererBeanName, recoverer);
 		beanFactory.initializeBean(recoverer, recovererBeanName);
-		MessageHandler handler = getErrorMessageHandler(destination, group, consumerProperties);
+		MessageHandler handler;
+		if (polled) {
+			handler = getPolledConsumerErrorMessageHandler(destination, group, consumerProperties);
+		}
+		else {
+			handler = getErrorMessageHandler(destination, group, consumerProperties);
+		}
 		MessageChannel defaultErrorChannel = null;
 		if (getApplicationContext().containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)) {
 			defaultErrorChannel = getApplicationContext().getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
@@ -482,8 +567,22 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @return the handler (may be null, which is the default, causing the exception to be
 	 * rethrown).
 	 */
-	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
-			final C consumerProperties) {
+	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination, String group,
+			C consumerProperties) {
+		return null;
+	}
+
+	/**
+	 * Binders can return a message handler to be subscribed to the error channel.
+	 * Examples might be if the user wishes to (re)publish messages to a DLQ.
+	 * @param destination the destination.
+	 * @param group the group.
+	 * @param consumerProperties the properties.
+	 * @return the handler (may be null, which is the default, causing the exception to be
+	 * rethrown).
+	 */
+	protected MessageHandler getPolledConsumerErrorMessageHandler(ConsumerDestination destination, String group,
+			C consumerProperties) {
 		return null;
 	}
 
@@ -670,6 +769,27 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				return messageValues.toMessage();
 			}
 			return message;
+		}
+
+	}
+
+	protected static class PolledConsumerResources {
+
+		private final MessageSource<?> source;
+
+		private final ErrorInfrastructure errorInfrastructure;
+
+		public PolledConsumerResources(MessageSource<?> source, ErrorInfrastructure errorInfrastructure) {
+			this.source = source;
+			this.errorInfrastructure = errorInfrastructure;
+		}
+
+		MessageSource<?> getSource() {
+			return this.source;
+		}
+
+		ErrorInfrastructure getErrorInfrastructure() {
+			return this.errorInfrastructure;
 		}
 
 	}
