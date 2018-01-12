@@ -201,8 +201,13 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 					doHandleMessage(handler, message);
 				}
 				catch (Exception e) {
-					this.messagingTemplate.send(this.errorMessageStrategy.buildErrorMessage(e, null));
-					return false;
+					if (this.errorChannel != null) {
+						this.messagingTemplate.send(this.errorChannel,
+								this.errorMessageStrategy.buildErrorMessage(e, null));
+					}
+					else {
+						throw e;
+					}
 				}
 			}
 			else {
@@ -212,12 +217,19 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 					return null;
 				}, this.recoveryCallback);
 			}
-			AckUtils.autoAck(ackCallback);
 			return true;
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 			AckUtils.autoNack(ackCallback);
-			throw (MessageHandlingException) e;
+			if (e instanceof MessageHandlingException
+					&& ((MessageHandlingException) e).getFailedMessage().equals(message)) {
+				throw (MessageHandlingException) e;
+			}
+			throw new MessageHandlingException(message, e);
+		}
+		finally {
+			AckUtils.autoAck(ackCallback);
 		}
 	}
 

@@ -144,6 +144,35 @@ public class PollableConsumerTests {
 		assertThat(((Exception) lastError.getPayload()).getCause().getMessage()).isEqualTo("test recoverer");
 	}
 
+	@Test
+	public void testErrorsNoRetry() {
+		SpringIntegrationChannelBinder binder = createBinder();
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
+		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				return MessageBuilder.withPayload(((String) message.getPayload()).toUpperCase())
+						.copyHeaders(message.getHeaders())
+						.build();
+			}
+
+		});
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
+		properties.setMaxAttempts(1);
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		final CountDownLatch latch = new CountDownLatch(1);
+		this.context.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class).subscribe(m -> {
+			latch.countDown();
+		});
+		final AtomicInteger count = new AtomicInteger();
+		assertThat(pollableSource.poll(received -> {
+			count.incrementAndGet();
+			throw new RuntimeException("test recoverer");
+		})).isTrue();
+		assertThat(count.get()).isEqualTo(1);
+	}
+
 	private SpringIntegrationChannelBinder createBinder() {
 		SpringIntegrationProvisioner provisioningProvider = new SpringIntegrationProvisioner();
 		SpringIntegrationChannelBinder binder = new SpringIntegrationChannelBinder(provisioningProvider);
