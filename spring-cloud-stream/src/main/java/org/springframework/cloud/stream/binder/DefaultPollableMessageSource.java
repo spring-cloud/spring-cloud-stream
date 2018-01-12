@@ -216,8 +216,12 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			return true;
 		}
 		catch (Exception e) {
-			AckUtils.autoNack(ackCallback);
 			throw (MessageHandlingException) e;
+		}
+		finally {
+			if (!ackCallback.isAcknowledged()) {
+				AckUtils.autoNack(ackCallback);
+			}
 		}
 	}
 
