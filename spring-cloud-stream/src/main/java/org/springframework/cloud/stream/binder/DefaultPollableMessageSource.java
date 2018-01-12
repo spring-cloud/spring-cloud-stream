@@ -203,7 +203,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 				catch (Exception e) {
 					if (this.errorChannel != null) {
 						this.messagingTemplate.send(this.errorChannel,
-								this.errorMessageStrategy.buildErrorMessage(e, null));
+								this.errorMessageStrategy.buildErrorMessage(e, attributesHolder.get()));
 					}
 					else {
 						throw e;
