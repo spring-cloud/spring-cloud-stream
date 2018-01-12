@@ -425,6 +425,23 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	protected final ErrorInfrastructure registerErrorInfrastructure(ConsumerDestination destination, String group,
 			C consumerProperties) {
+
+		return registerErrorInfrastructure(destination, group, consumerProperties, false);
+	}
+
+	/**
+	 * Build an errorChannelRecoverer that writes to a pub/sub channel for the destination
+	 * when an exception is thrown to a consumer.
+	 * @param destination the destination.
+	 * @param group the group.
+	 * @param consumerProperties the properties.
+	 * @param true if this is for a polled consumer.
+	 * @return the ErrorInfrastructure which is a holder for the error channel, the recoverer and the
+	 * message handler that is subscribed to the channel.
+	 */
+	protected final ErrorInfrastructure registerErrorInfrastructure(ConsumerDestination destination, String group,
+			C consumerProperties, boolean polled) {
+
 		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
 		ConfigurableListableBeanFactory beanFactory = getApplicationContext().getBeanFactory();
 		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
@@ -452,7 +469,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		String recovererBeanName = getErrorRecovererName(destination, group, consumerProperties);
 		beanFactory.registerSingleton(recovererBeanName, recoverer);
 		beanFactory.initializeBean(recoverer, recovererBeanName);
-		MessageHandler handler = getErrorMessageHandler(destination, group, consumerProperties);
+		MessageHandler handler;
+		if (polled) {
+			handler = getPolledConsumerErrorMessageHandler(destination, group, consumerProperties);
+		}
+		else {
+			handler = getErrorMessageHandler(destination, group, consumerProperties);
+		}
 		MessageChannel defaultErrorChannel = null;
 		if (getApplicationContext().containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)) {
 			defaultErrorChannel = getApplicationContext().getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
@@ -544,8 +567,22 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @return the handler (may be null, which is the default, causing the exception to be
 	 * rethrown).
 	 */
-	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
-			final C consumerProperties) {
+	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination, String group,
+			C consumerProperties) {
+		return null;
+	}
+
+	/**
+	 * Binders can return a message handler to be subscribed to the error channel.
+	 * Examples might be if the user wishes to (re)publish messages to a DLQ.
+	 * @param destination the destination.
+	 * @param group the group.
+	 * @param consumerProperties the properties.
+	 * @return the handler (may be null, which is the default, causing the exception to be
+	 * rethrown).
+	 */
+	protected MessageHandler getPolledConsumerErrorMessageHandler(ConsumerDestination destination, String group,
+			C consumerProperties) {
 		return null;
 	}
 
