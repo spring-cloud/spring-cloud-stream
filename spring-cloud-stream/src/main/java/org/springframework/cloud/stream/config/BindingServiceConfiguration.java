@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
-import org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
@@ -51,15 +49,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
-import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.HandlerMethodArgumentResolversHolder;
-import org.springframework.integration.config.IntegrationEvaluationContextFactoryBean;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
-import org.springframework.integration.json.JsonPropertyAccessor;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
@@ -68,7 +63,6 @@ import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.tuple.spel.TuplePropertyAccessor;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -83,7 +77,6 @@ import org.springframework.util.CollectionUtils;
  * @author Artem Bilan
  * @author Oleg Zhurakousky
  */
-@SuppressWarnings("deprecation")
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
 @Import(ContentTypeConfiguration.class)
@@ -216,27 +209,12 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(@Autowired(required=false) AbstractMappingMessageRouter[] routers,
+	@SuppressWarnings("deprecation")
+	public org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
+			@Autowired(required=false) AbstractMappingMessageRouter[] routers,
 			@Autowired(required=false)DestinationResolver<MessageChannel> channelResolver) {
-		return new BinderAwareRouterBeanPostProcessor(routers, channelResolver);
-	}
 
-	@Bean
-	public InitializingBean propertyAccessorInjector(IntegrationEvaluationContextFactoryBean[] iecfbs) {
-		return new InitializingBean() {
-			@Override
-			public void afterPropertiesSet() throws Exception {
-				TuplePropertyAccessor tpa = new TuplePropertyAccessor();
-				JsonPropertyAccessor jpa = new JsonPropertyAccessor();
-				if (iecfbs != null) {
-					for (IntegrationEvaluationContextFactoryBean iecfb : iecfbs) {
-						Map<String, PropertyAccessor> factoryBeanAccessors = iecfb.getPropertyAccessors();
-						factoryBeanAccessors.put(Introspector.decapitalize(tpa.getClass().getSimpleName()), tpa);
-						factoryBeanAccessors.put(Introspector.decapitalize(jpa.getClass().getSimpleName()), jpa);
-					}
-				}
-			}
-		};
+		return new org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor(routers, channelResolver);
 	}
 
 	@Bean
@@ -254,4 +232,5 @@ public class BindingServiceConfiguration {
 			}
 		};
 	}
+
 }
