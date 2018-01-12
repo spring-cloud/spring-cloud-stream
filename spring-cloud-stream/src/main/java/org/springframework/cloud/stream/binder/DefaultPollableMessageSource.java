@@ -216,6 +216,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			return true;
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 			AckUtils.autoNack(ackCallback);
 			throw (MessageHandlingException) e;
 		}
@@ -225,8 +226,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		try {
 			handler.handleMessage(message);
 		}
-		catch (Exception e) {
-			throw new MessageHandlingException(message, e);
+		catch (Throwable t) { // NOSONAR
+			throw new MessageHandlingException(message, t);
 		}
 	}
 
