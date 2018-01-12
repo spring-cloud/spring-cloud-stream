@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.cloud.stream.config;
+
+import java.beans.Introspector;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -32,15 +34,35 @@ import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.config.IntegrationConverter;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.expression.SpelPropertyAccessorRegistrar;
+import org.springframework.integration.json.JsonPropertyAccessor;
+import org.springframework.tuple.spel.TuplePropertyAccessor;
 
 /**
  * Adds a Converter from String to SpEL Expression in the context.
  *
  * @author Eric Bottard
+ * @author Artem Bilan
  */
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class SpelExpressionConverterConfiguration {
+
+	/**
+	 * Provide a {@link SpelPropertyAccessorRegistrar} supplied
+	 * with the {@link JsonPropertyAccessor} and {@link TuplePropertyAccessor}.
+	 * This bean is used to customize an
+	 * {@link org.springframework.integration.config.IntegrationEvaluationContextFactoryBean}.
+	 * for additional {@link org.springframework.expression.PropertyAccessor}s.
+	 * @return the SpelPropertyAccessorRegistrar bean
+	 * @see org.springframework.integration.config.IntegrationEvaluationContextFactoryBean
+	 */
+	@Bean
+	public static SpelPropertyAccessorRegistrar spelPropertyAccessorRegistrar() {
+		return new SpelPropertyAccessorRegistrar()
+				.add(Introspector.decapitalize(JsonPropertyAccessor.class.getSimpleName()), new JsonPropertyAccessor())
+				.add(Introspector.decapitalize(TuplePropertyAccessor.class.getSimpleName()), new TuplePropertyAccessor());
+	}
 
 	@Bean
 	@ConfigurationPropertiesBinding
