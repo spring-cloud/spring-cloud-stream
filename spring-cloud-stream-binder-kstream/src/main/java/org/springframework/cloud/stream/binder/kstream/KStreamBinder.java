@@ -100,23 +100,17 @@ public class KStreamBinder extends
 	private Serde<?> getKeySerde(ExtendedProducerProperties<KStreamProducerProperties> properties) {
 		Serde<?> keySerde;
 		try {
-			if (properties.isUseNativeEncoding()) {
-				keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("key.serde") ?
-						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("key.serde"), Serde.class) : Serdes.ByteArray();
-
+			if (StringUtils.hasText(properties.getExtension().getKeySerde())) {
+				keySerde = Utils.newInstance(properties.getExtension().getKeySerde(), Serde.class);
+				if (keySerde instanceof Configurable) {
+					((Configurable) keySerde).configure(streamsConfig.originals());
+				}
 			}
 			else {
-				if (StringUtils.hasText(properties.getExtension().getKeySerde())) {
-					keySerde = Utils.newInstance(properties.getExtension().getKeySerde(), Serde.class);
-					if (keySerde instanceof Configurable) {
-						((Configurable) keySerde).configure(streamsConfig.originals());
-					}
-				}
-				else {
-					keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("key.serde") ?
-							Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("key.serde"), Serde.class) : Serdes.ByteArray();
-				}
+				keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("key.serde") ?
+						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("key.serde"), Serde.class) : Serdes.ByteArray();
 			}
+
 		}
 		catch (ClassNotFoundException e) {
 			throw new IllegalStateException("Serde class not found: ", e);
@@ -128,12 +122,6 @@ public class KStreamBinder extends
 		Serde<?> valueSerde;
 		try {
 			if (properties.isUseNativeEncoding()) {
-				valueSerde = this.binderConfigurationProperties.getConfiguration().containsKey("value.serde") ?
-						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("value.serde"), Serde.class) : Serdes.ByteArray();
-
-			}
-			else {
-
 				if (StringUtils.hasText(properties.getExtension().getValueSerde())) {
 					valueSerde = Utils.newInstance(properties.getExtension().getValueSerde(), Serde.class);
 					if (valueSerde instanceof Configurable) {
@@ -141,8 +129,12 @@ public class KStreamBinder extends
 					}
 				}
 				else {
-					valueSerde = Serdes.ByteArray();
+					valueSerde = this.binderConfigurationProperties.getConfiguration().containsKey("value.serde") ?
+							Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("value.serde"), Serde.class) : Serdes.ByteArray();
 				}
+			}
+			else {
+				valueSerde = Serdes.ByteArray();
 			}
 		}
 		catch (ClassNotFoundException e) {
@@ -160,7 +152,7 @@ public class KStreamBinder extends
 		}
 		if (!isNativeEncoding) {
 				outboundBindTarget.map(keyValueMapper).to(name, Produced.with(keySerde, valueSerde));
-			}
+		}
 		else {
 			outboundBindTarget.to(name, Produced.with(keySerde, valueSerde));
 		}
