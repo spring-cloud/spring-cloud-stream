@@ -337,7 +337,7 @@ declareExchange::
   Whether to declare the exchange for the destination.
 +
 Default: `true`.
-delay::
+delayExpression::
   A SpEL expression to evaluate the delay to apply to the message (`x-delay` header) - has no effect if the exchange is not a delayed message exchange.
 +
 Default: No `x-delay` header is set.
