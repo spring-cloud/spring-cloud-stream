@@ -193,8 +193,7 @@ public class MessageConverterConfigurer
 				T bean;
 				Class<?> clazz;
 				try {
-					clazz = ClassUtils.forName(className,
-							this.beanFactory.getBeanClassLoader());
+					clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
 				}
 				catch (Exception e) {
 					throw new BinderException("Failed to load class: " + className, e);
@@ -206,8 +205,7 @@ public class MessageConverterConfigurer
 					this.beanFactory.initializeBean(bean, className);
 				}
 				catch (Exception e) {
-					throw new BinderException("Failed to instantiate class: " + className,
-							e);
+					throw new BinderException("Failed to instantiate class: " + className, e);
 				}
 				return bean;
 			}
@@ -252,60 +250,53 @@ public class MessageConverterConfigurer
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			if (message instanceof ErrorMessage) {
+				return message;
+			}
+			
 			Message<?> postProcessedMessage = message;
 			MimeType contentType = this.mimeType;
-			Object payload = null;
-			if (!(message instanceof ErrorMessage)) {
-				if (message.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
-					Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-					contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (MimeType)ct;
-					payload = this.deserializePayload(message, null);
-				}
-				else if (!message.getHeaders().containsKey((MessageHeaders.CONTENT_TYPE))) {
-					// Injects 'contentType' header into Message from the 'BindingProperties.contentType', if not already present in the Message
-					payload = this.deserializePayload(message, this.mimeType);
-				}
-				else if (message.getPayload() instanceof byte[]) {
-					Object ct = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-					contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (MimeType)ct;
-					payload = this.deserializePayload(message, contentType);
-				}
-				if (payload != null) {
-					postProcessedMessage = MessageConverterConfigurer.this.messageBuilderFactory
-							.withPayload(payload)
-							.copyHeaders(message.getHeaders())
-							.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-							.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-							.build();
-				}
+			if (message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+				Object ct = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+				contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (MimeType)ct;
 			}
-
+			
+			boolean deserializationRequired = message.getPayload() instanceof byte[] && 
+					("text".equalsIgnoreCase(contentType.getType()) ||
+					equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentType) ||
+					equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType) ||
+					equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType));
+			
+			Object payload = deserializationRequired ? this.deserializePayload(message, contentType) : message.getPayload();
+			
+			if (payload != null) {
+				Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+				contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (ct == null ? contentType : (MimeType)ct);
+				postProcessedMessage = MessageConverterConfigurer.this.messageBuilderFactory
+						.withPayload(payload)
+						.copyHeaders(message.getHeaders())
+						.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
+						.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+						.build();
+			}
 			return postProcessedMessage;
 		}
 
+
 		/**
-		 * Will *only* deserialize payload if its 'contentType' is 'text/* or application/json'.
+		 * Will *only* deserialize payload if its 'contentType' is 'text/* or application/json' or Java/Kryo serialized.
 		 * While this would naturally happen via MessageConverters at the time of handler method
-		 * invocation, doing it here for "certain" cases is strictly to support behavior established
-		 * in previous versions of SCSt.
-		 * This is due to certain type of assumptions on type-less handlers (i.e., handle(?) vs. handle(Foo));
+		 * invocation, doing it here also is strictly to support behavior established
+		 * in previous versions of SCSt. One of these cases is return payload as String if contentType is text or json.
+		 * Also to support certain type of assumptions on type-less handlers (i.e., handle(?) vs. handle(Foo));
 		 */
 		private Object deserializePayload(Message<?> message, MimeType contentTypeToUse) {
-			if (contentTypeToUse == null) {
-				Object ct = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-				contentTypeToUse = ct instanceof String ? MimeType.valueOf((String)ct) : (MimeType)ct;
-				if (contentTypeToUse == null) {
-					contentTypeToUse = this.mimeType;
-				}
+			Object payload = null;
+
+			if ("text".equalsIgnoreCase(contentTypeToUse.getType()) || equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentTypeToUse)) {
+				payload = new String((byte[])message.getPayload(), StandardCharsets.UTF_8);
 			}
-			Object payload = message.getPayload();
-			if (payload instanceof byte[] && ("text".equalsIgnoreCase(contentTypeToUse.getType()) ||
-					equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentTypeToUse))) {
-				payload = new String((byte[])payload, StandardCharsets.UTF_8);
-			}
-			else if (equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentTypeToUse) ||
-					equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentTypeToUse)) {
-				// for Java and Kryo de-serialization we need to reset the content type
+			else {
 				message = MessageBuilder.fromMessage(message).setHeader(MessageHeaders.CONTENT_TYPE, contentTypeToUse).build();
 				MessageConverter converter = equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentTypeToUse)
 						? compositeMessageConverterFactory.getMessageConverterForType(contentTypeToUse)
@@ -321,13 +312,12 @@ public class MessageConverterConfigurer
 								+ message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE), e);
 					}
 				}
-				if (converter != null){
-					Assert.isTrue(!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentTypeToUse) && targetClass == null),
-							"Cannot deserialize into message since 'contentType` is not "
-								+ "encoded with the actual target type."
-								+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
-					payload = converter.fromMessage(message, targetClass);
-				}
+				
+				Assert.isTrue(!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentTypeToUse) && targetClass == null),
+						"Cannot deserialize into message since 'contentType` is not "
+							+ "encoded with the actual target type."
+							+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
+				payload = converter.fromMessage(message, targetClass);
 			}
 			return payload;
 		}
