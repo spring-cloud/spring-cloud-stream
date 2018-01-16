@@ -796,12 +796,12 @@ package com.app.mysink;
 @EnableBinding(Sink.class)
 public class SinkApplication {
 
-	private static Logger logger = LoggerFactory.getLogger(SinkApplication.class);
+    private static Logger logger = LoggerFactory.getLogger(SinkApplication.class);
 
-	@ServiceActivator(inputChannel=Sink.INPUT)
-	public void loggerSink(Object payload) {
-		logger.info("Received: " + payload);
-	}
+    @ServiceActivator(inputChannel=Sink.INPUT)
+    public void loggerSink(Object payload) {
+        logger.info("Received: " + payload);
+    }
 }
 ----
 
@@ -815,10 +815,10 @@ package com.app.myprocessor;
 @EnableBinding(Processor.class)
 public class ProcessorApplication {
 
-	@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
-	public String loggerSink(String payload) {
-		return payload.toUpperCase();
-	}
+    @Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
+    public String loggerSink(String payload) {
+        return payload.toUpperCase();
+    }
 }
 ----
 
@@ -832,10 +832,10 @@ package com.app.mysource;
 @EnableBinding(Source.class)
 public class SourceApplication {
 
-	@InboundChannelAdapter(value = Source.OUTPUT)
-	public String timerMessageSource() {
-		return new SimpleDateFormat().format(new Date());
-	}
+    @InboundChannelAdapter(value = Source.OUTPUT)
+    public String timerMessageSource() {
+        return new SimpleDateFormat().format(new Date());
+    }
 }
 ----
 
@@ -850,12 +850,12 @@ package com.app;
 @SpringBootApplication
 public class SampleAggregateApplication {
 
-	public static void main(String[] args) {
-		new AggregateApplicationBuilder()
-			.from(SourceApplication.class).args("--fixedDelay=5000")
-			.via(ProcessorApplication.class)
-			.to(SinkApplication.class).args("--debug=true").run(args);
-	}
+    public static void main(String[] args) {
+        new AggregateApplicationBuilder()
+            .from(SourceApplication.class).args("--fixedDelay=5000")
+            .via(ProcessorApplication.class)
+            .to(SinkApplication.class).args("--debug=true").run(args);
+    }
 }
 ----
 
@@ -876,12 +876,12 @@ The namespace can be set for applications as follows:
 @SpringBootApplication
 public class SampleAggregateApplication {
 
-	public static void main(String[] args) {
-		new AggregateApplicationBuilder()
-			.from(SourceApplication.class).namespace("source").args("--fixedDelay=5000")
-			.via(ProcessorApplication.class).namespace("processor1")
-			.to(SinkApplication.class).namespace("sink").args("--debug=true").run(args);
-	}
+    public static void main(String[] args) {
+        new AggregateApplicationBuilder()
+            .from(SourceApplication.class).namespace("source").args("--fixedDelay=5000")
+            .via(ProcessorApplication.class).namespace("processor1")
+            .to(SinkApplication.class).namespace("sink").args("--debug=true").run(args);
+    }
 }
 ----
 
@@ -906,11 +906,11 @@ For instance,
 @SpringBootApplication
 public class SampleAggregateApplication {
 
-	public static void main(String[] args) {
-		new AggregateApplicationBuilder()
-			.from(SourceApplication.class).namespace("source").args("--fixedDelay=5000")
-			.via(ProcessorApplication.class).namespace("processor1").args("--debug=true").run(args);
-	}
+    public static void main(String[] args) {
+        new AggregateApplicationBuilder()
+            .from(SourceApplication.class).namespace("source").args("--fixedDelay=5000")
+            .via(ProcessorApplication.class).namespace("processor1").args("--debug=true").run(args);
+    }
 }
 ----
 
@@ -947,9 +947,9 @@ The key point of the SPI is the `Binder` interface which is a strategy for conne
 [source,java]
 ----
 public interface Binder<T, C extends ConsumerProperties, P extends ProducerProperties> {
-	Binding<T> bindConsumer(String name, String group, T inboundBindTarget, C consumerProperties);
+    Binding<T> bindConsumer(String name, String group, T inboundBindTarget, C consumerProperties);
 
-	Binding<T> bindProducer(String name, T outboundBindTarget, P producerProperties);
+    Binding<T> bindProducer(String name, T outboundBindTarget, P producerProperties);
 }
 ----
 
@@ -1298,20 +1298,20 @@ The `BinderAwareChannelResolver` can be used directly as in the following exampl
 @Controller
 public class SourceWithDynamicDestination {
 
-	@Autowired
-	private BinderAwareChannelResolver resolver;
+    @Autowired
+    private BinderAwareChannelResolver resolver;
 
-	@RequestMapping(path = "/{target}", method = POST, consumes = "*/*")
-	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void handleRequest(@RequestBody String body, @PathVariable("target") target,
-	       @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-		sendMessage(body, target, contentType);
-	}
+    @RequestMapping(path = "/{target}", method = POST, consumes = "*/*")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void handleRequest(@RequestBody String body, @PathVariable("target") target,
+           @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+        sendMessage(body, target, contentType);
+    }
 
-	private void sendMessage(String body, String target, Object contentType) {
-		resolver.resolveDestination(target).send(MessageBuilder.createMessage(body,
-				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
-	}
+    private void sendMessage(String body, String target, Object contentType) {
+        resolver.resolveDestination(target).send(MessageBuilder.createMessage(body,
+                new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
+    }
 }
 ----
 
@@ -1334,35 +1334,35 @@ For example, in a router using a SpEL expression based on the `target` field of 
 @Controller
 public class SourceWithDynamicDestination {
 
-	@Autowired
-	private BinderAwareChannelResolver resolver;
+    @Autowired
+    private BinderAwareChannelResolver resolver;
 
 
-	@RequestMapping(path = "/", method = POST, consumes = "application/json")
-	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-		sendMessage(body, contentType);
-	}
+    @RequestMapping(path = "/", method = POST, consumes = "application/json")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+        sendMessage(body, contentType);
+    }
 
-	private void sendMessage(Object body, Object contentType) {
-		routerChannel().send(MessageBuilder.createMessage(body,
-				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
-	}
+    private void sendMessage(Object body, Object contentType) {
+        routerChannel().send(MessageBuilder.createMessage(body,
+                new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
+    }
 
-	@Bean(name = "routerChannel")
-	public MessageChannel routerChannel() {
-		return new DirectChannel();
-	}
+    @Bean(name = "routerChannel")
+    public MessageChannel routerChannel() {
+        return new DirectChannel();
+    }
 
-	@Bean
-	@ServiceActivator(inputChannel = "routerChannel")
-	public ExpressionEvaluatingRouter router() {
+    @Bean
+    @ServiceActivator(inputChannel = "routerChannel")
+    public ExpressionEvaluatingRouter router() {
         ExpressionEvaluatingRouter router =
             new ExpressionEvaluatingRouter(new SpelExpressionParser().parseExpression("payload.target"));
-		router.setDefaultOutputChannelName("default-output");
-		router.setChannelResolver(resolver);
-		return router;
-	}
+        router.setDefaultOutputChannelName("default-output");
+        router.setChannelResolver(resolver);
+        return router;
+    }
 }
 ----
 
@@ -1461,21 +1461,19 @@ If you intend to bypass conversion, just make sure you set the appropriate `cont
 
 The following snippet shows how you can bypass conversion and set the correct contentType header.
 
-```java
-
+[source, java]
+----
 @Autowired
 private Source source;
 
-	public void sendImageData(File f) throws Exception{
-		byte[] data = Files.readAllBytes(f.toPath());
-		MimeType mimeType = (f.getName().endsWith("gif")) ? MimeTypeUtils.IMAGE_GIF : MimeTypeUtils.IMAGE_JPEG;
-		source.output().send(MessageBuilder.withPayload(data)
-				.setHeader(MessageHeaders.CONTENT_TYPE, mimeType)
-				.build());
-	}
-
-
-```
+public void sendImageData(File f) throws Exception {
+    byte[] data = Files.readAllBytes(f.toPath());
+    MimeType mimeType = (f.getName().endsWith("gif")) ? MimeTypeUtils.IMAGE_GIF : MimeTypeUtils.IMAGE_JPEG;
+    source.output().send(MessageBuilder.withPayload(data)
+            .setHeader(MessageHeaders.CONTENT_TYPE, mimeType)
+            .build());
+}
+----
 
 Regardless of contentType used, the result is always a `Message<byte[]>` with a header `contentType` set. This is what gets passed to the binder to be sent over the wire.
 
@@ -1595,34 +1593,34 @@ Here is an example of creating a message converter bean (with the content-type `
 @SpringBootApplication
 public static class SinkApplication {
 
-  ...
+    ...
 
-  @Bean
-  @StreamConverter
-  public MessageConverter customMessageConverter() {
-    return new MyCustomMessageConverter();
-  }
+    @Bean
+    @StreamConverter
+    public MessageConverter customMessageConverter() {
+        return new MyCustomMessageConverter();
+    }
+}
 ----
 
 [source,java]
 ----
-
 public class MyCustomMessageConverter extends AbstractMessageConverter {
 
-	public MyCustomMessageConverter() {
-		super(new MimeType("application", "bar"));
-	}
+    public MyCustomMessageConverter() {
+        super(new MimeType("application", "bar"));
+    }
 
-	@Override
-  protected boolean supports(Class<?> clazz) {
-    return (Bar.class == clazz);
-  }
+    @Override
+    protected boolean supports(Class<?> clazz) {
+        return (Bar.class.equals(clazz));
+    }
 
-	@Override
-	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
-		Object payload = message.getPayload();
-		return (payload instanceof Bar ? payload : new Bar((byte[]) payload));
-	}
+    @Override
+    protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+        Object payload = message.getPayload();
+        return (payload instanceof Bar ? payload : new Bar((byte[]) payload));
+    }
 }
 ----
 
@@ -1656,11 +1654,11 @@ public class GreetingMessage {
 @EnableAutoConfiguration
 public static class GreetingSink {
 
-		@StreamListener(Sink.INPUT)
-		public void receive(Greeting greeting) {
-			// handle Greeting
-		}
-	}
+        @StreamListener(Sink.INPUT)
+        public void receive(Greeting greeting) {
+            // handle Greeting
+        }
+    }
 ----
 
 The argument of the method will be populated automatically with the POJO containing the unmarshalled form of the JSON String.
@@ -1755,9 +1753,9 @@ A Spring Boot application enabling the schema registry looks as follows:
 @SpringBootApplication
 @EnableSchemaRegistryServer
 public class SchemaRegistryServerApplication {
-	public static void main(String[] args) {
-		SpringApplication.run(SchemaRegistryServerApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(SchemaRegistryServerApplication.class, args);
+    }
 }
 ----
 
@@ -1847,11 +1845,11 @@ The client-side abstraction for interacting with schema registry servers is the 
 ----
 public interface SchemaRegistryClient {
 
-	SchemaRegistrationResponse register(String subject, String format, String schema);
+    SchemaRegistrationResponse register(String subject, String format, String schema);
 
-	String fetch(SchemaReference schemaReference);
+    String fetch(SchemaReference schemaReference);
 
-	String fetch(Integer id);
+    String fetch(Integer id);
 
 }
 ----
@@ -2051,7 +2049,7 @@ If a SpEL expression is not sufficient for your needs, you can instead calculate
 . . .
 @Bean
 public CustomPartitionKeyExtractorClass customPartitionKeyExtractor() {
-	return new CustomPartitionKeyExtractorClass();
+    return new CustomPartitionKeyExtractorClass();
 }
 ----
 
@@ -2066,7 +2064,7 @@ This can be customized on the binding, either by setting a SpEL expression to be
 . . .
 @Bean
 public CustomPartitionSelectorClass customPartitionSelector() {
-	return new CustomPartitionSelectorClass();
+    return new CustomPartitionSelectorClass();
 }
 ----
 
@@ -2167,15 +2165,15 @@ In order to do so, you can exclude the `org.springframework.cloud.stream.test.bi
 
 [source,java]
 ----
-	@SpringBootApplication(exclude = TestSupportBinderAutoConfiguration.class)
-	@EnableBinding(Processor.class)
-	public static class MyProcessor {
+    @SpringBootApplication(exclude = TestSupportBinderAutoConfiguration.class)
+    @EnableBinding(Processor.class)
+    public static class MyProcessor {
 
-		@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
-		public String transform(String in) {
-			return in + " world";
-		}
-	}
+        @Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
+        public String transform(String in) {
+            return in + " world";
+        }
+    }
 ----
 
 When autoconfiguration is disabled, the test binder is available on the classpath, and its `defaultCandidate` property is set to `false`, so that it does not interfere with the regular user configuration. It can be referenced under the name `test` e.g.:
