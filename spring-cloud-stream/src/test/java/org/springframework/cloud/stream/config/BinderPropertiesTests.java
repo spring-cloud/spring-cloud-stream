@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.actuate.context.properties.ConfigurationPropertiesReportEndpoint;
-import org.springframework.boot.actuate.context.properties.ConfigurationPropertiesReportEndpoint.ConfigurationPropertiesDescriptor;
+import org.springframework.boot.actuate.context.properties.ConfigurationPropertiesReportEndpoint.ContextConfigurationProperties;
 import org.springframework.context.support.StaticApplicationContext;
 
 import static org.junit.Assert.assertFalse;
@@ -61,7 +61,9 @@ public class BinderPropertiesTests {
 		ConfigurationPropertiesReportEndpoint endpoint = new ConfigurationPropertiesReportEndpoint();
 		endpoint.setApplicationContext(context);
 
-		ConfigurationPropertiesDescriptor configurationProperties = endpoint.configurationProperties();
+		
+		ContextConfigurationProperties configurationProperties = endpoint.configurationProperties().getContexts().values().iterator().next();
+		
 		Map<String, Object> properties = configurationProperties.getBeans().get("bindingServiceProperties").getProperties();
 		assertFalse(properties.containsKey("error"));
 		assertTrue(properties.containsKey("binders"));

@@ -28,6 +28,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
+import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
@@ -123,8 +125,10 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	public MessageConverterConfigurer messageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory);
+			CompositeMessageConverterFactory compositeMessageConverterFactory,
+			@Nullable Map<String, PartitionKeyExtractorStrategy> partitionKeyExtractors,
+			@Nullable Map<String, PartitionSelectorStrategy> partitionSelectors) {
+		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory, partitionKeyExtractors, partitionSelectors);
 	}
 
 	@Bean

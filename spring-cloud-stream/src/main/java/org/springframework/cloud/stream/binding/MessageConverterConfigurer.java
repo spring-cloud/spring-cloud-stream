@@ -17,11 +17,15 @@
 package org.springframework.cloud.stream.binding;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
@@ -53,7 +57,7 @@ import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
@@ -73,8 +77,9 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  */
-public class MessageConverterConfigurer
-		implements MessageChannelAndSourceConfigurer, BeanFactoryAware, InitializingBean {
+public class MessageConverterConfigurer implements MessageChannelAndSourceConfigurer, BeanFactoryAware {
+
+	private final Log logger = LogFactory.getLog(getClass());
 
 	private final MessageBuilderFactory messageBuilderFactory = new MutableMessageBuilderFactory();
 
@@ -84,22 +89,30 @@ public class MessageConverterConfigurer
 
 	private ConfigurableListableBeanFactory beanFactory;
 
+	private final Map<String, PartitionKeyExtractorStrategy> partitionKeyExtractors;
+
+	private final Map<String, PartitionSelectorStrategy> partitionSelectors;
+
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		this(bindingServiceProperties, compositeMessageConverterFactory, Collections.emptyMap(), Collections.emptyMap());
+	}
+
+	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
+			CompositeMessageConverterFactory compositeMessageConverterFactory,
+			Map<String, PartitionKeyExtractorStrategy> partitionKeyExtractors,
+			Map<String, PartitionSelectorStrategy> partitionSelectors) {
 		Assert.notNull(compositeMessageConverterFactory,
 				"The message converter factory cannot be null");
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
+		this.partitionKeyExtractors = partitionKeyExtractors == null ? Collections.emptyMap() : partitionKeyExtractors;
+		this.partitionSelectors = partitionSelectors == null ? Collections.emptyMap() : partitionSelectors;
 	}
 
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
-	}
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		Assert.notNull(this.beanFactory, "Bean factory cannot be empty");
 	}
 
 	@Override
@@ -165,50 +178,65 @@ public class MessageConverterConfigurer
 		}
 	}
 
-	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(
-			ProducerProperties producerProperties) {
+	@SuppressWarnings("deprecation")
+	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(ProducerProperties producerProperties) {
+		PartitionKeyExtractorStrategy partitionKeyExtractor;
 		if (producerProperties.getPartitionKeyExtractorClass() != null) {
-			return getBean(producerProperties.getPartitionKeyExtractorClass().getName(),
-					PartitionKeyExtractorStrategy.class);
+			logger.warn("'partitionKeyExtractorClass' option is deprecated as of v2.0. Please configure partition "
+					+ "key extractor as a @Bean that implements 'PartitionKeyExtractorStrategy'. Additionally you can "
+					+ "specify 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' to specify which "
+					+ "bean to use in the event there are more then one.");
+			partitionKeyExtractor = instantiate(producerProperties.getPartitionKeyExtractorClass(), PartitionKeyExtractorStrategy.class);
 		}
-		return null;
+		else if (StringUtils.hasText(producerProperties.getPartitionKeyExtractorName())) {
+			partitionKeyExtractor = this.partitionKeyExtractors.get(producerProperties.getPartitionKeyExtractorName());
+			Assert.notNull(partitionKeyExtractor, "PartitionKeyExtractorStrategy bean with the name '" + producerProperties.getPartitionKeyExtractorName()
+				+ "' can not be found. Has it been configured (e.g., @Bean)?");
+		}
+		else {
+			Assert.isTrue(CollectionUtils.isEmpty(this.partitionKeyExtractors) || this.partitionKeyExtractors.size() <= 1,
+					"Multiple  beans of type 'PartitionKeyExtractorStrategy' found. " + this.partitionKeyExtractors + ". Please "
+							+ "use 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' property to specify "
+							+ "the name of the bean to be used.");
+			partitionKeyExtractor = CollectionUtils.isEmpty(this.partitionKeyExtractors) ?
+					null : this.partitionKeyExtractors.values().iterator().next();
+		}
+		return partitionKeyExtractor;
 	}
 
-	private PartitionSelectorStrategy getPartitionSelectorStrategy(
-			ProducerProperties producerProperties) {
+	@SuppressWarnings("deprecation")
+	private PartitionSelectorStrategy getPartitionSelectorStrategy(ProducerProperties producerProperties) {
+		PartitionSelectorStrategy partitionSelector;
 		if (producerProperties.getPartitionSelectorClass() != null) {
-			return getBean(producerProperties.getPartitionSelectorClass().getName(),
-					PartitionSelectorStrategy.class);
+			logger.warn("'partitionSelectorClass' option is deprecated as of v2.0. Please configure partition "
+					+ "selector as a @Bean that implements 'PartitionSelectorStrategy'. Additionally you can "
+					+ "specify 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' to specify which "
+					+ "bean to use in the event there are more then one.");
+			partitionSelector = instantiate(producerProperties.getPartitionSelectorClass(), PartitionSelectorStrategy.class);
 		}
-		return new DefaultPartitionSelector();
+		else if (StringUtils.hasText(producerProperties.getPartitionSelectorName())) {
+			partitionSelector = this.partitionSelectors.get(producerProperties.getPartitionSelectorName());
+			Assert.notNull(partitionSelector, "PartitionSelectorStrategy bean with the name '" + producerProperties.getPartitionSelectorName()
+				+ "' can not be found. Has it been configured (e.g., @Bean)?");
+		}
+		else {
+			Assert.isTrue(CollectionUtils.isEmpty(this.partitionSelectors) || this.partitionSelectors.size() <= 1,
+					"Multiple  beans of type 'PartitionSelectorStrategy' found. " + this.partitionSelectors + ". Please "
+							+ "use 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' property to specify "
+							+ "the name of the bean to be used.");
+			partitionSelector = CollectionUtils.isEmpty(this.partitionSelectors)
+					? new DefaultPartitionSelector() : this.partitionSelectors.values().iterator().next();
+		}
+		return partitionSelector;
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> T getBean(String className, Class<T> type) {
-		if (this.beanFactory.containsBean(className)) {
-			return this.beanFactory.getBean(className, type);
+	private <T> T instantiate(Class<?> implClass, Class<T> type) {
+		try {
+			return (T) implClass.newInstance();
 		}
-		else {
-			synchronized (this) {
-				T bean;
-				Class<?> clazz;
-				try {
-					clazz = ClassUtils.forName(className, this.beanFactory.getBeanClassLoader());
-				}
-				catch (Exception e) {
-					throw new BinderException("Failed to load class: " + className, e);
-				}
-				try {
-					bean = (T) clazz.newInstance();
-					Assert.isInstanceOf(type, bean);
-					this.beanFactory.registerSingleton(className, bean);
-					this.beanFactory.initializeBean(bean, className);
-				}
-				catch (Exception e) {
-					throw new BinderException("Failed to instantiate class: " + className, e);
-				}
-				return bean;
-			}
+		catch (Exception e) {
+			throw new BinderException("Failed to instantiate class: " + implClass.getName(), e);
 		}
 	}
 
@@ -253,22 +281,22 @@ public class MessageConverterConfigurer
 			if (message instanceof ErrorMessage) {
 				return message;
 			}
-			
+
 			Message<?> postProcessedMessage = message;
 			MimeType contentType = this.mimeType;
 			if (message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				Object ct = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 				contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (MimeType)ct;
 			}
-			
-			boolean deserializationRequired = message.getPayload() instanceof byte[] && 
+
+			boolean deserializationRequired = message.getPayload() instanceof byte[] &&
 					("text".equalsIgnoreCase(contentType.getType()) ||
 					equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentType) ||
 					equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType) ||
 					equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType));
-			
+
 			Object payload = deserializationRequired ? this.deserializePayload(message, contentType) : message.getPayload();
-			
+
 			if (payload != null) {
 				Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
 				contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (ct == null ? contentType : (MimeType)ct);
@@ -312,7 +340,7 @@ public class MessageConverterConfigurer
 								+ message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE), e);
 					}
 				}
-				
+
 				Assert.isTrue(!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentTypeToUse) && targetClass == null),
 						"Cannot deserialize into message since 'contentType` is not "
 							+ "encoded with the actual target type."
