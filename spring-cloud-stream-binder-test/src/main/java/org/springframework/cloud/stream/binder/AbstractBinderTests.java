@@ -449,7 +449,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				bindingServiceProperties,
 				new CompositeMessageConverterFactory(null, null));
 		messageConverterConfigurer.setBeanFactory(applicationContext.getBeanFactory());
-		messageConverterConfigurer.afterPropertiesSet();
 		if (inputChannel) {
 			messageConverterConfigurer.configureInputChannel(channel, channelName);
 		}
