@@ -101,7 +101,7 @@ The following is the compatibility matrix of Spring cloud Stream and its depende
       <td>1.3.x</td>
       <td>1.3.x, 1.2.x, 1.1.x</td>
       <td>2.3.x, 2.2.x, 2.1.x</td>
-      <td>1.0.x<sup>*</sup>, 0.11.0.x<sup>*</sup>, 0.10.2.x</td>
+      <td>0.11.0.x<sup>*</sup>, 0.10.2.x</td>
   </tr>
   <tr>
       <td>1.2.x</td>
@@ -113,7 +113,7 @@ The following is the compatibility matrix of Spring cloud Stream and its depende
 
 Depending on the selected release-combination, the dependent projects will be referenced transitively when using maven or gradle for version management.
 <br/><br/>
-<sup>*</sup> To use the 0.11.x.x or 1.x.x `kafka-clients` with 1.3.x, you must use the `spring-cloud-stream-binder-kafka11` jar (instead of `spring-cloud-stream-binder-kafka`). You must also override certain other jar versions as follows:
+<sup>*</sup> To use the 0.11.x.x `kafka-clients` with 1.3.x, you must use the `spring-cloud-stream-binder-kafka11` jar (instead of `spring-cloud-stream-binder-kafka`). You must also override certain other jar versions as follows:
 
 <table>
  <tr>
