@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.schema.avro;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +26,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericContainer;
 import org.apache.avro.reflect.ReflectData;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cache.CacheManager;
@@ -35,7 +37,6 @@ import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.core.io.Resource;
-import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
@@ -250,12 +251,13 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		SchemaReference schemaReference = parsedSchema.getRegistration()
 				.getSchemaReference();
 
-		if (headers instanceof MutableMessageHeaders) {
-			headers.put(MessageHeaders.CONTENT_TYPE,
-					"application/" + this.prefix + "." + schemaReference.getSubject() 
-						+ ".v" + schemaReference.getVersion() + "+avro");
-		}
-
+		DirectFieldAccessor dfa = new DirectFieldAccessor(headers);
+		@SuppressWarnings("unchecked")
+		Map<String, Object> _headers = (Map<String, Object>) dfa.getPropertyValue("headers");
+		_headers.put(MessageHeaders.CONTENT_TYPE,
+				"application/" + this.prefix + "." + schemaReference.getSubject() 
+				+ ".v" + schemaReference.getVersion() + "+avro");
+		
 		return schema;
 	}
 

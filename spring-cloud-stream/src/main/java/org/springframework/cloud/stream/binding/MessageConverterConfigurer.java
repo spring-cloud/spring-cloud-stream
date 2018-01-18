@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.stream.binding;
 
-import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
 
@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -32,7 +33,6 @@ import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.JavaClassMimeTypeUtils;
-import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
@@ -46,7 +46,6 @@ import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.integration.support.MutableMessageBuilderFactory;
-import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
@@ -55,12 +54,11 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.ErrorMessage;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -92,6 +90,8 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 	private final Map<String, PartitionKeyExtractorStrategy> partitionKeyExtractors;
 
 	private final Map<String, PartitionSelectorStrategy> partitionSelectors;
+	
+	private final Field headersField;
 
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
@@ -108,6 +108,9 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
 		this.partitionKeyExtractors = partitionKeyExtractors == null ? Collections.emptyMap() : partitionKeyExtractors;
 		this.partitionSelectors = partitionSelectors == null ? Collections.emptyMap() : partitionSelectors;
+
+		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
+		headersField.setAccessible(true);
 	}
 
 	@Override
@@ -133,8 +136,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if ((consumerProperties == null || !consumerProperties.isUseNativeDecoding())
 				&& binding instanceof DefaultPollableMessageSource) {
-			((DefaultPollableMessageSource) binding).addInterceptor(
-					new InboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverterFactory));
+			((DefaultPollableMessageSource) binding).addInterceptor(new InboundContentTypeEnhancingInterceptor(contentType));
 		}
 	}
 
@@ -160,7 +162,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties, inbound)) {
 			if (inbound) {
-				messageChannel.addInterceptor(new InboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverterFactory));
+				messageChannel.addInterceptor(new InboundContentTypeEnhancingInterceptor(contentType));
 			}
 			else {
 				messageChannel.addInterceptor(new OutboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverterFactory
@@ -257,105 +259,42 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			return Math.abs(hashCode);
 		}
 	}
-
+	
 	/**
 	 * Primary purpose of this interceptor is to enhance/enrich Message that sent to the *inbound*
 	 * channel with 'contentType' header for cases where 'contentType' is not present in the Message
 	 * itself but set on such channel via {@link BindingProperties#setContentType(String)}.
 	 * <br>
-	 * Secondary purpose of this interceptor is to provide backward compatibility with previous versions of SCSt
-	 * to support some of the type conversion assumptions.
-	 * See InboundContentTypeConvertingInterceptor.deserializePayload(..) for more details.
+	 * Secondary purpose of this interceptor is to provide backward compatibility with previous versions of SCSt.
 	 */
-	private final class InboundContentTypeConvertingInterceptor extends ChannelInterceptorAdapter {
+	private final class InboundContentTypeEnhancingInterceptor extends AbstractContentTypeInterceptor {
 
-		private final MimeType mimeType;
-
-		private final CompositeMessageConverterFactory compositeMessageConverterFactory;
-
-		private InboundContentTypeConvertingInterceptor(String contentType, CompositeMessageConverterFactory compositeMessageConverterFactory) {
-			this.mimeType = MessageConverterUtils.getMimeType(contentType);
-			this.compositeMessageConverterFactory = compositeMessageConverterFactory;
+		private InboundContentTypeEnhancingInterceptor(String contentType) {
+			super(contentType);
 		}
 
 		@Override
-		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			if (message instanceof ErrorMessage) {
-				return message;
+		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {	
+			@SuppressWarnings("unchecked")
+			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
+			
+			/*
+			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy message format established 
+			 * in 1.x version of the framework and should/will no longer be supported in 3.x
+			 */
+			Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			MimeType contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (ct == null ? this.mimeType : (MimeType)ct);
+			headersMap.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			// == end legacy note
+			
+			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
 			}
-
-			Message<?> postProcessedMessage = message;
-			MimeType contentType = this.mimeType;
-			if (message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-				Object ct = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
-				contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (MimeType)ct;
+			else if (message.getHeaders().get(MessageHeaders.CONTENT_TYPE) instanceof String) {
+				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf((String)message.getHeaders().get(MessageHeaders.CONTENT_TYPE)));
 			}
-
-			boolean deserializationRequired = message.getPayload() instanceof byte[] &&
-					("text".equalsIgnoreCase(contentType.getType()) ||
-					equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentType) ||
-					equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType) ||
-					equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType));
-
-			Object payload = deserializationRequired ? this.deserializePayload(message, contentType) : message.getPayload();
-
-			if (payload != null) {
-				Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-				contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (ct == null ? contentType : (MimeType)ct);
-				postProcessedMessage = MessageConverterConfigurer.this.messageBuilderFactory
-						.withPayload(payload)
-						.copyHeaders(message.getHeaders())
-						.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-						.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-						.build();
-			}
-			return postProcessedMessage;
-		}
-
-
-		/**
-		 * Will *only* deserialize payload if its 'contentType' is 'text/* or application/json' or Java/Kryo serialized.
-		 * While this would naturally happen via MessageConverters at the time of handler method
-		 * invocation, doing it here also is strictly to support behavior established
-		 * in previous versions of SCSt. One of these cases is return payload as String if contentType is text or json.
-		 * Also to support certain type of assumptions on type-less handlers (i.e., handle(?) vs. handle(Foo));
-		 */
-		private Object deserializePayload(Message<?> message, MimeType contentTypeToUse) {
-			Object payload = null;
-
-			if ("text".equalsIgnoreCase(contentTypeToUse.getType()) || equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentTypeToUse)) {
-				payload = new String((byte[])message.getPayload(), StandardCharsets.UTF_8);
-			}
-			else {
-				message = MessageBuilder.fromMessage(message).setHeader(MessageHeaders.CONTENT_TYPE, contentTypeToUse).build();
-				MessageConverter converter = equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentTypeToUse)
-						? compositeMessageConverterFactory.getMessageConverterForType(contentTypeToUse)
-								: compositeMessageConverterFactory.getMessageConverterForAllRegistered();
-				String targetClassName = contentTypeToUse.getParameter("type");
-				Class<?> targetClass = null;
-				if (StringUtils.hasText(targetClassName)) {
-					try {
-						targetClass = Class.forName(targetClassName, false, Thread.currentThread().getContextClassLoader());
-					}
-					catch (Exception e) {
-						throw new IllegalStateException("Failed to determine class name for contentType: "
-								+ message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE), e);
-					}
-				}
-
-				Assert.isTrue(!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentTypeToUse) && targetClass == null),
-						"Cannot deserialize into message since 'contentType` is not "
-							+ "encoded with the actual target type."
-							+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
-				payload = converter.fromMessage(message, targetClass);
-			}
-			return payload;
-		}
-		/*
-		 * Candidate to go into some utils class
-		 */
-		private boolean equalTypeAndSubType(MimeType m1, MimeType m2) {
-			return m1 != null && m2 != null && m1.getType().equalsIgnoreCase(m2.getType()) && m1.getSubtype().equalsIgnoreCase(m2.getSubtype());
+			
+			return message;
 		}
 	}
 
@@ -365,67 +304,67 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 	 * rely on provided MessageConverters that will use the provided 'contentType' and convert messages
 	 * to a type dictated by the Binders (i.e., byte[]).
 	 */
-	private final class OutboundContentTypeConvertingInterceptor extends ChannelInterceptorAdapter {
-
-		private final MimeType mimeType;
+	private final class OutboundContentTypeConvertingInterceptor extends AbstractContentTypeInterceptor {
 
 		private final MessageConverter messageConverter;
 
 		private OutboundContentTypeConvertingInterceptor(String contentType, CompositeMessageConverter messageConverter) {
-			this.mimeType = MessageConverterUtils.getMimeType(contentType);
+			super(contentType);
 			this.messageConverter = messageConverter;
 		}
 
 		@Override
-		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			Message<?> postProcessedMessage = message;
-			if (!(message instanceof ErrorMessage)) {
-				MutableMessageHeaders headers = new MutableMessageHeaders(message.getHeaders());
-				headers.putIfAbsent(MessageHeaders.CONTENT_TYPE, this.mimeType);
-				Message<?> converted = this.messageConverter.toMessage(message.getPayload(), headers);
-				if (converted != null) {
-					postProcessedMessage = converted;
-				} else {
-					postProcessedMessage = MessageConverterConfigurer.this.messageBuilderFactory
-					.withPayload(message.getPayload())
-					.copyHeaders(headers)
-					.build();
-				}
-				postProcessedMessage = this.finishPreSend(postProcessedMessage);
-			}
-			return postProcessedMessage;
-		}
-
-		/**
-		 * This is strictly to support 1.3 semantics where BINDER_ORIGINAL_CONTENT_TYPE header
-		 * needs to be set for certain cases and String payloads needs to be converted to byte[].
-		 *
-		 * Factored out of what was left of MessageSerializationUtils.
-		 */
-		// deprecated at the get go as a reminder to remove at v3.0
-		@Deprecated
-		private Message<?> finishPreSend(Message<?> message) {
+		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {	
 			String oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE) ? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString() : null;
 			String ct = oct;
 			if (message.getPayload() instanceof String) {
 				ct = JavaClassMimeTypeUtils.mimeTypeFromObject(message.getPayload(), ObjectUtils.nullSafeToString(oct)).toString();
 			}
-			MessageValues messageValues = new MessageValues(message);
-			Object payload = message.getPayload();
-			if (payload instanceof String) {
-				payload = ((String)payload).getBytes(StandardCharsets.UTF_8);
+			
+			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
+				headersMap.put(MessageHeaders.CONTENT_TYPE, this.mimeType);
 			}
-
-			messageValues.setPayload(payload);
-			if (ct != null && !ct.equals(oct)) {
-				messageValues.put(MessageHeaders.CONTENT_TYPE, ct);
-				messageValues.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, oct);
+			
+			@SuppressWarnings("unchecked")
+			Message<byte[]> outboundMessage = message.getPayload() instanceof byte[] 
+					? (Message<byte[]>)message : (Message<byte[]>) this.messageConverter.toMessage(message.getPayload(), message.getHeaders());
+			if (outboundMessage == null) {
+				throw new IllegalStateException("Failed to convert message: '" + message + "' to outbound message.");
 			}
-			return messageValues.toMessage();
+			
+			if (ct != null && !ct.equals(oct)) {		
+				@SuppressWarnings("unchecked")
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
+				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(ct));
+				headersMap.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, MimeType.valueOf(oct));
+			}
+			return outboundMessage;		
 		}
 	}
+	
+	/**
+	 * 
+	 */
+	private abstract class AbstractContentTypeInterceptor extends ChannelInterceptorAdapter {
+		final MimeType mimeType;
 
+		private AbstractContentTypeInterceptor(String contentType) {
+			this.mimeType = MessageConverterUtils.getMimeType(contentType);
+		}
+		
+		@Override
+		public Message<?> preSend(Message<?> message, MessageChannel channel) {
+			return message instanceof ErrorMessage ? message : this.doPreSend(message, channel);
+		}
+		
+		protected abstract Message<?> doPreSend(Message<?> message, MessageChannel channel);
+	}
 
+	/**
+	 * 
+	 */
 	protected final class PartitioningInterceptor extends ChannelInterceptorAdapter {
 
 		private final BindingProperties bindingProperties;

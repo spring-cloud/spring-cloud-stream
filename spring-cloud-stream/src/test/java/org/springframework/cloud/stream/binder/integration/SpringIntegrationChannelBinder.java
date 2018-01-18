@@ -128,10 +128,6 @@ public class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder
 		return this.lastError;
 	}
 
-	public void setLastError(Message<?> lastError) {
-		this.lastError = lastError;
-	}
-
 	@Override
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			ProducerProperties producerProperties, MessageChannel errorChannel) throws Exception {

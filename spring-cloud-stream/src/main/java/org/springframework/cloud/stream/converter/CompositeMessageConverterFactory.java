@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.converter;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,14 +25,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.lang.Nullable;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
@@ -75,41 +69,14 @@ public class CompositeMessageConverterFactory {
 	}
 
 	private void initDefaultConverters() {
-		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));
-
-		MappingJackson2MessageConverter jsonMessageConverter = new MappingJackson2MessageConverter() {
-			@Override
-			protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
-				if (payload instanceof byte[]){
-					return payload;
-				}
-				else if (payload instanceof String) {
-					return ((String)payload).getBytes(StandardCharsets.UTF_8);
-				}
-				else {
-					return super.convertToInternal(payload, headers, conversionHint);
-				}
-			}
-
-			@Override
-			protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
-				try{
-					return super.convertFromInternal(message, targetClass, conversionHint);
-				} catch (MessageConversionException me){
-					//Strings need special treatment
-					if(targetClass.isAssignableFrom(String.class)){
-						return message.getPayload();
-					}
-					throw me;
-				}
-			}
-		};
-		jsonMessageConverter.setStrictContentTypeMatch(true);
+		ApplicationJsonMessageMarshallingConverter applicationJson = new ApplicationJsonMessageMarshallingConverter();
+		applicationJson.setStrictContentTypeMatch(true);
 		if (this.objectMapper != null) {
-			jsonMessageConverter.setObjectMapper(this.objectMapper);
+			applicationJson.setObjectMapper(this.objectMapper);
 		}
-
-		this.converters.add(jsonMessageConverter);
+		this.converters.add(applicationJson);
+		
+		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));
 		this.converters.add(new ByteArrayMessageConverter());
 		this.converters.add(new ObjectStringMessageConverter());
 		this.converters.add(new JavaSerializationMessageConverter());

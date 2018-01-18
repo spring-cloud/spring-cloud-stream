@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +39,8 @@ import org.springframework.cloud.stream.binding.StreamListenerMessageHandler;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.converter.JavaSerializationMessageConverter;
+import org.springframework.cloud.stream.converter.KryoMessageConverter;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
@@ -48,8 +51,8 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessageHandlingException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.PollableChannel;
@@ -167,19 +170,19 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				getDestinationNameDelimiter()), moduleOutputChannel, outputBindingProperties.getProducer());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("foo%s0",
 				getDestinationNameDelimiter()), "testSendAndReceive", moduleInputChannel, inputBindingProperties.getConsumer());
-		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
+		Message<?> message = MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
 				.build();
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 
 		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<String>> inboundMessageRef = new AtomicReference<Message<String>>();
+		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
 		moduleInputChannel.subscribe(new MessageHandler() {
 
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				try {
-					inboundMessageRef.set((Message<String>) message);
+					inboundMessageRef.set((Message<byte[]>) message);
 				}
 				finally {
 					latch.countDown();
@@ -190,9 +193,9 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 
-		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo");
+		assertThat(new String(inboundMessageRef.get().getPayload(),StandardCharsets.UTF_8)).isEqualTo("foo");
 		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("foo/bar");
+		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("text/plain");
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -250,9 +253,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 
-		assertThat(inboundMessageRef.get().getPayload()).isInstanceOf(Foo.class);
+		KryoMessageConverter kryo = new KryoMessageConverter(null, true);
+		Foo fooPayload = (Foo) kryo.fromMessage(inboundMessageRef.get(), Foo.class);
+		assertNotNull(fooPayload);
 		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		assertTrue(equalTypeAndSubType((MimeType) inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE), MessageConverterUtils.X_JAVA_OBJECT));
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -262,13 +266,16 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	public void testSendAndReceiveJavaSerialization() throws Exception {
 		Binder binder = getBinder();
 		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
+		
 		DirectChannel moduleOutputChannel = createBindableChannel("output", outputBindingProperties);
 
 		BindingProperties inputBindingProperties = createConsumerBindingProperties(createConsumerProperties());
+		//inputBindingProperties.setContentType("tex/plain");
 		DirectChannel moduleInputChannel = createBindableChannel("input", inputBindingProperties);
 
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("foo%s0y",
 				getDestinationNameDelimiter()), moduleOutputChannel, outputBindingProperties.getProducer());
+		
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("foo%s0y",
 				getDestinationNameDelimiter()), "testSendAndReceiveJavaSerialization", moduleInputChannel,
 				inputBindingProperties.getConsumer());
@@ -281,13 +288,13 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		binderBindUnbindLatency();
 
 		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<SerializableFoo>> inboundMessageRef = new AtomicReference<Message<SerializableFoo>>();
+		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
 		moduleInputChannel.subscribe(new MessageHandler() {
 
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				try {
-					inboundMessageRef.set((Message<SerializableFoo>) message);
+					inboundMessageRef.set((Message<byte[]>) message);
 				}
 				finally {
 					latch.countDown();
@@ -298,7 +305,9 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 
-		assertThat(inboundMessageRef.get().getPayload()).isInstanceOf(SerializableFoo.class);
+		JavaSerializationMessageConverter converter = new JavaSerializationMessageConverter();
+		SerializableFoo serializableFoo = (SerializableFoo) converter.convertFromInternal(inboundMessageRef.get(), SerializableFoo.class, null);
+		assertNotNull(serializableFoo);
 		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
 		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT);
 		producerBinding.unbind();
@@ -385,13 +394,13 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 		moduleOutputChannel.send(message);
 		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<String>> inboundMessageRef = new AtomicReference<Message<String>>();
+		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
 		moduleInputChannel.subscribe(new MessageHandler() {
 
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				try {
-					inboundMessageRef.set((Message<String>) message);
+					inboundMessageRef.set((Message<byte[]>) message);
 				}
 				finally {
 					latch.countDown();
@@ -402,7 +411,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 		assertThat(inboundMessageRef.get()).isNotNull();
-		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo");
+		assertThat(new String(inboundMessageRef.get().getPayload(), StandardCharsets.UTF_8)).isEqualTo("foo");
 		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
 				.isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
 		producerBinding.unbind();
@@ -575,7 +584,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	}
 
 	@SuppressWarnings("rawtypes")
-	@Test(expected = MessageHandlingException.class)
+	@Test(expected = MessageDeliveryException.class)
 	public void testStreamListenerJavaSerializationNonSerializable() throws Exception {
 		Binder binder = getBinder();
 

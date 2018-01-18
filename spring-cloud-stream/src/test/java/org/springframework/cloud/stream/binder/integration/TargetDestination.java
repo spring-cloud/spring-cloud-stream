@@ -39,9 +39,10 @@ public class TargetDestination extends AbstractDestination {
 	 * Allows to access {@link Message}s received by this {@link TargetDestination}.
 	 * @param timeout how long to wait before giving up
 	 */
-	public Message<?> receive(long timeout) {
+	@SuppressWarnings("unchecked")
+	public Message<byte[]> receive(long timeout) {
 		try {
-			return this.messages.poll(timeout, TimeUnit.MILLISECONDS);
+			return (Message<byte[]>) this.messages.poll(timeout, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -52,7 +53,7 @@ public class TargetDestination extends AbstractDestination {
 	/**
 	 * Allows to access {@link Message}s received by this {@link TargetDestination}.
 	 */
-	public Message<?> receive() {
+	public Message<byte[]> receive() {
 		return this.receive(0);
 	}
 

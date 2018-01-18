@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			buf.get(payload);
 			Schema writerSchema = resolveWriterSchemaForDeserialization(mimeType);
 			Schema readerSchema = resolveReaderSchemaForDeserialization(targetClass);
+			@SuppressWarnings("unchecked")
 			DatumReader<Object> reader = getDatumReader((Class<Object>) targetClass, readerSchema, writerSchema);
 			Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
 			result = reader.read(null, decoder);
@@ -125,6 +126,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		return writer;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema schema, Schema writerSchema) {
 		DatumReader<Object> reader = null;
 		if (SpecificRecord.class.isAssignableFrom(type)) {
@@ -176,6 +178,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 				hintedContentType = (MimeType) conversionHint;
 			}
 			Schema schema = resolveSchemaForWriting(payload, headers, hintedContentType);
+			@SuppressWarnings("unchecked")
 			DatumWriter<Object> writer = getDatumWriter((Class<Object>) payload.getClass(), schema);
 			Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
 			writer.write(payload, encoder);
