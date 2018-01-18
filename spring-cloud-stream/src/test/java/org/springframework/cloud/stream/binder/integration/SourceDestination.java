@@ -34,7 +34,7 @@ public class SourceDestination extends AbstractDestination {
 	 * to binder's input destination (e.g., Processor.INPUT).
 	 *
 	 */
-	public void send(Message<?> message) {
+	public void send(Message<byte[]> message) {
 		this.getChannel().send(message);
 	}
 }

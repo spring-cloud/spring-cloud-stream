@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -58,11 +59,11 @@ public class InboundJsonToTupleConversionTest {
 		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
 				.build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-
-		assertThat(TupleBuilder.fromString(new String(received.getPayload()))).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
+		String payload = new String(received.getPayload(), StandardCharsets.UTF_8);
+		assertThat(TupleBuilder.fromString(payload)).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
 	}
 
 	@EnableBinding(Processor.class)

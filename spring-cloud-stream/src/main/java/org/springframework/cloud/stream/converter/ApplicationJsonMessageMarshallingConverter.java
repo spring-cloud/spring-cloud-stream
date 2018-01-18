@@ -1,0 +1,73 @@
+/*
+ * Copyright 2018 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.cloud.stream.converter;
+
+import java.nio.charset.StandardCharsets;
+
+import org.springframework.core.MethodParameter;
+import org.springframework.lang.Nullable;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+
+/**
+ * Variation of {@link MappingJackson2MessageConverter} to support marshalling and 
+ * unmarshalling of Messages's payload from 'byte[]' to and instance of a 'targetClass' and vice versa.
+ * 
+ * 
+ * @author Oleg Zhurakousky
+ * @since 2.0
+ *
+ */
+class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
+
+	@Override
+	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+		if (payload instanceof byte[]){
+			return payload;
+		}
+		else if (payload instanceof String) {
+			return ((String)payload).getBytes(StandardCharsets.UTF_8);
+		}
+		else {
+			return super.convertToInternal(payload, headers, conversionHint);
+		}
+	}
+
+	@Override
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+		Object result = null;
+		if (conversionHint instanceof MethodParameter) {
+			Class<?> conversionHintType = ((MethodParameter)conversionHint).getParameterType();
+			if (Message.class.isAssignableFrom(conversionHintType)) {
+				/*
+				 * Ensures that super won't attempt to create Message as a result of conversion 
+				 * and stays at payload conversion only.
+				 * The Message will eventually be created in MessageMethodArgumentResolver.resolveArgument(..)
+				 */
+				conversionHint = null; 
+			}
+		}
+		if (message.getPayload() instanceof byte[] &&  targetClass.isAssignableFrom(String.class)) {
+			result = new String((byte[])message.getPayload(), StandardCharsets.UTF_8);
+		}
+		else {
+			result = super.convertFromInternal(message, targetClass, conversionHint);
+		}
+		return result;
+	}
+}

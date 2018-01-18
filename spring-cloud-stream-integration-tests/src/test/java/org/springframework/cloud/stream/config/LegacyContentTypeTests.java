@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -54,8 +55,8 @@ public class LegacyContentTypeTests {
 		MessageHandler messageHandler = new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				assertThat(message.getPayload()).isInstanceOf(String.class);
-				assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}");
+				assertThat(message.getPayload()).isInstanceOf(byte[].class);
+				assertThat(new String(((byte[])message.getPayload()), StandardCharsets.UTF_8)).isEqualTo("{\"message\":\"Hi\"}");
 				assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
 				latch.countDown();
 			}
@@ -63,7 +64,6 @@ public class LegacyContentTypeTests {
 		testSink.input().subscribe(messageHandler);
 		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes())
 							.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
-							.setHeader(BinderHeaders.SCST_VERSION, "1.x")
 							.build());
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		testSink.input().unsubscribe(messageHandler);

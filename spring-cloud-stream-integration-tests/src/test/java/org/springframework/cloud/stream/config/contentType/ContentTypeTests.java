@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.handler.annotation.Headers;
@@ -229,7 +228,7 @@ public class ContentTypeTests {
 			assertThat(message.getPayload()).isEqualTo(user.toString());
 		}
 	}
-
+	
 	@Test
 	public void testSendTuple() throws Exception {
 		try (ConfigurableApplicationContext context = SpringApplication.run(
@@ -313,7 +312,7 @@ public class ContentTypeTests {
 		}
 	}
 
-	@Test(expected=MessageDeliveryException.class)
+	@Test
 	public void testReceiveKryoWithHeadersOverridingDefault() throws Exception{
 		try (ConfigurableApplicationContext context = SpringApplication.run(
 				SinkApplication.class, "--server.port=0",
