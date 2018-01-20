@@ -16,9 +16,58 @@
 
 package org.springframework.cloud.stream.binder.kstream.config;
 
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
+
 /**
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
-public class KStreamConsumerProperties extends KStreamCommonProperties {
+public class KStreamConsumerProperties extends KafkaConsumerProperties {
 
+	public enum SerdeError {
+		logAndContinue,
+		logAndFail,
+		sendToDlq
+	}
+
+	/**
+	 * Key serde specified per binding.
+	 */
+	private String keySerde;
+
+	/**
+	 * Value serde specified per binding.
+	 */
+	private String valueSerde;
+
+	/**
+	 * {@link org.apache.kafka.streams.errors.DeserializationExceptionHandler} to use
+	 * when there is a Serde error. {@link SerdeError} values are used to provide the
+	 * exception handler on consumer binding.
+	 */
+	private SerdeError serdeError;
+
+	public String getKeySerde() {
+		return keySerde;
+	}
+
+	public void setKeySerde(String keySerde) {
+		this.keySerde = keySerde;
+	}
+
+	public String getValueSerde() {
+		return valueSerde;
+	}
+
+	public void setValueSerde(String valueSerde) {
+		this.valueSerde = valueSerde;
+	}
+
+	public SerdeError getSerdeError() {
+		return serdeError;
+	}
+
+	public void setSerdeError(SerdeError serdeError) {
+		this.serdeError = serdeError;
+	}
 }

@@ -76,6 +76,7 @@ public class KstreamBinderPojoInputStringOutputIntegrationTests {
 		SpringApplication app = new SpringApplication(ProductCountApplication.class);
 		app.setWebEnvironment(false);
 		ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=foos",
 				"--spring.cloud.stream.bindings.output.destination=counts-id",
 				"--spring.cloud.stream.kstream.binder.configuration.commit.interval.ms=1000",

@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kstream;
 
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KeyValueMapper;
 
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
@@ -28,10 +30,13 @@ import org.springframework.core.ResolvableType;
  */
 public class KStreamListenerParameterAdapter implements StreamListenerParameterAdapter<KStream<?,?>, KStream<?, ?>> {
 
-	private final MessageConversionDelegate messageConversionDelegate;
+	private final KStreamBoundMessageConversionDelegate kStreamBoundMessageConversionDelegate;
+	private final KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue;
 
-	public KStreamListenerParameterAdapter(MessageConversionDelegate messageConversionDelegate) {
-		this.messageConversionDelegate = messageConversionDelegate;
+	public KStreamListenerParameterAdapter(KStreamBoundMessageConversionDelegate kStreamBoundMessageConversionDelegate,
+										KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue) {
+		this.kStreamBoundMessageConversionDelegate = kStreamBoundMessageConversionDelegate;
+		this.KStreamBindingInformationCatalogue = KStreamBindingInformationCatalogue;
 	}
 
 	@Override
@@ -46,8 +51,11 @@ public class KStreamListenerParameterAdapter implements StreamListenerParameterA
 		ResolvableType resolvableType = ResolvableType.forMethodParameter(parameter);
 		final Class<?> valueClass = (resolvableType.getGeneric(1).getRawClass() != null)
 				? (resolvableType.getGeneric(1).getRawClass()) : Object.class;
-
-		return bindingTarget.map(messageConversionDelegate.inboundKeyValueMapper(valueClass));
+		if (this.KStreamBindingInformationCatalogue.isUseNativeDecoding(bindingTarget)) {
+			return bindingTarget.map((KeyValueMapper) KeyValue::new);
+		}
+		else {
+			return kStreamBoundMessageConversionDelegate.deserializeOnInbound(valueClass, bindingTarget);
+		}
 	}
-
 }

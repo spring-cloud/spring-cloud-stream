@@ -42,6 +42,8 @@ import org.springframework.util.StringUtils;
  * Kafka Streams specific implementation for {@link StreamListenerSetupMethodOrchestrator}
  * that overrides the default mechanisms for invoking StreamListener adapters.
  *
+ * @since 2.0.0
+ * 
  * @author Soby Chacko
  */
 public class KStreamListenerSetupMethodOrchestrator implements StreamListenerSetupMethodOrchestrator, ApplicationContextAware {

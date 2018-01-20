@@ -82,6 +82,7 @@ public class KStreamBinderWordCountIntegrationTests {
 		app.setWebEnvironment(false);
 
 		ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=words",
 				"--spring.cloud.stream.bindings.output.destination=counts",
 				"--spring.cloud.stream.bindings.output.contentType=application/json",

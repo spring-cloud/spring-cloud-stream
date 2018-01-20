@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,21 @@
 
 package org.springframework.cloud.stream.binder.kstream.config;
 
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+
 /**
  * @author Soby Chacko
  */
-public class KStreamCommonProperties {
+public class KStreamBinderConfigurationProperties extends KafkaBinderConfigurationProperties {
 
-	private String keySerde;
+	private String applicationId = "default";
 
-	private String valueSerde;
-
-	public String getKeySerde() {
-		return keySerde;
+	public String getApplicationId() {
+		return applicationId;
 	}
 
-	public void setKeySerde(String keySerde) {
-		this.keySerde = keySerde;
+	public void setApplicationId(String applicationId) {
+		this.applicationId = applicationId;
 	}
 
-	public String getValueSerde() {
-		return valueSerde;
-	}
-
-	public void setValueSerde(String valueSerde) {
-		this.valueSerde = valueSerde;
-	}
 }

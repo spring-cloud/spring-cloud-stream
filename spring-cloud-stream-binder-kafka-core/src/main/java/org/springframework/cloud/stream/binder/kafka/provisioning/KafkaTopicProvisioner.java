@@ -387,6 +387,10 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			return this.consumerDestinationName;
 		}
 
+		public String getDlqName() {
+			return dlqName;
+		}
+
 		@Override
 		public String toString() {
 			return "KafkaConsumerDestination{" +

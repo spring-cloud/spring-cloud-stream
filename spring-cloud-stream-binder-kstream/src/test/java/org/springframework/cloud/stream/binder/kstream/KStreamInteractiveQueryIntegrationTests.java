@@ -22,7 +22,6 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
@@ -43,7 +42,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -81,6 +79,7 @@ public class KStreamInteractiveQueryIntegrationTests {
 		SpringApplication app = new SpringApplication(ProductCountApplication.class);
 		app.setWebEnvironment(false);
 		ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=foos",
 				"--spring.cloud.stream.bindings.output.destination=counts-id",
 				"--spring.cloud.stream.kstream.binder.configuration.commit.interval.ms=1000",
@@ -115,7 +114,7 @@ public class KStreamInteractiveQueryIntegrationTests {
 	public static class ProductCountApplication {
 
 		@Autowired
-		private StreamsBuilderFactoryBean kStreamBuilderFactoryBean;
+		private QueryableStoreRegistry queryableStoreRegistry;
 
 		@StreamListener("input")
 		@SendTo("output")
@@ -131,21 +130,23 @@ public class KStreamInteractiveQueryIntegrationTests {
 		}
 
 		@Bean
-		public Foo foo(StreamsBuilderFactoryBean kStreamBuilderFactoryBean) {
-			return new Foo(kStreamBuilderFactoryBean);
+		public Foo foo(QueryableStoreRegistry queryableStoreRegistry) {
+			return new Foo(queryableStoreRegistry);
 		}
 
 		static class Foo {
-			StreamsBuilderFactoryBean kStreamBuilderFactoryBean;
+			QueryableStoreRegistry queryableStoreRegistry;
 
-			Foo(StreamsBuilderFactoryBean kStreamBuilderFactoryBean) {
-				this.kStreamBuilderFactoryBean = kStreamBuilderFactoryBean;
+			Foo(QueryableStoreRegistry queryableStoreRegistry) {
+				this.queryableStoreRegistry = queryableStoreRegistry;
 			}
 
 			public Long getProductStock(Integer id) {
-				KafkaStreams streams = kStreamBuilderFactoryBean.getKafkaStreams();
+
+
 				ReadOnlyKeyValueStore<Object, Object> keyValueStore =
-						streams.store("prod-id-count-store", QueryableStoreTypes.keyValueStore());
+						queryableStoreRegistry.getQueryableStoreType("prod-id-count-store", QueryableStoreTypes.keyValueStore());
+
 				return (Long) keyValueStore.get(id);
 			}
 		}

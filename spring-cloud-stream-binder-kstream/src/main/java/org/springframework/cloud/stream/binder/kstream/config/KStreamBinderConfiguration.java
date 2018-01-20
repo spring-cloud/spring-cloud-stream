@@ -18,15 +18,16 @@ package org.springframework.cloud.stream.binder.kstream.config;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.kafka.streams.StreamsConfig;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kstream.KStreamBinder;
-import org.springframework.cloud.stream.binder.kstream.MessageConversionDelegate;
+import org.springframework.cloud.stream.binder.kstream.KStreamBindingInformationCatalogue;
+import org.springframework.cloud.stream.binder.kstream.KStreamBoundMessageConversionDelegate;
+import org.springframework.cloud.stream.binder.kstream.KeyValueSerdeResolver;
+import org.springframework.cloud.stream.binder.kstream.QueryableStoreRegistry;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,7 +37,6 @@ import org.springframework.context.annotation.Configuration;
  * @author Soby Chacko
  */
 @Configuration
-@EnableConfigurationProperties(KStreamExtendedBindingProperties.class)
 public class KStreamBinderConfiguration {
 
 	private static final Log logger = LogFactory.getLog(KStreamBinderConfiguration.class);
@@ -44,18 +44,24 @@ public class KStreamBinderConfiguration {
 	@Autowired
 	private KafkaProperties kafkaProperties;
 
+	@Autowired
+	private KStreamExtendedBindingProperties kStreamExtendedBindingProperties;
+
 	@Bean
 	public KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties binderConfigurationProperties) {
 		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties);
 	}
 
 	@Bean
-	public KStreamBinder kStreamBinder(KafkaBinderConfigurationProperties binderConfigurationProperties,
+	public KStreamBinder kStreamBinder(KStreamBinderConfigurationProperties binderConfigurationProperties,
 									KafkaTopicProvisioner kafkaTopicProvisioner,
-									KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig,
-									MessageConversionDelegate messageConversionDelegate) {
-		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner, kStreamExtendedBindingProperties,
-				streamsConfig, messageConversionDelegate);
+									KStreamBoundMessageConversionDelegate KStreamBoundMessageConversionDelegate,
+									KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue,
+									KeyValueSerdeResolver keyValueSerdeResolver, QueryableStoreRegistry queryableStoreRegistry) {
+		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner,
+				KStreamBoundMessageConversionDelegate, KStreamBindingInformationCatalogue,
+				keyValueSerdeResolver, queryableStoreRegistry);
+		kStreamBinder.setkStreamExtendedBindingProperties(kStreamExtendedBindingProperties);
 		return kStreamBinder;
 	}
 

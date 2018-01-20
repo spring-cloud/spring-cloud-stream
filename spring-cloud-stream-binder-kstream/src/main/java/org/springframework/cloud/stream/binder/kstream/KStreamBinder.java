@@ -16,29 +16,31 @@
 
 package org.springframework.cloud.stream.binder.kstream;
 
-import org.apache.kafka.common.Configurable;
+import java.util.Map;
+
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.utils.Utils;
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.errors.DeserializationExceptionHandler;
+import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
+import org.apache.kafka.streams.errors.LogAndFailExceptionHandler;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 import org.apache.kafka.streams.kstream.Produced;
 
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
-import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kstream.config.KStreamBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamConsumerProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamProducerProperties;
+import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 import org.springframework.util.StringUtils;
 
 /**
@@ -51,33 +53,111 @@ public class KStreamBinder extends
 
 	private final KafkaTopicProvisioner kafkaTopicProvisioner;
 
-	private final KStreamExtendedBindingProperties kStreamExtendedBindingProperties;
+	private KStreamExtendedBindingProperties kStreamExtendedBindingProperties = new KStreamExtendedBindingProperties();
 
-	private final StreamsConfig streamsConfig;
+	private final KStreamBinderConfigurationProperties binderConfigurationProperties;
 
-	private final KafkaBinderConfigurationProperties binderConfigurationProperties;
+	private final KStreamBoundMessageConversionDelegate kStreamBoundMessageConversionDelegate;
 
-	private final MessageConversionDelegate messageConversionDelegate;
+	private final KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue;
 
-	public KStreamBinder(KafkaBinderConfigurationProperties binderConfigurationProperties,
+	private final KeyValueSerdeResolver keyValueSerdeResolver;
+
+	private final QueryableStoreRegistry queryableStoreRegistry;
+
+	public KStreamBinder(KStreamBinderConfigurationProperties binderConfigurationProperties,
 						KafkaTopicProvisioner kafkaTopicProvisioner,
-						KStreamExtendedBindingProperties kStreamExtendedBindingProperties, StreamsConfig streamsConfig,
-						MessageConversionDelegate messageConversionDelegate) {
+						KStreamBoundMessageConversionDelegate kStreamBoundMessageConversionDelegate,
+						KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue,
+						KeyValueSerdeResolver keyValueSerdeResolver,
+						QueryableStoreRegistry queryableStoreRegistry) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
-		this.kStreamExtendedBindingProperties = kStreamExtendedBindingProperties;
-		this.streamsConfig = streamsConfig;
-		this.messageConversionDelegate = messageConversionDelegate;
+		this.kStreamBoundMessageConversionDelegate = kStreamBoundMessageConversionDelegate;
+		this.KStreamBindingInformationCatalogue = KStreamBindingInformationCatalogue;
+		this.keyValueSerdeResolver = keyValueSerdeResolver;
+		this.queryableStoreRegistry = queryableStoreRegistry;
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	protected Binding<KStream<Object, Object>> doBindConsumer(String name, String group,
 															KStream<Object, Object> inputTarget,
 															ExtendedConsumerProperties<KStreamConsumerProperties> properties) {
 
+		this.KStreamBindingInformationCatalogue.registerConsumerProperties(inputTarget, properties.getExtension());
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<>(
-				new KafkaConsumerProperties());
+				properties.getExtension());
+		if (properties.getExtension().getSerdeError() == KStreamConsumerProperties.SerdeError.sendToDlq) {
+			extendedConsumerProperties.getExtension().setEnableDlq(true);
+		}
+		if (!StringUtils.hasText(group)) {
+			group = binderConfigurationProperties.getApplicationId();
+		}
 		this.kafkaTopicProvisioner.provisionConsumerDestination(name, group, extendedConsumerProperties);
+
+		//populate the per binding StreamConfig properties
+		Map<String, Object> streamConfigGlobalProperties = getApplicationContext().getBean("streamConfigGlobalProperties", Map.class);
+
+		StreamsBuilderFactoryBean streamsBuilder = getApplicationContext().getBean("&stream-builder-" + name, StreamsBuilderFactoryBean.class);
+
+		streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, group);
+
+		if(properties.getExtension().getSerdeError() == KStreamConsumerProperties.SerdeError.logAndContinue) {
+			streamConfigGlobalProperties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+					LogAndContinueExceptionHandler.class);
+		}
+		else if(properties.getExtension().getSerdeError() == KStreamConsumerProperties.SerdeError.logAndFail) {
+			streamConfigGlobalProperties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+					LogAndFailExceptionHandler.class);
+		}
+		else if (properties.getExtension().getSerdeError() == KStreamConsumerProperties.SerdeError.sendToDlq) {
+			streamConfigGlobalProperties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+					SendToDlqAndContinue.class);
+		}
+
+		StreamsConfig streamsConfig = new StreamsConfig(streamConfigGlobalProperties) {
+
+			DeserializationExceptionHandler deserializationExceptionHandler;
+
+			@Override
+			@SuppressWarnings("unchecked")
+			public <T> T getConfiguredInstance(String key, Class<T> t) {
+				if (key.equals(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG)){
+					if (deserializationExceptionHandler != null){
+						return (T)deserializationExceptionHandler;
+					}
+					else {
+						T t1 = super.getConfiguredInstance(key, t);
+						deserializationExceptionHandler = (DeserializationExceptionHandler)t1;
+						return t1;
+					}
+				}
+				return super.getConfiguredInstance(key, t);
+			}
+		};
+
+		ConfigurableListableBeanFactory beanFactory = getApplicationContext().getBeanFactory();
+		beanFactory.registerSingleton("streamsConfig-" + name, streamsConfig);
+		beanFactory.initializeBean(streamsConfig, "streamsConfig-" + name);
+
+		streamsBuilder.setStreamsConfig(streamsConfig);
+		streamsBuilder.start();
+		queryableStoreRegistry.registerKafkaStreams(streamsBuilder.getKafkaStreams());
+
+		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
+			String dlqName = StringUtils.isEmpty(extendedConsumerProperties.getExtension().getDlqName()) ?
+					"error." + name + "." + group : extendedConsumerProperties.getExtension().getDlqName();
+			KStreamDlqDispatch kStreamDlqDispatch = new KStreamDlqDispatch(dlqName, binderConfigurationProperties,
+					extendedConsumerProperties.getExtension());
+			SendToDlqAndContinue sendToDlqAndContinue = this.getApplicationContext().getBean(SendToDlqAndContinue.class);
+			sendToDlqAndContinue.addKStreamDlqDispatch(name, kStreamDlqDispatch);
+
+			DeserializationExceptionHandler deserializationExceptionHandler = streamsConfig.defaultDeserializationExceptionHandler();
+			if(deserializationExceptionHandler instanceof SendToDlqAndContinue) {
+				((SendToDlqAndContinue)deserializationExceptionHandler).addKStreamDlqDispatch(name, kStreamDlqDispatch);
+			}
+		}
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}
 
@@ -89,69 +169,20 @@ public class KStreamBinder extends
 				new KafkaProducerProperties());
 		this.kafkaTopicProvisioner.provisionProducerDestination(name, extendedProducerProperties);
 
-		Serde<?> keySerde = getKeySerde(properties);
-		Serde<?> valueSerde = getValueSerde(properties);
+		Serde<?> keySerde = this.keyValueSerdeResolver.getOuboundKeySerde(properties.getExtension());
+		Serde<?> valueSerde = this.keyValueSerdeResolver.getOutboundValueSerde(properties, properties.getExtension());
 
 		to(properties.isUseNativeEncoding(), name, outboundBindTarget, (Serde<Object>) keySerde, (Serde<Object>) valueSerde);
 
 		return new DefaultBinding<>(name, null, outboundBindTarget, null);
 	}
 
-	private Serde<?> getKeySerde(ExtendedProducerProperties<KStreamProducerProperties> properties) {
-		Serde<?> keySerde;
-		try {
-			if (StringUtils.hasText(properties.getExtension().getKeySerde())) {
-				keySerde = Utils.newInstance(properties.getExtension().getKeySerde(), Serde.class);
-				if (keySerde instanceof Configurable) {
-					((Configurable) keySerde).configure(streamsConfig.originals());
-				}
-			}
-			else {
-				keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("key.serde") ?
-						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("key.serde"), Serde.class) : Serdes.ByteArray();
-			}
-
-		}
-		catch (ClassNotFoundException e) {
-			throw new IllegalStateException("Serde class not found: ", e);
-		}
-		return keySerde;
-	}
-
-	private Serde<?> getValueSerde(ExtendedProducerProperties<KStreamProducerProperties> properties) {
-		Serde<?> valueSerde;
-		try {
-			if (properties.isUseNativeEncoding()) {
-				if (StringUtils.hasText(properties.getExtension().getValueSerde())) {
-					valueSerde = Utils.newInstance(properties.getExtension().getValueSerde(), Serde.class);
-					if (valueSerde instanceof Configurable) {
-						((Configurable) valueSerde).configure(streamsConfig.originals());
-					}
-				}
-				else {
-					valueSerde = this.binderConfigurationProperties.getConfiguration().containsKey("value.serde") ?
-							Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("value.serde"), Serde.class) : Serdes.ByteArray();
-				}
-			}
-			else {
-				valueSerde = Serdes.ByteArray();
-			}
-		}
-		catch (ClassNotFoundException e) {
-			throw new IllegalStateException("Serde class not found: ", e);
-		}
-		return valueSerde;
-	}
-
 	@SuppressWarnings("unchecked")
 	private void to(boolean isNativeEncoding, String name, KStream<Object, Object> outboundBindTarget,
 				Serde<Object> keySerde, Serde<Object> valueSerde) {
-		KeyValueMapper<Object, Object, KeyValue<Object, Object>> keyValueMapper = null;
 		if (!isNativeEncoding) {
-			keyValueMapper = messageConversionDelegate.outboundKeyValueMapper(name);
-		}
-		if (!isNativeEncoding) {
-				outboundBindTarget.map(keyValueMapper).to(name, Produced.with(keySerde, valueSerde));
+			kStreamBoundMessageConversionDelegate.serializeOnOutbound(outboundBindTarget)
+					.to(name, Produced.with(keySerde, valueSerde));
 		}
 		else {
 			outboundBindTarget.to(name, Produced.with(keySerde, valueSerde));
@@ -166,5 +197,9 @@ public class KStreamBinder extends
 	@Override
 	public KStreamProducerProperties getExtendedProducerProperties(String channelName) {
 		return this.kStreamExtendedBindingProperties.getExtendedProducerProperties(channelName);
+	}
+
+	public void setkStreamExtendedBindingProperties(KStreamExtendedBindingProperties kStreamExtendedBindingProperties) {
+		this.kStreamExtendedBindingProperties = kStreamExtendedBindingProperties;
 	}
 }
