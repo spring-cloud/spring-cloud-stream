@@ -590,7 +590,7 @@ Similarly, if the following property is set (default is false), any message conv
 
 `spring.cloud.stream.bindings.input.consumer.useNativeDecoding`.
 
-When native encoding is disabled, then the messages on the outbound are converted by Spring Cloud Stream using the provided contentType.
+When native encoding is disabled, then the messages on the outbound are converted by Spring Cloud Stream using the provided `contentType` header.
 If no contentType is set by the application, it defaults to `application/json`.
 
 By default, all the out of the box message converters, serialize the data as `byte[]` encoding the proper contentType.
