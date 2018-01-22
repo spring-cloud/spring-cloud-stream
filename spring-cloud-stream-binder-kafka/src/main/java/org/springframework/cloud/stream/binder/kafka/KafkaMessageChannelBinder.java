@@ -701,7 +701,7 @@ public class KafkaMessageChannelBinder extends
 			setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
 			if (producerProperties.isPartitioned()) {
 				SpelExpressionParser parser = new SpelExpressionParser();
-				setPartitionIdExpression(parser.parseExpression("headers." + BinderHeaders.PARTITION_HEADER));
+				setPartitionIdExpression(parser.parseExpression("headers['" + BinderHeaders.PARTITION_HEADER + "']"));
 			}
 			if (producerProperties.getExtension().isSync()) {
 				setSync(true);
