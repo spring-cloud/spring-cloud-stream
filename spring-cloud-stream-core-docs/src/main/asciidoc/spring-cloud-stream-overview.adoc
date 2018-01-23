@@ -149,6 +149,18 @@ image::SCSt-groups.png[width=300,scaledwidth="50%"]
 All groups which subscribe to a given destination receive a copy of published data, but only one member of each group receives a given message from that destination.
 By default, when a group is not specified, Spring Cloud Stream assigns the application to an anonymous and independent single-member consumer group that is in a publish-subscribe relationship with all other consumer groups.
 
+[[consumer-types]]
+=== Consumer Types
+
+Two types of consumer are supported:
+
+- Message-driven (sometimes referred to as Asynchronous)
+- Polled (sometimes referred to as Synchronous)
+
+Prior to _version 2.0_, only asynchronous consumers were supported, where a message is delivered as soon as it is available (and there is a thread available to process it).
+
+You might want to use a synchronous consumer when you wish to control the rate at which messages are processed.
+
 [[durability]]
 ==== Durability
 
@@ -191,7 +203,7 @@ To set up a partitioned processing scenario, you must configure both the data-pr
 This section describes Spring Cloud Stream's programming model.
 Spring Cloud Stream provides a number of predefined annotations for declaring bound input and output channels as well as how to listen to channels.
 
-=== Declaring and Binding Channels
+=== Declaring and Binding Producers and Consumers
 
 ==== Triggering Binding Via `@EnableBinding`
 
@@ -252,10 +264,30 @@ public class CafeConfiguration {
 [NOTE]
 ====
 In Spring Cloud Stream, the bindable `MessageChannel` components are the Spring Messaging `MessageChannel` (for outbound) and its extension `SubscribableChannel` (for inbound).
-Using the same mechanism other bindable components can be supported.
+Using the same mechanism, other bindable components can be supported.
 `KStream` support in Spring Cloud Stream Kafka binder is one such example where KStream is used as inbound/outbound `bindable` components.
+Also, as discussed below, a `PollableMessageSource` can be bound to an inbound destination.
 In this documentation, we will continue to refer to MessageChannels as the `bindable` components.
 ====
+
+Starting with _version 2.0_, you can now bind a pollable consumer as follows:
+
+[source,java]
+----
+public interface PolledBarista {
+
+    @Input
+    PollableMessageSource orders();
+
+    @Output
+    MessageChannel hotDrinks();
+
+    @Output
+    MessageChannel coldDrinks();
+}
+----
+
+In this case, an implementation of `PollableMessageSource` is bound to the `orders` "channel".
 
 ===== Customizing Channel Names
 
@@ -551,6 +583,80 @@ public static class TestPojoWithAnnotatedArguments {
 ====
 Dispatching via `@StreamListener` conditions is only supported for handlers of individual messages, and not for reactive programming support (described below).
 ====
+
+===== Using Polled Consumers
+
+When using polled consumers, you poll the `PollableMessageSource` on demand.
+For example, given...
+
+[source,java]
+----
+public interface PolledConsumer {
+
+    @Input
+    PollableMessageSource dest1In();
+
+    @Output
+    MessageChannel dest2Out();
+
+}
+----
+
+...you might use that consumer as follows:
+
+[source,java]
+----
+@Bean
+public ApplicationRunner poller(PollableMessageSource dest1In, MessageChannel dest2Out) {
+    return args -> {
+        while (someCondition()) {
+            try {
+                if (!dest1In.poll(m -> {
+                    String newPayload = ((String) m.getPayload()).toUpperCase();
+                    dest2Out.send(new GenericMessage<>(newPayload));
+                })) {
+                    Thread.sleep(1000);
+                }
+            }
+            catch (Exception e) {
+                // handle failure
+            }
+        }
+    };
+}
+----
+
+The `PollableMessageSource.poll()` method takes a `MessageHandler` argument (often a lambda expression as shown here).
+It returns `true` if the message was received and successfully processed.
+
+As with message-driven consumers, if the `MessageHandler` throws an exception, messages are published to error channels as discussed in <<binder-error-channels>>.
+
+Normally, the `poll()` method will acknowledge the message when the `MessageHandler` exits.
+If the method exits abnormally, the message is rejected (not requeued).
+You can override that behavior, by taking responsibility for the acknowledgment, as follows:
+
+[source,java]
+----
+@Bean
+public ApplicationRunner poller(PollableMessageSource dest1In, MessageChannel dest2Out) {
+    return args -> {
+        while (someCondition()) {
+            if (!dest1In.poll(m -> {
+                StaticMessageHeaderAccessor.getAcknowledgmentCallback(m).noAutoAck();
+                // e.g. hand off to another thread which can perform the ack
+                // or acknowledge(Status.REQUEUE)
+
+            })) {
+                Thread.sleep(1000);
+            }
+        }
+    };
+}
+----
+
+IMPORTANT: You must ack (or nack) the message at some point, to avoid resource leaks.
+
+IMPORTANT: Some messaging systems (such as Apache Kafka) maintain a simple offset in a log, if a delivery fails and is requeued with  `StaticMessageHeaderAccessor.getAcknowledgmentCallback(m).acknowledge(Status.REQUEUE);`, any later successfully ack'd messages will be redelivered.
 
 ==== Reactive Programming Support
 
