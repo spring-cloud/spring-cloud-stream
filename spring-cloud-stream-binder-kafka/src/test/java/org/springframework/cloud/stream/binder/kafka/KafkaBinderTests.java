@@ -2417,7 +2417,8 @@ public class KafkaBinderTests extends
 	public void testPolledConsumer() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
-		binder.bindPollableConsumer("pollable", "group", inboundBindTarget, createConsumerProperties());
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable", "group",
+				inboundBindTarget, createConsumerProperties());
 		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
 		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
 		template.send("pollable", "testPollable");
@@ -2429,8 +2430,10 @@ public class KafkaBinderTests extends
 			polled = inboundBindTarget.poll(m -> {
 				assertThat(m.getPayload()).isEqualTo("testPollable".getBytes());
 			});
+			Thread.sleep(100);
 		}
 		assertThat(polled).isTrue();
+		binding.unbind();
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -2443,7 +2446,8 @@ public class KafkaBinderTests extends
 		properties.setBackOffInitialInterval(0);
 		properties.getExtension().setEnableDlq(true);
 		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
-		binder.bindPollableConsumer("pollableDlq", "group", inboundBindTarget, properties);
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlq", "group",
+				inboundBindTarget, properties);
 		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
 		template.send("pollableDlq", "testPollableDLQ");
 		try {
@@ -2466,6 +2470,8 @@ public class KafkaBinderTests extends
 		ConsumerRecord deadLetter = KafkaTestUtils.getSingleRecord(consumer, "error.pollableDlq.group");
 		assertThat(deadLetter).isNotNull();
 		assertThat(deadLetter.value()).isEqualTo("testPollableDLQ");
+		binding.unbind();
+		consumer.close();
 	}
 
 	private final class FailingInvocationCountingMessageHandler implements MessageHandler {
