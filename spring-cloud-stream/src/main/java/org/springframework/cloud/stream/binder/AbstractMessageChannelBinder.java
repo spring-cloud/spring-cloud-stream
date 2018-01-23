@@ -317,6 +317,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					getPolledConsumerRecoveryCallback(resources.getErrorInfrastructure(), properties));
 		}
 		postProcessPollableSource(bindingTarget);
+		if (resources.getSource() instanceof Lifecycle) {
+				((Lifecycle) resources.getSource()).start();
+		}
 		return new DefaultBinding<PollableSource<MessageHandler>>(name, group, inboundBindTarget,
 				resources.getSource() instanceof Lifecycle ? (Lifecycle) resources.getSource() : null) {
 
