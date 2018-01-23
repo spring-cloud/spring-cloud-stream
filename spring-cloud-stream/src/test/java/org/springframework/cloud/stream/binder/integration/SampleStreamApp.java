@@ -81,7 +81,7 @@ public class SampleStreamApp {
 
 	public interface PolledConsumer extends Processor {
 
-		@Input("pollableSource")
+		@Input
 		PollableMessageSource pollableSource();
 
 	}
