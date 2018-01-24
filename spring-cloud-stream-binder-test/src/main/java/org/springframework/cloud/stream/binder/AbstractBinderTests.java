@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -415,8 +415,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	protected abstract PP createProducerProperties();
 
-	protected final BindingProperties createConsumerBindingProperties(
-			CP consumerProperties) {
+	protected final BindingProperties createConsumerBindingProperties(CP consumerProperties) {
 		BindingProperties bindingProperties = new BindingProperties();
 		bindingProperties.setConsumer(consumerProperties);
 		return bindingProperties;
@@ -436,19 +435,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	protected DirectChannel createBindableChannel(String channelName,
 			BindingProperties bindingProperties, boolean inputChannel) throws Exception {
-		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
-		bindingServiceProperties.getBindings().put(channelName, bindingProperties);
-		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
-		applicationContext.refresh();
-		bindingServiceProperties.setApplicationContext(applicationContext);
-		bindingServiceProperties.setConversionService(new DefaultConversionService());
-		bindingServiceProperties.afterPropertiesSet();
+		MessageConverterConfigurer messageConverterConfigurer = createConverterConfigurer(channelName,
+				bindingProperties);
 		DirectChannel channel = new DirectChannel();
 		channel.setBeanName(channelName);
-		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
-				bindingServiceProperties,
-				new CompositeMessageConverterFactory(null, null));
-		messageConverterConfigurer.setBeanFactory(applicationContext.getBeanFactory());
 		if (inputChannel) {
 			messageConverterConfigurer.configureInputChannel(channel, channelName);
 		}
@@ -456,6 +446,29 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 			messageConverterConfigurer.configureOutputChannel(channel, channelName);
 		}
 		return channel;
+	}
+
+	protected DefaultPollableMessageSource createBindableMessageSource(String bindingName,
+			BindingProperties bindingProperties) throws Exception {
+		DefaultPollableMessageSource source = new DefaultPollableMessageSource();
+		createConverterConfigurer(bindingName, bindingProperties).configurePolledMessageSource(source, bindingName);
+		return source;
+	}
+
+	private MessageConverterConfigurer createConverterConfigurer(String channelName,
+			BindingProperties bindingProperties) throws Exception {
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		bindingServiceProperties.getBindings().put(channelName, bindingProperties);
+		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
+		applicationContext.refresh();
+		bindingServiceProperties.setApplicationContext(applicationContext);
+		bindingServiceProperties.setConversionService(new DefaultConversionService());
+		bindingServiceProperties.afterPropertiesSet();
+		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
+				bindingServiceProperties,
+				new CompositeMessageConverterFactory(null, null));
+		messageConverterConfigurer.setBeanFactory(applicationContext.getBeanFactory());
+		return messageConverterConfigurer;
 	}
 
 	@After
