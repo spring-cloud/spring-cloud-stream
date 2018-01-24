@@ -425,7 +425,7 @@ public class BindingServiceTests {
 		Binding<MessageChannel> delegate = TestUtils.getPropertyValue(bindings.iterator().next(), "delegate",
 				Binding.class);
 		int n = 0;
-		while (n++ < 100 && delegate == null) {
+		while (n++ < 300 && delegate == null) {
 			Thread.sleep(100);
 		}
 		assertThat(delegate).isSameAs(mockBinding);
@@ -467,7 +467,7 @@ public class BindingServiceTests {
 		assertThat(binding).isNotNull();
 		Binding delegate = TestUtils.getPropertyValue(binding, "delegate", Binding.class);
 		int n = 0;
-		while (n++ < 100 && delegate == null) {
+		while (n++ < 300 && delegate == null) {
 			Thread.sleep(100);
 			delegate = TestUtils.getPropertyValue(binding, "delegate", Binding.class);
 		}
