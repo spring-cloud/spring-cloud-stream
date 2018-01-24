@@ -594,10 +594,10 @@ For example, given...
 public interface PolledConsumer {
 
     @Input
-    PollableMessageSource dest1In();
+    PollableMessageSource destIn();
 
     @Output
-    MessageChannel dest2Out();
+    MessageChannel destOut();
 
 }
 ----
@@ -607,19 +607,19 @@ public interface PolledConsumer {
 [source,java]
 ----
 @Bean
-public ApplicationRunner poller(PollableMessageSource dest1In, MessageChannel dest2Out) {
+public ApplicationRunner poller(PollableMessageSource destIn, MessageChannel destOut) {
     return args -> {
         while (someCondition()) {
             try {
-                if (!dest1In.poll(m -> {
+                if (!destIn.poll(m -> {
                     String newPayload = ((String) m.getPayload()).toUpperCase();
-                    dest2Out.send(new GenericMessage<>(newPayload));
+                    destOut.send(new GenericMessage<>(newPayload));
                 })) {
                     Thread.sleep(1000);
                 }
             }
             catch (Exception e) {
-                // handle failure
+                // handle failure (throw an exception to reject the message);
             }
         }
     };
