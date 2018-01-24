@@ -330,9 +330,9 @@ public class BindingService {
 
 	private static class LateBinding<T> implements Binding<T> {
 
-		private Binding<T> delegate;
+		private volatile Binding<T> delegate;
 
-		private boolean unbound;
+		private volatile boolean unbound;
 
 		LateBinding() {
 			super();
