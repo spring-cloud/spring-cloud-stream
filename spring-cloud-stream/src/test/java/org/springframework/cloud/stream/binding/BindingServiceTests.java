@@ -393,7 +393,7 @@ public class BindingServiceTests {
 		assertThat(bindableType).isSameAs(SomeBindableType.class);
 	}
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testLateBindingConsumer() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
@@ -422,17 +422,21 @@ public class BindingServiceTests {
 		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel, inputChannelName);
 		assertThat(fail.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(bindings).hasSize(1);
-		Binding<MessageChannel> binding = TestUtils.getPropertyValue(bindings.iterator().next(), "delegate",
+		Binding<MessageChannel> delegate = TestUtils.getPropertyValue(bindings.iterator().next(), "delegate",
 				Binding.class);
-		assertThat(binding).isSameAs(mockBinding);
+		int n = 0;
+		while (n++ < 100 && delegate == null) {
+			Thread.sleep(100);
+		}
+		assertThat(delegate).isSameAs(mockBinding);
 		service.unbindConsumers(inputChannelName);
 		verify(binder, times(2)).bindConsumer(eq("foo"), isNull(), same(inputChannel),
 				any(ConsumerProperties.class));
-		verify(binding).unbind();
+		verify(delegate).unbind();
 		binderFactory.destroy();
 	}
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testLateBindingProducer() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
@@ -462,6 +466,11 @@ public class BindingServiceTests {
 		assertThat(fail.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(binding).isNotNull();
 		Binding delegate = TestUtils.getPropertyValue(binding, "delegate", Binding.class);
+		int n = 0;
+		while (n++ < 100 && delegate == null) {
+			Thread.sleep(100);
+			delegate = TestUtils.getPropertyValue(binding, "delegate", Binding.class);
+		}
 		assertThat(delegate).isSameAs(mockBinding);
 		service.unbindProducers(outputChannelName);
 		verify(binder, times(2)).bindProducer(eq("foo"), same(outputChannel), any(ProducerProperties.class));
