@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.core.ParameterizedTypeReference;
+
 /**
  * A mechanism to poll a consumer.
  *
@@ -25,6 +27,7 @@ package org.springframework.cloud.stream.binder;
  * @since 2.0
  *
  */
+@FunctionalInterface
 public interface PollableSource<H> {
 
 	/**
@@ -33,5 +36,15 @@ public interface PollableSource<H> {
 	 * @return true if a message was handled.
 	 */
 	boolean poll(H handler);
+
+	/**
+	 * Poll the consumer and convert the payload to the type.
+	 * @param handler the handler.
+	 * @param type the type.
+	 * @return true if a message was handled.
+	 */
+	default boolean poll(H handler, ParameterizedTypeReference<?> type) {
+		return poll(handler);
+	}
 
 }
