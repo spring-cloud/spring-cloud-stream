@@ -17,14 +17,19 @@
 package org.springframework.cloud.stream.binder;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.integration.SpringIntegrationChannelBinder;
 import org.springframework.cloud.stream.binder.integration.SpringIntegrationProvisioner;
+import org.springframework.cloud.stream.converter.SmartJsonMessageConverter;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.Message;
@@ -74,6 +79,65 @@ public class PollableConsumerTests {
 			}
 		})).isTrue();
 		assertThat(count.get()).isEqualTo(2);
+	}
+
+	@Test
+	public void testConvertSimple() {
+		SpringIntegrationChannelBinder binder = createBinder();
+		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"foo\":\"bar\"}"));
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
+		pollableSource.setMessageConverter(new SmartJsonMessageConverter());
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
+		properties.setMaxAttempts(1);
+		properties.setBackOffInitialInterval(0);
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		final AtomicReference<Object> payload = new AtomicReference<>();
+		assertThat(pollableSource.poll(received -> {
+			payload.set(received.getPayload());
+		}, new ParameterizedTypeReference<Foo>() {})).isTrue();
+		assertThat(payload.get()).isInstanceOf(Foo.class);
+		assertThat(((Foo) payload.get()).getFoo()).isEqualTo("bar");
+	}
+
+	@Test
+	public void testConvertList() {
+		SpringIntegrationChannelBinder binder = createBinder();
+		binder.setMessageSourceDelegate(() -> new GenericMessage<>("[{\"foo\":\"bar\"},{\"foo\":\"baz\"}]"));
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
+		pollableSource.setMessageConverter(new SmartJsonMessageConverter());
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
+		properties.setMaxAttempts(1);
+		properties.setBackOffInitialInterval(0);
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		final AtomicReference<Object> payload = new AtomicReference<>();
+		assertThat(pollableSource.poll(received -> {
+			payload.set(received.getPayload());
+		}, new ParameterizedTypeReference<List<Foo>>() {})).isTrue();
+		@SuppressWarnings("unchecked")
+		List<Foo> list = (List<Foo>) payload.get();
+		assertThat(list.size()).isEqualTo(2);
+		assertThat(list.get(0).getFoo()).isEqualTo("bar");
+		assertThat(list.get(1).getFoo()).isEqualTo("baz");
+	}
+
+	@Test
+	public void testConvertMap() {
+		SpringIntegrationChannelBinder binder = createBinder();
+		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"qux\":{\"foo\":\"bar\"}}"));
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
+		pollableSource.setMessageConverter(new SmartJsonMessageConverter());
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
+		properties.setMaxAttempts(1);
+		properties.setBackOffInitialInterval(0);
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		final AtomicReference<Object> payload = new AtomicReference<>();
+		assertThat(pollableSource.poll(received -> {
+			payload.set(received.getPayload());
+		}, new ParameterizedTypeReference<Map<String, Foo>>() {})).isTrue();
+		@SuppressWarnings("unchecked")
+		Map<String, Foo> map = (Map<String, Foo>) payload.get();
+		assertThat(map.size()).isEqualTo(1);
+		assertThat(map.get("qux").getFoo()).isEqualTo("bar");
 	}
 
 	@Test
@@ -180,6 +244,20 @@ public class PollableConsumerTests {
 		this.context.refresh();
 		binder.setApplicationContext(this.context);
 		return binder;
+	}
+
+	public static class Foo {
+
+		private String foo;
+
+		protected String getFoo() {
+			return this.foo;
+		}
+
+		protected void setFoo(String foo) {
+			this.foo = foo;
+		}
+
 	}
 
 }

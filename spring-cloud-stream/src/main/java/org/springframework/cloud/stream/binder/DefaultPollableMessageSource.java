@@ -27,6 +27,7 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.NameMatchMethodPointcutAdvisor;
 import org.springframework.context.Lifecycle;
 import org.springframework.core.AttributeAccessor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.support.AckUtils;
@@ -39,7 +40,9 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHandlingException;
+import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
@@ -74,7 +77,9 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	private BiConsumer<AttributeAccessor, Message<?>> attributesProvider;
 
-	private volatile boolean running;
+	private SmartMessageConverter messageConverter;
+
+	private boolean running;
 
 	public void setSource(MessageSource<?> source) {
 		ProxyFactory pf = new ProxyFactory(source);
@@ -129,6 +134,10 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		this.attributesProvider = attributesProvider;
 	}
 
+	public void setMessageConverter(SmartMessageConverter messageConverter) {
+		this.messageConverter = messageConverter;
+	}
+
 	public void addInterceptor(ChannelInterceptor interceptor) {
 		this.interceptors.add(interceptor);
 	}
@@ -138,12 +147,12 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	}
 
 	@Override
-	public boolean isRunning() {
+	public synchronized boolean isRunning() {
 		return this.running;
 	}
 
 	@Override
-	public void start() {
+	public synchronized void start() {
 		if (!this.running && this.source instanceof Lifecycle) {
 			((Lifecycle) this.source).start();
 		}
@@ -151,7 +160,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	}
 
 	@Override
-	public void stop() {
+	public synchronized void stop() {
 		if (this.running && this.source instanceof Lifecycle) {
 			((Lifecycle) this.source).stop();
 		}
@@ -184,9 +193,20 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	@Override
 	public boolean poll(MessageHandler handler) {
+		return poll(handler, null);
+	}
+
+	@Override
+	public boolean poll(MessageHandler handler, ParameterizedTypeReference<?> type) {
 		Message<?> message = this.source.receive();
 		if (message == null) {
 			return false;
+		}
+		if (type != null && this.messageConverter != null) {
+			Object payload = this.messageConverter.fromMessage(message, byte[].class, type);
+			message = MessageBuilder.withPayload(payload)
+					.copyHeaders(message.getHeaders())
+					.build();
 		}
 		AcknowledgmentCallback ackCallback = StaticMessageHeaderAccessor
 				.getAcknowledgmentCallback(message);
@@ -211,9 +231,10 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 				}
 			}
 			else {
+				final Message<?> messageToHandle = message;
 				this.retryTemplate.execute(context -> {
-					setAttributesIfNecessary(message);
-					doHandleMessage(handler, message);
+					setAttributesIfNecessary(messageToHandle);
+					doHandleMessage(handler, messageToHandle);
 					return null;
 				}, this.recoveryCallback);
 			}

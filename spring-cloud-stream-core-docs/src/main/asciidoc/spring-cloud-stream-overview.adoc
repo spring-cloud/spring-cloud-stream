@@ -658,6 +658,24 @@ IMPORTANT: You must ack (or nack) the message at some point, to avoid resource l
 
 IMPORTANT: Some messaging systems (such as Apache Kafka) maintain a simple offset in a log, if a delivery fails and is requeued with  `StaticMessageHeaderAccessor.getAcknowledgmentCallback(m).acknowledge(Status.REQUEUE);`, any later successfully ack'd messages will be redelivered.
 
+There is also an overloaded `poll` method:
+
+[source,java]
+----
+poll(MessageHandler handler, ParameterizedTypeReference<?> type)
+----
+
+The `type` is a conversion hint allowing the incoming message payload to be converted:
+
+[source,java]
+----
+boolean result = pollableSource.poll(received -> {
+			Map<String, Foo> payload = (Map<String, Foo>) received.getPayload()
+            ...
+
+		}, new ParameterizedTypeReference<Map<String, Foo>>() {}))
+----
+
 ==== Reactive Programming Support
 
 Spring Cloud Stream also supports the use of reactive APIs where incoming and outgoing data is handled as continuous data flows.
