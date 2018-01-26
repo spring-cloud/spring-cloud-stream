@@ -22,12 +22,12 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.boot.actuate.trace.TraceRepository;
+import org.springframework.boot.actuate.web.trace.HttpTraceRepository;
 import org.springframework.context.event.EventListener;
 
 /**
  * A listener for sends and acks of remote application events. Inserts a record for each
- * signal in the {@link TraceRepository}.
+ * signal in the {@link HttpTraceRepository}.
  *
  * @author Dave Syer
  */
@@ -35,20 +35,22 @@ public class TraceListener {
 
 	private static Log log = LogFactory.getLog(TraceListener.class);
 
-	private TraceRepository repository;
+	private HttpTraceRepository repository;
 
-	public TraceListener(TraceRepository repository) {
+	public TraceListener(HttpTraceRepository repository) {
 		this.repository = repository;
 	}
 
 	@EventListener
 	public void onAck(AckRemoteApplicationEvent event) {
-		this.repository.add(getReceivedTrace(event));
+		Map<String, Object> trace = getReceivedTrace(event);
+		// FIXME boot 2 this.repository.add(trace);
 	}
 
 	@EventListener
 	public void onSend(SentApplicationEvent event) {
-		this.repository.add(getSentTrace(event));
+		Map<String, Object> trace = getSentTrace(event);
+		// FIXME boot 2 this.repository.add(trace);
 	}
 
 	protected Map<String, Object> getSentTrace(SentApplicationEvent event) {

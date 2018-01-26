@@ -21,7 +21,7 @@ import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
-import org.springframework.boot.actuate.trace.TraceRepository;
+import org.springframework.boot.actuate.web.trace.HttpTraceRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -202,13 +202,13 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	@Configuration
 	@ConditionalOnClass({ Endpoint.class })
-	@ConditionalOnBean(TraceRepository.class)
+	@ConditionalOnBean(HttpTraceRepository.class)
 	@ConditionalOnProperty(value = "spring.cloud.bus.trace.enabled", matchIfMissing = false)
 	protected static class BusAckTraceConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean
-		public TraceListener ackTraceListener(TraceRepository repository) {
+		public TraceListener ackTraceListener(HttpTraceRepository repository) {
 			return new TraceListener(repository);
 		}
 
