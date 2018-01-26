@@ -97,6 +97,12 @@ public class PollableConsumerTests {
 		}, new ParameterizedTypeReference<Foo>() {})).isTrue();
 		assertThat(payload.get()).isInstanceOf(Foo.class);
 		assertThat(((Foo) payload.get()).getFoo()).isEqualTo("bar");
+		// test the cache for coverage
+		assertThat(pollableSource.poll(received -> {
+			payload.set(received.getPayload());
+		}, new ParameterizedTypeReference<Foo>() {})).isTrue();
+		assertThat(payload.get()).isInstanceOf(Foo.class);
+		assertThat(((Foo) payload.get()).getFoo()).isEqualTo("bar");
 	}
 
 	@Test

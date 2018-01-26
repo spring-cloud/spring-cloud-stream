@@ -17,7 +17,10 @@
 package org.springframework.cloud.stream.converter;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.core.ParameterizedTypeReference;
@@ -35,6 +38,7 @@ public class SmartJsonMessageConverter implements SmartMessageConverter {
 
 	private final ObjectMapper objectMapper;
 
+	private final Map<ParameterizedTypeReference<?>, JavaType> typeCache = new ConcurrentHashMap<>();
 
 	public SmartJsonMessageConverter() {
 		this.objectMapper = new ObjectMapper();
@@ -55,15 +59,17 @@ public class SmartJsonMessageConverter implements SmartMessageConverter {
 		Object payload = message.getPayload();
 		try {
 			if (conversionHint instanceof ParameterizedTypeReference) {
+				JavaType type = this.typeCache.get(conversionHint);
+				if (type == null) {
+					type = this.objectMapper.getTypeFactory().constructType(
+							((ParameterizedTypeReference<?>) conversionHint).getType());
+					this.typeCache.put((ParameterizedTypeReference<?>) conversionHint, type);
+				}
 				if (payload instanceof byte[]) {
-					return this.objectMapper.readValue((byte[]) payload,
-							this.objectMapper.getTypeFactory().constructType(
-									((ParameterizedTypeReference<?>) conversionHint).getType()));
+					return this.objectMapper.readValue((byte[]) payload, type);
 				}
 				else if (payload instanceof String) {
-					return this.objectMapper.readValue((String) payload,
-							this.objectMapper.getTypeFactory().constructType(
-									((ParameterizedTypeReference<?>) conversionHint).getType()));
+					return this.objectMapper.readValue((String) payload, type);
 				}
 				else {
 					throw new IllegalArgumentException("Unsupported payload type");
