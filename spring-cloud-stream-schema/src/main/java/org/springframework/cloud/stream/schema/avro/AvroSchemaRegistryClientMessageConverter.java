@@ -252,8 +252,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 		if (headers instanceof MutableMessageHeaders) {
 			headers.put(MessageHeaders.CONTENT_TYPE,
-					"application/vnd." + schemaReference.getSubject() + ".v"
-							+ schemaReference.getVersion() + "+avro");
+					"application/" + this.prefix + "." + schemaReference.getSubject() 
+						+ ".v" + schemaReference.getVersion() + "+avro");
 		}
 
 		return schema;
