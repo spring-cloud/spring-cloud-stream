@@ -46,17 +46,17 @@ public class DefaultBusPathMatcher implements PathMatcher {
 		this.delagateMatcher = delagateMatcher;
 	}
 
-	protected boolean matchMultiProfile(String pattern, String applicationContextID) {
+	protected boolean matchMultiProfile(String pattern, String idToMatch) {
 
-		log.debug("matchMultiProfile : " + pattern + ", " + applicationContextID);
+		log.debug("matchMultiProfile : " + pattern + ", " + idToMatch);
 
-		// parse the application-context-id
-		String[] appContextIDTokens = tokenizeToStringArray(applicationContextID,":");
-		if (appContextIDTokens.length <= 1) {
+		// parse the id
+		String[] tokens = tokenizeToStringArray(idToMatch,":");
+		if (tokens.length <= 1) {
 			// no parts, default to delegate which already returned false;
 			return false;
 		}
-		String selfProfiles = appContextIDTokens[1];
+		String selfProfiles = tokens[1];
 
 		// short circuit if possible
 		String[] profiles = tokenizeToStringArray(selfProfiles,",");
@@ -73,8 +73,8 @@ public class DefaultBusPathMatcher implements PathMatcher {
 		for (int i = 0; i < profiles.length; i++) {
 			//replace comma separated profiles with single profile
 			String profile = profiles[i];
-			String[] newTokens = new String[appContextIDTokens.length];
-			System.arraycopy(appContextIDTokens, 0, newTokens, 0, appContextIDTokens.length);
+			String[] newTokens = new String[tokens.length];
+			System.arraycopy(tokens, 0, newTokens, 0, tokens.length);
 			newTokens[1] = profile;
 			idsWithSingleProfile[i] = StringUtils.arrayToDelimitedString(newTokens, ":");
 		}

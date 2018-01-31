@@ -22,9 +22,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.bus.BusAutoConfiguration;
@@ -32,6 +34,7 @@ import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
+import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
@@ -54,12 +57,13 @@ import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 @Configuration
 @ConditionalOnBusEnabled
 @ConditionalOnClass({ RefreshBusEndpoint.class, ObjectMapper.class })
-@AutoConfigureAfter(BusAutoConfiguration.class)
+@AutoConfigureBefore(BusAutoConfiguration.class)
 public class BusJacksonAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(name = "busJsonConverter")
-	public BusJacksonMessageConverter busJsonConverter() {
+	@StreamMessageConverter
+	public AbstractMessageConverter busJsonConverter() {
 		return new BusJacksonMessageConverter();
 	}
 
@@ -67,6 +71,8 @@ public class BusJacksonAutoConfiguration {
 
 class BusJacksonMessageConverter extends AbstractMessageConverter
 		implements InitializingBean {
+
+	private static final Log log = LogFactory.getLog(BusJacksonMessageConverter.class);
 
 	private static final String DEFAULT_PACKAGE = ClassUtils
 			.getPackageName(RemoteApplicationEvent.class);
@@ -107,6 +113,9 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 					}
 				}
 			}
+		}
+		if (log.isDebugEnabled()) {
+			log.debug("Found sub types: "+types);
 		}
 		return types.toArray(new Class<?>[0]);
 	}

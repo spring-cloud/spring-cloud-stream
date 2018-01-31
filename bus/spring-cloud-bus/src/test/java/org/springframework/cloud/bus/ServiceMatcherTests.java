@@ -37,14 +37,18 @@ public class ServiceMatcherTests {
 
 	private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
-	private ServiceMatcher matcher = new ServiceMatcher();
-	private BusProperties context = new BusProperties();
+	private ServiceMatcher matcher;
 
 	@Before
 	public void init() {
-		context.setId("one:two:8888");
-		matcher.setMatcher(new DefaultBusPathMatcher(new AntPathMatcher(":")));
-		matcher.setBusProperties(context);
+		initMatcher("one:two:8888");
+	}
+
+	private void initMatcher(String id) {
+		BusProperties properties = new BusProperties();
+		properties.setId(id);
+		DefaultBusPathMatcher pathMatcher = new DefaultBusPathMatcher(new AntPathMatcher(":"));
+		matcher = new ServiceMatcher(pathMatcher, properties.getId());
 	}
 
 	@Test
@@ -130,7 +134,7 @@ public class ServiceMatcherTests {
 	 */
 	@Test
 	public void forSelfWithMultipleProfiles() {
-		context.setId("customerportal:dev,cloud:80");
+		initMatcher("customerportal:dev,cloud:80");
 		assertThat(matcher.isForSelf(new EnvironmentChangeRemoteApplicationEvent(this,
 				"foo:bar:spam", "customerportal:cloud:*", EMPTY_MAP)), is(true));
 	}
@@ -140,7 +144,7 @@ public class ServiceMatcherTests {
 	 */
 	@Test
 	public void notForSelfWithMultipleProfiles() {
-		context.setId("customerportal:dev,cloud:80");
+		initMatcher("customerportal:dev,cloud:80");
 		assertThat(matcher.isForSelf(new EnvironmentChangeRemoteApplicationEvent(this,
 				"foo:bar:spam", "bar:cloud:*", EMPTY_MAP)), is(false));
 	}
@@ -150,7 +154,7 @@ public class ServiceMatcherTests {
 	 */
 	@Test
 	public void notForSelfWithMultipleProfilesDifferentPort() {
-		context.setId("customerportal:dev,cloud:80");
+		initMatcher("customerportal:dev,cloud:80");
 		assertThat(
 				matcher.isForSelf(new EnvironmentChangeRemoteApplicationEvent(this,
 						"foo:bar:spam", "customerportal:cloud:8008", EMPTY_MAP)),

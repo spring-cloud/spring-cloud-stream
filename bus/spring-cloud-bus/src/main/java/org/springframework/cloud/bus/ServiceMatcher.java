@@ -24,15 +24,12 @@ import org.springframework.util.PathMatcher;
  * @author Spencer Gibb
  */
 public class ServiceMatcher {
-	private BusProperties context;
-	private PathMatcher matcher;
+	private final PathMatcher matcher;
+	private final String id;
 
-	public void setBusProperties(BusProperties context) {
-		this.context = context;
-	}
-
-	public void setMatcher(PathMatcher matcher) {
+	public ServiceMatcher(PathMatcher matcher, String id) {
 		this.matcher = matcher;
+		this.id = id;
 	}
 
 	public boolean isFromSelf(RemoteApplicationEvent event) {
@@ -48,7 +45,7 @@ public class ServiceMatcher {
 	}
 
 	public String getServiceId() {
-		return this.context.getId();
+		return this.id;
 	}
 
 }

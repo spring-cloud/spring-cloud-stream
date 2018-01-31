@@ -23,15 +23,17 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
+import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -47,6 +49,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.GenericMessage;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -73,8 +76,8 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void inboundNotForSelf() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
-		this.context.getBean(BusProperties.class).setId("foo");
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
+				"--spring.cloud.bus.id=foo");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "bar", "bar")));
@@ -84,8 +87,8 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void inboundFromSelf() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
-		this.context.getBean(BusProperties.class).setId("foo");
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
+				"--spring.cloud.bus.id=foo");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
@@ -95,8 +98,8 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void inboundNotFromSelf() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
-		this.context.getBean(BusProperties.class).setId("bar");
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
+				"--spring.cloud.bus.id=bar");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
@@ -106,11 +109,11 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void inboundNotFromSelfWithAck() throws Exception {
-		this.context = SpringApplication
-				.run(new Class[] { InboundMessageHandlerConfiguration.class,
+		this.context = SpringApplication.run(
+				new Class[] { InboundMessageHandlerConfiguration.class,
 						OutboundMessageHandlerConfiguration.class,
-						SentMessageConfiguration.class }, new String[] {});
-		this.context.getBean(BusProperties.class).setId("bar");
+						SentMessageConfiguration.class },
+				new String[] { "--spring.cloud.bus.id=bar" });
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
@@ -131,8 +134,8 @@ public class BusAutoConfigurationTests {
 				new Class[] { InboundMessageHandlerConfiguration.class,
 						OutboundMessageHandlerConfiguration.class,
 						SentMessageConfiguration.class },
-				new String[] { "--spring.cloud.bus.trace.enabled=true" });
-		this.context.getBean(BusProperties.class).setId("bar");
+				new String[] { "--spring.cloud.bus.trace.enabled=true",
+						"--spring.cloud.bus.id=bar" });
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
@@ -151,7 +154,8 @@ public class BusAutoConfigurationTests {
 				new Class[] { InboundMessageHandlerConfiguration.class,
 						OutboundMessageHandlerConfiguration.class,
 						AckMessageConfiguration.class },
-				new String[] { "--spring.cloud.bus.trace.enabled=true" });
+				new String[] { "--spring.cloud.bus.trace.enabled=true",
+						"--spring.cloud.bus.id=bar" });
 		this.context.getBean(BusProperties.class).setId("bar");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(new AckRemoteApplicationEvent(this, "foo",
@@ -165,19 +169,18 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void outboundFromSelf() throws Exception {
 		this.context = SpringApplication.run(OutboundMessageHandlerConfiguration.class,
-				"--debug=true");
-		this.context.getBean(BusProperties.class).setId("foo");
+				"--debug=true", "--spring.cloud.bus.id=foo");
 		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", null));
 		OutboundMessageHandlerConfiguration outbound = this.context
 				.getBean(OutboundMessageHandlerConfiguration.class);
 		outbound.latch.await(2000L, TimeUnit.MILLISECONDS);
-		assertNotNull(outbound.message);
+		assertNotNull("message was null", outbound.message);
 	}
 
 	@Test
 	public void outboundNotFromSelf() {
-		this.context = SpringApplication.run(OutboundMessageHandlerConfiguration.class);
-		this.context.getBean(BusProperties.class).setId("bar");
+		this.context = SpringApplication.run(OutboundMessageHandlerConfiguration.class,
+				"--spring.cloud.bus.id=bar");
 		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", null));
 		assertNull(
 				this.context.getBean(OutboundMessageHandlerConfiguration.class).message);
@@ -185,8 +188,8 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void inboundNotFromSelfPathPattern() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
-		this.context.getBean(BusProperties.class).setId("bar:1000");
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
+				"--spring.cloud.bus.id=bar:1000");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar:*")));
@@ -196,8 +199,8 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void inboundNotFromSelfDeepPathPattern() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
-		this.context.getBean(BusProperties.class).setId("bar:test:1000");
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
+				"--spring.cloud.bus.id=bar:test:1000");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar:**")));
@@ -207,8 +210,8 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void inboundNotFromSelfFlatPattern() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
-		this.context.getBean(BusProperties.class).setId("bar");
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
+				"--spring.cloud.bus.id=bar");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar*")));
@@ -216,17 +219,33 @@ public class BusAutoConfigurationTests {
 				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
 	}
 
-	/**
-	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74
-	 */
+	// see https://github.com/spring-cloud/spring-cloud-bus/issues/74
 	@Test
 	public void inboundNotFromSelfUnknown() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
-		this.context.getBean(BusProperties.class).setId("bar");
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
+				"--spring.cloud.bus.id=bar");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(new UnknownRemoteApplicationEvent(this,
 						"UnknownEvent", "yada".getBytes())));
 		// No Exception expected
+	}
+
+	// see https://github.com/spring-cloud/spring-cloud-bus/issues/101
+	@Test
+	@Ignore // TODO: replicate problem
+	public void serviceMatcherIdIsConstantAfterRefresh() {
+		this.context = SpringApplication.run(new Class[] { RefreshConfig.class, },
+				new String[] {});
+		String originalServiceId = this.context.getBean(ServiceMatcher.class)
+				.getServiceId();
+		this.context.getBean(ContextRefresher.class).refresh();
+		String newServiceId = this.context.getBean(ServiceMatcher.class).getServiceId();
+		assertThat(newServiceId).isEqualTo(originalServiceId);
+	}
+
+	@Configuration
+	@EnableAutoConfiguration
+	protected static class RefreshConfig {
 	}
 
 	@Configuration

@@ -63,7 +63,7 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeWithMessageConverter() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(
 				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
@@ -73,7 +73,7 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeUnknownTypeWithMessageConverter() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(
 				MessageBuilder.withPayload("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}").build(),
@@ -85,7 +85,7 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeJsonTypeWithMessageConverter() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(
 				MessageBuilder.withPayload("{\"type\":\"typed\"}").build(),
@@ -98,7 +98,7 @@ public class SubtypeModuleTests {
 	 */
 	@Test
 	public void testDeserializeAckRemoteApplicationEventWithKnownType() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(MessageBuilder.withPayload(
 				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent\"}")
@@ -113,7 +113,7 @@ public class SubtypeModuleTests {
 	 */
 	@Test
 	public void testDeserializeAckRemoteApplicationEventWithUnknownType() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonAutoConfiguration().busJsonConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(MessageBuilder.withPayload(
 				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}").build(),
