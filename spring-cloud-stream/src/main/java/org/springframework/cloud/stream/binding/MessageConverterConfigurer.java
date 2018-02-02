@@ -24,7 +24,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -334,7 +333,10 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 				throw new IllegalStateException("Failed to convert message: '" + message + "' to outbound message.");
 			}
 			
-			if (ct != null && !ct.equals(oct)) {		
+			/*
+			 * The below code is only to support message format defined in v1.x and can/will be removed in the future
+			 */
+			if (ct != null && !ct.equals(oct) && oct != null) {		
 				@SuppressWarnings("unchecked")
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
 				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(ct));
