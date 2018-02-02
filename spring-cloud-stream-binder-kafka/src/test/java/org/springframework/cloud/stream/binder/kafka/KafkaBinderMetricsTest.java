@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.search.Search;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -82,8 +83,8 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
-		assertThat(group.gauge().get().value()).isEqualTo(500.0);
+		Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
+		assertThat(group.gauge().value()).isEqualTo(500.0);
 	}
 
 	@Test
@@ -98,8 +99,8 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
-		assertThat(group.gauge().get().value()).isEqualTo(1000.0);
+		Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
+		assertThat(group.gauge().value()).isEqualTo(1000.0);
 	}
 
 	@Test
@@ -109,8 +110,8 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		MeterRegistry.Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
-		assertThat(group.gauge().get().value()).isEqualTo(1000.0);
+		Search group = meterRegistry.find(String.format("%s.%s.%s.lag", KafkaBinderMetrics.METRIC_PREFIX, "group", TEST_TOPIC));
+		assertThat(group.gauge().value()).isEqualTo(1000.0);
 	}
 
 	@Test
