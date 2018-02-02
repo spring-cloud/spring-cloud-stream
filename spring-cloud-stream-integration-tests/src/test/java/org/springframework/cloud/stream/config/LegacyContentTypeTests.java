@@ -56,7 +56,7 @@ public class LegacyContentTypeTests {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				assertThat(message.getPayload()).isInstanceOf(byte[].class);
-				assertThat(new String(((byte[])message.getPayload()), StandardCharsets.UTF_8)).isEqualTo("{\"message\":\"Hi\"}");
+				assertThat(((byte[])message.getPayload())).isEqualTo("{\"message\":\"Hi\"}".getBytes(StandardCharsets.UTF_8));
 				assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
 				latch.countDown();
 			}

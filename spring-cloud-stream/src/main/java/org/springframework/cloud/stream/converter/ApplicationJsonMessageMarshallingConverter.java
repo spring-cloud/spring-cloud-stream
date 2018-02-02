@@ -37,7 +37,7 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
-		if (payload instanceof byte[]){
+		if (payload instanceof byte[]) {
 			return payload;
 		}
 		else if (payload instanceof String) {
