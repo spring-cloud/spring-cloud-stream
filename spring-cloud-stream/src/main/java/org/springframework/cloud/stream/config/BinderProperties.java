@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,27 @@ import java.util.Properties;
  */
 public class BinderProperties {
 
+	/**
+	 * The binder type. It typically references one of the binders found on the classpath, 
+	 * in particular a key in a META-INF/spring.binders file. 
+	 * By default, it has the same value as the configuration name.
+	 */
 	private String type;
 
+	/**
+	 * Root for a set of properties that can be used to customize the environment of the binder. 
+	 */
 	private Map<Object, Object> environment = new HashMap<>();
 
+	/**
+	 * Whether the configuration will inherit the environment of the application itself. Default: true
+	 */
 	private boolean inheritEnvironment = true;
 
+	/**
+	 * Whether the binder configuration is a candidate for being considered a default binder, 
+	 * or can be used only when explicitly referenced. Defaulys: true
+	 */
 	private boolean defaultCandidate = true;
 
 	public String getType() {

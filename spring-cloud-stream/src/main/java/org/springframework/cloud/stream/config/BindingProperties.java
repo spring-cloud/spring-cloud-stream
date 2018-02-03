@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,16 +54,30 @@ public class BindingProperties {
 	 */
 	private String group;
 
-	// Properties for both inbound/outbound
+	// Properties for both input and output bindings
 
+	/**
+	 * Specifies content-type that will be used by this binding in the event 
+	 * it is not specified in Message headers. Default: 'application/json'.
+	 */
 	private String contentType = "application/json";
 
+	/**
+	 * The name of the binder to use for this binding in the event multiple binders available (e.g., 'rabbit');
+	 */
 	private String binder;
 
+	/**
+	 * Additional consumer specific properties (see {@link ConsumerProperties})
+	 */
 	private ConsumerProperties consumer;
 
+	/**
+	 * Additional producer specific properties (see {@link ProducerProperties})
+	 */
 	private ProducerProperties producer;
 
+	
 	public String getDestination() {
 		return this.destination;
 	}
