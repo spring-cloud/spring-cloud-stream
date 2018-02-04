@@ -2415,7 +2415,7 @@ public class KafkaBinderTests extends
 	@Test
 	public void testPolledConsumer() throws Exception {
 		KafkaTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable", "group",
 				inboundBindTarget, createConsumerProperties());
 		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
@@ -2439,7 +2439,7 @@ public class KafkaBinderTests extends
 	@Test
 	public void testPolledConsumerWithDlq() throws Exception {
 		KafkaTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
 		ExtendedConsumerProperties<KafkaConsumerProperties> properties = createConsumerProperties();
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
