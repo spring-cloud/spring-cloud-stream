@@ -1330,7 +1330,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumer() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable", "group",
 				inboundBindTarget, createConsumerProperties());
 		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
@@ -1351,7 +1351,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumerWithDlq() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
@@ -1380,7 +1380,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumerWithDlqNoRetry() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.setMaxAttempts(1);
 //		properties.getExtension().setRequeueRejected(true); // loops, correctly
@@ -1409,7 +1409,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumerWithDlqRePub() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
