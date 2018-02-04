@@ -120,7 +120,7 @@ public class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder
 	 * Set a delegate {@link MessageSource} for pollable consumers.
 	 * @param messageSourceDelegate the delegate.
 	 */
-	public void setMessageSourceDelegate(MessageSource<?> messageSourceDelegate) {
+	public void setMessageSourceDelegate(MessageSource<byte[]> messageSourceDelegate) {
 		this.messageSourceDelegate = messageSourceDelegate;
 	}
 

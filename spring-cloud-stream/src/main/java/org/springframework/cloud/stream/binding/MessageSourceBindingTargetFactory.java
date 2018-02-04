@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binding;
 
 import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.PollableMessageSource;
+import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.util.Assert;
 
 /**
@@ -30,16 +31,19 @@ public class MessageSourceBindingTargetFactory
 		extends AbstractBindingTargetFactory<PollableMessageSource> {
 
 	private final MessageChannelAndSourceConfigurer messageSourceConfigurer;
+	
+	private final SmartMessageConverter messageConverter;
 
-	public MessageSourceBindingTargetFactory(MessageChannelConfigurer messageSourceConfigurer) {
+	public MessageSourceBindingTargetFactory(SmartMessageConverter messageConverter, MessageChannelConfigurer messageSourceConfigurer) {
 		super(PollableMessageSource.class);
 		Assert.isInstanceOf(MessageChannelAndSourceConfigurer.class, messageSourceConfigurer);
 		this.messageSourceConfigurer = (MessageChannelAndSourceConfigurer) messageSourceConfigurer;
+		this.messageConverter = messageConverter;
 	}
 
 	@Override
 	public PollableMessageSource createInput(String name) {
-		DefaultPollableMessageSource binding = new DefaultPollableMessageSource();
+		DefaultPollableMessageSource binding = new DefaultPollableMessageSource(this.messageConverter);
 		this.messageSourceConfigurer.configurePolledMessageSource(binding, name);
 		return binding;
 	}

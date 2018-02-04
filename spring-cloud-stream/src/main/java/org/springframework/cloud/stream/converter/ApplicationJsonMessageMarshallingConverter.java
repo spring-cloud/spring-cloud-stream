@@ -16,13 +16,21 @@
 
 package org.springframework.cloud.stream.converter;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.core.MethodParameter;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.MessageConversionException;
 
 /**
  * Variation of {@link MappingJackson2MessageConverter} to support marshalling and 
@@ -30,10 +38,14 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
  * 
  * 
  * @author Oleg Zhurakousky
+ * @author Gary Russell
  * @since 2.0
  *
  */
 class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
+	
+	private final Map<ParameterizedTypeReference<?>, JavaType> typeCache = new ConcurrentHashMap<>();
+	
 
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
@@ -62,12 +74,44 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 				conversionHint = null; 
 			}
 		}
-		if (message.getPayload() instanceof byte[] &&  targetClass.isAssignableFrom(String.class)) {
-			result = new String((byte[])message.getPayload(), StandardCharsets.UTF_8);
+		else if (conversionHint instanceof ParameterizedTypeReference) {
+			result = convertParameterizedType(message, targetClass, conversionHint);
 		}
-		else {
-			result = super.convertFromInternal(message, targetClass, conversionHint);
+		
+		if (result == null) {
+			if (message.getPayload() instanceof byte[] &&  targetClass.isAssignableFrom(String.class)) {
+				result = new String((byte[])message.getPayload(), StandardCharsets.UTF_8);
+			}
+			else {
+				result = super.convertFromInternal(message, targetClass, conversionHint);
+			}
 		}
+		
 		return result;
+	}
+	
+	private Object convertParameterizedType(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		ObjectMapper objectMapper = this.getObjectMapper();
+		Object payload = message.getPayload();
+		try {
+			JavaType type = this.typeCache.get(conversionHint);
+			if (type == null) {
+				type = objectMapper.getTypeFactory().constructType(
+						((ParameterizedTypeReference<?>) conversionHint).getType());
+				this.typeCache.put((ParameterizedTypeReference<?>) conversionHint, type);
+			}
+			if (payload instanceof byte[]) {
+				return objectMapper.readValue((byte[]) payload, type);
+			}
+			else if (payload instanceof String) {
+				return objectMapper.readValue((String) payload, type);
+			}
+			else {
+				return null;
+			}
+		}
+		catch (IOException e) {
+			throw new MessageConversionException("Cannot parse payload ", e);
+		}
 	}
 }

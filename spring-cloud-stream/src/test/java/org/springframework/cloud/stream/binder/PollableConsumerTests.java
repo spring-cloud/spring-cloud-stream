@@ -15,7 +15,6 @@
  */
 
 package org.springframework.cloud.stream.binder;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -23,39 +22,55 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.Before;
 import org.junit.Test;
 
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.binder.integration.SpringIntegrationBinderConfiguration;
 import org.springframework.cloud.stream.binder.integration.SpringIntegrationChannelBinder;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationProvisioner;
-import org.springframework.cloud.stream.converter.SmartJsonMessageConverter;
-import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Gary Russell
+ * @author Oleg Zhurakousky
  * @since 2.0
  *
  */
 public class PollableConsumerTests {
 
-	private final GenericApplicationContext context = new GenericApplicationContext();
+	private ApplicationContext context;
+	
+	private SmartMessageConverter messageConverter; 
+	
+	@Before
+	public void before() {
+		this.messageConverter = new CompositeMessageConverterFactory().getMessageConverterForAllRegistered();
+	}
 
 	@Test
 	public void testSimple() {
 		SpringIntegrationChannelBinder binder = createBinder();
-		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);			
+			
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
 		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
 
 			@Override
@@ -73,7 +88,7 @@ public class PollableConsumerTests {
 		final AtomicInteger count = new AtomicInteger();
 		assertThat(pollableSource.poll(received -> {
 			assertThat(received.getPayload()).isEqualTo("POLLED DATA");
-			assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo("text/plain");
+			assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/plain"));
 			if (count.incrementAndGet() == 1) {
 				throw new RuntimeException("test retry");
 			}
@@ -84,9 +99,12 @@ public class PollableConsumerTests {
 	@Test
 	public void testConvertSimple() {
 		SpringIntegrationChannelBinder binder = createBinder();
-		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"foo\":\"bar\"}"));
-		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
-		pollableSource.setMessageConverter(new SmartJsonMessageConverter());
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
+		
+		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes()));
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(1);
 		properties.setBackOffInitialInterval(0);
@@ -108,13 +126,20 @@ public class PollableConsumerTests {
 	@Test
 	public void testConvertList() {
 		SpringIntegrationChannelBinder binder = createBinder();
-		binder.setMessageSourceDelegate(() -> new GenericMessage<>("[{\"foo\":\"bar\"},{\"foo\":\"baz\"}]"));
-		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
-		pollableSource.setMessageConverter(new SmartJsonMessageConverter());
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
+		
+		binder.setMessageSourceDelegate(() -> new GenericMessage<>("[{\"foo\":\"bar\"},{\"foo\":\"baz\"}]".getBytes()));
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(1);
 		properties.setBackOffInitialInterval(0);
+		
+		
+		
 		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		
 		final AtomicReference<Object> payload = new AtomicReference<>();
 		assertThat(pollableSource.poll(received -> {
 			payload.set(received.getPayload());
@@ -129,9 +154,12 @@ public class PollableConsumerTests {
 	@Test
 	public void testConvertMap() {
 		SpringIntegrationChannelBinder binder = createBinder();
-		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"qux\":{\"foo\":\"bar\"}}"));
-		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
-		pollableSource.setMessageConverter(new SmartJsonMessageConverter());
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
+		
+		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"qux\":{\"foo\":\"bar\"}}".getBytes()));
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(1);
 		properties.setBackOffInitialInterval(0);
@@ -149,6 +177,8 @@ public class PollableConsumerTests {
 	@Test
 	public void testEmbedded() {
 		SpringIntegrationChannelBinder binder = createBinder();
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
+		
 		binder.setMessageSourceDelegate(() -> {
 			MessageValues original = new MessageValues("foo".getBytes(),
 					Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "application/octet-stream"));
@@ -163,7 +193,8 @@ public class PollableConsumerTests {
 		});
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setHeaderMode(HeaderMode.embeddedHeaders);
-		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
 		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
 
 			@Override
@@ -184,7 +215,10 @@ public class PollableConsumerTests {
 	@Test
 	public void testErrors() {
 		SpringIntegrationChannelBinder binder = createBinder();
-		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
+		
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
 		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
 
 			@Override
@@ -200,7 +234,7 @@ public class PollableConsumerTests {
 		properties.setBackOffInitialInterval(0);
 		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
 		final CountDownLatch latch = new CountDownLatch(1);
-		this.context.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class).subscribe(m -> {
+		context.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class).subscribe(m -> {
 			latch.countDown();
 		});
 		final AtomicInteger count = new AtomicInteger();
@@ -217,7 +251,10 @@ public class PollableConsumerTests {
 	@Test
 	public void testErrorsNoRetry() {
 		SpringIntegrationChannelBinder binder = createBinder();
-		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource();
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
+		
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
 		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
 
 			@Override
@@ -232,7 +269,7 @@ public class PollableConsumerTests {
 		properties.setMaxAttempts(1);
 		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
 		final CountDownLatch latch = new CountDownLatch(1);
-		this.context.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class).subscribe(m -> {
+		context.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class).subscribe(m -> {
 			latch.countDown();
 		});
 		final AtomicInteger count = new AtomicInteger();
@@ -244,11 +281,9 @@ public class PollableConsumerTests {
 	}
 
 	private SpringIntegrationChannelBinder createBinder() {
-		SpringIntegrationProvisioner provisioningProvider = new SpringIntegrationProvisioner();
-		SpringIntegrationChannelBinder binder = new SpringIntegrationChannelBinder(provisioningProvider);
-		this.context.registerBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, PublishSubscribeChannel.class);
-		this.context.refresh();
-		binder.setApplicationContext(this.context);
+		this.context = new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration())
+				.web(WebApplicationType.NONE).run();		
+		SpringIntegrationChannelBinder binder = context.getBean(SpringIntegrationChannelBinder.class);
 		return binder;
 	}
 

@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.AbstractBinderTests.Station.Readings;
@@ -56,6 +57,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.PollableChannel;
+import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.handler.annotation.support.PayloadArgumentResolver;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolverComposite;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
@@ -84,6 +86,13 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	protected final Log logger = LogFactory.getLog(this.getClass());
 
 	protected B testBinder;
+	
+	protected SmartMessageConverter messageConverter;
+	
+	@Before
+	public void before() {
+		this.messageConverter = new CompositeMessageConverterFactory().getMessageConverterForAllRegistered();
+	}
 
 	/**
 	 * Subclasses may override this default value to have tests wait longer for a message
@@ -459,7 +468,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	protected DefaultPollableMessageSource createBindableMessageSource(String bindingName,
 			BindingProperties bindingProperties) throws Exception {
-		DefaultPollableMessageSource source = new DefaultPollableMessageSource();
+		DefaultPollableMessageSource source = new DefaultPollableMessageSource(new CompositeMessageConverterFactory().getMessageConverterForAllRegistered());
 		createConverterConfigurer(bindingName, bindingProperties).configurePolledMessageSource(source, bindingName);
 		return source;
 	}

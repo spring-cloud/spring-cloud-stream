@@ -138,9 +138,9 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	public MessageSourceBindingTargetFactory messageSourceFactory(
+	public MessageSourceBindingTargetFactory messageSourceFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new MessageSourceBindingTargetFactory(compositeMessageChannelConfigurer);
+		return new MessageSourceBindingTargetFactory(compositeMessageConverterFactory.getMessageConverterForAllRegistered(), compositeMessageChannelConfigurer);
 	}
 
 	@Bean

@@ -94,10 +94,6 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		});
 	}
 
-	/**
-	 * @deprecated as of version 2.0 based on deprecated {@link Bindings} annotation.
-	 */
-	@Deprecated
 	public static void registerBindingTargetsQualifiedBeanDefinitions(Class<?> parent, Class<?> type,
 			final BeanDefinitionRegistry registry) {
 

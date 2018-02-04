@@ -54,6 +54,7 @@ import org.springframework.util.Assert;
  * The default implementation of a {@link PollableMessageSource}.
  *
  * @author Gary Russell
+ * @author Oleg Zhurakousky
  * @since 2.0
  *
  */
@@ -64,6 +65,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	private final List<ChannelInterceptor> interceptors = new ArrayList<>();
 
 	private final MessagingTemplate messagingTemplate = new MessagingTemplate();
+	
+	private final SmartMessageConverter messageConverter;
 
 	private MessageSource<?> source;
 
@@ -77,9 +80,11 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	private BiConsumer<AttributeAccessor, Message<?>> attributesProvider;
 
-	private SmartMessageConverter messageConverter;
-
 	private boolean running;
+	
+	public DefaultPollableMessageSource(SmartMessageConverter messageConverter) {
+		this.messageConverter = messageConverter;
+	}
 
 	public void setSource(MessageSource<?> source) {
 		ProxyFactory pf = new ProxyFactory(source);
@@ -132,10 +137,6 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	public void setAttributesProvider(BiConsumer<AttributeAccessor, Message<?>> attributesProvider) {
 		this.attributesProvider = attributesProvider;
-	}
-
-	public void setMessageConverter(SmartMessageConverter messageConverter) {
-		this.messageConverter = messageConverter;
 	}
 
 	public void addInterceptor(ChannelInterceptor interceptor) {
