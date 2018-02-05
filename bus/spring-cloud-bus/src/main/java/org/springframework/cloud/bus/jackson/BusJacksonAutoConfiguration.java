@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -59,8 +60,8 @@ public class BusJacksonAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(name = "busJsonConverter")
-	public BusJacksonMessageConverter busJsonConverter() {
-		return new BusJacksonMessageConverter();
+	public BusJacksonMessageConverter busJsonConverter(@Autowired(required = false) ObjectMapper objectMapper) {
+		return new BusJacksonMessageConverter(objectMapper);
 	}
 
 }
@@ -71,9 +72,23 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 	private static final String DEFAULT_PACKAGE = ClassUtils
 			.getPackageName(RemoteApplicationEvent.class);
 
-	private final ObjectMapper mapper = new ObjectMapper();
+	private final ObjectMapper mapper;
 
 	private String[] packagesToScan = new String[] { DEFAULT_PACKAGE };
+
+	public BusJacksonMessageConverter() {
+		this(null);
+    }
+
+	public BusJacksonMessageConverter(ObjectMapper objectMapper) {
+		super(MimeTypeUtils.APPLICATION_JSON);
+
+		if (objectMapper != null) {
+			this.mapper = objectMapper;
+		} else {
+			this.mapper = new ObjectMapper();
+		}
+	}
 
 	public void setPackagesToScan(String[] packagesToScan) {
 		List<String> packages = new ArrayList<>(Arrays.asList(packagesToScan));
@@ -81,10 +96,6 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 			packages.add(DEFAULT_PACKAGE);
 		}
 		this.packagesToScan = packages.toArray(new String[0]);
-	}
-
-	public BusJacksonMessageConverter() {
-		super(MimeTypeUtils.APPLICATION_JSON);
 	}
 
 	private Class<?>[] findSubTypes() {
