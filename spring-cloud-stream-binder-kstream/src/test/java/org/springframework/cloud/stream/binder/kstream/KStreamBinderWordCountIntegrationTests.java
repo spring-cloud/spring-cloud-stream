@@ -37,6 +37,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kstream.annotations.KStreamProcessor;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamApplicationSupportProperties;
@@ -87,8 +88,8 @@ public class KStreamBinderWordCountIntegrationTests {
 				"--spring.cloud.stream.bindings.output.destination=counts",
 				"--spring.cloud.stream.bindings.output.contentType=application/json",
 				"--spring.cloud.stream.kstream.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kstream.binder.configuration.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kstream.binder.configuration.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kstream.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kstream.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kstream.timeWindow.length=5000",
@@ -120,10 +121,15 @@ public class KStreamBinderWordCountIntegrationTests {
 		@Autowired
 		private TimeWindows timeWindows;
 
-		@StreamListener("input")
+		@StreamListener
 		@SendTo("output")
-		public KStream<?, WordCount> process(KStream<Object, String> input) {
+		public KStream<?, WordCount> process(@Input("input") KStream<Object, String> input) {
 
+			input.map((k,v) -> {
+				System.out.println(k);
+				System.out.println(v);
+				return new KeyValue<>(k,v);
+			});
 			return input
 					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))

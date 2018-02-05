@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,18 @@
 
 package org.springframework.cloud.stream.binder.kstream.config;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
-import org.springframework.cloud.stream.binder.kstream.KStreamBinder;
 import org.springframework.cloud.stream.binder.kstream.KStreamBindingInformationCatalogue;
-import org.springframework.cloud.stream.binder.kstream.KStreamBoundMessageConversionDelegate;
-import org.springframework.cloud.stream.binder.kstream.KeyValueSerdeResolver;
+import org.springframework.cloud.stream.binder.kstream.KTableBinder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
- * @author Marius Bogoevici
- * @author Gary Russell
  * @author Soby Chacko
  */
-@Configuration
-public class KStreamBinderConfiguration {
-
-	private static final Log logger = LogFactory.getLog(KStreamBinderConfiguration.class);
+public class KTableBinderConfiguration {
 
 	@Autowired
 	private KafkaProperties kafkaProperties;
@@ -52,16 +41,11 @@ public class KStreamBinderConfiguration {
 	}
 
 	@Bean
-	public KStreamBinder kStreamBinder(KStreamBinderConfigurationProperties binderConfigurationProperties,
+	public KTableBinder kTableBinder(KStreamBinderConfigurationProperties binderConfigurationProperties,
 									KafkaTopicProvisioner kafkaTopicProvisioner,
-									KStreamBoundMessageConversionDelegate KStreamBoundMessageConversionDelegate,
-									KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue,
-									KeyValueSerdeResolver keyValueSerdeResolver) {
-		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner,
-				KStreamBoundMessageConversionDelegate, KStreamBindingInformationCatalogue,
-				keyValueSerdeResolver);
-		kStreamBinder.setkStreamExtendedBindingProperties(kStreamExtendedBindingProperties);
+									KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue) {
+		KTableBinder kStreamBinder = new KTableBinder(binderConfigurationProperties, kafkaTopicProvisioner,
+				KStreamBindingInformationCatalogue);
 		return kStreamBinder;
 	}
-
 }

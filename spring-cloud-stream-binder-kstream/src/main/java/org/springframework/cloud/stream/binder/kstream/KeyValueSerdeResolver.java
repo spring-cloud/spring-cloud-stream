@@ -139,8 +139,8 @@ public class KeyValueSerdeResolver {
 				keySerde = Utils.newInstance(keySerdeString, Serde.class);
 			}
 			else {
-				keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("key.serde") ?
-						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("key.serde"), Serde.class) : Serdes.ByteArray();
+				keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("default.key.serde") ?
+						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("default.key.serde"), Serde.class) : Serdes.ByteArray();
 			}
 			keySerde.configure(streamConfigGlobalProperties, true);
 
@@ -157,8 +157,8 @@ public class KeyValueSerdeResolver {
 			valueSerde = Utils.newInstance(valueSerdeString, Serde.class);
 		}
 		else {
-			valueSerde = this.binderConfigurationProperties.getConfiguration().containsKey("value.serde") ?
-					Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("value.serde"), Serde.class) : Serdes.ByteArray();
+			valueSerde = this.binderConfigurationProperties.getConfiguration().containsKey("default.value.serde") ?
+					Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("default.value.serde"), Serde.class) : Serdes.ByteArray();
 		}
 		return valueSerde;
 	}

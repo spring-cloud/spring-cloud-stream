@@ -23,6 +23,12 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
  */
 public class KStreamBinderConfigurationProperties extends KafkaBinderConfigurationProperties {
 
+	public enum SerdeError {
+		logAndContinue,
+		logAndFail,
+		sendToDlq
+	}
+
 	private String applicationId = "default";
 
 	public String getApplicationId() {
@@ -31,6 +37,21 @@ public class KStreamBinderConfigurationProperties extends KafkaBinderConfigurati
 
 	public void setApplicationId(String applicationId) {
 		this.applicationId = applicationId;
+	}
+
+	/**
+	 * {@link org.apache.kafka.streams.errors.DeserializationExceptionHandler} to use
+	 * when there is a Serde error. {@link KStreamBinderConfigurationProperties.SerdeError}
+	 * values are used to provide the exception handler on consumer binding.
+	 */
+	private KStreamBinderConfigurationProperties.SerdeError serdeError;
+
+	public KStreamBinderConfigurationProperties.SerdeError getSerdeError() {
+		return serdeError;
+	}
+
+	public void setSerdeError(KStreamBinderConfigurationProperties.SerdeError serdeError) {
+		this.serdeError = serdeError;
 	}
 
 }

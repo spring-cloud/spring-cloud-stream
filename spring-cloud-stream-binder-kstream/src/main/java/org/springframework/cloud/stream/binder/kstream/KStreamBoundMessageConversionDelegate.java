@@ -24,7 +24,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 
-import org.springframework.cloud.stream.binder.kstream.config.KStreamConsumerProperties;
+import org.springframework.cloud.stream.binder.kstream.config.KStreamBinderConfigurationProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -52,14 +52,18 @@ public class KStreamBoundMessageConversionDelegate {
 
 	private final SendToDlqAndContinue sendToDlqAndContinue;
 
-	private final KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue;
+	private final KStreamBindingInformationCatalogue kstreamBindingInformationCatalogue;
+
+	private final KStreamBinderConfigurationProperties kstreamBinderConfigurationProperties;
 
 	public KStreamBoundMessageConversionDelegate(CompositeMessageConverterFactory compositeMessageConverterFactory,
 												SendToDlqAndContinue sendToDlqAndContinue,
-												KStreamBindingInformationCatalogue KStreamBindingInformationCatalogue) {
+												KStreamBindingInformationCatalogue kstreamBindingInformationCatalogue,
+												KStreamBinderConfigurationProperties kstreamBinderConfigurationProperties) {
 		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
 		this.sendToDlqAndContinue = sendToDlqAndContinue;
-		this.KStreamBindingInformationCatalogue = KStreamBindingInformationCatalogue;
+		this.kstreamBindingInformationCatalogue = kstreamBindingInformationCatalogue;
+		this.kstreamBinderConfigurationProperties = kstreamBinderConfigurationProperties;
 	}
 
 	/**
@@ -69,7 +73,7 @@ public class KStreamBoundMessageConversionDelegate {
 	 * @return serialized KStream
 	 */
 	public KStream serializeOnOutbound(KStream<?,?> outboundBindTarget) {
-		String contentType = this.KStreamBindingInformationCatalogue.getContentType(outboundBindTarget);
+		String contentType = this.kstreamBindingInformationCatalogue.getContentType(outboundBindTarget);
 		MessageConverter messageConverter = StringUtils.hasText(contentType) ? compositeMessageConverterFactory
 				.getMessageConverterForType(MimeType.valueOf(contentType))
 				: null;
@@ -125,6 +129,7 @@ public class KStreamBoundMessageConversionDelegate {
 					isValidRecord = true;
 				}
 				catch (Exception ignored) {
+					System.out.println();
 					//pass through
 				}
 				return isValidRecord;
@@ -160,8 +165,8 @@ public class KStreamBoundMessageConversionDelegate {
 
 			@Override
 			public void process(Object o, Object o2) {
-				if (KStreamBindingInformationCatalogue.isEnableDlq(bindingTarget)) {
-					String destination = KStreamBindingInformationCatalogue.getDestination(bindingTarget);
+				if (kstreamBindingInformationCatalogue.isDlqEnabled(bindingTarget)) {
+					String destination = kstreamBindingInformationCatalogue.getDestination(bindingTarget);
 					if (o2 instanceof Message) {
 						Message message = (Message) o2;
 						sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) message.getPayload(), context.partition());
@@ -170,10 +175,10 @@ public class KStreamBoundMessageConversionDelegate {
 						sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) o2, context.partition());
 					}
 				}
-				else if (KStreamBindingInformationCatalogue.getSerdeError(bindingTarget) == KStreamConsumerProperties.SerdeError.logAndFail) {
+				else if (kstreamBinderConfigurationProperties.getSerdeError() == KStreamBinderConfigurationProperties.SerdeError.logAndFail) {
 					throw new IllegalStateException("Inbound deserialization failed.");
 				}
-				else if (KStreamBindingInformationCatalogue.getSerdeError(bindingTarget) == KStreamConsumerProperties.SerdeError.logAndContinue) {
+				else if (kstreamBinderConfigurationProperties.getSerdeError() == KStreamBinderConfigurationProperties.SerdeError.logAndContinue) {
 					//quietly pass through. No action needed, this is similar to log and continue.
 				}
 			}

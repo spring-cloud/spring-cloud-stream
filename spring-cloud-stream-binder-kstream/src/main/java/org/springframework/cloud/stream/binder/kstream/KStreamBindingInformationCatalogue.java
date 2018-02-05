@@ -16,13 +16,19 @@
 
 package org.springframework.cloud.stream.binder.kstream;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kstream.config.KStreamConsumerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 
 /**
  * A catalogue containing all the inbound and outboud KStreams.
@@ -39,6 +45,9 @@ public class KStreamBindingInformationCatalogue {
 
 	private final Map<KStream<?, ?>, BindingProperties> bindingProperties = new ConcurrentHashMap<>();
 	private final Map<KStream<?, ?>, KStreamConsumerProperties> consumerProperties = new ConcurrentHashMap<>();
+
+	private final Map<Object, StreamsConfig> streamsConfigs = new HashMap<>();
+	private final Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = new HashSet<>();
 
 	/**
 	 * For a given bounded {@link KStream}, retrieve it's corresponding destination
@@ -60,6 +69,9 @@ public class KStreamBindingInformationCatalogue {
 	 */
 	public boolean isUseNativeDecoding(KStream<?,?> bindingTarget) {
 		BindingProperties bindingProperties = this.bindingProperties.get(bindingTarget);
+		if (bindingProperties.getConsumer() == null) {
+			bindingProperties.setConsumer(new ConsumerProperties());
+		}
 		return bindingProperties.getConsumer().isUseNativeDecoding();
 	}
 
@@ -69,7 +81,7 @@ public class KStreamBindingInformationCatalogue {
 	 * @param bindingTarget KStream binding target
 	 * @return true if DLQ is enabled, false otherwise.
 	 */
-	public boolean isEnableDlq(KStream<?,?> bindingTarget) {
+	public boolean isDlqEnabled(KStream<?,?> bindingTarget) {
 		return consumerProperties.get(bindingTarget).isEnableDlq();
 	}
 
@@ -85,13 +97,13 @@ public class KStreamBindingInformationCatalogue {
 	}
 
 	/**
-	 * Retrieve any configured Serde error handling strategies for this {@link KStream}
+	 * Retrieve and return the registered {@link StreamsBuilderFactoryBean} for the given KStream
 	 *
 	 * @param bindingTarget KStream binding target
-	 * @return configured Serde error handling strategy
+	 * @return corresponding {@link StreamsBuilderFactoryBean}
 	 */
-	public KStreamConsumerProperties.SerdeError getSerdeError(KStream<?,?> bindingTarget) {
-		return consumerProperties.get(bindingTarget).getSerdeError();
+	public StreamsConfig getStreamsConfig(Object bindingTarget) {
+		return streamsConfigs.get(bindingTarget);
 	}
 
 	/**
@@ -114,4 +126,20 @@ public class KStreamBindingInformationCatalogue {
 		this.consumerProperties.put(bindingTarget, kStreamConsumerProperties);
 	}
 
+	/**
+	 * Adds a mapping for KStream -> {@link StreamsBuilderFactoryBean}
+	 *
+	 * @param streamsBuilderFactoryBean provides the {@link StreamsBuilderFactoryBean} mapped to the KStream
+	 */
+	public void addStreamBuilderFactory(StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
+		this.streamsBuilderFactoryBeans.add(streamsBuilderFactoryBean);
+	}
+
+	public void addStreamsConfigs(Object bindingTarget, StreamsConfig streamsConfig) {
+		this.streamsConfigs.put(bindingTarget, streamsConfig);
+	}
+
+	public Set<StreamsBuilderFactoryBean> getStreamsBuilderFactoryBeans() {
+		return streamsBuilderFactoryBeans;
+	}
 }

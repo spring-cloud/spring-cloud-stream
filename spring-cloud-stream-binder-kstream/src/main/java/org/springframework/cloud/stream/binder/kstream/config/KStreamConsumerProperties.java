@@ -24,12 +24,6 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
  */
 public class KStreamConsumerProperties extends KafkaConsumerProperties {
 
-	public enum SerdeError {
-		logAndContinue,
-		logAndFail,
-		sendToDlq
-	}
-
 	/**
 	 * Key serde specified per binding.
 	 */
@@ -41,11 +35,9 @@ public class KStreamConsumerProperties extends KafkaConsumerProperties {
 	private String valueSerde;
 
 	/**
-	 * {@link org.apache.kafka.streams.errors.DeserializationExceptionHandler} to use
-	 * when there is a Serde error. {@link SerdeError} values are used to provide the
-	 * exception handler on consumer binding.
+	 * Materialized as a KeyValueStore
 	 */
-	private SerdeError serdeError;
+	private String materializedAs;
 
 	public String getKeySerde() {
 		return keySerde;
@@ -63,11 +55,12 @@ public class KStreamConsumerProperties extends KafkaConsumerProperties {
 		this.valueSerde = valueSerde;
 	}
 
-	public SerdeError getSerdeError() {
-		return serdeError;
+	public String getMaterializedAs() {
+		return materializedAs;
 	}
 
-	public void setSerdeError(SerdeError serdeError) {
-		this.serdeError = serdeError;
+	public void setMaterializedAs(String materializedAs) {
+		this.materializedAs = materializedAs;
 	}
+
 }
