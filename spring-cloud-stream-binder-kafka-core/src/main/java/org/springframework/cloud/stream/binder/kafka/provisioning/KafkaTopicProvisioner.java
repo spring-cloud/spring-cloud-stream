@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 the original author or authors.
+ * Copyright 2014-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
@@ -74,25 +75,20 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 
 	private final Log logger = LogFactory.getLog(getClass());
 
-	private KafkaBinderConfigurationProperties configurationProperties;
+	private final KafkaBinderConfigurationProperties configurationProperties;
 
 	private final AdminClient adminClient;
 
 	private RetryOperations metadataRetryOperations;
 
-	private int operationTimeout = DEFAULT_OPERATION_TIMEOUT;
+	private final int operationTimeout = DEFAULT_OPERATION_TIMEOUT;
 
 	public KafkaTopicProvisioner(KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
 								KafkaProperties kafkaProperties) {
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
 		Map<String, Object> adminClientProperties = kafkaProperties.buildAdminProperties();
-		String kafkaConnectionString = kafkaBinderConfigurationProperties.getKafkaConnectionString();
-
-		if (ObjectUtils.isEmpty(adminClientProperties.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG))
-				|| !kafkaConnectionString.equals(kafkaBinderConfigurationProperties.getDefaultKafkaConnectionString())) {
-			adminClientProperties.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConnectionString);
-		}
 		this.configurationProperties = kafkaBinderConfigurationProperties;
+		normalalizeBootPropsWithBinder(adminClientProperties, kafkaProperties, kafkaBinderConfigurationProperties);
 		this.adminClient = AdminClient.create(adminClientProperties);
 	}
 
@@ -166,7 +162,9 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 				TopicDescription topicDescription = topicDescriptions.get(name);
 				int partitions = topicDescription.partitions().size();
 				ConsumerDestination dlqTopic = createDlqIfNeedBe(name, group, properties, anonymous, partitions);
-				if (dlqTopic != null) return dlqTopic;
+				if (dlqTopic != null) {
+					return dlqTopic;
+				}
 				return new KafkaConsumerDestination(name, partitions);
 			}
 			catch (Exception e) {
@@ -174,6 +172,41 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			}
 		}
 		return new KafkaConsumerDestination(name);
+	}
+
+	/**
+	 * In general, binder properties supersede boot kafka properties.
+	 * The one exception is the bootstrap servers. In that case, we should only override
+	 * the boot properties if (there is a binder property AND it is a non-default value)
+	 * OR (if there is no boot property); this is needed because the binder property
+	 * never returns a null value.
+	 * @param adminProps the admin properties to normalize.
+	 * @param bootProps the boot kafka properties.
+	 * @param binderProps the binder kafka properties.
+	 */
+	private void normalalizeBootPropsWithBinder(Map<String, Object> adminProps, KafkaProperties bootProps,
+			KafkaBinderConfigurationProperties binderProps) {
+		// First deal with the outlier
+		String kafkaConnectionString = binderProps.getKafkaConnectionString();
+		if (ObjectUtils.isEmpty(adminProps.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG))
+				|| !kafkaConnectionString.equals(binderProps.getDefaultKafkaConnectionString())) {
+			adminProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConnectionString);
+		}
+		// Now override any boot values with binder values
+		Map<String, String> binderProperties = binderProps.getConfiguration();
+		Set<String> adminConfigNames = AdminClientConfig.configNames();
+		binderProperties.forEach((key, value) -> {
+			if (key.equals(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG)) {
+				throw new IllegalStateException(
+						"Set binder bootstrap servers via the 'brokers' property, not 'configuration'");
+			}
+			if (adminConfigNames.contains(key)) {
+				Object replaced = adminProps.put(key, value);
+				if (replaced != null && this.logger.isDebugEnabled()) {
+					logger.debug("Overrode boot property: [" + key + "], from: [" + replaced + "] to: [" + value + "]");
+				}
+			}
+		});
 	}
 
 	private ConsumerDestination createDlqIfNeedBe(String name, String group,
