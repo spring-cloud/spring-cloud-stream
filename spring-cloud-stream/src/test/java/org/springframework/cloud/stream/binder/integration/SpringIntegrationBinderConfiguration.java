@@ -59,12 +59,15 @@ public class SpringIntegrationBinderConfiguration<T> {
 	 * application annotated with {@link EnableBinding}, yet require
 	 * full {@link Binder} configuration.
 	 */
-	public static Class<?>[] getCompleteConfiguration() {
+	public static Class<?>[] getCompleteConfiguration(Class<?>... additionalConfigurationClasses) {
 		List<Class<?>> configClasses = new ArrayList<>();
 		configClasses.add(SpringIntegrationBinderConfiguration.class);
 		Import annotation = AnnotationUtils.getAnnotation(EnableBinding.class, Import.class);
 		Map<String, Object> annotationAttributes = AnnotationUtils.getAnnotationAttributes(annotation);
 		configClasses.addAll(Arrays.asList((Class<?>[])annotationAttributes.get("value")));
+		if (additionalConfigurationClasses != null) {
+			configClasses.addAll(Arrays.asList(additionalConfigurationClasses));
+		}
 		return configClasses.toArray(new Class<?>[] {});
 	}
 

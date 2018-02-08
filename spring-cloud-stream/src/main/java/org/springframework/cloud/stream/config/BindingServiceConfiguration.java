@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -47,11 +46,13 @@ import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.HandlerMethodArgumentResolversHolder;
@@ -66,7 +67,6 @@ import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.util.CollectionUtils;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
@@ -229,17 +229,12 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	public static InitializingBean messageHandlerHeaderPropagationBeanPostProcessor(@Autowired(required=false) List<AbstractReplyProducingMessageHandler> producingMessageHandlers,
-			@Autowired SpringIntegrationProperties springIntegrationProperties) {
-		return new InitializingBean() {
+	public ApplicationListener<ContextRefreshedEvent> appListener(SpringIntegrationProperties springIntegrationProperties) {
+		return new ApplicationListener<ContextRefreshedEvent>() {
 			@Override
-			public void afterPropertiesSet() throws Exception {
-				if (!CollectionUtils.isEmpty(producingMessageHandlers)) {
-					String[] messageHandlerNotPropagatedHeaders = springIntegrationProperties.getMessageHandlerNotPropagatedHeaders();
-					for (AbstractReplyProducingMessageHandler producingMessageHandler : producingMessageHandlers) {
-						producingMessageHandler.addNotPropagatedHeaders(messageHandlerNotPropagatedHeaders);
-					}
-				}
+			public void onApplicationEvent(ContextRefreshedEvent event) {
+				event.getApplicationContext().getBeansOfType(AbstractReplyProducingMessageHandler.class).values()
+					.forEach(mh -> mh.addNotPropagatedHeaders(springIntegrationProperties.getMessageHandlerNotPropagatedHeaders()));
 			}
 		};
 	}
