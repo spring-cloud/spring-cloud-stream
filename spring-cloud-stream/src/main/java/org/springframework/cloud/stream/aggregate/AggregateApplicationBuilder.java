@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,7 +207,13 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		}
 		if (this.parentContext == null) {
 			if (Boolean.TRUE.equals(this.webEnvironment)) {
-				this.addParentSources(new Object[] { ServletWebServerFactoryAutoConfiguration.class });
+				try {
+					Class.forName("javax.servlet.ServletRequest");
+					this.addParentSources(new Object[] { ServletWebServerFactoryAutoConfiguration.class });
+				} catch (Exception e) {
+					throw new IllegalStateException("'webEnvironment' is set to 'true' but 'javax.servlet.*' does not appear to be available in the classpath. "
+							+ "Consider adding `org.springframework.boot:spring-boot-starter-web", e);
+				}
 			}
 			this.parentContext = AggregateApplicationUtils.createParentContext(
 					this.parentSources.toArray(new Class<?>[0]),

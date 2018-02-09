@@ -29,7 +29,6 @@ import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder.SourceConfigurer;
 import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
@@ -85,6 +84,7 @@ public class AggregationTest {
 	public void aggregation() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--server.port=0", "--debug=true")
+				.web(false)
 						.from(TestSource.class)
 						.to(TestProcessor.class)
 						.run();
@@ -101,7 +101,7 @@ public class AggregationTest {
 	public void testModuleAggregationUsingSharedChannelRegistry() {
 		// test backward compatibility
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0")
+				MockBinderRegistryConfiguration.class, "--server.port=0").web(false)
 						.from(TestSource.class).to(TestProcessor.class).run();
 		SharedBindingTargetRegistry sharedChannelRegistry = aggregatedApplicationContext
 				.getBean(SharedBindingTargetRegistry.class);
@@ -115,6 +115,7 @@ public class AggregationTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testParentArgsAndSources() {
+		
 		List<String> argsToVerify = new ArrayList<>();
 		argsToVerify.add("--foo1=bar1");
 		argsToVerify.add("--foo2=bar2");
@@ -124,6 +125,7 @@ public class AggregationTest {
 				MockBinderRegistryConfiguration.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
 				.parent(DummyConfig.class, "--foo2=bar2")
+				.web(false)
 				.from(TestSource.class)
 				.namespace("foo").to(TestProcessor.class).namespace("bar")
 				.run("--foo3=bar3", "--server.port=0");
@@ -131,10 +133,6 @@ public class AggregationTest {
 		final List<String> parentArgs = (List<String>) aggregateApplicationBuilderAccessor.getPropertyValue(
 				"parentArgs");
 		assertThat(parentArgs).containsExactlyInAnyOrder(argsToVerify.toArray(new String[argsToVerify.size()]));
-		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
-		assertThat(sources).containsExactlyInAnyOrder(AggregateApplicationBuilder.ParentConfiguration.class,
-				MockBinderRegistryConfiguration.class, DummyConfig.class,
-				ServletWebServerFactoryAutoConfiguration.class);
 		context.close();
 	}
 
@@ -160,7 +158,7 @@ public class AggregationTest {
 	public void testNamespacePrefixesFromCmdLine() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
+		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").via(TestProcessor.class).namespace("b")
 				.via(TestProcessor.class).namespace("c")
 				.run("--a.foo1=bar1", "--b.foo1=bar2", "--c.foo1=bar3");
@@ -190,7 +188,7 @@ public class AggregationTest {
 	public void testNamespacePrefixesFromCmdLineVsArgs() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
+		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--fooValue=bar")
 				.via(TestProcessor.class).namespace("b").args("--foo1=argbarb")
 				.via(TestProcessor.class).namespace("c")
@@ -221,7 +219,7 @@ public class AggregationTest {
 	public void testNamespacePrefixesFromCmdLineWithRelaxedNames() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
+		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar")
 				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
 				.via(TestProcessor.class).namespace("c")
@@ -254,7 +252,7 @@ public class AggregationTest {
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
 		System.setProperty("server.port", "0");
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
+		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar")
 				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
 				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
@@ -288,7 +286,7 @@ public class AggregationTest {
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
 		System.setProperty("server.port", "0");
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
+		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar")
 				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
 				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
@@ -321,7 +319,7 @@ public class AggregationTest {
 				MockBinderRegistryConfiguration.class);
 		System.setProperty("a.fooValue", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).from(TestSource.class)
+		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar")
 				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
 				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
@@ -348,7 +346,7 @@ public class AggregationTest {
 	@Test
 	public void testNamespaces() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0")
+				MockBinderRegistryConfiguration.class, "--server.port=0").web(false)
 						.from(TestSource.class).namespace("foo").to(TestProcessor.class)
 						.namespace("bar").run();
 		SharedBindingTargetRegistry sharedChannelRegistry = aggregatedApplicationContext

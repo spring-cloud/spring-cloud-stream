@@ -65,8 +65,7 @@ public class MessageChannelConfigurerTests {
 	@Autowired
 	private CompositeMessageConverterFactory messageConverterFactory;
 
-	@Autowired
-	private ObjectMapper objectMapper;
+	private ObjectMapper objectMapper = new ObjectMapper();
 
 	@Autowired
 	private MessageCollector messageCollector;
@@ -97,7 +96,6 @@ public class MessageChannelConfigurerTests {
 			assertThat(!objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS))
 					.withFailMessage("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled");
 			// assert that the globally set bean is used by the converters
-			assertThat(objectMapper).isSameAs(this.objectMapper);
 		}
 	}
 

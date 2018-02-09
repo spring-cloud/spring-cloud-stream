@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class AggregateApplicationTests {
 	@SuppressWarnings("unchecked")
 	public void testAggregateApplication() throws Exception {
 		ConfigurableApplicationContext context = new AggregateApplicationBuilder(
-				TestSupportBinderAutoConfiguration.class).from(TestSource.class).to(TestProcessor.class).run();
+				TestSupportBinderAutoConfiguration.class).web(false).from(TestSource.class).to(TestProcessor.class).run();
 		TestSupportBinder testSupportBinder = (TestSupportBinder) context.getBean(BinderFactory.class).getBinder(null,
 				MessageChannel.class);
 		MessageChannel processorOutput = testSupportBinder.getChannelForName("output");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class AggregateWithMainTest {
 	@Test
 	public void testAggregateApplication() throws InterruptedException {
 		// emulate a main method
-		ConfigurableApplicationContext context = new AggregateApplicationBuilder(MainConfiguration.class)
+		ConfigurableApplicationContext context = new AggregateApplicationBuilder(MainConfiguration.class).web(false)
 				.from(UppercaseProcessor.class).namespace("upper")
 				.to(SuffixProcessor.class).namespace("suffix")
 				.run("--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain");
