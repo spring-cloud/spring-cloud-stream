@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.boot.actuate.web.trace.HttpTraceRepository;
+import org.springframework.boot.actuate.trace.http.HttpTraceRepository;
 import org.springframework.context.event.EventListener;
 
 /**
