@@ -1,5 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  org.springframework.cloud.stream.binder.kstream.config.KStreamBinderSupportAutoConfiguration,\
-  org.springframework.cloud.stream.binder.kstream.config.KStreamApplicationSupportAutoConfiguration
-
-  

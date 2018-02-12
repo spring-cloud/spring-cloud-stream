@@ -1,6 +1,0 @@
-kstream:\
-org.springframework.cloud.stream.binder.kstream.config.KStreamBinderConfiguration
-ktable:\
-org.springframework.cloud.stream.binder.kstream.config.KTableBinderConfiguration
-
-
