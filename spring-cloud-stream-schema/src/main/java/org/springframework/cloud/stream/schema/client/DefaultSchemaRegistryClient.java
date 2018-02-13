@@ -36,12 +36,30 @@ public class DefaultSchemaRegistryClient implements SchemaRegistryClient {
 	private String endpoint = "http://localhost:8990";
 
 	public DefaultSchemaRegistryClient() {
-		this.template = new RestTemplate();
+		this(new RestTemplate());
+	}
+	
+	public DefaultSchemaRegistryClient(RestTemplate restTemplate) {
+		Assert.notNull(restTemplate,"restTemplate cannot be null.");
+		this.template = restTemplate;
+	}
+	
+	protected String getEndpoint() {
+		return this.endpoint;
 	}
 
 	public void setEndpoint(String endpoint) {
 		Assert.hasText(endpoint, "cannot be empty");
 		this.endpoint = endpoint;
+	}
+
+	protected RestTemplate getRestTemplate() {
+		return this.template;
+	}
+
+	public void setRestTemplate(RestTemplate restTemplate) {
+		Assert.notNull(restTemplate,"restTemplate cannot be null.");
+		this.template = restTemplate;
 	}
 
 	@Override
