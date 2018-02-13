@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.schema.avro;
 
+import org.apache.avro.Schema;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
@@ -35,6 +36,8 @@ public class AvroMessageConverterProperties {
 	private String prefix = "vnd";
 
 	private Class<? extends SubjectNamingStrategy> subjectNamingStrategy = DefaultSubjectNamingStrategy.class;
+
+	private boolean registerPrettyPrintedSchemas;
 
 	public Resource getReaderSchema() {
 		return this.readerSchema;
@@ -74,8 +77,30 @@ public class AvroMessageConverterProperties {
 		return subjectNamingStrategy;
 	}
 
-	public void setSubjectNamingStrategy(Class<? extends SubjectNamingStrategy>  subjectNamingStrategy) {
+	public void setSubjectNamingStrategy(Class<? extends SubjectNamingStrategy> subjectNamingStrategy) {
 		Assert.notNull(subjectNamingStrategy, "cannot be null");
 		this.subjectNamingStrategy = subjectNamingStrategy;
+	}
+
+	/**
+	 * @return true if schemas are to be registered in print-pretty format
+	 * {@link Schema#toString(boolean)}.
+	 */
+	public boolean isRegisterPrettyPrintedSchemas() {
+		return this.registerPrettyPrintedSchemas;
+	}
+
+	/**
+	 * <p>
+	 * If true is supplied schemas will be registered in print-pretty format
+	 * {@link Schema#toString(boolean)}.
+	 * </p>
+	 * <p>
+	 * Default is false.
+	 * </p>
+	 * @param registerPrettyPrintedSchemas the registerPrettyPrintedSchemas to set
+	 */
+	public void setRegisterPrettyPrintedSchemas(boolean registerPrettyPrintedSchemas) {
+		this.registerPrettyPrintedSchemas = registerPrettyPrintedSchemas;
 	}
 }

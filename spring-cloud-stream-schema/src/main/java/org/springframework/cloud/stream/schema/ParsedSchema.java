@@ -42,10 +42,14 @@ public class ParsedSchema {
 	private SchemaRegistrationResponse registration;
 
 	public ParsedSchema(Schema schema) {
-		this.schema = schema;
-		this.representation = schema.toString();
+		this(schema,false);
 	}
 
+	public ParsedSchema(Schema schema, boolean prettyPrintrepresentation) {
+		this.schema = schema;
+		this.representation = schema.toString(prettyPrintrepresentation);
+	}
+	
 	public Schema getSchema() {
 		return schema;
 	}
