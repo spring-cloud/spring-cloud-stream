@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.schema.avro;
 
 import org.apache.avro.Schema;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
