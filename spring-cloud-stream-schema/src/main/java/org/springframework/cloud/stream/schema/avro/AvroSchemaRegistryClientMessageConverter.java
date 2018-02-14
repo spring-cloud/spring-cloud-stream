@@ -176,7 +176,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 								+ schema.getName());
 					}
 					this.schemaRegistryClient.register(toSubject(schema), AVRO_FORMAT,
-							schema.toString(true));
+							schema.toString());
 					if (this.logger.isInfoEnabled()) {
 						this.logger.info("Schema " + schema.getName()
 								+ " registered with id " + schema);
