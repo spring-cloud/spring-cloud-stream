@@ -17,7 +17,8 @@
 package org.springframework.cloud.stream.schema.avro;
 
 import java.io.IOException;
-import java.util.Arrays;
+
+import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,6 +88,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	public static final String REFERENCE_CACHE_NAME = CACHE_PREFIX + ".referenceCache";
 
+	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application", "*+"+AVRO_FORMAT);
+	
 	private Pattern versionedSchema;
 
 	private boolean dynamicSchemaGenerationEnabled;
@@ -122,7 +125,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	 */
 	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient,
 			CacheManager cacheManager) {
-		super(Arrays.asList(new MimeType("application", "*+avro")));
+		super(Collections.singletonList(DEFAULT_AVRO_MIME_TYPE));
 		Assert.notNull(schemaRegistryClient, "cannot be null");
 		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
 		this.schemaRegistryClient = schemaRegistryClient;
@@ -168,7 +171,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		this.versionedSchema = Pattern.compile("application/" + this.prefix
-				+ "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+avro");
+				+ "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+"+AVRO_FORMAT);
 		if (!ObjectUtils.isEmpty(this.schemaLocations)) {
 			this.logger.info("Scanning avro schema resources on classpath");
 			if (this.logger.isInfoEnabled()) {
@@ -223,7 +226,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 			return true;
 		}
 		MimeType mimeType = getContentTypeResolver().resolve(headers);
-		return MimeType.valueOf("application/*+avro").includes(mimeType);
+		return DEFAULT_AVRO_MIME_TYPE.includes(mimeType);
 	}
 
 	@Override
@@ -256,7 +259,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		Map<String, Object> _headers = (Map<String, Object>) dfa.getPropertyValue("headers");
 		_headers.put(MessageHeaders.CONTENT_TYPE,
 				"application/" + this.prefix + "." + schemaReference.getSubject() 
-				+ ".v" + schemaReference.getVersion() + "+avro");
+				+ ".v" + schemaReference.getVersion() + "+"+AVRO_FORMAT);
 		
 		return schema;
 	}
