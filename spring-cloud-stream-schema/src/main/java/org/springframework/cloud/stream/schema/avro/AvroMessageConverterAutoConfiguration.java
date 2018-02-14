@@ -53,7 +53,7 @@ public class AvroMessageConverterAutoConfiguration {
 	public AvroSchemaRegistryClientMessageConverter avroSchemaMessageConverter(
 			SchemaRegistryClient schemaRegistryClient) {
 		AvroSchemaRegistryClientMessageConverter avroSchemaRegistryClientMessageConverter = new AvroSchemaRegistryClientMessageConverter(
-				schemaRegistryClient);
+				schemaRegistryClient, cacheManager());
 		avroSchemaRegistryClientMessageConverter.setDynamicSchemaGenerationEnabled(
 				this.avroMessageConverterProperties.isDynamicSchemaGenerationEnabled());
 		if (this.avroMessageConverterProperties.getReaderSchema() != null) {
@@ -65,8 +65,7 @@ public class AvroMessageConverterAutoConfiguration {
 					this.avroMessageConverterProperties.getSchemaLocations());
 		}
 		avroSchemaRegistryClientMessageConverter.setPrefix(this.avroMessageConverterProperties.getPrefix());
-		avroSchemaRegistryClientMessageConverter.setCacheManager(cacheManager());
-
+		
 		try {
 			Class clazz = this.avroMessageConverterProperties.getSubjectNamingStrategy();
 			Constructor constructor = ReflectionUtils.accessibleConstructor(clazz);

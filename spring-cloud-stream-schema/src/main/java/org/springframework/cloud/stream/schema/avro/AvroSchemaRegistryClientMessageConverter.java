@@ -88,7 +88,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	public static final String REFERENCE_CACHE_NAME = CACHE_PREFIX + ".referenceCache";
 
-	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application", "*+"+AVRO_FORMAT);
+	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application", "*+" + AVRO_FORMAT);
 	
 	private Pattern versionedSchema;
 
@@ -107,15 +107,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	private SubjectNamingStrategy subjectNamingStrategy;
 
 	/**
-	 * @deprecated as of release 1.2.2 in favor of
-	 * {@link #AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient, CacheManager)}
-	 */
-	@Deprecated
-	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient) {
-		this(schemaRegistryClient, new NoOpCacheManager());
-	}
-
-	/**
 	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and
 	 * {@link CacheManager}.
 	 * @param schemaRegistryClient the {@link SchemaRegistryClient} used to interact with
@@ -123,8 +114,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	 * @param cacheManager instance of {@link CacheManager} to cache parsed schemas. If
 	 * caching is not required use {@link NoOpCacheManager}
 	 */
-	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient,
-			CacheManager cacheManager) {
+	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
 		super(Collections.singletonList(DEFAULT_AVRO_MIME_TYPE));
 		Assert.notNull(schemaRegistryClient, "cannot be null");
 		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
@@ -259,7 +249,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		Map<String, Object> _headers = (Map<String, Object>) dfa.getPropertyValue("headers");
 		_headers.put(MessageHeaders.CONTENT_TYPE,
 				"application/" + this.prefix + "." + schemaReference.getSubject() 
-				+ ".v" + schemaReference.getVersion() + "+"+AVRO_FORMAT);
+				+ ".v" + schemaReference.getVersion() + "+" + AVRO_FORMAT);
 		
 		return schema;
 	}
