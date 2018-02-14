@@ -56,6 +56,10 @@ public class AvroMessageConverterAutoConfiguration {
 				schemaRegistryClient);
 		avroSchemaRegistryClientMessageConverter.setDynamicSchemaGenerationEnabled(
 				this.avroMessageConverterProperties.isDynamicSchemaGenerationEnabled());
+
+		avroSchemaRegistryClientMessageConverter
+				.setRegisterPrettyPrintedSchemas(this.avroMessageConverterProperties.isRegisterPrettyPrintedSchemas());
+
 		if (this.avroMessageConverterProperties.getReaderSchema() != null) {
 			avroSchemaRegistryClientMessageConverter.setReaderSchema(
 					this.avroMessageConverterProperties.getReaderSchema());
@@ -72,13 +76,12 @@ public class AvroMessageConverterAutoConfiguration {
 			Constructor constructor = ReflectionUtils.accessibleConstructor(clazz);
 
 			avroSchemaRegistryClientMessageConverter.setSubjectNamingStrategy(
-					(SubjectNamingStrategy) constructor.newInstance()
-			);
-		} catch (Exception ex) {
+					(SubjectNamingStrategy) constructor.newInstance());
+		}
+		catch (Exception ex) {
 			throw new IllegalStateException("Unable to create SubjectNamingStrategy " +
 					this.avroMessageConverterProperties.getSubjectNamingStrategy().toString(),
-					ex
-			);
+					ex);
 		}
 
 		return avroSchemaRegistryClientMessageConverter;

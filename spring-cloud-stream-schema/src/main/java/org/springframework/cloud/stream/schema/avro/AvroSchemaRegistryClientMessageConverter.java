@@ -103,6 +103,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private SubjectNamingStrategy subjectNamingStrategy;
 
+	private boolean registerPrettyPrintedSchemas;
+
 	/**
 	 * @deprecated as of release 1.2.2 in favor of
 	 * {@link #AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient, CacheManager)}
@@ -183,7 +185,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 								+ schema.getName());
 					}
 					this.schemaRegistryClient.register(toSubject(schema), AVRO_FORMAT,
-							schema.toString(true));
+							schema.toString(this.registerPrettyPrintedSchemas));
 					if (this.logger.isInfoEnabled()) {
 						this.logger.info("Schema " + schema.getName()
 								+ " registered with id " + schema);
@@ -236,7 +238,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 				.get(schema, ParsedSchema.class);
 
 		if (parsedSchema == null) {
-			parsedSchema = new ParsedSchema(schema);
+			parsedSchema = new ParsedSchema(schema, this.registerPrettyPrintedSchemas);
 			this.cacheManager.getCache(REFERENCE_CACHE_NAME).putIfAbsent(schema,
 					parsedSchema);
 		}
@@ -255,9 +257,9 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		@SuppressWarnings("unchecked")
 		Map<String, Object> _headers = (Map<String, Object>) dfa.getPropertyValue("headers");
 		_headers.put(MessageHeaders.CONTENT_TYPE,
-				"application/" + this.prefix + "." + schemaReference.getSubject() 
-				+ ".v" + schemaReference.getVersion() + "+avro");
-		
+				"application/" + this.prefix + "." + schemaReference.getSubject()
+						+ ".v" + schemaReference.getVersion() + "+avro");
+
 		return schema;
 	}
 
@@ -285,7 +287,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 					String schemaContent = this.schemaRegistryClient
 							.fetch(schemaReference);
 					schema = new Schema.Parser().parse(schemaContent);
-					parsedSchema = new ParsedSchema(schema);
+					parsedSchema = new ParsedSchema(schema, this.registerPrettyPrintedSchemas);
 					cacheManager.getCache(REFERENCE_CACHE_NAME)
 							.putIfAbsent(schemaReference, parsedSchema);
 				}
@@ -354,5 +356,10 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	public void setSubjectNamingStrategy(SubjectNamingStrategy subjectNamingStrategy) {
 		this.subjectNamingStrategy = subjectNamingStrategy;
+	}
+
+	public void setRegisterPrettyPrintedSchemas(boolean registerPrettyPrintedSchemas) {
+		this.registerPrettyPrintedSchemas = registerPrettyPrintedSchemas;
+
 	}
 }
