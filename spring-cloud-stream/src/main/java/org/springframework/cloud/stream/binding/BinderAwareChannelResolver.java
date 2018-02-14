@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,16 @@
 
 package org.springframework.cloud.stream.binding;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.integration.channel.ChannelInterceptorAware;
+import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
 import org.springframework.messaging.core.DestinationResolutionException;
@@ -35,8 +40,11 @@ import org.springframework.util.ObjectUtils;
  * @author Mark Fisher
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
+ * @author Oleg Zhurakousky
  */
 public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
+	
+	private final Log logger = LogFactory.getLog(BinderAwareChannelResolver.class);
 
 	private final BindingService bindingService;
 
@@ -48,23 +56,34 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	private final NewDestinationBindingCallback newBindingCallback;
 
 	private ConfigurableListableBeanFactory beanFactory;
-
+	
+	private final GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor;
+	
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
-		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, null);
+		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, null, null);
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public BinderAwareChannelResolver(BindingService bindingService,
+			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
+			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback) {
+		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, callback, null);
 	}
 
 	@SuppressWarnings("rawtypes")
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
-			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback) {
+			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback, 
+			GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 		Assert.notNull(bindingService, "'bindingService' cannot be null");
 		Assert.notNull(bindingTargetFactory, "'bindingTargetFactory' cannot be null");
 		this.bindingService = bindingService;
 		this.bindingTargetFactory = bindingTargetFactory;
 		this.newBindingCallback = callback;
+		this.globalChannelInterceptorProcessor = globalChannelInterceptorProcessor;
 	}
 
 	@Override
@@ -95,8 +114,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			MessageChannel channel = null;
 			if (this.beanFactory != null) {
 				String[] dynamicDestinations = null;
-				BindingServiceProperties bindingServiceProperties = this.bindingService
-						.getBindingServiceProperties();
+				BindingServiceProperties bindingServiceProperties = this.bindingService.getBindingServiceProperties();
 				if (bindingServiceProperties != null) {
 					dynamicDestinations = bindingServiceProperties.getDynamicDestinations();
 				}
@@ -105,6 +123,9 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 				if (dynamicAllowed) {
 					channel = this.bindingTargetFactory.createOutput(channelName);
 					this.beanFactory.registerSingleton(channelName, channel);
+					
+					this.instrumentChannelWithGlobalInterceptors(channel, channelName);
+							
 					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
 					if (this.newBindingCallback != null) {
 						ProducerProperties producerProperties = this.bindingService.getBindingServiceProperties()
@@ -124,6 +145,17 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 				}
 			}
 			return channel;
+		}
+	}
+	
+	private void instrumentChannelWithGlobalInterceptors(MessageChannel channel, String channelName) {
+		if (channel instanceof ChannelInterceptorAware) {
+			if (this.globalChannelInterceptorProcessor != null) {
+				this.globalChannelInterceptorProcessor.addMatchingInterceptors((ChannelInterceptorAware) channel, channelName);
+			}				
+		}
+		else {
+			logger.warn("Failed to add global interceptors to '" + channelName + "' since it is not an instance of ChannelInterceptorAware.");
 		}
 	}
 
@@ -151,5 +183,4 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 				T extendedProducerProperties);
 
 	}
-
 }
