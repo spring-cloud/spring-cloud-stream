@@ -52,7 +52,7 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 	// TODO: move this to commons
 	private String getDefaultServiceId(ConfigurableEnvironment environment) {
-		return "${vcap.application.name:${spring.application.name:${spring.application.name:application}}}:${vcap.application.instance_index:${spring.application.index:${local.server.port:${server.port:0}}}}:${vcap.application.instance_id:${random.value}}";
+		return "${vcap.application.name:${spring.application.name:application}}:${vcap.application.instance_index:${spring.application.index:${local.server.port:${server.port:0}}}}:${vcap.application.instance_id:${random.value}}";
 	}
 
 	private void addOrReplace(MutablePropertySources propertySources,
