@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import org.mockito.Mockito;
 
 import org.springframework.boot.WebApplicationType;
@@ -38,16 +39,22 @@ import org.springframework.cloud.stream.binding.SubscribableChannelBindingTarget
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.interceptor.GlobalChannelInterceptorWrapper;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ImmutableMessageChannelInterceptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -76,10 +83,20 @@ public class BinderAwareChannelResolverTests {
 
 	protected volatile DynamicDestinationsBindable dynamicDestinationsBindable;
 
+	@Configuration
+	public static class InterceptorConfiguration {
+		@Bean
+		public GlobalChannelInterceptorWrapper testInterceptor() {
+			return  new GlobalChannelInterceptorWrapper(new ImmutableMessageChannelInterceptor());
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	@Before
 	public void setupContext() throws Exception {
-		this.context = new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration()).web(WebApplicationType.NONE).run();
+		this.context = new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration(BinderAwareChannelResolverTests.InterceptorConfiguration.class))
+				.web(WebApplicationType.NONE).run();
+		
 		this.resolver = context.getBean(BinderAwareChannelResolver.class);
 		this.binder = context.getBean(Binder.class);
 		this.bindingServiceProperties = context.getBean(BindingServiceProperties.class);
@@ -95,6 +112,8 @@ public class BinderAwareChannelResolverTests {
 			assertEquals(0, bindable.getOutputs().size());// consumer
 		}
 		MessageChannel registered = resolver.resolveDestination("foo");
+		assertEquals(2, ((AbstractMessageChannel)registered).getChannelInterceptors().size());
+		assertTrue(((AbstractMessageChannel)registered).getChannelInterceptors().get(1) instanceof ImmutableMessageChannelInterceptor);
 
 		bindables = context.getBeansOfType(Bindable.class);
 		assertThat(bindables).hasSize(1);
