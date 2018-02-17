@@ -34,7 +34,7 @@ import org.springframework.boot.actuate.endpoint.MetricReaderPublicMetrics;
 import org.springframework.boot.actuate.endpoint.MetricsEndpoint;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
 import org.springframework.boot.bind.PropertySourcesPropertyValues;
 import org.springframework.boot.bind.RelaxedDataBinder;
 import org.springframework.boot.bind.RelaxedNames;
@@ -49,6 +49,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.PropertySources;
 import org.springframework.integration.monitor.IntegrationMBeanExporter;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -202,7 +203,10 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		}
 		if (this.parentContext == null) {
 			if (Boolean.TRUE.equals(this.webEnvironment)) {
-				this.addParentSources(new Object[] { EmbeddedServletContainerAutoConfiguration.class });
+				Assert.isTrue(ClassUtils.isPresent("javax.servlet.ServletRequest", ClassUtils.getDefaultClassLoader()),
+						"'webEnvironment' is set to 'true' but 'javax.servlet.*' does not appear to be available in "
+						+ "the classpath. Consider adding `org.springframework.boot:spring-boot-starter-web");
+				this.addParentSources(new Object[] { ServletWebServerFactoryAutoConfiguration.class });
 			}
 			this.parentContext = AggregateApplicationUtils.createParentContext(
 					this.parentSources.toArray(new Object[0]),
