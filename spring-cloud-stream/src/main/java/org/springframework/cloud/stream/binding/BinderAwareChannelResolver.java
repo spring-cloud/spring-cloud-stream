@@ -89,9 +89,8 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) {
 		super.setBeanFactory(beanFactory);
-		if (beanFactory instanceof ConfigurableListableBeanFactory) {
-			this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
-		}
+		Assert.isTrue(beanFactory instanceof ConfigurableListableBeanFactory, "'beanFactory' must be an instance of ConfigurableListableBeanFactory");
+		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -104,46 +103,33 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			// intentionally empty; will check again while holding the monitor
 		}
 		synchronized (this) {
-			DestinationResolutionException destinationResolutionException;
+			BindingServiceProperties bindingServiceProperties = this.bindingService.getBindingServiceProperties();
+			String[] dynamicDestinations = bindingServiceProperties.getDynamicDestinations();
+			boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations) || ObjectUtils.containsElement(dynamicDestinations, channelName);
 			try {
 				return super.resolveDestination(channelName);
 			}
 			catch (DestinationResolutionException e) {
-				destinationResolutionException = e;
-			}
-			MessageChannel channel = null;
-			if (this.beanFactory != null) {
-				String[] dynamicDestinations = null;
-				BindingServiceProperties bindingServiceProperties = this.bindingService.getBindingServiceProperties();
-				if (bindingServiceProperties != null) {
-					dynamicDestinations = bindingServiceProperties.getDynamicDestinations();
+				if (!dynamicAllowed) {
+					throw e;
 				}
-				boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
-						|| ObjectUtils.containsElement(dynamicDestinations, channelName);
-				if (dynamicAllowed) {
-					channel = this.bindingTargetFactory.createOutput(channelName);
-					this.beanFactory.registerSingleton(channelName, channel);
+			}
+			
+			MessageChannel channel = this.bindingTargetFactory.createOutput(channelName);
+			this.beanFactory.registerSingleton(channelName, channel);
+			
+			this.instrumentChannelWithGlobalInterceptors(channel, channelName);
 					
-					this.instrumentChannelWithGlobalInterceptors(channel, channelName);
-							
-					channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
-					if (this.newBindingCallback != null) {
-						ProducerProperties producerProperties = this.bindingService.getBindingServiceProperties()
-								.getProducerProperties(channelName);
-						Object extendedProducerProperties =
-								this.bindingService.getExtendedProducerProperties(channel, channelName);
-						this.newBindingCallback.configure(channelName, channel, producerProperties,
-								extendedProducerProperties);
-						this.bindingService.getBindingServiceProperties().updateProducerProperties(channelName,
-								producerProperties);
-					}
-					Binding<MessageChannel> binding = this.bindingService.bindProducer(channel, channelName);
-					this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
-				}
-				else {
-					throw destinationResolutionException;
-				}
+			channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
+			if (this.newBindingCallback != null) {
+				ProducerProperties producerProperties = bindingServiceProperties.getProducerProperties(channelName);
+				Object extendedProducerProperties = this.bindingService.getExtendedProducerProperties(channel, channelName);
+				this.newBindingCallback.configure(channelName, channel, producerProperties, extendedProducerProperties);
+				bindingServiceProperties.updateProducerProperties(channelName, producerProperties);
 			}
+			Binding<MessageChannel> binding = this.bindingService.bindProducer(channel, channelName);
+			this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
+			
 			return channel;
 		}
 	}
