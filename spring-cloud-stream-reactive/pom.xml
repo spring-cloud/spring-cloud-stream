@@ -9,10 +9,6 @@
 
 	<artifactId>spring-cloud-stream-reactive</artifactId>
 
-	<properties>
-		<java.version>1.8</java.version>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -30,7 +26,6 @@
 		<dependency>
 			<groupId>io.reactivex</groupId>
 			<artifactId>rxjava-reactive-streams</artifactId>
-			<version>${rxjava-reactive-streams.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
