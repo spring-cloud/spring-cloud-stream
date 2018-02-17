@@ -45,6 +45,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -207,13 +208,10 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		}
 		if (this.parentContext == null) {
 			if (Boolean.TRUE.equals(this.webEnvironment)) {
-				try {
-					Class.forName("javax.servlet.ServletRequest");
-					this.addParentSources(new Object[] { ServletWebServerFactoryAutoConfiguration.class });
-				} catch (Exception e) {
-					throw new IllegalStateException("'webEnvironment' is set to 'true' but 'javax.servlet.*' does not appear to be available in the classpath. "
-							+ "Consider adding `org.springframework.boot:spring-boot-starter-web", e);
-				}
+				Assert.isTrue(ClassUtils.isPresent("javax.servlet.ServletRequest", ClassUtils.getDefaultClassLoader()), 
+						"'webEnvironment' is set to 'true' but 'javax.servlet.*' does not appear to be available in "
+						+ "the classpath. Consider adding `org.springframework.boot:spring-boot-starter-web");
+				this.addParentSources(new Object[] { ServletWebServerFactoryAutoConfiguration.class });
 			}
 			this.parentContext = AggregateApplicationUtils.createParentContext(
 					this.parentSources.toArray(new Class<?>[0]),
