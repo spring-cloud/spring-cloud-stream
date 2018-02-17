@@ -38,7 +38,6 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.avro.specific.SpecificRecord;
 
-import org.springframework.cloud.stream.binder.OriginalContentTypeResolver;
 import org.springframework.core.io.Resource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;

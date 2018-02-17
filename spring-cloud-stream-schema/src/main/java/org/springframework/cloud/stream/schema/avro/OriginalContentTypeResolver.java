@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder;
+package org.springframework.cloud.stream.schema.avro;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.util.MimeType;
@@ -30,7 +31,7 @@ import org.springframework.util.MimeType;
  * returns the contentType
  *
  */
-public class OriginalContentTypeResolver implements ContentTypeResolver {
+class OriginalContentTypeResolver implements ContentTypeResolver {
 
 	private ConcurrentMap<String, MimeType> mimeTypeCache = new ConcurrentHashMap<>();
 

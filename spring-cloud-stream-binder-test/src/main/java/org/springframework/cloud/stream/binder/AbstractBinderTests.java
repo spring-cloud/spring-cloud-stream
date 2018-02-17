@@ -62,7 +62,6 @@ import org.springframework.messaging.handler.annotation.support.PayloadArgumentR
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolverComposite;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.util.Assert;
-import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -279,7 +278,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		DirectChannel moduleOutputChannel = createBindableChannel("output", outputBindingProperties);
 
 		BindingProperties inputBindingProperties = createConsumerBindingProperties(createConsumerProperties());
-		//inputBindingProperties.setContentType("tex/plain");
 		DirectChannel moduleInputChannel = createBindableChannel("input", inputBindingProperties);
 
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("foo%s0y",
@@ -747,11 +745,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		assertTrue(reply.getPayload() instanceof Station);
 		producerBinding.unbind();
 		consumerBinding.unbind();
-	}
-
-	private static boolean equalTypeAndSubType(MimeType m1, MimeType m2) {
-		return m1 != null && m2 != null && m1.getType().equalsIgnoreCase(m2.getType())
-				&& m1.getSubtype().equalsIgnoreCase(m2.getSubtype());
 	}
 
 	@SuppressWarnings("unused") // it is used via reflection

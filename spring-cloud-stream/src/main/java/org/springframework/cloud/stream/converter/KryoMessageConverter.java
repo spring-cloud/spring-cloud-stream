@@ -48,7 +48,9 @@ import org.springframework.util.MimeType;
 
 /**
  * @author Vinicius Carvalho
+ * @deprecated as of 2.0 all language specific type converters (kryo, java etc) are deprecated and won't be supported in the future.
  */
+@Deprecated
 public class KryoMessageConverter implements SmartMessageConverter {
 
 	protected final KryoPool pool;
