@@ -29,7 +29,7 @@ import java.util.Set;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  */
-public class SingleBindingTargetBindable<T> extends BindableAdapter {
+public class SingleBindingTargetBindable<T> implements Bindable {
 
 	private final String name;
 

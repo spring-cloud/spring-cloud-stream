@@ -24,7 +24,7 @@ import java.util.Set;
 import org.springframework.cloud.stream.binder.Binding;
 
 /**
- * A {@link BindableAdapter} that stores the dynamic destination names and handles their
+ * A {@link Bindable} that stores the dynamic destination names and handles their
  * unbinding.
  *
  * This class is not thread-safe.

@@ -68,6 +68,7 @@ public class CompositeMessageConverterFactory {
 		initDefaultConverters();
 	}
 
+	@SuppressWarnings("deprecation")
 	private void initDefaultConverters() {
 		ApplicationJsonMessageMarshallingConverter applicationJson = new ApplicationJsonMessageMarshallingConverter();
 		applicationJson.setStrictContentTypeMatch(true);

@@ -208,21 +208,9 @@ public class BindingServiceConfiguration {
 	}
 
 
-	/**
-	 *
-	 * @deprecated as of version 2.0
-	 */
-	@Bean
-	@Deprecated
-	// provided for backwards compatibility scenarios
-	public ChannelBindingServiceProperties channelBindingServiceProperties(
-			BindingServiceProperties bindingServiceProperties) {
-		return new ChannelBindingServiceProperties(bindingServiceProperties);
-	}
-
+	@SuppressWarnings("deprecation")
 	@Bean
 	@ConditionalOnMissingBean
-	@SuppressWarnings("deprecation")
 	public org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
 			@Autowired(required=false) AbstractMappingMessageRouter[] routers,
 			@Autowired(required=false)DestinationResolver<MessageChannel> channelResolver) {
