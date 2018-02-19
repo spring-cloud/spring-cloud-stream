@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.tck;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -51,6 +52,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -381,6 +383,31 @@ public class ContentTypeTckTests {
 		assertTrue(binder.getLastError().getPayload() instanceof MessageConversionException);
 	}
 	
+	
+	@Test
+	public void toCollectionWithParameterizedType() throws Exception {	
+		ApplicationContext context = new SpringApplicationBuilder(CollectionWithParameterizedTypes.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		SourceDestination source = context.getBean(SourceDestination.class);
+		TargetDestination target = context.getBean(TargetDestination.class);
+		String jsonPayload = "[{\"person\":{\"name\":\"jon\"},\"id\":123},{\"person\":{\"name\":\"jane\"},\"id\":456}]";
+		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertThat(outputMessage.getPayload()).isEqualTo(jsonPayload.getBytes());
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(SpringIntegrationBinderConfiguration.class)
+	public static class CollectionWithParameterizedTypes {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public List<Employee<Person>> echo(List<Employee<Person>> value) {
+			assertTrue(value.get(0) instanceof Employee);
+			return value;
+		}
+	}
+	
 	@EnableBinding(Processor.class)
 	@Import(SpringIntegrationBinderConfiguration.class)
 	public static class TextInJsonOutListener {
@@ -390,8 +417,6 @@ public class ContentTypeTckTests {
 			return MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
 		}
 	}
-	
-	
 	
 	@EnableBinding(Processor.class)
 	@Import(SpringIntegrationBinderConfiguration.class)
@@ -505,6 +530,23 @@ public class ContentTypeTckTests {
 			person.setName("bob");
 			String json = mapper.writeValueAsString(person);
 			return MessageBuilder.withPayload(json).build();
+		}
+	}
+	
+	public static class Employee<P> {
+		private P person;
+		private int id;
+		public int getId() {
+			return id;
+		}
+		public void setId(int id) {
+			this.id = id;
+		}
+		public P getPerson() {
+			return person;
+		}
+		public void setPerson(P person) {
+			this.person = person;
 		}
 	}
 	

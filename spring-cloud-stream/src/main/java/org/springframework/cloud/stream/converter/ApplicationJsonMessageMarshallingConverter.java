@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.converter;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +47,6 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 	
 	private final Map<ParameterizedTypeReference<?>, JavaType> typeCache = new ConcurrentHashMap<>();
 	
-
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
 		if (payload instanceof byte[]) {
@@ -73,9 +73,13 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 				 */
 				conversionHint = null; 
 			}
+			else if (((MethodParameter)conversionHint).getGenericParameterType() instanceof ParameterizedType) {
+				ParameterizedTypeReference<Object> forType = ParameterizedTypeReference.forType(((MethodParameter)conversionHint).getGenericParameterType());
+				result = convertParameterizedType(message, targetClass, forType);
+			}
 		}
 		else if (conversionHint instanceof ParameterizedTypeReference) {
-			result = convertParameterizedType(message, targetClass, conversionHint);
+			result = convertParameterizedType(message, targetClass, (ParameterizedTypeReference<?>)conversionHint);
 		}
 		
 		if (result == null) {
@@ -90,15 +94,14 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		return result;
 	}
 	
-	private Object convertParameterizedType(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	private Object convertParameterizedType(Message<?> message, Class<?> targetClass, ParameterizedTypeReference<?> conversionHint) {
 		ObjectMapper objectMapper = this.getObjectMapper();
 		Object payload = message.getPayload();
 		try {
 			JavaType type = this.typeCache.get(conversionHint);
 			if (type == null) {
-				type = objectMapper.getTypeFactory().constructType(
-						((ParameterizedTypeReference<?>) conversionHint).getType());
-				this.typeCache.put((ParameterizedTypeReference<?>) conversionHint, type);
+				type = objectMapper.getTypeFactory().constructType((conversionHint).getType());
+				this.typeCache.put(conversionHint, type);
 			}
 			if (payload instanceof byte[]) {
 				return objectMapper.readValue((byte[]) payload, type);
