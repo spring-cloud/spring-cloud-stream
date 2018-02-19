@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -44,6 +45,8 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
@@ -63,6 +66,9 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	private volatile Codec codec;
 
 	private volatile EvaluationContext evaluationContext;
+
+	@Autowired(required=false) // this would need to be refactored into constructor in the future
+	private RetryTemplate retryTemplate;
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -172,21 +178,25 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	/**
-	 * Create and configure a retry template.
+	 * Create and configure a default retry template unless one
+	 * has already been provided via @Bean by an application.
 	 *
 	 * @param properties The properties.
 	 * @return The retry template
 	 */
-	public RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
-		RetryTemplate template = new RetryTemplate();
-		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-		retryPolicy.setMaxAttempts(properties.getMaxAttempts());
-		ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-		backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
-		backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
-		backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
-		template.setRetryPolicy(retryPolicy);
-		template.setBackOffPolicy(backOffPolicy);
-		return template;
+	protected RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
+		RetryTemplate rt = this.retryTemplate;
+		if (rt == null) {
+			rt = new RetryTemplate();
+			SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
+			retryPolicy.setMaxAttempts(properties.getMaxAttempts());
+			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
+			backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
+			backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
+			rt.setRetryPolicy(retryPolicy);
+			rt.setBackOffPolicy(backOffPolicy);
+		}
+		return rt;
 	}
 }
