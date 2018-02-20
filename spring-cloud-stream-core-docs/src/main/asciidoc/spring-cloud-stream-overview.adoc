@@ -670,10 +670,10 @@ The `type` is a conversion hint allowing the incoming message payload to be conv
 [source,java]
 ----
 boolean result = pollableSource.poll(received -> {
-			Map<String, Foo> payload = (Map<String, Foo>) received.getPayload()
+			Map<String, Foo> payload = (Map<String, Foo>) received.getPayload();
             ...
 
-		}, new ParameterizedTypeReference<Map<String, Foo>>() {}))
+		}, new ParameterizedTypeReference<Map<String, Foo>>() {});
 ----
 
 ==== Reactive Programming Support
@@ -1219,13 +1219,13 @@ This includes application arguments, environment variables, and YAML or .propert
 
 spring.cloud.stream.instanceCount::
   The number of deployed instances of an application.
-Must be set for partitioning and if using Kafka.
+Must be set for partitioning on the producer side, and on the consumer side if using RabbitMQ and with Kafka if `autoRebalanceEnabled=false`.
 +
 Default: `1`.
 
 spring.cloud.stream.instanceIndex::
   The instance index of the application: a number from `0` to `instanceCount`-1.
-Used for partitioning and with Kafka.
+Used for partitioning with RabbitMQ and with Kafka if `autoRebalanceEnabled=false`.
 Automatically set in Cloud Foundry to match the application's instance index.
 spring.cloud.stream.dynamicDestinations::
   A list of destinations that can be bound dynamically (for example, in a dynamic routing scenario).
@@ -1333,11 +1333,13 @@ Default: `2.0`.
 instanceIndex::
   When set to a value greater than equal to zero, allows customizing the instance index of this consumer (if different from `spring.cloud.stream.instanceIndex`).
 When set to a negative value, it will default to `spring.cloud.stream.instanceIndex`.
+See that property for more information.
 +
 Default: `-1`.
 instanceCount::
   When set to a value greater than equal to zero, allows customizing the instance count of this consumer (if different from `spring.cloud.stream.instanceCount`).
 When set to a negative value, it will default to `spring.cloud.stream.instanceCount`.
+See that property for more information.
 +
 Default: `-1`.
 
@@ -2206,8 +2208,13 @@ spring.cloud.stream.instanceCount=5
 ----
 
 The `instanceCount` value represents the total number of application instances between which the data need to be partitioned, and the `instanceIndex` must be a unique value across the multiple instances, between `0` and `instanceCount - 1`.
-The instance index helps each application instance to identify the unique partition (or, in the case of Kafka, the partition set) from which it receives data.
-It is important to set both values correctly in order to ensure that all of the data is consumed and that the application instances receive mutually exclusive datasets.
+The instance index helps each application instance to identify the unique partition(s) from which it receives data.
+It is required by binders using technology that doesn't support partitioning natively, for example, with RabbitMQ, there is a queue for each partition, with the queue name containing the instance index.
+With Kafka, if `autoRebalanceEnabled` is `true` (default), Kafka will take care of distributing partitions across instances and these properties are not required.
+If `autoRebalanceEnabled` is set to false, the `instanceCount` and `instanceIndex` are used by the binder to determine which partition(s) the instance will subscribe to (you must have at least as many partitions as there are instances).
+The binder will allocate the partitions instead of Kafka.
+This might be useful if you want messages for a particular partition to always go to the same instance.
+When a binder configuration that requires them, it is important to set both values correctly in order to ensure that all of the data is consumed and that the application instances receive mutually exclusive datasets.
 
 While a scenario which using multiple instances for partitioned data processing may be complex to set up in a standalone case, Spring Cloud Dataflow can simplify the process significantly by populating both the input and output values correctly as well as relying on the runtime infrastructure to provide information about the instance index and instance count.
 
