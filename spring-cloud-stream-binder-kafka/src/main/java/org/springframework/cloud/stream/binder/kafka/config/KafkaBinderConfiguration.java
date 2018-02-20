@@ -62,13 +62,10 @@ import org.springframework.util.ObjectUtils;
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
 @Import({ PropertyPlaceholderAutoConfiguration.class})
-@EnableConfigurationProperties({ KafkaBinderConfigurationProperties.class, KafkaExtendedBindingProperties.class })
+@EnableConfigurationProperties({ KafkaExtendedBindingProperties.class })
 public class KafkaBinderConfiguration {
 
 	protected static final Log logger = LogFactory.getLog(KafkaBinderConfiguration.class);
-
-	@Autowired
-	private KafkaBinderConfigurationProperties configurationProperties;
 
 	@Autowired
 	private KafkaExtendedBindingProperties kafkaExtendedBindingProperties;
@@ -83,14 +80,20 @@ public class KafkaBinderConfiguration {
 	private KafkaProperties kafkaProperties;
 
 	@Bean
-	KafkaTopicProvisioner provisioningProvider() {
-		return new KafkaTopicProvisioner(this.configurationProperties, this.kafkaProperties);
+	KafkaBinderConfigurationProperties configurationProperties() {
+		return new KafkaBinderConfigurationProperties();
 	}
 
 	@Bean
-	KafkaMessageChannelBinder kafkaMessageChannelBinder() {
+	KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties configurationProperties) {
+		return new KafkaTopicProvisioner(configurationProperties, this.kafkaProperties);
+	}
+
+	@Bean
+	KafkaMessageChannelBinder kafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
+														KafkaTopicProvisioner provisioningProvider) {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
-				this.configurationProperties, provisioningProvider());
+				configurationProperties, provisioningProvider);
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
 		return kafkaMessageChannelBinder;
@@ -103,7 +106,8 @@ public class KafkaBinderConfiguration {
 	}
 
 	@Bean
-	KafkaBinderHealthIndicator healthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+	KafkaBinderHealthIndicator healthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder,
+											KafkaBinderConfigurationProperties configurationProperties) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
@@ -111,17 +115,18 @@ public class KafkaBinderConfiguration {
 			props.putAll(configurationProperties.getConsumerConfiguration());
 		}
 		if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
-			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
+			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, configurationProperties.getKafkaConnectionString());
 		}
 		ConsumerFactory<?, ?> consumerFactory = new DefaultKafkaConsumerFactory<>(props);
 		KafkaBinderHealthIndicator indicator = new KafkaBinderHealthIndicator(kafkaMessageChannelBinder,
 				consumerFactory);
-		indicator.setTimeout(this.configurationProperties.getHealthTimeout());
+		indicator.setTimeout(configurationProperties.getHealthTimeout());
 		return indicator;
 	}
 
 	@Bean
-	public MeterBinder kafkaBinderMetrics(KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+	public MeterBinder kafkaBinderMetrics(KafkaMessageChannelBinder kafkaMessageChannelBinder,
+										KafkaBinderConfigurationProperties configurationProperties) {
 		return new KafkaBinderMetrics(kafkaMessageChannelBinder, configurationProperties);
 	}
 
