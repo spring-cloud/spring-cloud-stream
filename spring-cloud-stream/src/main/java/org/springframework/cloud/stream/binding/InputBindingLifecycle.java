@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.Collection;
 import java.util.Map;
+
+import org.springframework.cloud.stream.binder.Binding;
 
 /**
  * Coordinates binding/unbinding of input binding targets in accordance to the lifecycle
@@ -26,6 +29,10 @@ import java.util.Map;
  * @author Oleg Zhurakousky
  */
 public class InputBindingLifecycle extends AbstractBindingLifecycle {
+	
+	@SuppressWarnings("unused")
+	//It is actually used reflectively since at the moment we do not want to expose it via public method
+	private Collection<Binding<Object>> inputBindings;
 
 	public InputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
 		super(bindingService, bindables);
@@ -42,7 +49,7 @@ public class InputBindingLifecycle extends AbstractBindingLifecycle {
 
 	@Override
 	void doStartWithBindable(Bindable bindable) {
-		bindable.bindInputs(bindingService);
+		this.inputBindings = bindable.createAndBindInputs(bindingService);
 	}
 
 	@Override

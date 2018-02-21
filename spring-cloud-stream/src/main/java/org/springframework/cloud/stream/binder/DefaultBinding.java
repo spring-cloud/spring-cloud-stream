@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Default implementation for a {@link Binding}.
@@ -27,9 +31,13 @@ import org.springframework.util.ObjectUtils;
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
+ * 
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public class DefaultBinding<T> implements Binding<T> {
+	
+	private final Log logger = LogFactory.getLog(this.getClass().getName());
 
 	protected final String name;
 
@@ -64,12 +72,33 @@ public class DefaultBinding<T> implements Binding<T> {
 	public String getGroup() {
 		return this.group;
 	}
+	
+	public boolean isRunning() {
+		return this.lifecycle != null && this.lifecycle.isRunning();
+	}
+	
+	@Override
+	public final synchronized void start() {
+		if (!this.isRunning()) {
+			if (this.lifecycle != null && StringUtils.hasText(this.group)) {
+				this.lifecycle.start();
+			}
+			else {
+				logger.warn("Can not re-bind an anonymous binding");
+			}
+		}
+	}
+	
+	@Override
+	public final synchronized void stop() {
+		if (this.isRunning()) {
+			this.lifecycle.stop();
+		}
+	}
 
 	@Override
 	public final void unbind() {
-		if (this.lifecycle != null) {
-			this.lifecycle.stop();
-		}
+		this.stop();
 		afterUnbind();
 	}
 
