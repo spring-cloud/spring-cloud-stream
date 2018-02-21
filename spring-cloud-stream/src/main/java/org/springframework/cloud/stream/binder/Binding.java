@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.context.Lifecycle;
+
 /**
  * Represents a binding between an input or output and an adapter endpoint that connects
  * via a Binder. The binding could be for a consumer or a producer. A consumer binding
@@ -26,9 +28,46 @@ package org.springframework.cloud.stream.binder;
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
+ * 
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-public interface Binding<T> {
+public interface Binding<T> extends Lifecycle {
+	
+	/**
+	 * Stops the target component represented by this instance.
+	 * NOTE: At the time the instance is created the component is already started. 
+	 * This operation is typically used by actuator to re-bind/re-start.
+	 * 
+	 * @see BindingsEndpoint
+	 */
+	default void start() {}
+	
+	/**
+	 * Starts the target component represented by this instance.
+	 * NOTE: At the time the instance is created the component is already started. 
+	 * This operation is typically used by actuator to re-bind/re-start.
+	 * 
+	 * @see BindingsEndpoint
+	 */
+	default void stop() {}
+	
+	/**
+	 * Returns 'true' if the target component represented by this instance is running.
+	 */
+	default boolean isRunning() {
+		return false;
+	}
+	
+	/**
+	 * Returns the name of this binding  (i.e., channel name)
+	 * 
+	 * @return binding name
+	 */
+	default String getName() {
+		return null;
+	}
+		
 
 	/**
 	 * Unbinds the target component represented by this instance and stops any active

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+
+import org.springframework.cloud.stream.binder.Binding;
 
 /**
  * Marker interface for instances that can bind/unbind groups of inputs and outputs.
@@ -31,8 +34,23 @@ public interface Bindable {
 
 	/**
 	 * Binds all the inputs associated with this instance.
+	 * @deprecated as of 2.0 in favor of {@link #createAndBindInputs(BindingService)}
 	 */
-	default void bindInputs(BindingService adapter) {}
+	@Deprecated
+	default void bindInputs(BindingService adapter) {
+		this.createAndBindInputs(adapter);
+	}
+	
+	/**
+	 * Binds all the inputs associated with this instance.
+	 * @param adapter instance of {@link BindingService}
+	 * @return collection of {@link Binding}s
+	 * 
+	 * @since 2.0
+	 */
+	default Collection<Binding<Object>> createAndBindInputs(BindingService adapter) {
+		return Collections.<Binding<Object>>emptyList();
+	}
 
 	/**
 	 * Binds all the outputs associated with this instance.

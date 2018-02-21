@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.internal.InternalPropertyNames;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
@@ -50,6 +52,7 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author David Syer
  * @author Ilayaperumal Gopinathan
+ * @author Oleg Zhurakousky
  *
  * @see EnableBinding
  */
@@ -206,8 +209,18 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		return true;
 	}
 
+	/**
+	 * @deprecated in favor of {@link #bindInputBindings(BindingService)}
+	 */
 	@Override
+	@Deprecated
 	public void bindInputs(BindingService bindingService) {
+		this.createAndBindInputs(bindingService);
+	}
+	
+	@Override
+	public Collection<Binding<Object>> createAndBindInputs(BindingService bindingService) {
+		List<Binding<Object>> bindings = new ArrayList<>();
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding inputs for %s:%s", this.namespace, this.type));
 		}
@@ -218,9 +231,10 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type, inputTargetName));
 				}
-				bindingService.bindConsumer(boundTargetHolder.getBoundTarget(), inputTargetName);
+				bindings.addAll(bindingService.bindConsumer(boundTargetHolder.getBoundTarget(), inputTargetName));
 			}
 		}
+		return bindings;
 	}
 
 	@Override
