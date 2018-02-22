@@ -1,4 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  org.springframework.cloud.stream.metrics.config.BinderMetricsAutoConfiguration
-org.springframework.boot.env.EnvironmentPostProcessor=\
-  org.springframework.cloud.stream.metrics.config.BinderMetricsEnvironmentPostProcessor
