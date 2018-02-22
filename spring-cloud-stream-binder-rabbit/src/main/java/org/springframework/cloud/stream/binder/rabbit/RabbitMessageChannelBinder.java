@@ -125,6 +125,8 @@ public class RabbitMessageChannelBinder
 
 	private final RabbitProperties rabbitProperties;
 
+	private boolean destroyConnectionFactory;
+
 	private ConnectionFactory connectionFactory;
 
 	private ConnectionFactory producerConnectionFactory;
@@ -207,13 +209,16 @@ public class RabbitMessageChannelBinder
 					this.rabbitProperties.getSsl().getTrustStore(),
 					this.rabbitProperties.getSsl().getKeyStorePassword(),
 					this.rabbitProperties.getSsl().getTrustStorePassword());
+			this.destroyConnectionFactory = true;
 		}
 	}
 
 	@Override
 	public void destroy() throws Exception {
 		if (this.connectionFactory instanceof DisposableBean) {
-			((DisposableBean) this.connectionFactory).destroy();
+			if (this.destroyConnectionFactory) {
+				((DisposableBean) this.connectionFactory).destroy();
+			}
 			((DisposableBean) this.producerConnectionFactory).destroy();
 		}
 	}
