@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -33,6 +32,8 @@ import org.springframework.util.Assert;
 
 /**
  * 
+ * Actuator endpoint for binding control
+ * 
  * @author Oleg Zhurakousky
  * 
  * @since 2.0
@@ -43,20 +44,23 @@ public class BindingsEndpoint {
 	
 	static final String BASE_ENPOINT_ID = "bindings";
 	
-	static final String START_ENPOINT_ID = BASE_ENPOINT_ID + "/" + "start/{name}";
+	static final String START_ENPOINT_ID = BASE_ENPOINT_ID + "/start/{name}";
 	
-	static final String STOP_ENPOINT_ID = BASE_ENPOINT_ID + "/" + "stop/{name}";
+	static final String STOP_ENPOINT_ID = BASE_ENPOINT_ID + "/stop/{name}";
 
 	private final List<InputBindingLifecycle> inputBindingLifecycles;
+	
+	private final ObjectMapper objectMapper;
 	
 	public BindingsEndpoint(List<InputBindingLifecycle> inputBindingLifecycles) {
 		Assert.notEmpty(inputBindingLifecycles, "'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
+		this.objectMapper = new ObjectMapper();
 	}
 	
 	@ReadOperation
-	public List<Object> bindings() {
-		return new ObjectMapper().convertValue(this.gatherInputBindings(), new TypeReference<List<Object>>() {});	
+	public List<?> bindings() {
+		return this.objectMapper.convertValue(this.gatherInputBindings(), List.class);	
 	}
 	
 	public StopEndpoint getStopEndpoint() {
@@ -68,28 +72,32 @@ public class BindingsEndpoint {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private List<Binding<Object>> gatherInputBindings() {
-		List<Binding<Object>> inputBindings = new ArrayList<>();
-		for (InputBindingLifecycle inputBindingLifecycle : inputBindingLifecycles) {
-			Collection<Binding<Object>> lifecycleInputBindings = 
-					(Collection<Binding<Object>>) new DirectFieldAccessor(inputBindingLifecycle).getPropertyValue("inputBindings");
+	private List<Binding<?>> gatherInputBindings() {
+		List<Binding<?>> inputBindings = new ArrayList<>();
+		for (InputBindingLifecycle inputBindingLifecycle : this.inputBindingLifecycles) {
+			Collection<Binding<?>> lifecycleInputBindings = 
+					(Collection<Binding<?>>) new DirectFieldAccessor(inputBindingLifecycle).getPropertyValue("inputBindings");
 			inputBindings.addAll(lifecycleInputBindings);
 		}
 		return inputBindings;
+	}
+	
+	private Binding<?> locateBinding(String name) {
+		return BindingsEndpoint.this.gatherInputBindings().stream()
+			.filter(binding -> name.equals(binding.getName()))
+			.findFirst()
+			.orElse(null);
 	}
 	
 	@Endpoint(id = BindingsEndpoint.STOP_ENPOINT_ID)
 	public class StopEndpoint {	
 		@WriteOperation
 		public boolean stop(String name) {
-			List<Binding<Object>> inputBindings = BindingsEndpoint.this.gatherInputBindings();	
-			for (Binding<Object> binding : inputBindings) {
-				if (name.equals(binding.getName())) {
-					binding.stop();
-					return true;
-				}
+			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
+			if (binding != null) {
+				binding.stop();
 			}
-			return false;
+			return binding != null;
 		}
 	}
 	
@@ -97,14 +105,11 @@ public class BindingsEndpoint {
 	public class StartEndpoint {	
 		@WriteOperation
 		public boolean start(String name) {
-			List<Binding<Object>> inputBindings = BindingsEndpoint.this.gatherInputBindings();
-			for (Binding<Object> binding : inputBindings) {
-				if (name.equals(binding.getName())) {
-					binding.start();
-					return true;
-				}
+			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
+			if (binding != null) {
+				binding.start();
 			}
-			return false;
+			return binding != null;
 		}
 	}
 
