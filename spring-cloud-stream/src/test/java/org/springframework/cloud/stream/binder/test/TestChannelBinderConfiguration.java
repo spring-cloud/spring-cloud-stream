@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.integration;
+package org.springframework.cloud.stream.binder.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,16 +39,16 @@ import org.springframework.integration.config.EnableIntegration;
 /**
  * {@link Binder} configuration backed by Spring Integration.
  *
- * Please see {@link SpringIntegrationChannelBinder} for more details.
+ * Please see {@link TestChannelBinder} for more details.
  *
  * @author Oleg Zhurakousky
  *
- * @see SpringIntegrationChannelBinder
+ * @see TestChannelBinder
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
 @EnableIntegration
-public class SpringIntegrationBinderConfiguration<T> {
+public class TestChannelBinderConfiguration<T> {
 
 	public static final String NAME = "integration";
 
@@ -61,7 +61,7 @@ public class SpringIntegrationBinderConfiguration<T> {
 	 */
 	public static Class<?>[] getCompleteConfiguration(Class<?>... additionalConfigurationClasses) {
 		List<Class<?>> configClasses = new ArrayList<>();
-		configClasses.add(SpringIntegrationBinderConfiguration.class);
+		configClasses.add(TestChannelBinderConfiguration.class);
 		Import annotation = AnnotationUtils.getAnnotation(EnableBinding.class, Import.class);
 		Map<String, Object> annotationAttributes = AnnotationUtils.getAnnotationAttributes(annotation);
 		configClasses.addAll(Arrays.asList((Class<?>[])annotationAttributes.get("value")));
@@ -73,30 +73,30 @@ public class SpringIntegrationBinderConfiguration<T> {
 
 	@Bean
 	public BinderTypeRegistry binderTypeRegistry() {
-		BinderType binderType = new BinderType(NAME, new Class[] {SpringIntegrationBinderConfiguration.class});
+		BinderType binderType = new BinderType(NAME, new Class[] {TestChannelBinderConfiguration.class});
 		BinderTypeRegistry btr = new DefaultBinderTypeRegistry(Collections.singletonMap(NAME, binderType));
 		return btr;
 	}
 
 	@Bean
-	public SourceDestination sourceDestination() {
-		return new SourceDestination();
+	public InputDestination sourceDestination() {
+		return new InputDestination();
 	}
 
 	@Bean
-	public TargetDestination targetDestination() {
-		return new TargetDestination();
+	public OutputDestination targetDestination() {
+		return new OutputDestination();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Bean
-	public Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> springIntegrationChannelBinder(SpringIntegrationProvisioner provisioner) {
-		return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) new SpringIntegrationChannelBinder(provisioner);
+	public Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> springIntegrationChannelBinder(TestChannelBinderProvisioner provisioner) {
+		return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) new TestChannelBinder(provisioner);
 	}
 
 	@Bean
-	public SpringIntegrationProvisioner springIntegrationProvisioner() {
-		return new SpringIntegrationProvisioner();
+	public TestChannelBinderProvisioner springIntegrationProvisioner() {
+		return new TestChannelBinderProvisioner();
 	}
 
 }

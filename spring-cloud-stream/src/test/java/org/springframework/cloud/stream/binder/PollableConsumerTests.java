@@ -27,8 +27,8 @@ import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationBinderConfiguration;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationChannelBinder;
+import org.springframework.cloud.stream.binder.test.TestChannelBinder;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.ApplicationContext;
@@ -66,7 +66,7 @@ public class PollableConsumerTests {
 
 	@Test
 	public void testSimple() {
-		SpringIntegrationChannelBinder binder = createBinder();
+		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);			
 			
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
@@ -98,7 +98,7 @@ public class PollableConsumerTests {
 
 	@Test
 	public void testConvertSimple() {
-		SpringIntegrationChannelBinder binder = createBinder();
+		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
 		
 		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes()));
@@ -125,7 +125,7 @@ public class PollableConsumerTests {
 
 	@Test
 	public void testConvertList() {
-		SpringIntegrationChannelBinder binder = createBinder();
+		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
 		
 		binder.setMessageSourceDelegate(() -> new GenericMessage<>("[{\"foo\":\"bar\"},{\"foo\":\"baz\"}]".getBytes()));
@@ -153,7 +153,7 @@ public class PollableConsumerTests {
 
 	@Test
 	public void testConvertMap() {
-		SpringIntegrationChannelBinder binder = createBinder();
+		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
 		
 		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"qux\":{\"foo\":\"bar\"}}".getBytes()));
@@ -176,7 +176,7 @@ public class PollableConsumerTests {
 
 	@Test
 	public void testEmbedded() {
-		SpringIntegrationChannelBinder binder = createBinder();
+		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
 		
 		binder.setMessageSourceDelegate(() -> {
@@ -214,7 +214,7 @@ public class PollableConsumerTests {
 
 	@Test
 	public void testErrors() {
-		SpringIntegrationChannelBinder binder = createBinder();
+		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
 		
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
@@ -250,7 +250,7 @@ public class PollableConsumerTests {
 
 	@Test
 	public void testErrorsNoRetry() {
-		SpringIntegrationChannelBinder binder = createBinder();
+		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
 		
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
@@ -280,10 +280,10 @@ public class PollableConsumerTests {
 		assertThat(count.get()).isEqualTo(1);
 	}
 
-	private SpringIntegrationChannelBinder createBinder() {
-		this.context = new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration())
+	private TestChannelBinder createBinder() {
+		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration())
 				.web(WebApplicationType.NONE).run();		
-		SpringIntegrationChannelBinder binder = context.getBean(SpringIntegrationChannelBinder.class);
+		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 		return binder;
 	}
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.integration;
+package org.springframework.cloud.stream.binder.test;
 
 import java.util.Collections;
 import java.util.function.Consumer;
@@ -25,8 +25,8 @@ import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationProvisioner.SpringIntegrationConsumerDestination;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationProvisioner.SpringIntegrationProducerDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationConsumerDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationProducerDestination;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.core.AttributeAccessor;
@@ -61,12 +61,12 @@ import org.springframework.util.StringUtils;
  * <br>
  * The destination classes are
  * <ul>
- * <li>{@link SourceDestination}</li>
- * <li>{@link TargetDestination}</li>
+ * <li>{@link InputDestination}</li>
+ * <li>{@link OutputDestination}</li>
  * </ul>
  * Simply autowire them in your your application and send/receive messages.
  * </p>
- * You must also add {@link SpringIntegrationBinderConfiguration} to your configuration.
+ * You must also add {@link TestChannelBinderConfiguration} to your configuration.
  * Below is the example using Spring Boot test.
  * <pre class="code">
  *
@@ -101,8 +101,8 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  *
  */
-public class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder<ConsumerProperties,
-	ProducerProperties, SpringIntegrationProvisioner> {
+public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProperties,
+	ProducerProperties, TestChannelBinderProvisioner> {
 
 	@Autowired
 	private BeanFactory beanFactory;
@@ -112,7 +112,7 @@ public class SpringIntegrationChannelBinder extends AbstractMessageChannelBinder
 	private MessageSource<?> messageSourceDelegate = () -> new GenericMessage<>("polled data",
 			Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "text/plain"));
 
-	public SpringIntegrationChannelBinder(SpringIntegrationProvisioner provisioningProvider) {
+	public TestChannelBinder(TestChannelBinderProvisioner provisioningProvider) {
 		super(new String[] {}, provisioningProvider);
 	}
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.integration;
+package org.springframework.cloud.stream.binder.test;
 
 import java.nio.charset.StandardCharsets;
 
@@ -38,7 +38,7 @@ import org.springframework.messaging.support.GenericMessage;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Sample spring cloud stream application that demonstrates the usage of {@link SpringIntegrationChannelBinder}.
+ * Sample spring cloud stream application that demonstrates the usage of {@link TestChannelBinder}.
  *
  * @author Oleg Zhurakousky
  * @author Gary Russell
@@ -46,14 +46,14 @@ import static org.junit.Assert.assertEquals;
  */
 @SpringBootApplication
 @EnableBinding(SampleStreamApp.PolledConsumer.class)
-@Import(SpringIntegrationBinderConfiguration.class)
+@Import(TestChannelBinderConfiguration.class)
 public class SampleStreamApp {
 
 	public static void main(String[] args) {
 		ApplicationContext context = new SpringApplicationBuilder(SampleStreamApp.class).web(WebApplicationType.NONE)
 				.run("--server.port=0");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
 
 		Message<?> message = target.receive();

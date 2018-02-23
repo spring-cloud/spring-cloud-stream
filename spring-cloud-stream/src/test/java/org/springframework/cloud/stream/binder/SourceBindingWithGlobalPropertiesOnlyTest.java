@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationBinderConfiguration;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.Source;
@@ -35,7 +35,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = {SpringIntegrationBinderConfiguration.class, SourceBindingWithGlobalPropertiesOnlyTest.TestSource.class}, properties = {
+@SpringBootTest(classes = {TestChannelBinderConfiguration.class, SourceBindingWithGlobalPropertiesOnlyTest.TestSource.class}, properties = {
 		"spring.cloud.stream.default.contentType=application/json",
 		"spring.cloud.stream.default.producer.partitionKeyExpression=key" })
 public class SourceBindingWithGlobalPropertiesOnlyTest {

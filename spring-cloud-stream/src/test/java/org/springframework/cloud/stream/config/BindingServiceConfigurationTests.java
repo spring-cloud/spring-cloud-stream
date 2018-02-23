@@ -22,7 +22,7 @@ import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationBinderConfiguration;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -40,7 +40,7 @@ public class BindingServiceConfigurationTests {
 
 	@Test
 	public void valdateImportedConfiguartionHandlerPostProcessing() {
-		ApplicationContext context = new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration(RootConfiguration.class)).web(WebApplicationType.NONE).run();
+		ApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration(RootConfiguration.class)).web(WebApplicationType.NONE).run();
 		Map<String, AbstractReplyProducingMessageHandler> beansOfType = context.getBeansOfType(AbstractReplyProducingMessageHandler.class);
 		for (AbstractReplyProducingMessageHandler handler : beansOfType.values()) {
 			assertTrue(handler.getNotPropagatedHeaders().contains("contentType"));

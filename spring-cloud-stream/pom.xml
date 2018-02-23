@@ -73,7 +73,7 @@
 					<execution>
 						<configuration>
 							<includes>
-								<include>**/integration/*</include>
+								<include>**/test/*</include>
 							</includes>
 							<classifier>test-binder</classifier>
 						</configuration>

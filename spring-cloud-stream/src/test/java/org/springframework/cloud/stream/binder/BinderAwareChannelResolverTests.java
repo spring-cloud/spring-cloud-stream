@@ -30,7 +30,7 @@ import org.mockito.Mockito;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationBinderConfiguration;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BindingService;
@@ -94,7 +94,7 @@ public class BinderAwareChannelResolverTests {
 	@SuppressWarnings("unchecked")
 	@Before
 	public void setupContext() throws Exception {
-		this.context = new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration(BinderAwareChannelResolverTests.InterceptorConfiguration.class))
+		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration(BinderAwareChannelResolverTests.InterceptorConfiguration.class))
 				.web(WebApplicationType.NONE).run();
 		
 		this.resolver = context.getBean(BinderAwareChannelResolver.class);

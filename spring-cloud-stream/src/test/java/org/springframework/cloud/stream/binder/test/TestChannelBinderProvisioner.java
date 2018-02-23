@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.integration;
+package org.springframework.cloud.stream.binder.test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +34,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * {@link ProvisioningProvider} to support {@link SpringIntegrationChannelBinder}. It
+ * {@link ProvisioningProvider} to support {@link TestChannelBinder}. It
  * exists primarily to support {@link AbstractMessageChannel} semantics for creating
  * {@link ConsumerDestination} and {@link ProducerDestination}, to interact with this
  * {@link Binder}.
@@ -42,21 +42,21 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Oleg Zhurakousky
  *
  */
-public class SpringIntegrationProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
+public class TestChannelBinderProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
 
 	private final Map<String, SubscribableChannel> provisionedDestinations = new HashMap<>();
 
 	@Autowired
-	private SourceDestination source;
+	private InputDestination source;
 
 	@Autowired
-	private TargetDestination target;
+	private OutputDestination target;
 
 	/**
 	 * Will provision producer destination as an SI {@link PublishSubscribeChannel}.
 	 * <br>
 	 * This provides convenience of registering additional subscriber (handler in the test method)
-	 * along side of being able to call {@link TargetDestination#receive()} to get a
+	 * along side of being able to call {@link OutputDestination#receive()} to get a
 	 * {@link Message} for additional assertions.
 	 */
 	@Override

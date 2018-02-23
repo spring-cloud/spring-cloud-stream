@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.integration;
+package org.springframework.cloud.stream.binder.test;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
@@ -31,12 +31,12 @@ import org.springframework.messaging.Message;
  * @author Oleg Zhurakousky
  *
  */
-public class TargetDestination extends AbstractDestination {
+public class OutputDestination extends AbstractDestination {
 
 	private BlockingQueue<Message<?>> messages;
 
 	/**
-	 * Allows to access {@link Message}s received by this {@link TargetDestination}.
+	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
 	 * @param timeout how long to wait before giving up
 	 */
 	@SuppressWarnings("unchecked")
@@ -51,7 +51,7 @@ public class TargetDestination extends AbstractDestination {
 	}
 
 	/**
-	 * Allows to access {@link Message}s received by this {@link TargetDestination}.
+	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
 	 */
 	public Message<byte[]> receive() {
 		return this.receive(0);

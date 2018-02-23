@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.integration;
+package org.springframework.cloud.stream.binder.test;
 
 import org.springframework.messaging.Message;
 
@@ -27,7 +27,7 @@ import org.springframework.messaging.Message;
  * @author Oleg Zhurakousky
  *
  */
-public class SourceDestination extends AbstractDestination {
+public class InputDestination extends AbstractDestination {
 
 	/**
 	 * Allows the {@link Message} to be sent to a Binder to be delegated

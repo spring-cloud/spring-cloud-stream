@@ -29,10 +29,10 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.annotation.StreamMessageConverter;
-import org.springframework.cloud.stream.binder.integration.SourceDestination;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationBinderConfiguration;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationChannelBinder;
-import org.springframework.cloud.stream.binder.integration.TargetDestination;
+import org.springframework.cloud.stream.binder.test.InputDestination;
+import org.springframework.cloud.stream.binder.test.OutputDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinder;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.converter.KryoMessageConverter;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -74,8 +74,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -88,8 +88,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToStringStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -102,8 +102,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToStringStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.output.contentType=text/plain", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -116,8 +116,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToByteArrayStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -130,8 +130,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToByteArrayStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.output.contentType=text/plain", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -144,8 +144,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(StringToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -158,8 +158,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(StringToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes(), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN))));
 		Message<byte[]> outputMessage = target.receive();
@@ -172,8 +172,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -186,8 +186,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(StringToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes(), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN))));
 		Message<byte[]> outputMessage = target.receive();
@@ -200,8 +200,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayToByteArrayStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -214,8 +214,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayToByteArrayStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.cloud.stream.bindings.output.contentType=text/plain", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -229,8 +229,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoMessageToStringMessageStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -243,8 +243,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoMessageToStringMessageServiceActivator.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -257,8 +257,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayMessageToStringJsonMessageStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -271,8 +271,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(StringMessageToStringMessageStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -285,8 +285,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.default.contentType=application/x-java-object", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		
 		KryoMessageConverter converter = new KryoMessageConverter(null, true);
 		@SuppressWarnings("unchecked")
@@ -306,8 +306,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false", "--spring.cloud.stream.bindings.output.contentType=application/x-java-object");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		
 		KryoMessageConverter converter = new KryoMessageConverter(null, true);
 		@SuppressWarnings("unchecked")
@@ -330,8 +330,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(StringToStringStreamListener.class, CustomConverters.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.default.contentType=application/x-java-object", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -346,8 +346,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(StringToStringStreamListener.class, CustomConverters.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.default.contentType=foo/bar", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -364,8 +364,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.default.contentType=text/plain", "--spring.jmx.enabled=false");	
-		SourceDestination source = context.getBean(SourceDestination.class);
-		SpringIntegrationChannelBinder binder = context.getBean(SpringIntegrationChannelBinder.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		assertTrue(binder.getLastError().getPayload() instanceof MessageConversionException);
@@ -376,8 +376,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(StringToStringStreamListener.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.default.contentType=foo/bar", "--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		SpringIntegrationChannelBinder binder = context.getBean(SpringIntegrationChannelBinder.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		assertTrue(binder.getLastError().getPayload() instanceof MessageConversionException);
@@ -389,8 +389,8 @@ public class ContentTypeTckTests {
 		ApplicationContext context = new SpringApplicationBuilder(CollectionWithParameterizedTypes.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
-		SourceDestination source = context.getBean(SourceDestination.class);
-		TargetDestination target = context.getBean(TargetDestination.class);
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "[{\"person\":{\"name\":\"jon\"},\"id\":123},{\"person\":{\"name\":\"jane\"},\"id\":456}]";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
@@ -398,7 +398,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class CollectionWithParameterizedTypes {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -409,7 +409,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class TextInJsonOutListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -419,7 +419,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoToPojoStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -429,7 +429,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoToStringStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -439,7 +439,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoToByteArrayStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -449,7 +449,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class ByteArrayToPojoStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -460,7 +460,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class StringToPojoStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -471,7 +471,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class ByteArrayToByteArrayStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -481,7 +481,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class StringToStringStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -491,7 +491,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoMessageToStringMessageStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -501,7 +501,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoMessageToStringMessageServiceActivator {
 		@ServiceActivator(inputChannel=Processor.INPUT, outputChannel=Processor.OUTPUT)
 		public Message<String> echo(Message<Person> value)  {
@@ -510,7 +510,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class StringMessageToStringMessageStreamListener {
 		@ServiceActivator(inputChannel=Processor.INPUT, outputChannel=Processor.OUTPUT)
 		public Message<String> echo(Message<String> value) throws Exception {
@@ -521,7 +521,7 @@ public class ContentTypeTckTests {
 	}
 	
 	@EnableBinding(Processor.class)
-	@Import(SpringIntegrationBinderConfiguration.class)
+	@Import(TestChannelBinderConfiguration.class)
 	public static class ByteArrayMessageToStringJsonMessageStreamListener {
 		@ServiceActivator(inputChannel=Processor.INPUT, outputChannel=Processor.OUTPUT)
 		public Message<String> echo(Message<byte[]> value) throws Exception {

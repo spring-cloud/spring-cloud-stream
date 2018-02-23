@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.binder.integration.SpringIntegrationBinderConfiguration;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -56,7 +56,7 @@ public class AbstractMessageChannelBinderTests {
 
 	@Before
 	public void prepare() {
-		this.context = new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration())
+		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration())
 				.web(WebApplicationType.NONE)
 				.run();
 	}
@@ -107,7 +107,7 @@ public class AbstractMessageChannelBinderTests {
 	@Test
 	public void testEndpointBinderHasRecoverer() throws Exception {
 		ConfigurableApplicationContext context =
-				new SpringApplicationBuilder(SpringIntegrationBinderConfiguration.getCompleteConfiguration()).web(WebApplicationType.NONE).run();
+				new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration()).web(WebApplicationType.NONE).run();
 
 		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, ProvisioningProvider<ConsumerProperties, ProducerProperties>> binder =
 				context.getBean(AbstractMessageChannelBinder.class);
