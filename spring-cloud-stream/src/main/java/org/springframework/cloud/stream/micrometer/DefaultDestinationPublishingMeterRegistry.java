@@ -71,7 +71,7 @@ import org.springframework.messaging.support.GenericMessage;
  * @since 2.0
  *
  */
-public class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements SmartLifecycle {
+class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements SmartLifecycle {
 
 	private static final Log logger = LogFactory.getLog(DefaultDestinationPublishingMeterRegistry.class);
 
@@ -87,7 +87,7 @@ public class DefaultDestinationPublishingMeterRegistry extends MeterRegistry imp
 
 	private ScheduledFuture<?> publisher;
 
-	public DefaultDestinationPublishingMeterRegistry(ApplicationMetricsProperties applicationProperties,
+	DefaultDestinationPublishingMeterRegistry(ApplicationMetricsProperties applicationProperties,
 			MetersPublisherBinding publisherBinding, MetricsPublisherConfig metricsPublisherConfig, Clock clock) {
 		super(clock);
 		this.metricsPublisherConfig = metricsPublisherConfig;
