@@ -102,7 +102,6 @@
     <modules>
         <module>spring-cloud-stream</module>
         <module>spring-cloud-stream-binder-test</module>
-        <module>spring-cloud-stream-rxjava</module>
         <module>spring-cloud-stream-test-support</module>
         <module>spring-cloud-stream-test-support-internal</module>
         <module>spring-cloud-stream-integration-tests</module>
