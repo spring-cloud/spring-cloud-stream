@@ -1,5 +1,9 @@
 spring:
   application:
     name: SchemaRegistryServer
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
 server:
   port: 8990
