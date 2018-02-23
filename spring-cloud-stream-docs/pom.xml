@@ -4,13 +4,13 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>2.0.0.BUILD-SNAPSHOT</version>
+		<version>2.0.0.RC1</version>
 		<relativePath />
 	</parent>
 	<artifactId>spring-cloud-stream-docs</artifactId>
 	<name>spring-cloud-stream-docs</name>
 	<description>Spring Cloud Stream Docs</description>
-	<version>Elmhurst.BUILD-SNAPSHOT</version>
+	<version>Elmhurst.RC1</version>
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
 		<spring.cloud.stream.version>2.0.0.RC1</spring.cloud.stream.version>
