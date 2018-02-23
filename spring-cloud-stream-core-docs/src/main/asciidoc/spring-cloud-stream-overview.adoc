@@ -687,7 +687,6 @@ The programming model with reactive APIs is declarative, where instead of specif
 Spring Cloud Stream supports the following reactive APIs:
 
 *   Reactor
-*   RxJava 1.x
 
 In the future, it is intended to support a more generic model based on Reactive Streams.
 
@@ -754,43 +753,6 @@ public static class UppercaseTransformer {
   @StreamListener
   public void receive(@Input(Processor.INPUT) Flux<String> input,
      @Output(Processor.OUTPUT) FluxSender output) {
-     output.send(input.map(s -> s.toUpperCase()));
-  }
-}
-----
-
-===== RxJava 1.x support
-
-RxJava 1.x handlers follow the same rules as Reactor-based one, but will use `Observable` and `ObservableSender` arguments and return types.
-
-So the first example above will become:
-
-[source, java]
-----
-@EnableBinding(Processor.class)
-@EnableAutoConfiguration
-public static class UppercaseTransformer {
-
-  @StreamListener
-  @Output(Processor.OUTPUT)
-  public Observable<String> receive(@Input(Processor.INPUT) Observable<String> input) {
-    return input.map(s -> s.toUpperCase());
-  }
-}
-----
-
-The second example above will become:
-
-
-[source, java]
-----
-@EnableBinding(Processor.class)
-@EnableAutoConfiguration
-public static class UppercaseTransformer {
-
-  @StreamListener
-  public void receive(@Input(Processor.INPUT) Observable<String> input,
-     @Output(Processor.OUTPUT) ObservableSender output) {
      output.send(input.map(s -> s.toUpperCase()));
   }
 }
