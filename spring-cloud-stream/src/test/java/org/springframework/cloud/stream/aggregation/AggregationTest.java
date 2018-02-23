@@ -51,8 +51,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-
-
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
@@ -84,10 +82,7 @@ public class AggregationTest {
 	public void aggregation() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--server.port=0", "--debug=true")
-				.web(false)
-						.from(TestSource.class)
-						.to(TestProcessor.class)
-						.run();
+						.web(false).from(TestSource.class).to(TestProcessor.class).run();
 		SharedBindingTargetRegistry sharedBindingTargetRegistry = aggregatedApplicationContext
 				.getBean(SharedBindingTargetRegistry.class);
 		BindingTargetFactory channelFactory = aggregatedApplicationContext
@@ -115,7 +110,7 @@ public class AggregationTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testParentArgsAndSources() {
-		
+
 		List<String> argsToVerify = new ArrayList<>();
 		argsToVerify.add("--foo1=bar1");
 		argsToVerify.add("--foo2=bar2");
@@ -124,15 +119,15 @@ public class AggregationTest {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
-				.parent(DummyConfig.class, "--foo2=bar2")
-				.web(false)
-				.from(TestSource.class)
-				.namespace("foo").to(TestProcessor.class).namespace("bar")
-				.run("--foo3=bar3", "--server.port=0");
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		final List<String> parentArgs = (List<String>) aggregateApplicationBuilderAccessor.getPropertyValue(
-				"parentArgs");
-		assertThat(parentArgs).containsExactlyInAnyOrder(argsToVerify.toArray(new String[argsToVerify.size()]));
+				.parent(DummyConfig.class, "--foo2=bar2").web(false)
+				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
+				.namespace("bar").run("--foo3=bar3", "--server.port=0");
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
+				aggregateApplicationBuilder);
+		final List<String> parentArgs = (List<String>) aggregateApplicationBuilderAccessor
+				.getPropertyValue("parentArgs");
+		assertThat(parentArgs).containsExactlyInAnyOrder(
+				argsToVerify.toArray(new String[argsToVerify.size()]));
 		context.close();
 	}
 
@@ -143,12 +138,15 @@ public class AggregationTest {
 				MockBinderRegistryConfiguration.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
 				.parent(DummyConfig.class, "--foo2=bar2").web(false)
-				.from(TestSource.class)
-				.namespace("foo").to(TestProcessor.class).namespace("bar")
-				.run("--server.port=0");
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor.getPropertyValue("parentSources");
-		assertThat(sources).containsExactlyInAnyOrder(AggregateApplicationBuilder.ParentConfiguration.class,
+				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
+				.namespace("bar").run("--server.port=0");
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
+				aggregateApplicationBuilder);
+		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor
+				.getPropertyValue("parentSources");
+		assertThat(sources).containsExactlyInAnyOrder(
+				AggregateApplicationBuilder.ParentConfiguration.class,
+				AggregateApplicationBuilder.ParentActuatorConfiguration.class,
 				MockBinderRegistryConfiguration.class, DummyConfig.class);
 		context.close();
 	}
@@ -158,17 +156,18 @@ public class AggregationTest {
 	public void testNamespacePrefixesFromCmdLine() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
+		aggregatedApplicationContext = aggregateApplicationBuilder
+				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").via(TestProcessor.class).namespace("b")
 				.via(TestProcessor.class).namespace("c")
 				.run("--a.foo1=bar1", "--b.foo1=bar2", "--c.foo1=bar3");
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
+				aggregateApplicationBuilder);
 		assertTrue(Arrays.equals(
-				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
-						.getArgs(),
+				((SourceConfigurer) aggregateApplicationBuilderAccessor
+						.getPropertyValue("sourceConfigurer")).getArgs(),
 				new String[] { "--foo1=bar1" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
-				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -188,18 +187,18 @@ public class AggregationTest {
 	public void testNamespacePrefixesFromCmdLineVsArgs() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
-				.namespace("a").args("--fooValue=bar")
-				.via(TestProcessor.class).namespace("b").args("--foo1=argbarb")
-				.via(TestProcessor.class).namespace("c")
-				.run("--a.fooValue=bara", "--c.foo1=barc");
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
+		aggregatedApplicationContext = aggregateApplicationBuilder
+				.parent(DummyConfig.class).web(false).from(TestSource.class)
+				.namespace("a").args("--fooValue=bar").via(TestProcessor.class)
+				.namespace("b").args("--foo1=argbarb").via(TestProcessor.class)
+				.namespace("c").run("--a.fooValue=bara", "--c.foo1=barc");
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
+				aggregateApplicationBuilder);
 		assertTrue(Arrays.equals(
-				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
-						.getArgs(),
+				((SourceConfigurer) aggregateApplicationBuilderAccessor
+						.getPropertyValue("sourceConfigurer")).getArgs(),
 				new String[] { "--fooValue=bara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
-				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -219,18 +218,19 @@ public class AggregationTest {
 	public void testNamespacePrefixesFromCmdLineWithRelaxedNames() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class);
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
-				.namespace("a").args("--foo-value=bar")
-				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
-				.via(TestProcessor.class).namespace("c")
+		aggregatedApplicationContext = aggregateApplicationBuilder
+				.parent(DummyConfig.class).web(false).from(TestSource.class)
+				.namespace("a").args("--foo-value=bar").via(TestProcessor.class)
+				.namespace("b").args("--fooValue=argbarb").via(TestProcessor.class)
+				.namespace("c")
 				.run("--a.fooValue=bara", "--b.foo-value=barb", "--c.foo1=barc");
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
+				aggregateApplicationBuilder);
 		assertTrue(Arrays.equals(
-				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
-						.getArgs(),
+				((SourceConfigurer) aggregateApplicationBuilderAccessor
+						.getPropertyValue("sourceConfigurer")).getArgs(),
 				new String[] { "--fooValue=bara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
-				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -238,7 +238,8 @@ public class AggregationTest {
 						new String[] { "--foo-value=barb" }));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
-				assertThat(processorConfigurer.getArgs(), is(new String[] { "--foo1=barc" }));
+				assertThat(processorConfigurer.getArgs(),
+						is(new String[] { "--foo1=barc" }));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -252,18 +253,18 @@ public class AggregationTest {
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
 		System.setProperty("server.port", "0");
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
-				.namespace("a").args("--foo-value=bar")
-				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
-				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
-				.run("--a.fooValue=bara");
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
+		aggregatedApplicationContext = aggregateApplicationBuilder
+				.parent(DummyConfig.class).web(false).from(TestSource.class)
+				.namespace("a").args("--foo-value=bar").via(TestProcessor.class)
+				.namespace("b").args("--fooValue=argbarb").via(TestProcessor.class)
+				.namespace("c").args("--foo-value=argbarc").run("--a.fooValue=bara");
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
+				aggregateApplicationBuilder);
 		assertTrue(Arrays.equals(
-				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
-						.getArgs(),
+				((SourceConfigurer) aggregateApplicationBuilderAccessor
+						.getPropertyValue("sourceConfigurer")).getArgs(),
 				new String[] { "--fooValue=bara", "--foo-value=bara" }));
-		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers =
-				(List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
@@ -286,20 +287,19 @@ public class AggregationTest {
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
 		System.setProperty("server.port", "0");
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
-				.namespace("a").args("--foo-value=bar")
-				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
-				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
-				.run();
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
+		aggregatedApplicationContext = aggregateApplicationBuilder
+				.parent(DummyConfig.class).web(false).from(TestSource.class)
+				.namespace("a").args("--foo-value=bar").via(TestProcessor.class)
+				.namespace("b").args("--fooValue=argbarb").via(TestProcessor.class)
+				.namespace("c").args("--foo-value=argbarc").run();
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
+				aggregateApplicationBuilder);
 		assertTrue(Arrays.equals(
-				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
-						.getArgs(),
+				((SourceConfigurer) aggregateApplicationBuilderAccessor
+						.getPropertyValue("sourceConfigurer")).getArgs(),
 				new String[] { "--foo-value=sysbara" }));
-		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer :
-				((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
-				.getPropertyValue(
-						"processorConfigurers"))) {
+		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
+				.getPropertyValue("processorConfigurers"))) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
 						new String[] { "--fooValue=argbarb" }));
@@ -319,15 +319,16 @@ public class AggregationTest {
 				MockBinderRegistryConfiguration.class);
 		System.setProperty("a.fooValue", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
-		aggregatedApplicationContext = aggregateApplicationBuilder.parent(DummyConfig.class).web(false).from(TestSource.class)
-				.namespace("a").args("--foo-value=bar")
-				.via(TestProcessor.class).namespace("b").args("--fooValue=argbarb")
-				.via(TestProcessor.class).namespace("c").args("--foo-value=argbarc")
-				.run("--a.fooValue=highest");
-		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(aggregateApplicationBuilder);
-		assertThat(
-				((SourceConfigurer) aggregateApplicationBuilderAccessor.getPropertyValue("sourceConfigurer"))
-						.getArgs()).containsExactly(new String[] { "--fooValue=highest" });
+		aggregatedApplicationContext = aggregateApplicationBuilder
+				.parent(DummyConfig.class).web(false).from(TestSource.class)
+				.namespace("a").args("--foo-value=bar").via(TestProcessor.class)
+				.namespace("b").args("--fooValue=argbarb").via(TestProcessor.class)
+				.namespace("c").args("--foo-value=argbarc").run("--a.fooValue=highest");
+		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
+				aggregateApplicationBuilder);
+		assertThat(((SourceConfigurer) aggregateApplicationBuilderAccessor
+				.getPropertyValue("sourceConfigurer")).getArgs())
+						.containsExactly(new String[] { "--fooValue=highest" });
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
@@ -353,7 +354,8 @@ public class AggregationTest {
 				.getBean(SharedBindingTargetRegistry.class);
 		BindingTargetFactory channelFactory = aggregatedApplicationContext
 				.getBean(SubscribableChannelBindingTargetFactory.class);
-		MessageChannel fooOutput = sharedChannelRegistry.get("foo.output", MessageChannel.class);
+		MessageChannel fooOutput = sharedChannelRegistry.get("foo.output",
+				MessageChannel.class);
 		assertThat(fooOutput).isNotNull();
 		Object barInput = sharedChannelRegistry.get("bar.input", MessageChannel.class);
 		assertThat(barInput).isNotNull();
@@ -365,9 +367,10 @@ public class AggregationTest {
 	@Test
 	public void testBindableProxyFactoryCaching() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(
-				MockBinderRegistryConfiguration.class,
-				TestSource2.class, TestProcessor.class);
-		Map<String, BindableProxyFactory> factories = context.getBeansOfType(BindableProxyFactory.class);
+				MockBinderRegistryConfiguration.class, TestSource2.class,
+				TestProcessor.class);
+		Map<String, BindableProxyFactory> factories = context
+				.getBeansOfType(BindableProxyFactory.class);
 		assertThat(factories).hasSize(2);
 
 		Map<String, Source> sources = context.getBeansOfType(Source.class);
@@ -390,7 +393,8 @@ public class AggregationTest {
 		}
 
 		for (BindableProxyFactory factory : factories.values()) {
-			Field field = ReflectionUtils.findField(BindableProxyFactory.class, "targetCache");
+			Field field = ReflectionUtils.findField(BindableProxyFactory.class,
+					"targetCache");
 			ReflectionUtils.makeAccessible(field);
 			Map<?, ?> targetCache = (Map<?, ?>) ReflectionUtils.getField(field, factory);
 			if (factory.getObjectType() == Source.class) {
@@ -433,7 +437,6 @@ public class AggregationTest {
 	public static class TestSource2 {
 
 	}
-
 
 	@Configuration
 	public static class DummyConfig {

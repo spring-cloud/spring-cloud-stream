@@ -60,8 +60,8 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  */
 @EnableBinding
-public class AggregateApplicationBuilder implements AggregateApplication, ApplicationContextAware,
-		SmartInitializingSingleton {
+public class AggregateApplicationBuilder implements AggregateApplication,
+		ApplicationContextAware, SmartInitializingSingleton {
 
 	private static final String CHILD_CONTEXT_SUFFIX = ".spring.cloud.stream.context";
 
@@ -106,6 +106,11 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 	private void addParentSources(Object[] sources) {
 		if (!this.parentSources.contains(ParentConfiguration.class)) {
 			this.parentSources.add(ParentConfiguration.class);
+			if (ClassUtils.isPresent(
+					"org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration",
+					null)) {
+				this.parentSources.add(ParentActuatorConfiguration.class);
+			}
 		}
 		this.parentSources.addAll(Arrays.asList(sources));
 	}
@@ -150,23 +155,25 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
 		this.parentContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	@Override
 	public <T> T getBinding(Class<T> bindableType, String namespace) {
 		if (parentContext == null) {
-			throw new IllegalStateException("The aggregate application has not been started yet");
+			throw new IllegalStateException(
+					"The aggregate application has not been started yet");
 		}
 		try {
-			ChildContextHolder contextHolder = parentContext.getBean(namespace + CHILD_CONTEXT_SUFFIX,
-					ChildContextHolder.class);
+			ChildContextHolder contextHolder = parentContext
+					.getBean(namespace + CHILD_CONTEXT_SUFFIX, ChildContextHolder.class);
 			return contextHolder.getChildContext().getBean(bindableType);
 		}
 		catch (BeansException e) {
-			throw new IllegalStateException("Binding not found for '" + bindableType.getName() + "' into namespace " +
-					namespace);
+			throw new IllegalStateException("Binding not found for '"
+					+ bindableType.getName() + "' into namespace " + namespace);
 		}
 	}
 
@@ -200,35 +207,41 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 				// to remove illegal characters for new properties
 				// binder
 				// org.springframework.cloud.stream.aggregation.AggregationTest$TestSource
-				appConfigurer.namespace = AggregateApplicationUtils
-						.getDefaultNamespace(appConfigurer.getApp().getName().replaceAll("\\$", "."), i);
+				appConfigurer.namespace = AggregateApplicationUtils.getDefaultNamespace(
+						appConfigurer.getApp().getName().replaceAll("\\$", "."), i);
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 			appConfigurers.put(appConfigurer, appConfigurer.namespace);
 		}
 		if (this.parentContext == null) {
 			if (Boolean.TRUE.equals(this.webEnvironment)) {
-				Assert.isTrue(ClassUtils.isPresent("javax.servlet.ServletRequest", ClassUtils.getDefaultClassLoader()), 
+				Assert.isTrue(
+						ClassUtils.isPresent("javax.servlet.ServletRequest",
+								ClassUtils.getDefaultClassLoader()),
 						"'webEnvironment' is set to 'true' but 'javax.servlet.*' does not appear to be available in "
-						+ "the classpath. Consider adding `org.springframework.boot:spring-boot-starter-web");
-				this.addParentSources(new Object[] { ServletWebServerFactoryAutoConfiguration.class });
+								+ "the classpath. Consider adding `org.springframework.boot:spring-boot-starter-web");
+				this.addParentSources(
+						new Object[] { ServletWebServerFactoryAutoConfiguration.class });
 			}
 			this.parentContext = AggregateApplicationUtils.createParentContext(
 					this.parentSources.toArray(new Class<?>[0]),
-					this.parentArgs.toArray(new String[0]), selfContained(), this.webEnvironment, this.headless);
+					this.parentArgs.toArray(new String[0]), selfContained(),
+					this.webEnvironment, this.headless);
 		}
 		else {
-			if (BeanFactoryUtils.beansOfTypeIncludingAncestors(this.parentContext, SharedBindingTargetRegistry.class)
-					.size() == 0) {
+			if (BeanFactoryUtils.beansOfTypeIncludingAncestors(this.parentContext,
+					SharedBindingTargetRegistry.class).size() == 0) {
 				SharedBindingTargetRegistry sharedBindingTargetRegistry = new SharedBindingTargetRegistry();
-				this.parentContext.getBeanFactory().registerSingleton("sharedBindingTargetRegistry",
-						sharedBindingTargetRegistry);
+				this.parentContext.getBeanFactory().registerSingleton(
+						"sharedBindingTargetRegistry", sharedBindingTargetRegistry);
 			}
 		}
 		SharedBindingTargetRegistry sharedBindingTargetRegistry = this.parentContext
 				.getBean(SharedBindingTargetRegistry.class);
-		AggregateApplicationUtils.prepareSharedBindingTargetRegistry(sharedBindingTargetRegistry, appsToEmbed);
-		for (Map.Entry<AppConfigurer<?>, String> appConfigurerEntry : appConfigurers.entrySet()) {
+		AggregateApplicationUtils.prepareSharedBindingTargetRegistry(
+				sharedBindingTargetRegistry, appsToEmbed);
+		for (Map.Entry<AppConfigurer<?>, String> appConfigurerEntry : appConfigurers
+				.entrySet()) {
 
 			AppConfigurer<?> appConfigurer = appConfigurerEntry.getKey();
 			if (appConfigurerEntry.getValue() == null) {
@@ -237,7 +250,8 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			String namespace = appConfigurerEntry.getValue().toLowerCase();
 			Set<String> argsToUpdate = new LinkedHashSet<>();
 			Set<String> argKeys = new LinkedHashSet<>();
-			Map<String, String> target = bindProperties(namespace, this.parentContext.getEnvironment());
+			Map<String, String> target = bindProperties(namespace,
+					this.parentContext.getEnvironment());
 
 			if (!target.isEmpty()) {
 				for (Map.Entry<String, String> entry : target.entrySet()) {
@@ -255,9 +269,10 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 			AppConfigurer<?> appConfigurer = apps.get(i);
 			appConfigurer.embed();
 		}
-		if (BeanFactoryUtils.beansOfTypeIncludingAncestors(this.parentContext, AggregateApplication.class)
-				.size() == 0) {
-			this.parentContext.getBeanFactory().registerSingleton("aggregateApplicationAccessor", this);
+		if (BeanFactoryUtils.beansOfTypeIncludingAncestors(this.parentContext,
+				AggregateApplication.class).size() == 0) {
+			this.parentContext.getBeanFactory()
+					.registerSingleton("aggregateApplicationAccessor", this);
 		}
 		return this.parentContext;
 	}
@@ -266,14 +281,16 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		return (this.sourceConfigurer != null) && (this.sinkConfigurer != null);
 	}
 
-	private ChildContextBuilder childContext(Class<?> app, ConfigurableApplicationContext parentContext,
-			String namespace) {
-		return new ChildContextBuilder(AggregateApplicationUtils.embedApp(parentContext, namespace, app));
+	private ChildContextBuilder childContext(Class<?> app,
+			ConfigurableApplicationContext parentContext, String namespace) {
+		return new ChildContextBuilder(
+				AggregateApplicationUtils.embedApp(parentContext, namespace, app));
 	}
 
 	private Map<String, String> bindProperties(String namepace, Environment environment) {
 		Map<String, String> target;
-		BindResult<Map<String, String>> bindResult = Binder.get(environment).bind(namepace, STRING_STRING_MAP);
+		BindResult<Map<String, String>> bindResult = Binder.get(environment)
+				.bind(namepace, STRING_STRING_MAP);
 		if (bindResult.isBound()) {
 			target = bindResult.get();
 		}
@@ -297,7 +314,7 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		}
 	}
 
-	@ImportAutoConfiguration({ ChannelBindingAutoConfiguration.class, EndpointAutoConfiguration.class })
+	@ImportAutoConfiguration(ChannelBindingAutoConfiguration.class)
 	@EnableBinding
 	public static class ParentConfiguration {
 		@Bean
@@ -305,6 +322,10 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 		public SharedBindingTargetRegistry sharedBindingTargetRegistry() {
 			return new SharedBindingTargetRegistry();
 		}
+	}
+
+	@ImportAutoConfiguration(EndpointAutoConfiguration.class)
+	public static class ParentActuatorConfiguration {
 	}
 
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
@@ -397,20 +418,24 @@ public class AggregateApplicationBuilder implements AggregateApplication, Applic
 
 		void embed() {
 			final ConfigurableApplicationContext childContext = childContext(this.app,
-					AggregateApplicationBuilder.this.parentContext, this.namespace).args(this.args).config(this.names)
-							.profiles(this.profiles).run();
+					AggregateApplicationBuilder.this.parentContext, this.namespace)
+							.args(this.args).config(this.names).profiles(this.profiles)
+							.run();
 			// Register bindable proxies as beans so they can be queried for later
 			Map<String, BindableProxyFactory> bindableProxies = BeanFactoryUtils
-					.beansOfTypeIncludingAncestors(childContext.getBeanFactory(), BindableProxyFactory.class);
+					.beansOfTypeIncludingAncestors(childContext.getBeanFactory(),
+							BindableProxyFactory.class);
 			for (String bindableProxyName : bindableProxies.keySet()) {
 				try {
-					AggregateApplicationBuilder.this.parentContext.getBeanFactory().registerSingleton(
-							this.getNamespace() + CHILD_CONTEXT_SUFFIX, new ChildContextHolder(childContext));
+					AggregateApplicationBuilder.this.parentContext.getBeanFactory()
+							.registerSingleton(this.getNamespace() + CHILD_CONTEXT_SUFFIX,
+									new ChildContextHolder(childContext));
 				}
 				catch (Exception e) {
 					throw new IllegalStateException(
 							"Error while trying to register the aggregate bound interface '"
-									+ bindableProxyName + "' into namespace '" + this.getNamespace() + "'",
+									+ bindableProxyName + "' into namespace '"
+									+ this.getNamespace() + "'",
 							e);
 				}
 			}
