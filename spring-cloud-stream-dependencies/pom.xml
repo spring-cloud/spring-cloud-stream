@@ -31,16 +31,6 @@
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-stream-metrics</artifactId>
-                <version>${spring.cloud.stream.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-stream-rxjava</artifactId>
-                <version>${spring.cloud.stream.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-stream-schema</artifactId>
                 <version>${spring.cloud.stream.version}</version>
             </dependency>
@@ -66,7 +56,7 @@
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-stream-binder-kstream</artifactId>
+                <artifactId>spring-cloud-stream-binder-kafka-streams</artifactId>
                 <version>${spring.cloud.stream.binder.kafka.version}</version>
             </dependency>
             <dependency>
@@ -77,11 +67,6 @@
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-starter-stream-kafka</artifactId>
-                <version>${spring.cloud.stream.binder.kafka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-stream-binder-kafka-test-support</artifactId>
                 <version>${spring.cloud.stream.binder.kafka.version}</version>
             </dependency>
             <dependency>
