@@ -46,32 +46,41 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @AutoConfigureBefore(SimpleMetricsExportAutoConfiguration.class)
 @AutoConfigureAfter(MetricsAutoConfiguration.class)
-@ConditionalOnClass(Binder.class)
-@ConditionalOnProperty("spring.cloud.stream.bindings." + MetersPublisherBinding.APPLICATION_METRICS + ".destination")
+@ConditionalOnClass({ Binder.class, MetricsAutoConfiguration.class })
+@ConditionalOnProperty("spring.cloud.stream.bindings."
+		+ MetersPublisherBinding.APPLICATION_METRICS + ".destination")
 @EnableConfigurationProperties(ApplicationMetricsProperties.class)
 public class DestinationPublishingMetricsAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public MetricsPublisherConfig metricsPublisherConfig(ApplicationMetricsProperties metersPublisherProperties) {
+	public MetricsPublisherConfig metricsPublisherConfig(
+			ApplicationMetricsProperties metersPublisherProperties) {
 		return new MetricsPublisherConfig(metersPublisherProperties);
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
-	public DefaultDestinationPublishingMeterRegistry defaultDestinationPublishingMeterRegistry(ApplicationMetricsProperties applicationMetricsProperties, 
-			MetersPublisherBinding publisherBinding, MetricsPublisherConfig metricsPublisherConfig, Clock clock) {
-		return new DefaultDestinationPublishingMeterRegistry(applicationMetricsProperties, publisherBinding, metricsPublisherConfig, clock);
+	public DefaultDestinationPublishingMeterRegistry defaultDestinationPublishingMeterRegistry(
+			ApplicationMetricsProperties applicationMetricsProperties,
+			MetersPublisherBinding publisherBinding,
+			MetricsPublisherConfig metricsPublisherConfig, Clock clock) {
+		return new DefaultDestinationPublishingMeterRegistry(applicationMetricsProperties,
+				publisherBinding, metricsPublisherConfig, clock);
 	}
-	
+
 	@Bean
 	public BeanFactoryPostProcessor metersPublisherBindingRegistrant() {
-		return new BeanFactoryPostProcessor() {		
+		return new BeanFactoryPostProcessor() {
 			@Override
-			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-				RootBeanDefinition emitterBindingDefinition = new RootBeanDefinition(BindableProxyFactory.class);			
-				emitterBindingDefinition.getConstructorArgumentValues().addGenericArgumentValue(MetersPublisherBinding.class);
-				((DefaultListableBeanFactory)beanFactory).registerBeanDefinition(MetersPublisherBinding.class.getName(), emitterBindingDefinition);			
+			public void postProcessBeanFactory(
+					ConfigurableListableBeanFactory beanFactory) throws BeansException {
+				RootBeanDefinition emitterBindingDefinition = new RootBeanDefinition(
+						BindableProxyFactory.class);
+				emitterBindingDefinition.getConstructorArgumentValues()
+						.addGenericArgumentValue(MetersPublisherBinding.class);
+				((DefaultListableBeanFactory) beanFactory).registerBeanDefinition(
+						MetersPublisherBinding.class.getName(), emitterBindingDefinition);
 			}
 		};
 	}
