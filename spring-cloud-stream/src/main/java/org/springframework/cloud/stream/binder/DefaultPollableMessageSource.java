@@ -40,6 +40,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHandlingException;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
@@ -65,7 +66,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	private final List<ChannelInterceptor> interceptors = new ArrayList<>();
 
 	private final MessagingTemplate messagingTemplate = new MessagingTemplate();
-	
+
 	private final SmartMessageConverter messageConverter;
 
 	private MessageSource<?> source;
@@ -81,7 +82,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	private BiConsumer<AttributeAccessor, Message<?>> attributesProvider;
 
 	private boolean running;
-	
+
 	public DefaultPollableMessageSource(SmartMessageConverter messageConverter) {
 		this.messageConverter = messageConverter;
 	}
@@ -204,7 +205,12 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			return false;
 		}
 		if (type != null && this.messageConverter != null) {
-			Object payload = this.messageConverter.fromMessage(message, byte[].class, type);
+			Class<?> targetType = type == null ? Object.class :
+				type.getType() instanceof Class ? (Class<?>) type.getType() : Object.class;
+			Object payload = this.messageConverter.fromMessage(message, targetType, type);
+			if (payload == null) {
+				throw new MessageConversionException(message, "No converter could convert Message");
+			}
 			message = MessageBuilder.withPayload(payload)
 					.copyHeaders(message.getHeaders())
 					.build();

@@ -89,7 +89,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 	private final Map<String, PartitionKeyExtractorStrategy> partitionKeyExtractors;
 
 	private final Map<String, PartitionSelectorStrategy> partitionSelectors;
-	
+
 	private final Field headersField;
 
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
@@ -258,7 +258,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			return Math.abs(hashCode);
 		}
 	}
-	
+
 	/**
 	 * Primary purpose of this interceptor is to enhance/enrich Message that sent to the *inbound*
 	 * channel with 'contentType' header for cases where 'contentType' is not present in the Message
@@ -273,26 +273,26 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		}
 
 		@Override
-		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {	
+		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
 			@SuppressWarnings("unchecked")
 			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
-			
+
 			/*
-			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy message format established 
+			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy message format established
 			 * in 1.x version of the framework and should/will no longer be supported in 3.x
 			 */
 			Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
 			MimeType contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (ct == null ? this.mimeType : (MimeType)ct);
 			headersMap.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
 			// == end legacy note
-			
+
 			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
 			}
 			else if (message.getHeaders().get(MessageHeaders.CONTENT_TYPE) instanceof String) {
 				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf((String)message.getHeaders().get(MessageHeaders.CONTENT_TYPE)));
 			}
-			
+
 			return message;
 		}
 	}
@@ -313,7 +313,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		}
 
 		@Override
-		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {	
+		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
 			// ===== 1.3 backward compatibility code part-1 ===
 			String oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE) ? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString() : null;
 			String ct = oct;
@@ -321,34 +321,34 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 				ct = JavaClassMimeTypeUtils.mimeTypeFromObject(message.getPayload(), ObjectUtils.nullSafeToString(oct)).toString();
 			}
 			// ===== END 1.3 backward compatibility code part-1 ===
-			
+
 			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				@SuppressWarnings("unchecked")
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
 				headersMap.put(MessageHeaders.CONTENT_TYPE, this.mimeType);
 			}
-			
+
 			@SuppressWarnings("unchecked")
-			Message<byte[]> outboundMessage = message.getPayload() instanceof byte[] 
+			Message<byte[]> outboundMessage = message.getPayload() instanceof byte[]
 					? (Message<byte[]>)message : (Message<byte[]>) this.messageConverter.toMessage(message.getPayload(), message.getHeaders());
 			if (outboundMessage == null) {
 				throw new IllegalStateException("Failed to convert message: '" + message + "' to outbound message.");
 			}
-			
+
 			/// ===== 1.3 backward compatibility code part-2 ===
-			if (ct != null && !ct.equals(oct) && oct != null) {		
+			if (ct != null && !ct.equals(oct) && oct != null) {
 				@SuppressWarnings("unchecked")
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
 				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(ct));
 				headersMap.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, MimeType.valueOf(oct));
 			}
 			// ===== END 1.3 backward compatibility code part-2 ===
-			return outboundMessage;		
+			return outboundMessage;
 		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 */
 	private abstract class AbstractContentTypeInterceptor extends ChannelInterceptorAdapter {
 		final MimeType mimeType;
@@ -356,17 +356,17 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		private AbstractContentTypeInterceptor(String contentType) {
 			this.mimeType = MessageConverterUtils.getMimeType(contentType);
 		}
-		
+
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
 			return message instanceof ErrorMessage ? message : this.doPreSend(message, channel);
 		}
-		
+
 		protected abstract Message<?> doPreSend(Message<?> message, MessageChannel channel);
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	protected final class PartitioningInterceptor extends ChannelInterceptorAdapter {
 
