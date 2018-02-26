@@ -52,7 +52,7 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
 
 	/**
-	 * The instance id of the application: a number from 0 to instanceCount-1. Used for partitioning and with Kafka. 
+	 * The instance id of the application: a number from 0 to instanceCount-1. Used for partitioning and with Kafka.
 	 */
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
 	private int instanceIndex;
@@ -63,18 +63,18 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	private int instanceCount = 1;
 
 	/**
-	 * Additional binding properties (see {@link BinderProperties}) per binding name (e.g., 'input`). 
-	 * 
-	 * For example; This sets the content-type for the 'input' binding of a Sink application: 
+	 * Additional binding properties (see {@link BinderProperties}) per binding name (e.g., 'input`).
+	 *
+	 * For example; This sets the content-type for the 'input' binding of a Sink application:
 	 * 'spring.cloud.stream.bindings.input.contentType=text/plain'
 	 */
 	private Map<String, BindingProperties> bindings = new TreeMap<>(
 			String.CASE_INSENSITIVE_ORDER);
 
 	/**
-	 * Additional per-binder properties (see {@link BinderProperties}) if more then one binder of the same type is used 
-	 * (i.e., connect to multiple instances of RabbitMq). Here you can specify multiple 
-	 * binder configurations, each with different environment settings. For example; 
+	 * Additional per-binder properties (see {@link BinderProperties}) if more then one binder of the same type is used
+	 * (i.e., connect to multiple instances of RabbitMq). Here you can specify multiple
+	 * binder configurations, each with different environment settings. For example;
 	 * spring.cloud.stream.binders.rabbit1.environment. . . , spring.cloud.stream.binders.rabbit2.environment. . .
 	 */
 	private Map<String, BinderProperties> binders = new HashMap<>();
@@ -93,9 +93,9 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	 * Retry interval (in seconds) used to schedule binding attempts. Default: 30 sec.
 	 */
 	private int bindingRetryInterval = DEFAULT_BINDING_RETRY_INTERVAL;
-	
+
 	private ConfigurableApplicationContext applicationContext;
-	
+
 	private ConversionService conversionService;
 
 	public Map<String, BindingProperties> getBindings() {
