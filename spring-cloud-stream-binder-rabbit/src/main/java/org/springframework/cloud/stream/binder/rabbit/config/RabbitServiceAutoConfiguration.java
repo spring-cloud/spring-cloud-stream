@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Artem Bilan
+ * @author Gary Russell
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
@@ -186,7 +187,7 @@ public class RabbitServiceAutoConfiguration {
 		}
 		if (rabbitProperties.getCache().getChannel().getCheckoutTimeout() != null) {
 			connectionFactory.setChannelCheckoutTimeout(
-					rabbitProperties.getCache().getChannel().getCheckoutTimeout());
+					rabbitProperties.getCache().getChannel().getCheckoutTimeout().toMillis());
 		}
 		connectionFactory.setApplicationContext(applicationContext);
 		applicationContext.addApplicationListener(connectionFactory);

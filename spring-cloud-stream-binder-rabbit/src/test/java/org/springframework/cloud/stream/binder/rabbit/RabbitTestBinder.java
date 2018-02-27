@@ -67,7 +67,6 @@ public class RabbitTestBinder extends
 	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitMessageChannelBinder binder) {
 		this.applicationContext = new AnnotationConfigApplicationContext(Config.class);
 		binder.setApplicationContext(this.applicationContext);
-		binder.setProducerConnectionFactory(connectionFactory);
 		this.setPollableConsumerBinder(binder);
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 	}

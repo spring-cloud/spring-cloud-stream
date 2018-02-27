@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.binder.rabbit.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.willReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -59,9 +54,15 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.willReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Marius Bogoevici
@@ -106,10 +107,6 @@ public class RabbitBinderModuleTests {
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
 		assertThat(binderConnectionFactory).isSameAs(connectionFactory);
 
-		ConnectionFactory producerConnectionFactory = (ConnectionFactory) binderFieldAccessor
-				.getPropertyValue("producerConnectionFactory");
-		assertThat(producerConnectionFactory).isNotSameAs(connectionFactory);
-
 		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
 				CompositeHealthIndicator.class);
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
@@ -119,6 +116,16 @@ public class RabbitBinderModuleTests {
 				.getPropertyValue("indicators");
 		assertThat(healthIndicators).containsKey(("rabbit"));
 		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo((Status.UP));
+
+		ConnectionFactory publisherConnectionFactory = binderConnectionFactory.getPublisherConnectionFactory();
+		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory, "connection.target")).isNull();
+		DirectChannel checkPf = new DirectChannel();
+		Binding<MessageChannel> binding = ((RabbitMessageChannelBinder) binder).bindProducer("checkPF", checkPf,
+				new ExtendedProducerProperties<>(
+						new RabbitProducerProperties()));
+		checkPf.send(new GenericMessage<>("foo".getBytes()));
+		binding.unbind();
+		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory, "connection.target")).isNotNull();
 	}
 
 	@Test
@@ -254,16 +261,8 @@ public class RabbitBinderModuleTests {
 
 		assertThat(binderConnectionFactory).isNotSameAs(connectionFactory);
 
-		ConnectionFactory producerConnectionFactory = (ConnectionFactory) binderFieldAccessor
-				.getPropertyValue("producerConnectionFactory");
-
-		assertThat(producerConnectionFactory).isNotSameAs(connectionFactory);
-
-		assertThat(binderConnectionFactory).isNotSameAs(producerConnectionFactory);
-
 		assertThat(TestUtils.getPropertyValue(connectionFactory, "addresses")).isNotNull();
 		assertThat(TestUtils.getPropertyValue(binderConnectionFactory, "addresses")).isNull();
-		assertThat(TestUtils.getPropertyValue(producerConnectionFactory, "addresses")).isNull();
 
 		Cloud cloud = this.context.getBean(Cloud.class);
 

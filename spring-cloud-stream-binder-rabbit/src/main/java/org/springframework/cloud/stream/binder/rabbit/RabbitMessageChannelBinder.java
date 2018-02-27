@@ -129,8 +129,6 @@ public class RabbitMessageChannelBinder
 
 	private ConnectionFactory connectionFactory;
 
-	private ConnectionFactory producerConnectionFactory;
-
 	private MessagePostProcessor decompressingPostProcessor = new DelegatingDecompressingPostProcessor();
 
 	private MessagePostProcessor compressingPostProcessor = new GZipPostProcessor();
@@ -150,15 +148,6 @@ public class RabbitMessageChannelBinder
 		Assert.notNull(rabbitProperties, "rabbitProperties must not be null");
 		this.connectionFactory = connectionFactory;
 		this.rabbitProperties = rabbitProperties;
-	}
-
-	/**
-	 * Specify a distinct {@link ConnectionFactory} for the non-transactional producers to avoid dead locks
-	 * on blocked connections.
-	 * @param producerConnectionFactory the ConnectionFactory to use for non-transactional producers.
-	 */
-	public void setProducerConnectionFactory(ConnectionFactory producerConnectionFactory) {
-		this.producerConnectionFactory = producerConnectionFactory;
 	}
 
 	/**
@@ -219,7 +208,6 @@ public class RabbitMessageChannelBinder
 			if (this.destroyConnectionFactory) {
 				((DisposableBean) this.connectionFactory).destroy();
 			}
-			((DisposableBean) this.producerConnectionFactory).destroy();
 		}
 	}
 
@@ -439,7 +427,11 @@ public class RabbitMessageChannelBinder
 			return new MessageHandler() {
 
 				private final RabbitTemplate template = new RabbitTemplate(
-						RabbitMessageChannelBinder.this.producerConnectionFactory);
+						RabbitMessageChannelBinder.this.connectionFactory);
+
+				{
+					this.template.setUsePublisherConnection(true);
+				}
 
 				private final String exchange = deadLetterExchangeName(properties.getExtension());
 
@@ -584,12 +576,8 @@ public class RabbitMessageChannelBinder
 			rabbitTemplate = new RabbitTemplate();
 		}
 		rabbitTemplate.setChannelTransacted(properties.isTransacted());
-		if (rabbitTemplate.isChannelTransacted()) {
-			rabbitTemplate.setConnectionFactory(this.connectionFactory);
-		}
-		else {
-			rabbitTemplate.setConnectionFactory(this.producerConnectionFactory);
-		}
+		rabbitTemplate.setConnectionFactory(this.connectionFactory);
+		rabbitTemplate.setUsePublisherConnection(true);
 		if (properties.isCompress()) {
 			rabbitTemplate.setBeforePublishPostProcessors(this.compressingPostProcessor);
 		}
@@ -598,9 +586,9 @@ public class RabbitMessageChannelBinder
 			Retry retry = rabbitProperties.getTemplate().getRetry();
 			RetryPolicy retryPolicy = new SimpleRetryPolicy(retry.getMaxAttempts());
 			ExponentialBackOffPolicy backOff = new ExponentialBackOffPolicy();
-			backOff.setInitialInterval(retry.getInitialInterval());
+			backOff.setInitialInterval(retry.getInitialInterval().toMillis());
 			backOff.setMultiplier(retry.getMultiplier());
-			backOff.setMaxInterval(retry.getMaxInterval());
+			backOff.setMaxInterval(retry.getMaxInterval().toMillis());
 			RetryTemplate retryTemplate = new RetryTemplate();
 			retryTemplate.setRetryPolicy(retryPolicy);
 			retryTemplate.setBackOffPolicy(backOff);
