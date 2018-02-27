@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.springframework.context.Lifecycle;
 import org.springframework.integration.endpoint.Pausable;
 
 /**
@@ -33,7 +32,7 @@ import org.springframework.integration.endpoint.Pausable;
  * 
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-public interface Binding<T> extends Lifecycle, Pausable {
+public interface Binding<T> extends Pausable {
 	
 	/**
 	 * Stops the target component represented by this instance.

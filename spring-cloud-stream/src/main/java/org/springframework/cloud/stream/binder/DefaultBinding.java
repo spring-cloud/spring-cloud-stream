@@ -100,14 +100,20 @@ public class DefaultBinding<T> implements Binding<T> {
 	@Override
 	public final synchronized void pause() {
 		if (this.lifecycle instanceof Pausable) {
-			((Pausable)this.lifecycle).pause();
+			( (Pausable) this.lifecycle).pause();
+		}
+		else {
+			logger.warn("Attempted to pause a component that does not support Pausable " + this.lifecycle);
 		}
 	}
 	
 	@Override
 	public final synchronized void resume() {
 		if (this.lifecycle instanceof Pausable) {
-			((Pausable)this.lifecycle).resume();
+			( (Pausable) this.lifecycle).resume();
+		}
+		else {
+			logger.warn("Attempted to resume a component that does not support Pausable " + this.lifecycle);
 		}
 	}
 
