@@ -20,6 +20,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.Lifecycle;
+import org.springframework.integration.endpoint.Pausable;
 import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
@@ -93,6 +94,26 @@ public class DefaultBinding<T> implements Binding<T> {
 	public final synchronized void stop() {
 		if (this.isRunning()) {
 			this.lifecycle.stop();
+		}
+	}
+	
+	@Override
+	public final synchronized void pause() {
+		if (this.lifecycle instanceof Pausable) {
+			( (Pausable) this.lifecycle).pause();
+		}
+		else {
+			logger.warn("Attempted to pause a component that does not support Pausable " + this.lifecycle);
+		}
+	}
+	
+	@Override
+	public final synchronized void resume() {
+		if (this.lifecycle instanceof Pausable) {
+			( (Pausable) this.lifecycle).resume();
+		}
+		else {
+			logger.warn("Attempted to resume a component that does not support Pausable " + this.lifecycle);
 		}
 	}
 
