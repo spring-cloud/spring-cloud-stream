@@ -30,6 +30,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.ParameterizedTypeReference;
@@ -56,9 +58,9 @@ import static org.assertj.core.api.Assertions.fail;
 public class PollableConsumerTests {
 
 	private ApplicationContext context;
-	
-	private SmartMessageConverter messageConverter; 
-	
+
+	private SmartMessageConverter messageConverter;
+
 	@Before
 	public void before() {
 		this.messageConverter = new CompositeMessageConverterFactory().getMessageConverterForAllRegistered();
@@ -67,8 +69,8 @@ public class PollableConsumerTests {
 	@Test
 	public void testSimple() {
 		TestChannelBinder binder = createBinder();
-		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);			
-			
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
 		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
@@ -99,12 +101,12 @@ public class PollableConsumerTests {
 	@Test
 	public void testConvertSimple() {
 		TestChannelBinder binder = createBinder();
-		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
-		
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+
 		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes()));
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		
+
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(1);
 		properties.setBackOffInitialInterval(0);
@@ -124,22 +126,53 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testConvertList() {
+	public void testConvertSimpler() {
 		TestChannelBinder binder = createBinder();
-		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
-		
-		binder.setMessageSourceDelegate(() -> new GenericMessage<>("[{\"foo\":\"bar\"},{\"foo\":\"baz\"}]".getBytes()));
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+		BindingServiceProperties bsps = this.context.getBean(BindingServiceProperties.class);
+		BindingProperties props = new BindingProperties();
+		props.setContentType("text/plain");
+		bsps.setBindings(Collections.singletonMap("foo", props));
+
+		binder.setMessageSourceDelegate(() -> new GenericMessage<>("foo".getBytes()));
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		
+
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(1);
 		properties.setBackOffInitialInterval(0);
-		
-		
-		
 		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
-		
+		final AtomicReference<Object> payload = new AtomicReference<>();
+		assertThat(pollableSource.poll(received -> {
+			payload.set(received.getPayload());
+		}, new ParameterizedTypeReference<String>() {})).isTrue();
+		assertThat(payload.get()).isInstanceOf(String.class);
+		assertThat(payload.get()).isEqualTo("foo");
+		// test the cache for coverage
+		assertThat(pollableSource.poll(received -> {
+			payload.set(received.getPayload());
+		}, new ParameterizedTypeReference<String>() {})).isTrue();
+		assertThat(payload.get()).isInstanceOf(String.class);
+		assertThat(payload.get()).isEqualTo("foo");
+	}
+
+	@Test
+	public void testConvertList() {
+		TestChannelBinder binder = createBinder();
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+
+		binder.setMessageSourceDelegate(() -> new GenericMessage<>("[{\"foo\":\"bar\"},{\"foo\":\"baz\"}]".getBytes()));
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
+		properties.setMaxAttempts(1);
+		properties.setBackOffInitialInterval(0);
+
+
+
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+
 		final AtomicReference<Object> payload = new AtomicReference<>();
 		assertThat(pollableSource.poll(received -> {
 			payload.set(received.getPayload());
@@ -154,12 +187,12 @@ public class PollableConsumerTests {
 	@Test
 	public void testConvertMap() {
 		TestChannelBinder binder = createBinder();
-		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
-		
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+
 		binder.setMessageSourceDelegate(() -> new GenericMessage<>("{\"qux\":{\"foo\":\"bar\"}}".getBytes()));
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		
+
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(1);
 		properties.setBackOffInitialInterval(0);
@@ -177,8 +210,8 @@ public class PollableConsumerTests {
 	@Test
 	public void testEmbedded() {
 		TestChannelBinder binder = createBinder();
-		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
-		
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+
 		binder.setMessageSourceDelegate(() -> {
 			MessageValues original = new MessageValues("foo".getBytes(),
 					Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "application/octet-stream"));
@@ -215,8 +248,8 @@ public class PollableConsumerTests {
 	@Test
 	public void testErrors() {
 		TestChannelBinder binder = createBinder();
-		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
-		
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
 		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
@@ -251,8 +284,8 @@ public class PollableConsumerTests {
 	@Test
 	public void testErrorsNoRetry() {
 		TestChannelBinder binder = createBinder();
-		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);	
-		
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
 		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
@@ -280,9 +313,9 @@ public class PollableConsumerTests {
 		assertThat(count.get()).isEqualTo(1);
 	}
 
-	private TestChannelBinder createBinder() {
+	private TestChannelBinder createBinder(String... args) {
 		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration())
-				.web(WebApplicationType.NONE).run();		
+				.web(WebApplicationType.NONE).run(args);
 		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 		return binder;
 	}
