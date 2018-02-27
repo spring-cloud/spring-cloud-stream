@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import org.springframework.context.Lifecycle;
+import org.springframework.integration.endpoint.Pausable;
 
 /**
  * Represents a binding between an input or output and an adapter endpoint that connects
@@ -32,7 +33,7 @@ import org.springframework.context.Lifecycle;
  * 
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-public interface Binding<T> extends Lifecycle {
+public interface Binding<T> extends Lifecycle, Pausable {
 	
 	/**
 	 * Stops the target component represented by this instance.
@@ -51,6 +52,26 @@ public interface Binding<T> extends Lifecycle {
 	 * @see BindingsEndpoint
 	 */
 	default void stop() {}
+	
+	/**
+	 * Pauses the target component represented by this instance if and only if the component 
+	 * implements {@link Pausable} interface
+	 * NOTE: At the time the instance is created the component is already started and active. 
+	 * This operation is typically used by actuator to pause/resume.
+	 * 
+	 * @see BindingsEndpoint
+	 */
+	default void pause() {}
+	
+	/**
+	 * Resumes the target component represented by this instance if and only if the component 
+	 * implements {@link Pausable} interface
+	 * NOTE: At the time the instance is created the component is already started and active. 
+	 * This operation is typically used by actuator to pause/resume.
+	 * 
+	 * @see BindingsEndpoint
+	 */
+	default void resume() {}
 	
 	/**
 	 * Returns 'true' if the target component represented by this instance is running.

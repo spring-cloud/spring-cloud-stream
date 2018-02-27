@@ -47,6 +47,10 @@ public class BindingsEndpoint {
 	static final String START_ENPOINT_ID = BASE_ENPOINT_ID + "/start/{name}";
 	
 	static final String STOP_ENPOINT_ID = BASE_ENPOINT_ID + "/stop/{name}";
+	
+	static final String PAUSE_ENPOINT_ID = BASE_ENPOINT_ID + "/pause/{name}";
+	
+	static final String RESUME_ENPOINT_ID = BASE_ENPOINT_ID + "/resume/{name}";
 
 	private final List<InputBindingLifecycle> inputBindingLifecycles;
 	
@@ -69,6 +73,14 @@ public class BindingsEndpoint {
 	
 	public StartEndpoint getStartEndpoint() {
 		return new StartEndpoint();
+	}
+	
+	public PauseEndpoint getPauseEndpoint() {
+		return new PauseEndpoint();
+	}
+	
+	public ResumeEndpoint getResumeEndpoint() {
+		return new ResumeEndpoint();
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -101,6 +113,18 @@ public class BindingsEndpoint {
 		}
 	}
 	
+	@Endpoint(id = BindingsEndpoint.PAUSE_ENPOINT_ID)
+	public class PauseEndpoint {	
+		@WriteOperation
+		public boolean pause(String name) {
+			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
+			if (binding != null) {
+				binding.pause();
+			}
+			return binding != null;
+		}
+	}
+	
 	@Endpoint(id = BindingsEndpoint.START_ENPOINT_ID)
 	public class StartEndpoint {	
 		@WriteOperation
@@ -108,6 +132,18 @@ public class BindingsEndpoint {
 			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
 			if (binding != null) {
 				binding.start();
+			}
+			return binding != null;
+		}
+	}
+	
+	@Endpoint(id = BindingsEndpoint.RESUME_ENPOINT_ID)
+	public class ResumeEndpoint {	
+		@WriteOperation
+		public boolean resume(String name) {
+			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
+			if (binding != null) {
+				binding.resume();
 			}
 			return binding != null;
 		}

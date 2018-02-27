@@ -50,8 +50,18 @@ public class BindingsEndpointAutoConfiguration {
 	}
 	
 	@Bean
+	public BindingsEndpoint.PauseEndpoint pauseEndpoint(BindingsEndpoint bindingEndpoint) {
+		return bindingEndpoint.getPauseEndpoint();
+	}
+	
+	@Bean
 	public BindingsEndpoint.StartEndpoint startEndpoint(BindingsEndpoint bindingEndpoint) {
 		return bindingEndpoint.getStartEndpoint();
+	}
+	
+	@Bean
+	public BindingsEndpoint.ResumeEndpoint resumeEndpoint(BindingsEndpoint bindingEndpoint) {
+		return bindingEndpoint.getResumeEndpoint();
 	}
 	
 }
