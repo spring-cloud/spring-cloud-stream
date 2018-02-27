@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Map;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -41,6 +42,8 @@ import org.springframework.util.ObjectUtils;
  * Metrics for Kafka binder.
  *
  * @author Henryk Konsek
+ * @author Soby Chacko
+ * @author Artem Bilan
  */
 public class KafkaBinderMetrics implements MeterBinder {
 
@@ -57,6 +60,7 @@ public class KafkaBinderMetrics implements MeterBinder {
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties,
 			ConsumerFactory<?, ?> defaultConsumerFactory) {
+
 		this.binder = binder;
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.defaultConsumerFactory = defaultConsumerFactory;
@@ -64,6 +68,7 @@ public class KafkaBinderMetrics implements MeterBinder {
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties) {
+
 		this(binder, binderConfigurationProperties, null);
 	}
 
@@ -71,6 +76,7 @@ public class KafkaBinderMetrics implements MeterBinder {
 	public void bindTo(MeterRegistry registry) {
 		for (Map.Entry<String, KafkaMessageChannelBinder.TopicInformation> topicInfo : this.binder.getTopicsInUse()
 				.entrySet()) {
+
 			if (!topicInfo.getValue().isConsumerTopic()) {
 				continue;
 			}
@@ -78,47 +84,54 @@ public class KafkaBinderMetrics implements MeterBinder {
 			String topic = topicInfo.getKey();
 			String group = topicInfo.getValue().getConsumerGroup();
 
-			try (Consumer<?, ?> metadataConsumer = createConsumerFactory(group).createConsumer()) {
-				List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
-				List<TopicPartition> topicPartitions = new LinkedList<>();
-				for (PartitionInfo partitionInfo : partitionInfos) {
-					topicPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
-				}
-				Map<TopicPartition, Long> endOffsets = metadataConsumer.endOffsets(topicPartitions);
-				long lag = 0;
-				for (Map.Entry<TopicPartition, Long> endOffset : endOffsets.entrySet()) {
-					OffsetAndMetadata current = metadataConsumer.committed(endOffset.getKey());
-					if (current != null) {
-						lag += endOffset.getValue() - current.offset();
-					}
-					else {
-						lag += endOffset.getValue();
-					}
-				}
-				registry.gauge(String.format("%s.%s.%s.lag", METRIC_PREFIX, group, topic), lag);
-			}
-			catch (Exception e) {
-				LOG.debug("Cannot generate metric for topic: " + topic, e);
-			}
+			registry.gauge(String.format("%s.%s.%s.lag", METRIC_PREFIX, group, topic), this,
+					o -> calculateConsumerLagOnTopic(topic, group));
 		}
 	}
 
+	private double calculateConsumerLagOnTopic(String topic, String group) {
+		long lag = 0;
+		try (Consumer<?, ?> metadataConsumer = createConsumerFactory(group).createConsumer()) {
+			List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
+			List<TopicPartition> topicPartitions = new LinkedList<>();
+			for (PartitionInfo partitionInfo : partitionInfos) {
+				topicPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
+			}
+			Map<TopicPartition, Long> endOffsets = metadataConsumer.endOffsets(topicPartitions);
+
+			for (Map.Entry<TopicPartition, Long> endOffset : endOffsets.entrySet()) {
+				OffsetAndMetadata current = metadataConsumer.committed(endOffset.getKey());
+				if (current != null) {
+					lag += endOffset.getValue() - current.offset();
+				}
+				else {
+					lag += endOffset.getValue();
+				}
+			}
+		}
+		catch (Exception e) {
+			LOG.debug("Cannot generate metric for topic: " + topic, e);
+		}
+		return lag;
+	}
+
 	private ConsumerFactory<?, ?> createConsumerFactory(String group) {
-		if (defaultConsumerFactory != null) {
-			return defaultConsumerFactory;
+		if (this.defaultConsumerFactory == null) {
+			Map<String, Object> props = new HashMap<>();
+			props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+			props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+			if (!ObjectUtils.isEmpty(binderConfigurationProperties.getConsumerConfiguration())) {
+				props.putAll(binderConfigurationProperties.getConsumerConfiguration());
+			}
+			if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
+				props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+						this.binderConfigurationProperties.getKafkaConnectionString());
+			}
+			props.put("group.id", group);
+			this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(props);
 		}
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-		if (!ObjectUtils.isEmpty(binderConfigurationProperties.getConsumerConfiguration())) {
-			props.putAll(binderConfigurationProperties.getConsumerConfiguration());
-		}
-		if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
-			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-					this.binderConfigurationProperties.getKafkaConnectionString());
-		}
-		props.put("group.id", group);
-		return new DefaultKafkaConsumerFactory<>(props);
+
+		return this.defaultConsumerFactory;
 	}
 
 }
