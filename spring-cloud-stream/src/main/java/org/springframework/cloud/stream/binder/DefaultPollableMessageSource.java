@@ -36,6 +36,7 @@ import org.springframework.integration.support.DefaultErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageUtils;
 import org.springframework.integration.support.StaticMessageHeaderAccessor;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -83,7 +84,10 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 
 	private boolean running;
 
-	public DefaultPollableMessageSource(SmartMessageConverter messageConverter) {
+	/**
+	 * @param messageConverter instance of {@link SmartMessageConverter}. Can be null.
+	 */
+	public DefaultPollableMessageSource(@Nullable SmartMessageConverter messageConverter) {
 		this.messageConverter = messageConverter;
 	}
 
@@ -169,79 +173,38 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		this.running = false;
 	}
 
-	/**
-	 * If there's a retry template, it will set the attributes holder via the listener. If
-	 * there's no retry template, but there's an error channel, we create a new attributes
-	 * holder here. If an attributes holder exists (by either method), we set the
-	 * attributes for use by the {@link ErrorMessageStrategy}.
-	 * @param message the Spring Messaging message to use.
-	 */
-	private void setAttributesIfNecessary(Message<?> message) {
-		boolean needHolder = this.errorChannel != null && this.retryTemplate == null;
-		boolean needAttributes = needHolder || this.retryTemplate != null;
-		if (needHolder) {
-			attributesHolder.set(ErrorMessageUtils.getAttributeAccessor(null, null));
-		}
-		if (needAttributes) {
-			AttributeAccessor attributes = attributesHolder.get();
-			if (attributes != null) {
-				attributes.setAttribute(ErrorMessageUtils.INPUT_MESSAGE_CONTEXT_KEY, message);
-				if (this.attributesProvider != null) {
-					this.attributesProvider.accept(attributes, message);
-				}
-			}
-		}
-	}
-
 	@Override
 	public boolean poll(MessageHandler handler) {
 		return poll(handler, null);
 	}
-
+	
 	@Override
 	public boolean poll(MessageHandler handler, ParameterizedTypeReference<?> type) {
-		Message<?> message = this.source.receive();
+		Message<?> message = this.receive(type);
 		if (message == null) {
 			return false;
 		}
-		if (type != null && this.messageConverter != null) {
-			Class<?> targetType = type == null ? Object.class :
-				type.getType() instanceof Class ? (Class<?>) type.getType() : Object.class;
-			Object payload = this.messageConverter.fromMessage(message, targetType, type);
-			if (payload == null) {
-				throw new MessageConversionException(message, "No converter could convert Message");
-			}
-			message = MessageBuilder.withPayload(payload)
-					.copyHeaders(message.getHeaders())
-					.build();
-		}
+
 		AcknowledgmentCallback ackCallback = StaticMessageHeaderAccessor
 				.getAcknowledgmentCallback(message);
 		try {
-			if (this.retryTemplate == null && this.errorChannel == null) {
-				setAttributesIfNecessary(message);
-				doHandleMessage(handler, message);
-			}
-			else if (this.retryTemplate == null) {
-				try {
-					setAttributesIfNecessary(message);
-					doHandleMessage(handler, message);
+			if (this.retryTemplate == null) {
+				if (this.errorChannel == null) {
+					this.handle(message, handler);
 				}
-				catch (Exception e) {
-					if (this.errorChannel != null) {
-						this.messagingTemplate.send(this.errorChannel,
-								this.errorMessageStrategy.buildErrorMessage(e, attributesHolder.get()));
+				else {
+					try {
+						this.handle(message, handler);
 					}
-					else {
-						throw e;
+					catch (Exception e) {
+						this.messagingTemplate
+							.send(this.errorChannel, this.errorMessageStrategy.buildErrorMessage(e, attributesHolder.get()));
 					}
 				}
 			}
 			else {
-				final Message<?> messageToHandle = message;
 				this.retryTemplate.execute(context -> {
-					setAttributesIfNecessary(messageToHandle);
-					doHandleMessage(handler, messageToHandle);
+					this.handle(message, handler);
 					return null;
 				}, this.recoveryCallback);
 			}
@@ -257,15 +220,6 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		}
 		finally {
 			AckUtils.autoAck(ackCallback);
-		}
-	}
-
-	private void doHandleMessage(MessageHandler handler, Message<?> message) {
-		try {
-			handler.handleMessage(message);
-		}
-		catch (Throwable t) { // NOSONAR
-			throw new MessageHandlingException(message, t);
 		}
 	}
 
@@ -289,4 +243,61 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		// Empty
 	}
 
+	/**
+	 * Receives Message from the source and converts its payload to a provided type.
+	 * Can return null
+	 */
+	private Message<?> receive(ParameterizedTypeReference<?> type) {
+		Message<?> message = this.source.receive();
+		if (message != null && type != null && this.messageConverter != null) {		
+			Class<?> targetType = type == null ? Object.class :
+				type.getType() instanceof Class ? (Class<?>) type.getType() : Object.class;
+			Object payload = this.messageConverter.fromMessage(message, targetType, type);
+			if (payload == null) {
+				throw new MessageConversionException(message, "No converter could convert Message");
+			}
+			message = MessageBuilder.withPayload(payload)
+					.copyHeaders(message.getHeaders())
+					.build();
+		}
+		return message;
+	}
+	
+	private void doHandleMessage(MessageHandler handler, Message<?> message) {
+		try {
+			handler.handleMessage(message);
+		}
+		catch (Throwable t) { // NOSONAR
+			throw new MessageHandlingException(message, t);
+		}
+	}
+	
+	/**
+	 * If there's a retry template, it will set the attributes holder via the listener. If
+	 * there's no retry template, but there's an error channel, we create a new attributes
+	 * holder here. If an attributes holder exists (by either method), we set the
+	 * attributes for use by the {@link ErrorMessageStrategy}.
+	 * @param message the Spring Messaging message to use.
+	 */
+	private void setAttributesIfNecessary(Message<?> message) {
+		boolean needHolder = this.errorChannel != null && this.retryTemplate == null;
+		boolean needAttributes = needHolder || this.retryTemplate != null;
+		if (needHolder) {
+			attributesHolder.set(ErrorMessageUtils.getAttributeAccessor(null, null));
+		}
+		if (needAttributes) {
+			AttributeAccessor attributes = attributesHolder.get();
+			if (attributes != null) {
+				attributes.setAttribute(ErrorMessageUtils.INPUT_MESSAGE_CONTEXT_KEY, message);
+				if (this.attributesProvider != null) {
+					this.attributesProvider.accept(attributes, message);
+				}
+			}
+		}
+	}
+	
+	private void handle(Message<?> message, MessageHandler handler) {
+		setAttributesIfNecessary(message);
+		doHandleMessage(handler, message);
+	}
 }
