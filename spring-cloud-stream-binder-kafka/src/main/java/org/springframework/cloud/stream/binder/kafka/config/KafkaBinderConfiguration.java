@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,6 +49,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.security.jaas.KafkaJaasLoginModuleInitializer;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
+import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -58,6 +60,7 @@ import org.springframework.util.ObjectUtils;
  * @author Ilayaperumal Gopinathan
  * @author Henryk Konsek
  * @author Gary Russell
+ * @author Oleg Zhurakousky
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
@@ -126,8 +129,9 @@ public class KafkaBinderConfiguration {
 
 	@Bean
 	public MeterBinder kafkaBinderMetrics(KafkaMessageChannelBinder kafkaMessageChannelBinder,
-										KafkaBinderConfigurationProperties configurationProperties) {
-		return new KafkaBinderMetrics(kafkaMessageChannelBinder, configurationProperties);
+										KafkaBinderConfigurationProperties configurationProperties,
+										@Nullable MeterRegistry meterRegistry) {
+		return new KafkaBinderMetrics(kafkaMessageChannelBinder, configurationProperties, null, meterRegistry);
 	}
 
 	@Bean

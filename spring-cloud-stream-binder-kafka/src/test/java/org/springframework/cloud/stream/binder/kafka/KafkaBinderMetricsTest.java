@@ -70,7 +70,7 @@ public class KafkaBinderMetricsTest {
 		MockitoAnnotations.initMocks(this);
 		org.mockito.BDDMockito.given(consumerFactory.createConsumer()).willReturn(consumer);
 		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
-		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties, consumerFactory);
+		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties, consumerFactory, null);
 		org.mockito.BDDMockito.given(consumer.endOffsets(org.mockito.Matchers.anyCollectionOf(TopicPartition.class)))
 				.willReturn(java.util.Collections.singletonMap(new TopicPartition(TEST_TOPIC, 0), 1000L));
 	}

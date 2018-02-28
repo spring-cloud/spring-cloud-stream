@@ -33,9 +33,12 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
+import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.context.ApplicationListener;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -44,8 +47,9 @@ import org.springframework.util.ObjectUtils;
  * @author Henryk Konsek
  * @author Soby Chacko
  * @author Artem Bilan
+ * @author Oleg Zhurakousky
  */
-public class KafkaBinderMetrics implements MeterBinder {
+public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
 
 	private final static Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
 
@@ -57,19 +61,22 @@ public class KafkaBinderMetrics implements MeterBinder {
 
 	private ConsumerFactory<?, ?> defaultConsumerFactory;
 
+	private final MeterRegistry meterRegistry;
+
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties,
-			ConsumerFactory<?, ?> defaultConsumerFactory) {
+			ConsumerFactory<?, ?> defaultConsumerFactory, @Nullable MeterRegistry meterRegistry) {
 
 		this.binder = binder;
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.defaultConsumerFactory = defaultConsumerFactory;
+		this.meterRegistry = meterRegistry;
 	}
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties) {
 
-		this(binder, binderConfigurationProperties, null);
+		this(binder, binderConfigurationProperties, null, null);
 	}
 
 	@Override
@@ -132,6 +139,14 @@ public class KafkaBinderMetrics implements MeterBinder {
 		}
 
 		return this.defaultConsumerFactory;
+	}
+
+	@Override
+	public void onApplicationEvent(BindingCreatedEvent event) {
+		if (this.meterRegistry != null) {
+			// meters are idempotent when called with the same arguments so safe to call it multiple times
+			this.bindTo(this.meterRegistry);
+		}
 	}
 
 }
