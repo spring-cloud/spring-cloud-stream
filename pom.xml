@@ -21,7 +21,7 @@
         <java.version>1.8</java.version>
         <spring.tuple.version>1.0.0.RELEASE</spring.tuple.version>
         <spring.integration.tuple.version>1.0.0.RELEASE</spring.integration.tuple.version>
-        <reactor.version>Bismuth-SR5</reactor.version>
+        <reactor.version>Bismuth-SR7</reactor.version>
         <kryo-shaded.version>3.0.3</kryo-shaded.version>
         <objenesis.version>2.1</objenesis.version>
     </properties>
