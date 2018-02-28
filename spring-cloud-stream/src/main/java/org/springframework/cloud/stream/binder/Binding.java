@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.springframework.integration.endpoint.Pausable;
 
 /**
@@ -33,6 +36,10 @@ import org.springframework.integration.endpoint.Pausable;
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public interface Binding<T> extends Pausable {
+	
+	default Map<String, Object> getExtendedInfo() {
+		return Collections.emptyMap();
+	}
 	
 	/**
 	 * Stops the target component represented by this instance.
@@ -60,7 +67,9 @@ public interface Binding<T> extends Pausable {
 	 * 
 	 * @see BindingsEndpoint
 	 */
-	default void pause() {}
+	default void pause() {
+		this.stop();
+	}
 	
 	/**
 	 * Resumes the target component represented by this instance if and only if the component 
@@ -70,7 +79,9 @@ public interface Binding<T> extends Pausable {
 	 * 
 	 * @see BindingsEndpoint
 	 */
-	default void resume() {}
+	default void resume() {
+		this.start();
+	}
 	
 	/**
 	 * Returns 'true' if the target component represented by this instance is running.

@@ -16,6 +16,11 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.commons.logging.Log;
 
 import org.springframework.beans.factory.DisposableBean;
@@ -71,6 +76,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private final EmbeddedHeadersChannelInterceptor embeddedHeadersChannelInterceptor =
 			new EmbeddedHeadersChannelInterceptor(this.logger);
+	
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	/**
 	 * {@link ProvisioningProvider} delegated by the downstream binder implementations.
@@ -155,6 +162,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return new DefaultBinding<MessageChannel>(destination, null, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
 
+			@Override
+			public Map<String, Object> getExtendedInfo() {	
+				return doGetExtendedInfo(destination, producerProperties);
+			}
+			
 			@Override
 			public void afterUnbind() {
 				try {
@@ -255,7 +267,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			return new DefaultBinding<MessageChannel>(name, group, inputChannel,
 					consumerEndpoint instanceof Lifecycle ? (Lifecycle) consumerEndpoint : null) {
-
+				
+				@Override
+				public Map<String, Object> getExtendedInfo() {
+					return doGetExtendedInfo(destination, properties);
+				}
+				
 				@Override
 				protected void afterUnbind() {
 					try {
@@ -289,7 +306,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
-
 	@Override
 	public Binding<PollableSource<MessageHandler>> bindPollableConsumer(String name, String group,
 			final PollableSource<MessageHandler> inboundBindTarget, C properties) {
@@ -322,6 +338,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		return new DefaultBinding<PollableSource<MessageHandler>>(name, group, inboundBindTarget,
 				resources.getSource() instanceof Lifecycle ? (Lifecycle) resources.getSource() : null) {
+			
+			@Override
+			public Map<String, Object> getExtendedInfo() {
+				return doGetExtendedInfo(destination, properties);
+			}
 
 			@Override
 			public void afterUnbind() {
@@ -637,6 +658,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	protected String errorsBaseName(ProducerDestination destination) {
 		return destination.getName() + ".errors";
+	}
+	
+	private Map<String, Object> doGetExtendedInfo(Object destination, Object properties) {
+		Map<String, Object> extendedInfo = new LinkedHashMap<>();
+		extendedInfo.put("bindingDestination", destination.toString());
+		extendedInfo.put(properties.getClass().getSimpleName(), objectMapper.convertValue(properties, Map.class));
+		return extendedInfo;
 	}
 
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {

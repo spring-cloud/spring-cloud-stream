@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -36,6 +39,8 @@ import org.springframework.util.StringUtils;
  * 
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
+@JsonPropertyOrder({ "name", "group", "pausable", "state"})
+@JsonIgnoreProperties("running")
 public class DefaultBinding<T> implements Binding<T> {
 	
 	private final Log logger = LogFactory.getLog(this.getClass().getName());
@@ -47,7 +52,9 @@ public class DefaultBinding<T> implements Binding<T> {
 	protected final T target;
 
 	protected final Lifecycle lifecycle;
-
+	
+	private boolean paused;
+	
 	/**
 	 * Creates an instance that associates a given name, group and binding target with an
 	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
@@ -55,8 +62,9 @@ public class DefaultBinding<T> implements Binding<T> {
 	 * @param name the name of the binding target
 	 * @param group the group (only for input targets)
 	 * @param target the binding target
-	 * @param lifecycle {@link Lifecycle} that runs while the binding is active and will
-	 * be stopped during unbinding
+	 * @param lifecycle {@link Lifecycle} that runs while the binding is active and will be stopped during unbinding
+	 * @param extBindingInfo additional information related to binding
+	 * 
 	 */
 	public DefaultBinding(String name, String group, T target, Lifecycle lifecycle) {
 		Assert.notNull(target, "target must not be null");
@@ -65,7 +73,7 @@ public class DefaultBinding<T> implements Binding<T> {
 		this.target = target;
 		this.lifecycle = lifecycle;
 	}
-
+	
 	public String getName() {
 		return this.name;
 	}
@@ -74,8 +82,25 @@ public class DefaultBinding<T> implements Binding<T> {
 		return this.group;
 	}
 	
+	public String getState() {
+		String state = "N/A";
+		if (this.lifecycle != null) {
+			if (isPausable()) {
+				state = this.paused ? "paused" : this.getRunningState();
+			}
+			else {
+				state = this.getRunningState();
+			}
+		}
+		return state;
+	}
+	
 	public boolean isRunning() {
 		return this.lifecycle != null && this.lifecycle.isRunning();
+	}
+	
+	public boolean isPausable() {
+		return this.lifecycle instanceof Pausable;
 	}
 	
 	@Override
@@ -101,6 +126,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	public final synchronized void pause() {
 		if (this.lifecycle instanceof Pausable) {
 			( (Pausable) this.lifecycle).pause();
+			this.paused = true;
 		}
 		else {
 			logger.warn("Attempted to pause a component that does not support Pausable " + this.lifecycle);
@@ -111,6 +137,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	public final synchronized void resume() {
 		if (this.lifecycle instanceof Pausable) {
 			( (Pausable) this.lifecycle).resume();
+			this.paused = false;
 		}
 		else {
 			logger.warn("Attempted to resume a component that does not support Pausable " + this.lifecycle);
@@ -127,13 +154,6 @@ public class DefaultBinding<T> implements Binding<T> {
 		return this.lifecycle;
 	}
 
-	/**
-	 * Listener method that executes after unbinding. Subclasses can implement their own
-	 * behaviour on unbinding by overriding this method.
-	 */
-	protected void afterUnbind() {
-	}
-
 	@Override
 	public String toString() {
 		return " Binding [name=" + this.name + ", target=" + this.target + ", lifecycle="
@@ -141,5 +161,16 @@ public class DefaultBinding<T> implements Binding<T> {
 						? ((NamedComponent) this.lifecycle).getComponentName()
 						: ObjectUtils.nullSafeToString(this.lifecycle))
 				+ "]";
+	}
+	
+	/**
+	 * Listener method that executes after unbinding. Subclasses can implement their own
+	 * behaviour on unbinding by overriding this method.
+	 */
+	protected void afterUnbind() {
+	}
+	
+	private String getRunningState() {
+		return isRunning() ? "running" : "stopped";
 	}
 }
