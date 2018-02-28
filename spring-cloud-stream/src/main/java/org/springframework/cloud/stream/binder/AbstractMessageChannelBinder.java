@@ -25,12 +25,15 @@ import org.apache.commons.logging.Log;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -89,6 +92,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * a binding requires embedding headers.
 	 */
 	private final String[] headersToEmbed;
+	
+	@Autowired
+	private ApplicationEventPublisher applicationEventPublisher;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed,
 			PP provisioningProvider) {
@@ -159,7 +165,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
 						producerProperties.isUseNativeEncoding()));
 
-		return new DefaultBinding<MessageChannel>(destination, null, outputChannel,
+		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination, null, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
 
 			@Override
@@ -182,6 +188,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				afterUnbindProducer(producerDestination, producerProperties);
 			}
 		};
+		
+		this.doPublishEvent(new BindingCreatedEvent(binding));
+		return binding;
 	}
 
 	/**
@@ -265,7 +274,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				((Lifecycle) consumerEndpoint).start();
 			}
 
-			return new DefaultBinding<MessageChannel>(name, group, inputChannel,
+			Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(name, group, inputChannel,
 					consumerEndpoint instanceof Lifecycle ? (Lifecycle) consumerEndpoint : null) {
 				
 				@Override
@@ -289,6 +298,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				}
 
 			};
+			this.doPublishEvent(new BindingCreatedEvent(binding));
+			return binding;
 		}
 		catch (Exception e) {
 			if (consumerEndpoint instanceof Lifecycle) {
@@ -336,7 +347,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (resources.getSource() instanceof Lifecycle) {
 				((Lifecycle) resources.getSource()).start();
 		}
-		return new DefaultBinding<PollableSource<MessageHandler>>(name, group, inboundBindTarget,
+		Binding<PollableSource<MessageHandler>> binding = new DefaultBinding<PollableSource<MessageHandler>>(name, group, inboundBindTarget,
 				resources.getSource() instanceof Lifecycle ? (Lifecycle) resources.getSource() : null) {
 			
 			@Override
@@ -351,6 +362,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 
 		};
+		
+		this.doPublishEvent(new BindingCreatedEvent(binding));
+		return binding;
 	}
 
 	protected void postProcessPollableSource(DefaultPollableMessageSource bindingTarget) {
@@ -666,6 +680,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		extendedInfo.put(properties.getClass().getSimpleName(), objectMapper.convertValue(properties, Map.class));
 		return extendedInfo;
 	}
+	
+	private void doPublishEvent(ApplicationEvent event) {
+		if (this.applicationEventPublisher != null) {
+			this.applicationEventPublisher.publishEvent(event);
+		}
+	}
 
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {
 
@@ -824,5 +844,4 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 
 	}
-
 }
