@@ -5,11 +5,11 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
-	<version>Elmhurst.RC2</version>
+	<version>Elmhurst.BUILD-SNAPSHOT</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>2.0.0.RC2</version>
+		<version>2.0.0.BUILD-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 
