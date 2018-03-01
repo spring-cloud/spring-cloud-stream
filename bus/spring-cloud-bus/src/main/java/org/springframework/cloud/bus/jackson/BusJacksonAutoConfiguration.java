@@ -33,12 +33,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.bus.BusAutoConfiguration;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
+import org.springframework.cloud.stream.annotation.StreamMessageConverter;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AssignableTypeFilter;
@@ -59,6 +62,14 @@ import org.springframework.util.MimeTypeUtils;
 @AutoConfigureBefore({ BusAutoConfiguration.class, JacksonAutoConfiguration.class})
 public class BusJacksonAutoConfiguration {
 
+	// needed in the case where @RemoteApplicationEventScan is not used
+	// otherwise RemoteApplicationEventRegistrar will register the bean
+    @Bean
+    @ConditionalOnMissingBean(name = "busJsonConverter")
+    @StreamMessageConverter
+    public AbstractMessageConverter busJsonConverter(@Autowired(required = false) ObjectMapper objectMapper) {
+        return new BusJacksonMessageConverter(objectMapper);
+    }
 }
 
 class BusJacksonMessageConverter extends AbstractMessageConverter
