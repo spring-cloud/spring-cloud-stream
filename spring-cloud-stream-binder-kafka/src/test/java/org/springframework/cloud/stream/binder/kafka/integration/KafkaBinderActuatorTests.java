@@ -74,15 +74,13 @@ public class KafkaBinderActuatorTests {
 
 	@Test
 	public void testKafkaBinderMetricsExposed() {
-		Search search = this.meterRegistry.find(
-				String.format("%s.%s.%s.lag", "spring.cloud.stream.binder.kafka", TEST_CONSUMER_GROUP, Sink.INPUT));
-
-		assertThat(search.gauge()).isNotNull();
-
 		this.kafkaTemplate.send(Sink.INPUT, null, "foo".getBytes());
 		this.kafkaTemplate.flush();
 
-		assertThat(search.gauge().value()).isGreaterThan(0);
+		assertThat(this.meterRegistry.get("spring.cloud.stream.binder.kafka.offset")
+				.tag("group", TEST_CONSUMER_GROUP)
+				.tag("topic", Sink.INPUT)
+				.timeGauge().value()).isGreaterThan(0);
 	}
 
 	@EnableBinding(Sink.class)

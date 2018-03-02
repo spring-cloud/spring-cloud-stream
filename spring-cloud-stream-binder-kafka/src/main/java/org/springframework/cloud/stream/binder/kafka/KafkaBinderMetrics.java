@@ -20,10 +20,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.binder.MeterBinder;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -53,7 +56,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 	private final static Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
 
-	static final String METRIC_PREFIX = "spring.cloud.stream.binder.kafka";
+	static final String METRIC_NAME = "spring.cloud.stream.binder.kafka.offset";
 
 	private final KafkaMessageChannelBinder binder;
 
@@ -91,8 +94,12 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 			String topic = topicInfo.getKey();
 			String group = topicInfo.getValue().getConsumerGroup();
 
-			registry.gauge(String.format("%s.%s.%s.lag", METRIC_PREFIX, group, topic), this,
-					o -> calculateConsumerLagOnTopic(topic, group));
+			TimeGauge.builder(METRIC_NAME, this, TimeUnit.MILLISECONDS,
+						o -> calculateConsumerLagOnTopic(topic, group))
+					.tag("group", group)
+					.tag("topic", topic)
+					.description("Consumer lag for a particular group and topic")
+					.register(registry);
 		}
 	}
 
@@ -104,6 +111,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 			for (PartitionInfo partitionInfo : partitionInfos) {
 				topicPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
 			}
+
 			Map<TopicPartition, Long> endOffsets = metadataConsumer.endOffsets(topicPartitions);
 
 			for (Map.Entry<TopicPartition, Long> endOffset : endOffsets.entrySet()) {
