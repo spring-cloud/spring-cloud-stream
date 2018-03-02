@@ -52,13 +52,21 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
 
 	/**
-	 * The instance id of the application: a number from 0 to instanceCount-1. Used for partitioning and with Kafka.
+	 * The instance id of the application: a number from 0 to instanceCount-1. 
+	 * Used for partitioning and with Kafka.
+	 * NOTE: Could also be managed per individual binding 
+	 * "spring.cloud.stream.bindings.foo.consumer.instance-index" where 'foo' is 
+	 * the name of the binding.
 	 */
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
 	private int instanceIndex;
 
 	/**
-	 * The number of deployed instances of an application. Default: 1.
+	 * The number of deployed instances of an application. 
+	 * Default: 1.
+	 * NOTE: Could also be managed per individual binding 
+	 * "spring.cloud.stream.bindings.foo.consumer.instance-count" where 'foo' is 
+	 * the name of the binding.
 	 */
 	private int instanceCount = 1;
 
