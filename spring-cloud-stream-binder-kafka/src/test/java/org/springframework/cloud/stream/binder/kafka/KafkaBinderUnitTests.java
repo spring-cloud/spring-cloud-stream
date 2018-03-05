@@ -17,10 +17,21 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -28,9 +39,24 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.provisioning.ConsumerDestination;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Gary Russell
@@ -75,5 +101,123 @@ public class KafkaBinderUnitTests {
 		configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)).isEqualTo("earliest");
 	}
+
+	@Test
+	public void testOffsetResetWithGroupManagementEarliest() throws Exception {
+		testOffsetResetWithGroupManagement(true, true);
+	}
+
+	@Test
+	public void testOffsetResetWithGroupManagementLatest() throws Throwable {
+		testOffsetResetWithGroupManagement(false, true);
+	}
+
+	@Test
+	@Ignore // SK GH-599
+	public void testOffsetResetWithManualAssignmentEarliest() throws Exception {
+		testOffsetResetWithGroupManagement(true, false);
+	}
+
+	@Test
+	@Ignore // SK GH-599
+	public void testOffsetResetWithGroupManualAssignmentLatest() throws Throwable {
+		testOffsetResetWithGroupManagement(false, false);
+	}
+
+	private void testOffsetResetWithGroupManagement(final boolean earliest, boolean groupManage) throws Exception {
+		final Collection<TopicPartition> partitions = new ArrayList<>();
+		partitions.add(new TopicPartition("foo", 0));
+		partitions.add(new TopicPartition("foo", 1));
+		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties();
+		KafkaTopicProvisioner provisioningProvider = mock(KafkaTopicProvisioner.class);
+		ConsumerDestination dest = mock(ConsumerDestination.class);
+		given(dest.getName()).willReturn("foo");
+		given(provisioningProvider.provisionConsumerDestination(anyString(), anyString(), any())).willReturn(dest);
+		final AtomicInteger part = new AtomicInteger();
+		willAnswer(i -> {
+			return partitions.stream()
+					.map(p -> new PartitionInfo("foo", part.getAndIncrement(), null, null, null))
+					.collect(Collectors.toList());
+		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), anyBoolean(), any());
+		@SuppressWarnings("unchecked")
+		final Consumer<byte[], byte[]> consumer = mock(Consumer.class);
+		final CountDownLatch latch = new CountDownLatch(1);
+		willAnswer(i -> {
+			try {
+				Thread.sleep(100);
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+			if (!groupManage) {
+				latch.countDown();
+			}
+			return new ConsumerRecords<>(Collections.emptyMap());
+		}).given(consumer).poll(anyLong());
+		willAnswer(i -> {
+			((org.apache.kafka.clients.consumer.ConsumerRebalanceListener) i.getArgument(1))
+					.onPartitionsAssigned(partitions);
+			latch.countDown();
+			return null;
+		}).given(consumer).subscribe(eq(Collections.singletonList("foo")),
+				any(org.apache.kafka.clients.consumer.ConsumerRebalanceListener.class));
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties, provisioningProvider) {
+
+			@Override
+			protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous, String consumerGroup,
+					ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+
+				return new ConsumerFactory<byte[], byte[]>() {
+
+					@Override
+					public Consumer<byte[], byte[]> createConsumer() {
+						return consumer;
+					}
+
+					@Override
+					public Consumer<byte[], byte[]> createConsumer(String arg0) {
+						return consumer;
+					}
+
+					@Override
+					public Consumer<byte[], byte[]> createConsumer(String arg0, String arg1) {
+						return consumer;
+					}
+
+					@Override
+					public boolean isAutoCommit() {
+						return false;
+					}
+
+					@Override
+					public Map<String, Object> getConfigurationProperties() {
+						return Collections.singletonMap(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+								earliest ? "earliest" : "latest");
+					}
+
+				};
+			}
+
+		};
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.refresh();
+		binder.setApplicationContext(context);
+		MessageChannel channel = new DirectChannel();
+		KafkaConsumerProperties extension = new KafkaConsumerProperties();
+		extension.setResetOffsets(true);
+		extension.setAutoRebalanceEnabled(groupManage);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = new ExtendedConsumerProperties<KafkaConsumerProperties>(
+				extension);
+		consumerProperties.setInstanceCount(1);
+		binder.bindConsumer("foo", "bar", channel, consumerProperties);
+		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+		if (earliest) {
+			verify(consumer).seekToBeginning(partitions);
+		}
+		else {
+			verify(consumer).seekToEnd(partitions);
+		}
+	}
+
 
 }
