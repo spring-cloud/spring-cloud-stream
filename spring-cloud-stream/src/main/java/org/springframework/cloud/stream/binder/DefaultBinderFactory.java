@@ -165,11 +165,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			Assert.state(binderConfiguration != null, "Unknown binder configuration: " + configurationName);
 			BinderType binderType = this.binderTypeRegistry.get(binderConfiguration.getBinderType());
 			Assert.notNull(binderType, "Binder type " + binderConfiguration.getBinderType() + " is not defined");
-			Map<Object, Object> binderProperties = binderConfiguration.getProperties();
+			
+			Map<String, String> binderProperties = new HashMap<>();
+			this.flatten(null, binderConfiguration.getProperties(), binderProperties);
+
 			// Convert all properties to arguments, so that they receive maximum
 			// precedence
 			ArrayList<String> args = new ArrayList<>();
-			for (Map.Entry<Object, Object> property : binderProperties.entrySet()) {
+			for (Map.Entry<String, String> property : binderProperties.entrySet()) {
 				args.add(String.format("--%s=%s", property.getKey(), property.getValue()));
 			}
 			// Initialize the domain with a unique name based on the bootstrapping context
@@ -210,6 +213,20 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			this.binderInstanceCache.put(configurationName, new SimpleImmutableEntry<>(binder, binderProducingContext));
 		}
 		return (Binder<T, ?, ?>) this.binderInstanceCache.get(configurationName).getKey();
+	}
+	
+	/**
+	 * Ensures that nested properties 
+	 */
+	@SuppressWarnings("unchecked")
+	private void flatten(String propertyName, Object value, Map<String, String> flattenedProperties) {
+		if (value instanceof Map) {
+			((Map<Object, Object>) value)
+				.forEach((k, v) -> flatten((propertyName != null ? propertyName + "." : "") + k, v, flattenedProperties));
+		}
+		else {
+			flattenedProperties.put(propertyName, value.toString());
+		}
 	}
 
 	/**
