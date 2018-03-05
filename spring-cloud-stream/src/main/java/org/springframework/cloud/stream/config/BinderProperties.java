@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.config;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Contains the properties of a binder.
@@ -38,7 +39,7 @@ public class BinderProperties {
 	/**
 	 * Root for a set of properties that can be used to customize the environment of the binder. 
 	 */
-	private Map<Object, Object> environment = new HashMap<>();
+	private Map<String, Object> environment = new HashMap<>();
 
 	/**
 	 * Whether the configuration will inherit the environment of the application itself. Default: true
@@ -59,7 +60,7 @@ public class BinderProperties {
 		this.type = name;
 	}
 
-	public Map<Object, Object> getEnvironment() {
+	public Map<String, Object> getEnvironment() {
 		return environment;
 	}
 
@@ -69,10 +70,10 @@ public class BinderProperties {
 	@Deprecated
 	public void setEnvironment(Properties environment) {
 		this.environment.clear();
-		this.environment.putAll(environment);
+		this.environment.putAll(environment.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue())));
 	}
 
-	public void setEnvironment(Map<Object, Object> environment) {
+	public void setEnvironment(Map<String, Object> environment) {
 		this.environment = environment;
 	}
 
