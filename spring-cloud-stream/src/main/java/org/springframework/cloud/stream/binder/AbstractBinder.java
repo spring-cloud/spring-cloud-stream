@@ -159,6 +159,10 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return new MessageValues(message);
 	}
 
+	/**
+	 * Deprecated as of v2.0. Remains primarily for
+	 * backward compatibility and will be removed in the next major release.
+	 */
 	@Deprecated
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
 		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
