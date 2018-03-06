@@ -44,6 +44,8 @@ public class KafkaProducerProperties {
 
 	private Map<String, String> configuration = new HashMap<>();
 
+	private KafkaAdminProperties admin = new KafkaAdminProperties();
+
 	public int getBufferSize() {
 		return this.bufferSize;
 	}
@@ -100,6 +102,15 @@ public class KafkaProducerProperties {
 	public void setConfiguration(Map<String, String> configuration) {
 		this.configuration = configuration;
 	}
+
+	public KafkaAdminProperties getAdmin() {
+		return this.admin;
+	}
+
+	public void setAdmin(KafkaAdminProperties admin) {
+		this.admin = admin;
+	}
+
 
 	public enum CompressionType {
 		none,

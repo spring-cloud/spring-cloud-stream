@@ -87,7 +87,7 @@ public class KafkaBinderConfigurationProperties {
 
 	private String requiredAcks = "1";
 
-	private int replicationFactor = 1;
+	private short replicationFactor = 1;
 
 	private int fetchSize = 1024 * 1024;
 
@@ -345,11 +345,11 @@ public class KafkaBinderConfigurationProperties {
 		this.requiredAcks = requiredAcks;
 	}
 
-	public int getReplicationFactor() {
+	public short getReplicationFactor() {
 		return this.replicationFactor;
 	}
 
-	public void setReplicationFactor(int replicationFactor) {
+	public void setReplicationFactor(short replicationFactor) {
 		this.replicationFactor = replicationFactor;
 	}
 

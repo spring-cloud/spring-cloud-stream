@@ -81,6 +81,8 @@ public class KafkaConsumerProperties {
 
 	private Map<String, String> configuration = new HashMap<>();
 
+	private KafkaAdminProperties admin = new KafkaAdminProperties();
+
 	public boolean isAutoCommitOffset() {
 		return this.autoCommitOffset;
 	}
@@ -202,6 +204,14 @@ public class KafkaConsumerProperties {
 
 	public void setIdleEventInterval(long idleEventInterval) {
 		this.idleEventInterval = idleEventInterval;
+	}
+
+	public KafkaAdminProperties getAdmin() {
+		return this.admin;
+	}
+
+	public void setAdmin(KafkaAdminProperties admin) {
+		this.admin = admin;
 	}
 
 }

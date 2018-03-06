@@ -55,10 +55,11 @@ public class KafkaTopicProvisionerTests {
 		binderConfig.getConfiguration().put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts.getFile().getAbsolutePath());
 		binderConfig.setBrokers("localhost:9092");
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderConfig, bootConfig);
-		AdminClient adminClient = KafkaTestUtils.getPropertyValue(provisioner, "adminClient", AdminClient.class);
+		AdminClient adminClient = provisioner.createAdminClient();
 		assertThat(KafkaTestUtils.getPropertyValue(adminClient, "client.selector.channelBuilder")).isInstanceOf(SslChannelBuilder.class);
 		Map configs = KafkaTestUtils.getPropertyValue(adminClient, "client.selector.channelBuilder.configs", Map.class);
 		assertThat(((List) configs.get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG)).get(0)).isEqualTo("localhost:1234");
+		adminClient.close();
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -73,13 +74,13 @@ public class KafkaTopicProvisionerTests {
 		binderConfig.getConfiguration().put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts.getFile().getAbsolutePath());
 		binderConfig.setBrokers("localhost:1234");
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderConfig, bootConfig);
-		AdminClient adminClient = KafkaTestUtils.getPropertyValue(provisioner, "adminClient", AdminClient.class);
+		AdminClient adminClient = provisioner.createAdminClient();
 		assertThat(KafkaTestUtils.getPropertyValue(adminClient, "client.selector.channelBuilder")).isInstanceOf(SslChannelBuilder.class);
 		Map configs = KafkaTestUtils.getPropertyValue(adminClient, "client.selector.channelBuilder.configs", Map.class);
 		assertThat(((List) configs.get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG)).get(0)).isEqualTo("localhost:1234");
+		adminClient.close();
 	}
 
-	@SuppressWarnings("rawtypes")
 	@Test
 	public void brokersInvalid() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
