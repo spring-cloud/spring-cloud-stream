@@ -16,12 +16,18 @@
 
 package org.springframework.cloud.stream.binder.rabbit.config;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
@@ -89,6 +95,18 @@ public class RabbitMessageChannelBinderConfiguration {
 	@Bean
 	RabbitExchangeQueueProvisioner provisioningProvider() {
 		return new RabbitExchangeQueueProvisioner(this.rabbitConnectionFactory);
+	}
+
+	@Bean
+	@ConditionalOnMissingBean(ConnectionNameStrategy.class)
+	@ConditionalOnProperty("spring.cloud.stream.rabbit.binder.connection-name-prefix")
+	public ConnectionNameStrategy connectionNamer(CachingConnectionFactory cf) {
+		final AtomicInteger nameIncrementer = new AtomicInteger();
+		ConnectionNameStrategy namer = f -> this.rabbitBinderConfigurationProperties.getConnectionNamePrefix()
+				+ "#" + nameIncrementer.getAndIncrement();
+		// TODO: this can be removed when Boot 2.0.1 wires it in
+		cf.setConnectionNameStrategy(namer);
+		return namer;
 	}
 
 }

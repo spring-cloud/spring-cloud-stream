@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author David Turanski
+ * @author Gary Russell
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.rabbit.binder")
 public class RabbitBinderConfigurationProperties {
@@ -29,6 +30,8 @@ public class RabbitBinderConfigurationProperties {
 	private String[] nodes = new String[0];
 
 	private int compressionLevel;
+
+	private String connectionNamePrefix;
 
 	public String[] getAdminAddresses() {
 		return adminAddresses;
@@ -68,4 +71,13 @@ public class RabbitBinderConfigurationProperties {
 	public void setCompressionLevel(int compressionLevel) {
 		this.compressionLevel = compressionLevel;
 	}
+
+	public String getConnectionNamePrefix() {
+		return this.connectionNamePrefix;
+	}
+
+	public void setConnectionNamePrefix(String connectionNamePrefix) {
+		this.connectionNamePrefix = connectionNamePrefix;
+	}
+
 }
