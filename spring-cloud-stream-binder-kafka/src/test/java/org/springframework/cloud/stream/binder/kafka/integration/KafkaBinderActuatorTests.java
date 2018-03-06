@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka.integration;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.search.Search;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -40,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Artem Bilan
  * @author Oleg Zhurakousky
+ * @author Jon Schneider
  *
  * @since 2.0
  */

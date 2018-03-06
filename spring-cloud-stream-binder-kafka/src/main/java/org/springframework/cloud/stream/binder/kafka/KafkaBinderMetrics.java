@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import org.apache.commons.logging.Log;
@@ -51,6 +49,7 @@ import org.springframework.util.ObjectUtils;
  * @author Soby Chacko
  * @author Artem Bilan
  * @author Oleg Zhurakousky
+ * @author Jon Schneider
  */
 public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
 
