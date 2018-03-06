@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
-import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -50,8 +48,7 @@ import static org.junit.Assert.assertTrue;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { KafkaBinderAutoConfigurationPropertiesTest.KafkaBinderConfigProperties.class,
-		KafkaBinderConfiguration.class })
+@SpringBootTest(classes = {KafkaBinderConfiguration.class })
 @TestPropertySource(locations = "classpath:binder-config-autoconfig.properties")
 public class KafkaBinderAutoConfigurationPropertiesTest {
 
@@ -123,14 +120,5 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 		bootstrapServers.add("10.98.09.199:9092");
 		bootstrapServers.add("10.98.09.196:9092");
 		assertTrue(((List<String>) configs.get("bootstrap.servers")).containsAll(bootstrapServers));
-	}
-
-	public static class KafkaBinderConfigProperties {
-
-		@Bean
-		KafkaProperties kafkaProperties() {
-			return new KafkaProperties();
-		}
-
 	}
 }
