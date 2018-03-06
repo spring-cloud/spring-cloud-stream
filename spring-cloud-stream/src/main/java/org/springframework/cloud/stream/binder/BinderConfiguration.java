@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,13 @@ import java.util.Properties;
  * systems of the same type.
  *
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 public class BinderConfiguration {
 
 	private final String binderType;
 
-	private final Map<Object, Object> properties;
+	private final Map<String, Object> properties;
 
 	private final boolean inheritEnvironment;
 
@@ -45,7 +46,7 @@ public class BinderConfiguration {
 	 * @param defaultCandidate whether the binder should be considered as a candidate when
 	 * determining a default
 	 */
-	public BinderConfiguration(String binderType, Map<Object, Object> properties, boolean inheritEnvironment,
+	public BinderConfiguration(String binderType, Map<String, Object> properties, boolean inheritEnvironment,
 			boolean defaultCandidate) {
 		this.binderType = binderType;
 		this.properties = properties;
@@ -57,7 +58,7 @@ public class BinderConfiguration {
 		return binderType;
 	}
 
-	public Map<Object, Object> getProperties() {
+	public Map<String, Object> getProperties() {
 		return properties;
 	}
 
