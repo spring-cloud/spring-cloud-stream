@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.integration;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.MeterBinder;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -26,7 +27,9 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Sink;
@@ -44,8 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(
-		webEnvironment = SpringBootTest.WebEnvironment.NONE,
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
 		properties = "spring.cloud.stream.bindings.input.group=" + KafkaBinderActuatorTests.TEST_CONSUMER_GROUP)
 public class KafkaBinderActuatorTests {
 
@@ -81,6 +83,17 @@ public class KafkaBinderActuatorTests {
 				.tag("group", TEST_CONSUMER_GROUP)
 				.tag("topic", Sink.INPUT)
 				.timeGauge().value()).isGreaterThan(0);
+	}
+
+	@Test
+	public void testKafkaBinderMetricsWhenNoMicrometer() {
+		new ApplicationContextRunner()
+				.withUserConfiguration(KafkaMetricsTestConfig.class)
+				.withClassLoader(new FilteredClassLoader("io.micrometer.core"))
+				.run(context -> {
+					assertThat(context.getBeanNamesForType(MeterRegistry.class)).isEmpty();
+					assertThat(context.getBeanNamesForType(MeterBinder.class)).isEmpty();
+				});
 	}
 
 	@EnableBinding(Sink.class)

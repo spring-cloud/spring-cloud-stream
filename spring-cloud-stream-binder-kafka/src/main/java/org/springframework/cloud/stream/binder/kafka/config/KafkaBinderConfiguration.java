@@ -20,10 +20,10 @@ import java.io.IOException;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -41,7 +41,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.kafka.security.jaas.KafkaJaasLoginModuleInitializer;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
-import org.springframework.lang.Nullable;
 
 /**
  * @author David Turanski
@@ -52,14 +51,13 @@ import org.springframework.lang.Nullable;
  * @author Henryk Konsek
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@Import({ PropertyPlaceholderAutoConfiguration.class, KafkaBinderHealthIndicatorConfiguration.class})
+@Import({ PropertyPlaceholderAutoConfiguration.class, KafkaBinderHealthIndicatorConfiguration.class })
 @EnableConfigurationProperties({ KafkaExtendedBindingProperties.class })
 public class KafkaBinderConfiguration {
-
-	protected static final Log logger = LogFactory.getLog(KafkaBinderConfiguration.class);
 
 	@Autowired
 	private KafkaExtendedBindingProperties kafkaExtendedBindingProperties;
@@ -82,7 +80,8 @@ public class KafkaBinderConfiguration {
 
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
-														KafkaTopicProvisioner provisioningProvider) {
+			KafkaTopicProvisioner provisioningProvider) {
+
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
 				configurationProperties, provisioningProvider);
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
@@ -97,15 +96,29 @@ public class KafkaBinderConfiguration {
 	}
 
 	@Bean
-	public MeterBinder kafkaBinderMetrics(KafkaMessageChannelBinder kafkaMessageChannelBinder,
-										KafkaBinderConfigurationProperties configurationProperties,
-										@Nullable MeterRegistry meterRegistry) {
-		return new KafkaBinderMetrics(kafkaMessageChannelBinder, configurationProperties, null, meterRegistry);
-	}
-
-	@Bean
 	public KafkaJaasLoginModuleInitializer jaasInitializer() throws IOException {
 		return new KafkaJaasLoginModuleInitializer();
+	}
+
+	/**
+	 * A conditional configuration for the {@link KafkaBinderMetrics} bean when the
+	 * {@link MeterRegistry} class is in classpath, as well as a {@link MeterRegistry} bean is
+	 * present in the application context.
+	 */
+	@Configuration
+	@ConditionalOnClass(MeterRegistry.class)
+	@ConditionalOnBean(MeterRegistry.class)
+	protected class KafkaBinderMetricsConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean(KafkaBinderMetrics.class)
+		public MeterBinder kafkaBinderMetrics(KafkaMessageChannelBinder kafkaMessageChannelBinder,
+				KafkaBinderConfigurationProperties configurationProperties,
+				MeterRegistry meterRegistry) {
+
+			return new KafkaBinderMetrics(kafkaMessageChannelBinder, configurationProperties, null, meterRegistry);
+		}
+
 	}
 
 	public static class JaasConfigurationProperties {
@@ -114,4 +127,5 @@ public class KafkaBinderConfiguration {
 
 		private JaasLoginModuleConfiguration zookeeper;
 	}
+
 }
