@@ -25,7 +25,6 @@ import org.apache.commons.logging.Log;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
@@ -34,6 +33,7 @@ import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -75,7 +75,8 @@ import org.springframework.util.Assert;
  * @since 1.1
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
-		extends AbstractBinder<MessageChannel, C, P> implements PollableConsumerBinder<MessageHandler, C> {
+		extends AbstractBinder<MessageChannel, C, P>
+		implements PollableConsumerBinder<MessageHandler, C>, ApplicationEventPublisherAware {
 
 	private final EmbeddedHeadersChannelInterceptor embeddedHeadersChannelInterceptor =
 			new EmbeddedHeadersChannelInterceptor(this.logger);
@@ -93,7 +94,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private final String[] headersToEmbed;
 
-	@Autowired
 	private ApplicationEventPublisher applicationEventPublisher;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed,
@@ -111,6 +111,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			PP provisioningProvider) {
 
 		this(headersToEmbed, provisioningProvider);
+	}
+
+	@Override
+	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+		this.applicationEventPublisher = applicationEventPublisher;
+	}
+
+	protected ApplicationEventPublisher getApplicationEventPublisher() {
+		return this.applicationEventPublisher;
 	}
 
 	/**
