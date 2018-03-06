@@ -50,6 +50,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitManagementTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.AsyncConsumerStartedEvent;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
@@ -75,6 +76,7 @@ import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchang
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.spel.standard.SpelExpression;
@@ -162,6 +164,9 @@ public class RabbitBinderTests extends
 	@Test
 	public void testSendAndReceiveBad() throws Exception {
 		RabbitTestBinder binder = getBinder();
+		final AtomicReference<AsyncConsumerStartedEvent> event = new AtomicReference<>();
+		binder.getApplicationContext().addApplicationListener(
+				(ApplicationListener<AsyncConsumerStartedEvent>) e -> event.set(e));
 		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
 		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
 		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0", moduleOutputChannel,
@@ -180,6 +185,7 @@ public class RabbitBinderTests extends
 		});
 		moduleOutputChannel.send(message);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(event.get()).isNotNull();
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}

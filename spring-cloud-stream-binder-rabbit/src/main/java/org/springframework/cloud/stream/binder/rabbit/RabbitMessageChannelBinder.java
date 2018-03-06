@@ -105,7 +105,7 @@ public class RabbitMessageChannelBinder
 		extends AbstractMessageChannelBinder<ExtendedConsumerProperties<RabbitConsumerProperties>,
 		ExtendedProducerProperties<RabbitProducerProperties>, RabbitExchangeQueueProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, RabbitConsumerProperties, RabbitProducerProperties>,
-		DisposableBean {
+			DisposableBean {
 
 	private static final AmqpMessageHeaderErrorMessageStrategy errorMessageStrategy =
 			new AmqpMessageHeaderErrorMessageStrategy();
@@ -373,6 +373,12 @@ public class RabbitMessageChannelBinder
 		if (properties.getExtension().getFailedDeclarationRetryInterval() != null) {
 			listenerContainer.setFailedDeclarationRetryInterval(
 					properties.getExtension().getFailedDeclarationRetryInterval());
+		}
+		if (getApplicationEventPublisher() != null) {
+			listenerContainer.setApplicationEventPublisher(getApplicationEventPublisher());
+		}
+		else if (getApplicationContext() != null) {
+			listenerContainer.setApplicationEventPublisher(getApplicationContext());
 		}
 		listenerContainer.afterPropertiesSet();
 
