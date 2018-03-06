@@ -18,8 +18,8 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +31,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -113,19 +112,17 @@ public class KafkaBinderUnitTests {
 	}
 
 	@Test
-	@Ignore // SK GH-599
 	public void testOffsetResetWithManualAssignmentEarliest() throws Exception {
 		testOffsetResetWithGroupManagement(true, false);
 	}
 
 	@Test
-	@Ignore // SK GH-599
 	public void testOffsetResetWithGroupManualAssignmentLatest() throws Throwable {
 		testOffsetResetWithGroupManagement(false, false);
 	}
 
 	private void testOffsetResetWithGroupManagement(final boolean earliest, boolean groupManage) throws Exception {
-		final Collection<TopicPartition> partitions = new ArrayList<>();
+		final List<TopicPartition> partitions = new ArrayList<>();
 		partitions.add(new TopicPartition("foo", 0));
 		partitions.add(new TopicPartition("foo", 1));
 		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties();
@@ -141,7 +138,7 @@ public class KafkaBinderUnitTests {
 		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), anyBoolean(), any());
 		@SuppressWarnings("unchecked")
 		final Consumer<byte[], byte[]> consumer = mock(Consumer.class);
-		final CountDownLatch latch = new CountDownLatch(1);
+		final CountDownLatch latch = new CountDownLatch(2);
 		willAnswer(i -> {
 			try {
 				Thread.sleep(100);
@@ -149,18 +146,20 @@ public class KafkaBinderUnitTests {
 			catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
-			if (!groupManage) {
-				latch.countDown();
-			}
 			return new ConsumerRecords<>(Collections.emptyMap());
 		}).given(consumer).poll(anyLong());
 		willAnswer(i -> {
 			((org.apache.kafka.clients.consumer.ConsumerRebalanceListener) i.getArgument(1))
 					.onPartitionsAssigned(partitions);
 			latch.countDown();
+			latch.countDown();
 			return null;
 		}).given(consumer).subscribe(eq(Collections.singletonList("foo")),
 				any(org.apache.kafka.clients.consumer.ConsumerRebalanceListener.class));
+		willAnswer(i -> {
+			latch.countDown();
+			return null;
+		}).given(consumer).seek(any(), anyLong());
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties, provisioningProvider) {
 
 			@Override
@@ -211,11 +210,23 @@ public class KafkaBinderUnitTests {
 		consumerProperties.setInstanceCount(1);
 		binder.bindConsumer("foo", "bar", channel, consumerProperties);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
-		if (earliest) {
-			verify(consumer).seekToBeginning(partitions);
+		if (groupManage) {
+			if (earliest) {
+				verify(consumer).seekToBeginning(partitions);
+			}
+			else {
+				verify(consumer).seekToEnd(partitions);
+			}
 		}
 		else {
-			verify(consumer).seekToEnd(partitions);
+			if (earliest) {
+				verify(consumer).seek(partitions.get(0), 0L);
+				verify(consumer).seek(partitions.get(1), 0L);
+			}
+			else {
+				verify(consumer).seek(partitions.get(0), Long.MAX_VALUE);
+				verify(consumer).seek(partitions.get(1), Long.MAX_VALUE);
+			}
 		}
 	}
 

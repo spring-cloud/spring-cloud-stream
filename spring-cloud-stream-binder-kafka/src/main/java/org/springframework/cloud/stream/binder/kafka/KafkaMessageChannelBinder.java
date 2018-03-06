@@ -30,6 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -90,7 +91,6 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
-import org.springframework.kafka.support.TopicPartitionInitialOffset.SeekPosition;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
 import org.springframework.messaging.MessageChannel;
@@ -358,8 +358,7 @@ public class KafkaMessageChannelBinder extends
 		}
 		containerProperties.setIdleEventInterval(extendedConsumerProperties.getExtension().getIdleEventInterval());
 		int concurrency = Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
-		resetOffsets(extendedConsumerProperties, consumerFactory, groupManagement, topicPartitionInitialOffsets,
-				containerProperties);
+		resetOffsets(extendedConsumerProperties, consumerFactory, groupManagement, containerProperties);
 		@SuppressWarnings("rawtypes")
 		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
 				new ConcurrentMessageListenerContainer(consumerFactory, containerProperties) {
@@ -404,11 +403,12 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	/*
-	 * Reset the offsets if needed.
+	 * Reset the offsets if needed; may update the offsets in in the container's
+	 * topicPartitionInitialOffsets.
 	 */
-	private void resetOffsets(final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
+	private void resetOffsets(
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
 			final ConsumerFactory<?, ?> consumerFactory, boolean groupManagement,
-			final TopicPartitionInitialOffset[] topicPartitionInitialOffsets,
 			final ContainerProperties containerProperties) {
 
 		boolean resetOffsets = extendedConsumerProperties.getExtension().isResetOffsets();
@@ -446,8 +446,11 @@ public class KafkaMessageChannelBinder extends
 			});
 		}
 		else if (resetOffsets) {
-			Arrays.stream(topicPartitionInitialOffsets).map(tpio -> new TopicPartitionInitialOffset(tpio.topic(), tpio.partition(),
-					"earliest".equals(resetTo) ? SeekPosition.BEGINNING : SeekPosition.END));
+			Arrays.stream(containerProperties.getTopicPartitions())
+					.map(tpio -> new TopicPartitionInitialOffset(tpio.topic(), tpio.partition(),
+							// SK GH-599	 "earliest".equals(resetTo) ? SeekPosition.BEGINNING : SeekPosition.END))
+							"earliest".equals(resetTo) ? 0L : Long.MAX_VALUE))
+					.collect(Collectors.toList()).toArray(containerProperties.getTopicPartitions());
 		}
 	}
 
