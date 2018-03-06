@@ -1143,6 +1143,50 @@ spring:
                 host: <host2>
 ----
 
+=== Binding visualization and control
+Since version 2.0 Spring Cloud Stream supports visualization and control of the Bindings via Actuator endpoints.
+
+[NOTE]
+====
+Given that starting with version 2.0 _actuator_ and _web_ are optional, one must first add one of the web dependencies as well as the actuator dependency manually.
+
+[source,xml]
+----
+<dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+----
+or
+[source,xml]
+----
+<dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+----
+
+Actuator dependency can be added as follows:
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+----
+
+You must also enable actuator endpoints with the following property `--management.endpoints.web.exposure.include=*`.
+====
+Once the above prerequisites are satisfied you can visualize bindings by simply accessing the following URL `http://<host>:<port>/actuator/bindings`.
+You can also _stop, start, pause_ and _resume_ bindings by posting to the following URL 
+`curl -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/start/inOne` where 'inOne' is the name of the binding and 'start' is the 
+operation to be performed.
+
+[NOTE]
+==== 
+_pause_ and _resume_ are only effective if corresponding binder and its underlyig technology supports it. Currently only Kafka binders supports _pause_ and _resume_.
+====
+
 === Binder configuration properties
 
 The following properties are available when creating custom binder configurations.
