@@ -4,6 +4,104 @@ This section goes into more detail about how you can work with Spring Cloud Stre
 It covers topics such as creating and running stream applications.
 --
 
+== What's New in 2.0?
+Spring Cloud Stream introduces quite a number of new features, enhancements and changes. The following sections outline most notable ones. 
+
+=== New Features and Components
+
+==== Polling Consumer
+Introduction of _polled consumers_, where the application can control message processing rates. Please refer to the appropriate section for more details.
+You can also read this blog for more details https://spring.io/blog/2018/02/27/spring-cloud-stream-2-0-polled-consumers
+
+==== Micrometer support
+
+Metrics has been switched to use https://micrometer.io/[Micrometer]. `MeterRegistry` is also provided as a bean so custom application can autowire it to capture custom metrics.
+Please refer to the appropriate section for more details
+
+==== New Actuator Binding controls
+There are now new new Actuator binding controls to bothe visulaize as well as control Bindings lifecycle. By simply enabling actuator 
+endpoints (e.g., --management.endpoints.web.exposure.include=*) one can now visualize bindings by simply accessing the following URL `http://<host>:<port>/actuator/bindings`.
+One can also _stop, start, pause_ and _resume_ bindings by posting to the following URL 
+`curl -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/start/inOne` where 'inOne' is the name of the binding and 'start' is the 
+operation to be performed.
+NOTE: _pause_ and _resume_ are only effective if corresponding binder and its underlyig technology supports it. Currently only Kafka binders support _pause_ and _resume_.
+
+==== Configurable RetryTemplate
+Aside from providing properties to configure `RetryTemplate` we now allow you to provide your own effectively overriding the one provided by the framework. Simply configure 
+it as a `@Bean` in your application.
+
+=== Notable changes and enhancements 
+
+==== Both Actuator and Web dependencies are now optional
+
+This helps to slim down the footprint of the deployed application in the event neither of the functionality is required. 
+It also allows one to swicth between the reactive and conventional web paradigms by adding one of the following dependencies manually:
+[source,xml]
+----
+<dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+----
+or
+[source,xml]
+----
+<dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+----
+
+Actuator dependency can be added as follows:
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+----
+
+==== Content-type negotiation improvenents
+One of the core themes for 2.0 is improvements (both consistency and performance) around content-type negotiation and message conversion.
+The following summary outlines notable changes and improvements. Please refer to the appropriate section for more details as well as this blog
+https://spring.io/blog/2018/02/26/spring-cloud-stream-2-0-content-type-negotiation-and-transformation.
+
+* All message conversion is now handled *only* by `MessageConverters`.
+* Introduction of `@StreamMessageConverter` annotation to provide custom `MessageConverters`.
+* Introduction of the default _Content Type_ as `application/json` which needs to be taken into consideration when migrating 1.3
+application and/or operating in the mixed mode (i.e., 1.3 producer -> 2.0 consumer).
+* Messages with textual payloads and _contentType_ `text/...` or `.../json` are no longer converted to `Message<String>` for cases where argument type of the provided `MessageHandler` 
+can not be determnied (i.e., `public void handle(Message<?> message)` or `public void handle(Object payload)`). Further more, a strong argument type may not be enough 
+to properly convert messages, so `contentType` header is may be used as supplement by some `MessageConverters`.
+
+=== Notable Deprecations
+==== Java serialization (Java native and Kryo)
+* `JavaSerializationMessageConverter` and `KryoMessageConverter`. While these two converters remain for now, they will be moved out of the core packages and support in the future.
+The main reason for this deprecation is to signal the issue _type-based language-specific_ serialization couuld  cause in the distributed environments, where Producers and Consumers
+may not only depend on different JVM versions or have different versions of supporting libraries (i.e., Kryo), but to also draw the attention to the fact that Consumers and Producers 
+may and in a lot of cases are non-Java based.
+
+==== Deprecated classes and methods
+Following is a quick summary of notable deprecations. See corresponding javadocs fort more details.
+
+* `SharedChannelRegistry` in favor of `SharedBindingTargetRegistry`. 
+* `Bindings` - beans qualified by it are already uniquely identified by their type. For example, provided `Source`, `Processor` or custom bindings:
+[source,java]
+----
+public interface Foo {
+	String OUTPUT = "fooOutput";
+
+	@Output(Foo.OUTPUT)
+	MessageChannel output();
+}
+----
+* `HeaderMode.raw`. Use `none`, `headers` or `embeddedHeaders`
+* `ProducerProperties.partitionKeyExtractorClass` in favor of `partitionKeyExtractorName` and `ProducerProperties.partitionSelectorClass` in favor of `partitionSelectorName`.
+This is to ensure that both components are Spring configured/managed and referenced in Spring-friendly way.
+* `BinderAwareRouterBeanPostProcessor` - while the component exists it is no longer a Bean Post Processor and will be renamed in the future.
+* `BinderProperties.setEnvironment(Properties environment)` in favor of `BinderProperties.setEnvironment(Map<String, Object> environment)`.
+	
+
 == Introducing Spring Cloud Stream
 Spring Cloud Stream is a framework for building message-driven microservice applications.
 Spring Cloud Stream builds upon Spring Boot to create standalone, production-grade Spring applications, and uses Spring Integration to provide connectivity to message brokers.
