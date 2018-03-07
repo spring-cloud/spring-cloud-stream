@@ -39,29 +39,8 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureAfter(EndpointAutoConfiguration.class)
 public class BindingsEndpointAutoConfiguration {
 
-	@Bean
+	@Bean	
 	public BindingsEndpoint bindingsEndpoint(List<InputBindingLifecycle> inputBindings) {
 		return new BindingsEndpoint(inputBindings);
 	}
-	
-	@Bean
-	public BindingsEndpoint.StopEndpoint stopEndpoint(BindingsEndpoint bindingEndpoint) {
-		return bindingEndpoint.getStopEndpoint();
-	}
-	
-	@Bean
-	public BindingsEndpoint.PauseEndpoint pauseEndpoint(BindingsEndpoint bindingEndpoint) {
-		return bindingEndpoint.getPauseEndpoint();
-	}
-	
-	@Bean
-	public BindingsEndpoint.StartEndpoint startEndpoint(BindingsEndpoint bindingEndpoint) {
-		return bindingEndpoint.getStartEndpoint();
-	}
-	
-	@Bean
-	public BindingsEndpoint.ResumeEndpoint resumeEndpoint(BindingsEndpoint bindingEndpoint) {
-		return bindingEndpoint.getResumeEndpoint();
-	}
-	
 }

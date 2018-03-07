@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
+import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
@@ -39,19 +40,9 @@ import org.springframework.util.Assert;
  * @since 2.0
  *
  */
-@Endpoint(id = BindingsEndpoint.BASE_ENPOINT_ID)
+@Endpoint(id = "bindings")
 public class BindingsEndpoint {
 	
-	static final String BASE_ENPOINT_ID = "bindings";
-	
-	static final String START_ENPOINT_ID = BASE_ENPOINT_ID + "/start/{name}";
-	
-	static final String STOP_ENPOINT_ID = BASE_ENPOINT_ID + "/stop/{name}";
-	
-	static final String PAUSE_ENPOINT_ID = BASE_ENPOINT_ID + "/pause/{name}";
-	
-	static final String RESUME_ENPOINT_ID = BASE_ENPOINT_ID + "/resume/{name}";
-
 	private final List<InputBindingLifecycle> inputBindingLifecycles;
 	
 	private final ObjectMapper objectMapper;
@@ -62,25 +53,41 @@ public class BindingsEndpoint {
 		this.objectMapper = new ObjectMapper();
 	}
 	
+	@WriteOperation
+	public boolean changeState(@Selector String name, State state) {
+		Assert.notNull(name, "'name' must not be null");
+		Assert.notNull(name, "'state' must not be null");
+		Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
+		if (binding != null) {
+			switch (state) {
+				case STARTED:
+					binding.start();
+					return true;
+				case STOPPED:
+					binding.stop();
+					return true;
+				case PAUSED:
+					binding.pause();
+					return true;
+				case RESUMED:
+					binding.resume();
+					return true;
+				default:
+					break;
+			}
+		}
+		return false;
+	}
+	
 	@ReadOperation
-	public List<?> bindings() {
-		return this.objectMapper.convertValue(this.gatherInputBindings(), List.class);	
+	public List<?> queryStates() {
+		return objectMapper.convertValue(gatherInputBindings(), List.class);	
 	}
 	
-	public StopEndpoint getStopEndpoint() {
-		return new StopEndpoint();
-	}
-	
-	public StartEndpoint getStartEndpoint() {
-		return new StartEndpoint();
-	}
-	
-	public PauseEndpoint getPauseEndpoint() {
-		return new PauseEndpoint();
-	}
-	
-	public ResumeEndpoint getResumeEndpoint() {
-		return new ResumeEndpoint();
+	@ReadOperation
+	public Binding<?> queryState(@Selector String name) {
+		Assert.notNull(name, "'name' must not be null");
+		return this.locateBinding(name);	
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -101,52 +108,10 @@ public class BindingsEndpoint {
 			.orElse(null);
 	}
 	
-	@Endpoint(id = BindingsEndpoint.STOP_ENPOINT_ID)
-	public class StopEndpoint {	
-		@WriteOperation
-		public boolean stop(String name) {
-			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
-			if (binding != null) {
-				binding.stop();
-			}
-			return binding != null;
-		}
+	private enum State {
+		STARTED,
+		STOPPED, 
+		PAUSED,
+		RESUMED;
 	}
-	
-	@Endpoint(id = BindingsEndpoint.PAUSE_ENPOINT_ID)
-	public class PauseEndpoint {	
-		@WriteOperation
-		public boolean pause(String name) {
-			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
-			if (binding != null) {
-				binding.pause();
-			}
-			return binding != null;
-		}
-	}
-	
-	@Endpoint(id = BindingsEndpoint.START_ENPOINT_ID)
-	public class StartEndpoint {	
-		@WriteOperation
-		public boolean start(String name) {
-			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
-			if (binding != null) {
-				binding.start();
-			}
-			return binding != null;
-		}
-	}
-	
-	@Endpoint(id = BindingsEndpoint.RESUME_ENPOINT_ID)
-	public class ResumeEndpoint {	
-		@WriteOperation
-		public boolean resume(String name) {
-			Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
-			if (binding != null) {
-				binding.resume();
-			}
-			return binding != null;
-		}
-	}
-
 }
