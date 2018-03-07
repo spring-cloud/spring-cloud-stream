@@ -7,7 +7,7 @@ In addition, this guide also explains the Kafka Streams binding capabilities of 
 
 == Usage
 
-For using the Apache Kafka binder, you just need to add it to your Spring Cloud Stream application, using the following Maven coordinates:
+To use Apache Kafka binder all you need is to add `spring-cloud-stream-binder-kafka` as a dependency to your Spring Cloud Stream application. Below is a Maven example:
 
 [source,xml]
 ----

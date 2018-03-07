@@ -27,6 +27,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -115,6 +116,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the connection String
 	 * @deprecated connection to zookeeper is no longer necessary
 	 */
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	@Deprecated
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
@@ -138,6 +140,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public int getOffsetUpdateTimeWindow() {
 		return this.offsetUpdateTimeWindow;
 	}
@@ -148,6 +151,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public int getOffsetUpdateCount() {
 		return this.offsetUpdateCount;
 	}
@@ -158,6 +162,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public int getOffsetUpdateShutdownTimeout() {
 		return this.offsetUpdateShutdownTimeout;
 	}
@@ -168,6 +173,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated connection to zookeeper is no longer necessary
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "No longer necessary since 2.0")
 	public String[] getZkNodes() {
 		return this.zkNodes;
 	}
@@ -178,6 +184,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated connection to zookeeper is no longer necessary
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "No longer necessary since 2.0")
 	public void setZkNodes(String... zkNodes) {
 		this.zkNodes = zkNodes;
 	}
@@ -188,6 +195,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated connection to zookeeper is no longer necessary
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "No longer necessary since 2.0")
 	public void setDefaultZkPort(String defaultZkPort) {
 		this.defaultZkPort = defaultZkPort;
 	}
@@ -214,6 +222,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public void setOffsetUpdateTimeWindow(int offsetUpdateTimeWindow) {
 		this.offsetUpdateTimeWindow = offsetUpdateTimeWindow;
 	}
@@ -224,6 +233,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public void setOffsetUpdateCount(int offsetUpdateCount) {
 		this.offsetUpdateCount = offsetUpdateCount;
 	}
@@ -234,6 +244,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public void setOffsetUpdateShutdownTimeout(int offsetUpdateShutdownTimeout) {
 		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
 	}
@@ -244,6 +255,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated connection to zookeeper is no longer necessary
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "No longer necessary since 2.0")
 	public int getZkSessionTimeout() {
 		return this.zkSessionTimeout;
 	}
@@ -254,6 +266,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated connection to zookeeper is no longer necessary
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "No longer necessary since 2.0")
 	public void setZkSessionTimeout(int zkSessionTimeout) {
 		this.zkSessionTimeout = zkSessionTimeout;
 	}
@@ -264,6 +277,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated connection to zookeeper is no longer necessary
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "No longer necessary since 2.0")
 	public int getZkConnectionTimeout() {
 		return this.zkConnectionTimeout;
 	}
@@ -274,6 +288,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated connection to zookeeper is no longer necessary
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "No longer necessary since 2.0")
 	public void setZkConnectionTimeout(int zkConnectionTimeout) {
 		this.zkConnectionTimeout = zkConnectionTimeout;
 	}
@@ -302,6 +317,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public int getMaxWait() {
 		return this.maxWait;
 	}
@@ -312,6 +328,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public void setMaxWait(int maxWait) {
 		this.maxWait = maxWait;
 	}
@@ -342,6 +359,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public int getFetchSize() {
 		return this.fetchSize;
 	}
@@ -352,6 +370,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public void setFetchSize(int fetchSize) {
 		this.fetchSize = fetchSize;
 	}
@@ -378,6 +397,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public int getQueueSize() {
 		return this.queueSize;
 	}
@@ -388,6 +408,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
 	public void setQueueSize(int queueSize) {
 		this.queueSize = queueSize;
 	}
@@ -415,6 +436,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0, set properties such as this via 'configuration'")
 	public int getSocketBufferSize() {
 		return this.socketBufferSize;
 	}
@@ -426,6 +448,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @deprecated
 	 */
 	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.0, set properties such as this via 'configuration'")
 	public void setSocketBufferSize(int socketBufferSize) {
 		this.socketBufferSize = socketBufferSize;
 	}
