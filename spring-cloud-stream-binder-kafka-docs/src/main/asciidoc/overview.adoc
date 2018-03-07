@@ -38,6 +38,11 @@ The Apache Kafka Binder implementation maps each destination to an Apache Kafka 
 The consumer group maps directly to the same Apache Kafka concept.
 Partitioning also maps directly to Apache Kafka partitions as well.
 
+The binder currently uses the Apache Kafka `kafka-clients` 1.0.0 jar and is designed to be used with a broker at least that version.
+This client can communicate with older brokers (refer to the Kafka documentation), but certain features may not be available.
+For example, with versions earlier than 0.11.x.x, native headers are not supported.
+Also, 0.11.x.x does not support the `autoAddPartitions` property.
+
 == Configuration Options
 
 This section contains the configuration options used by the Apache Kafka binder.
@@ -55,40 +60,21 @@ spring.cloud.stream.kafka.binder.defaultBrokerPort::
 This sets the default port when no port is configured in the broker list.
 +
 Default: `9092`.
-spring.cloud.stream.kafka.binder.zkNodes::
-  A list of ZooKeeper nodes to which the Kafka binder can connect.
-+
-Default: `localhost`.
-spring.cloud.stream.kafka.binder.defaultZkPort::
-  `zkNodes` allows hosts specified with or without port information (e.g., `host1,host2:port2`).
-This sets the default port when no port is configured in the node list.
-+
-Default: `2181`.
 spring.cloud.stream.kafka.binder.configuration::
   Key/Value map of client properties (both producers and consumer) passed to all clients created by the binder.
-Due to the fact that these properties will be used by both producers and consumers, usage should be restricted to common properties, especially security settings.
+Due to the fact that these properties will be used by both producers and consumers, usage should be restricted to common properties, for example, security settings.
 +
 Default: Empty map.
 spring.cloud.stream.kafka.binder.headers::
   The list of custom headers that will be transported by the binder.
+Only required when communicating with older applications (<= 1.3.x) with a `kafka-clients` version < 0.11.0.0; newer versions support headers natively.
 +
 Default: empty.
 spring.cloud.stream.kafka.binder.healthTimeout::
   The time to wait to get partition information in seconds; default 60.
-  Health will report as down if this timer expires.
+Health will report as down if this timer expires.
 +
 Default: 10.
-spring.cloud.stream.kafka.binder.offsetUpdateTimeWindow::
-  The frequency, in milliseconds, with which offsets are saved.
-Ignored if `0`.
-+
-Default: `10000`.
-spring.cloud.stream.kafka.binder.offsetUpdateCount::
-  The frequency, in number of updates, which which consumed offsets are persisted.
-Ignored if `0`.
-Mutually exclusive with `offsetUpdateTimeWindow`.
-+
-Default: `0`.
 spring.cloud.stream.kafka.binder.requiredAcks::
   The number of required acks on the broker.
 +
@@ -101,6 +87,7 @@ It can be superseded by the `partitionCount` setting of the producer or by the v
 Default: `1`.
 spring.cloud.stream.kafka.binder.replicationFactor::
   The replication factor of auto-created topics if `autoCreateTopics` is active.
+Can be overriden on each binding.
 +
 Default: `1`.
 spring.cloud.stream.kafka.binder.autoCreateTopics::
@@ -116,10 +103,6 @@ If set to `false`, the binder will rely on the partition size of the topic being
 If the partition count of the target topic is smaller than the expected value, the binder will fail to start.
 +
 Default: `false`.
-spring.cloud.stream.kafka.binder.socketBufferSize::
-  Size (in bytes) of the socket buffer to be used by the Kafka consumers.
-+
-Default: `2097152`.
 spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix::
   Enable transactions in the binder; see `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/html/_reference.html#transactions[Transactions] in the `spring-kafka` documentation.
   When transactions are enabled, individual `producer` properties are ignored and all producers use the `spring.cloud.stream.kafka.binder.transaction.producer.*` properties.
@@ -136,6 +119,25 @@ Default: See individual producer properties.
 
 The following properties are available for Kafka consumers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
+
+admin.configuration::
+A `Map` of Kafka topic properties used when provisioning topics.
+e.g. `spring.cloud.stream.kafka.bindings.input.consumer.admin.configuration.message.format.version=0.9.0.0`
++
+Default: none.
+
+admin.replicas-assignment::
+A Map<Integer, List<Integer>> of replica assignments, with the key being the partition and value the assignments.
+Used when provisioning new topics.
+See `NewTopic` javadocs in the `kafka-clients` jar.
++
+Default: none.
+
+admin.replication-factor::
+The replication factor to use when provisioning topics; overrides the binder-wide setting.
+Ignored if `replicas-assignments` is present.
++
+Default: none (the binder-wide default of 1 is used).
 
 autoRebalanceEnabled::
 When `true`, topic partitions will be automatically rebalanced between the members of a consumer group.
@@ -159,14 +161,15 @@ If set to `true`, it will always auto-commit (if auto-commit is enabled).
 If not set (default), it effectively has the same value as `enableDlq`, auto-committing erroneous messages if they are sent to a DLQ, and not committing them otherwise.
 +
 Default: not set.
-recoveryInterval::
-  The interval between connection recovery attempts, in milliseconds.
+resetOffsets::
+Whether to reset offsets on the consumer to the value provided by startOffset.
 +
-Default: `5000`.
+Default: `false`.
 startOffset::
   The starting offset for new groups.
 Allowed values: `earliest`, `latest`.
 If the consumer group is set explicitly for the consumer 'binding' (via `spring.cloud.stream.bindings.<channelName>.group`), then 'startOffset' is set to `earliest`; otherwise it is set to `latest` for the `anonymous` consumer group.
+Also see `resetOffsets`.
 +
 Default: null (equivalent to `earliest`).
 enableDlq::
@@ -214,6 +217,25 @@ Default: `30000`
 The following properties are available for Kafka producers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
 
+admin.configuration::
+A `Map` of Kafka topic properties used when provisioning new topics.
+e.g. `spring.cloud.stream.kafka.bindings.input.consumer.admin.configuration.message.format.version=0.9.0.0`
++
+Default: none.
+
+admin.replicas-assignment::
+A Map<Integer, List<Integer>> of replica assignments, with the key being the partition and value the assignments.
+Used when provisioning new topics.
+See `NewTopic` javadocs in the `kafka-clients` jar.
++
+Default: none.
+
+admin.replication-factor::
+The replication factor to use when provisioning new topics; overrides the binder-wide setting.
+Ignored if `replicas-assignments` is present.
++
+Default: none (the binder-wide default of 1 is used).
+
 bufferSize::
   Upper limit, in bytes, of how much data the Kafka producer will attempt to batch before sending.
 +
@@ -229,15 +251,15 @@ batchTimeout::
 Default: `0`.
 messageKeyExpression::
  A SpEL expression evaluated against the outgoing message used to populate the key of the produced Kafka message.
-For example `headers.key` or `payload.myKey`.
+For example `headers['myKey']`; the payload cannot be used because by the time this expression is evaluated, the payload is already in the form of a `byte[]`.
 +
 Default: `none`.
 headerPatterns::
   A comma-delimited list of simple patterns to match spring-messaging headers to be mapped to the kafka `Headers` in the `ProducerRecord`.
-  Patterns can begin or end with the wildcard character (asterisk).
-  Patterns can be negated by prefixing with `!`; matching stops after the first match (positive or negative).
-  For example `!foo,fo*` will pass `fox` but not `foo`.
-  `id` and `timestamp` are never mapped.
+Patterns can begin or end with the wildcard character (asterisk).
+Patterns can be negated by prefixing with `!`; matching stops after the first match (positive or negative).
+For example `!foo,fo*` will pass `fox` but not `foo`.
+`id` and `timestamp` are never mapped.
 +
 Default: `*` (all headers - except the `id` and `timestamp`)
 configuration::
@@ -314,7 +336,6 @@ Here is an example of launching a Spring Cloud Stream application with SASL and 
 ----
  java -Djava.security.auth.login.config=/path.to/kafka_client_jaas.conf -jar log.jar \
    --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \
-   --spring.cloud.stream.kafka.binder.zkNodes=secure.zookeeper:2181 \
    --spring.cloud.stream.bindings.input.destination=stream.ticktock \
    --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT
 ----
@@ -343,7 +364,6 @@ Here is an example of launching a Spring Cloud Stream application with SASL and 
 [source]
 ----
  java --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \
-   --spring.cloud.stream.kafka.binder.zkNodes=secure.zookeeper:2181 \
    --spring.cloud.stream.bindings.input.destination=stream.ticktock \
    --spring.cloud.stream.kafka.binder.autoCreateTopics=false \
    --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT \
@@ -366,7 +386,7 @@ KafkaClient {
 };
 ----
 
-If the topics required already exist on the broker, or will be created by an administrator, autocreation can be turned off and only client JAAS properties need to be sent. As an alternative to setting `spring.cloud.stream.kafka.binder.autoCreateTopics` you can simply remove the broker dependency from the application. See <<exclude-admin-utils>> for details.
+If the topics required already exist on the broker, or will be created by an administrator, autocreation can be turned off and only client JAAS properties need to be sent.
 
 [NOTE]
 ====
@@ -420,103 +440,6 @@ public class Application {
 
 }
 ----
-
-
-==== Using the binder with Apache Kafka 0.10
-
-The default Kafka support in Spring Cloud Stream Kafka binder is for Kafka version 0.10.1.1. The binder also supports connecting to other 0.10 based versions and 0.9 clients.
-In order to do this, when you create the project that contains your application, include `spring-cloud-starter-stream-kafka` as you normally would do for the default binder.
-Then add these dependencies at the top of the `<dependencies>` section in the pom.xml file to override the dependencies.
-
-Here is an example for downgrading your application to 0.10.0.1. Since it is still on the 0.10 line, the default `spring-kafka` and `spring-integration-kafka` versions can be retained.
-
-[source,xml]
-----
-<dependency>
-  <groupId>org.apache.kafka</groupId>
-  <artifactId>kafka_2.11</artifactId>
-  <version>0.10.0.1</version>
-  <exclusions>
-    <exclusion>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-    </exclusion>
-  </exclusions>
-</dependency>
-<dependency>
-  <groupId>org.apache.kafka</groupId>
-  <artifactId>kafka-clients</artifactId>
-  <version>0.10.0.1</version>
-</dependency>
-----
-
-Here is another example of using 0.9.0.1 version.
-
-[source,xml]
-----
-<dependency>
-  <groupId>org.springframework.kafka</groupId>
-  <artifactId>spring-kafka</artifactId>
-  <version>1.0.5.RELEASE</version>
-</dependency>
-<dependency>
-  <groupId>org.springframework.integration</groupId>
-  <artifactId>spring-integration-kafka</artifactId>
-  <version>2.0.1.RELEASE</version>
-</dependency>
-<dependency>
-  <groupId>org.apache.kafka</groupId>
-  <artifactId>kafka_2.11</artifactId>
-  <version>0.9.0.1</version>
-  <exclusions>
-    <exclusion>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-    </exclusion>
-  </exclusions>
-</dependency>
-<dependency>
-  <groupId>org.apache.kafka</groupId>
-  <artifactId>kafka-clients</artifactId>
-  <version>0.9.0.1</version>
-</dependency>
-
-----
-
-[NOTE]
-====
-The versions above are provided only for the sake of the example.
-For best results, we recommend using the most recent 0.10-compatible versions of the projects.
-====
-
-[[exclude-admin-utils]]
-==== Excluding Kafka broker jar from the classpath of the binder based application
-
-The Apache Kafka Binder uses the administrative utilities which are part of the Apache Kafka server library to create and reconfigure topics.
-If the inclusion of the Apache Kafka server library and its dependencies is not necessary at runtime because the application will rely on the topics being configured administratively, the Kafka binder allows for Apache Kafka server dependency to be excluded from the application.
-
-If you use non default versions for Kafka dependencies as advised above, all you have to do is not to include the kafka broker dependency.
-If you use the default Kafka version, then ensure that you exclude the kafka broker jar from the `spring-cloud-starter-stream-kafka` dependency as following.
-
-[source,xml]
-----
-<dependency>
-  <groupId>org.springframework.cloud</groupId>
-  <artifactId>spring-cloud-starter-stream-kafka</artifactId>
-  <exclusions>
-    <exclusion>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.11</artifactId>
-    </exclusion>
-  </exclusions>
-</dependency>
-----
-
-If you exclude the Apache Kafka server dependency and the topic is not present on the server, then the Apache Kafka broker will create the topic if auto topic creation is enabled on the server.
-Please keep in mind that if you are relying on this, then the Kafka server will use the default number of partitions and replication factors.
-On the other hand, if auto topic creation is disabled on the server, then care must be taken before running the application to create the topic with the desired number of partitions.
-
-If you want to have full control over how partitions are allocated, then leave the default settings as they are, i.e. do not exclude the kafka broker jar and ensure that `spring.cloud.stream.kafka.binder.autoCreateTopics` is set to `true`, which is the default.
 
 [[kafka-error-channels]]
 == Error Channels

@@ -121,10 +121,22 @@ public class KafkaConsumerProperties {
 		this.autoCommitOnError = autoCommitOnError;
 	}
 
+	/**
+	 * No longer used.
+	 * @return the interval.
+	 * @deprecated
+	 */
+	@Deprecated
 	public int getRecoveryInterval() {
 		return this.recoveryInterval;
 	}
 
+	/**
+	 * No longer used.
+	 * @param recoveryInterval the interval.
+	 * @deprecated
+	 */
+	@Deprecated
 	public void setRecoveryInterval(int recoveryInterval) {
 		this.recoveryInterval = recoveryInterval;
 	}

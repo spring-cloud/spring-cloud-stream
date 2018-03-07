@@ -110,6 +110,12 @@ public class KafkaBinderConfigurationProperties {
 		return this.transaction;
 	}
 
+	/**
+	 * No longer used.
+	 * @return the connection String
+	 * @deprecated connection to zookeeper is no longer necessary
+	 */
+	@Deprecated
 	public String getZkConnectionString() {
 		return toConnectionString(this.zkNodes, this.defaultZkPort);
 	}
@@ -126,26 +132,62 @@ public class KafkaBinderConfigurationProperties {
 		return this.headers;
 	}
 
+	/**
+	 * No longer used.
+	 * @return the window.
+	 * @deprecated
+	 */
+	@Deprecated
 	public int getOffsetUpdateTimeWindow() {
 		return this.offsetUpdateTimeWindow;
 	}
 
+	/**
+	 * No longer used.
+	 * @return the count.
+	 * @deprecated
+	 */
+	@Deprecated
 	public int getOffsetUpdateCount() {
 		return this.offsetUpdateCount;
 	}
 
+	/**
+	 * No longer used.
+	 * @return the timeout.
+	 * @deprecated
+	 */
+	@Deprecated
 	public int getOffsetUpdateShutdownTimeout() {
 		return this.offsetUpdateShutdownTimeout;
 	}
 
+	/**
+	 * Zookeeper nodes.
+	 * @return the nodes.
+	 * @deprecated connection to zookeeper is no longer necessary
+	 */
+	@Deprecated
 	public String[] getZkNodes() {
 		return this.zkNodes;
 	}
 
+	/**
+	 * Zookeeper nodes.
+	 * @param zkNodes the nodes.
+	 * @deprecated connection to zookeeper is no longer necessary
+	 */
+	@Deprecated
 	public void setZkNodes(String... zkNodes) {
 		this.zkNodes = zkNodes;
 	}
 
+	/**
+	 * Zookeeper port.
+	 * @param defaultZkPort the port.
+	 * @deprecated connection to zookeeper is no longer necessary
+	 */
+	@Deprecated
 	public void setDefaultZkPort(String defaultZkPort) {
 		this.defaultZkPort = defaultZkPort;
 	}
@@ -166,30 +208,72 @@ public class KafkaBinderConfigurationProperties {
 		this.headers = headers;
 	}
 
+	/**
+	 * No longer used.
+	 * @param offsetUpdateTimeWindow the window.
+	 * @deprecated
+	 */
+	@Deprecated
 	public void setOffsetUpdateTimeWindow(int offsetUpdateTimeWindow) {
 		this.offsetUpdateTimeWindow = offsetUpdateTimeWindow;
 	}
 
+	/**
+	 * No longer used.
+	 * @param offsetUpdateCount the count.
+	 * @deprecated
+	 */
+	@Deprecated
 	public void setOffsetUpdateCount(int offsetUpdateCount) {
 		this.offsetUpdateCount = offsetUpdateCount;
 	}
 
+	/**
+	 * No longer used.
+	 * @param offsetUpdateShutdownTimeout the timeout.
+	 * @deprecated
+	 */
+	@Deprecated
 	public void setOffsetUpdateShutdownTimeout(int offsetUpdateShutdownTimeout) {
 		this.offsetUpdateShutdownTimeout = offsetUpdateShutdownTimeout;
 	}
 
+	/**
+	 * Zookeeper session timeout.
+	 * @return the timeout.
+	 * @deprecated connection to zookeeper is no longer necessary
+	 */
+	@Deprecated
 	public int getZkSessionTimeout() {
 		return this.zkSessionTimeout;
 	}
 
+	/**
+	 * Zookeeper session timeout.
+	 * @param zkSessionTimeout the timout
+	 * @deprecated connection to zookeeper is no longer necessary
+	 */
+	@Deprecated
 	public void setZkSessionTimeout(int zkSessionTimeout) {
 		this.zkSessionTimeout = zkSessionTimeout;
 	}
 
+	/**
+	 * Zookeeper connection timeout.
+	 * @return the timout.
+	 * @deprecated connection to zookeeper is no longer necessary
+	 */
+	@Deprecated
 	public int getZkConnectionTimeout() {
 		return this.zkConnectionTimeout;
 	}
 
+	/**
+	 * Zookeeper connection timeout.
+	 * @param zkConnectionTimeout the timeout.
+	 * @deprecated connection to zookeeper is no longer necessary
+	 */
+	@Deprecated
 	public void setZkConnectionTimeout(int zkConnectionTimeout) {
 		this.zkConnectionTimeout = zkConnectionTimeout;
 	}
@@ -212,10 +296,22 @@ public class KafkaBinderConfigurationProperties {
 		return StringUtils.arrayToCommaDelimitedString(fullyFormattedHosts);
 	}
 
+	/**
+	 * No longer used.
+	 * @return the wait.
+	 * @deprecated
+	 */
+	@Deprecated
 	public int getMaxWait() {
 		return this.maxWait;
 	}
 
+	/**
+	 * No longer user.
+	 * @param maxWait the wait.
+	 * @deprecated
+	 */
+	@Deprecated
 	public void setMaxWait(int maxWait) {
 		this.maxWait = maxWait;
 	}
@@ -240,10 +336,22 @@ public class KafkaBinderConfigurationProperties {
 		this.replicationFactor = replicationFactor;
 	}
 
+	/**
+	 * No longer used.
+	 * @return the size.
+	 * @deprecated
+	 */
+	@Deprecated
 	public int getFetchSize() {
 		return this.fetchSize;
 	}
 
+	/**
+	 * No longer used.
+	 * @param fetchSize the size.
+	 * @deprecated
+	 */
+	@Deprecated
 	public void setFetchSize(int fetchSize) {
 		this.fetchSize = fetchSize;
 	}
@@ -264,10 +372,22 @@ public class KafkaBinderConfigurationProperties {
 		this.healthTimeout = healthTimeout;
 	}
 
+	/**
+	 * No longer used.
+	 * @return the queue size.
+	 * @deprecated
+	 */
+	@Deprecated
 	public int getQueueSize() {
 		return this.queueSize;
 	}
 
+	/**
+	 * No longer used.
+	 * @param queueSize the queue size.
+	 * @deprecated
+	 */
+	@Deprecated
 	public void setQueueSize(int queueSize) {
 		this.queueSize = queueSize;
 	}
@@ -288,10 +408,24 @@ public class KafkaBinderConfigurationProperties {
 		this.autoAddPartitions = autoAddPartitions;
 	}
 
+	/**
+	 * No longer used; set properties such as this via {@link #getConfiguration()
+	 * configuration}.
+	 * @return the size.
+	 * @deprecated
+	 */
+	@Deprecated
 	public int getSocketBufferSize() {
 		return this.socketBufferSize;
 	}
 
+	/**
+	 * No longer used; set properties such as this via {@link #getConfiguration()
+	 * configuration}.
+	 * @param socketBufferSize the size.
+	 * @deprecated
+	 */
+	@Deprecated
 	public void setSocketBufferSize(int socketBufferSize) {
 		this.socketBufferSize = socketBufferSize;
 	}
