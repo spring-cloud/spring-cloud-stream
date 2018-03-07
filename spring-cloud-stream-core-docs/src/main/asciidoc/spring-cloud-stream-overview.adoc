@@ -20,10 +20,17 @@ Please refer to the appropriate section for more details
 
 ==== New Actuator Binding controls
 There are now new new Actuator binding controls to bothe visulaize as well as control Bindings lifecycle. By simply enabling actuator 
-endpoints (e.g., --management.endpoints.web.exposure.include=*) one can now visualize bindings by simply accessing the following URL `http://<host>:<port>/actuator/bindings`.
-One can also _stop, start, pause_ and _resume_ bindings by posting to the following URL 
-`curl -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/start/inOne` where 'inOne' is the name of the binding and 'start' is the 
-operation to be performed.
+endpoints (e.g., --management.endpoints.web.exposure.include=*) one can now visualize bindings by simply accessing the following URL:
+----
+http://<host>:<port>/actuator/bindings
+----
+
+One can also _stop, start, pause_ and _resume_ bindings by posting to the following URL:
+----
+curl -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/start/inOne
+----
+where 'inOne' is the name of the binding and 'start' is the operation to be performed.
+
 NOTE: _pause_ and _resume_ are only effective if corresponding binder and its underlyig technology supports it. Currently only Kafka binders support _pause_ and _resume_.
 
 ==== Configurable RetryTemplate
@@ -101,6 +108,108 @@ This is to ensure that both components are Spring configured/managed and referen
 * `BinderAwareRouterBeanPostProcessor` - while the component exists it is no longer a Bean Post Processor and will be renamed in the future.
 * `BinderProperties.setEnvironment(Properties environment)` in favor of `BinderProperties.setEnvironment(Map<String, Object> environment)`.
 	
+== Quick Start
+
+You can try Spring Cloud Stream in less then 5 min even before you jump into any details and the following _three-step guide_ will help.
+
+We'll create a simple Spring Cloud Stream application which receives messages coming from the messaging middleware of your choice (more on this later) and 
+logs them to the console. We'll call it _LoggingConsumer_. While not very practical it will certainly provide a good introduction to some of the main concepts 
+and abstractions, making it easier to digest the rest of this user guide.
+
+So let's get started. . .
+
+==== Step One - Create sample Application using Spring Initilaizer 
+Visit the https://start.spring.io[Spring Initializr]. Tis is where we'll generate our _LoggingConsumer_ application. 
+
+In _Dependencies_ start typing 'stream' and _Cloud Stream_ option should pop up. Select it. Now start typing either 'kafka' or 'rabbit'. Basically this is where you are choosing 
+what messaging midleware this application will be bound to. Choose the one you have already installed and/or feel more comfortable with installing/running.
+Also, as you can see from the Initilaizer screen there are few other options you can choose. For example, you can choose Gradle as your build tool instead of the default Maven.
+With the _Dependencies_ selected the only other thing you have to identify is the application name - _logging-consumer_.
+Your configuration screeen should now contain the following:
+	
+	Dependencies: Cloud Stream, RabbitMQ (or Kafka)
+	Group: com.example - default
+	Artifact: logging-consumer
+	Spring Boot Version: 2.0.0 (or above) - default
+	
+Click on _Generate Project_ button. This will donwload the zipped version of the generated project to your hard drive. Unzip it and you're ready for Step Two.
+
+==== Step Two - Import project into the IDE
+Here you simply import the project into your IDE of choice.
+Please keep in mind that dependening on the IDE you may need to follow a specific import procedures. For example depending on how the project was generated (Maven or Gradle)
+you may need to follow specific import procedure (e.g., in Eclipse/STS: `File -> Import -> Maven -> Existing Maven Project`).
+
+Ones imported the project must have no errors of any kind and `src/main/java` should also contain `com.example.loggingconsumer.LoggingConsumerApplication`. 
+
+Technically at this point you can just run the appication's main class since it's already a valid _Spring Boot_ application, but it does not do anything, so let's add some code.
+
+==== Step Three - Add message handler, build and run
+Modify the `com.example.loggingconsumer.LoggingConsumerApplication` to look as follows:
+
+[source, java]
+----
+@SpringBootApplication
+@EnableBinding(Sink.class)
+public class LoggingConsumerApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(LoggingConsumerApplication.class, args);
+	}
+	
+	@StreamListener(Sink.INPUT)
+	public void handle(Person person) {
+		System.out.println("Received: " + person);
+	}
+	
+	public static class Person {
+		private String name;
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public String toString() {
+			return this.name;
+		}
+	}
+}
+----
+
+As you can see from the above:
+
+* We've enabled `Sink` binding (input-no-output) via `@EnableBinding(Sink.class)`. This will signal to the framework to initiate binding to the messagig middleware where 
+it will auto-create the destination which will be bound to `Sink.INPUT` channel.
+* We've added handler method to receive incoming Message as type `Person`. What this means is that the framework will attempt to automatically convert incoming message to `Person` type.
+
+This is it, we now have a fully functional Spring Cloud Stream application. From here for simplicity we'll assume RabbitMQ was selected in step one.
+Assuming you have RabbitMQ installed and running, start the application by simply running its mian method. 
+
+You should see following output:
+
+	--- [ main] c.s.b.r.p.RabbitExchangeQueueProvisioner : declaring queue for inbound: input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg, bound to: input
+	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#2a3a299:0/SimpleConnection@66c83fc8. . .
+	. . .
+	--- [ main] o.s.i.a.i.AmqpInboundChannelAdapter      : started inbound.input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg
+	. . .
+	--- [ main] c.e.l.LoggingConsumerApplication         : Started LoggingConsumerApplication in 2.531 seconds (JVM running for 2.897)
+
+Go to RabbitMQ management console or any other RabbitMQ client and simply send message to `input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg` 
+(NOTE: the `anonymous.CbMIwdkJSBO1ZoPDOtHtCg` part represents the group name and is generated and will be different in your environment. For something more 
+predictable you can use explicit group name via `spring.cloud.stream.bindings.input.group=hello`).
+
+The contents of the message should be JSON representation of `Person` class, so let's send this:
+
+	{"name":"Turd Ferguson"}
+
+And in your console you should see:
+
+	Received: Turd Ferguson
+	
+You can also build/package your application into a boot jar (i.e., `./mvnw clean install`) and run the built JAR using `java -jar` command.
+
+That is all!
 
 == Introducing Spring Cloud Stream
 Spring Cloud Stream is a framework for building message-driven microservice applications.
@@ -263,7 +372,7 @@ You might want to use a synchronous consumer when you wish to control the rate a
 ==== Durability
 
 Consistent with the opinionated application model of Spring Cloud Stream, consumer group subscriptions are _durable_.
-That is, a binder implementation ensures that group subscriptions are persistent, and once at least one subscription for a group has been created, the group will receive messages, even if they are sent while all applications in the group are stopped.
+That is, a binder implementation ensures that group subscriptions are persistent, and ones at least one subscription for a group has been created, the group will receive messages, even if they are sent while all applications in the group are stopped.
 
 [NOTE]
 ====
@@ -1069,7 +1178,7 @@ public class SampleAggregateApplication {
 }
 ----
 
-Once the 'namespace' is set for the individual applications, the application properties with the `namespace` as prefix can be passed to the aggregate application using any supported property source (commandline, environment properties etc.).
+Ones the 'namespace' is set for the individual applications, the application properties with the `namespace` as prefix can be passed to the aggregate application using any supported property source (commandline, environment properties etc.).
 
 For instance, to override the default `fixedDelay` and `debug` properties of 'source' and 'sink' applications:
 
@@ -2201,7 +2310,7 @@ In the case of POJOs a schema will be inferred if the property `spring.cloud.str
 .Schema Writer Resolution Process
 image::schema_resolution.png[width=300,scaledwidth="75%",align="center"]
 
-Once a schema is obtained, the converter will then load its metadata (version) from the remote server.
+Ones a schema is obtained, the converter will then load its metadata (version) from the remote server.
 First it queries a local cache, and if not found it then submits the data to the server that will reply with versioning information.
 The converter will always cache the results to avoid the overhead of querying the Schema Server for every new message that needs to be serialized.
 
@@ -2213,7 +2322,7 @@ With the schema version information, the converter sets the `contentType` header
 ==== Schema Resolution Process (Deserialization)
 
 When reading messages that contain version information (i.e. a `contentType` header with a scheme like above), the converter will query the Schema server to fetch the *writer* schema of the message.
-Once it has found the correct schema of the incoming message, it then retrieves the reader schema and using Avro's schema resolution support reads it into the reader definition (setting defaults and missing properties).
+Ones it has found the correct schema of the incoming message, it then retrieves the reader schema and using Avro's schema resolution support reads it into the reader definition (setting defaults and missing properties).
 
 .Schema Reading Resolution Process
 image::schema_reading.png[width=300,scaledwidth="75%",align="center"]
@@ -2291,7 +2400,7 @@ public CustomPartitionKeyExtractorClass customPartitionKeyExtractor() {
 
 NOTE: In previous versions of Spring Cloud Stream you could specify the implementation of `org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy` as `spring.cloud.stream.bindings.output.producer.partitionKeyExtractorClass` property. Since version 2.0 this property is deprecated and support for it will be removed in a future version.
 
-Once the message key is calculated, the partition selection process will determine the target partition as a value between `0` and `partitionCount - 1`.
+Ones the message key is calculated, the partition selection process will determine the target partition as a value between `0` and `partitionCount - 1`.
 The default calculation, applicable in most scenarios, is based on the formula `key.hashCode() % partitionCount`.
 This can be customized on the binding, either by setting a SpEL expression to be evaluated against the 'key' (via the `partitionSelectorExpression` property) or by configuring an implementation of `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` as a bean (i.e., @Bean). And similarly to the `PartitionKeyExtractorStrategy` you can further filter it using `spring.cloud.stream.bindings.output.producer.partitionSelectorName` property in the event there are more then one bean of this type is available in the Application Context.
 
@@ -2396,7 +2505,7 @@ public class ExampleTest {
 In the example above, we are creating an application that has an input and an output channel, bound through the `Processor` interface.
 The bound interface is injected into the test so we can have access to both channels.
 We are sending a message on the input channel and we are using the `MessageCollector` provided by Spring Cloud Stream's test support to capture the message has been sent to the output channel as a result.
-Once we have received the message, we can validate that the component functions correctly.
+Ones we have received the message, we can validate that the component functions correctly.
 
 === Disabling the test binder autoconfiguration
 
@@ -2556,120 +2665,6 @@ The resulting JSON is:
 == Samples
 
 For Spring Cloud Stream samples, please refer to the https://github.com/spring-cloud/spring-cloud-stream-samples[spring-cloud-stream-samples] repository on GitHub.
-
-== Getting Started
-
-To get started with creating Spring Cloud Stream applications, visit the https://start.spring.io[Spring Initializr] and create a new Maven project named "GreetingSource".
-Select Spring Boot {supported-spring-boot-version} in the dropdown.
-In the _Search for dependencies_ text box type `Stream Rabbit` or `Stream Kafka` depending on what binder you want to use.
-
-Next, create a new class, `GreetingSource`, in the same package as the `GreetingSourceApplication` class.
-Give it the following code:
-
-[source,java]
-----
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.integration.annotation.InboundChannelAdapter;
-
-@EnableBinding(Source.class)
-public class GreetingSource {
-
-    @InboundChannelAdapter(Source.OUTPUT)
-    public String greet() {
-        return "hello world " + System.currentTimeMillis();
-    }
-}
-----
-
-The `@EnableBinding` annotation is what triggers the creation of Spring Integration infrastructure components.
-Specifically, it will create a Kafka connection factory, a Kafka outbound channel adapter, and the message channel defined inside the Source interface:
-
-[source,java]
-----
-public interface Source {
-
-  String OUTPUT = "output";
-
-  @Output(Source.OUTPUT)
-  MessageChannel output();
-
-}
-----
-
-The auto-configuration also creates a default poller, so that the `greet()` method will be invoked once per second.
-The standard Spring Integration `@InboundChannelAdapter` annotation sends a message to the source's output channel, using the return value as the payload of the message.
-
-To test-drive this setup, run a Kafka message broker.
-An easy way to do this is to use a Docker image:
-
-[source]
-----
-# On OS X
-$ docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=`docker-machine ip \`docker-machine active\`` --env ADVERTISED_PORT=9092 spotify/kafka
-
-# On Linux
-$ docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=localhost --env ADVERTISED_PORT=9092 spotify/kafka
-----
-
-Build the application:
-
-----
-./mvnw clean package
-----
-
-The consumer application is coded in a similar manner.
-Go back to Initializr and create another project, named LoggingSink.
-Then create a new class, `LoggingSink`, in the same package as the class `LoggingSinkApplication` and with the following code:
-
-[source,java]
-----
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.messaging.Sink;
-
-@EnableBinding(Sink.class)
-public class LoggingSink {
-
-    @StreamListener(Sink.INPUT)
-    public void log(String message) {
-        System.out.println(message);
-    }
-}
-----
-
-Build the application:
-
-----
-./mvnw clean package
-----
-
-To connect the GreetingSource application to the LoggingSink application, each application must share the same destination name.
-Starting up both applications as shown below, you will see the consumer application printing "hello world" and a timestamp to the console:
-
-[source]
-----
-cd GreetingSource
-java -jar target/GreetingSource-0.0.1-SNAPSHOT.jar --spring.cloud.stream.bindings.output.destination=mydest
-
-cd LoggingSink
-java -jar target/LoggingSink-0.0.1-SNAPSHOT.jar --server.port=8090 --spring.cloud.stream.bindings.input.destination=mydest
-----
-
-(The different server port prevents collisions of the HTTP port used to service the Spring Boot Actuator endpoints in the two applications.)
-
-The output of the LoggingSink application will look something like the following:
-
-[source]
-----
-[           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8090 (http)
-[           main] com.example.LoggingSinkApplication       : Started LoggingSinkApplication in 6.828 seconds (JVM running for 7.371)
-hello world 1458595076731
-hello world 1458595077732
-hello world 1458595078733
-hello world 1458595079734
-hello world 1458595080735
-----
 
 === Deploying Stream applications on CloudFoundry
 
