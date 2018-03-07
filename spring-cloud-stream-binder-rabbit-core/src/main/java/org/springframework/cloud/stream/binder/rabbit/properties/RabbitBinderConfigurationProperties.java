@@ -25,12 +25,24 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "spring.cloud.stream.rabbit.binder")
 public class RabbitBinderConfigurationProperties {
 
+	/**
+	 * Urls for management plugins; only needed for queue affinity.
+	 */
 	private String[] adminAddresses = new String[0];
 
+	/**
+	 * Cluster member node names; only needed for queue affinity.
+	 */
 	private String[] nodes = new String[0];
 
+	/**
+	 * Compression level for compressed bindings; see 'java.util.zip.Deflator'.
+	 */
 	private int compressionLevel;
 
+	/**
+	 * Prefix for connection names from this binder.
+	 */
 	private String connectionNamePrefix;
 
 	public String[] getAdminAddresses() {

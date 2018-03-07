@@ -27,6 +27,7 @@ import org.mockito.Mockito;
 
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.utils.test.TestUtils;
@@ -96,7 +97,7 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefault() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
-				.run("--server.port=0");
+				.run("--server.port=0", "--spring.cloud.stream.rabbit.binder.connection-name-prefix=foo");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
@@ -126,6 +127,11 @@ public class RabbitBinderModuleTests {
 		checkPf.send(new GenericMessage<>("foo".getBytes()));
 		binding.unbind();
 		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory, "connection.target")).isNotNull();
+
+		CachingConnectionFactory cf = this.context.getBean(CachingConnectionFactory.class);
+		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf, "connectionNameStrategy",
+				ConnectionNameStrategy.class);
+		assertThat(cns.obtainNewConnectionName(cf)).isEqualTo("foo#2");
 	}
 
 	@Test
@@ -166,6 +172,11 @@ public class RabbitBinderModuleTests {
 				.getPropertyValue("indicators");
 		assertThat(healthIndicators).containsKey("rabbit");
 		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo(Status.UP);
+
+		CachingConnectionFactory cf = this.context.getBean(CachingConnectionFactory.class);
+		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf, "connectionNameStrategy",
+				ConnectionNameStrategy.class);
+		assertThat(cns.obtainNewConnectionName(cf)).startsWith("rabbitConnectionFactory");
 	}
 
 	@Test

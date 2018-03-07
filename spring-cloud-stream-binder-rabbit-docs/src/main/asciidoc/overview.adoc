@@ -102,7 +102,7 @@ spring.cloud.stream.binder.connection-name-prefix::
   A connection name prefix used to name the connection(s) created by this binder.
 The name will be this prefix followed by `#n`, where n increments each time a new connection is opened.
 +
-Defauklt: none (Spring AMQP default).
+Default: none (Spring AMQP default).
 
 === RabbitMQ Consumer Properties
 
