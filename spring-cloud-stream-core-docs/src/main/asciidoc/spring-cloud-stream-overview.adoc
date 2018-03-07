@@ -19,19 +19,7 @@ Metrics has been switched to use https://micrometer.io/[Micrometer]. `MeterRegis
 Please refer to the appropriate section for more details
 
 ==== New Actuator Binding controls
-There are now new new Actuator binding controls to bothe visulaize as well as control Bindings lifecycle. By simply enabling actuator 
-endpoints (e.g., --management.endpoints.web.exposure.include=*) one can now visualize bindings by simply accessing the following URL:
-----
-http://<host>:<port>/actuator/bindings
-----
-
-One can also _stop, start, pause_ and _resume_ bindings by posting to the following URL:
-----
-curl -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/start/inOne
-----
-where 'inOne' is the name of the binding and 'start' is the operation to be performed.
-
-NOTE: _pause_ and _resume_ are only effective if corresponding binder and its underlyig technology supports it. Currently only Kafka binders support _pause_ and _resume_.
+There are now new new Actuator binding controls to both visualize as well as control Bindings lifecycle. For more details please visit <<Binding visualization and control>>
 
 ==== Configurable RetryTemplate
 Aside from providing properties to configure `RetryTemplate` we now allow you to provide your own effectively overriding the one provided by the framework. Simply configure 
@@ -1382,22 +1370,41 @@ Actuator dependency can be added as follows:
 </dependency>
 ----
 
-You must also enable actuator endpoints with the following property `--management.endpoints.web.exposure.include=*`.
+You must also enable `bindings` actuator endpoints with the following property `--management.endpoints.web.exposure.include=bindings`.
 ====
-Once the above prerequisites are satisfied you can visualize bindings by simply accessing the following URL:
+Once the above prerequisites are satisfied you should see the following in the logs when application is started:
+
+	: Mapped "{[/actuator/bindings/{name}],methods=[POST]. . .
+	: Mapped "{[/actuator/bindings],methods=[GET]. . .
+	: Mapped "{[/actuator/bindings/{name}],methods=[GET]. . .
+
+To visualize current bindings simply access the following URL:
 ----
 http://<host>:<port>/actuator/bindings
 ----
 
-You can also _stop, start, pause_ and _resume_ bindings by posting to the following URL:
+or
+
 ----
-curl -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/start/inOne
+http://<host>:<port>/actuator/bindings/myBindingName
 ----
-where 'inOne' is the name of the binding and 'start' is the operation to be performed.
+
+...if you want to visualize a single binding named 'myBindingName'
+
+You can also _stop, start, pause_ and _resume_ individual binding by posting to the same URL while providing `state` argument as JSON. 
+
+For example,
+----
+curl -d '{"state":"STOPPED"}' -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/myBindingName
+curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/myBindingName
+curl -d '{"state":"PAUSED"}' -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/myBindingName
+curl -d '{"state":"RESUMED"}' -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/myBindingName
+----
 
 [NOTE]
 ==== 
-_pause_ and _resume_ are only effective if corresponding binder and its underlyig technology supports it. Currently only Kafka binder supports _pause_ and _resume_.
+_PAUSED_ and _RESUMED_ are only effective if corresponding binder and its underlyig technology supports it, otherwise you'll see the warning message in the logs. 
+Currently only Kafka binder supports _PAUSED_ and _RESUMED_ state.
 ====
 
 === Binder configuration properties
