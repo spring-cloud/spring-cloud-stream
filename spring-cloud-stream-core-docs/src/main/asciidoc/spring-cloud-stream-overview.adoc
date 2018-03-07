@@ -141,7 +141,7 @@ you may need to follow specific import procedure (e.g., in Eclipse/STS: `File ->
 
 Ones imported the project must have no errors of any kind and `src/main/java` should also contain `com.example.loggingconsumer.LoggingConsumerApplication`. 
 
-Technically at this point you can just run the appication's main class since it's already a valid _Spring Boot_ application, but it does not do anything, so let's add some code.
+Technically at this point you can just run the application's main class since it's already a valid _Spring Boot_ application, but it does not do anything, so let's add some code.
 
 ==== Step Three - Add message handler, build and run
 Modify the `com.example.loggingconsumer.LoggingConsumerApplication` to look as follows:
@@ -178,12 +178,12 @@ public class LoggingConsumerApplication {
 
 As you can see from the above:
 
-* We've enabled `Sink` binding (input-no-output) via `@EnableBinding(Sink.class)`. This will signal to the framework to initiate binding to the messagig middleware where 
+* We've enabled `Sink` binding (input-no-output) via `@EnableBinding(Sink.class)`. This will signal to the framework to initiate binding to the messaging middleware where 
 it will auto-create the destination which will be bound to `Sink.INPUT` channel.
 * We've added handler method to receive incoming Message as type `Person`. What this means is that the framework will attempt to automatically convert incoming message to `Person` type.
 
 This is it, we now have a fully functional Spring Cloud Stream application. From here for simplicity we'll assume RabbitMQ was selected in step one.
-Assuming you have RabbitMQ installed and running, start the application by simply running its mian method. 
+Assuming you have RabbitMQ installed and running, start the application by simply running its `main` method. 
 
 You should see following output:
 
