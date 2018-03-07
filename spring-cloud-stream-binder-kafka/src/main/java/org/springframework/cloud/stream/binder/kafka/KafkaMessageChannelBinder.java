@@ -371,8 +371,14 @@ public class KafkaMessageChannelBinder extends
 		};
 		messageListenerContainer.setConcurrency(concurrency);
 		// these won't be needed if the container is made a bean
-		messageListenerContainer.setApplicationEventPublisher(getApplicationContext());
+		if (getApplicationEventPublisher() != null) {
+			messageListenerContainer.setApplicationEventPublisher(getApplicationEventPublisher());
+		}
+		else if (getApplicationContext() != null) {
+			messageListenerContainer.setApplicationEventPublisher(getApplicationContext());
+		}
 		messageListenerContainer.setBeanName(destination.getName() + ".container");
+		// end of these won't be needed...
 		if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
 			messageListenerContainer.getContainerProperties()
 					.setAckMode(AbstractMessageListenerContainer.AckMode.MANUAL);
