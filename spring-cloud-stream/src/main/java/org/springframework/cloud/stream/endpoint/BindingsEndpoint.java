@@ -54,29 +54,26 @@ public class BindingsEndpoint {
 	}
 	
 	@WriteOperation
-	public boolean changeState(@Selector String name, State state) {
-		Assert.notNull(name, "'name' must not be null");
-		Assert.notNull(name, "'state' must not be null");
+	public void changeState(@Selector String name, State state) {
 		Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
 		if (binding != null) {
 			switch (state) {
 				case STARTED:
 					binding.start();
-					return true;
+					break;
 				case STOPPED:
 					binding.stop();
-					return true;
+					break;
 				case PAUSED:
 					binding.pause();
-					return true;
+					break;
 				case RESUMED:
 					binding.resume();
-					return true;
+					break;
 				default:
 					break;
 			}
 		}
-		return false;
 	}
 	
 	@ReadOperation
