@@ -69,6 +69,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  * @author Simon Flandergan
+ * @author Oleg Zhurakousky
  */
 public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<KafkaConsumerProperties>,
 		ExtendedProducerProperties<KafkaProducerProperties>>, InitializingBean {
@@ -128,23 +129,22 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		KafkaTopicUtils.validateTopicName(name);
 		try (AdminClient adminClient = AdminClient.create(this.adminClientProperties)) {
 			createTopic(adminClient, name, properties.getPartitionCount(), false, properties.getExtension().getAdmin());
+			int partitions = 0;
 			if (this.configurationProperties.isAutoCreateTopics()) {
 				DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(name));
 				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult.all();
 
+				Map<String, TopicDescription> topicDescriptions = null;
 				try {
-					Map<String, TopicDescription> topicDescriptions = all.get(this.operationTimeout, TimeUnit.SECONDS);
-					TopicDescription topicDescription = topicDescriptions.get(name);
-					int partitions = topicDescription.partitions().size();
-					return new KafkaProducerDestination(name, partitions);
+					topicDescriptions = all.get(this.operationTimeout, TimeUnit.SECONDS);
 				}
 				catch (Exception e) {
 					throw new ProvisioningException("Problems encountered with partitions finding", e);
 				}
+				TopicDescription topicDescription = topicDescriptions.get(name);
+				partitions = topicDescription.partitions().size();
 			}
-			else {
-				return new KafkaProducerDestination(name);
-			}
+			return new KafkaProducerDestination(name, partitions);
 		}
 	}
 
@@ -160,6 +160,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			throw new IllegalArgumentException("Instance count cannot be zero");
 		}
 		int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
+		ConsumerDestination consumerDestination = new KafkaConsumerDestination(name);
 		try (AdminClient adminClient = createAdminClient()) {
 			createTopic(adminClient, name, partitionCount, properties.getExtension().isAutoRebalanceEnabled(),
 					properties.getExtension().getAdmin());
@@ -170,19 +171,17 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 					Map<String, TopicDescription> topicDescriptions = all.get(operationTimeout, TimeUnit.SECONDS);
 					TopicDescription topicDescription = topicDescriptions.get(name);
 					int partitions = topicDescription.partitions().size();
-					ConsumerDestination dlqTopic = createDlqIfNeedBe(adminClient, name, group, properties, anonymous,
-							partitions);
-					if (dlqTopic != null) {
-						return dlqTopic;
+					consumerDestination = createDlqIfNeedBe(adminClient, name, group, properties, anonymous, partitions);
+					if (consumerDestination == null) {
+						consumerDestination = new KafkaConsumerDestination(name, partitions);
 					}
-					return new KafkaConsumerDestination(name, partitions);
 				}
 				catch (Exception e) {
 					throw new ProvisioningException("provisioning exception", e);
 				}
 			}
 		}
-		return new KafkaConsumerDestination(name);
+		return consumerDestination;
 	}
 
 	AdminClient createAdminClient() {
@@ -399,10 +398,6 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 
 		private final int partitions;
 
-		KafkaProducerDestination(String destinationName) {
-			this(destinationName, 0);
-		}
-
 		KafkaProducerDestination(String destinationName, Integer partitions) {
 			this.producerDestinationName = destinationName;
 			this.partitions = partitions;
@@ -452,10 +447,6 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		@Override
 		public String getName() {
 			return this.consumerDestinationName;
-		}
-
-		public String getDlqName() {
-			return dlqName;
 		}
 
 		@Override
