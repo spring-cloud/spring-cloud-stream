@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.rabbit;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -993,14 +992,6 @@ public class RabbitBinderTests extends
 
 	@Test
 	public void testAutoBindDLQwithRepublish() throws Exception {
-		// pre-declare the queue with dead-lettering, users can also use a policy
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
-		Map<String, Object> args = new HashMap<String, Object>();
-		args.put("x-dead-letter-exchange", TEST_PREFIX + "DLX");
-		args.put("x-dead-letter-routing-key", TEST_PREFIX + "dlqpubtest.default");
-		Queue queue = new Queue(TEST_PREFIX + "dlqpubtest.default", true, false, false, args);
-		admin.declareQueue(queue);
-
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.getExtension().setPrefix(TEST_PREFIX);

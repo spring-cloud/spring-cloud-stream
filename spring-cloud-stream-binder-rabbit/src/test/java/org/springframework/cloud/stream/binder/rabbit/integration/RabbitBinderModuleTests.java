@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.rabbit.integration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.After;
 import org.junit.ClassRule;
@@ -87,10 +88,8 @@ public class RabbitBinderModuleTests {
 			context = null;
 		}
 		RabbitAdmin admin = new RabbitAdmin(rabbitTestSupport.getResource());
-		admin.deleteQueue("binder.input.default");
-		admin.deleteQueue("binder.output.default");
-		admin.deleteExchange("binder.input");
-		admin.deleteExchange("binder.output");
+		admin.deleteExchange("input");
+		admin.deleteExchange("output");
 	}
 
 	@Test
@@ -132,6 +131,7 @@ public class RabbitBinderModuleTests {
 		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf, "connectionNameStrategy",
 				ConnectionNameStrategy.class);
 		assertThat(cns.obtainNewConnectionName(cf)).isEqualTo("foo#2");
+		new RabbitAdmin(rabbitTestSupport.getResource()).deleteExchange("checkPF");
 	}
 
 	@Test
@@ -240,7 +240,8 @@ public class RabbitBinderModuleTests {
 				.getPropertyValue("indicators");
 		assertThat(healthIndicators).containsKey("custom");
 		assertThat(healthIndicators.get("custom").health().getStatus()).isEqualTo(Status.UP);
-		Binding<MessageChannel> binding = binder.bindProducer("foo", new DirectChannel(),
+		String name = UUID.randomUUID().toString();
+		Binding<MessageChannel> binding = binder.bindProducer(name, new DirectChannel(),
 				new ExtendedProducerProperties<>(new RabbitProducerProperties()));
 		RetryTemplate template = TestUtils.getPropertyValue(binding, "lifecycle.amqpTemplate.retryTemplate",
 				RetryTemplate.class);
@@ -253,6 +254,7 @@ public class RabbitBinderModuleTests {
 		assertThat(backOff.getMultiplier()).isEqualTo(1.1);
 		assertThat(backOff.getMaxInterval()).isEqualTo(3000L);
 		binding.unbind();
+		new RabbitAdmin(rabbitTestSupport.getResource()).deleteExchange(name);
 		context.close();
 	}
 
