@@ -1920,7 +1920,7 @@ public class SchemaRegistryServerApplication {
 
 The Schema Registry Server API consists of the following operations:
 
-===== `POST /`
+`POST /`
 
 Register a new schema.
 
@@ -1938,7 +1938,7 @@ Response is a schema object in JSON format, with the following fields:
 *   `version` the schema version;
 *   `definition` the schema definition.
 
-===== `GET /{subject}/{format}/{version}`
+`GET /{subject}/{format}/{version}`
 
 Retrieve an existing schema by its subject, format and version.
 
@@ -1950,7 +1950,7 @@ Response is a schema object in JSON format, with the following fields:
 *   `version` the schema version;
 *   `definition` the schema definition.
 
-===== `GET /{subject}/{format}`
+`GET /{subject}/{format}`
 
 Retrieve a list of existing schema by its subject and format.
 
@@ -1962,7 +1962,7 @@ Response is a list of schemas with each schema object in JSON format, with the f
 *   `version` the schema version;
 *   `definition` the schema definition.
 
-===== `GET /schemas/{id}`
+`GET /schemas/{id}`
 
 Retrieve an existing schema by its id.
 
@@ -1974,15 +1974,15 @@ Response is a schema object in JSON format, with the following fields:
 *   `version` the schema version;
 *   `definition` the schema definition.
 
-===== `DELETE /{subject}/{format}/{version}`
+`DELETE /{subject}/{format}/{version}`
 
 Delete an existing schema by its subject, format and version.
 
-===== `DELETE /schemas/{id}`
+`DELETE /schemas/{id}`
 
 Delete an existing schema by its id.
 
-===== `DELETE /{subject}`
+`DELETE /{subject}`
 
 Delete existing schemas by their subject.
 
