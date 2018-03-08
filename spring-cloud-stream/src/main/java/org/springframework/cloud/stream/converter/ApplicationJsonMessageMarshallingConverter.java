@@ -35,7 +35,8 @@ import org.springframework.messaging.converter.MessageConversionException;
 
 /**
  * Variation of {@link MappingJackson2MessageConverter} to support marshalling and 
- * unmarshalling of Messages's payload from 'byte[]' to and instance of a 'targetClass' and vice versa.
+ * unmarshalling of Messages's payload from 'String' or 'byte[]' to an instance of a 'targetClass' 
+ * and and back to 'byte[]'
  * 
  * 
  * @author Oleg Zhurakousky

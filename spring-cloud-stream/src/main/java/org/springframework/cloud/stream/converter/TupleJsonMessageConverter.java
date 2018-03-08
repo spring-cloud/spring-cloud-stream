@@ -37,7 +37,10 @@ import org.springframework.util.MimeTypeUtils;
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
+ * 
+ * @deprecated as of 2.0. please use 'application/json' content type
  */
+@Deprecated
 public class TupleJsonMessageConverter extends AbstractMessageConverter {
 
 	private final ObjectMapper objectMapper;
