@@ -33,20 +33,21 @@ A simplified diagram of how the RabbitMQ binder operates can be seen below.
 .RabbitMQ Binder
 image::rabbit-binder.png[width=300,scaledwidth="50%"]
 
-The RabbitMQ Binder implementation maps each destination to a `TopicExchange`.
+The RabbitMQ Binder implementation maps each destination to a `TopicExchange` (by default).
 For each consumer group, a `Queue` will be bound to that `TopicExchange`.
 Each consumer instance have a corresponding RabbitMQ `Consumer` instance for its group's `Queue`.
 For partitioned producers/consumers the queues are suffixed with the partition index and use the partition index as routing key.
+For anonymous consumers (no `group` property) an auto-delete queue is used, with a randomized unique name.
 
-Using the `autoBindDlq` option, you can optionally configure the binder to create and configure dead-letter queues (DLQs) (and a dead-letter exchange `DLX`).
-The dead letter queue has the name of the destination, appended with `.dlq`.
-If retry is enabled (`maxAttempts > 1`) failed messages will be delivered to the DLQ.
+Using the optional `autoBindDlq` option, you can configure the binder to create and configure dead-letter queues (DLQs) (and a dead-letter exchange `DLX` as well as routing infrastructure).
+By default, the dead letter queue has the name of the destination, appended with `.dlq`.
+If retry is enabled (`maxAttempts > 1`) failed messages will be delivered to the DLQ after retries are exhausted.
 If retry is disabled (`maxAttempts = 1`), you should set `requeueRejected` to `false` (default) so that a failed message will be routed to the DLQ, instead of being requeued.
 In addition, `republishToDlq` causes the binder to publish a failed message to the DLQ (instead of rejecting it); this enables additional information to be added to the message in headers, such as the stack trace in the `x-exception-stacktrace` header.
 This option does not need retry enabled; you can republish a failed message after just one attempt.
 Starting with _version 1.2_, you can configure the delivery mode of republished messages; see property `republishDeliveryMode`.
 
-IMPORTANT: Setting `requeueRejected` to `true` will cause the message to be requeued and redelivered continually, which is likely not what you want unless the failure issue is transient.
+IMPORTANT: Setting `requeueRejected` to `true` (with `republishToDlq=false` ) will cause the message to be requeued and redelivered continually, which is likely not what you want unless the reason for the failure is transient.
 In general, it's better to enable retry within the binder by setting `maxAttempts` to greater than one, or set `republishToDlq` to `true`.
 
 See <<rabbit-binder-properties>> for more information about these properties.
@@ -57,9 +58,10 @@ Some options are described in <<rabbit-dlq-processing>>.
 [NOTE]
 ====
 When *multiple* RabbitMQ binders are used in a Spring Cloud Stream application, it is important to disable 'RabbitAutoConfiguration' to avoid the same configuration from `RabbitAutoConfiguration` being applied to the two binders.
+Exclude the class using the `@SpringBootApplication` annotation.
 ====
 
-Starting with _version 1.3_, the `RabbitMessageChannelBinder` creates an internal `ConnectionFactory` copy for the non-transactional producers to avoid dead locks on consumers when shared, cached connections are blocked because of https://www.rabbitmq.com/memory.html[Memory Alarm] on Broker.
+Starting with _version 2.0_, the `RabbitMessageChannelBinder` sets the `RabbitTemplate.userPublisherConnection` property to true so that the non-transactional producers will avoid dead locks on consumers which can happen if cached connections are blocked because of https://www.rabbitmq.com/memory.html[Memory Alarm] on Broker.
 
 == Configuration Options
 
@@ -72,7 +74,7 @@ please refer to the https://github.com/spring-cloud/spring-cloud-stream/blob/mas
 === RabbitMQ Binder Properties
 
 By default, the RabbitMQ binder uses Spring Boot's `ConnectionFactory`, and it therefore supports all Spring Boot configuration options for RabbitMQ.
-(For reference, consult the http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties[Spring Boot documentation].)
+(For reference, consult the http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties[Spring Boot documentation]).
 RabbitMQ configuration options use the `spring.rabbitmq` prefix.
 
 In addition to Spring Boot options, the RabbitMQ binder supports the following properties:
@@ -236,12 +238,12 @@ Default: `no limit`
 maxPriority::
   maximum priority of messages in the queue (0-255)
 +
-Default:: `none`
+Default: `none`
 missingQueuesFatal::
   If the queue cannot be found, treat the condition as fatal and stop the listener container.
   Defaults to `false` so that the container keeps trying to consume from the queue, for example when using a cluster and the node hosting a non HA queue is down.
 +
-Default:: `false`
+Default: `false`
 prefetch::
   Prefetch count.
 +
@@ -254,7 +256,7 @@ queueDeclarationRetries::
   The number of times to retry consuming from a queue if it is missing.
   Only relevant if `missingQueuesFatal` is `true`; otherwise the container keeps retrying indefinitely.
 +
-Default:: `3`
+Default: `3`
 queueNameGroupOnly::
   When true, consume from a queue with a name equal to the `group`; otherwise the queue name is `destination.group`.
   This is useful, for example, when using Spring Cloud Stream to consume from an existing RabbitMQ queue.
@@ -302,6 +304,8 @@ autoBindDlq::
 Default: `false`.
 batchingEnabled::
   Whether to enable message batching by producers.
+Messages are batched into one message according to the following properties.
+Refer to https://docs.spring.io/spring-amqp//reference/html/_reference.html#template-batching[Batching] for more information.
 +
 Default: `false`.
 batchSize::
@@ -309,8 +313,12 @@ batchSize::
 +
 Default: `100`.
 batchBufferLimit::
+  The maximum buffer size when batching is enabled.
++
   Default: `10000`.
 batchTimeout::
+  The batch timeout when batching is enabled.
++
   Default: `5000`.
 bindingRoutingKey::
   The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
@@ -442,7 +450,7 @@ maxPriority::
   maximum priority of messages in the queue (0-255)
   Only applies if `requiredGroups` are provided and then only to those groups.
 +
-Default:: `none`
+Default: `none`
 prefix::
   A prefix to be added to the name of the `destination` exchange.
 +
@@ -486,9 +494,9 @@ Example configuration to enable this feature:
 
 * Set `autoBindDlq` to `true` - the binder will create a DLQ; you can optionally specify a name in `deadLetterQueueName`
 * Set `dlqTtl` to the back off time you want to wait between redeliveries
-* Set the `dlqDeadLetterExchange` to the default exchange - expired messages from the DLQ will be routed to the original queue since the default `deadLetterRoutingKey` is the queue name (`destination.group`)
+* Set the `dlqDeadLetterExchange` to the default exchange - expired messages from the DLQ will be routed to the original queue since the default `deadLetterRoutingKey` is the queue name (`destination.group`) - setting to the default exchange is achieved by setting the property with no value, as is shown in the example below
 
-To force a message to be dead-lettered, either throw an `AmqpRejectAndDontRequeueException`, or set `requeueRejected` to `true` and throw any exception.
+To force a message to be dead-lettered, either throw an `AmqpRejectAndDontRequeueException`, or set `requeueRejected` to `true` (default) and throw any exception.
 
 The loop will continue without end, which is fine for transient problems but you may want to give up after some number of attempts.
 Fortunately, RabbitMQ provides the `x-death` header which allows you to determine how many cycles have occurred.
