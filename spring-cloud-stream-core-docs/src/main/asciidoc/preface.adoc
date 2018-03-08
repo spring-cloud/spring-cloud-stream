@@ -1,0 +1,197 @@
+
+
+== Quick Start
+
+You can try Spring Cloud Stream in less then 5 min even before you jump into any details and the following _three-step guide_ will help.
+
+We'll create a simple Spring Cloud Stream application which receives messages coming from the messaging middleware of your choice (more on this later) and 
+logs received messages to the console. We'll call it _LoggingConsumer_. While not very practical it will certainly provide a good introduction to some of the main concepts 
+and abstractions, making it easier to digest the rest of this user guide.
+
+So let's get started. . .
+
+==== Step One - Create sample Application using Spring Initilaizer 
+Visit the https://start.spring.io[Spring Initializr]. This is where we'll generate our _LoggingConsumer_ application. 
+
+In the _Dependencies_ start typing 'stream' and _Cloud Stream_ option should pop up. Select it. Now start typing either 'kafka' or 'rabbit'. Basically this is where you are choosing 
+what messaging midleware this application will be bound to. Choose the one you have already installed and/or feel more comfortable with installing/running.
+Also, as you can see from the Initilaizer screen there are few other options you can choose. For example, you can choose Gradle as your build tool instead of the default Maven.
+With the _Dependencies_ selected the only other thing you have to identify is the application name - _logging-consumer_.
+Your configuration screeen should now contain the following:
+	
+	Dependencies: Cloud Stream, RabbitMQ (or Kafka)
+	Group: com.example - default
+	Artifact: logging-consumer
+	Spring Boot Version: 2.0.0 (or above) - default
+	
+Click on _Generate Project_ button. This will donwload the zipped version of the generated project to your hard drive. Unzip it and you're ready for Step Two.
+
+==== Step Two - Import project into the IDE
+Here you simply import the project into your IDE of choice.
+Please keep in mind that dependening on the IDE you may need to follow a specific import procedures. For example depending on how the project was generated (Maven or Gradle)
+you may need to follow specific import procedure (e.g., in Eclipse/STS: `File -> Import -> Maven -> Existing Maven Project`).
+
+Ones imported the project must have no errors of any kind and `src/main/java` should also contain `com.example.loggingconsumer.LoggingConsumerApplication`. 
+
+Technically at this point you can just run the application's main class since it's already a valid _Spring Boot_ application, but it does not do anything, so let's add some code.
+
+==== Step Three - Add message handler, build and run
+Modify the `com.example.loggingconsumer.LoggingConsumerApplication` to look as follows:
+
+[source, java]
+----
+@SpringBootApplication
+@EnableBinding(Sink.class)
+public class LoggingConsumerApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(LoggingConsumerApplication.class, args);
+	}
+	
+	@StreamListener(Sink.INPUT)
+	public void handle(Person person) {
+		System.out.println("Received: " + person);
+	}
+	
+	public static class Person {
+		private String name;
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public String toString() {
+			return this.name;
+		}
+	}
+}
+----
+
+As you can see from the above:
+
+* We've enabled `Sink` binding (input-no-output) via `@EnableBinding(Sink.class)`. This will signal to the framework to initiate binding to the messaging middleware where 
+it will auto-create the destination (i.e., queue, topic) which will be bound to `Sink.INPUT` channel.
+* We've added handler method to receive incoming Message as type `Person`. What this means is that here youcan already observe one of the core features of the framework where
+it will attempt to automatically convert incoming message's payload to type `Person`.
+
+This is it, we now have a fully functional Spring Cloud Stream application that does something. From here for simplicity we'll assume RabbitMQ was selected in _step one_.
+Assuming you have RabbitMQ installed and running, start the application by simply running its `main` method. 
+
+You should see following output:
+
+	--- [ main] c.s.b.r.p.RabbitExchangeQueueProvisioner : declaring queue for inbound: input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg, bound to: input
+	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#2a3a299:0/SimpleConnection@66c83fc8. . .
+	. . .
+	--- [ main] o.s.i.a.i.AmqpInboundChannelAdapter      : started inbound.input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg
+	. . .
+	--- [ main] c.e.l.LoggingConsumerApplication         : Started LoggingConsumerApplication in 2.531 seconds (JVM running for 2.897)
+
+Go to RabbitMQ management console or any other RabbitMQ client and simply send message to `input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg` 
+(NOTE: the `anonymous.CbMIwdkJSBO1ZoPDOtHtCg` part represents the group name and is generated and will be different in your environment. For something more 
+predictable you can use explicit group name via `spring.cloud.stream.bindings.input.group=hello`).
+
+The contents of the message should be JSON representation of `Person` class, so let's send this:
+
+	{"name":"Turd Ferguson"}
+
+And in your console you should see:
+
+	Received: Turd Ferguson
+	
+You can also build/package your application into a boot jar (i.e., `./mvnw clean install`) and run the built JAR using `java -jar` command.
+
+That is all!
+
+== What's New in 2.0?
+Spring Cloud Stream introduces quite a number of new features, enhancements and changes. The following sections outline most notable ones. 
+
+=== New Features and Components
+
+==== Polling Consumer
+Introduction of _polled consumers_, where the application can control message processing rates. Please refer to the appropriate section for more details.
+You can also read this blog for more details https://spring.io/blog/2018/02/27/spring-cloud-stream-2-0-polled-consumers
+
+==== Micrometer support
+
+Metrics has been switched to use https://micrometer.io/[Micrometer]. `MeterRegistry` is also provided as a bean so custom application can autowire it to capture custom metrics.
+Please refer to the appropriate section for more details
+
+==== New Actuator Binding controls
+There are now new new Actuator binding controls to both visualize as well as control Bindings lifecycle. For more details please visit <<Binding visualization and control>>
+
+==== Configurable RetryTemplate
+Aside from providing properties to configure `RetryTemplate` we now allow you to provide your own effectively overriding the one provided by the framework. Simply configure 
+it as a `@Bean` in your application.
+
+=== Notable changes and enhancements 
+
+==== Both Actuator and Web dependencies are now optional
+
+This helps to slim down the footprint of the deployed application in the event neither of the functionality is required. 
+It also allows one to swicth between the reactive and conventional web paradigms by adding one of the following dependencies manually:
+[source,xml]
+----
+<dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+----
+or
+[source,xml]
+----
+<dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+----
+
+Actuator dependency can be added as follows:
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+----
+
+==== Content-type negotiation improvenents
+One of the core themes for 2.0 is improvements (both consistency and performance) around content-type negotiation and message conversion.
+The following summary outlines notable changes and improvements. Please refer to the appropriate section for more details as well as this blog
+https://spring.io/blog/2018/02/26/spring-cloud-stream-2-0-content-type-negotiation-and-transformation.
+
+* All message conversion is now handled *only* by `MessageConverters`.
+* Introduction of `@StreamMessageConverter` annotation to provide custom `MessageConverters`.
+* Introduction of the default _Content Type_ as `application/json` which needs to be taken into consideration when migrating 1.3
+application and/or operating in the mixed mode (i.e., 1.3 producer -> 2.0 consumer).
+* Messages with textual payloads and _contentType_ `text/...` or `.../json` are no longer converted to `Message<String>` for cases where argument type of the provided `MessageHandler` 
+can not be determnied (i.e., `public void handle(Message<?> message)` or `public void handle(Object payload)`). Further more, a strong argument type may not be enough 
+to properly convert messages, so `contentType` header is may be used as supplement by some `MessageConverters`.
+
+=== Notable Deprecations
+==== Java serialization (Java native and Kryo)
+* `JavaSerializationMessageConverter` and `KryoMessageConverter`. While these two converters remain for now, they will be moved out of the core packages and support in the future.
+The main reason for this deprecation is to signal the issue _type-based language-specific_ serialization couuld  cause in the distributed environments, where Producers and Consumers
+may not only depend on different JVM versions or have different versions of supporting libraries (i.e., Kryo), but to also draw the attention to the fact that Consumers and Producers 
+may and in a lot of cases are non-Java based.
+
+==== Deprecated classes and methods
+Following is a quick summary of notable deprecations. See corresponding javadocs fort more details.
+
+* `SharedChannelRegistry` in favor of `SharedBindingTargetRegistry`. 
+* `Bindings` - beans qualified by it are already uniquely identified by their type. For example, provided `Source`, `Processor` or custom bindings:
+[source,java]
+----
+public interface Foo {
+	String OUTPUT = "fooOutput";
+
+	@Output(Foo.OUTPUT)
+	MessageChannel output();
+}
+----
+* `HeaderMode.raw`. Use `none`, `headers` or `embeddedHeaders`
+* `ProducerProperties.partitionKeyExtractorClass` in favor of `partitionKeyExtractorName` and `ProducerProperties.partitionSelectorClass` in favor of `partitionSelectorName`.
+This is to ensure that both components are Spring configured/managed and referenced in Spring-friendly way.
+* `BinderAwareRouterBeanPostProcessor` - while the component exists it is no longer a Bean Post Processor and will be renamed in the future.
+* `BinderProperties.setEnvironment(Properties environment)` in favor of `BinderProperties.setEnvironment(Map<String, Object> environment)`.
