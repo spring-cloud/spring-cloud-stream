@@ -114,6 +114,12 @@ spring.cloud.stream.kafka.binder.transaction.producer.*::
 +
 Default: See individual producer properties.
 
+spring.cloud.stream.kafka.binder.headerMapperBeanName::
+  The bean name of a `KafkaHeaderMapper` used for mapping `spring-messaging` headers to/from Kafka headers.
+Use this, for example, if you wish to customize the trusted packages in a `DefaultKafkaHeaderMapper`, which uses JSON deserialization for the headers.
++
+Default: none.
+
 [[kafka-consumer-properties]]
 === Kafka Consumer Properties
 
