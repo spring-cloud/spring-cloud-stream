@@ -30,7 +30,11 @@ import org.springframework.messaging.converter.MessageConversionException;
  * as input.
  *
  * @author Marius Bogoevici
+ * 
+ * @deprecated as of 2.0. 
  */
+// NOTE we need to revisit as to why do we need it in the first place, given that our first converter already handles JSON
+@Deprecated
 public class JsonUnmarshallingConverter extends AbstractMessageConverter {
 
 	private final ObjectMapper objectMapper;

@@ -41,8 +41,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
@@ -68,6 +70,19 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class ContentTypeTckTests {
+	
+	@Test
+	public void withInternalPipeline() {
+		ApplicationContext context = new SpringApplicationBuilder(InternalPipeLine.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals("OLEG", new String(outputMessage.getPayload()));
+	}
 	
 	@Test
 	public void pojoToPojo() {
@@ -530,6 +545,27 @@ public class ContentTypeTckTests {
 			person.setName("bob");
 			String json = mapper.writeValueAsString(person);
 			return MessageBuilder.withPayload(json).build();
+		}
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	public static class InternalPipeLine {
+		@StreamListener(Processor.INPUT)
+		@SendTo("internalChannel")
+		public String handleA(Person value)  {
+			return "{\"name\":\"" + value.getName().toUpperCase() + "\"}";
+		}
+		
+		@Bean
+		public MessageChannel internalChannel() {
+			return new DirectChannel();
+		}
+		
+		@StreamListener("internalChannel")
+		@SendTo(Processor.OUTPUT)
+		public String handleB(Person value)  {
+			return value.toString();
 		}
 	}
 	

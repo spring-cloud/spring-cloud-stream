@@ -23,6 +23,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -36,6 +38,8 @@ import org.springframework.validation.annotation.Validated;
 @JsonInclude(Include.NON_DEFAULT)
 @Validated
 public class BindingProperties {
+	
+	public static final MimeType DEFAULT_CONTENT_TYPE = MimeTypeUtils.APPLICATION_JSON;
 
 	private static final String COMMA = ",";
 
@@ -60,7 +64,7 @@ public class BindingProperties {
 	 * Specifies content-type that will be used by this binding in the event 
 	 * it is not specified in Message headers. Default: 'application/json'.
 	 */
-	private String contentType = "application/json";
+	private String contentType = DEFAULT_CONTENT_TYPE.toString();
 
 	/**
 	 * The name of the binder to use for this binding in the event multiple binders available (e.g., 'rabbit');

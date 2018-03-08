@@ -47,6 +47,12 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 	
 	private final Map<ParameterizedTypeReference<?>, JavaType> typeCache = new ConcurrentHashMap<>();
 	
+	ApplicationJsonMessageMarshallingConverter(@Nullable ObjectMapper objectMapper) {
+		if (objectMapper != null) {
+			this.setObjectMapper(objectMapper);
+		}	
+	}
+	
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
 		if (payload instanceof byte[]) {
