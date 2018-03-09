@@ -82,6 +82,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
 import org.springframework.kafka.listener.config.ContainerProperties;
@@ -387,6 +388,9 @@ public class KafkaMessageChannelBinder extends
 		else {
 			messageListenerContainer.getContainerProperties()
 					.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
+			if (extendedConsumerProperties.getExtension().isAckEachRecord()) {
+				messageListenerContainer.getContainerProperties().setAckMode(AckMode.RECORD);
+			}
 		}
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug(

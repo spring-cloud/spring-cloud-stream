@@ -77,6 +77,7 @@ Health will report as down if this timer expires.
 Default: 10.
 spring.cloud.stream.kafka.binder.requiredAcks::
   The number of required acks on the broker.
+See the Kafka documentation for the producer `acks` property.
 +
 Default: `1`.
 spring.cloud.stream.kafka.binder.minPartitionCount::
@@ -152,12 +153,21 @@ This requires both `spring.cloud.stream.instanceCount` and `spring.cloud.stream.
 The property `spring.cloud.stream.instanceCount` must typically be greater than 1 in this case.
 +
 Default: `true`.
+ackEachRecord::
+  When `autoCommitOffset` is `true`, whether to commit the offset after each record is processed.
+By default, offsets are committed after all records in the batch of records returned by `consumer.poll()` have been processed.
+The number of records returned by a poll can be controlled with the `max.poll.recods` Kafka property, set via the consumer `configuration` property.
+Setting this to true may cause a degradation in performance, but reduces the likelihood of redelivered records when a failure occurs.
+Also see the binder `requiredAcks` property, which also affects the performance of committing offsets.
++
+Default: `false`.
 autoCommitOffset::
   Whether to autocommit offsets when a message has been processed.
 If set to `false`, a header with the key `kafka_acknowledgment` of the type `org.springframework.kafka.support.Acknowledgment` header will be present in the inbound message.
 Applications may use this header for acknowledging messages.
 See the examples section for details.
-When this property is set to `false`, Kafka binder will set the ack mode to `org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode.MANUAL`.
+When this property is set to `false`, Kafka binder will set the ack mode to `org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode.MANUAL` and the application is responsible for acknowledging records.
+Also see `ackEachRecord`.
 +
 Default: `true`.
 autoCommitOnError::

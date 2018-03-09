@@ -100,6 +100,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -1095,6 +1097,11 @@ public class KafkaBinderTests extends
 				"testManualAckIsNotPossibleWhenAutoCommitOffsetIsEnabledOnTheBinder", "test", moduleInputChannel,
 				consumerProperties);
 
+
+		AbstractMessageListenerContainer<?, ?> container = TestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.messageListenerContainer", AbstractMessageListenerContainer.class);
+		assertThat(container.getContainerProperties().getAckMode()).isEqualTo(AckMode.BATCH);
+
 		String testPayload1 = "foo" + UUID.randomUUID().toString();
 		Message<?> message1 = org.springframework.integration.support.MessageBuilder.withPayload(
 				testPayload1.getBytes()).build();
@@ -1131,11 +1138,16 @@ public class KafkaBinderTests extends
 		QueueChannel inbound1 = new QueueChannel();
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
+		consumerProperties.getExtension().setAckEachRecord(true);
 		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination, "test1", inbound1,
 				consumerProperties);
 		QueueChannel inbound2 = new QueueChannel();
 		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer(testDestination, "test2", inbound2,
 				consumerProperties);
+
+		AbstractMessageListenerContainer<?, ?> container = TestUtils.getPropertyValue(consumerBinding2,
+				"lifecycle.messageListenerContainer", AbstractMessageListenerContainer.class);
+		assertThat(container.getContainerProperties().getAckMode()).isEqualTo(AckMode.RECORD);
 
 		Message<?> receivedMessage1 = receive(inbound1);
 		assertThat(receivedMessage1).isNotNull();

@@ -53,6 +53,8 @@ public class KafkaConsumerProperties {
 		both
 	}
 
+	private boolean ackEachRecord;
+
 	private boolean autoRebalanceEnabled = true;
 
 	private boolean autoCommitOffset = true;
@@ -82,6 +84,14 @@ public class KafkaConsumerProperties {
 	private Map<String, String> configuration = new HashMap<>();
 
 	private KafkaAdminProperties admin = new KafkaAdminProperties();
+
+	public boolean isAckEachRecord() {
+		return this.ackEachRecord;
+	}
+
+	public void setAckEachRecord(boolean ackEachRecord) {
+		this.ackEachRecord = ackEachRecord;
+	}
 
 	public boolean isAutoCommitOffset() {
 		return this.autoCommitOffset;
