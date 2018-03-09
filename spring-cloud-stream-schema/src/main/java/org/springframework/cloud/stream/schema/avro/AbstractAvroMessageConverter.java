@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.schema.avro;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -77,7 +76,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		Object result = null;
 		try {
 			byte[] payload = (byte[]) message.getPayload();
-			ByteBuffer buf = ByteBuffer.wrap(payload);
+
 			MimeType mimeType = getContentTypeResolver().resolve(message.getHeaders());
 			if (mimeType == null) {
 				if (conversionHint instanceof MimeType) {
@@ -87,9 +86,11 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 					return null;
 				}
 			}
-			buf.get(payload);
+
 			Schema writerSchema = resolveWriterSchemaForDeserialization(mimeType);
 			Schema readerSchema = resolveReaderSchemaForDeserialization(targetClass);
+
+			@SuppressWarnings("unchecked")
 			DatumReader<Object> reader = getDatumReader((Class<Object>) targetClass, readerSchema, writerSchema);
 			Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
 			result = reader.read(null, decoder);
