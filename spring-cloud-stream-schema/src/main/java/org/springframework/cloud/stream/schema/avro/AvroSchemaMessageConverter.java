@@ -22,6 +22,8 @@ import java.util.Collection;
 import org.apache.avro.Schema;
 
 import org.springframework.core.io.Resource;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
@@ -97,13 +99,20 @@ public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 	}
 
 	@Override
+	@Nullable
+	protected Schema toClassSchemaInternal(@NonNull Class<?> targetClass) {
+		return toClassSchema(targetClass);
+	}
+
+	@Override
 	protected Schema resolveWriterSchemaForDeserialization(MimeType mimeType) {
 		return this.schema;
 	}
 
 	@Override
 	protected Schema resolveReaderSchemaForDeserialization(Class<?> targetClass) {
-		return this.schema;
+		// TODO #1294 should we attempt find the schema from the targetClass?
+		return this.schema != null ? this.schema : toClassSchemaInternal(targetClass);
 	}
 
 	@Override

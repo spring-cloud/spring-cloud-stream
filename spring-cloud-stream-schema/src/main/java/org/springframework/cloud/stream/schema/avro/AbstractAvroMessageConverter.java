@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
@@ -32,13 +33,19 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.avro.specific.SpecificExceptionBase;
+import org.apache.avro.specific.SpecificFixed;
 import org.apache.avro.specific.SpecificRecord;
+import org.apache.avro.specific.SpecificRecordBase;
 
 import org.springframework.core.io.Resource;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
@@ -53,6 +60,8 @@ import org.springframework.util.MimeType;
  */
 public abstract class AbstractAvroMessageConverter extends AbstractMessageConverter {
 
+	protected static final String AVRO_GET_CLASS_SCHEMA_METHOD_NAME = "getClassSchema";
+
 	protected AbstractAvroMessageConverter(MimeType supportedMimeType) {
 		this(Collections.singletonList(supportedMimeType));
 	}
@@ -64,6 +73,51 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 
 	protected static Schema parseSchema(Resource r) throws IOException {
 		return new Schema.Parser().parse(r.getInputStream());
+	}
+
+	/**
+	 * If the targetClass is subtype of {@link SpecificRecordBase}, {@link SpecificFixed}
+	 * or {@link SpecificExceptionBase} attempt to retrieve the class {@link Schema} via
+	 * reflection.
+	 *
+	 * @param targetClass the target class, may not be null
+	 * @return the schema or null if not found
+	 */
+	@Nullable
+	protected static Schema toClassSchema(@NonNull Class<?> targetClass) {
+
+		// TODO #1294 should we leverage avro's tools to retrieve, which might return
+		// things we don't want, or be explicit.
+		// Note that avro's mechanisms is used in
+		// AvroSchemaRegistryClientMessageConverter.extractSchemaForWriting
+		try {
+			return ReflectData.get().getSchema(targetClass);
+		}
+		catch (@SuppressWarnings("unused") AvroRuntimeException arw) {
+			return null;
+		}
+
+		// if (SpecificRecordBase.class.isAssignableFrom(targetClass) ||
+		// SpecificFixed.class.isAssignableFrom(targetClass)
+		// || SpecificExceptionBase.class.isAssignableFrom(targetClass)) {
+		//
+		// try {
+		//
+		// final Method getClassSchemaMethod = ReflectionUtils.findMethod(targetClass,
+		// "getClassSchema");
+		//
+		// if (getClassSchemaMethod != null) {
+		//
+		// Schema schema = (Schema) ReflectionUtils.invokeMethod(getClassSchemaMethod,
+		// null);
+		// return schema;
+		// }
+		// }
+		// catch (@SuppressWarnings("unused") IllegalStateException ise) {
+		// return null;
+		// }
+		// }
+		// return null;
 	}
 
 	@Override
@@ -103,6 +157,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	private DatumWriter<Object> getDatumWriter(Class<Object> type, Schema schema) {
 		DatumWriter<Object> writer;
 		this.logger.debug("Finding correct DatumWriter for type " + type.getName());
+
+		// TODO #1294 should it support SpecificFixed?
 		if (SpecificRecord.class.isAssignableFrom(type)) {
 			if (schema != null) {
 				writer = new SpecificDatumWriter<>(schema);
@@ -126,15 +182,17 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema schema, Schema writerSchema) {
+	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema readerSchema, Schema writerSchema) {
 		DatumReader<Object> reader = null;
+
+		// TODO #1294 should it support SpecificFixed?
 		if (SpecificRecord.class.isAssignableFrom(type)) {
-			if (schema != null) {
+			if (readerSchema != null) {
 				if (writerSchema != null) {
-					reader = new SpecificDatumReader<>(writerSchema, schema);
+					reader = new SpecificDatumReader<>(writerSchema, readerSchema);
 				}
 				else {
-					reader = new SpecificDatumReader<>(schema);
+					reader = new SpecificDatumReader<>(readerSchema);
 				}
 			}
 			else {
@@ -145,12 +203,12 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			}
 		}
 		else if (GenericRecord.class.isAssignableFrom(type)) {
-			if (schema != null) {
+			if (readerSchema != null) {
 				if (writerSchema != null) {
-					reader = new GenericDatumReader<>(writerSchema, schema);
+					reader = new GenericDatumReader<>(writerSchema, readerSchema);
 				}
 				else {
-					reader = new GenericDatumReader<>(schema);
+					reader = new GenericDatumReader<>(readerSchema);
 				}
 			}
 		}
@@ -188,6 +246,17 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		}
 		return baos.toByteArray();
 	}
+
+	/**
+	 * If the targetClass is subtype of {@link SpecificRecordBase}, {@link SpecificFixed}
+	 * or {@link SpecificExceptionBase} attempt to retrieve the class {@link Schema} via
+	 * reflection.
+	 *
+	 * @param targetClass the target class, may not be null
+	 * @return the schema or null if not found
+	 */
+	@Nullable
+	protected abstract Schema toClassSchemaInternal(@NonNull Class<?> targetClass);
 
 	protected abstract Schema resolveSchemaForWriting(Object payload, MessageHeaders headers,
 			MimeType hintedContentType);
