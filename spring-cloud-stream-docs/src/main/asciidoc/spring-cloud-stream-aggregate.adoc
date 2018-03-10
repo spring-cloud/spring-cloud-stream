@@ -1,3 +1,4 @@
+include::{stream-docs-basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/preface.adoc[]
 include::{stream-docs-basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc[]
 
 = Binder Implementations
