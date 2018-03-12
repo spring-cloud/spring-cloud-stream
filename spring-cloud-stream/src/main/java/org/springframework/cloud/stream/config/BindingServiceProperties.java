@@ -34,6 +34,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
@@ -158,6 +160,12 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	public void setApplicationContext(ApplicationContext applicationContext)
 			throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+		GenericConversionService cs = (GenericConversionService) IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory());
+		if (this.applicationContext.containsBean("spelConverter")) {
+			Converter<?,?> converter = (Converter<?, ?>) this.applicationContext.getBean("spelConverter");
+			cs.addConverter(converter);	
+		}
+		
 		if (this.applicationContext.getEnvironment() instanceof ConfigurableEnvironment) {
 			// override the bindings store with the environment-initializing version if in
 			// a Spring context
