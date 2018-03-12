@@ -85,7 +85,7 @@ import org.springframework.scheduling.TaskScheduler;
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
-@Import({ContentTypeConfiguration.class, MessageChannelStatsdMetricsAutoConfiguration.class})
+@Import({ContentTypeConfiguration.class})
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class BindingServiceConfiguration {
 
