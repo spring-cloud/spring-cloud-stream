@@ -75,7 +75,7 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	@SuppressWarnings("rawtypes")
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
-			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback, 
+			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback,
 			GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 		Assert.notNull(bindingService, "'bindingService' cannot be null");

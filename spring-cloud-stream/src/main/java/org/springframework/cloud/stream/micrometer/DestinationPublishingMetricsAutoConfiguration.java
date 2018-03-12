@@ -37,9 +37,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 
+ *
  * @author Oleg Zhurakousky
- * 
+ *
  * @since 2.0
  *
  */

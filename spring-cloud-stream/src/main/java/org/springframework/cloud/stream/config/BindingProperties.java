@@ -61,7 +61,7 @@ public class BindingProperties {
 	// Properties for both input and output bindings
 
 	/**
-	 * Specifies content-type that will be used by this binding in the event 
+	 * Specifies content-type that will be used by this binding in the event
 	 * it is not specified in Message headers. Default: 'application/json'.
 	 */
 	private String contentType = DEFAULT_CONTENT_TYPE.toString();

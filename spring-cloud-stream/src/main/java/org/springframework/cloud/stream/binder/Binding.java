@@ -32,7 +32,7 @@ import org.springframework.integration.endpoint.Pausable;
  * @author Gary Russell
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
- * 
+ *
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public interface Binding<T> extends Pausable {
@@ -43,28 +43,28 @@ public interface Binding<T> extends Pausable {
 	
 	/**
 	 * Stops the target component represented by this instance.
-	 * NOTE: At the time the instance is created the component is already started. 
+	 * NOTE: At the time the instance is created the component is already started.
 	 * This operation is typically used by actuator to re-bind/re-start.
-	 * 
+	 *
 	 * @see BindingsEndpoint
 	 */
 	default void start() {}
 	
 	/**
 	 * Starts the target component represented by this instance.
-	 * NOTE: At the time the instance is created the component is already started. 
+	 * NOTE: At the time the instance is created the component is already started.
 	 * This operation is typically used by actuator to re-bind/re-start.
-	 * 
+	 *
 	 * @see BindingsEndpoint
 	 */
 	default void stop() {}
 	
 	/**
-	 * Pauses the target component represented by this instance if and only if the component 
+	 * Pauses the target component represented by this instance if and only if the component
 	 * implements {@link Pausable} interface
-	 * NOTE: At the time the instance is created the component is already started and active. 
+	 * NOTE: At the time the instance is created the component is already started and active.
 	 * This operation is typically used by actuator to pause/resume.
-	 * 
+	 *
 	 * @see BindingsEndpoint
 	 */
 	default void pause() {
@@ -72,11 +72,11 @@ public interface Binding<T> extends Pausable {
 	}
 	
 	/**
-	 * Resumes the target component represented by this instance if and only if the component 
+	 * Resumes the target component represented by this instance if and only if the component
 	 * implements {@link Pausable} interface
-	 * NOTE: At the time the instance is created the component is already started and active. 
+	 * NOTE: At the time the instance is created the component is already started and active.
 	 * This operation is typically used by actuator to pause/resume.
-	 * 
+	 *
 	 * @see BindingsEndpoint
 	 */
 	default void resume() {
@@ -92,7 +92,7 @@ public interface Binding<T> extends Pausable {
 	
 	/**
 	 * Returns the name of this binding  (i.e., channel name)
-	 * 
+	 *
 	 * @return binding name
 	 */
 	default String getName() {

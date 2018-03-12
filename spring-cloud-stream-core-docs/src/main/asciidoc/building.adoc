@@ -8,7 +8,7 @@
 To build the source you will need to install JDK {jdkversion}.
 
 The build uses the Maven wrapper so you don't have to install a specific
-version of Maven.  To enable the tests for Redis, Rabbit, and Kafka bindings you 
+version of Maven.  To enable the tests for Redis, Rabbit, and Kafka bindings you
 should have those servers running before building. See below for more
 information on running the servers.
 

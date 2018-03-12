@@ -248,7 +248,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		@SuppressWarnings("unchecked")
 		Map<String, Object> _headers = (Map<String, Object>) dfa.getPropertyValue("headers");
 		_headers.put(MessageHeaders.CONTENT_TYPE,
-				"application/" + this.prefix + "." + schemaReference.getSubject() 
+				"application/" + this.prefix + "." + schemaReference.getSubject()
 				+ ".v" + schemaReference.getVersion() + "+" + AVRO_FORMAT);
 		
 		return schema;

@@ -32,7 +32,7 @@ import org.springframework.integration.handler.AbstractReplyProducingMessageHand
 import static org.junit.Assert.assertTrue;
 
 /**
- * 
+ *
  * @author Oleg Zhurakousky
  *
  */

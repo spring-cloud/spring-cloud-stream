@@ -45,7 +45,7 @@ public interface Bindable {
 	 * Binds all the inputs associated with this instance.
 	 * @param adapter instance of {@link BindingService}
 	 * @return collection of {@link Binding}s
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	default Collection<Binding<Object>> createAndBindInputs(BindingService adapter) {

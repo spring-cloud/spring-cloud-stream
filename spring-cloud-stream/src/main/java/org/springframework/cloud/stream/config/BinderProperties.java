@@ -30,14 +30,14 @@ import java.util.stream.Collectors;
 public class BinderProperties {
 
 	/**
-	 * The binder type. It typically references one of the binders found on the classpath, 
-	 * in particular a key in a META-INF/spring.binders file. 
+	 * The binder type. It typically references one of the binders found on the classpath,
+	 * in particular a key in a META-INF/spring.binders file.
 	 * By default, it has the same value as the configuration name.
 	 */
 	private String type;
 
 	/**
-	 * Root for a set of properties that can be used to customize the environment of the binder. 
+	 * Root for a set of properties that can be used to customize the environment of the binder.
 	 */
 	private Map<String, Object> environment = new HashMap<>();
 
@@ -47,7 +47,7 @@ public class BinderProperties {
 	private boolean inheritEnvironment = true;
 
 	/**
-	 * Whether the binder configuration is a candidate for being considered a default binder, 
+	 * Whether the binder configuration is a candidate for being considered a default binder,
 	 * or can be used only when explicitly referenced. Defaulys: true
 	 */
 	private boolean defaultCandidate = true;

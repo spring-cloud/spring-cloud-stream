@@ -19,9 +19,9 @@ package org.springframework.cloud.stream.micrometer;
 import io.micrometer.core.instrument.step.StepRegistryConfig;
 
 /**
- * 
+ *
  * @author Oleg Zhurakousky
- * 
+ *
  * @since 2.0
  *
  */

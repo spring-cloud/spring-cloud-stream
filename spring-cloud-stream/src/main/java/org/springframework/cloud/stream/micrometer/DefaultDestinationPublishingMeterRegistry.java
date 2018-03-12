@@ -67,7 +67,7 @@ import org.springframework.messaging.support.GenericMessage;
 /**
  *
  * @author Oleg Zhurakousky
- * 
+ *
  * @since 2.0
  *
  */
@@ -246,7 +246,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	private class Field {
 		final String name;
@@ -274,7 +274,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	private static final class MessageChannelPublisher implements Consumer<String> {
 		private final MetersPublisherBinding metersPublisherBinding;

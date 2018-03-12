@@ -34,11 +34,11 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 
 /**
- * Variation of {@link MappingJackson2MessageConverter} to support marshalling and 
- * unmarshalling of Messages's payload from 'String' or 'byte[]' to an instance of a 'targetClass' 
+ * Variation of {@link MappingJackson2MessageConverter} to support marshalling and
+ * unmarshalling of Messages's payload from 'String' or 'byte[]' to an instance of a 'targetClass'
  * and and back to 'byte[]'
- * 
- * 
+ *
+ *
  * @author Oleg Zhurakousky
  * @author Gary Russell
  * @since 2.0
@@ -74,11 +74,11 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 			Class<?> conversionHintType = ((MethodParameter)conversionHint).getParameterType();
 			if (Message.class.isAssignableFrom(conversionHintType)) {
 				/*
-				 * Ensures that super won't attempt to create Message as a result of conversion 
+				 * Ensures that super won't attempt to create Message as a result of conversion
 				 * and stays at payload conversion only.
 				 * The Message will eventually be created in MessageMethodArgumentResolver.resolveArgument(..)
 				 */
-				conversionHint = null; 
+				conversionHint = null;
 			}
 			else if (((MethodParameter)conversionHint).getGenericParameterType() instanceof ParameterizedType) {
 				ParameterizedTypeReference<Object> forType = ParameterizedTypeReference.forType(((MethodParameter)conversionHint).getGenericParameterType());

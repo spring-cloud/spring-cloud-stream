@@ -49,7 +49,7 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable.mapOf(String.class, String.class);
 
 	/**
-	 * The name of the metric being emitted. Should be an unique value per application. 
+	 * The name of the metric being emitted. Should be an unique value per application.
 	 * Defaults to: ${spring.application.name:${vcap.application.name:${spring.config.name:application}}}
 	 */
 	@Value("${spring.application.name:${vcap.application.name:${spring.config.name:application}}}")

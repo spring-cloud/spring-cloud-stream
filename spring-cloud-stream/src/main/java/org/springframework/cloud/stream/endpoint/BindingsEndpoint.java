@@ -32,11 +32,11 @@ import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.util.Assert;
 
 /**
- * 
+ *
  * Actuator endpoint for binding control
- * 
+ *
  * @author Oleg Zhurakousky
- * 
+ *
  * @since 2.0
  *
  */
@@ -91,7 +91,7 @@ public class BindingsEndpoint {
 	private List<Binding<?>> gatherInputBindings() {
 		List<Binding<?>> inputBindings = new ArrayList<>();
 		for (InputBindingLifecycle inputBindingLifecycle : this.inputBindingLifecycles) {
-			Collection<Binding<?>> lifecycleInputBindings = 
+			Collection<Binding<?>> lifecycleInputBindings =
 					(Collection<Binding<?>>) new DirectFieldAccessor(inputBindingLifecycle).getPropertyValue("inputBindings");
 			inputBindings.addAll(lifecycleInputBindings);
 		}
@@ -107,7 +107,7 @@ public class BindingsEndpoint {
 	
 	private enum State {
 		STARTED,
-		STOPPED, 
+		STOPPED,
 		PAUSED,
 		RESUMED;
 	}

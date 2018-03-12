@@ -20,7 +20,7 @@ import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * 
+ *
  * @author Oleg Zhurakousky
  *
  * @since 2.0

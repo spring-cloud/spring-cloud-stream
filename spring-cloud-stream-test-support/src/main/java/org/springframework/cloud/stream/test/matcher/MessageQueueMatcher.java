@@ -35,7 +35,7 @@ import org.springframework.messaging.Message;
  *
  * <p>
  * Expected usage is of the form (with appropriate static imports):
- * 
+ *
  * <pre>
  * public class TransformProcessorApplicationTests {
  *

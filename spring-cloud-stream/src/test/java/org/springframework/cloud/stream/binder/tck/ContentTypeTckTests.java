@@ -336,7 +336,7 @@ public class ContentTypeTckTests {
 		assertEquals("x-java-object", contentType.getSubtype());
 	}
 	
-	/** 
+	/**
 	 * This test simply demonstrates how one can override an existing MessageConverter for a given contentType.
 	 * In this case we are demonstrating how Kryo converter can be overriden ('application/x-java-object' maps to Kryo).
 	 */
@@ -625,8 +625,8 @@ public class ContentTypeTckTests {
 		}
 		
 		/**
-		 * Even though this MessageConverter has nothing to do with Kryo it still shows how Kryo 
-		 * conversion can be customized/overriden since it simply overriding a converter for 
+		 * Even though this MessageConverter has nothing to do with Kryo it still shows how Kryo
+		 * conversion can be customized/overriden since it simply overriding a converter for
 		 * contentType 'application/x-java-object'
 		 *
 		 */

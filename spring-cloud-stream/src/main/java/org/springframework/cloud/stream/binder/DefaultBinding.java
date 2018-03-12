@@ -36,7 +36,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
- * 
+ *
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 @JsonPropertyOrder({ "name", "group", "pausable", "state"})
@@ -64,7 +64,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	 * @param target the binding target
 	 * @param lifecycle {@link Lifecycle} that runs while the binding is active and will be stopped during unbinding
 	 * @param extBindingInfo additional information related to binding
-	 * 
+	 *
 	 */
 	public DefaultBinding(String name, String group, T target, Lifecycle lifecycle) {
 		Assert.notNull(target, "target must not be null");

@@ -178,7 +178,7 @@ public class BindingServiceConfiguration {
 	public BinderAwareChannelResolver binderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable,
-			@Nullable BinderAwareChannelResolver.NewDestinationBindingCallback callback, 
+			@Nullable BinderAwareChannelResolver.NewDestinationBindingCallback callback,
 			@Nullable GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor) {
 		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory, dynamicDestinationsBindable,
 				callback, globalChannelInterceptorProcessor);

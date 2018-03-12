@@ -18,7 +18,7 @@ package org.springframework.cloud.stream.internal;
 
 /**
  * Contains the names of properties for the internal use of Spring Cloud Stream.
- * 
+ *
  * @author Marius Bogoevici
  */
 public abstract class InternalPropertyNames {

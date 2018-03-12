@@ -16,13 +16,13 @@
 
 /**
  * Provides test channel binder and supporting classes
- * 
- * THe test binder is backed by Spring Integration framework and is not intended 
+ *
+ * THe test binder is backed by Spring Integration framework and is not intended
  * for uses outside of local testing.
- *  
+ *
  * The test binder implementation - {@link org.springframework.cloud.stream.binder.test.TestChannelBinder}
  * The test binder configuration - {@link org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration}
- * The example that shows how to use it - {@link org.springframework.cloud.stream.binder.test.SampleStreamApp} 
- * 
+ * The example that shows how to use it - {@link org.springframework.cloud.stream.binder.test.SampleStreamApp}
+ *
  */
 package org.springframework.cloud.stream.binder.test;
