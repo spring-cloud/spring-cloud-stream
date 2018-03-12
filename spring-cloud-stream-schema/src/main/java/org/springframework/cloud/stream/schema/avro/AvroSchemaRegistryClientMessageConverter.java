@@ -30,6 +30,7 @@ import org.apache.avro.reflect.ReflectData;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.schema.ParsedSchema;
@@ -38,6 +39,8 @@ import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.SchemaRegistrationResponse;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.core.io.Resource;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
@@ -89,7 +92,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	public static final String REFERENCE_CACHE_NAME = CACHE_PREFIX + ".referenceCache";
 
 	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application", "*+" + AVRO_FORMAT);
-	
+
 	private Pattern versionedSchema;
 
 	private boolean dynamicSchemaGenerationEnabled;
@@ -114,7 +117,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	 * @param cacheManager instance of {@link CacheManager} to cache parsed schemas. If
 	 * caching is not required use {@link NoOpCacheManager}
 	 */
-	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
+	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient,
+			CacheManager cacheManager) {
 		super(Collections.singletonList(DEFAULT_AVRO_MIME_TYPE));
 		Assert.notNull(schemaRegistryClient, "cannot be null");
 		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
@@ -148,7 +152,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	/**
-	 * Set the prefix to be used in the publised subtype. Default 'vnd'.
+	 * Set the prefix to be used in the published subtype. Default 'vnd'.
 	 * @param prefix
 	 */
 	public void setPrefix(String prefix) {
@@ -161,7 +165,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		this.versionedSchema = Pattern.compile("application/" + this.prefix
-				+ "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+"+AVRO_FORMAT);
+				+ "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+" + AVRO_FORMAT);
 		if (!ObjectUtils.isEmpty(this.schemaLocations)) {
 			this.logger.info("Scanning avro schema resources on classpath");
 			if (this.logger.isInfoEnabled()) {
@@ -248,9 +252,9 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		@SuppressWarnings("unchecked")
 		Map<String, Object> _headers = (Map<String, Object>) dfa.getPropertyValue("headers");
 		_headers.put(MessageHeaders.CONTENT_TYPE,
-				"application/" + this.prefix + "." + schemaReference.getSubject() 
-				+ ".v" + schemaReference.getVersion() + "+" + AVRO_FORMAT);
-		
+				"application/" + this.prefix + "." + schemaReference.getSubject()
+						+ ".v" + schemaReference.getVersion() + "+" + AVRO_FORMAT);
+
 		return schema;
 	}
 
@@ -268,32 +272,46 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	@Override
 	protected Schema resolveWriterSchemaForDeserialization(MimeType mimeType) {
 		if (this.readerSchema == null) {
-			Schema schema = null;
-			ParsedSchema parsedSchema = null;
 			SchemaReference schemaReference = extractSchemaReference(mimeType);
 			if (schemaReference != null) {
-				parsedSchema = cacheManager.getCache(REFERENCE_CACHE_NAME)
+				final Cache referenceCache = cacheManager.getCache(REFERENCE_CACHE_NAME);
+				ParsedSchema parsedSchema = referenceCache
 						.get(schemaReference, ParsedSchema.class);
 				if (parsedSchema == null) {
 					String schemaContent = this.schemaRegistryClient
 							.fetch(schemaReference);
-					schema = new Schema.Parser().parse(schemaContent);
+					Schema schema = new Schema.Parser().parse(schemaContent);
 					parsedSchema = new ParsedSchema(schema);
-					cacheManager.getCache(REFERENCE_CACHE_NAME)
+					referenceCache
 							.putIfAbsent(schemaReference, parsedSchema);
 				}
-
+				return parsedSchema.getSchema();
 			}
-			return parsedSchema.getSchema();
+			return null;
 		}
-		else {
-			return this.readerSchema;
+		return this.readerSchema;
+	}
+
+	@Override
+	@Nullable
+	protected Schema toClassSchemaInternal(@NonNull Class<?> targetClass) {
+		// TODO #1294 is this the right cache?
+		final Cache reflectionCache = cacheManager.getCache(REFLECTION_CACHE_NAME);
+		final Schema schemaFromCache = reflectionCache.get(targetClass.getName(), Schema.class);
+		if (schemaFromCache == null) {
+			final Schema classFromSchema = toClassSchema(targetClass);
+			if (classFromSchema != null) {
+				reflectionCache.putIfAbsent(targetClass, classFromSchema);
+				return classFromSchema;
+			}
 		}
+		return schemaFromCache;
 	}
 
 	@Override
 	protected Schema resolveReaderSchemaForDeserialization(Class<?> targetClass) {
-		return this.readerSchema;
+		// TODO #1294 should we attempt to resolve from the target class?
+		return readerSchema == null ? toClassSchemaInternal(targetClass) : readerSchema;
 	}
 
 	public void setReaderSchema(Resource readerSchema) {
