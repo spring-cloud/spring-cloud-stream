@@ -177,7 +177,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	public boolean poll(MessageHandler handler) {
 		return poll(handler, null);
 	}
-	
+
 	@Override
 	public boolean poll(MessageHandler handler, ParameterizedTypeReference<?> type) {
 		Message<?> message = this.receive(type);
@@ -249,7 +249,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	 */
 	private Message<?> receive(ParameterizedTypeReference<?> type) {
 		Message<?> message = this.source.receive();
-		if (message != null && type != null && this.messageConverter != null) {		
+		if (message != null && type != null && this.messageConverter != null) {
 			Class<?> targetType = type == null ? Object.class :
 				type.getType() instanceof Class ? (Class<?>) type.getType() : Object.class;
 			Object payload = this.messageConverter.fromMessage(message, targetType, type);
@@ -262,7 +262,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		}
 		return message;
 	}
-	
+
 	private void doHandleMessage(MessageHandler handler, Message<?> message) {
 		try {
 			handler.handleMessage(message);
@@ -271,7 +271,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			throw new MessageHandlingException(message, t);
 		}
 	}
-	
+
 	/**
 	 * If there's a retry template, it will set the attributes holder via the listener. If
 	 * there's no retry template, but there's an error channel, we create a new attributes
@@ -295,7 +295,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			}
 		}
 	}
-	
+
 	private void handle(Message<?> message, MessageHandler handler) {
 		setAttributesIfNecessary(message);
 		doHandleMessage(handler, message);

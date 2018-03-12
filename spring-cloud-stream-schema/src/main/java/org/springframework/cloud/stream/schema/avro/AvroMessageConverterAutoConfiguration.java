@@ -65,7 +65,7 @@ public class AvroMessageConverterAutoConfiguration {
 					this.avroMessageConverterProperties.getSchemaLocations());
 		}
 		avroSchemaRegistryClientMessageConverter.setPrefix(this.avroMessageConverterProperties.getPrefix());
-		
+
 		try {
 			Class clazz = this.avroMessageConverterProperties.getSubjectNamingStrategy();
 			Constructor constructor = ReflectionUtils.accessibleConstructor(clazz);

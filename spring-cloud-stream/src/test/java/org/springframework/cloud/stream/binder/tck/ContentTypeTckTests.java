@@ -70,7 +70,7 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class ContentTypeTckTests {
-	
+
 	@Test
 	public void withInternalPipeline() {
 		ApplicationContext context = new SpringApplicationBuilder(InternalPipeLine.class)
@@ -83,7 +83,7 @@ public class ContentTypeTckTests {
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals("OLEG", new String(outputMessage.getPayload()));
 	}
-	
+
 	@Test
 	public void pojoToPojo() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
@@ -97,7 +97,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void pojoToString() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToStringStreamListener.class)
@@ -111,7 +111,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void pojoToStringOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToStringStreamListener.class)
@@ -125,7 +125,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void pojoToByteArray() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToByteArrayStreamListener.class)
@@ -139,7 +139,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void pojoToByteArrayOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToByteArrayStreamListener.class)
@@ -153,7 +153,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void stringToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(StringToPojoStreamListener.class)
@@ -167,7 +167,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void stringToPojoInboundContentTypeHeader() {
 		ApplicationContext context = new SpringApplicationBuilder(StringToPojoStreamListener.class)
@@ -181,7 +181,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void byteArrayToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayToPojoStreamListener.class)
@@ -195,7 +195,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void byteArrayToPojoInboundContentTypeHeader() {
 		ApplicationContext context = new SpringApplicationBuilder(StringToPojoStreamListener.class)
@@ -209,7 +209,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void byteArrayToByteArray() {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayToByteArrayStreamListener.class)
@@ -223,7 +223,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void byteArrayToByteArrayInboundOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayToByteArrayStreamListener.class)
@@ -237,8 +237,8 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
-	
+
+
 	@Test
 	public void pojoMessageToStringMessage() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoMessageToStringMessageStreamListener.class)
@@ -252,7 +252,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void pojoMessageToStringMessageServiceActivator() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoMessageToStringMessageServiceActivator.class)
@@ -266,7 +266,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void byteArrayMessageToStringJsonMessageStreamListener() {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayMessageToStringJsonMessageStreamListener.class)
@@ -280,7 +280,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("{\"name\":\"bob\"}", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void byteArrayMessageToStringMessageStreamListener() {
 		ApplicationContext context = new SpringApplicationBuilder(StringMessageToStringMessageStreamListener.class)
@@ -294,7 +294,7 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-	
+
 	@Test
 	public void kryo_pojoToPojo() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
@@ -302,12 +302,12 @@ public class ContentTypeTckTests {
 				.run("--spring.cloud.stream.default.contentType=application/x-java-object", "--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
-		
+
 		KryoMessageConverter converter = new KryoMessageConverter(null, true);
 		@SuppressWarnings("unchecked")
 		Message<byte[]> message = (Message<byte[]>) converter
 				.toMessage(new Person("oleg"), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_OBJECT)));
-		
+
 		source.send(new GenericMessage<byte[]>(message.getPayload()));
 		Message<byte[]> outputMessage = target.receive();
 		assertNotNull(outputMessage);
@@ -315,7 +315,7 @@ public class ContentTypeTckTests {
 		assertEquals("x-java-object", contentType.getSubtype());
 		assertEquals(Person.class.getName(), contentType.getParameters().get("type"));
 	}
-	
+
 	@Test
 	public void kryo_pojoToPojoContentTypeHeader() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
@@ -323,19 +323,19 @@ public class ContentTypeTckTests {
 				.run("--spring.jmx.enabled=false", "--spring.cloud.stream.bindings.output.contentType=application/x-java-object");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
-		
+
 		KryoMessageConverter converter = new KryoMessageConverter(null, true);
 		@SuppressWarnings("unchecked")
 		Message<byte[]> message = (Message<byte[]>) converter
 				.toMessage(new Person("oleg"), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_OBJECT)));
-		
+
 		source.send(message);
 		Message<byte[]> outputMessage = target.receive();
 		assertNotNull(outputMessage);
 		MimeType contentType = (MimeType) outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE);
 		assertEquals("x-java-object", contentType.getSubtype());
 	}
-	
+
 	/**
 	 * This test simply demonstrates how one can override an existing MessageConverter for a given contentType.
 	 * In this case we are demonstrating how Kryo converter can be overriden ('application/x-java-object' maps to Kryo).
@@ -355,7 +355,7 @@ public class ContentTypeTckTests {
 		assertEquals("AlwaysStringKryoMessageConverter", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 		assertEquals(MimeType.valueOf("application/x-java-object"), outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 	}
-	
+
 	@Test
 	public void customMessageConverter_defaultContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(StringToStringStreamListener.class, CustomConverters.class)
@@ -371,21 +371,21 @@ public class ContentTypeTckTests {
 		assertEquals(MimeType.valueOf("foo/bar"), outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 	}
 
-	
+
 	//Failure tests
-	
+
 	@Test
 	public void _jsonToPojoWrongDefaultContentTypeProperty() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
-				.run("--spring.cloud.stream.default.contentType=text/plain", "--spring.jmx.enabled=false");	
+				.run("--spring.cloud.stream.default.contentType=text/plain", "--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		assertTrue(binder.getLastError().getPayload() instanceof MessageConversionException);
 	}
-	
+
 	@Test
 	public void _toStringDefaultContentTypePropertyUnknownContentType() {
 		ApplicationContext context = new SpringApplicationBuilder(StringToStringStreamListener.class)
@@ -397,10 +397,10 @@ public class ContentTypeTckTests {
 		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
 		assertTrue(binder.getLastError().getPayload() instanceof MessageConversionException);
 	}
-	
-	
+
+
 	@Test
-	public void toCollectionWithParameterizedType() throws Exception {	
+	public void toCollectionWithParameterizedType() throws Exception {
 		ApplicationContext context = new SpringApplicationBuilder(CollectionWithParameterizedTypes.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
@@ -411,7 +411,7 @@ public class ContentTypeTckTests {
 		Message<byte[]> outputMessage = target.receive();
 		assertThat(outputMessage.getPayload()).isEqualTo(jsonPayload.getBytes());
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class CollectionWithParameterizedTypes {
@@ -422,7 +422,7 @@ public class ContentTypeTckTests {
 			return value;
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class TextInJsonOutListener {
@@ -432,7 +432,7 @@ public class ContentTypeTckTests {
 			return MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoToPojoStreamListener {
@@ -442,7 +442,7 @@ public class ContentTypeTckTests {
 			return value;
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoToStringStreamListener {
@@ -452,7 +452,7 @@ public class ContentTypeTckTests {
 			return value.toString();
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoToByteArrayStreamListener {
@@ -462,7 +462,7 @@ public class ContentTypeTckTests {
 			return value.toString().getBytes(StandardCharsets.UTF_8);
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class ByteArrayToPojoStreamListener {
@@ -473,7 +473,7 @@ public class ContentTypeTckTests {
 			return mapper.readValue(value, Person.class);
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class StringToPojoStreamListener {
@@ -484,7 +484,7 @@ public class ContentTypeTckTests {
 			return mapper.readValue(value, Person.class);
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class ByteArrayToByteArrayStreamListener {
@@ -494,7 +494,7 @@ public class ContentTypeTckTests {
 			return value;
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class StringToStringStreamListener {
@@ -504,7 +504,7 @@ public class ContentTypeTckTests {
 			return value;
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoMessageToStringMessageStreamListener {
@@ -514,7 +514,7 @@ public class ContentTypeTckTests {
 			return MessageBuilder.withPayload(value.getPayload().toString()).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class PojoMessageToStringMessageServiceActivator {
@@ -523,7 +523,7 @@ public class ContentTypeTckTests {
 			return MessageBuilder.withPayload(value.getPayload().toString()).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class StringMessageToStringMessageStreamListener {
@@ -534,7 +534,7 @@ public class ContentTypeTckTests {
 			return MessageBuilder.withPayload(person.toString()).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class ByteArrayMessageToStringJsonMessageStreamListener {
@@ -547,7 +547,7 @@ public class ContentTypeTckTests {
 			return MessageBuilder.withPayload(json).build();
 		}
 	}
-	
+
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	public static class InternalPipeLine {
@@ -556,19 +556,19 @@ public class ContentTypeTckTests {
 		public String handleA(Person value)  {
 			return "{\"name\":\"" + value.getName().toUpperCase() + "\"}";
 		}
-		
+
 		@Bean
 		public MessageChannel internalChannel() {
 			return new DirectChannel();
 		}
-		
+
 		@StreamListener("internalChannel")
 		@SendTo(Processor.OUTPUT)
 		public String handleB(Person value)  {
 			return value.toString();
 		}
 	}
-	
+
 	public static class Employee<P> {
 		private P person;
 		private int id;
@@ -585,14 +585,14 @@ public class ContentTypeTckTests {
 			this.person = person;
 		}
 	}
-	
+
 	public static class Person {
 		private String name;
-		
+
 		public Person() {
 			this(null);
 		}
-		
+
 		public Person(String name) {
 			this.name = name;
 		}
@@ -604,26 +604,26 @@ public class ContentTypeTckTests {
 		public void setName(String name) {
 			this.name = name;
 		}
-		
+
 		public String toString() {
 			return name;
 		}
 	}
-	
+
 	@Configuration
-	public static class CustomConverters {	
+	public static class CustomConverters {
 		@Bean
 		@StreamMessageConverter
 		public FooBarMessageConverter fooBarMessageConverter() {
 			return new FooBarMessageConverter(MimeType.valueOf("foo/bar"));
 		}
-		
+
 		@Bean
 		@StreamMessageConverter
 		public AlwaysStringKryoMessageConverter kryoOverrideMessageConverter() {
 			return new AlwaysStringKryoMessageConverter(MimeType.valueOf("application/x-java-object"));
 		}
-		
+
 		/**
 		 * Even though this MessageConverter has nothing to do with Kryo it still shows how Kryo
 		 * conversion can be customized/overriden since it simply overriding a converter for
@@ -634,12 +634,12 @@ public class ContentTypeTckTests {
 			public AlwaysStringKryoMessageConverter(MimeType supportedMimeType) {
 				super(supportedMimeType);
 			}
-			
+
 			@Override
 			protected boolean supports(Class<?> clazz) {
 				return clazz == null || String.class.isAssignableFrom(clazz);
 			}
-			
+
 			protected Object convertFromInternal(
 					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 				return this.getClass().getSimpleName();
@@ -649,7 +649,7 @@ public class ContentTypeTckTests {
 				return ((String)payload).getBytes(StandardCharsets.UTF_8);
 			}
 		}
-		
+
 		public static class FooBarMessageConverter extends AbstractMessageConverter {
 			protected FooBarMessageConverter(MimeType supportedMimeType) {
 				super(supportedMimeType);
@@ -657,13 +657,13 @@ public class ContentTypeTckTests {
 			@Override
 			protected boolean supports(Class<?> clazz) {
 				return clazz != null && String.class.isAssignableFrom(clazz);
-			}		
-			
+			}
+
 			protected Object convertFromInternal(
 					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 				return this.getClass().getSimpleName();
 			}
-			
+
 			protected Object convertToInternal(
 					Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
 				return ((String)payload).getBytes(StandardCharsets.UTF_8);

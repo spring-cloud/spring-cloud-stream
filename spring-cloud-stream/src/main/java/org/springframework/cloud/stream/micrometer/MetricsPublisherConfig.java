@@ -26,7 +26,7 @@ import io.micrometer.core.instrument.step.StepRegistryConfig;
  *
  */
 class MetricsPublisherConfig implements StepRegistryConfig {
-	
+
 	private final ApplicationMetricsProperties applicationMetricsProperties;
 
 	MetricsPublisherConfig(ApplicationMetricsProperties applicationMetricsProperties) {

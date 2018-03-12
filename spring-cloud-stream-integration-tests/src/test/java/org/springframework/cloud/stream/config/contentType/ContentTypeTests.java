@@ -228,7 +228,7 @@ public class ContentTypeTests {
 			assertThat(message.getPayload()).isEqualTo(user.toString());
 		}
 	}
-	
+
 	@Test
 	public void testSendTuple() throws Exception {
 		try (ConfigurableApplicationContext context = SpringApplication.run(

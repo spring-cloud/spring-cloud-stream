@@ -18,12 +18,12 @@ what messaging midleware this application will be bound to. Choose the one you h
 Also, as you can see from the Initilaizer screen there are few other options you can choose. For example, you can choose Gradle as your build tool instead of the default Maven.
 With the _Dependencies_ selected the only other thing you have to identify is the application name - _logging-consumer_.
 Your configuration screeen should now contain the following:
-	
+
 	Dependencies: Cloud Stream, RabbitMQ (or Kafka)
 	Group: com.example - default
 	Artifact: logging-consumer
 	Spring Boot Version: 2.0.0 (or above) - default
-	
+
 Click on _Generate Project_ button. This will donwload the zipped version of the generated project to your hard drive. Unzip it and you're ready for Step Two.
 
 ==== Step Two - Import project into the IDE
@@ -47,12 +47,12 @@ public class LoggingConsumerApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(LoggingConsumerApplication.class, args);
 	}
-	
+
 	@StreamListener(Sink.INPUT)
 	public void handle(Person person) {
 		System.out.println("Received: " + person);
 	}
-	
+
 	public static class Person {
 		private String name;
 		public String getName() {
@@ -99,7 +99,7 @@ The contents of the message should be JSON representation of `Person` class, so 
 And in your console you should see:
 
 	Received: Turd Ferguson
-	
+
 You can also build/package your application into a boot jar (i.e., `./mvnw clean install`) and run the built JAR using `java -jar` command.
 
 That is all!

@@ -43,7 +43,7 @@ import org.springframework.util.PatternMatchUtils;
  */
 @ConfigurationProperties(prefix = ApplicationMetricsProperties.PREFIX)
 public class ApplicationMetricsProperties implements EnvironmentAware, ApplicationContextAware {
-	
+
 	public static final String PREFIX = "spring.cloud.stream.metrics";
 
 	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable.mapOf(String.class, String.class);
@@ -60,13 +60,13 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 	 * For example: `spring.application**`
 	 */
 	private String[] properties;
-	
+
 	/**
 	 * Interval expressed as Duration for scheduling metrics snapshots publishing.
 	 * Defaults to PT60S (60 sec)
 	 */
 	private String scheduleInterval;
-	
+
 	/**
 	 * List of properties that are going to be appended to each message. This gets
 	 * populate by onApplicationEvent, once the context refreshes to avoid overhead of
@@ -110,7 +110,7 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 		}
 		return this.exportProperties;
 	}
-	
+
 	public String getScheduleInterval() {
 		return scheduleInterval;
 	}
@@ -165,5 +165,5 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 		}
 		return target;
 	}
-	
+
 }

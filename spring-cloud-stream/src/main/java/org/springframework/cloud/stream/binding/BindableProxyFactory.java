@@ -217,7 +217,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	public void bindInputs(BindingService bindingService) {
 		this.createAndBindInputs(bindingService);
 	}
-	
+
 	@Override
 	public Collection<Binding<Object>> createAndBindInputs(BindingService bindingService) {
 		List<Binding<Object>> bindings = new ArrayList<>();

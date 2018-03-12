@@ -45,15 +45,15 @@ import org.springframework.messaging.converter.MessageConversionException;
  *
  */
 class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
-	
+
 	private final Map<ParameterizedTypeReference<?>, JavaType> typeCache = new ConcurrentHashMap<>();
-	
+
 	ApplicationJsonMessageMarshallingConverter(@Nullable ObjectMapper objectMapper) {
 		if (objectMapper != null) {
 			this.setObjectMapper(objectMapper);
-		}	
+		}
 	}
-	
+
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
 		if (payload instanceof byte[]) {
@@ -88,7 +88,7 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		else if (conversionHint instanceof ParameterizedTypeReference) {
 			result = convertParameterizedType(message, targetClass, (ParameterizedTypeReference<?>)conversionHint);
 		}
-		
+
 		if (result == null) {
 			if (message.getPayload() instanceof byte[] &&  targetClass.isAssignableFrom(String.class)) {
 				result = new String((byte[])message.getPayload(), StandardCharsets.UTF_8);
@@ -97,10 +97,10 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 				result = super.convertFromInternal(message, targetClass, conversionHint);
 			}
 		}
-		
+
 		return result;
 	}
-	
+
 	private Object convertParameterizedType(Message<?> message, Class<?> targetClass, ParameterizedTypeReference<?> conversionHint) {
 		ObjectMapper objectMapper = this.getObjectMapper();
 		Object payload = message.getPayload();

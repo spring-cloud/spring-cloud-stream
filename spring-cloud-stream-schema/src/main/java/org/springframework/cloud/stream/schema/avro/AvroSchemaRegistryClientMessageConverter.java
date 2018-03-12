@@ -89,7 +89,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	public static final String REFERENCE_CACHE_NAME = CACHE_PREFIX + ".referenceCache";
 
 	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application", "*+" + AVRO_FORMAT);
-	
+
 	private Pattern versionedSchema;
 
 	private boolean dynamicSchemaGenerationEnabled;
@@ -250,7 +250,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		_headers.put(MessageHeaders.CONTENT_TYPE,
 				"application/" + this.prefix + "." + schemaReference.getSubject()
 				+ ".v" + schemaReference.getVersion() + "+" + AVRO_FORMAT);
-		
+
 		return schema;
 	}
 

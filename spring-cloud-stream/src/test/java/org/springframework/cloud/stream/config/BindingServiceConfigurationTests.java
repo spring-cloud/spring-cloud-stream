@@ -46,7 +46,7 @@ public class BindingServiceConfigurationTests {
 			assertTrue(handler.getNotPropagatedHeaders().contains("contentType"));
 		}
 	}
-	
+
 	@Configuration
 	@Import(ImportedConfiguration.class)
 	public static class RootConfiguration {
@@ -54,13 +54,13 @@ public class BindingServiceConfigurationTests {
 		public void rootService(String val) {
 		}
 	}
-	
+
 	@Configuration
 	public static class ImportedConfiguration {
 		@ServiceActivator(inputChannel="input")
 		public void importedService(String val) {
 		}
 	}
-	
-	
+
+
 }

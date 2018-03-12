@@ -31,7 +31,7 @@ public class MessageSourceBindingTargetFactory
 		extends AbstractBindingTargetFactory<PollableMessageSource> {
 
 	private final MessageChannelAndSourceConfigurer messageSourceConfigurer;
-	
+
 	private final SmartMessageConverter messageConverter;
 
 	public MessageSourceBindingTargetFactory(SmartMessageConverter messageConverter, MessageChannelConfigurer messageSourceConfigurer) {

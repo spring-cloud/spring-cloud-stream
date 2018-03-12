@@ -165,7 +165,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			Assert.state(binderConfiguration != null, "Unknown binder configuration: " + configurationName);
 			BinderType binderType = this.binderTypeRegistry.get(binderConfiguration.getBinderType());
 			Assert.notNull(binderType, "Binder type " + binderConfiguration.getBinderType() + " is not defined");
-			
+
 			Map<String, String> binderProperties = new HashMap<>();
 			this.flatten(null, binderConfiguration.getProperties(), binderProperties);
 
@@ -214,7 +214,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		}
 		return (Binder<T, ?, ?>) this.binderInstanceCache.get(configurationName).getKey();
 	}
-	
+
 	/**
 	 * Ensures that nested properties are flattened (i.e., foo.bar=baz instead of foo={bar=baz})
 	 */

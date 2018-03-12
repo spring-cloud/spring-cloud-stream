@@ -38,12 +38,12 @@ public class DefaultSchemaRegistryClient implements SchemaRegistryClient {
 	public DefaultSchemaRegistryClient() {
 		this(new RestTemplate());
 	}
-	
+
 	public DefaultSchemaRegistryClient(RestTemplate restTemplate) {
 		Assert.notNull(restTemplate,"'restTemplate' must not be null.");
 		this.restTemplate = restTemplate;
 	}
-	
+
 	protected String getEndpoint() {
 		return this.endpoint;
 	}

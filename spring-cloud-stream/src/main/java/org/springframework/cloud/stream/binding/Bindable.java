@@ -40,7 +40,7 @@ public interface Bindable {
 	default void bindInputs(BindingService adapter) {
 		this.createAndBindInputs(adapter);
 	}
-	
+
 	/**
 	 * Binds all the inputs associated with this instance.
 	 * @param adapter instance of {@link BindingService}

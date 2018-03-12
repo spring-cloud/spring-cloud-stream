@@ -90,13 +90,13 @@ public class BinderAwareChannelResolverTests {
 			return  new GlobalChannelInterceptorWrapper(new ImmutableMessageChannelInterceptor());
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Before
 	public void setupContext() throws Exception {
 		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration(BinderAwareChannelResolverTests.InterceptorConfiguration.class))
 				.web(WebApplicationType.NONE).run();
-		
+
 		this.resolver = context.getBean(BinderAwareChannelResolver.class);
 		this.binder = context.getBean(Binder.class);
 		this.bindingServiceProperties = context.getBean(BindingServiceProperties.class);

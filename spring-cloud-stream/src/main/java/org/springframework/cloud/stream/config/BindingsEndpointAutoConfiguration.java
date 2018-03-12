@@ -39,7 +39,7 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureAfter(EndpointAutoConfiguration.class)
 public class BindingsEndpointAutoConfiguration {
 
-	@Bean	
+	@Bean
 	public BindingsEndpoint bindingsEndpoint(List<InputBindingLifecycle> inputBindings) {
 		return new BindingsEndpoint(inputBindings);
 	}

@@ -68,7 +68,7 @@ public class CompositeMessageConverterFactory {
 			this.converters = new ArrayList<>();
 		}
 		initDefaultConverters();
-		
+
 		DefaultContentTypeResolver resolver = new DefaultContentTypeResolver();
 		resolver.setDefaultMimeType(BindingProperties.DEFAULT_CONTENT_TYPE);
 		this.converters.stream()
@@ -80,11 +80,11 @@ public class CompositeMessageConverterFactory {
 	private void initDefaultConverters() {
 		ApplicationJsonMessageMarshallingConverter applicationJsonConverter = new ApplicationJsonMessageMarshallingConverter(this.objectMapper);
 		applicationJsonConverter.setStrictContentTypeMatch(true);
-		this.converters.add(applicationJsonConverter);		
+		this.converters.add(applicationJsonConverter);
 		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));
 		this.converters.add(new ByteArrayMessageConverter());
 		this.converters.add(new ObjectStringMessageConverter());
-		
+
 		// Deprecated converters
 		this.converters.add(new JavaSerializationMessageConverter());
 		this.converters.add(new KryoMessageConverter(null,true));

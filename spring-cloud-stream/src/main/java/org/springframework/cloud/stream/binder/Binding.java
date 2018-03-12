@@ -36,11 +36,11 @@ import org.springframework.integration.endpoint.Pausable;
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public interface Binding<T> extends Pausable {
-	
+
 	default Map<String, Object> getExtendedInfo() {
 		return Collections.emptyMap();
 	}
-	
+
 	/**
 	 * Stops the target component represented by this instance.
 	 * NOTE: At the time the instance is created the component is already started.
@@ -49,7 +49,7 @@ public interface Binding<T> extends Pausable {
 	 * @see BindingsEndpoint
 	 */
 	default void start() {}
-	
+
 	/**
 	 * Starts the target component represented by this instance.
 	 * NOTE: At the time the instance is created the component is already started.
@@ -58,7 +58,7 @@ public interface Binding<T> extends Pausable {
 	 * @see BindingsEndpoint
 	 */
 	default void stop() {}
-	
+
 	/**
 	 * Pauses the target component represented by this instance if and only if the component
 	 * implements {@link Pausable} interface
@@ -70,7 +70,7 @@ public interface Binding<T> extends Pausable {
 	default void pause() {
 		this.stop();
 	}
-	
+
 	/**
 	 * Resumes the target component represented by this instance if and only if the component
 	 * implements {@link Pausable} interface
@@ -82,14 +82,14 @@ public interface Binding<T> extends Pausable {
 	default void resume() {
 		this.start();
 	}
-	
+
 	/**
 	 * Returns 'true' if the target component represented by this instance is running.
 	 */
 	default boolean isRunning() {
 		return false;
 	}
-	
+
 	/**
 	 * Returns the name of this binding  (i.e., channel name)
 	 *
@@ -98,7 +98,7 @@ public interface Binding<T> extends Pausable {
 	default String getName() {
 		return null;
 	}
-		
+
 
 	/**
 	 * Unbinds the target component represented by this instance and stops any active

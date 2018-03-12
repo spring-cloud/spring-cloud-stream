@@ -163,9 +163,9 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 		GenericConversionService cs = (GenericConversionService) IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory());
 		if (this.applicationContext.containsBean("spelConverter")) {
 			Converter<?,?> converter = (Converter<?, ?>) this.applicationContext.getBean("spelConverter");
-			cs.addConverter(converter);	
+			cs.addConverter(converter);
 		}
-		
+
 		if (this.applicationContext.getEnvironment() instanceof ConfigurableEnvironment) {
 			// override the bindings store with the environment-initializing version if in
 			// a Spring context

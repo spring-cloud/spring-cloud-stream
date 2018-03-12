@@ -80,7 +80,7 @@ public class CustomPartitionedProducerTest {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testCustomPartitionedProducerByName() {
 		ApplicationContext context = SpringApplication.run(CustomPartitionedProducerTest.TestSource.class,
@@ -111,7 +111,7 @@ public class CustomPartitionedProducerTest {
 			}
 		}
 	}
-	
+
 	@Test
 	public void testCustomPartitionedProducerAsSingletons() {
 		ApplicationContext context = SpringApplication.run(CustomPartitionedProducerTest.TestSource.class,
@@ -139,7 +139,7 @@ public class CustomPartitionedProducerTest {
 			}
 		}
 	}
-	
+
 	public void testCustomPartitionedProducerMultipleInstances() {
 		ApplicationContext context = SpringApplication.run(CustomPartitionedProducerTest.TestSourceMultipleStrategies.class,
 				"--spring.jmx.enabled=false",
@@ -169,7 +169,7 @@ public class CustomPartitionedProducerTest {
 			}
 		}
 	}
-	
+
 	@Test(expected=Exception.class)
 	// It actually throws UnsatisfiedDependencyException, but it is confusing when it comes to test
 	// But for the purposes of the test all we care about is that it fails
@@ -188,12 +188,12 @@ public class CustomPartitionedProducerTest {
 		public CustomPartitionSelectorClass customPartitionSelector() {
 			return new CustomPartitionSelectorClass();
 		}
-		
+
 		@Bean
 		public CustomPartitionKeyExtractorClass customPartitionKeyExtractor() {
 			return new CustomPartitionKeyExtractorClass();
 		}
-		
+
 		@Bean
 		@InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
 		public MessageSource<String> timerMessageSource() {
@@ -205,7 +205,7 @@ public class CustomPartitionedProducerTest {
 			};
 		}
 	}
-	
+
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	@Import(MockBinderRegistryConfiguration.class)
@@ -216,22 +216,22 @@ public class CustomPartitionedProducerTest {
 		public CustomPartitionSelectorClass customPartitionSelectorOne() {
 			return new CustomPartitionSelectorClass();
 		}
-		
+
 		@Bean
 		public CustomPartitionSelectorClass customPartitionSelectorTwo() {
 			return new CustomPartitionSelectorClass();
 		}
-		
+
 		@Bean
 		public CustomPartitionKeyExtractorClass customPartitionKeyExtractorOne() {
 			return new CustomPartitionKeyExtractorClass();
 		}
-		
+
 		@Bean
 		public CustomPartitionKeyExtractorClass customPartitionKeyExtractorTwo() {
 			return new CustomPartitionKeyExtractorClass();
 		}
-		
+
 		@Bean
 		@InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
 		public MessageSource<String> timerMessageSource() {

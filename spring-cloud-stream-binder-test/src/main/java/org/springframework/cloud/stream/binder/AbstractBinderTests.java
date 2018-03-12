@@ -85,9 +85,9 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	protected final Log logger = LogFactory.getLog(this.getClass());
 
 	protected B testBinder;
-	
+
 	protected SmartMessageConverter messageConverter;
-	
+
 	@Before
 	public void before() {
 		this.messageConverter = new CompositeMessageConverterFactory().getMessageConverterForAllRegistered();
@@ -274,7 +274,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	public void testSendAndReceiveJavaSerialization() throws Exception {
 		Binder binder = getBinder();
 		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
-		
+
 		DirectChannel moduleOutputChannel = createBindableChannel("output", outputBindingProperties);
 
 		BindingProperties inputBindingProperties = createConsumerBindingProperties(createConsumerProperties());
@@ -282,7 +282,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("foo%s0y",
 				getDestinationNameDelimiter()), moduleOutputChannel, outputBindingProperties.getProducer());
-		
+
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(String.format("foo%s0y",
 				getDestinationNameDelimiter()), "testSendAndReceiveJavaSerialization", moduleInputChannel,
 				inputBindingProperties.getConsumer());

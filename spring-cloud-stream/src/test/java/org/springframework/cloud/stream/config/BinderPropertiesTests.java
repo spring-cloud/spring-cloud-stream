@@ -61,9 +61,9 @@ public class BinderPropertiesTests {
 		ConfigurationPropertiesReportEndpoint endpoint = new ConfigurationPropertiesReportEndpoint();
 		endpoint.setApplicationContext(context);
 
-		
+
 		ContextConfigurationProperties configurationProperties = endpoint.configurationProperties().getContexts().values().iterator().next();
-		
+
 		Map<String, Object> properties = configurationProperties.getBeans().get("bindingServiceProperties").getProperties();
 		assertFalse(properties.containsKey("error"));
 		assertTrue(properties.containsKey("binders"));

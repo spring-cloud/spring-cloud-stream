@@ -42,7 +42,7 @@ import org.springframework.util.StringUtils;
 @JsonPropertyOrder({ "name", "group", "pausable", "state"})
 @JsonIgnoreProperties("running")
 public class DefaultBinding<T> implements Binding<T> {
-	
+
 	private final Log logger = LogFactory.getLog(this.getClass().getName());
 
 	protected final String name;
@@ -52,9 +52,9 @@ public class DefaultBinding<T> implements Binding<T> {
 	protected final T target;
 
 	protected final Lifecycle lifecycle;
-	
+
 	private boolean paused;
-	
+
 	/**
 	 * Creates an instance that associates a given name, group and binding target with an
 	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
@@ -73,7 +73,7 @@ public class DefaultBinding<T> implements Binding<T> {
 		this.target = target;
 		this.lifecycle = lifecycle;
 	}
-	
+
 	public String getName() {
 		return this.name;
 	}
@@ -81,7 +81,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	public String getGroup() {
 		return this.group;
 	}
-	
+
 	public String getState() {
 		String state = "N/A";
 		if (this.lifecycle != null) {
@@ -94,15 +94,15 @@ public class DefaultBinding<T> implements Binding<T> {
 		}
 		return state;
 	}
-	
+
 	public boolean isRunning() {
 		return this.lifecycle != null && this.lifecycle.isRunning();
 	}
-	
+
 	public boolean isPausable() {
 		return this.lifecycle instanceof Pausable;
 	}
-	
+
 	@Override
 	public final synchronized void start() {
 		if (!this.isRunning()) {
@@ -114,14 +114,14 @@ public class DefaultBinding<T> implements Binding<T> {
 			}
 		}
 	}
-	
+
 	@Override
 	public final synchronized void stop() {
 		if (this.isRunning()) {
 			this.lifecycle.stop();
 		}
 	}
-	
+
 	@Override
 	public final synchronized void pause() {
 		if (this.lifecycle instanceof Pausable) {
@@ -132,7 +132,7 @@ public class DefaultBinding<T> implements Binding<T> {
 			logger.warn("Attempted to pause a component that does not support Pausable " + this.lifecycle);
 		}
 	}
-	
+
 	@Override
 	public final synchronized void resume() {
 		if (this.lifecycle instanceof Pausable) {
@@ -162,14 +162,14 @@ public class DefaultBinding<T> implements Binding<T> {
 						: ObjectUtils.nullSafeToString(this.lifecycle))
 				+ "]";
 	}
-	
+
 	/**
 	 * Listener method that executes after unbinding. Subclasses can implement their own
 	 * behaviour on unbinding by overriding this method.
 	 */
 	protected void afterUnbind() {
 	}
-	
+
 	private String getRunningState() {
 		return isRunning() ? "running" : "stopped";
 	}

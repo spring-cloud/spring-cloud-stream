@@ -42,17 +42,17 @@ import org.springframework.util.Assert;
  */
 @Endpoint(id = "bindings")
 public class BindingsEndpoint {
-	
+
 	private final List<InputBindingLifecycle> inputBindingLifecycles;
-	
+
 	private final ObjectMapper objectMapper;
-	
+
 	public BindingsEndpoint(List<InputBindingLifecycle> inputBindingLifecycles) {
 		Assert.notEmpty(inputBindingLifecycles, "'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
 		this.objectMapper = new ObjectMapper();
 	}
-	
+
 	@WriteOperation
 	public void changeState(@Selector String name, State state) {
 		Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
@@ -75,18 +75,18 @@ public class BindingsEndpoint {
 			}
 		}
 	}
-	
+
 	@ReadOperation
 	public List<?> queryStates() {
-		return objectMapper.convertValue(gatherInputBindings(), List.class);	
+		return objectMapper.convertValue(gatherInputBindings(), List.class);
 	}
-	
+
 	@ReadOperation
 	public Binding<?> queryState(@Selector String name) {
 		Assert.notNull(name, "'name' must not be null");
-		return this.locateBinding(name);	
+		return this.locateBinding(name);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private List<Binding<?>> gatherInputBindings() {
 		List<Binding<?>> inputBindings = new ArrayList<>();
@@ -97,14 +97,14 @@ public class BindingsEndpoint {
 		}
 		return inputBindings;
 	}
-	
+
 	private Binding<?> locateBinding(String name) {
 		return BindingsEndpoint.this.gatherInputBindings().stream()
 			.filter(binding -> name.equals(binding.getName()))
 			.findFirst()
 			.orElse(null);
 	}
-	
+
 	private enum State {
 		STARTED,
 		STOPPED,
