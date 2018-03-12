@@ -46,7 +46,7 @@ import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.micrometer.DestinationPublishingMetricsAutoConfiguration;
+import org.springframework.cloud.stream.micrometer.MessageChannelStatsdMetricsAutoConfiguration;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -85,7 +85,7 @@ import org.springframework.scheduling.TaskScheduler;
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
-@Import({ContentTypeConfiguration.class, DestinationPublishingMetricsAutoConfiguration.class})
+@Import({ContentTypeConfiguration.class, MessageChannelStatsdMetricsAutoConfiguration.class})
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class BindingServiceConfiguration {
 

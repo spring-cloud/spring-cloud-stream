@@ -48,7 +48,7 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 
 	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable.mapOf(String.class, String.class);
 
-	/**
+	 /**
 	 * The name of the metric being emitted. Should be an unique value per application.
 	 * Defaults to: ${spring.application.name:${vcap.application.name:${spring.config.name:application}}}
 	 */
@@ -119,12 +119,8 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 		this.scheduleInterval = scheduleInterval;
 	}
 
-	private boolean isMatch(String name, String[] includes, String[] excludes) {
-		if (ObjectUtils.isEmpty(includes)
-				|| PatternMatchUtils.simpleMatch(includes, name)) {
-			return !PatternMatchUtils.simpleMatch(excludes, name);
-		}
-		return false;
+	private boolean isMatch(String name, String[] includes) {
+		return ObjectUtils.isEmpty(includes) || PatternMatchUtils.simpleMatch(includes, name);
 	}
 
 	private Map<String, Object> buildExportProperties() {
@@ -137,15 +133,12 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 			BeanExpressionContext expressionContext = new BeanExpressionContext(
 					((ConfigurableApplicationContext) applicationContext).getBeanFactory(), null);
 			for (Entry<String, String> entry : target.entrySet()) {
-				if (isMatch(entry.getKey(), this.properties, null)) {
+				if (isMatch(entry.getKey(), this.properties)) {
 					String stringValue = ObjectUtils.nullSafeToString(entry.getValue());
-					Object exportedValue = null;
-					if (stringValue != null) {
-						exportedValue = stringValue.startsWith("#{")
-								? beanExpressionResolver.evaluate(
-										environment.resolvePlaceholders(stringValue), expressionContext)
-								: environment.resolvePlaceholders(stringValue);
-					}
+					Object exportedValue = stringValue.startsWith("#{")
+							? beanExpressionResolver.evaluate(
+									environment.resolvePlaceholders(stringValue), expressionContext)
+							: environment.resolvePlaceholders(stringValue);
 
 					props.put(entry.getKey(), exportedValue);
 				}
