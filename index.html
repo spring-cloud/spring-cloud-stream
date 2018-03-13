@@ -82,7 +82,7 @@ Make sure Kafka (0.10.1.x or later) is running when you run the application. You
 
 Spring Cloud Stream's Kafka binder builds upon Spring Kafka and Spring Integration Kafka libraries. Specifically, Spring Kafka is the core to this foundation, and it is based on the pure java `kafka-clients` jar.
 
-The following is the compatibility matrix of Spring cloud Stream and its dependent projects:
+The following is the compatibility matrix of Spring cloud Stream and its dependent projects (and broker versions):
 
 <table>
   <tr>
@@ -90,11 +90,13 @@ The following is the compatibility matrix of Spring cloud Stream and its depende
       <th>Spring for Apache Kafka Version</th>
       <th>Spring Integration for Apache Kafka Version</th>
       <th><code>kafka-clients</code> Version</th>
+      <th>Kafka Broker Version</th>
   </tr>
   <tr>
       <td>2.0.x</td>
       <td>2.1.x, 2.0.x</td>
       <td>3.0.x</td>
+      <td>1.0.x<sup>*</sup></td>
       <td>1.0.x, 0.11.0.x<sup>*</sup></td>
   </tr>
   <tr>
@@ -102,19 +104,22 @@ The following is the compatibility matrix of Spring cloud Stream and its depende
       <td>1.3.x, 1.2.x, 1.1.x</td>
       <td>2.3.x, 2.2.x, 2.1.x</td>
       <td>0.11.0.x<sup>**</sup>, 0.10.2.x</td>
+      <td>(Same as client)</td>
   </tr>
   <tr>
       <td>1.2.x</td>
       <td>1.2.x, 1.1.x</td>
       <td>2.2.x, 2.1.x</td>
       <td>0.10.1.x</td>
+      <td>(Same as client)</td>
   </tr>
 </table>
 
 Depending on the selected release-combination, the dependent projects will be referenced transitively when using maven or gradle for version management.
 <br/><br/>
-<sup>*</sup>The 2.0.x binder uses the pure java `AdminClient` to provision topics.
-When using the 0.11.x.x client, topics can be provisioned, but the number of partitions cannot be automatically adjusted up.
+<sup>*</sup>The 2.0.x binder uses the pure java `AdminClient` to provision topics and supports native headers.
+The 1.0.x client can communicate with an 0.11.x.x broker (which also supports headers).
+When using with a 0.11.x.x broker, topics can be provisioned, but the number of partitions cannot be automatically adjusted up.
 To increase the number of topics, you must use the kafka tools instead.
 The property `spring.cloud.stream.kafka.binder.auto-add-partitions` must be `false` (default).
 <br/>
