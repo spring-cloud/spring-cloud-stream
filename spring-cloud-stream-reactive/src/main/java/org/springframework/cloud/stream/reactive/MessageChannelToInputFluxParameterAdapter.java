@@ -26,6 +26,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
 /**
@@ -53,15 +54,33 @@ public class MessageChannelToInputFluxParameterAdapter
 
 	@Override
 	public Flux<?> adapt(final SubscribableChannel bindingTarget, MethodParameter parameter) {
-		ResolvableType resolvableType = ResolvableType.forMethodParameter(parameter);
-		final Class<?> argumentClass = (resolvableType.getGeneric(0).getRawClass() != null) ? (resolvableType
-				.getGeneric(0).getRawClass()) : Object.class;
+		final ResolvableType fluxResolvableType = ResolvableType.forMethodParameter(parameter);
+		final ResolvableType fluxTypeParameter = fluxResolvableType.getGeneric(0);
+		final Class<?> fluxTypeParameterRawClass = fluxTypeParameter.getRawClass();
+		final Class<?> fluxTypeParameterClass = (fluxTypeParameterRawClass != null) ? fluxTypeParameterRawClass
+				: Object.class;
+
 		final Object monitor = new Object();
-		if (Message.class.isAssignableFrom(argumentClass)) {
+
+		if (Message.class.isAssignableFrom(fluxTypeParameterClass)) {
+
+			final ResolvableType payloadTypeParameter = fluxTypeParameter.getGeneric(0);
+			final Class<?> payloadTypeParameterRawClass = payloadTypeParameter.getRawClass();
+			final Class<?> payloadTypeParameterClass = (payloadTypeParameterRawClass != null)
+					? payloadTypeParameterRawClass : Object.class;
+
 			return Flux.create(emitter -> {
 				MessageHandler messageHandler = message -> {
 					synchronized (monitor) {
-						emitter.next(message);
+
+						if (payloadTypeParameterClass.isAssignableFrom(message.getPayload().getClass())) {
+							emitter.next(message);
+						}
+						else {
+							emitter.next(MessageBuilder.createMessage(
+									this.messageConverter.fromMessage(message, payloadTypeParameterClass),
+									message.getHeaders()));
+						}
 					}
 				};
 				bindingTarget.subscribe(messageHandler);
@@ -72,12 +91,11 @@ public class MessageChannelToInputFluxParameterAdapter
 			return Flux.create(emitter -> {
 				MessageHandler messageHandler = message -> {
 					synchronized (monitor) {
-						if (argumentClass.isAssignableFrom(message
-								.getPayload().getClass())) {
+						if (fluxTypeParameterClass.isAssignableFrom(message.getPayload().getClass())) {
 							emitter.next(message.getPayload());
 						}
 						else {
-							emitter.next(this.messageConverter.fromMessage(message, argumentClass));
+							emitter.next(this.messageConverter.fromMessage(message, fluxTypeParameterClass));
 						}
 					}
 				};
