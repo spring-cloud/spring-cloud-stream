@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.schema.client.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.schema.client.CachingRegistryClient;
 import org.springframework.cloud.stream.schema.client.DefaultSchemaRegistryClient;
@@ -28,6 +29,7 @@ import org.springframework.util.StringUtils;
 /**
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
+ * @author Soby Chacko
  */
 @Configuration
 @EnableConfigurationProperties(SchemaRegistryClientProperties.class)
@@ -37,6 +39,7 @@ public class SchemaRegistryClientConfiguration {
 	private SchemaRegistryClientProperties schemaRegistryClientProperties;
 
 	@Bean
+	@ConditionalOnMissingBean
 	public SchemaRegistryClient schemaRegistryClient() {
 		DefaultSchemaRegistryClient defaultSchemaRegistryClient = new DefaultSchemaRegistryClient();
 
