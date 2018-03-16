@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.tck;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -48,6 +49,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
@@ -70,6 +72,53 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class ContentTypeTckTests {
+
+	@Test
+	public void stringToMapStreamListener() {
+		ApplicationContext context = new SpringApplicationBuilder(StringToMapStreamListener.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals("oleg", new String(outputMessage.getPayload()));
+	}
+
+	@Test
+	public void stringToMapMessageStreamListener() {
+		ApplicationContext context = new SpringApplicationBuilder(StringToMapMessageStreamListener.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals("oleg", new String(outputMessage.getPayload()));
+	}
+
+	@Test
+	// emulates 1.3 behavior
+	public void stringToMapMessageStreamListenerOriginalContentType() {
+		ApplicationContext context = new SpringApplicationBuilder(StringToMapMessageStreamListener.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+
+		Message<byte[]> message = MessageBuilder.withPayload(jsonPayload.getBytes())
+			.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+			.setHeader("originalContentType", "application/json;charset=UTF-8")
+			.build();
+
+		source.send(message);
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals("oleg", new String(outputMessage.getPayload()));
+	}
+
 
 	@Test
 	public void withInternalPipeline() {
@@ -502,6 +551,27 @@ public class ContentTypeTckTests {
 		@SendTo(Processor.OUTPUT)
 		public String echo(String value)  {
 			return value;
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	public static class StringToMapStreamListener {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public String echo(@Payload Map<?, ?> value)  {
+			return (String) value.get("name");
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	public static class StringToMapMessageStreamListener {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public String echo(Message<Map<?, ?>> value)  {
+			assertTrue(value.getPayload() instanceof Map);
+			return (String) value.getPayload().get("name");
 		}
 	}
 

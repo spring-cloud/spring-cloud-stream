@@ -276,14 +276,17 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
 			@SuppressWarnings("unchecked")
 			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
-
+			MimeType contentType = this.mimeType;
 			/*
 			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy message format established
 			 * in 1.x version of the framework and should/will no longer be supported in 3.x
 			 */
-			Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			MimeType contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (ct == null ? this.mimeType : (MimeType)ct);
-			headersMap.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			if (message.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
+				Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+				contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (ct == null ? this.mimeType : (MimeType)ct);
+				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
+				headersMap.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+			}
 			// == end legacy note
 
 			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
