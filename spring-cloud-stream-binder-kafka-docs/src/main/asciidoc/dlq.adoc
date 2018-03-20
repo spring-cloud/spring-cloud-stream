@@ -10,7 +10,7 @@ It terminates when no messages are received for 5 seconds.
 
 The examples assume the original destination is `so8400out` and the consumer group is `so8400`.
 
-There are a couple of use strategies to consider:
+There are a couple of strategies to consider:
 
 * Consider running the rerouting only when the main application is not running.
 Otherwise, the retries for transient errors are used up very quickly.
