@@ -2,9 +2,9 @@
 
 Apache Kafka supports topic partitioning natively.
 
-Sometimes it is advantageous to send data to specific partitions, for example when you want to strictly order message processing - all messages for a particular customer should go to the same partition.
+Sometimes it is advantageous to send data to specific partitions -- for example, when you want to strictly order message processing (all messages for a particular customer should go to the same partition).
 
-The following illustrates how to configure the producer and consumer side:
+The following example shows how to configure the producer and consumer side:
 
 [source, java]
 ----
@@ -55,14 +55,17 @@ spring:
 ----
 
 IMPORTANT: The topic must be provisioned to have enough partitions to achieve the desired concurrency for all consumer groups.
-The above configuration will support up to 12 consumer instances (or 6 if their `concurrency` is 2, etc.).
-It is generally best to "over provision" the partitions to allow for future increases in consumers and/or concurrency.
+The above configuration supports up to 12 consumer instances (6 if their `concurrency` is 2, 4 if their concurrency is 3, and so on).
+It is generally best to "`over-provision`" the partitions to allow for future increases in consumers or concurrency.
 
-NOTE: The above configuration uses the default partitioning (`key.hashCode() % partitionCount`).
-This may or may not provide a suitably balanced algorithm, depending on the key values; you can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
+NOTE: The preceding configuration uses the default partitioning (`key.hashCode() % partitionCount`).
+This may or may not provide a suitably balanced algorithm, depending on the key values.
+You can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
 
 Since partitions are natively handled by Kafka, no special configuration is needed on the consumer side.
-Kafka will allocate partitions across the instances.
+Kafka allocates partitions across the instances.
+
+The following Spring Boot application listens to a Kafka stream and prints (to the console) the partition ID to which each message goes:
 
 [source, java]
 ----
@@ -96,5 +99,6 @@ spring:
           group: myGroup
 ----
 
-You can add instances as needed; Kafka will rebalance the partition allocations.
-If the instance count (or `instance count * concurrency`) exceeds the number of partitions, some consumers will be idle.
+You can add instances as needed.
+Kafka rebalances the partition allocations.
+If the instance count (or `instance count * concurrency`) exceeds the number of partitions, some consumers are idle.
