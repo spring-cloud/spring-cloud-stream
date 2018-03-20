@@ -1,7 +1,7 @@
 [[kafka-dlq-processing]]
 == Dead-Letter Topic Processing
 
-Because you cannot anticipated how users would want to dispose of dead-lettered messages, the framework does not provide any standard mechanism to handle them.
+Because you cannot anticipate how users would want to dispose of dead-lettered messages, the framework does not provide any standard mechanism to handle them.
 If the reason for the dead-lettering is transient, you may wish to route the messages back to the original topic.
 However, if the problem is a permanent issue, that could cause an infinite loop.
 The sample Spring Boot application within this topic is an example of how to route those messages back to the original topic, but it moves them to a "`parking lot`" topic after three attempts.
@@ -10,15 +10,11 @@ It terminates when no messages are received for 5 seconds.
 
 The examples assume the original destination is `so8400out` and the consumer group is `so8400`.
 
-There are several considerations.
+There are a couple of use strategies to consider:
 
-* Consider only running the rerouting when the main application is not running.
+* Consider running the rerouting only when the main application is not running.
 Otherwise, the retries for transient errors are used up very quickly.
 * Alternatively, use a two-stage approach: Use this application to route to a third topic and another to route from there back to the main topic.
-* Since this technique uses a message header to keep track of retries, it does not work with `headerMode=raw`.
-In that case, consider adding some data to the payload (which can be ignored by the main application).
-* `x-retries` has to be added to the `headers` property (`spring.cloud.stream.kafka.binder.headers=x-retries`) on both this application and the main application so that the header is transported between the applications.
-* Since Kafka uses publish/subscribe, replayed messages (even those that successfully processed a message the first time around) are sent to each consumer group.
 
 The following code listings show the sample application:
 
