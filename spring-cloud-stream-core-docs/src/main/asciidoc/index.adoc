@@ -1,8 +1,8 @@
 [[spring-cloud-stream-reference]]
 = Spring Cloud Stream Reference Guide
-Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Vinicius Carvalho; Oleg Zhurakousky
+Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Vinicius Carvalho; Oleg Zhurakousky; Jay Bryant
 :doctype: book
-:toc:
+:toc: left
 :toclevels: 4
 :source-highlighter: prettify
 :numbered:
@@ -13,6 +13,7 @@ Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinat
 :spring-cloud-stream-docs-version: current
 :spring-cloud-stream-docs: http://docs.spring.io/spring-cloud-stream/docs/{spring-cloud-stream-docs-version}/reference
 :spring-cloud-stream-docs-current: http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/html/
+:spring-cloud-stream-javadoc-current: https://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/api/
 :github-repo: spring-cloud/spring-cloud-stream
 :github-raw: http://raw.github.com/{github-repo}/{github-tag}
 :github-code: http://github.com/{github-repo}/tree/{github-tag}

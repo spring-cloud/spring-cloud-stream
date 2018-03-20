@@ -1,42 +1,62 @@
-
-
 == Quick Start
 
-You can try Spring Cloud Stream in less then 5 min even before you jump into any details and the following _three-step guide_ will help.
+You can try Spring Cloud Stream in less then 5 min even before you jump into any details by following this three-step guide.
 
-We'll create a simple Spring Cloud Stream application which receives messages coming from the messaging middleware of your choice (more on this later) and
-logs received messages to the console. We'll call it _LoggingConsumer_. While not very practical it will certainly provide a good introduction to some of the main concepts
+We show you how to create a Spring Cloud Stream application that receives messages coming from the messaging middleware of your choice (more on this later) and logs received messages to the console.
+We call it `LoggingConsumer`.
+While not very practical, it provides a good introduction to some of the main concepts
 and abstractions, making it easier to digest the rest of this user guide.
 
-So let's get started. . .
+The three steps are as follows:
 
-==== Step One - Create sample Application using Spring Initilaizer
-Visit the https://start.spring.io[Spring Initializr]. This is where we'll generate our _LoggingConsumer_ application.
+. <<spring-cloud-stream-preface-creating-sample-application>>
+. <<spring-cloud-stream-preface-importing-project>>
+. <<spring-cloud-stream-preface-adding-message-handler>>
 
-In the _Dependencies_ start typing 'stream' and _Cloud Stream_ option should pop up. Select it. Now start typing either 'kafka' or 'rabbit'. Basically this is where you are choosing
-what messaging midleware this application will be bound to. Choose the one you have already installed and/or feel more comfortable with installing/running.
-Also, as you can see from the Initilaizer screen there are few other options you can choose. For example, you can choose Gradle as your build tool instead of the default Maven.
-With the _Dependencies_ selected the only other thing you have to identify is the application name - _logging-consumer_.
-Your configuration screeen should now contain the following:
+[[spring-cloud-stream-preface-creating-sample-application]]
+==== Creating a Sample Application by Using Spring Initializr
+To get started, visit the https://start.spring.io[Spring Initializr]. From there, you can generate our `LoggingConsumer` application. To do so:
 
-	Dependencies: Cloud Stream, RabbitMQ (or Kafka)
-	Group: com.example - default
-	Artifact: logging-consumer
-	Spring Boot Version: 2.0.0 (or above) - default
+. In the *Dependencies* section, start typing `stream`.
+When the "`Cloud Stream`" option should appears, select it.
+. Start typing either 'kafka' or 'rabbit'.
+. Select "`Kafka`" or "`RabbitMQ`".
++
+Basically, you choose the messaging middleware to which your application binds.
+We recommend using the one you have already installed or feel more comfortable with installing and running.
+Also, as you can see from the Initilaizer screen, there are a few other options you can choose.
+For example, you can choose Gradle as your build tool instead of Maven (the default).
+. In the *Artifact* field, type 'logging-consumer`.
++
+The value of the *Artifact* field becomes the application name.
+If you chose RabbitMQ for the middleware, your Spring Initializr should now be as follows:
++
+image::stream-initializr.png[]
+. Click the *Generate Project* button.
++
+Doing so downloads the zipped version of the generated project to your hard drive.
+. Unzip the file into the folder you want to use as your project directory.
 
-Click on _Generate Project_ button. This will donwload the zipped version of the generated project to your hard drive. Unzip it and you're ready for Step Two.
+TIP: We encourage you to explore the many possibilities available in the Spring Initializr.
+It lets you create many different kinds of Spring applications.
 
-==== Step Two - Import project into the IDE
-Here you simply import the project into your IDE of choice.
-Please keep in mind that dependening on the IDE you may need to follow a specific import procedures. For example depending on how the project was generated (Maven or Gradle)
-you may need to follow specific import procedure (e.g., in Eclipse/STS: `File -> Import -> Maven -> Existing Maven Project`).
+[[spring-cloud-stream-preface-importing-project]]
+==== Importing the Project into Your IDE
 
-Ones imported the project must have no errors of any kind and `src/main/java` should also contain `com.example.loggingconsumer.LoggingConsumerApplication`.
+Now you can import the project into your IDE.
+Keep in mind that, depending on the IDE, you may need to follow a specific import procedure.
+For example, depending on how the project was generated (Maven or Gradle), you may need to follow specific import procedure (for example, in Eclipse or STS, you need to use File -> Import -> Maven -> Existing Maven Project).
 
-Technically at this point you can just run the application's main class since it's already a valid _Spring Boot_ application, but it does not do anything, so let's add some code.
+Once imported, the project must have no errors of any kind. Also, `src/main/java` should contain `com.example.loggingconsumer.LoggingConsumerApplication`.
 
-==== Step Three - Add message handler, build and run
-Modify the `com.example.loggingconsumer.LoggingConsumerApplication` to look as follows:
+Technically, at this point, you can run the application's main class.
+It is already a valid Spring Boot application.
+However, it does not do anything, so we want to add some code.
+
+[[spring-cloud-stream-preface-adding-message-handler]]
+==== Adding a Message Handler, Building, and Running
+
+Modify the `com.example.loggingconsumer.LoggingConsumerApplication` class to look as follows:
 
 [source, java]
 ----
@@ -68,18 +88,21 @@ public class LoggingConsumerApplication {
 }
 ----
 
-As you can see from the above:
+As you can see from the preceding listing:
 
-* We've enabled `Sink` binding (input-no-output) via `@EnableBinding(Sink.class)`. This will signal to the framework to initiate binding to the messaging middleware where
-it will auto-create the destination (i.e., queue, topic) which will be bound to `Sink.INPUT` channel.
-* We've added handler method to receive incoming Message as type `Person`. What this means is that here youcan already observe one of the core features of the framework where
-it will attempt to automatically convert incoming message's payload to type `Person`.
+* We have enabled `Sink` binding (input-no-output) by using `@EnableBinding(Sink.class)`.
+Doing so signals to the framework to initiate binding to the messaging middleware, where it automatically creates the destination (that is, queue, topic, and others) that are bound to the `Sink.INPUT` channel.
+* We have added a `handler` method to receive incoming messages of type `Person`.
+Doing so lets you see one of the core features of the framework: It tries to automatically convert incoming message payloads to type `Person`.
 
-This is it, we now have a fully functional Spring Cloud Stream application that does something. From here for simplicity we'll assume RabbitMQ was selected in _step one_.
-Assuming you have RabbitMQ installed and running, start the application by simply running its `main` method.
+You now have a fully functional Spring Cloud Stream application that does listens for messages.
+From here, for simplicity, we assume you selected RabbitMQ in <<spring-cloud-stream-preface-creating-sample-application,step one>>.
+Assuming you have RabbitMQ installed and running, you can start the application by running its `main` method in your IDE.
 
 You should see following output:
 
+[source]
+----
 	--- [ main] c.s.b.r.p.RabbitExchangeQueueProvisioner : declaring queue for inbound: input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg, bound to: input
 	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
 	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#2a3a299:0/SimpleConnection@66c83fc8. . .
@@ -87,50 +110,63 @@ You should see following output:
 	--- [ main] o.s.i.a.i.AmqpInboundChannelAdapter      : started inbound.input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg
 	. . .
 	--- [ main] c.e.l.LoggingConsumerApplication         : Started LoggingConsumerApplication in 2.531 seconds (JVM running for 2.897)
+----
 
-Go to RabbitMQ management console or any other RabbitMQ client and simply send message to `input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg`
-(NOTE: the `anonymous.CbMIwdkJSBO1ZoPDOtHtCg` part represents the group name and is generated and will be different in your environment. For something more
-predictable you can use explicit group name via `spring.cloud.stream.bindings.input.group=hello`).
+Go to the RabbitMQ management console or any other RabbitMQ client and send a message to `input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg`.
+The `anonymous.CbMIwdkJSBO1ZoPDOtHtCg` part represents the group name and is generated, so it is bound to be different in your environment.
+For something more predictable, you can use an explicit group name by setting `spring.cloud.stream.bindings.input.group=hello` (or whatever name you like).
 
-The contents of the message should be JSON representation of `Person` class, so let's send this:
+The contents of the message should be a JSON representation of the `Person` class, as follows:
 
-	{"name":"Turd Ferguson"}
+	{"name":"Sam Spade"}
 
-And in your console you should see:
+Then, in your console, you should see:
 
-	Received: Turd Ferguson
+`Received: Sam Spade`
 
-You can also build/package your application into a boot jar (i.e., `./mvnw clean install`) and run the built JAR using `java -jar` command.
+You can also build and package your application into a boot jar (by using `./mvnw clean install`) and run the built JAR by using the `java -jar` command.
 
-That is all!
+Now you have a working (albeit very basic) Spring Cloud Stream application.
 
 == What's New in 2.0?
-Spring Cloud Stream introduces quite a number of new features, enhancements and changes. The following sections outline most notable ones.
+Spring Cloud Stream introduces a number of new features, enhancements, and changes. The following sections outline the most notable ones:
 
+* <<spring-cloud-stream-preface-new-features>>
+* <<spring-cloud-stream-preface-notable-enhancements>>
+
+[[spring-cloud-stream-preface-new-features]]
 === New Features and Components
 
-==== Polling Consumer
-Introduction of _polled consumers_, where the application can control message processing rates. Please refer to the appropriate section for more details.
-You can also read this blog for more details https://spring.io/blog/2018/02/27/spring-cloud-stream-2-0-polled-consumers
+* *Polling Consumers*: Introduction of polled consumers, which let the application can control message processing rates.
+See "`<<spring-cloud-streams-overview-using-polled-consumers>>`" for more details.
+You can also read https://spring.io/blog/2018/02/27/spring-cloud-stream-2-0-polled-consumers[this blog post] for more details.
 
-==== Micrometer support
+* *Micrometer Support*: Metrics has been switched to use https://micrometer.io/[Micrometer].
+`MeterRegistry` is also provided as a bean so that custom applications can autowire it to capture custom metrics.
+See "`<<spring-cloud-stream-overview-metrics-emitter>>`" for more details.
 
-Metrics has been switched to use https://micrometer.io/[Micrometer]. `MeterRegistry` is also provided as a bean so custom application can autowire it to capture custom metrics.
-Please refer to the appropriate section for more details
+* *New Actuator Binding Controls*: New actuator binding controls let you both visualize and control the Bindings lifecycle.
+For more details, see <<Binding visualization and control>>.
 
-==== New Actuator Binding controls
-There are now new new Actuator binding controls to both visualize as well as control Bindings lifecycle. For more details please visit <<Binding visualization and control>>
+* *Configurable RetryTemplate*: Aside from providing properties to configure `RetryTemplate`, we now let you provide your own template, effectively overriding the one provided by the framework.
+To use it, configure it as a `@Bean` in your application.
 
-==== Configurable RetryTemplate
-Aside from providing properties to configure `RetryTemplate` we now allow you to provide your own effectively overriding the one provided by the framework. Simply configure
-it as a `@Bean` in your application.
+[[spring-cloud-stream-preface-notable-enhancements]]
+=== Notable Enhancements
 
-=== Notable changes and enhancements
+This version includes the following notable enhancements:
 
-==== Both Actuator and Web dependencies are now optional
+* <<spring-cloud-stream-preface-actuator-web-dependencies>>
+* <<spring-cloud-stream-preface-content-type-negotiation-improvements>>
+* <<spring-cloud-stream-preface-notable-deprecations>>
 
-This helps to slim down the footprint of the deployed application in the event neither of the functionality is required.
-It also allows one to swicth between the reactive and conventional web paradigms by adding one of the following dependencies manually:
+[[spring-cloud-stream-preface-actuator-web-dependencies]]
+==== Both Actuator and Web Dependencies Are Now Optional
+
+This change slims down the footprint of the deployed application in the event neither actuator nor web dependencies required.
+It also lets you switch between the reactive and conventional web paradigms by manually adding one of the following dependencies.
+
+The following listing shows how to add the conventional web framework:
 [source,xml]
 ----
 <dependency>
@@ -138,7 +174,9 @@ It also allows one to swicth between the reactive and conventional web paradigms
         <artifactId>spring-boot-starter-web</artifactId>
 </dependency>
 ----
-or
+
+The following listing shows how to add the reactive web framework:
+
 [source,xml]
 ----
 <dependency>
@@ -147,7 +185,7 @@ or
 </dependency>
 ----
 
-Actuator dependency can be added as follows:
+The following list shows how to add the actuator dependency:
 [source,xml]
 ----
 <dependency>
@@ -156,42 +194,53 @@ Actuator dependency can be added as follows:
 </dependency>
 ----
 
-==== Content-type negotiation improvenents
-One of the core themes for 2.0 is improvements (both consistency and performance) around content-type negotiation and message conversion.
-The following summary outlines notable changes and improvements. Please refer to the appropriate section for more details as well as this blog
-https://spring.io/blog/2018/02/26/spring-cloud-stream-2-0-content-type-negotiation-and-transformation.
+[[spring-cloud-stream-preface-content-type-negotiation-improvements]]
+==== Content-type Negotiation Improvements
 
-* All message conversion is now handled *only* by `MessageConverters`.
-* Introduction of `@StreamMessageConverter` annotation to provide custom `MessageConverters`.
-* Introduction of the default _Content Type_ as `application/json` which needs to be taken into consideration when migrating 1.3
-application and/or operating in the mixed mode (i.e., 1.3 producer -> 2.0 consumer).
-* Messages with textual payloads and _contentType_ `text/...` or `.../json` are no longer converted to `Message<String>` for cases where argument type of the provided `MessageHandler`
-can not be determnied (i.e., `public void handle(Message<?> message)` or `public void handle(Object payload)`). Further more, a strong argument type may not be enough
-to properly convert messages, so `contentType` header is may be used as supplement by some `MessageConverters`.
+One of the core themes for verion 2.0 is improvements (in both consistency and performance) around content-type negotiation and message conversion.
+The following summary outlines the notable changes and improvements in this area.
+See the "`<<contenttypemanagement>>`" section for more details.
+Also https://spring.io/blog/2018/02/26/spring-cloud-stream-2-0-content-type-negotiation-and-transformation[this blog post] contains more detail.
 
+* All message conversion is now handled *only* by `MessageConverter` objects.
+* We introduced the `@StreamMessageConverter` annotation to provide custom `MessageConverter` objects.
+* We introduced the default `Content Type` as `application/json`, which needs to be taken into consideration when migrating 1.3 application or operating in the mixed mode (that is, 1.3 producer -> 2.0 consumer).
+* Messages with textual payloads and a `contentType` of `text/...` or `.../json` are no longer converted to `Message<String>` for cases where the argument type of the provided `MessageHandler` can not be determined (that is, `public void handle(Message<?> message)` or `public void handle(Object payload)`).
+Furthermore, a strong argument type may not be enough to properly convert messages, so the `contentType` header may be used as a supplement by some `MessageConverters`.
+
+[[spring-cloud-stream-preface-notable-deprecations]]
 === Notable Deprecations
-==== Java serialization (Java native and Kryo)
-* `JavaSerializationMessageConverter` and `KryoMessageConverter`. While these two converters remain for now, they will be moved out of the core packages and support in the future.
-The main reason for this deprecation is to signal the issue _type-based language-specific_ serialization couuld  cause in the distributed environments, where Producers and Consumers
-may not only depend on different JVM versions or have different versions of supporting libraries (i.e., Kryo), but to also draw the attention to the fact that Consumers and Producers
-may and in a lot of cases are non-Java based.
 
-==== Deprecated classes and methods
-Following is a quick summary of notable deprecations. See corresponding javadocs fort more details.
+As of version 2.0, the following items have been deprecated:
 
-* `SharedChannelRegistry` in favor of `SharedBindingTargetRegistry`.
-* `Bindings` - beans qualified by it are already uniquely identified by their type. For example, provided `Source`, `Processor` or custom bindings:
+* <<spring-cloud-stream-preface-deprecation-java-serialization>>
+* <<spring-cloud-stream-preface-deprecation-classes-methods>>
+
+[[spring-cloud-stream-preface-deprecation-java-serialization]]
+==== Java Serialization (Java Native and Kryo)
+
+`JavaSerializationMessageConverter` and `KryoMessageConverter` remain for now. However, we plan to move them out of the core packages and support in the future.
+The main reason for this deprecation is to flag the issue that type-based, language-specific serialization could cause in distributed environments, where Producers and Consumers may depend on different JVM versions or have different versions of supporting libraries (that is, Kryo).
+We also wanted to draw the attention to the fact that Consumers and Producers may not be Java-based.
+
+[[spring-cloud-stream-preface-deprecation-classes-methods]]
+==== Deprecated Classes and Methods
+The following is a quick summary of notable deprecations. See the corresponding {spring-cloud-stream-javadoc-current}[javadoc] for more details.
+
+* `SharedChannelRegistry`. Use `SharedBindingTargetRegistry`.
+* `Bindings`.
+Beans qualified by it are already uniquely identified by their type -- for example, provided `Source`, `Processor`, or custom bindings:
 [source,java]
 ----
-public interface Foo {
-	String OUTPUT = "fooOutput";
+public interface Sample {
+	String OUTPUT = "sampleOutput";
 
-	@Output(Foo.OUTPUT)
+	@Output(Sample.OUTPUT)
 	MessageChannel output();
 }
 ----
 * `HeaderMode.raw`. Use `none`, `headers` or `embeddedHeaders`
-* `ProducerProperties.partitionKeyExtractorClass` in favor of `partitionKeyExtractorName` and `ProducerProperties.partitionSelectorClass` in favor of `partitionSelectorName`.
-This is to ensure that both components are Spring configured/managed and referenced in Spring-friendly way.
-* `BinderAwareRouterBeanPostProcessor` - while the component exists it is no longer a Bean Post Processor and will be renamed in the future.
-* `BinderProperties.setEnvironment(Properties environment)` in favor of `BinderProperties.setEnvironment(Map<String, Object> environment)`.
+* `ProducerProperties.partitionKeyExtractorClass`. Use `partitionKeyExtractorName` and `ProducerProperties.partitionSelectorClass` in favor of `partitionSelectorName`.
+This change ensures that both components are Spring configured and managed and are referenced in a Spring-friendly way.
+* `BinderAwareRouterBeanPostProcessor`. While the component exists, it is no longer a Bean Post Processor and will be renamed in the future.
+* `BinderProperties.setEnvironment(Properties environment)`. Use `BinderProperties.setEnvironment(Map<String, Object> environment)`.
