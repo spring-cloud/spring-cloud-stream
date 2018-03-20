@@ -1,6 +1,6 @@
 [[spring-cloud-stream-binder-rabbit-reference]]
 = Spring Cloud Stream RabbitMQ Binder Reference Guide
-Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Gary Russell
+Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Gary Russell, Jay Bryant
 :doctype: book
 :toc:
 :toclevels: 4

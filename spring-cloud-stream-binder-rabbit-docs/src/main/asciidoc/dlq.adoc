@@ -1,19 +1,20 @@
 [[rabbit-dlq-processing]]
 == Dead-Letter Queue Processing
 
-Because it can't be anticipated how users would want to dispose of dead-lettered messages, the framework does not provide any standard mechanism to handle them.
+Because you cannot anticipate how users would want to dispose of dead-lettered messages, the framework does not provide any standard mechanism to handle them.
 If the reason for the dead-lettering is transient, you may wish to route the messages back to the original queue.
 However, if the problem is a permanent issue, that could cause an infinite loop.
-The following `spring-boot` application is an example of how to route those messages back to the original queue, but moves them to a third "parking lot" queue after three attempts.
-The second example utilizes the https://www.rabbitmq.com/blog/2015/04/16/scheduling-messages-with-rabbitmq/[RabbitMQ Delayed Message Exchange] to introduce a delay to the requeued message.
+The following Spring Boot application shows an example of how to route those messages back to the original queue but moves them to a third "`parking lot`" queue after three attempts.
+The second example uses the https://www.rabbitmq.com/blog/2015/04/16/scheduling-messages-with-rabbitmq/[RabbitMQ Delayed Message Exchange] to introduce a delay to the re-queued message.
 In this example, the delay increases for each attempt.
-These examples use a `@RabbitListener` to receive messages from the DLQ, you could also use `RabbitTemplate.receive()` in a batch process.
+These examples use a `@RabbitListener` to receive messages from the DLQ.
+You could also use `RabbitTemplate.receive()` in a batch process.
 
 The examples assume the original destination is `so8400in` and the consumer group is `so8400`.
 
 === Non-Partitioned Destinations
 
-The first two examples are when the destination is **not** partitioned.
+The first two examples are for when the destination is *not* partitioned:
 
 [source, java]
 ----
@@ -125,11 +126,11 @@ public class ReRouteDlqApplication {
 
 === Partitioned Destinations
 
-With partitioned destinations, there is one DLQ for all partitions and we determine the original queue from the headers.
+With partitioned destinations, there is one DLQ for all partitions. We determine the original queue from the headers.
 
-==== republishToDlq=false
+==== `republishToDlq=false`
 
-When `republishToDlq` is `false`, RabbitMQ publishes the message to the DLX/DLQ with an `x-death` header containing information about the original destination.
+When `republishToDlq` is `false`, RabbitMQ publishes the message to the DLX/DLQ with an `x-death` header containing information about the original destination, as shown in the following example:
 
 [source, java]
 ----
@@ -184,9 +185,9 @@ public class ReRouteDlqApplication {
 }
 ----
 
-==== republishToDlq=true
+==== `republishToDlq=true`
 
-When `republishToDlq` is `true`, the republishing recoverer adds the original exchange and routing key to headers.
+When `republishToDlq` is `true`, the republishing recoverer adds the original exchange and routing key to headers, as shown in the following example:
 
 [source, java]
 ----

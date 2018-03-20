@@ -2,11 +2,11 @@
 
 RabbitMQ does not support partitioning natively.
 
-Sometimes it is advantageous to send data to specific partitions, for example when you want to strictly order message processing - all messages for a particular customer should go to the same partition.
+Sometimes, it is advantageous to send data to specific partitions -- for example, when you want to strictly order message processing, all messages for a particular customer should go to the same partition.
 
 The `RabbitMessageChannelBinder` provides partitioning by binding a queue for each partition to the destination exchange.
 
-The following illustrates how to configure the producer and consumer side:
+The following Java and YAML examples show how to configure the producer:
 
 .Producer
 [source, java]
@@ -18,10 +18,10 @@ public class RabbitPartitionProducerApplication {
     private static final Random RANDOM = new Random(System.currentTimeMillis());
 
     private static final String[] data = new String[] {
-            "foo1", "bar1", "qux1",
-            "foo2", "bar2", "qux2",
-            "foo3", "bar3", "qux3",
-            "foo4", "bar4", "qux4",
+            "abc1", "def1", "qux1",
+            "abc2", "def2", "qux2",
+            "abc3", "def3", "qux3",
+            "abc4", "def4", "qux4",
             };
 
     public static void main(String[] args) {
@@ -61,24 +61,27 @@ public class RabbitPartitionProducerApplication {
 
 [NOTE]
 ====
-The above configuration uses the default partitioning (`key.hashCode() % partitionCount`).
-This may or may not provide a suitably balanced algorithm, depending on the key values; you can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
+The configuration in the prececing example uses the default partitioning (`key.hashCode() % partitionCount`).
+This may or may not provide a suitably balanced algorithm, depending on the key values.
+You can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
 
-The `required-groups` property is only required if you need the consumer queues to be provisioned when the producer is deployed.
-Otherwise, any messages sent to a partition will be lost until the corresponding consumer is deployed.
+The `required-groups` property is required only if you need the consumer queues to be provisioned when the producer is deployed.
+Otherwise, any messages sent to a partition are lost until the corresponding consumer is deployed.
 ====
 
-This configuration provisions a topic exchange:
+The following configuration provisions a topic exchange:
 
 image::part-exchange.png[scaledwidth="50%"]
 
-and these queues bound to that exchange:
+The following queues are bound to that exchange:
 
 image::part-queues.png[scaledwidth="50%"]
 
-with these bindings:
+The following bindings associate the queues to the exchange:
 
 image::part-bindings.png[scaledwidth="50%"]
+
+The following Java and YAML examples continue the previous examples and show how to configure the consumer:
 
 .Consumer
 [source, java]
@@ -116,6 +119,7 @@ public class RabbitPartitionConsumerApplication {
                 instance-index: 0
 ----
 
-IMPORTANT: The `RabbitMessageChannelBinder` does not support dynamic scaling; there must be at least one consumer per partition.
-The consumer's `instanceIndex` is used to indicate which partition will be consumed.
-On platforms such as Cloud Foundry there can only be one instance with an `instanceIndex`.
+IMPORTANT: The `RabbitMessageChannelBinder` does not support dynamic scaling.
+There must be at least one consumer per partition.
+The consumer's `instanceIndex` is used to indicate which partition is consumed.
+Platforms such as Cloud Foundry can have only one instance with an `instanceIndex`.
