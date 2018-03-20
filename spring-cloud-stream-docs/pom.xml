@@ -139,7 +139,7 @@
 									<backend>docbook5</backend>
 									<doctype>book</doctype>
 									<attributes>
-										<docinfo>true</docinfo>
+										<docinfo>shared</docinfo>
 									</attributes>
 								</configuration>
 							</execution>
@@ -311,7 +311,10 @@
 											<fileset dir="${project.build.directory}/contents" />
 											<zipfileset dir="${project.build.directory}/generated-docs" prefix="reference/htmlsingle">
 												<include name="index.html" />
+												<include name="docinfo.html" />
+												<include name="docinfo-footer.html" />
 												<include name="images/**" />
+												<include name="tocbot-3.0.2/**" />
 											</zipfileset>
 										</zip>
 									</target>
