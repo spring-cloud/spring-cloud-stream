@@ -1648,15 +1648,15 @@ Message<byte[]> toMessage(Object payload, @Nullable MessageHeaders headers);
 As mentioned earlier, the framework already provides a stack of `MessageConverters` to handle most common use cases.
 The following list describes the provided `MessageConverters`, in order of precedence (the first `MessageConverter` that works is used):
 
-. `ApplicationJsonMessageMarshallingConverter`: Variation of the `org.springframework.messaging.converter.MappingJackson2MessageConverter`. Supports conversion of the payload of the `Message` from `String` or `byte[]`.
-. `TupleJsonMessageConverter`: *DEPRECATED* Supports conversion of the payload of the `Message` from `org.springframework.tuple.Tuple`.
-. `ByteArrayMessageConverter`: Supports conversion of the payload of the `Message` from `byte[]` to `byte[]` for cases when `contentType` is set to `application/octet-stream`. It is essentially a pass through and exists primarily for backward compatibility.
+. `ApplicationJsonMessageMarshallingConverter`: Variation of the `org.springframework.messaging.converter.MappingJackson2MessageConverter`. Supports conversion of the payload of the `Message` to/from POJO for cases when `contentType` is `application/json` (DEFAULT).
+. `TupleJsonMessageConverter`: *DEPRECATED* Supports conversion of the payload of the `Message` to/from `org.springframework.tuple.Tuple`.
+. `ByteArrayMessageConverter`: Supports conversion of the payload of the `Message` from `byte[]` to `byte[]` for cases when `contentType` is `application/octet-stream`. It is essentially a pass through and exists primarily for backward compatibility.
 . `ObjectStringMessageConverter`: Supports conversion of any type to a `String` when `contentType` is `text/plain`.
 It invokes Object’s `toString()` method or, if the payload is `byte[]`, a new `String(byte[])`.
 . `JavaSerializationMessageConverter`: *DEPRECATED* Supports conversion based on java serialization when `contentType` is `application/x-java-serialized-object`.
 . `KryoMessageConverter`: *DEPRECATED* Supports conversion based on Kryo serialization when `contentType` is `application/x-java-object`.
 . `JsonUnmarshallingConverter`: Similar to the `ApplicationJsonMessageMarshallingConverter`. It supports conversion of any type when `contentType` is `application/x-java-object`.
-It expects the actual type information to be embedded in the `contentType` as an attribute (for example, `application/x-java-object;type=thingOne.thingTwo.Cat`).
+It expects the actual type information to be embedded in the `contentType` as an attribute (for example, `application/x-java-object;type=foo.bar.Cat`).
 
 When no appropriate converter is found, the framework throws an exception. When that happens, you should check your code and configuration and ensure you did not miss anything (that is, ensure that you provided a `contentType` by using a binding or a header).
 However, most likely, you found some uncommon case (such as a custom `contentType` perhaps) and the current stack of provided `MessageConverters`
@@ -1667,8 +1667,7 @@ does not know how to convert. If that is the case, you can add custom `MessageCo
 
 Spring Cloud Stream exposes a mechanism to define and register additional `MessageConverters`.
 To use it, implement `org.springframework.messaging.converter.MessageConverter`, configure it as a `@Bean`, and annotate it with `@StreamMessageConverter`.
-It is then added to the existing stack of `MessageConverters`.
-The `@StreamMessageConverter` annotation ensures that other other converters that may be present on the application context are not picked up by mistake.
+It is then apended to the existing stack of `MessageConverter`s.
 
 NOTE: It is important to understand that custom `MessageConverter` implementations are added to the head of the existing stack.
 Consequently, custom `MessageConverter` implementations take precedence over the existing ones, which lets you override as well as add to the existing converters.
@@ -1684,7 +1683,7 @@ public static class SinkApplication {
     ...
 
     @Bean
-    @StreamConverter
+    @StreamMessageConverter
     public MessageConverter customMessageConverter() {
         return new MyCustomMessageConverter();
     }

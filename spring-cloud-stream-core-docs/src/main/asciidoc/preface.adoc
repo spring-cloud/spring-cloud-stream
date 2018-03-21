@@ -26,7 +26,7 @@ Basically, you choose the messaging middleware to which your application binds.
 We recommend using the one you have already installed or feel more comfortable with installing and running.
 Also, as you can see from the Initilaizer screen, there are a few other options you can choose.
 For example, you can choose Gradle as your build tool instead of Maven (the default).
-. In the *Artifact* field, type 'logging-consumer`.
+. In the *Artifact* field, type 'logging-consumer'.
 +
 The value of the *Artifact* field becomes the application name.
 If you chose RabbitMQ for the middleware, your Spring Initializr should now be as follows:
@@ -137,7 +137,7 @@ Spring Cloud Stream introduces a number of new features, enhancements, and chang
 [[spring-cloud-stream-preface-new-features]]
 === New Features and Components
 
-* *Polling Consumers*: Introduction of polled consumers, which let the application can control message processing rates.
+* *Polling Consumers*: Introduction of polled consumers, which lets the application control message processing rates.
 See "`<<spring-cloud-streams-overview-using-polled-consumers>>`" for more details.
 You can also read https://spring.io/blog/2018/02/27/spring-cloud-stream-2-0-polled-consumers[this blog post] for more details.
 
@@ -199,7 +199,7 @@ The following list shows how to add the actuator dependency:
 
 One of the core themes for verion 2.0 is improvements (in both consistency and performance) around content-type negotiation and message conversion.
 The following summary outlines the notable changes and improvements in this area.
-See the "`<<contenttypemanagement>>`" section for more details.
+See the "`<<content-type-management>>`" section for more details.
 Also https://spring.io/blog/2018/02/26/spring-cloud-stream-2-0-content-type-negotiation-and-transformation[this blog post] contains more detail.
 
 * All message conversion is now handled *only* by `MessageConverter` objects.
@@ -221,7 +221,7 @@ As of version 2.0, the following items have been deprecated:
 
 `JavaSerializationMessageConverter` and `KryoMessageConverter` remain for now. However, we plan to move them out of the core packages and support in the future.
 The main reason for this deprecation is to flag the issue that type-based, language-specific serialization could cause in distributed environments, where Producers and Consumers may depend on different JVM versions or have different versions of supporting libraries (that is, Kryo).
-We also wanted to draw the attention to the fact that Consumers and Producers may not be Java-based.
+We also wanted to draw the attention to the fact that Consumers and Producers may not even be Java-based, so polyglot style serialization (i.e., JSON) is better suited.
 
 [[spring-cloud-stream-preface-deprecation-classes-methods]]
 ==== Deprecated Classes and Methods
@@ -240,7 +240,7 @@ public interface Sample {
 }
 ----
 * `HeaderMode.raw`. Use `none`, `headers` or `embeddedHeaders`
-* `ProducerProperties.partitionKeyExtractorClass`. Use `partitionKeyExtractorName` and `ProducerProperties.partitionSelectorClass` in favor of `partitionSelectorName`.
+* `ProducerProperties.partitionKeyExtractorClass` in favor of `partitionKeyExtractorName` and `ProducerProperties.partitionSelectorClass` in favor of `partitionSelectorName`.
 This change ensures that both components are Spring configured and managed and are referenced in a Spring-friendly way.
-* `BinderAwareRouterBeanPostProcessor`. While the component exists, it is no longer a Bean Post Processor and will be renamed in the future.
+* `BinderAwareRouterBeanPostProcessor`. While the component remains, it is no longer a `BeanPostProcessor` and will be renamed in the future.
 * `BinderProperties.setEnvironment(Properties environment)`. Use `BinderProperties.setEnvironment(Map<String, Object> environment)`.
