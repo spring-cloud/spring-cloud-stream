@@ -108,7 +108,7 @@ public final class GenericsUtils {
 	 *
 	 * @param binderInstance the binder.
 	 * @param bindingTargetType the binding target type.
-	 * @return
+	 * @return true if found, false otherwise.
 	 */
 	@SuppressWarnings("rawtypes")
 	public static boolean checkCompatiblePollableBinder(Binder binderInstance, Class<?> bindingTargetType) {

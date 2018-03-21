@@ -33,8 +33,7 @@ public interface AggregateApplication {
 	 *
 	 * @param bindableType the bindable type
 	 * @param namespace the namespace
-	 * @param <T>
-	 * @return
+	 * @param <T> parameterized bindable type
 	 */
 	<T> T getBinding(Class<T> bindableType, String namespace);
 }

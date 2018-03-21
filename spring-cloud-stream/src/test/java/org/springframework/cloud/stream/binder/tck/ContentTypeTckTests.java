@@ -81,7 +81,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals("oleg", new String(outputMessage.getPayload()));
 	}
@@ -94,7 +94,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals("oleg", new String(outputMessage.getPayload()));
 	}
@@ -128,7 +128,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals("OLEG", new String(outputMessage.getPayload()));
 	}
@@ -141,7 +141,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -155,7 +155,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -169,7 +169,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -183,7 +183,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -197,7 +197,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -211,7 +211,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -225,7 +225,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes(), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN))));
+		source.send(new GenericMessage<>(jsonPayload.getBytes(), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN))));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -239,7 +239,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -253,7 +253,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes(), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN))));
+		source.send(new GenericMessage<>(jsonPayload.getBytes(), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN))));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -267,7 +267,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -281,7 +281,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -296,7 +296,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -310,7 +310,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -324,7 +324,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("{\"name\":\"bob\"}", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -338,13 +338,14 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertEquals(MimeTypeUtils.TEXT_PLAIN, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void kryo_pojoToPojo() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
@@ -357,7 +358,7 @@ public class ContentTypeTckTests {
 		Message<byte[]> message = (Message<byte[]>) converter
 				.toMessage(new Person("oleg"), new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_OBJECT)));
 
-		source.send(new GenericMessage<byte[]>(message.getPayload()));
+		source.send(new GenericMessage<>(message.getPayload()));
 		Message<byte[]> outputMessage = target.receive();
 		assertNotNull(outputMessage);
 		MimeType contentType = (MimeType) outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE);
@@ -366,6 +367,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void kryo_pojoToPojoContentTypeHeader() {
 		ApplicationContext context = new SpringApplicationBuilder(PojoToPojoStreamListener.class)
 				.web(WebApplicationType.NONE)
@@ -397,7 +399,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertNotNull(outputMessage);
 		System.out.println(new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
@@ -413,13 +415,12 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertNotNull(outputMessage);
 		assertEquals("FooBarMessageConverter", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 		assertEquals(MimeType.valueOf("foo/bar"), outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 	}
-
 
 	//Failure tests
 
@@ -431,7 +432,7 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		assertTrue(binder.getLastError().getPayload() instanceof MessageConversionException);
 	}
 
@@ -443,20 +444,20 @@ public class ContentTypeTckTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		assertTrue(binder.getLastError().getPayload() instanceof MessageConversionException);
 	}
 
 
 	@Test
-	public void toCollectionWithParameterizedType() throws Exception {
+	public void toCollectionWithParameterizedType() {
 		ApplicationContext context = new SpringApplicationBuilder(CollectionWithParameterizedTypes.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "[{\"person\":{\"name\":\"jon\"},\"id\":123},{\"person\":{\"name\":\"jane\"},\"id\":456}]";
-		source.send(new GenericMessage<byte[]>(jsonPayload.getBytes()));
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertThat(outputMessage.getPayload()).isEqualTo(jsonPayload.getBytes());
 	}
@@ -467,7 +468,7 @@ public class ContentTypeTckTests {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public List<Employee<Person>> echo(List<Employee<Person>> value) {
-			assertTrue(value.get(0) instanceof Employee);
+			assertTrue(value.get(0) != null);
 			return value;
 		}
 	}

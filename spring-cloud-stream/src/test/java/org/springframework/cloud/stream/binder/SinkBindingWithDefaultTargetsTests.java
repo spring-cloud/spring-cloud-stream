@@ -31,8 +31,8 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -51,8 +51,8 @@ public class SinkBindingWithDefaultTargetsTests {
 	@Autowired
 	private Sink testSink;
 
-	@SuppressWarnings("rawtypes")
 	@Test
+	@SuppressWarnings({"rawtypes","unchecked"})
 	public void testSourceOutputChannelBound() {
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("testtock"), isNull(), eq(this.testSink.input()),

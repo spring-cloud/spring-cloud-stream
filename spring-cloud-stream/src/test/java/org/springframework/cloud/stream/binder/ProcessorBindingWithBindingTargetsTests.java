@@ -31,8 +31,8 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -49,14 +49,14 @@ public class ProcessorBindingWithBindingTargetsTests {
 	@Autowired
 	private Processor testProcessor;
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testSourceOutputChannelBound() {
 		final Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("testtock.0"), isNull(),
-				eq(this.testProcessor.input()), Mockito.<ConsumerProperties>any());
+				eq(this.testProcessor.input()), Mockito.any());
 		verify(binder).bindProducer(eq("testtock.1"), eq(this.testProcessor.output()),
-				Mockito.<ProducerProperties>any());
+				Mockito.any());
 	}
 
 	@EnableBinding(Processor.class)

@@ -262,6 +262,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
 	public void testPartitionedModuleJava() throws Exception {
 		B binder = getBinder();
 

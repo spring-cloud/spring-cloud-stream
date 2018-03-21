@@ -29,7 +29,6 @@ import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.ReflectionUtils.MethodCallback;
 import org.springframework.util.StringUtils;
 
 /**
@@ -74,23 +73,19 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 
 	public static void registerBindingTargetBeanDefinitions(Class<?> type, final String bindingTargetInterfaceBeanName,
 			final BeanDefinitionRegistry registry) {
-		ReflectionUtils.doWithMethods(type, new MethodCallback() {
-			@Override
-			public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-				Input input = AnnotationUtils.findAnnotation(method, Input.class);
-				if (input != null) {
-					String name = getBindingTargetName(input, method);
-					registerInputBindingTargetBeanDefinition(input.value(), name, bindingTargetInterfaceBeanName,
-							method.getName(), registry);
-				}
-				Output output = AnnotationUtils.findAnnotation(method, Output.class);
-				if (output != null) {
-					String name = getBindingTargetName(output, method);
-					registerOutputBindingTargetBeanDefinition(output.value(), name, bindingTargetInterfaceBeanName,
-							method.getName(), registry);
-				}
+		ReflectionUtils.doWithMethods(type, method -> {
+			Input input = AnnotationUtils.findAnnotation(method, Input.class);
+			if (input != null) {
+				String name = getBindingTargetName(input, method);
+				registerInputBindingTargetBeanDefinition(input.value(), name, bindingTargetInterfaceBeanName,
+						method.getName(), registry);
 			}
-
+			Output output = AnnotationUtils.findAnnotation(method, Output.class);
+			if (output != null) {
+				String name = getBindingTargetName(output, method);
+				registerOutputBindingTargetBeanDefinition(output.value(), name, bindingTargetInterfaceBeanName,
+						method.getName(), registry);
+			}
 		});
 	}
 

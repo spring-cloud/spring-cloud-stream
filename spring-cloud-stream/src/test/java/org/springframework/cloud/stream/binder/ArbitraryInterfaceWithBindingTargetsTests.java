@@ -30,8 +30,8 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -49,18 +49,18 @@ public class ArbitraryInterfaceWithBindingTargetsTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("someQueue.0"), isNull(), eq(this.fooChannels.foo()),
-				Mockito.<ConsumerProperties>any());
+				Mockito.any());
 		verify(binder).bindConsumer(eq("someQueue.1"), isNull(), eq(this.fooChannels.bar()),
-				Mockito.<ConsumerProperties>any());
+				Mockito.any());
 		verify(binder).bindProducer(eq("someQueue.2"), eq(this.fooChannels.baz()),
-				Mockito.<ProducerProperties>any());
+				Mockito.any());
 		verify(binder).bindProducer(eq("someQueue.3"), eq(this.fooChannels.qux()),
-				Mockito.<ProducerProperties>any());
+				Mockito.any());
 		verifyNoMoreInteractions(binder);
 	}
 

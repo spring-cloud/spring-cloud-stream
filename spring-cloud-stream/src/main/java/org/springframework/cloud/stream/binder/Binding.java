@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.util.Collections;
 import java.util.Map;
 
+import org.springframework.cloud.stream.endpoint.BindingsEndpoint;
 import org.springframework.integration.endpoint.Pausable;
 
 /**

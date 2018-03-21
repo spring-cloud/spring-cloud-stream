@@ -46,6 +46,7 @@ import org.springframework.messaging.MessageChannel;
 public class TestSupportBinderAutoConfiguration {
 
 	@Bean
+	@SuppressWarnings("unchecked")
 	public BinderFactory binderFactory(final Binder<MessageChannel, ?, ?> binder) {
 		return new BinderFactory() {
 			@Override

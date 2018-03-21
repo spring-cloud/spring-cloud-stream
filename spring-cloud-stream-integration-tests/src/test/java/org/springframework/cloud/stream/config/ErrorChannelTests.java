@@ -63,7 +63,7 @@ public class ErrorChannelTests {
 		Assert.isTrue(message.getPayload() instanceof MessagingException, "Message payload should be an instance" +
 				"of MessagingException");
 		Assert.isTrue(message.getPayload().toString()
-				.equals("org.springframework.messaging.MessagingException: test"));
+				.equals("org.springframework.messaging.MessagingException: test"), "Text did not match");
 	}
 
 	@EnableBinding(Source.class)
@@ -74,11 +74,8 @@ public class ErrorChannelTests {
 		@Bean
 		@InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
 		public MessageSource<String> timerMessageSource() {
-			return new MessageSource<String>() {
-				@Override
-				public Message<String> receive() {
-					throw new MessagingException("test");
-				}
+			return () -> {
+				throw new MessagingException("test");
 			};
 		}
 	}

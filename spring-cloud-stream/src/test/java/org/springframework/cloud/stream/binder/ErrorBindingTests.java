@@ -30,25 +30,22 @@ import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.context.IntegrationContextUtils;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Matchers.same;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
 
 /**
  * @author Marius Bogoevici
  */
 public class ErrorBindingTests {
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testErrorChannelNotBoundByDefault() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class,
@@ -64,7 +61,7 @@ public class ErrorBindingTests {
 		applicationContext.close();
 	}
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testErrorChannelBoundIfConfigured() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class,
@@ -97,12 +94,9 @@ public class ErrorBindingTests {
 		MessageChannel errorBridgeChannel = applicationContext.getBean(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL,
 				MessageChannel.class);
 
-		((SubscribableChannel)errorBridgeChannel).subscribe(new MessageHandler() {
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				assertThat(new String((byte[])message.getPayload())).isEqualTo("{\"foo\":\"bar\"}");
-				received.set(true);
-			}
+		((SubscribableChannel) errorBridgeChannel).subscribe(message -> {
+			assertThat(new String((byte[]) message.getPayload())).isEqualTo("{\"foo\":\"bar\"}");
+			received.set(true);
 		});
 
 		Foo foo = new Foo();
@@ -126,15 +120,12 @@ public class ErrorBindingTests {
 		MessageChannel errorBridgeChannel = applicationContext.getBean(BindingServiceConfiguration.ERROR_BRIDGE_CHANNEL,
 				MessageChannel.class);
 
-		((SubscribableChannel)errorBridgeChannel).subscribe(new MessageHandler() {
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				String payload = new String((byte[]) message.getPayload());
-				assertThat(payload.contains("cause")).isTrue();
-				assertThat(payload.contains("stackTrace")).isTrue();
-				assertThat(payload.contains("throwing exception")).isTrue();
-				received.set(true);
-			}
+		((SubscribableChannel) errorBridgeChannel).subscribe(message -> {
+			String payload = new String((byte[]) message.getPayload());
+			assertThat(payload.contains("cause")).isTrue();
+			assertThat(payload.contains("stackTrace")).isTrue();
+			assertThat(payload.contains("throwing exception")).isTrue();
+			received.set(true);
 		});
 
 		errorChannel.send(new GenericMessage<>(new Exception("throwing exception")));

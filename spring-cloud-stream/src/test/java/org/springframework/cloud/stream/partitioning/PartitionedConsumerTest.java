@@ -38,8 +38,8 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -59,7 +59,7 @@ public class PartitionedConsumerTest {
 	private Sink testSink;
 
 	@Test
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void testBindingPartitionedConsumer() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor.forClass(ConsumerProperties.class);

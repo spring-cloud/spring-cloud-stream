@@ -21,7 +21,6 @@ package org.springframework.cloud.stream.binder;
  *
  * @param <H> the polled consumer handler type.
  * @param <C> the consumer properties type.
- * @param <P> the producer properties type.
  *
  * @author Gary Russell
  * @since 2.0

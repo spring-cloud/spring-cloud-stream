@@ -30,8 +30,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
@@ -48,14 +48,14 @@ public class ProcessorBindingsWithDefaultsTests {
 	@Autowired
 	private Processor processor;
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testSourceOutputChannelBound() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		Mockito.verify(binder).bindConsumer(eq("input"), isNull(), eq(this.processor.input()),
-				Mockito.<ConsumerProperties>any());
+				Mockito.any());
 		Mockito.verify(binder).bindProducer(eq("output"), eq(this.processor.output()),
-				Mockito.<ProducerProperties>any());
+				Mockito.any());
 		verifyNoMoreInteractions(binder);
 	}
 

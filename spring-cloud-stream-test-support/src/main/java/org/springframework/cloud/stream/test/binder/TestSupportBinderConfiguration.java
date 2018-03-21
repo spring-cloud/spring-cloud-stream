@@ -23,7 +23,7 @@ import org.springframework.messaging.MessageChannel;
 
 /**
  * Binder {@link org.springframework.context.annotation.Configuration} for the
- * {@link @TestBinder}.
+ * {@link TestSupportBinder}
  *
  * Either imported by the {@link TestSupportBinderAutoConfiguration} for the test binder
  * default usage scenario (superseding all binders on the classpath), or used as a binder

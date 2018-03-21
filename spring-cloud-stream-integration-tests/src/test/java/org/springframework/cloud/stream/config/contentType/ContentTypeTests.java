@@ -265,7 +265,7 @@ public class ContentTypeTests {
 	}
 
 	@Test
-	public void testReceiveRawWithDifferentContentTypes() throws Exception {
+	public void testReceiveRawWithDifferentContentTypes() {
 		try (ConfigurableApplicationContext context = SpringApplication.run(
 				SinkApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false")) {
@@ -289,7 +289,7 @@ public class ContentTypeTests {
 	}
 
 	@Test
-	public void testReceiveKryoPayload() throws Exception {
+	public void testReceiveKryoPayload() {
 		try (ConfigurableApplicationContext context = SpringApplication.run(
 				SinkApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
@@ -313,7 +313,8 @@ public class ContentTypeTests {
 	}
 
 	@Test
-	public void testReceiveKryoWithHeadersOverridingDefault() throws Exception{
+	@SuppressWarnings("deprecation")
+	public void testReceiveKryoWithHeadersOverridingDefault() {
 		try (ConfigurableApplicationContext context = SpringApplication.run(
 				SinkApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false"
@@ -407,7 +408,4 @@ public class ContentTypeTests {
 		SubscribableChannel raw();
 
 	}
-
-
-
 }

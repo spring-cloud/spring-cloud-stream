@@ -43,8 +43,8 @@ import org.springframework.util.StringUtils;
  * When beans of this interface are present in the context, they get priority in the {@link StreamListenerAnnotationBeanPostProcessor}
  * before falling back to the default implementation.
  *
- * {@see StreamListener}
- * {@see StreamListenerAnnotationBeanPostProcessor}
+ * @see StreamListener
+ * @see StreamListenerAnnotationBeanPostProcessor
  *
  * @author Soby Chacko
  */

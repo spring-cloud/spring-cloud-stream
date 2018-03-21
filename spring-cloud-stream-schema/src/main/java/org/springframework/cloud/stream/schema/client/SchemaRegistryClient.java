@@ -29,7 +29,7 @@ public interface SchemaRegistryClient {
 	 * Registers a schema with the remote repository returning the unique identifier
 	 * associated with this schema.
 	 * @param subject the full name of the schema
-	 * @param schema
+	 * @param schema string representation of the schema
 	 * @return a {@link SchemaRegistrationResponse} representing the result of the
 	 * operation
 	 */
@@ -39,14 +39,14 @@ public interface SchemaRegistryClient {
 	 * Retrieves a schema by its reference (subject and version).
 	 * @param schemaReference a {@link SchemaReference} used to identify the target
 	 * schema.
-	 * @return
+	 * @return schema
 	 */
 	String fetch(SchemaReference schemaReference);
 
 	/**
 	 * Retrieves a schema by its identifier.
 	 * @param id the id of the target schema.
-	 * @return
+	 * @return schema
 	 */
 	String fetch(int id);
 

@@ -292,7 +292,7 @@ public class BindingService {
 	/**
 	 * Provided for backwards compatibility. Will be removed in a future version.
 	 *
-	 * @return
+	 * @return {@link BindingServiceProperties}
 	 */
 	@Deprecated
 	public BindingServiceProperties getChannelBindingServiceProperties() {

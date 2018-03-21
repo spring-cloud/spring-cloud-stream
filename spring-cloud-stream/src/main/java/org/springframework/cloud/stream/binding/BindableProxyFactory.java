@@ -210,7 +210,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	/**
-	 * @deprecated in favor of {@link #bindInputBindings(BindingService)}
+	 * @deprecated in favor of {@link #createAndBindInputs(BindingService)}
 	 */
 	@Override
 	@Deprecated

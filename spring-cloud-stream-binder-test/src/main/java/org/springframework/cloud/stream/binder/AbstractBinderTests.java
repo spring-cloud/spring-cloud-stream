@@ -53,9 +53,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
-import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.handler.annotation.support.PayloadArgumentResolver;
@@ -185,16 +183,12 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		CountDownLatch latch = new CountDownLatch(1);
 		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
-		moduleInputChannel.subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				try {
-					inboundMessageRef.set((Message<byte[]>) message);
-				}
-				finally {
-					latch.countDown();
-				}
+		moduleInputChannel.subscribe(message1 -> {
+			try {
+				inboundMessageRef.set((Message<byte[]>) message1);
+			}
+			finally {
+				latch.countDown();
 			}
 		});
 
@@ -222,8 +216,8 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		}
 	}
 
-	@SuppressWarnings("rawtypes")
 	@Test
+	@SuppressWarnings({"rawtypes","deprecation"})
 	public void testSendAndReceiveKryo() throws Exception {
 		Binder binder = getBinder();
 		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
@@ -245,16 +239,12 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		CountDownLatch latch = new CountDownLatch(1);
 		AtomicReference<Message<Foo>> inboundMessageRef = new AtomicReference<Message<Foo>>();
-		moduleInputChannel.subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				try {
-					inboundMessageRef.set((Message<Foo>) message);
-				}
-				finally {
-					latch.countDown();
-				}
+		moduleInputChannel.subscribe(message1 -> {
+			try {
+				inboundMessageRef.set((Message<Foo>) message1);
+			}
+			finally {
+				latch.countDown();
 			}
 		});
 
@@ -269,8 +259,8 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		consumerBinding.unbind();
 	}
 
-	@SuppressWarnings("rawtypes")
 	@Test
+	@SuppressWarnings({"rawtypes","deprecation"})
 	public void testSendAndReceiveJavaSerialization() throws Exception {
 		Binder binder = getBinder();
 		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
@@ -296,16 +286,12 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 		CountDownLatch latch = new CountDownLatch(1);
 		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
-		moduleInputChannel.subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				try {
-					inboundMessageRef.set((Message<byte[]>) message);
-				}
-				finally {
-					latch.countDown();
-				}
+		moduleInputChannel.subscribe(message1 -> {
+			try {
+				inboundMessageRef.set((Message<byte[]>) message1);
+			}
+			finally {
+				latch.countDown();
 			}
 		});
 
@@ -402,16 +388,12 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		CountDownLatch latch = new CountDownLatch(1);
 		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
-		moduleInputChannel.subscribe(new MessageHandler() {
-
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-				try {
-					inboundMessageRef.set((Message<byte[]>) message);
-				}
-				finally {
-					latch.countDown();
-				}
+		moduleInputChannel.subscribe(message1 -> {
+			try {
+				inboundMessageRef.set((Message<byte[]>) message1);
+			}
+			finally {
+				latch.countDown();
 			}
 		});
 

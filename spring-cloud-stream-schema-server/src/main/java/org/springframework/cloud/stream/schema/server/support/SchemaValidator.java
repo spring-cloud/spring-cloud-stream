@@ -32,7 +32,7 @@ public interface SchemaValidator {
 	/**
 	 * Verifies if a definition is a valid schema
 	 * @param definition - The textual representation of the schema file
-	 * @return
+	 * @return true if valid, false otherwise
 	 */
 	boolean isValid(String definition);
 
@@ -41,7 +41,7 @@ public interface SchemaValidator {
 	 * This method may not be supported for certain formats
 	 * @param source - The textual representation of the schema to tested
 	 * @param other - The textual representation of the other schema to tested
-	 * @return
+	 * @return {@link Compatibility}
 	 */
 	Compatibility compatibilityCheck(String source, String other);
 
