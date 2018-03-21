@@ -1,9 +1,10 @@
 [[spring-cloud-stream-reference]]
 = Spring Cloud Stream Reference Guide
-Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Soby Chacko; Vinicius Carvalho; Gary Russell; Oleg Zhurakousky
+Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Soby Chacko; Vinicius Carvalho; Gary Russell; Oleg Zhurakousky; Jay Bryant
 :doctype: book
-:toc:
+:toc: left
 :toclevels: 4
+:docinfo: shared
 :source-highlighter: prettify
 :numbered:
 :icons: font
