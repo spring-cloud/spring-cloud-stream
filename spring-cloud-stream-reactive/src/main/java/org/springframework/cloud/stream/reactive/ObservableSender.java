@@ -23,8 +23,11 @@ import rx.Single;
  * Used for {@link org.springframework.cloud.stream.annotation.StreamListener} arguments
  * annotated with {@link org.springframework.cloud.stream.annotation.Output}.
  *
+ * @deprecated as of 2.0.0.RELEASE, this interface is deprecated and will be removed in 2.1 Use Project Reactor based {@link FluxSender}.
+ *
  * @author Marius Bogoevici
  */
+@Deprecated
 public interface ObservableSender {
 
 	/**
