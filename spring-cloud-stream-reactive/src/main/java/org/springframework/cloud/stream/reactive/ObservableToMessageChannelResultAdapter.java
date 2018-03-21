@@ -31,7 +31,9 @@ import org.springframework.util.Assert;
  * {@link MessageChannel}.
  *
  * @author Marius Bogoevici
+ * @deprecated as of 2.0.0.RELEASE, this is deprecated and will be removed in 2.1 Use Project Reactor based alternatives offered in Spring Cloud Stream.
  */
+@Deprecated
 public class ObservableToMessageChannelResultAdapter
 		implements StreamListenerResultAdapter<Observable<?>, MessageChannel> {
 
