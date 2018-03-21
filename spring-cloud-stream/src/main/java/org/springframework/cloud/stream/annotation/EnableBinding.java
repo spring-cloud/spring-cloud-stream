@@ -39,7 +39,6 @@ import org.springframework.integration.config.EnableIntegration;
  * @author Marius Bogoevici
  * @author David Turanski
  */
-@SuppressWarnings("deprecation")
 @Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

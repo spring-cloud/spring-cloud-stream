@@ -267,7 +267,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 	/**
 	 * This operations ensures that required dependencies are not accidentally injected early given that this bean is BPP.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void injectAndPostProcessDependencies() {
 		Collection<StreamListenerParameterAdapter> streamListenerParameterAdapters = this.applicationContext.getBeansOfType(StreamListenerParameterAdapter.class).values();
 		Collection<StreamListenerResultAdapter> streamListenerResultAdapters = this.applicationContext.getBeansOfType(StreamListenerResultAdapter.class).values();
@@ -327,6 +327,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
 	private class DefaultStreamListenerSetupMethodOrchestrator implements StreamListenerSetupMethodOrchestrator {
 
 		private final ConfigurableApplicationContext applicationContext;
@@ -370,7 +371,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 			return true;
 		}
 
-		@SuppressWarnings({"rawtypes", "unchecked"})
+		@SuppressWarnings("unchecked")
 		private void invokeStreamListenerResultAdapter(Method method, Object bean, String outboundName, Object... arguments) {
 			try {
 				if (Void.TYPE.equals(method.getReturnType())) {
