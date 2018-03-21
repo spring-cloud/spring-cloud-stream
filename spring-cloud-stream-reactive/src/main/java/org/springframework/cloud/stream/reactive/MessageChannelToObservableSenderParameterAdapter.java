@@ -31,8 +31,12 @@ import org.springframework.util.Assert;
 /**
  * Adapts an {@link org.springframework.cloud.stream.annotation.Output} annotated
  * {@link ObservableSender} to an outbound {@link MessageChannel}.
+ *
+ * @deprecated as of 2.0.0.RELEASE, this is deprecated and will be removed in 2.1 Use Project Reactor based alternatives offered in Spring Cloud Stream.
+ *
  * @author Marius Bogoevici
  */
+@Deprecated
 public class MessageChannelToObservableSenderParameterAdapter implements
 		StreamListenerParameterAdapter<ObservableSender, MessageChannel> {
 
