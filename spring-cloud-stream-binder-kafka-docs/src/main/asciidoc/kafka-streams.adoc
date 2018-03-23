@@ -577,6 +577,38 @@ public KStream<?, WordCount> process(KStream<Object, String> input) {
 }
 ----
 
+== State Store
+
+State store is created automatically by Kafka Stream when Streas DSL is used. When use processor API, in case you want to
+create and register a state store manually, you can use `KafkaStreamsStateStore` annotation. You can specify store name,
+type, whether to enable log, whether disable cache, etc, and those parameters will be injected into KStream building
+process in Kafka Streams binder to create and register the store to your KStream. After that, you can access the same way
+how you access in normal Kafka Streams code.
+
+Creation code:
+[source]
+----
+@KafkaStreamsStateStore(name="mystate", type= KafkaStreamsStateStoreProperties.StoreType.WINDOW, lengthMs=300000)
+public void process(KStream<Object, Product> input) {
+    ...
+}
+----
+
+Access code:
+[source]
+----
+Processor<Object, Product>() {
+
+    WindowStore<Object, String> state;
+
+    @Override
+    public void init(ProcessorContext processorContext) {
+        state = (WindowStore)processorContext.getStateStore("mystate");
+    }
+    ...
+}
+----
+
 == Interactive Queries
 
 As part of the public Kafka Streams binder API, we expose a class called `QueryableStoreRegistry`. You can access this 

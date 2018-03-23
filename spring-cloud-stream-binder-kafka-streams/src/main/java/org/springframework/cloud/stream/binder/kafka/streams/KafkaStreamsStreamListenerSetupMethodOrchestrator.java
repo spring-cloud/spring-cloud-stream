@@ -35,6 +35,9 @@ import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
+import org.apache.kafka.streams.state.StoreBuilder;
+import org.apache.kafka.streams.state.Stores;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -44,9 +47,11 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsStateStoreProperties;
 import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
@@ -79,6 +84,7 @@ import org.springframework.util.StringUtils;
  * 3. Each StreamListener method that it orchestrates gets its own {@link StreamsBuilderFactoryBean} and {@link StreamsConfig}
  *
  * @author Soby Chacko
+ * @author Lei Chen
  */
 class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListenerSetupMethodOrchestrator, ApplicationContextAware {
 
@@ -230,10 +236,12 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean = methodStreamsBuilderFactoryBeanMap.get(method);
 					StreamsBuilder streamsBuilder = streamsBuilderFactoryBean.getObject();
 					KafkaStreamsConsumerProperties extendedConsumerProperties = kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(inboundName);
+					//get state store spec
+					KafkaStreamsStateStoreProperties spec = buildStateStoreSpec(method);
 					Serde<?> keySerde = this.keyValueSerdeResolver.getInboundKeySerde(extendedConsumerProperties);
 					Serde<?> valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(bindingProperties.getConsumer(), extendedConsumerProperties);
 					if (parameterType.isAssignableFrom(KStream.class)) {
-						KStream<?, ?> stream = getkStream(inboundName, bindingProperties, streamsBuilder, keySerde, valueSerde);
+						KStream<?, ?> stream = getkStream(inboundName, spec, bindingProperties, streamsBuilder, keySerde, valueSerde);
 						KStreamBoundElementFactory.KStreamWrapper kStreamWrapper = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KStream)
 						kStreamWrapper.wrap((KStream<Object, Object>) stream);
@@ -288,8 +296,51 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 						.withValueSerde(v));
 	}
 
-	private KStream<?, ?> getkStream(String inboundName, BindingProperties bindingProperties, StreamsBuilder streamsBuilder,
+	private StoreBuilder buildStateStore(KafkaStreamsStateStoreProperties spec) {
+		try {
+			Serde<?> keySerde = this.keyValueSerdeResolver.getStateStoreKeySerde(spec.getKeySerdeString());
+			Serde<?> valueSerde = this.keyValueSerdeResolver.getStateStoreValueSerde(spec.getValueSerdeString());
+			StoreBuilder builder;
+			switch (spec.getType()) {
+				case KEYVALUE:
+					builder = Stores.keyValueStoreBuilder(Stores.persistentKeyValueStore(spec.getName()), keySerde, valueSerde);
+					break;
+				case WINDOW:
+					builder = Stores.windowStoreBuilder(Stores.persistentWindowStore(spec.getName(), spec.getRetention(), 3, spec.getLength(), false),
+							keySerde,
+							valueSerde);
+					break;
+				case SESSION:
+					builder = Stores.sessionStoreBuilder(Stores.persistentSessionStore(spec.getName(), spec.getRetention()), keySerde, valueSerde);
+					break;
+				default:
+					throw new UnsupportedOperationException("state store type (" + spec.getType() + ") is not supported!");
+			}
+			if (spec.isCacheEnabled()) {
+				builder = builder.withCachingEnabled();
+			}
+			if (spec.isLoggingDisabled()) {
+				builder = builder.withLoggingDisabled();
+			}
+
+			return builder;
+
+		}catch (Exception e) {
+			LOG.error("failed to build state store exception : " + e);
+			throw e;
+		}
+	}
+
+
+	private KStream<?, ?> getkStream(String inboundName, KafkaStreamsStateStoreProperties storeSpec, BindingProperties bindingProperties, StreamsBuilder streamsBuilder,
 									Serde<?> keySerde, Serde<?> valueSerde) {
+		if (storeSpec != null) {
+			StoreBuilder storeBuilder = buildStateStore(storeSpec);
+			streamsBuilder.addStateStore(storeBuilder);
+			if (LOG.isInfoEnabled()) {
+				LOG.info("state store " + storeBuilder.name() + " added to topology");
+			}
+		}
 		KStream<?, ?> stream = streamsBuilder.stream(bindingServiceProperties.getBindingDestination(inboundName),
 				Consumed.with(keySerde, valueSerde));
 		final boolean nativeDecoding = bindingServiceProperties.getConsumerProperties(inboundName).isUseNativeDecoding();
@@ -428,6 +479,26 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 			Assert.isTrue(!ObjectUtils.isEmpty(sendTo.value()), StreamListenerErrorMessages.ATLEAST_ONE_OUTPUT);
 			Assert.isTrue(sendTo.value().length >= 1, "At least one outbound destination need to be provided.");
 			return sendTo.value();
+		}
+		return null;
+	}
+
+	@SuppressWarnings({"unchecked"})
+	private static KafkaStreamsStateStoreProperties buildStateStoreSpec(Method method) {
+		KafkaStreamsStateStore spec = AnnotationUtils.findAnnotation(method, KafkaStreamsStateStore.class);
+		if (spec != null) {
+			Assert.isTrue(!ObjectUtils.isEmpty(spec.name()), "name cannot be empty");
+			Assert.isTrue(spec.name().length() >= 1, "name cannot be empty.");
+			KafkaStreamsStateStoreProperties props = new KafkaStreamsStateStoreProperties();
+			props.setName(spec.name());
+			props.setType(spec.type());
+			props.setLength(spec.lengthMs());
+			props.setKeySerdeString(spec.keySerde());
+			props.setRetention(spec.retentionMs());
+			props.setValueSerdeString(spec.valueSerde());
+			props.setCacheEnabled(spec.cache());
+			props.setLoggingDisabled(!spec.logging());
+			return props;
 		}
 		return null;
 	}

@@ -38,12 +38,16 @@ import org.springframework.util.StringUtils;
  * If native decoding is disabled, then the binder will do the deserialization on value and ignore any Serde set for value
  * and rely on the contentType provided. Keys are always deserialized at the broker.
  *
+ *
  * Same rules apply on the outbound. If native encoding is enabled, then value serialization is done at the broker using
  * any binder level Serde for value, if not using common Serde, if not, then byte[].
  * If native encoding is disabled, then the binder will do serialization using a contentType. Keys are always serialized
  * by the broker.
  *
+ * For state store, use serdes class specified in {@link KafkaStreamsStateStore} to create Serde accordingly.
+ *
  * @author Soby Chacko
+ * @author Lei Chen
  */
 class KeyValueSerdeResolver {
 
@@ -128,6 +132,31 @@ class KeyValueSerdeResolver {
 			throw new IllegalStateException("Serde class not found: ", e);
 		}
 		return valueSerde;
+	}
+
+	/**
+	 * Provide the {@link Serde} for state store
+	 *
+	 * @param keySerdeString serde class used for key
+	 * @return {@link Serde} for the state store key.
+	 */
+	public Serde<?> getStateStoreKeySerde(String keySerdeString) {
+		return getKeySerde(keySerdeString);
+	}
+
+	/**
+	 * Provide the {@link Serde} for state store value
+	 *
+	 * @param valueSerdeString serde class used for value
+	 * @return {@link Serde} for the state store value.
+	 */
+	public Serde<?> getStateStoreValueSerde(String valueSerdeString) {
+		try {
+			return getValueSerde(valueSerdeString);
+		}
+		catch (ClassNotFoundException e) {
+			throw new IllegalStateException("Serde class not found: ", e);
+		}
 	}
 
 	private Serde<?> getKeySerde(String keySerdeString) {
