@@ -42,7 +42,7 @@ class MetricsPublisherConfig implements StepRegistryConfig {
 	public String get(String key) {
 		String value = null;
 		if (key.equals(this.prefix() + ".step")) {
-			value = this.applicationMetricsProperties.getScheduleInterval();
+			value = this.applicationMetricsProperties.getScheduleInterval().toString();
 		}
 		return value;
 	}

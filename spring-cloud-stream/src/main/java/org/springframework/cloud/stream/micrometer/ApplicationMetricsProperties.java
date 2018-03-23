@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.micrometer;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,7 +47,16 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 
 	public static final String PREFIX = "spring.cloud.stream.metrics";
 
+	public static final String EXPORT_FILTER = PREFIX + ".filter";
+
 	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable.mapOf(String.class, String.class);
+
+
+	/**
+	 * Pattern to control the 'meters' one wants to capture. By default all 'meters' will be captured.
+	 * For example, 'spring.integration.*' will only capture metric information for meters whose name starts with 'spring.integration'.
+	 */
+	private String meterFilter;
 
 	/**
 	 * The name of the metric being emitted. Should be an unique value per application.
@@ -65,7 +75,7 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 	 * Interval expressed as Duration for scheduling metrics snapshots publishing.
 	 * Defaults to PT60S (60 sec)
 	 */
-	private String scheduleInterval;
+	private Duration scheduleInterval;
 
 	/**
 	 * List of properties that are going to be appended to each message. This gets
@@ -111,12 +121,20 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 		return this.exportProperties;
 	}
 
-	public String getScheduleInterval() {
+	public Duration getScheduleInterval() {
 		return scheduleInterval;
 	}
 
-	public void setScheduleInterval(String scheduleInterval) {
+	public void setScheduleInterval(Duration scheduleInterval) {
 		this.scheduleInterval = scheduleInterval;
+	}
+
+	public String getMeterFilter() {
+		return this.meterFilter;
+	}
+
+	public void setMeterFilter(String meterFilter) {
+		this.meterFilter = meterFilter;
 	}
 
 	private boolean isMatch(String name, String[] includes, String[] excludes) {

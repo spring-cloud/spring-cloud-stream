@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.micrometer;
 
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.config.MeterFilter;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -35,13 +36,14 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.PatternMatchUtils;
+import org.springframework.util.StringUtils;
 
 /**
  *
  * @author Oleg Zhurakousky
  *
  * @since 2.0
- *
  */
 @Configuration
 @AutoConfigureBefore(SimpleMetricsExportAutoConfiguration.class)
@@ -63,7 +65,12 @@ public class DestinationPublishingMetricsAutoConfiguration {
 			ApplicationMetricsProperties applicationMetricsProperties,
 			MetersPublisherBinding publisherBinding,
 			MetricsPublisherConfig metricsPublisherConfig, Clock clock) {
-		return new DefaultDestinationPublishingMeterRegistry(applicationMetricsProperties, publisherBinding, metricsPublisherConfig, clock);
+		DefaultDestinationPublishingMeterRegistry registry = new DefaultDestinationPublishingMeterRegistry(applicationMetricsProperties, publisherBinding, metricsPublisherConfig, clock);
+
+		if (StringUtils.hasText(applicationMetricsProperties.getMeterFilter())) {
+			registry.config().meterFilter(MeterFilter.denyUnless(id -> PatternMatchUtils.simpleMatch(applicationMetricsProperties.getMeterFilter(), id.getName())));
+		}
+		return registry;
 	}
 
 	@Bean

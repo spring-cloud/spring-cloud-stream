@@ -16,11 +16,8 @@
 
 package org.springframework.cloud.stream.micrometer;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -51,8 +48,6 @@ import io.micrometer.core.instrument.cumulative.CumulativeFunctionCounter;
 import io.micrometer.core.instrument.cumulative.CumulativeFunctionTimer;
 import io.micrometer.core.instrument.cumulative.CumulativeTimer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
-import io.micrometer.core.instrument.distribution.HistogramSnapshot;
-import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 import io.micrometer.core.instrument.distribution.pause.PauseDetector;
 import io.micrometer.core.instrument.internal.DefaultGauge;
 import io.micrometer.core.instrument.internal.DefaultLongTaskTimer;
@@ -69,7 +64,6 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Oleg Zhurakousky
  *
  * @since 2.0
- *
  */
 class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements SmartLifecycle {
 
@@ -78,8 +72,6 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	private final MetricsPublisherConfig metricsPublisherConfig;
 
 	private final Consumer<String> metricsConsumer;
-
-	private final DecimalFormat format = new DecimalFormat("#.####");
 
 	private final ApplicationMetricsProperties applicationProperties;
 
@@ -150,23 +142,25 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	}
 
 	protected void publish() {
-		List<Map<String, Object>> aggregatedMeters = new ArrayList<>();
+		List<Metric<Number>> aggregatedMeters = new ArrayList<>();
 		for (Meter meter : this.getMeters()) {
 			if (meter instanceof Timer) {
-				aggregatedMeters.add(timerMap((Timer) meter));
-			} else if (meter instanceof DistributionSummary) {
-				aggregatedMeters.add(summaryMap((DistributionSummary) meter));
+				aggregatedMeters.add(toTimerMetric((Timer) meter));
+			}
+			else if (meter instanceof DistributionSummary) {
+				aggregatedMeters.add(toSummaryMetric((DistributionSummary) meter));
 			}
 		}
-		Map<String, Object> messageMap = new LinkedHashMap<>();
-		messageMap.put("name", this.applicationProperties.getKey());
-		messageMap.put("properties", this.applicationProperties.getExportProperties());
-		messageMap.put("meter-snapshots", aggregatedMeters);
-		try {
-			String jsonString = this.objectMapper.writeValueAsString(messageMap);
-			this.metricsConsumer.accept(jsonString);
-		} catch (JsonProcessingException e) {
-			logger.warn("Error producing JSON String representation metric data", e);
+		if (!aggregatedMeters.isEmpty()) {
+			ApplicationMetrics metrics = new ApplicationMetrics(this.applicationProperties.getKey(), aggregatedMeters);
+			metrics.setProperties(this.applicationProperties.getExportProperties());
+			try {
+				String jsonString = this.objectMapper.writeValueAsString(metrics);
+				this.metricsConsumer.accept(jsonString);
+			}
+			catch (JsonProcessingException e) {
+				logger.warn("Error producing JSON String representation metric data", e);
+			}
 		}
 	}
 
@@ -194,8 +188,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	}
 
 	@Override
-	protected DistributionSummary newDistributionSummary(Id id, DistributionStatisticConfig distributionStatisticConfig,
-			double scale) {
+	protected DistributionSummary newDistributionSummary(Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
 		return new CumulativeDistributionSummary(id, clock, distributionStatisticConfig, scale);
 	}
 
@@ -214,63 +207,12 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 				TimeUnit.MILLISECONDS);
 	}
 
-	private Map<String, Object> summaryMap(DistributionSummary summary) {
-		List<Field> fields = this.gatherSnapshotFields(summary.takeSnapshot(false));
-		return this.toMeterMap(fields, summary.getId());
+	private Metric<Number> toSummaryMetric(DistributionSummary summary) {
+		return new Metric<Number>(summary.getId(), summary.takeSnapshot(false));
 	}
 
-	private Map<String, Object> timerMap(Timer timer) {
-		List<Field> fields = this.gatherSnapshotFields(timer.takeSnapshot(false));
-		return this.toMeterMap(fields, timer.getId());
-	}
-
-	private List<Field> gatherSnapshotFields(HistogramSnapshot snapshot) {
-		List<Field> fields = new ArrayList<>();
-		fields.add(new Field("sum", snapshot.total(getBaseTimeUnit())));
-		fields.add(new Field("count", snapshot.count()));
-		fields.add(new Field("mean", snapshot.mean(getBaseTimeUnit())));
-		fields.add(new Field("upper", snapshot.max(getBaseTimeUnit())));
-		fields.add(new Field("total", snapshot.total(getBaseTimeUnit())));
-
-		for (ValueAtPercentile v : snapshot.percentileValues()) {
-			fields.add(new Field(format.format(v.percentile()) + "_percentile", v.value(getBaseTimeUnit())));
-		}
-		return fields;
-	}
-
-	private Map<String, Object> toMeterMap(List<Field> fields, Meter.Id id) {
-		Map<String, Object> meterMap = new LinkedHashMap<>();
-		meterMap.put("id", id);
-		meterMap.put("metrics", fields);
-		return meterMap;
-	}
-
-	/**
-	 *
-	 */
-	private class Field {
-		final String name;
-		final double value;
-
-		private Field(String name, double value) {
-			this.name = name;
-			this.value = value;
-		}
-
-		@SuppressWarnings("unused") // used by ObjectMapper
-		public String getName() {
-			return name;
-		}
-
-		@SuppressWarnings("unused") // used by ObjectMapper
-		public double getValue() {
-			return value;
-		}
-
-		@Override
-		public String toString() {
-			return name + "=" + format.format(value);
-		}
+	private Metric<Number> toTimerMetric(Timer timer) {
+		return new Metric<Number>(timer.getId(), timer.takeSnapshot(false));
 	}
 
 	/**
