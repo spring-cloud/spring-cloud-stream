@@ -32,7 +32,7 @@ Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown 
 The following image shows a simplified diagram of how the Apache Kafka binder operates:
 
 .Kafka Binder
-image::kafka-binder.png[width=300,scaledwidth="50%"]
+image::images/kafka-binder.png[width=300,scaledwidth="50%"]
 
 The Apache Kafka Binder implementation maps each destination to an Apache Kafka topic.
 The consumer group maps directly to the same Apache Kafka concept.
