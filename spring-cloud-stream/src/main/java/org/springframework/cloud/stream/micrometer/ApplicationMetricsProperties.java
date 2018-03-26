@@ -73,9 +73,9 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 
 	/**
 	 * Interval expressed as Duration for scheduling metrics snapshots publishing.
-	 * Defaults to PT60S (60 sec)
+	 * Defaults to 60 seconds
 	 */
-	private Duration scheduleInterval;
+	private Duration scheduleInterval = Duration.ofSeconds(60);
 
 	/**
 	 * List of properties that are going to be appended to each message. This gets
