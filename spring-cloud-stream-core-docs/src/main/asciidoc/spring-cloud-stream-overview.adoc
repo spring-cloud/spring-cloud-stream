@@ -1193,7 +1193,8 @@ Currently, only Kafka binder supports the `PAUSED` and `RESUMED` states.
 
 === Binder Configuration Properties
 
-The following properties are available when creating custom binder configurations.
+The following properties are available when customizing binder configurations. These properties exposed via `org.springframework.cloud.stream.config.BinderProperties`
+
 They must be prefixed with `spring.cloud.stream.binders.<configurationName>`.
 
 type::
@@ -1225,7 +1226,9 @@ Some binders let additional binding properties support middleware-specific featu
 Configuration options can be provided to Spring Cloud Stream applications through any mechanism supported by Spring Boot.
 This includes application arguments, environment variables, and YAML or .properties files.
 
-=== Spring Cloud Stream Properties
+=== Binding Service Properties
+
+These properties are exposed via `org.springframework.cloud.stream.config.BindingServiceProperties`
 
 spring.cloud.stream.instanceCount::
 The number of deployed instances of an application.
@@ -1274,7 +1277,9 @@ To avoid repetition, Spring Cloud Stream supports setting values for all channel
 
 In what follows, we indicate where we have omitted the `spring.cloud.stream.bindings.<channelName>.` prefix and focus just on the property name, with the understanding that the prefix ise included at runtime.
 
-==== Properties for Use of Spring Cloud Stream
+==== Common Binding Properties
+
+These properties are exposed via `org.springframework.cloud.stream.config.BindingProperties`
 
 The following binding properties are available for both input and output bindings and must be prefixed with `spring.cloud.stream.bindings.<channelName>.` (for example, `spring.cloud.stream.bindings.input.destination=ticktock`).
 
@@ -1303,6 +1308,8 @@ See "`<<multiple-binders>>`" for details.
 Default: `null` (the default binder is used, if it exists).
 
 ==== Consumer Properties
+
+These properties are exposed via `org.springframework.cloud.stream.binder.ConsumerProperties`
 
 The following binding properties are available for input bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.consumer.` (for example, `spring.cloud.stream.bindings.input.consumer.concurrency=3`).
 
@@ -1355,6 +1362,8 @@ See "`<<spring-cloud-stream-overview-instance-index-instance-count>>`" for more 
 Default: `-1`.
 
 ==== Producer Properties
+
+These properties are exposed via `org.springframework.cloud.stream.binder.ProducerProperties`
 
 The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.producer.` (for example, `spring.cloud.stream.bindings.input.producer.partitionKeyExpression=payload.id`).
 
