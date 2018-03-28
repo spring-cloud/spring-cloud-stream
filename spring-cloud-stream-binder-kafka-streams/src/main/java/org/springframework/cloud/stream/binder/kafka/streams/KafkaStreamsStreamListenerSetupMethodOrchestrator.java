@@ -221,7 +221,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 				enableNativeDecodingForKTableAlways(parameterType, bindingProperties);
 				StreamsConfig streamsConfig = null;
 				//Retrieve the StreamsConfig created for this method if available.
-				//Otherwise, carete the StreamsBuilderFactory and get the underlying config.
+				//Otherwise, create the StreamsBuilderFactory and get the underlying config.
 				if (!methodStreamsBuilderFactoryBeanMap.containsKey(method)) {
 					streamsConfig = buildStreamsBuilderAndRetrieveConfig(method, applicationContext, bindingProperties);
 				}
@@ -291,7 +291,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 									Serde<?> keySerde, Serde<?> valueSerde) {
 		KStream<?, ?> stream = streamsBuilder.stream(bindingServiceProperties.getBindingDestination(inboundName),
 				Consumed.with(keySerde, valueSerde));
-		if (bindingProperties.getConsumer().isUseNativeDecoding()){
+		final boolean nativeDecoding = bindingServiceProperties.getConsumerProperties(inboundName).isUseNativeDecoding();
+		if (nativeDecoding){
 			LOG.info("Native decoding is enabled for " + inboundName + ". Inbound deserialization done at the broker.");
 		}
 		else {
@@ -300,7 +301,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		stream = stream.map((key, value) -> {
 			KeyValue<Object, Object> keyValue;
 			String contentType = bindingProperties.getContentType();
-			if (!StringUtils.isEmpty(contentType) && !bindingProperties.getConsumer().isUseNativeDecoding()) {
+			if (!StringUtils.isEmpty(contentType) && !nativeDecoding) {
 				Message<?> message = MessageBuilder.withPayload(value)
 						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
 				keyValue = new KeyValue<>(key, message);
