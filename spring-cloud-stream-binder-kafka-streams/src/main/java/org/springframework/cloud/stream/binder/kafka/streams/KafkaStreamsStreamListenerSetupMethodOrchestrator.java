@@ -66,6 +66,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -155,6 +156,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 				this.applicationContext,
 				this.streamListenerParameterAdapter);
 		try {
+			ReflectionUtils.makeAccessible(method);
 			if (Void.TYPE.equals(method.getReturnType())) {
 				method.invoke(bean, adaptedInboundArguments);
 			}

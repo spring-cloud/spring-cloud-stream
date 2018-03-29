@@ -119,7 +119,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
-	public static class WordCountProcessorApplication {
+	static class WordCountProcessorApplication {
 
 		@Autowired
 		private TimeWindows timeWindows;
