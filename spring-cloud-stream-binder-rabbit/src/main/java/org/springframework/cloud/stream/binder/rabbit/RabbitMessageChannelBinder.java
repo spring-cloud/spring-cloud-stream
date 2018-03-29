@@ -391,9 +391,7 @@ public class RabbitMessageChannelBinder
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(consumerDestination, group, properties);
 		if (properties.getMaxAttempts() > 1) {
 			adapter.setRetryTemplate(buildRetryTemplate(properties));
-			if (properties.getExtension().isRepublishToDlq()) {
-				adapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
-			}
+			adapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
 		}
 		else {
 			adapter.setErrorMessageStrategy(errorMessageStrategy);
@@ -478,13 +476,19 @@ public class RabbitMessageChannelBinder
 		}
 		else if (properties.getMaxAttempts() > 1) {
 			return new MessageHandler() {
-
 				private final RejectAndDontRequeueRecoverer recoverer = new RejectAndDontRequeueRecoverer();
 
 				@Override
 				public void handleMessage(org.springframework.messaging.Message<?> message) throws MessagingException {
 					Message amqpMessage = (Message) message.getHeaders()
 							.get(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE);
+					/*
+					 * NOTE: The following IF and subsequent ELSE IF should never happen under normal interaction and
+					 * it should always go to the last ELSE
+					 * However, given that this is a handler subscribing to the public channel and that we can't control what
+					 * type of Message may be sent to that channel (user decides to send a Message manually) the 'IF/ELSE IF' provides
+					 * a safety net to handle any message properly.
+					 */
 					if (!(message instanceof ErrorMessage)) {
 						logger.error("Expected an ErrorMessage, not a " + message.getClass().toString() + " for: "
 								+ message);
