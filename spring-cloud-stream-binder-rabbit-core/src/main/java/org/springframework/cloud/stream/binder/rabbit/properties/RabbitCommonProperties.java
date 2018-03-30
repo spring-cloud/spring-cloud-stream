@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,12 +155,12 @@ public abstract class RabbitCommonProperties {
 	private String prefix = "";
 
 	/**
-	 * True if the queue is provisioned as a lazy queue.
+	 * true if the queue is provisioned as a lazy queue
 	 */
 	private boolean lazy;
 
 	/**
-	 * True if the DLQ is provisioned as a lazy queue.
+	 * true if the DLQ is provisioned as a lazy queue
 	 */
 	private boolean dlqLazy;
 

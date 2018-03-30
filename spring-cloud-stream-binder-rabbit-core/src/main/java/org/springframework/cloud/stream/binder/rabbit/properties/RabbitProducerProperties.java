@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,29 +26,53 @@ import org.springframework.amqp.core.MessageDeliveryMode;
  */
 public class RabbitProducerProperties extends RabbitCommonProperties {
 
+	/**
+	 * true to compress messages
+	 */
 	private boolean compress;
 
+	/**
+	 * true to batch multiple messages into one
+	 */
 	private boolean batchingEnabled;
 
+	/**
+	 * the number of messages to batch, when enabled
+	 */
 	private int batchSize = 100;
 
+	/**
+	 * the size limit for batched messages
+	 */
 	private int batchBufferLimit = 10000;
 
+	/**
+	 * the time after which an incomplete batch will be sent
+	 */
 	private int batchTimeout = 5000;
 
+	/**
+	 * true to use transacted channels
+	 */
 	private boolean transacted;
 
+	/**
+	 * the delivery mode for published messages
+	 */
 	private MessageDeliveryMode deliveryMode = MessageDeliveryMode.PERSISTENT;
 
+	/**
+	 * patterns to match which headers are mapped (inbound)
+	 */
 	private String[] headerPatterns = new String[] {"*"};
 
 	/**
-	 * When using a delayed message exchange, a SpEL expression to determine the delay to apply to messages
+	 * when using a delayed message exchange, a SpEL expression to determine the delay to apply to messages
 	 */
 	private String delayExpression;
 
 	/**
-	 * A custom routing key when publishing messages; default is the destination name; suffixed by "-partition" when partitioned
+	 * a custom routing key when publishing messages; default is the destination name; suffixed by "-partition" when partitioned
 	 */
 	private String routingKeyExpression;
 

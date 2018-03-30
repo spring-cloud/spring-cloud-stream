@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,37 +28,79 @@ import org.springframework.util.Assert;
  */
 public class RabbitConsumerProperties extends RabbitCommonProperties {
 
+	/**
+	 * true to use transacted channels
+	 */
 	private boolean transacted;
 
+	/**
+	 * container acknowledge mode
+	 */
 	private AcknowledgeMode acknowledgeMode = AcknowledgeMode.AUTO;
 
+	/**
+	 * maxumum concurrency of this consumer (threads)
+	 */
 	private int maxConcurrency = 1;
 
+	/**
+	 * number of prefetched messages pre consumer thread
+	 */
 	private int prefetch = 1;
 
+	/**
+	 * messages per acknowledgment (and commit when transacted)
+	 */
 	private int txSize = 1;
 
+	/**
+	 * true for a durable subscription
+	 */
 	private boolean durableSubscription = true;
 
+	/**
+	 * republish failures to the DLQ with diagnostic headers
+	 */
 	private boolean republishToDlq;
 
+	/**
+	 * when republishing to the DLQ, the delivery mode to use
+	 */
 	private MessageDeliveryMode republishDeliveyMode = MessageDeliveryMode.PERSISTENT;
 
+	/**
+	 * true to requeue rejected messages, false to discard (or route to DLQ)
+	 */
 	private boolean requeueRejected = false;
 
+	/**
+	 * patterns to match which headers are mapped (inbound)
+	 */
 	private String[] headerPatterns = new String[] {"*"};
 
+	/**
+	 * interval between reconnection attempts
+	 */
 	private long recoveryInterval = 5000;
 
 	/**
-	 * True if the consumer is exclusive.
+	 * true if the consumer is exclusive
 	 */
 	private boolean exclusive;
 
+	/**
+	 * when true, stop the container instead of retrying queue declarations
+	 */
 	private boolean missingQueuesFatal = false;
 
+	/**
+	 * how many times to attempt passive queue declaration
+	 */
 	private Integer queueDeclarationRetries;
 
+	/**
+	 * interval between attempts to passively declare missing queues
+	 */
 	private Long  failedDeclarationRetryInterval;
 
 	public boolean isTransacted() {
