@@ -729,7 +729,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		@SuppressWarnings("deprecation")
 		private Message<?> serializeAndEmbedHeadersIfApplicable(Message<?> message) throws Exception {
 			MessageValues transformed = serializePayloadIfNecessary(message);
-			byte[] payload;
+			Object payload;
 			if (this.embedHeaders) {
 				Object contentType = transformed.get(MessageHeaders.CONTENT_TYPE);
 				// transform content type headers to String, so that they can be properly
@@ -744,7 +744,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				payload = EmbeddedHeaderUtils.embedHeaders(transformed, this.embeddedHeaders);
 			}
 			else {
-				payload = (byte[]) transformed.getPayload();
+				payload = transformed.getPayload();
 			}
 			return getMessageBuilderFactory().withPayload(payload).copyHeaders(transformed.getHeaders()).build();
 		}
