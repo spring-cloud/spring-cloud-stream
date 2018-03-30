@@ -479,29 +479,6 @@ public class TransformProcessor {
 NOTE: It is important to understand that, when you consume from the same binding by using `@StreamListener`, a pub-sub model is used. Each method annotated with `@StreamListener` receives its own copy of the message and each one has its own consumer group.
 However, if you share a bindable channel as an input for `@Aggregator`, `@Transformer`, or `@ServiceActivator`, those consume in a competing model. No individual consumer group is created for each subscription.
 
-[[spring-cloud-stream-overview-error-channel-support]]
-===== Spring Integration Error Channel Support
-
-Spring Cloud Stream supports publishing error messages received by the Spring Integration global error channel.
-Error messages sent to the `errorChannel` can be published to a specific destination at the broker by configuring a binding named `error` for the outbound target.
-For example, to publish error messages to a broker destination named `myErrors`, set the following property: `spring.cloud.stream.bindings.error.destination=myErrors`.
-
-[[binder-error-channels]]
-===== Message Channel Binders and Error Channels
-
-Starting with version 1.3, some `MessageChannel`-based binders publish errors to a discrete error channel for each destination.
-In addition, these error channels are bridged to the global Spring Integration `errorChannel` mentioned spring-cloud-stream-overview-error-channel-support[earlier].
-You can, therefore, consume errors for specific destinations or for all destinations by using a standard Spring Integration flow (`IntegrationFlow`, `@ServiceActivator`, and others).
-
-On the consumer side, the listener thread catches any exceptions and forwards an `ErrorMessage` to the destination's error channel.
-The payload of the message is a `MessagingException` with the normal `failedMessage` and `cause` properties.
-Usually, the raw data received from the broker is included in a header.
-For binders that support (and are configured with) a dead letter destination, a `MessagePublishingErrorHandler` is subscribed to the channel and the raw data is forwarded to the dead letter destination.
-
-On the producer side, for binders that support some kind of asynchronous result after publishing messages (such as RabbitMQ and Kafka), you can enable an error channel by setting the `...producer.errorChannelEnabled` to `true`.
-The payload of the `ErrorMessage` depends on the binder implementation but is a `MessagingException` with the normal `failedMessage`  property as well as additional properties about the failure.
-See the spring-cloud-stream-overview-binders[binder documentation] for complete details.
-
 ===== Using @StreamListener for Automatic Content Type Handling
 
 Complementary to its Spring Integration support, Spring Cloud Stream provides its own `@StreamListener` annotation, modeled after other Spring Messaging annotations (`@MessageMapping`, `@JmsListener`, `@RabbitListener`, and others).
@@ -677,6 +654,203 @@ boolean result = pollableSource.poll(received -> {
 
 		}, new ParameterizedTypeReference<Map<String, Foo>>() {});
 ----
+
+[[spring-cloud-stream-overview-error-handling]]
+==== Error Handling
+
+Errors happen, and Spring Cloud Stream provides several flexible mechanisms to handle them.
+The error handling comes in two flavors:
+
+	* *system:* The error handling is delegated to the binder (re-queue, DL, and others). Note that the techniques are dependent on binder implementation and the
+	capability of the underlying messaging middleware.
+
+	* *application:* The error handling is done within the application (custom error handler).
+
+Spring Cloud Stream uses the https://github.com/spring-projects/spring-retry[Spring Retry] library to facilitate successful message processing. See <<Retry Template>> for more details.
+However, when all fails, the exceptions thrown by the message handlers are propagated back to the binder. At that point, binder invokes custom error handler or communicates
+the error back to the messaging system (re-queue, DLQ, and others).
+
+===== Application Error Handling
+
+First, we examine application-level error handling.
+
+For each input binding, Spring Cloud Stream creates a dedicated error channel with the following semantics `<channel-name>.<group-name>.errors`.
+If such a channel has a subscriber, all errors are sent to that subscriber.
+
+Consider the following:
+
+[source,text]
+----
+spring.cloud.stream.bindings.input.group=myGroup
+----
+
+[source,java]
+----
+@StreamListener(Sink.INPUT) // destination name 'input.myGroup'
+public void handle(Person value)
+	throw new RuntimeException("BOOM!");
+}
+
+@StreamListener(Processor.INPUT + ".myGroup.errors") //channel name 'input.myGroup.errors'
+public void error(Message<?> message) {
+	System.out.println("Handling ERROR: " + message);
+}
+----
+
+The `handle(..)` method, which subscribes to the channel named `input`, throws an exception.  Given there is also a subscriber to the error channel `input.myGroup.errors`
+all error messages are handled by this subscriber.
+
+If you have multiple bindings, you may want to have a single error handler. Spring Cloud Stream automatically provides support for
+a _global error channel_ by bridging each individual error channel to the channel named `errorChannel`, allowing a single subscriber to handle all errors,
+as shown in the following example:
+
+[source,java]
+----
+@StreamListener(“errorChannel")
+public void error(Message<?> message) {
+	System.out.println("Handling ERROR: " + message);
+}
+----
+
+This may be a convenient option if error handling logic is the same regardless of which handler produced the error.
+
+Also, error messages sent to the `errorChannel` can be published to a specific destination at the broker by configuring a binding named `error` for the outbound target.
+This option provides a mechanism to automatically send error messages to another application bound to that destination or for later retrieval (for example, audit).
+For example, to publish error messages to a broker destination named `myErrors`, set the following property:
+
+[source,text]
+----
+spring.cloud.stream.bindings.error.destination=myErrors.
+----
+
+===== System Error Handling
+
+System-level error handling implies that the errors are communicated back to the messaging system and, given that not every messaging system
+is the same, the capabilities may differ from binder to binder.
+
+That said, in this section we explain the general idea behind system level error handling and use Rabbit binder as an example. NOTE: Kafka binder provides similar
+support, although some configuration properties do differ. Also, for more details and configuration options, see the individual binder's documentation.
+
+If no internal error handlers are configured, the errors propagate to the binders, and the binders subsequently propagate those errors back to the messaging system.
+Depending on the capabilities of the messaging system such a system may _drop_ the message, _re-queue_ the message for re-processing or _send the failed message to DLQ_.
+Both Rabbit and Kafka support these concepts. However, other binders may not, so refer to your individual binder’s documentation for details on supported system-level
+error-handling options.
+
+====== Drop
+
+By default, if no additional system-level configuration is provided, the messaging system drops the failed message.
+While acceptable in some cases, for most cases, it is not, and we need some recovery mechanism to avoid message loss.
+
+====== DLQ - Dead Letter Queue
+
+DLQ allows failed messages to be sent to a special destination: - _Dead Letter Queue_.
+
+When configured, failed messages are sent to this destination for subsequent re-processing or auditing and reconciliation.
+
+For example, continuing on the previous example and to set up the DLQ with Rabbit binder, you need to set the following property:
+
+[source,text]
+----
+spring.cloud.stream.rabbit.bindings.input.consumer.auto-bind-dlq=true
+----
+
+Keep in mind that, in the above property, `input` corresponds to the name of the input destination binding.
+The `consumer` indicates that it is a consumer property and `auto-bind-dlq` instructs the binder to configure DLQ for `input`
+destination, which results in an additional Rabbit queue named `input.myGroup.dlq`.
+
+Once configured, all failed messages are routed to this queue with an error message similar to the following:
+
+[source,text]
+----
+delivery_mode:	1
+headers:
+x-death:
+count:	1
+reason:	rejected
+queue:	input.hello
+time:	1522328151
+exchange:
+routing-keys:	input.myGroup
+Payload {"name”:"Bob"}
+----
+
+As you can see from the above, your original message is preserved for further actions.
+
+However, one thing you may have noticed is that there is limited information on the original issue with the message processing. For example, you do not see a stack
+trace corresponding to the original error.
+To get more relevant information about the original error, you must set an additional property:
+
+[source,text]
+----
+spring.cloud.stream.rabbit.bindings.input.consumer.republish-to-dlq=true
+----
+
+Doing so forces the internal error handler to intercept the error message and add additional information to it before publishing it to DLQ.
+Once configured, you can see that the error message contains more information relevant to the original error, as follows:
+
+[source,text]
+----
+delivery_mode:	2
+headers:
+x-original-exchange:
+x-exception-message:	has an error
+x-original-routingKey:	input.myGroup
+x-exception-stacktrace:	org.springframework.messaging.MessageHandlingException: nested exception is
+      org.springframework.messaging.MessagingException: has an error, failedMessage=GenericMessage [payload=byte[15],
+      headers={amqp_receivedDeliveryMode=NON_PERSISTENT, amqp_receivedRoutingKey=input.hello, amqp_deliveryTag=1,
+      deliveryAttempt=3, amqp_consumerQueue=input.hello, amqp_redelivered=false, id=a15231e6-3f80-677b-5ad7-d4b1e61e486e,
+      amqp_consumerTag=amq.ctag-skBFapilvtZhDsn0k3ZmQg, contentType=application/json, timestamp=1522327846136}]
+      at org.spring...integ...han...MethodInvokingMessageProcessor.processMessage(MethodInvokingMessageProcessor.java:107)
+      at. . . . .
+Payload {"name”:"Bob"}
+----
+
+====== Re-queue
+
+As mentioned earlier, the currently supported binders (Rabbit and Kafka) rely on `RetryTemplate` to facilitate successful message processing. See <<Retry Template>> for details.
+However, for cases when `max-attempts` property is set to 1, internal reprocessing of the message is disabled. At this point, you can facilitate message re-processing (re-tries)
+by instructing the messaging system to re-queue the failed message. Once re-queued, the failed message is sent back to the original handler, essentially creating a retry loop.
+
+This option may be feasible for cases where the nature of the error is related to some sporadic yet short-term unavailability of some resource.
+
+To accomplish that, you must set the following properties:
+
+[source,text]
+----
+spring.cloud.stream.bindings.input.consumer.max-attempts=1
+spring.cloud.stream.rabbit.bindings.input.consumer.requeue-rejected=true
+----
+
+In the preceding example, the `max-attempts` set to 1 essentially disabling internal re-tries and `requeue-rejected` (short for _requeue rejected messages_) is set to `true`.
+Once set, the failed message is resubmitted to the same handler and loops continuously or until the handler throws `AmqpRejectAndDontRequeueException`
+essentially allowing you to build your own re-try logic within the handler itself.
+
+===== Retry Template
+
+The `RetryTemplate` is part of the https://github.com/spring-projects/spring-retry[Spring Retry] library.
+While it is out of scope of this dcument to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
+the `RetryTemplate`:
+
+maxAttempts::
+The number of attempts to process the message.
++
+Default: 3.
+backOffInitialInterval::
+The backoff initial interval on retry.
++
+Default 1000 milliseconds.
+backOffMaxInterval::
+The maximum backoff interval.
++
+Default 10000 milliseconds.
+backOffMultiplier::
+The backoff multiplier.
++
+Default 2.0.
+
+While the preceding settings are sufficient for majority of the customization requirements, they may not satisfy certain complex requirements at, which
+point you may want to provide your own instance of the `RetryTemplate`. To do so configure it as a `@Bean` in your application configuration. The application provided
+instance overrides the one provided by the framework.
 
 [[spring-cloud-stream-overview-reactive-programming-support]]
 ==== Reactive Programming Support
