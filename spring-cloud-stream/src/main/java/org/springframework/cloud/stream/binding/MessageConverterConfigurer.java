@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -86,27 +85,14 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 
 	private ConfigurableListableBeanFactory beanFactory;
 
-	private final Map<String, PartitionKeyExtractorStrategy> partitionKeyExtractors;
-
-	private final Map<String, PartitionSelectorStrategy> partitionSelectors;
-
 	private final Field headersField;
 
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		this(bindingServiceProperties, compositeMessageConverterFactory, Collections.emptyMap(), Collections.emptyMap());
-	}
-
-	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
-			CompositeMessageConverterFactory compositeMessageConverterFactory,
-			Map<String, PartitionKeyExtractorStrategy> partitionKeyExtractors,
-			Map<String, PartitionSelectorStrategy> partitionSelectors) {
 		Assert.notNull(compositeMessageConverterFactory,
 				"The message converter factory cannot be null");
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
-		this.partitionKeyExtractors = partitionKeyExtractors == null ? Collections.emptyMap() : partitionKeyExtractors;
-		this.partitionSelectors = partitionSelectors == null ? Collections.emptyMap() : partitionSelectors;
 
 		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 		headersField.setAccessible(true);
@@ -190,17 +176,17 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			partitionKeyExtractor = instantiate(producerProperties.getPartitionKeyExtractorClass(), PartitionKeyExtractorStrategy.class);
 		}
 		else if (StringUtils.hasText(producerProperties.getPartitionKeyExtractorName())) {
-			partitionKeyExtractor = this.partitionKeyExtractors.get(producerProperties.getPartitionKeyExtractorName());
+			partitionKeyExtractor = this.beanFactory.getBean(producerProperties.getPartitionKeyExtractorName(), PartitionKeyExtractorStrategy.class);
 			Assert.notNull(partitionKeyExtractor, "PartitionKeyExtractorStrategy bean with the name '" + producerProperties.getPartitionKeyExtractorName()
 				+ "' can not be found. Has it been configured (e.g., @Bean)?");
 		}
 		else {
-			Assert.isTrue(this.partitionKeyExtractors.size() <= 1,
-					"Multiple  beans of type 'PartitionKeyExtractorStrategy' found. " + this.partitionKeyExtractors + ". Please "
+			Map<String, PartitionKeyExtractorStrategy> extractors = this.beanFactory.getBeansOfType(PartitionKeyExtractorStrategy.class);
+			Assert.isTrue(extractors.size() <= 1,
+					"Multiple  beans of type 'PartitionKeyExtractorStrategy' found. " + extractors + ". Please "
 							+ "use 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' property to specify "
 							+ "the name of the bean to be used.");
-			partitionKeyExtractor = CollectionUtils.isEmpty(this.partitionKeyExtractors) ?
-					null : this.partitionKeyExtractors.values().iterator().next();
+			partitionKeyExtractor = CollectionUtils.isEmpty(extractors) ? null : extractors.values().iterator().next();
 		}
 		return partitionKeyExtractor;
 	}
@@ -217,18 +203,18 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 					PartitionSelectorStrategy.class);
 		}
 		else if (StringUtils.hasText(producerProperties.getPartitionSelectorName())) {
-			partitionSelector = this.partitionSelectors.get(producerProperties.getPartitionSelectorName());
+			partitionSelector = this.beanFactory.getBean(producerProperties.getPartitionSelectorName(), PartitionSelectorStrategy.class);
 			Assert.notNull(partitionSelector,
 					"PartitionSelectorStrategy bean with the name '" + producerProperties.getPartitionSelectorName()
 							+ "' can not be found. Has it been configured (e.g., @Bean)?");
 		}
 		else {
-			Assert.isTrue(this.partitionSelectors.size() <= 1,
-				"Multiple  beans of type 'PartitionSelectorStrategy' found. " + this.partitionSelectors + ". Please "
+			Map<String, PartitionSelectorStrategy> selectors = this.beanFactory.getBeansOfType(PartitionSelectorStrategy.class);
+			Assert.isTrue(selectors.size() <= 1,
+				"Multiple  beans of type 'PartitionSelectorStrategy' found. " + selectors + ". Please "
 					+ "use 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' property to specify "
 					+ "the name of the bean to be used.");
-			partitionSelector = CollectionUtils.isEmpty(this.partitionSelectors)
-					? new DefaultPartitionSelector() : this.partitionSelectors.values().iterator().next();
+			partitionSelector = CollectionUtils.isEmpty(selectors) ? new DefaultPartitionSelector() : selectors.values().iterator().next();
 		}
 		return partitionSelector;
 	}

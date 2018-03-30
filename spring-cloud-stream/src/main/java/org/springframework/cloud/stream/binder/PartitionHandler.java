@@ -92,13 +92,9 @@ public class PartitionHandler {
 		return Math.abs(partition % producerProperties.getPartitionCount());
 	}
 
-	@SuppressWarnings("deprecation")
 	private Object extractKey(Message<?> message) {
-		Object key = null;
-		if (this.producerProperties.getPartitionKeyExtractorClass() != null) {
-			key = invokeKeyExtractor(message);
-		}
-		else if (this.producerProperties.getPartitionKeyExpression() != null) {
+		Object key = invokeKeyExtractor(message);
+		if (key == null && this.producerProperties.getPartitionKeyExpression() != null) {
 			key = this.producerProperties.getPartitionKeyExpression().getValue(this.evaluationContext, message);
 		}
 		Assert.notNull(key, "Partition key cannot be null");
@@ -107,7 +103,10 @@ public class PartitionHandler {
 	}
 
 	private Object invokeKeyExtractor(Message<?> message) {
-		return this.partitionKeyExtractorStrategy.extractKey(message);
+		if (partitionKeyExtractorStrategy != null) {
+			return this.partitionKeyExtractorStrategy.extractKey(message);
+		}
+		return null;
 	}
 
 }
