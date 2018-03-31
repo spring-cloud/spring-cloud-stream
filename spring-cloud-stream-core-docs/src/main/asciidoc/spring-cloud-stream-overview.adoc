@@ -661,10 +661,10 @@ boolean result = pollableSource.poll(received -> {
 Errors happen, and Spring Cloud Stream provides several flexible mechanisms to handle them.
 The error handling comes in two flavors:
 
-	* *system:* The error handling is delegated to the binder (re-queue, DL, and others). Note that the techniques are dependent on binder implementation and the
-	capability of the underlying messaging middleware.
-
 	* *application:* The error handling is done within the application (custom error handler).
+
+  * *system:* The error handling is delegated to the binder (re-queue, DL, and others). Note that the techniques are dependent on binder implementation and the
+  capability of the underlying messaging middleware.
 
 Spring Cloud Stream uses the https://github.com/spring-projects/spring-retry[Spring Retry] library to facilitate successful message processing. See <<Retry Template>> for more details.
 However, when all fails, the exceptions thrown by the message handlers are propagated back to the binder. At that point, binder invokes custom error handler or communicates
@@ -672,7 +672,10 @@ the error back to the messaging system (re-queue, DLQ, and others).
 
 ===== Application Error Handling
 
-First, we examine application-level error handling.
+There are two types of application-level error handling. Errors can be handled at each binding subscription or a global handler can handle all the binding subscription errors. Let's review the details.
+
+.A Spring Cloud Stream Sink Application with Custom and Global Error Handlers
+image::custom_vs_global_error_channels.png[width=300,scaledwidth="50%"]
 
 For each input binding, Spring Cloud Stream creates a dedicated error channel with the following semantics `<channel-name>.<group-name>.errors`.
 If such a channel has a subscriber, all errors are sent to that subscriber.
@@ -785,7 +788,7 @@ To get more relevant information about the original error, you must set an addit
 spring.cloud.stream.rabbit.bindings.input.consumer.republish-to-dlq=true
 ----
 
-Doing so forces the internal error handler to intercept the error message and add additional information to it before publishing it to DLQ.
+Doing so forces the internal error handler to intercept the error message and add additional information to it before publishing it to DLQ. 
 Once configured, you can see that the error message contains more information relevant to the original error, as follows:
 
 [source,text]
@@ -804,6 +807,8 @@ x-exception-stacktrace:	org.springframework.messaging.MessageHandlingException: 
       at. . . . .
 Payload {"name”:"Bob"}
 ----
+
+This effectively combines application-level and system-level error handling to further assist with downstream troubleshooting mechanics.
 
 ====== Re-queue
 
