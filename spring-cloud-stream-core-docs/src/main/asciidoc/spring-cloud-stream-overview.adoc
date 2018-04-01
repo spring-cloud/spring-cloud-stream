@@ -677,8 +677,9 @@ There are two types of application-level error handling. Errors can be handled a
 .A Spring Cloud Stream Sink Application with Custom and Global Error Handlers
 image::custom_vs_global_error_channels.png[width=300,scaledwidth="50%"]
 
-For each input binding, Spring Cloud Stream creates a dedicated error channel with the following semantics `<channel-name>.<group-name>.errors`.
-If such a channel has a subscriber, all errors are sent to that subscriber.
+For each input binding, Spring Cloud Stream creates a dedicated error channel with the following semantics `<destinationName>.errors`.
+
+NOTE: The `<destinationName>` consists of the name of the binding (such as `input`) and the name of the group (such as `myGroup`).
 
 Consider the following:
 
@@ -700,6 +701,23 @@ public void error(Message<?> message) {
 }
 ----
 
+In the preceeding example the destination name is `input.myGroup` and the dedicated error channel name is `input.myGroup.errors`.
+
+NOTE: If `group` is not specified anonymous group is used (something like `input.anonymous.2K37rb06Q6m2r51-SPIDDQ`), which is not suitable for error
+handling scenarious, since you don't know what it's going to be until the destination is created.
+
+Also, in the event you are binidng to the existing destination such as:
+
+[source,text]
+----
+spring.cloud.stream.bindings.input.destination=myFooDestination
+spring.cloud.stream.bindings.input.group=myGroup
+----
+
+the full destination name is `myFooDestination.myGroup` and then the dedicated error channel name is `myFooDestination.myGroup.errors`.
+
+Back to the example. . .
+
 The `handle(..)` method, which subscribes to the channel named `input`, throws an exception.  Given there is also a subscriber to the error channel `input.myGroup.errors`
 all error messages are handled by this subscriber.
 
@@ -717,7 +735,7 @@ public void error(Message<?> message) {
 
 This may be a convenient option if error handling logic is the same regardless of which handler produced the error.
 
-Also, error messages sent to the `errorChannel` can be published to a specific destination at the broker by configuring a binding named `error` for the outbound target.
+Also, error messages sent to the `errorChannel` can be published to the specific destination at the broker by configuring a binding named `error` for the outbound target.
 This option provides a mechanism to automatically send error messages to another application bound to that destination or for later retrieval (for example, audit).
 For example, to publish error messages to a broker destination named `myErrors`, set the following property:
 
@@ -725,6 +743,9 @@ For example, to publish error messages to a broker destination named `myErrors`,
 ----
 spring.cloud.stream.bindings.error.destination=myErrors.
 ----
+
+NOTE: The ability to bridge global error channel to a broker destination essentially provides a mechanism which connects
+the _application-level_ error handling with the _system-level_ error handling.
 
 ===== System Error Handling
 
@@ -788,7 +809,7 @@ To get more relevant information about the original error, you must set an addit
 spring.cloud.stream.rabbit.bindings.input.consumer.republish-to-dlq=true
 ----
 
-Doing so forces the internal error handler to intercept the error message and add additional information to it before publishing it to DLQ. 
+Doing so forces the internal error handler to intercept the error message and add additional information to it before publishing it to DLQ.
 Once configured, you can see that the error message contains more information relevant to the original error, as follows:
 
 [source,text]
