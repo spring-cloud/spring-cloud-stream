@@ -30,7 +30,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
@@ -72,9 +71,7 @@ class KafkaStreamsMessageConversionDelegate {
 	 */
 	public KStream serializeOnOutbound(KStream<?,?> outboundBindTarget) {
 		String contentType = this.kstreamBindingInformationCatalogue.getContentType(outboundBindTarget);
-		MessageConverter messageConverter = StringUtils.hasText(contentType) ? compositeMessageConverterFactory
-				.getMessageConverterForType(MimeType.valueOf(contentType))
-				: null;
+		MessageConverter messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 
 		return outboundBindTarget.map((k, v) -> {
 			Message<?> message = v instanceof Message<?> ? (Message<?>) v :
