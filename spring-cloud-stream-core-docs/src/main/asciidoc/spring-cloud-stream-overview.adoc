@@ -675,7 +675,7 @@ the error back to the messaging system (re-queue, DLQ, and others).
 There are two types of application-level error handling. Errors can be handled at each binding subscription or a global handler can handle all the binding subscription errors. Let's review the details.
 
 .A Spring Cloud Stream Sink Application with Custom and Global Error Handlers
-image::custom_vs_global_error_channels.png[width=300,scaledwidth="50%"]
+image::custom_vs_global_error_channels.png[width=300,scaledwidth="75%",align="center"]
 
 For each input binding, Spring Cloud Stream creates a dedicated error channel with the following semantics `<destinationName>.errors`.
 
@@ -695,13 +695,17 @@ public void handle(Person value)
 	throw new RuntimeException("BOOM!");
 }
 
-@StreamListener(Processor.INPUT + ".myGroup.errors") //channel name 'input.myGroup.errors'
+@ServiceActivator(inputChannel = Processor.INPUT + ".myGroup.errors") //channel name 'input.myGroup.errors'
 public void error(Message<?> message) {
 	System.out.println("Handling ERROR: " + message);
 }
 ----
 
 In the preceeding example the destination name is `input.myGroup` and the dedicated error channel name is `input.myGroup.errors`.
+
+NOTE: The use of @StreamListener annotation is intended specifically to define bindings that bridge internal channels and external destinations. Given that the destination
+specific error channel does NOT have an associated external destination, such channel is a prerogative of Spring Integration (SI). This means that the handler
+for such destination must be defined using one of the SI handler annotations (i.e., @ServiceActivator, @Transformer etc.).
 
 NOTE: If `group` is not specified anonymous group is used (something like `input.anonymous.2K37rb06Q6m2r51-SPIDDQ`), which is not suitable for error
 handling scenarious, since you don't know what it's going to be until the destination is created.
