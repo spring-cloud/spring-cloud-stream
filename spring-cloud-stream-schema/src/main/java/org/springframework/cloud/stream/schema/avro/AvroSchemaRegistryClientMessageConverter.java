@@ -268,27 +268,23 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	@Override
 	protected Schema resolveWriterSchemaForDeserialization(MimeType mimeType) {
 		if (this.readerSchema == null) {
-			Schema schema = null;
-			ParsedSchema parsedSchema = null;
 			SchemaReference schemaReference = extractSchemaReference(mimeType);
 			if (schemaReference != null) {
-				parsedSchema = cacheManager.getCache(REFERENCE_CACHE_NAME)
-						.get(schemaReference, ParsedSchema.class);
+				ParsedSchema parsedSchema = cacheManager.getCache(REFERENCE_CACHE_NAME).get(schemaReference, ParsedSchema.class);
 				if (parsedSchema == null) {
-					String schemaContent = this.schemaRegistryClient
-							.fetch(schemaReference);
-					schema = new Schema.Parser().parse(schemaContent);
-					parsedSchema = new ParsedSchema(schema);
-					cacheManager.getCache(REFERENCE_CACHE_NAME)
-							.putIfAbsent(schemaReference, parsedSchema);
+					String schemaContent = this.schemaRegistryClient.fetch(schemaReference);
+					if (schemaContent != null) {
+						Schema schema = new Schema.Parser().parse(schemaContent);
+						parsedSchema = new ParsedSchema(schema);
+						cacheManager.getCache(REFERENCE_CACHE_NAME).putIfAbsent(schemaReference, parsedSchema);
+					}
 				}
-
+				if (parsedSchema != null) {
+					return parsedSchema.getSchema();
+				}
 			}
-			return parsedSchema.getSchema();
 		}
-		else {
-			return this.readerSchema;
-		}
+		return this.readerSchema;
 	}
 
 	@Override
