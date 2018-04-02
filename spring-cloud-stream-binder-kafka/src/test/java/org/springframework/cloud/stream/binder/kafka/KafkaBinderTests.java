@@ -573,20 +573,30 @@ public class KafkaBinderTests extends
 
 	@Test
 	public void testDlqAndRetry() throws Exception {
-		testDlqGuts(true);
+		testDlqGuts(true, null);
 	}
 
 	@Test
 	public void testDlq() throws Exception {
-		testDlqGuts(false);
+		testDlqGuts(false, null);
 	}
 
-	@SuppressWarnings("unchecked")
-	private void testDlqGuts(boolean withRetry) throws Exception {
+	@Test
+	public void testDlqNone() throws Exception {
+		testDlqGuts(false, HeaderMode.none);
+	}
+
+	@Test
+	public void testDlqEmbedded() throws Exception {
+		testDlqGuts(false, HeaderMode.embeddedHeaders);
+	}
+
+	private void testDlqGuts(boolean withRetry, HeaderMode headerMode) throws Exception {
 		AbstractKafkaTestBinder binder = getBinder();
 
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setHeaderPatterns(new String[]{MessageHeaders.CONTENT_TYPE});
+		producerProperties.setHeaderMode(headerMode);
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				createProducerBindingProperties(producerProperties));
@@ -597,6 +607,7 @@ public class KafkaBinderTests extends
 		consumerProperties.setBackOffMaxInterval(150);
 		consumerProperties.getExtension().setEnableDlq(true);
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
+		consumerProperties.setHeaderMode(headerMode);
 
 		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
 
@@ -614,6 +625,7 @@ public class KafkaBinderTests extends
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
 		dlqConsumerProperties.setMaxAttempts(1);
+		dlqConsumerProperties.setHeaderMode(headerMode);
 
 		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(), "applicationContext",
 				ApplicationContext.class);
@@ -640,13 +652,27 @@ public class KafkaBinderTests extends
 		Message<?> receivedMessage = receive(dlqChannel, 3);
 		assertThat(receivedMessage).isNotNull();
 		assertThat(receivedMessage.getPayload()).isEqualTo(testMessagePayload.getBytes());
-		assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
-		assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
-				.isEqualTo(producerName.getBytes(StandardCharsets.UTF_8));
-		assertThat(new String((byte[]) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
-				.startsWith("failed to send Message to channel 'input'");
-		assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
-				.isNotNull();
+		if (HeaderMode.embeddedHeaders.equals(headerMode)) {
+			assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
+					.isEqualTo(producerName);
+			assertThat(((String) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
+					.startsWith("failed to send Message to channel 'input'");
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
+					.isNotNull();
+		}
+		else if (!HeaderMode.none.equals(headerMode)) {
+			assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
+					.isEqualTo(producerName.getBytes(StandardCharsets.UTF_8));
+			assertThat(new String((byte[]) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
+					.startsWith("failed to send Message to channel 'input'");
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
+					.isNotNull();
+		}
+		else {
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC)).isNull();
+		}
 		binderBindUnbindLatency();
 
 		// verify we got a message on the dedicated error channel and the global (via bridge)

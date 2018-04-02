@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -52,10 +53,12 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
+import org.springframework.cloud.stream.binder.EmbeddedHeaderUtils;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
+import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties.StandardHeaders;
@@ -75,6 +78,7 @@ import org.springframework.integration.kafka.support.RawRecordHeaderErrorMessage
 import org.springframework.integration.support.AcknowledgmentCallback;
 import org.springframework.integration.support.AcknowledgmentCallback.Status;
 import org.springframework.integration.support.ErrorMessageStrategy;
+import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.support.StaticMessageHeaderAccessor;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -601,7 +605,8 @@ public class KafkaMessageChannelBinder extends
 			DlqSender<?,?> dlqSender = new DlqSender(kafkaTemplate, dlqName);
 
 			return message -> {
-				final ConsumerRecord<?, ?> record = message.getHeaders()
+				@SuppressWarnings("unchecked")
+				final ConsumerRecord<Object, Object> record = message.getHeaders()
 						.get(KafkaHeaders.RAW_DATA, ConsumerRecord.class);
 
 				if (properties.isUseNativeDecoding()) {
@@ -625,16 +630,40 @@ public class KafkaMessageChannelBinder extends
 					return;
 				}
 				Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
-				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
-						record.topic().getBytes(StandardCharsets.UTF_8)));
+				AtomicReference<ConsumerRecord<?, ?>> recordToSend = new AtomicReference<>(record);
 				if (message.getPayload() instanceof Throwable) {
 					Throwable throwable = (Throwable) message.getPayload();
-					kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
-							throwable.getMessage().getBytes(StandardCharsets.UTF_8)));
-					kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
-							getStackTraceAsString(throwable).getBytes(StandardCharsets.UTF_8)));
+					HeaderMode headerMode = properties.getHeaderMode();
+					if (headerMode == null || HeaderMode.headers.equals(headerMode)) {
+						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
+								record.topic().getBytes(StandardCharsets.UTF_8)));
+						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
+								throwable.getMessage().getBytes(StandardCharsets.UTF_8)));
+						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
+								getStackTraceAsString(throwable).getBytes(StandardCharsets.UTF_8)));
+					}
+					else if (HeaderMode.embeddedHeaders.equals(headerMode)) {
+						try {
+							MessageValues messageValues = EmbeddedHeaderUtils
+									.extractHeaders(MessageBuilder.withPayload((byte[]) record.value()).build(),
+											false);
+							messageValues.put(X_ORIGINAL_TOPIC, record.topic());
+							messageValues.put(X_EXCEPTION_MESSAGE, throwable.getMessage());
+							messageValues.put(X_EXCEPTION_STACKTRACE, getStackTraceAsString(throwable));
+
+							final String[] headersToEmbed = new ArrayList<>(messageValues.keySet()).toArray(
+									new String[messageValues.keySet().size()]);
+							byte[] payload = EmbeddedHeaderUtils.embedHeaders(messageValues,
+									EmbeddedHeaderUtils.headersToEmbed(headersToEmbed));
+							recordToSend.set(new ConsumerRecord<Object, Object>(record.topic(), record.partition(),
+									record.offset(), record.key(), payload));
+						}
+						catch (Exception e) {
+							throw new RuntimeException(e);
+						}
+					}
 				}
-				dlqSender.sendToDlq(record, kafkaHeaders);
+				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders);
 			};
 		}
 		return null;
