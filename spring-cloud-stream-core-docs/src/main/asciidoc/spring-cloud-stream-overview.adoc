@@ -2481,6 +2481,10 @@ When autoconfiguration is disabled, the test binder is available on the classpat
 
 Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name of `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
+If management.health.binders.enabled is `false`, then no health indicator is shown on `/health`.
+Setting management.health.binders.enabled to `true` enables the health indicator.
+By using `/health` endpoint, then the binder health indicators can be retrieved.
+Health indicators are binder specific and certain binder implementations may not necessarily provide a health indicator.
 
 [[spring-cloud-stream-overview-metrics-emitter]]
 == Metrics Emitter
