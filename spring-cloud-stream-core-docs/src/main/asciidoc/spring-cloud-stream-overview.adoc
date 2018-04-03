@@ -1930,61 +1930,8 @@ See "`<<schema-evolution>>`" for details.
 [[schema-evolution]]
 == Schema Evolution Support
 
-Spring Cloud Stream provides support for schema-based message converters through its `spring-cloud-stream-schema` module.
-Currently, the only serialization format supported out of the box for schema-based message converters is Apache Avro, with more formats to be added in future versions.
-
-=== Apache Avro Message Converters
-
-The `spring-cloud-stream-schema` module contains two types of message converters that can be used for Apache Avro serialization:
-
-* Converters that use the class information of the serialized or deserialized objects or a schema with a location known at startup.
-* Converters that use a schema registry. They locate the schemas at runtime and dynamically register new schemas as domain objects evolve.
-
-=== Converters with Schema Support
-
-The `AvroSchemaMessageConverter` supports serializing and deserializing messages either by using a predefined schema or by using the schema information available in the class (either reflectively or contained in the `SpecificRecord`).
-If the target type of the conversion is a `GenericRecord`, a schema must be set.
-
-To use it, you can simply add it to the application context, optionally specifying one or more `MimeTypes` with which to associate it.
-The default `MimeType` is `application/avro`.
-
-The following example shows how to configure a converter in a sink application by registering the Apache Avro `MessageConverter` without a predefined schema:
-
-[source,java]
-----
-@EnableBinding(Sink.class)
-@SpringBootApplication
-public static class SinkApplication {
-
-  ...
-
-  @Bean
-  public MessageConverter userMessageConverter() {
-      return new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes"));
-  }
-}
-----
-
-Conversely, the following application registers a converter with a predefined schema (found on the classpath):
-
-[source,java]
-----
-@EnableBinding(Sink.class)
-@SpringBootApplication
-public static class SinkApplication {
-
-  ...
-
-  @Bean
-  public MessageConverter userMessageConverter() {
-      AvroSchemaMessageConverter converter = new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes"));
-      converter.setSchemaLocation(new ClassPathResource("schemas/User.avro"));
-      return converter;
-  }
-}
-----
-
-In order to understand the schema registry client converter, we must first describe the schema registry support.
+Spring Cloud Stream provides support for schema evolution so that the data can be evolved over time and still work with older or newer producers and consumers and vice versa.
+This section goes through the details of various components involved in schema evolution process.
 
 === Schema Registry Support
 
@@ -2151,22 +2098,6 @@ Because of this, it uses a `DefaultSchemaRegistryClient` that does not caches re
 If you intend to use the client directly on your code, you can request a bean that also caches responses to be created.
 To do so, add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
 
-==== Using Confluent's Schema Registry
-
-The default configuration creates a `DefaultSchemaRegistryClient` bean.
-If you want to use the Confluent schema registry, you need to create a bean of type `ConfluentSchemaRegistryClient`, which supersedes the one configured by default by the framework. The following example shows how to create such a bean:
-
-[source,java]
-----
-@Bean
-public SchemaRegistryClient schemaRegistryClient(@Value("${spring.cloud.stream.schemaRegistryClient.endpoint}") String endpoint){
-  ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient();
-  client.setEndpoint(endpoint);
-  return client;
-}
-----
-NOTE: The ConfluentSchemaRegistryClient is tested against Confluent platform version 3.2.2.
-
 ==== Schema Registry Client Properties
 
 The Schema Registry Client supports the following properties:
@@ -2181,10 +2112,81 @@ Clients using the schema registry client should set this to `true`.
 +
 Default:: `true`
 
+==== Using Confluent's Schema Registry
+
+The default configuration creates a `DefaultSchemaRegistryClient` bean.
+If you want to use the Confluent schema registry, you need to create a bean of type `ConfluentSchemaRegistryClient`, which supersedes the one configured by default by the framework. The following example shows how to create such a bean:
+
+[source,java]
+----
+@Bean
+public SchemaRegistryClient schemaRegistryClient(@Value("${spring.cloud.stream.schemaRegistryClient.endpoint}") String endpoint){
+  ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient();
+  client.setEndpoint(endpoint);
+  return client;
+}
+----
+NOTE: The ConfluentSchemaRegistryClient is tested against Confluent platform version 4.0.0.
+
+=== Apache Avro Message Converters
+
+Spring Cloud Stream provides support for schema-based message converters through its `spring-cloud-stream-schema` module.
+Currently, the only serialization format supported out of the box for schema-based message converters is Apache Avro, with more formats to be added in future versions.
+
+The `spring-cloud-stream-schema` module contains two types of message converters that can be used for Apache Avro serialization:
+
+* Converters that use the class information of the serialized or deserialized objects or a schema with a location known at startup.
+* Converters that use a schema registry. They locate the schemas at runtime and dynamically register new schemas as domain objects evolve.
+
+=== Converters with Schema Support
+
+To use it, you can simply add it to the application context, optionally specifying one or more `MimeTypes` with which to associate it.
+The default `MimeType` is `application/avro`.
+
+The `AvroSchemaMessageConverter` supports serializing and deserializing messages either by using a predefined schema or by using the schema information available in the class (either reflectively or contained in the `SpecificRecord`).
+If the user provides a custom converter (as below), then the default `AvroSchemaMessageConverter` bean will not be created.
+
+If the target type of the conversion is a `GenericRecord`, a schema must be set.
+
+The following example shows how to configure a converter in a sink application by registering the Apache Avro `MessageConverter` without a predefined schema.
+
+[source,java]
+----
+@EnableBinding(Sink.class)
+@SpringBootApplication
+public static class SinkApplication {
+
+  ...
+
+  @Bean
+  public MessageConverter userMessageConverter() {
+      return new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes"));
+  }
+}
+----
+
+Conversely, the following application registers a converter with a predefined schema (found on the classpath):
+
+[source,java]
+----
+@EnableBinding(Sink.class)
+@SpringBootApplication
+public static class SinkApplication {
+
+  ...
+
+  @Bean
+  public MessageConverter userMessageConverter() {
+      AvroSchemaMessageConverter converter = new AvroSchemaMessageConverter(MimeType.valueOf("avro/bytes"));
+      converter.setSchemaLocation(new ClassPathResource("schemas/User.avro"));
+      return converter;
+  }
+}
+----
 
 === Avro Schema Registry Client Message Converters
 
-For Spring Boot applications that have a `SchemaRegistryClient` bean registered with the application context, Spring Cloud Stream autoconfigures an Apache Avro message converter that uses the schema registry client for schema management.
+For Spring Boot applications that have a `SchemaRegistryClient` bean registered with the application context, Spring Cloud Stream auto configures an Apache Avro message converter that uses the schema registry client for schema management.
 This eases schema evolution, as applications that receive messages can get easy access to a writer schema that can be reconciled with their own reader schema.
 
 For outbound messages, if the content type of the channel is set to `application/*+avro`, the `MessageConverter` is activated, as shown in the following example:
@@ -2221,7 +2223,6 @@ Default: `empty`
 spring.cloud.stream.schema.avro.prefix:: The prefix to be used on the Content-Type header.
 +
 Default: `vnd`
-
 
 === Schema Registration and Resolution
 
