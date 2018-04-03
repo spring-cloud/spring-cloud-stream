@@ -1931,10 +1931,6 @@ See "`<<schema-evolution>>`" for details.
 == Schema Evolution Support
 
 Spring Cloud Stream provides support for schema evolution so that the data can be evolved over time and still work with older or newer producers and consumers and vice versa.
-This section goes through the details of various components involved in schema evolution process.
-
-=== Schema Registry Support
-
 Most serialization models, especially the ones that aim for portability across different platforms and languages, rely on a schema that describes how the data is serialized in the binary payload.
 In order to serialize the data and then to interpret it, both the sending and receiving sides must have access to a schema that describes the binary format.
 In certain cases, the schema can be inferred from the payload type on serialization or from the target type on deserialization.
@@ -1945,6 +1941,8 @@ A schema is referenceable as a tuple consisting of:
 *    A subject that is the logical name of the schema
 *    The schema version
 *    The schema format, which describes the binary format of the data
+
+This following sections goes through the details of various components involved in schema evolution process.
 
 === Schema Registry Client
 
@@ -2057,7 +2055,7 @@ The default `MimeType` is `application/avro`.
 If the target type of the conversion is a `GenericRecord`, a schema must be set.
 
 The following example shows how to configure a converter in a sink application by registering the Apache Avro `MessageConverter` without a predefined schema.
-In these examples, note that the mime type value is `avro/bytes`, not the default `application/avro`.
+In this example, note that the mime type value is `avro/bytes`, not the default `application/avro`.
 
 [source,java]
 ----
