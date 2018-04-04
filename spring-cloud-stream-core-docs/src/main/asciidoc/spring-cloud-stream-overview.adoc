@@ -1963,7 +1963,7 @@ public interface SchemaRegistryClient {
 
 Spring Cloud Stream provides out-of-the-box implementations for interacting with its own schema server and for interacting with the Confluent Schema Registry.
 
-A client for the Spring Cloud Stream schema registry can be configured byusing the `@EnableSchemaRegistryClient`, as follows:
+A client for the Spring Cloud Stream schema registry can be configured by using the `@EnableSchemaRegistryClient`, as follows:
 
 [source,java]
 ----
@@ -1976,9 +1976,9 @@ A client for the Spring Cloud Stream schema registry can be configured byusing t
 ----
 
 NOTE: The default converter is optimized to cache not only the schemas from the remote server but also the `parse()` and `toString()` methods, which are quite expensive.
-Because of this, it uses a `DefaultSchemaRegistryClient` that does not caches responses.
-If you intend to use the client directly on your code, you can request a bean that also caches responses to be created.
-To do so, add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
+Because of this, it uses a `DefaultSchemaRegistryClient` that does not cache responses.
+If you intend to change the default behavior, you can use the client directly on your code and override it to the desired outcome.
+To do so, you have to add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
 
 ==== Schema Registry Client Properties
 
@@ -1996,7 +1996,7 @@ Default:: `true`
 
 === Avro Schema Registry Client Message Converters
 
-For Spring Boot applications that have a `SchemaRegistryClient` bean registered with the application context, Spring Cloud Stream auto configures an Apache Avro message converter that uses the schema registry client for schema management.
+For applications that have a SchemaRegistryClient bean registered with the application context, Spring Cloud Stream auto configures an Apache Avro message converter for schema management.
 This eases schema evolution, as applications that receive messages can get easy access to a writer schema that can be reconciled with their own reader schema.
 
 For outbound messages, if the content type of the channel is set to `application/*+avro`, the `MessageConverter` is activated, as shown in the following example:
