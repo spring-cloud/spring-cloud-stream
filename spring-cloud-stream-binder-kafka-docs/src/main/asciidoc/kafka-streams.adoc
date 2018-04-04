@@ -169,7 +169,7 @@ spring.cloud.stream.kafka.streams.timeWindow.length::
   The value is expressed in milliseconds.
 +
 Default: `none`.
-spring.cloud.stream.kstream.timeWindow.advanceBy::
+spring.cloud.stream.kafka.streams.timeWindow.advanceBy::
   Value is given in milliseconds.
 +
 Default: `none`.
@@ -413,9 +413,9 @@ If `nativeEncoding` is set, then you can set different SerDe's on individual out
 
 [source]
 ----
-spring.cloud.stream.kstream.bindings.output1.producer.valueSerde=IntegerSerde
-spring.cloud.stream.kstream.bindings.output2.producer.valueSerde=StringSerde
-spring.cloud.stream.kstream.bindings.output3.producer.valueSerde=JsonSerde
+spring.cloud.stream.kafka.streams.bindings.output1.producer.valueSerde=IntegerSerde
+spring.cloud.stream.kafka.streams.bindings.output2.producer.valueSerde=StringSerde
+spring.cloud.stream.kafka.streams.bindings.output3.producer.valueSerde=JsonSerde
 ----
 
 Then if you have `SendTo` like this, @SendTo({"output1", "output2", "output3"}), the `KStream[]` from the branches are 
