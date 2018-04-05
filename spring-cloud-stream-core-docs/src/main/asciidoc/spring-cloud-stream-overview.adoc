@@ -2047,7 +2047,7 @@ The `spring-cloud-stream-schema` module contains two types of message converters
 === Converters with Schema Support
 
 The `AvroSchemaMessageConverter` supports serializing and deserializing messages either by using a predefined schema or by using the schema information available in the class (either reflectively or contained in the `SpecificRecord`).
-If the user provides a custom converter (as below), then the default `AvroSchemaMessageConverter` bean will not be created.
+If you provide a custom converter, then the default AvroSchemaMessageConverter bean is not created. The following example shows a custom converter:
 
 To use custom converters, you can simply add it to the application context, optionally specifying one or more `MimeTypes` with which to associate it.
 The default `MimeType` is `application/avro`.
