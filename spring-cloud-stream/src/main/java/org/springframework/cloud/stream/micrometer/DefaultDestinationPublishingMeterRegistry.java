@@ -42,16 +42,16 @@ import io.micrometer.core.instrument.Meter.Id;
 import io.micrometer.core.instrument.Meter.Type;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.cumulative.CumulativeCounter;
-import io.micrometer.core.instrument.cumulative.CumulativeDistributionSummary;
-import io.micrometer.core.instrument.cumulative.CumulativeFunctionCounter;
-import io.micrometer.core.instrument.cumulative.CumulativeFunctionTimer;
-import io.micrometer.core.instrument.cumulative.CumulativeTimer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.core.instrument.distribution.pause.PauseDetector;
 import io.micrometer.core.instrument.internal.DefaultGauge;
 import io.micrometer.core.instrument.internal.DefaultLongTaskTimer;
 import io.micrometer.core.instrument.internal.DefaultMeter;
+import io.micrometer.core.instrument.step.StepCounter;
+import io.micrometer.core.instrument.step.StepDistributionSummary;
+import io.micrometer.core.instrument.step.StepFunctionCounter;
+import io.micrometer.core.instrument.step.StepFunctionTimer;
+import io.micrometer.core.instrument.step.StepTimer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -128,7 +128,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 
 	@Override
 	protected Counter newCounter(Meter.Id id) {
-		return new CumulativeCounter(id);
+		return new StepCounter(id, clock, metricsPublisherConfig.step().toMillis());
 	}
 
 	@Override
@@ -153,6 +153,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 		}
 		if (!aggregatedMeters.isEmpty()) {
 			ApplicationMetrics metrics = new ApplicationMetrics(this.applicationProperties.getKey(), aggregatedMeters);
+			metrics.setInterval(this.metricsPublisherConfig.step().toMillis());
 			metrics.setProperties(this.applicationProperties.getExportProperties());
 			try {
 				String jsonString = this.objectMapper.writeValueAsString(metrics);
@@ -167,19 +168,19 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	@Override
 	protected Timer newTimer(Id id, DistributionStatisticConfig distributionStatisticConfig,
 			PauseDetector pauseDetector) {
-		return new CumulativeTimer(id, clock, distributionStatisticConfig, pauseDetector, getBaseTimeUnit());
+		return new StepTimer(id, clock, distributionStatisticConfig, pauseDetector, getBaseTimeUnit());
 	}
 
 	@Override
 	protected <T> FunctionTimer newFunctionTimer(Id id, T obj, ToLongFunction<T> countFunction,
 			ToDoubleFunction<T> totalTimeFunction, TimeUnit totalTimeFunctionUnits) {
-		return new CumulativeFunctionTimer<T>(id, obj, countFunction, totalTimeFunction, totalTimeFunctionUnits,
-				getBaseTimeUnit());
+		return new StepFunctionTimer<T>(id, clock, metricsPublisherConfig.step().toMillis(), obj, countFunction, totalTimeFunction,
+				totalTimeFunctionUnits, getBaseTimeUnit());
 	}
 
 	@Override
 	protected <T> FunctionCounter newFunctionCounter(Id id, T obj, ToDoubleFunction<T> valueFunction) {
-		return new CumulativeFunctionCounter<T>(id, obj, valueFunction);
+		return new StepFunctionCounter<T>(id, clock, metricsPublisherConfig.step().toMillis(), obj, valueFunction);
 	}
 
 	@Override
@@ -189,7 +190,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 
 	@Override
 	protected DistributionSummary newDistributionSummary(Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
-		return new CumulativeDistributionSummary(id, clock, distributionStatisticConfig, scale);
+		return new StepDistributionSummary(id, clock, distributionStatisticConfig, scale);
 	}
 
 	@Override
