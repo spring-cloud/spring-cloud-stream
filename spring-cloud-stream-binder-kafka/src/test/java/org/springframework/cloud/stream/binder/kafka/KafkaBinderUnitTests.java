@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -190,8 +191,11 @@ public class KafkaBinderUnitTests {
 
 					@Override
 					public Map<String, Object> getConfigurationProperties() {
-						return Collections.singletonMap(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+						Map<String, Object> props = new HashMap<>();
+						props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
 								earliest ? "earliest" : "latest");
+						props.put(ConsumerConfig.GROUP_ID_CONFIG, "bar");
+						return props;
 					}
 
 				};
