@@ -72,6 +72,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Soby Chacko
  * @author Oleg Zhurakousky
+ * @author Viacheslav Petriaiev
  */
 public class MessageConverterConfigurer implements MessageChannelAndSourceConfigurer, BeanFactoryAware {
 
