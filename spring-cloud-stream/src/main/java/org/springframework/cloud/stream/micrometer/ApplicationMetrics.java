@@ -30,13 +30,15 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @author Vinicius Carvalho
  * @author Oleg Zhurakousky
  */
-@JsonPropertyOrder({ "name", "createdTime", "properties", "metrics" })
+@JsonPropertyOrder({ "name", "inteval", "createdTime", "properties", "metrics" })
 class ApplicationMetrics {
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
 	private final Date createdTime;
 
 	private String name;
+
+	private long interval;
 
 	private Collection<Metric<Number>> metrics;
 
@@ -75,5 +77,13 @@ class ApplicationMetrics {
 
 	public void setProperties(Map<String, Object> properties) {
 		this.properties = properties;
+	}
+
+	public long getInterval() {
+		return interval;
+	}
+
+	public void setInterval(long interval) {
+		this.interval = interval;
 	}
 }
