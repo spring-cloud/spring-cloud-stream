@@ -137,6 +137,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
 		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(channelName);
 		String contentType = bindingProperties.getContentType();
+		messageChannel.setDatatypes(bindingProperties.getDataTypes());
 		ProducerProperties producerProperties = bindingProperties.getProducer();
 		if (!inbound && producerProperties != null && producerProperties.isPartitioned()) {
 			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,

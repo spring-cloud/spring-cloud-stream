@@ -27,6 +27,7 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
@@ -36,11 +37,13 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
 
 /**
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author Viacheslav Petriaiev
  * @since 1.3
  *
  */
@@ -54,12 +57,12 @@ public class MessageConverterConfigurerTests {
 		bindingProps.setContentType("application/json");
 		props.setBindings(Collections.singletonMap("foo", bindingProps));
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
-				Collections.<MessageConverter>emptyList(), null);
+				Collections.emptyList(), null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
 		QueueChannel out = new QueueChannel();
 		configurer.configureOutputChannel(out, "foo");
 		out.send(new GenericMessage<Foo>(new Foo(),
-				Collections.<String, Object> singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")));
+				Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")));
 		Message<?> received = out.receive(0);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isInstanceOf(Foo.class);
@@ -86,13 +89,13 @@ public class MessageConverterConfigurerTests {
 
 		};
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
-				Collections.<MessageConverter>singletonList(converter), null);
+				Collections.singletonList(converter), null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
 		QueueChannel out = new QueueChannel();
 		configurer.configureOutputChannel(out, "foo");
 		try {
 			out.send(new GenericMessage<Foo>(new Foo(),
-					Collections.<String, Object> singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")));
+					Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")));
 			fail("Expected MessageConversionException: " + out.receive(0));
 		}
 		catch (MessageConversionException e) {
@@ -107,7 +110,7 @@ public class MessageConverterConfigurerTests {
 		bindingProps.setContentType("foo/bar");
 		props.setBindings(Collections.singletonMap("foo", bindingProps));
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
-				Collections.<MessageConverter>emptyList(), null);
+				Collections.emptyList(), null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
 		QueueChannel in = new QueueChannel();
 		configurer.configureInputChannel(in, "foo");
@@ -121,6 +124,40 @@ public class MessageConverterConfigurerTests {
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo(foo);
 		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
+	}
+
+	@Test
+	public void testConfigureInputChannelWithDataType() {
+		BindingServiceProperties props = new BindingServiceProperties();
+		BindingProperties bindingProps = new BindingProperties();
+		bindingProps.setDataTypes(new Class<?>[]{Foo.class});
+		props.setBindings(Collections.singletonMap("foo", bindingProps));
+		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
+				Collections.emptyList(), null);
+		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
+		QueueChannel in = new QueueChannel();
+		configurer.configureInputChannel(in, "foo");
+		Foo foo = new Foo();
+		in.send(MessageBuilder.withPayload(foo).build());
+		Message<?> received = in.receive(0);
+		assertThat(received).isNotNull();
+		assertThat(received.getPayload()).isEqualTo(foo);
+	}
+
+	@Test
+	public void testConfigureInputChannelWithNotAcceptableDataType() {
+		BindingServiceProperties props = new BindingServiceProperties();
+		BindingProperties bindingProps = new BindingProperties();
+		bindingProps.setDataTypes(new Class<?>[]{Foo.class});
+		props.setBindings(Collections.singletonMap("foo", bindingProps));
+		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
+				Collections.emptyList(), null);
+		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
+		QueueChannel in = new QueueChannel();
+		configurer.configureInputChannel(in, "foo");
+		assertThatThrownBy(() -> in.send(MessageBuilder.withPayload("Not acceptable payload").build()))
+				.isInstanceOf(MessageDeliveryException.class)
+				.hasMessageContaining("expected one of the following datataypes");
 	}
 
 	public static class Foo {
