@@ -37,9 +37,14 @@ badges:
 
 {% capture billboard_description %}
 
-Spring Cloud Stream is a framework for building message-driven microservices. Spring Cloud Stream builds upon Spring Boot to create DevOps friendly microservice applications and Spring Integration to provide connectivity to message brokers. Spring Cloud Stream provides an opinionated configuration of message brokers, introducing the concepts of persistent pub/sub semantics, consumer groups and partitions across several middleware vendors. This opinionated configuration provides the basis to create stream processing applications.
+Spring Cloud Stream is a framework for building message-driven microservices connected with one another with messaging middleware.
+It builds on Spring Boot provides both connectivity to message brokers as well as programming model for developing 
+microservices. Spring Cloud Stream provides an opinionated configuration of message brokers, introducing the concepts of 
+persistent pub/sub semantics, consumer groups and partitions across several middleware vendors. This opinionated configuration 
+provides the basis to create stream processing applications and is highly customizable.
 
-By adding `@EnableBinding` to your main application, you get immediate connectivity to a message broker and by adding `@StreamListener` to a method, you will receive events for stream processing.
+By adding `@EnableBinding` to your main application, you get immediate connectivity to a message broker and by adding 
+`@StreamListener` to a method, you receive events from the message broker.
 
 {% endcapture %}
 
@@ -117,13 +122,13 @@ The following is the compatibility matrix of Spring cloud Stream and its depende
 
 Depending on the selected release-combination, the dependent projects will be referenced transitively when using maven or gradle for version management.
 <br/><br/>
-<sup>*</sup>The 2.0.x binder uses the pure java `AdminClient` to provision topics and supports native headers.
+The 2.0.x binder uses the pure java `AdminClient` to provision topics and supports native headers.
 The 1.0.x client can communicate with an 0.11.x.x broker (which also supports headers).
 When using with a 0.11.x.x broker, topics can be provisioned, but the number of partitions cannot be automatically adjusted up.
 To increase the number of topics, you must use the kafka tools instead.
 The property `spring.cloud.stream.kafka.binder.auto-add-partitions` must be `false` (default).
 <br/>
-<sup>**</sup> To use the 0.11.x.x `kafka-clients` with 1.3.x, you must use the `spring-cloud-stream-binder-kafka11` jar (instead of `spring-cloud-stream-binder-kafka`). You must also override certain other jar versions as follows:
+To use the 0.11.x.x `kafka-clients` with 1.3.x, you must use the `spring-cloud-stream-binder-kafka11` jar (instead of `spring-cloud-stream-binder-kafka`). You must also override certain other jar versions as follows:
 
 <table>
  <tr>
