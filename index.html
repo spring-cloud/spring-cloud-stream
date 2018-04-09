@@ -54,13 +54,14 @@ provides the basis to create stream processing applications and is highly custom
 <script type="text/javascript">{% include custom.js %}</script>
 {% include download_widget.md %}
 
-As long as Spring Cloud Stream and a Spring Cloud Stream Binder dependencies are on the classpath any Spring Boot application with `@EnableBinding` will bind to the external 
-message broker (e.g. Rabbit MQ or Apache Kafka, depending on the binder-implementation of choice).
+As long as Spring Cloud Stream and a Spring Cloud Stream Binder dependencies are on the classpath any Spring Boot application with `@EnableBinding` binds to the external 
+messaging system (e.g. Rabbit MQ or Apache Kafka, depending on the binder-implementation of choice).
 
 Let's see it in action!
 
 Below is the fully functional Spring Cloud Stream application, which receives and logs received messages to the console.
-```
+
+```java
 @SpringBootApplication
 @EnableBinding(Sink.class)
 public class LoggingConsumerApplication {
@@ -90,18 +91,18 @@ public class LoggingConsumerApplication {
 ```
 As you can see from the preceding example:
 
-* We have enabled Sink binding (input-no-output) by using `@EnableBinding(Sink.class)`. Doing so signals to the framework to initiate binding to the messaging middleware, 
+* We have enabled `Sink` binding (input-no-output) by using `@EnableBinding(Sink.class)`. Doing so signals to the framework to initiate binding to the messaging system, 
 where it automatically creates the destination (that is, queue, topic, and others) that are bound to the `Sink.INPUT` channel.
 
 * We have added a handler method to receive incoming messages of type `Person`. Doing so lets you see one of the core features of the framework: It tries to automatically convert incoming message payloads to type `Person`.
 
-You now have a fully functional Spring Cloud Stream application that does listens for messages. From here, for simplicity, we assume you selected RabbitMQ which us up and running, you can start the application by running its main method.
+You can start the application by simply running its main method.
 
-For more details please refer to the [Quick Start]() section of the user guide.
+For more details please refer to the [Quick Start](https://docs.spring.io/spring-cloud-stream/docs/Elmhurst.RELEASE/reference/htmlsingle/#_quick_start) section of the user guide.
 
-Currently Spring Cloud Stream suports RabbitMQ and Kafka binders with more binder implementations in the pipeline (such as Google PubSub, AWS Kinesis and more).
+Currently Spring Cloud Stream suports Rabbit MQ and Kafka binders with more binder implementations in the pipeline (such as Google PubSub, AWS Kinesis and more).
 
-## Kafka Client Compatibility notes
+### Kafka Client Compatibility notes
 
 Spring Cloud Stream's Kafka binder builds upon Spring Kafka and Spring Integration Kafka libraries. Specifically, Spring Kafka is the core to this foundation, and it is based on the pure java `kafka-clients` jar.
 
