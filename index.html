@@ -59,49 +59,49 @@ message broker (e.g. Rabbit MQ or Apache Kafka, depending on the binder-implemen
 
 Let's see it in action!
 
-We show you how to create a Spring Cloud Stream application that receives messages coming from the messaging middleware of your choice (more on this later) and logs received messages to the console.
-We call it `LoggingConsumer`.
-While not very practical, it provides a good introduction to some of the main concepts
-and abstractions, making it easier to digest the rest of this user guide.
-
-### Create a Sample Application by Using Spring Initializr
-To get started, visit the [Spring Initializr](https://start.spring.io). From there, you can generate sample application. To do so:
-
-. In the *Dependencies* section, start typing `stream`.
-When the "`Cloud Stream`" option should appears, select it.
-. Start typing either 'kafka' or 'rabbit'.
-. Select "`Kafka`" or "`RabbitMQ`".
-+
-Basically, you choose the messaging middleware to which your application binds.
-We recommend using the one you have already installed or feel more comfortable with installing and running.
-Also, as you can see from the Initilaizer screen, there are a few other options you can choose.
-For example, you can choose Gradle as your build tool instead of Maven (the default).
-. In the *Artifact* field, type 'logging-consumer'.
-+
-The value of the *Artifact* field becomes the application name.
-If you chose RabbitMQ for the middleware, your Spring Initializr should now be as follows:
-
-```java
+Below is the fully functional Spring Cloud Stream application, which receives and logs received messages to the console.
+```
 @SpringBootApplication
-@EnableBinding(Source.class)
-public class StreamdemoApplication {
+@EnableBinding(Sink.class)
+public class LoggingConsumerApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(StreamdemoApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(LoggingConsumerApplication.class, args);
+	}
 
-    @Bean
-    @InboundChannelAdapter(value = Source.OUTPUT)
-    public MessageSource<String> timerMessageSource() {
-        return () -> new GenericMessage<>(new SimpleDateFormat().format(new Date()));
-    }
+	@StreamListener(Sink.INPUT)
+	public void handle(Person person) {
+		System.out.println("Received: " + person);
+	}
 
+	public static class Person {
+		private String name;
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public String toString() {
+			return this.name;
+		}
+	}
 }
 ```
+As you can see from the preceding example:
 
-Make sure Kafka (0.10.1.x or later) is running when you run the application. You can use the `kafka-console-consumer.sh` utility provided by Kafka to monitor messages sent on the `output` topic.
+* We have enabled Sink binding (input-no-output) by using `@EnableBinding(Sink.class)`. Doing so signals to the framework to initiate binding to the messaging middleware, 
+where it automatically creates the destination (that is, queue, topic, and others) that are bound to the `Sink.INPUT` channel.
 
-## Kafka Client Compatibility
+* We have added a handler method to receive incoming messages of type `Person`. Doing so lets you see one of the core features of the framework: It tries to automatically convert incoming message payloads to type `Person`.
+
+You now have a fully functional Spring Cloud Stream application that does listens for messages. From here, for simplicity, we assume you selected RabbitMQ which us up and running, you can start the application by running its main method.
+
+For more details please refer to the [Quick Start]() section of the user guide.
+
+Currently Spring Cloud Stream suports RabbitMQ and Kafka binders with more binder implementations in the pipeline (such as Google PubSub, AWS Kinesis and more).
+
+## Kafka Client Compatibility notes
 
 Spring Cloud Stream's Kafka binder builds upon Spring Kafka and Spring Integration Kafka libraries. Specifically, Spring Kafka is the core to this foundation, and it is based on the pure java `kafka-clients` jar.
 
