@@ -69,7 +69,7 @@ public class StreamdemoApplication {
 
     @Bean
     @InboundChannelAdapter(value = Source.OUTPUT)
-    private MessageSource<String> timerMessageSource() {
+    public MessageSource<String> timerMessageSource() {
         return () -> new GenericMessage<>(new SimpleDateFormat().format(new Date()));
     }
 
