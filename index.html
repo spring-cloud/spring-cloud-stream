@@ -37,20 +37,20 @@ badges:
 
 {% capture billboard_description %}
 
-Spring Cloud Stream is a framework for building and connecting highly-scalable microservices via shared messaging systems. 
-It provides flexible programming model, built on already established and familiar Spring idioms and frameworks. 
-Spring Cloud Stream Bindings and Binders provide connectivity between messaging systems and user code and thus other microservices which while 
-also supporting persistent pub/sub semantics, consumer groups and partitions.
+Spring Cloud Stream is an event-driven microservices framework for building highly-scalable applications connected via shared messaging systems. 
+
+The framework provides flexible programming model built on already established and familiar Spring idioms and best practices, including support 
+for persistent pub/sub semantics, consumer groups, and stateful partitions.
 
 {% endcapture %}
 
 {% capture main_content %}
 
-To understand the programming model, you should be familiar with the following core concepts:
+The core building blocks of Spring Cloud Stream are:
 
-* Destination Binders: Components responsible to provide integration with the external messaging systems.
-* Destination Bindings: Bridge between the external messaging systems and application provided Producers and Consumers of messages (created by the Destination Binders).
-* Message: The canonical data structure used by producers and consumers to communicate with Destination Binders (and thus other applications via external messaging systems).
+* *Destination Binders*: Components responsible to provide integration with the external messaging systems.
+* *Destination Bindings*: Bridge between the external messaging systems and application provided Producers and Consumers of messages (created by the Destination Binders).
+* *Message*: The canonical data structure used by producers and consumers to communicate with Destination Binders (and thus other applications via external messaging systems).
 
 <span id="quick-start"></span>
 
