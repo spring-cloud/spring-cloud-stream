@@ -34,19 +34,16 @@ badges:
 [Spring Cloud]({{ site.projects_site_url }}/spring-cloud)
 {% endcapture %}
 
-
 {% capture billboard_description %}
 
-Spring Cloud Stream is an event-driven microservices framework for building highly-scalable applications connected via shared messaging systems. 
+Spring Cloud Stream is a framework for building highly scalable event-driven microservices connected with shared messaging systems.
 
 <br >
 The framework provides flexible programming model built on already established and familiar Spring idioms and best practices, including support 
 for persistent pub/sub semantics, consumer groups, and stateful partitions.
 
 {% endcapture %}
-
 {% capture main_content %}
-
 The core building blocks of Spring Cloud Stream are:
 
 * *Destination Binders*: Components responsible to provide integration with the external messaging systems.
@@ -54,6 +51,8 @@ The core building blocks of Spring Cloud Stream are:
 * *Message*: The canonical data structure used by producers and consumers to communicate with Destination Binders (and thus other applications via external messaging systems).
 
 <img class="styled-image" src="img/SCSt-overview.png" alt="Spring Cloud Stream overview" title="Spring Cloud Stream overview" border="5"/>
+
+Currently Spring Cloud Stream suports [Rabbit MQ](https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit) and [Kafka](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka) binders with more binder implementations in the pipeline (such as [Google PubSub](https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder), [AWS Kinesis](https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis) and more).
 
 <span id="quick-start"></span>
 
@@ -107,11 +106,9 @@ where it automatically creates the destination (that is, queue, topic, and other
 * We've added a handler method to receive incoming messages of type `Person`. Doing so lets you see one of the core features of the framework: It tries to automatically convert incoming message 
 payloads to type `Person`.
 
-You can start the application by simply running its main method.
+You can start the application by simply running its `main(..)` method.
 
 For more details please refer to the [Quick Start](https://docs.spring.io/spring-cloud-stream/docs/Elmhurst.RELEASE/reference/htmlsingle/#_quick_start) section of the user guide.
-
-Currently Spring Cloud Stream supports [RabbitMQ](https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit) and [Kafka](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka) binders with more binder implementations in the pipeline _(such as: [Google PubSub](https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder) and [AWS Kinesis](https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis))_.
 
 ### Kafka Client Compatibility
 Spring Cloud Stream supports a variety of Kafka Client releases. To learn more about it, please refer to the [Kafka Client Compatibility](https://github.com/spring-cloud/spring-cloud-stream/wiki/Kafka-Client-Compatibility) section in the Wiki page.

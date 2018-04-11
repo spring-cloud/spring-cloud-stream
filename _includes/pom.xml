@@ -16,6 +16,6 @@
     </dependency>
     <dependency>
         <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        <artifactId>spring-cloud-starter-stream-rabbit</artifactId> <!-- or '*-stream-kafka' -->
     </dependency>
 </dependencies>
