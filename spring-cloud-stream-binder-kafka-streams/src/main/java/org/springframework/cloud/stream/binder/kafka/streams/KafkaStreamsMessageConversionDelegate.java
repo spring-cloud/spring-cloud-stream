@@ -73,7 +73,7 @@ class KafkaStreamsMessageConversionDelegate {
 		String contentType = this.kstreamBindingInformationCatalogue.getContentType(outboundBindTarget);
 		MessageConverter messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 
-		return outboundBindTarget.map((k, v) -> {
+		return outboundBindTarget.mapValues((v) -> {
 			Message<?> message = v instanceof Message<?> ? (Message<?>) v :
 					MessageBuilder.withPayload(v).build();
 			Map<String, Object> headers = new HashMap<>(message.getHeaders());
@@ -81,9 +81,9 @@ class KafkaStreamsMessageConversionDelegate {
 				headers.put(MessageHeaders.CONTENT_TYPE, contentType);
 			}
 			MessageHeaders messageHeaders = new MessageHeaders(headers);
-			return new KeyValue<>(k,
+			return 
 					messageConverter.toMessage(message.getPayload(),
-							messageHeaders).getPayload());
+							messageHeaders).getPayload();
 		});
 	}
 
@@ -137,10 +137,10 @@ class KafkaStreamsMessageConversionDelegate {
 		processErrorFromDeserialization(bindingTarget, branch[1]);
 
 		//first branch above is the branch where the messages are converted, let it go through further processing.
-		return branch[0].map((o, o2) -> {
-			KeyValue<Object, Object> objectObjectKeyValue = keyValueThreadLocal.get();
+		return branch[0].mapValues((o2) -> {
+			Object objectValue = keyValueThreadLocal.get().value;
 			keyValueThreadLocal.remove();
-			return objectObjectKeyValue;
+			return objectValue;
 		});
 	}
 

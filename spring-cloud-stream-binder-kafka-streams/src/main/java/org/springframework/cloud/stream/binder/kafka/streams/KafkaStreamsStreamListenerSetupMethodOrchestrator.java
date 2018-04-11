@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.Consumed;
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.DeserializationExceptionHandler;
@@ -300,18 +299,18 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		else {
 			LOG.info("Native decoding is disabled for " + inboundName + ". Inbound message conversion done by Spring Cloud Stream.");
 		}
-		stream = stream.map((key, value) -> {
-			KeyValue<Object, Object> keyValue;
+
+		stream = stream.mapValues(value -> {
+			Object returnValue;
 			String contentType = bindingProperties.getContentType();
 			if (!StringUtils.isEmpty(contentType) && !nativeDecoding) {
 				Message<?> message = MessageBuilder.withPayload(value)
 						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
-				keyValue = new KeyValue<>(key, message);
+						returnValue = message;
+			} else {
+				returnValue = value;
 			}
-			else {
-				keyValue = new KeyValue<>(key, value);
-			}
-			return keyValue;
+			return returnValue;
 		});
 		return stream;
 	}
