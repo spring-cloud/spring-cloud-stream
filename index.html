@@ -52,7 +52,7 @@ The core building blocks of Spring Cloud Stream are:
 
 <img class="styled-image" src="img/SCSt-overview.png" alt="Spring Cloud Stream overview" title="Spring Cloud Stream overview" border="5"/>
 
-Currently Spring Cloud Stream supports [RabbitMQ](https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit) and [Kafka](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka) binders with more binder implementations in the pipeline _(such as: [Google PubSub](https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder) and [AWS Kinesis](https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis))_.
+Currently Spring Cloud Stream supports [RabbitMQ](https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit) and [Apache Kafka](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka) binders with more binder implementations in the pipeline _(such as: [Google PubSub](https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder) and [AWS Kinesis](https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis))_.
 
 <span id="quick-start"></span>
 
@@ -62,7 +62,7 @@ Currently Spring Cloud Stream supports [RabbitMQ](https://github.com/spring-clou
 {% include download_widget.md %}
 
 As long as Spring Cloud Stream and a Spring Cloud Stream Binder dependencies are on the classpath any Spring Boot application with `@EnableBinding` binds to the external 
-messaging system (e.g. [Rabbit MQ](https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit) or [Kafka](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka), 
+messaging system (e.g. [Rabbit MQ](https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit) or [Apache Kafka](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka), 
 depending on the binder-implementation of choice).
 
 For more comprehansive step-by-step _getting started_ experience please refer to the
@@ -108,8 +108,8 @@ payloads to type `Person`.
 
 You can start the application by simply running its `main(..)` method.
 
-### Kafka Client Compatibility
-Spring Cloud Stream supports a variety of Kafka Client releases. To learn more about it, please refer to the [Kafka Client Compatibility](https://github.com/spring-cloud/spring-cloud-stream/wiki/Kafka-Client-Compatibility) section in the Wiki page.
+### Apache Kafka Client Compatibility
+Spring Cloud Stream supports a variety of Apache Kafka Client releases. To learn more about it, please refer to the [Apache Kafka Client Compatibility](https://github.com/spring-cloud/spring-cloud-stream/wiki/Kafka-Client-Compatibility) section in the Wiki page.
 
 {% endcapture %}
 
