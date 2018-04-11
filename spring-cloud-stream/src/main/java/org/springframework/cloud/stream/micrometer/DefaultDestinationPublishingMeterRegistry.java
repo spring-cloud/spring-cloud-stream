@@ -57,7 +57,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.SmartLifecycle;
-import org.springframework.messaging.support.GenericMessage;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 /**
  *
@@ -229,7 +230,8 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 		@Override
 		public void accept(String metricData) {
 			logger.trace(metricData);
-			this.metersPublisherBinding.applicationMetrics().send(new GenericMessage<String>(metricData));
+			Message<String> message = MessageBuilder.withPayload(metricData).setHeader("STREAM_VERSION", "2.x").build();
+			this.metersPublisherBinding.applicationMetrics().send(message);
 		}
 	}
 }
