@@ -1665,7 +1665,7 @@ But what if the payload type matches the target type declared by the handler met
 payload is passed unmodified. While this sounds pretty straightforward and logical, keep in mind handler methods that take a `Message<?>` or `Object` as an argument.
 By declaring the target type to be `Object` (which is an `instanceof` everything in Java), you essentially forfeit the conversion process.
 
-NOTEDo not expect `Message` to be converted into some other type based only on the `contentType`.
+NOTE: Do not expect `Message` to be converted into some other type based only on the `contentType`.
 Remember that the `contentType` is complementary to the target type.
 If you wish, you can provide a hint, which `MessageConverter` may or may not take into consideration.
 
