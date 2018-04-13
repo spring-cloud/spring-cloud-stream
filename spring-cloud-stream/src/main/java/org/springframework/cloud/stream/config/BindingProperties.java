@@ -34,6 +34,7 @@ import org.springframework.validation.annotation.Validated;
  * @author Gary Russell
  * @author Soby Chacko
  * @author Oleg Zhurakousky
+ * @author Viacheslav Petriaiev
  */
 @JsonInclude(Include.NON_DEFAULT)
 @Validated
@@ -57,6 +58,11 @@ public class BindingProperties {
 	 * org.springframework.cloud.stream.binder.ConsumerProperties)
 	 */
 	private String group;
+
+	/**
+	 * Specifies payload types that can be accepted by the channel
+	 */
+	private Class<?>[] dataTypes;
 
 	// Properties for both input and output bindings
 
@@ -96,6 +102,14 @@ public class BindingProperties {
 
 	public void setGroup(String group) {
 		this.group = group;
+	}
+
+	public Class<?>[] getDataTypes() {
+		return dataTypes;
+	}
+
+	public void setDataTypes(Class<?>[] dataTypes) {
+		this.dataTypes = dataTypes;
 	}
 
 	public String getContentType() {
