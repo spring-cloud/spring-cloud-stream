@@ -2379,7 +2379,7 @@ java -jar time-source.jar \
     --spring.cloud.stream.metrics.meter-filter=spring.integration.*
 ----
 
-The following example shows data published to the binding destination as a result of the preceding command:
+The following example shows the payload of the data published to the binding destination as a result of the preceding command:
 
 [source,javascript]
 ----
@@ -2424,6 +2424,9 @@ The following example shows data published to the binding destination as a resul
 	]
 }
 ----
+
+NOTE: Given that the format of the Metric message has slightly changed after migrating to Micrometer, the published message will also have
+a `STREAM_VERSION` header set to `2.x` to help distinguish between Metric messages from the older versions of the Spring Cloud Stream.
 
 == Samples
 
