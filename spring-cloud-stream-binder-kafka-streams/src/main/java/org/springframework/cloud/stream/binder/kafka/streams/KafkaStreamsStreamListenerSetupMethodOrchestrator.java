@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -341,7 +342,9 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 				LOG.info("state store " + storeBuilder.name() + " added to topology");
 			}
 		}
-		KStream<?, ?> stream = streamsBuilder.stream(bindingServiceProperties.getBindingDestination(inboundName),
+		String[] bindingTargets = StringUtils
+				.commaDelimitedListToStringArray(bindingServiceProperties.getBindingDestination(inboundName));
+		KStream<?, ?> stream = streamsBuilder.stream(Arrays.asList(bindingTargets),
 				Consumed.with(keySerde, valueSerde));
 		final boolean nativeDecoding = bindingServiceProperties.getConsumerProperties(inboundName).isUseNativeDecoding();
 		if (nativeDecoding){
