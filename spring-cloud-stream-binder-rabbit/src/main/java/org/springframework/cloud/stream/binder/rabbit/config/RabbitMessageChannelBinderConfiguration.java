@@ -34,7 +34,6 @@ import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -54,9 +53,6 @@ import org.springframework.context.annotation.Import;
 public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
-	private ConfigurableApplicationContext applicationContext;
-
-	@Autowired
 	private ConnectionFactory rabbitConnectionFactory;
 
 	@Autowired
@@ -68,10 +64,13 @@ public class RabbitMessageChannelBinderConfiguration {
 	@Autowired
 	private RabbitExtendedBindingProperties rabbitExtendedBindingProperties;
 
+	@Autowired(required = false)
+	private ListenerContainerCustomizer containerCustomizer;
+
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder() throws Exception {
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(this.rabbitConnectionFactory,
-				this.rabbitProperties, provisioningProvider());
+				this.rabbitProperties, provisioningProvider(), this.containerCustomizer);
 		binder.setAdminAddresses(this.rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());

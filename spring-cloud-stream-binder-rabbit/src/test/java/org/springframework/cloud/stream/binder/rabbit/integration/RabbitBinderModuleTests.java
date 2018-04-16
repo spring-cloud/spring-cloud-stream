@@ -47,6 +47,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
+import org.springframework.cloud.stream.binder.rabbit.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
@@ -140,6 +141,7 @@ public class RabbitBinderModuleTests {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0",
+						"--spring.cloud.stream.bindings.input.group=someGroup",
 						"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
 						"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
@@ -152,6 +154,8 @@ public class RabbitBinderModuleTests {
 		Binding<MessageChannel> inputBinding = consumerBindings.get("input").get(0);
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(inputBinding,
 				"lifecycle.messageListenerContainer", SimpleMessageListenerContainer.class);
+		assertThat(TestUtils.getPropertyValue(container, "beanName"))
+			.isEqualTo("setByCustomizerForQueue:input.someGroup,andGroup:someGroup");
 		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class)).isTrue();
 		Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>) TestUtils
 				.getPropertyValue(bindingService, "producerBindings");
@@ -285,6 +289,12 @@ public class RabbitBinderModuleTests {
 	@EnableBinding(Processor.class)
 	@SpringBootApplication
 	public static class SimpleProcessor {
+
+		@Bean
+		public ListenerContainerCustomizer containerCustomizer() {
+			return (c, q, g) -> c.setBeanName("setByCustomizerForQueue:" + q +
+					(g == null ? "" : ",andGroup:" + g));
+		}
 
 	}
 
