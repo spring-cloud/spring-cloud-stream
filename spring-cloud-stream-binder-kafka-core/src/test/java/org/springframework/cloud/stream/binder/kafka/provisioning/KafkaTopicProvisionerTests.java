@@ -49,7 +49,7 @@ public class KafkaTopicProvisionerTests {
 		KafkaProperties bootConfig = new KafkaProperties();
 		bootConfig.getProperties().put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT");
 		bootConfig.setBootstrapServers(Collections.singletonList("localhost:1234"));
-		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties();
+		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(bootConfig);
 		binderConfig.getConfiguration().put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
 		ClassPathResource ts = new ClassPathResource("test.truststore.ks");
 		binderConfig.getConfiguration().put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts.getFile().getAbsolutePath());
@@ -68,7 +68,7 @@ public class KafkaTopicProvisionerTests {
 		KafkaProperties bootConfig = new KafkaProperties();
 		bootConfig.getProperties().put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT");
 		bootConfig.setBootstrapServers(Collections.singletonList("localhost:9092"));
-		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties();
+		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(bootConfig);
 		binderConfig.getConfiguration().put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
 		ClassPathResource ts = new ClassPathResource("test.truststore.ks");
 		binderConfig.getConfiguration().put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts.getFile().getAbsolutePath());
@@ -84,7 +84,7 @@ public class KafkaTopicProvisionerTests {
 	@Test
 	public void brokersInvalid() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
-		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties();
+		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(bootConfig);
 		binderConfig.getConfiguration().put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "localhost:1234");
 		try {
 			new KafkaTopicProvisioner(binderConfig, bootConfig);

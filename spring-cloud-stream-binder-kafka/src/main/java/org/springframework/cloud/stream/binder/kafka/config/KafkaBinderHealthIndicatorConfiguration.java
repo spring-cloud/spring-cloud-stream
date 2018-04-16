@@ -33,7 +33,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.util.ObjectUtils;
 
 /**
- * 
+ *
  * @author Oleg Zhurakousky
  *
  */
@@ -48,8 +48,9 @@ class KafkaBinderHealthIndicatorConfiguration {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-		if (!ObjectUtils.isEmpty(configurationProperties.getConsumerConfiguration())) {
-			props.putAll(configurationProperties.getConsumerConfiguration());
+		Map<String, Object> mergedConfig = configurationProperties.mergedConsumerConfiguration();
+		if (!ObjectUtils.isEmpty(mergedConfig)) {
+			props.putAll(mergedConfig);
 		}
 		if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
 			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, configurationProperties.getKafkaConnectionString());

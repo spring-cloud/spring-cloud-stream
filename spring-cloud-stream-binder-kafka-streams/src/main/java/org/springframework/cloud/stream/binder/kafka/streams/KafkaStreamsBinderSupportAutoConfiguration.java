@@ -27,6 +27,7 @@ import org.apache.kafka.streams.errors.LogAndFailExceptionHandler;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
@@ -41,6 +42,7 @@ import org.springframework.util.ObjectUtils;
 /**
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Gary Russell
  */
 @EnableConfigurationProperties(KafkaStreamsExtendedBindingProperties.class)
 @ConditionalOnBean(BindingService.class)
@@ -48,8 +50,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 	@Bean
 	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.streams.binder")
-	public KafkaStreamsBinderConfigurationProperties binderConfigurationProperties() {
-		return new KafkaStreamsBinderConfigurationProperties();
+	public KafkaStreamsBinderConfigurationProperties binderConfigurationProperties(KafkaProperties kafkaProperties) {
+		return new KafkaStreamsBinderConfigurationProperties(kafkaProperties);
 	}
 
 	@Bean("streamConfigGlobalProperties")

@@ -63,6 +63,12 @@ Default: `9092`.
 spring.cloud.stream.kafka.binder.configuration::
 Key/Value map of client properties (both producers and consumer) passed to all clients created by the binder.
 Due to the fact that these properties are used by both producers and consumers, usage should be restricted to common properties -- for example, security settings.
+Properties here supersede any properties set in boot.
++
+Default: Empty map.
+spring.cloud.stream.kafka.binder.consumerProperties::
+Key/Value map of arbitrary Kafka client consumer properties.
+Properties here supersede any properties set in boot and in the `configuration` property above.
 +
 Default: Empty map.
 spring.cloud.stream.kafka.binder.headers::
@@ -86,6 +92,11 @@ The global minimum number of partitions that the binder configures on topics on 
 It can be superseded by the `partitionCount` setting of the producer or by the value of `instanceCount * concurrency` settings of the producer (if either is larger).
 +
 Default: `1`.
+spring.cloud.stream.kafka.binder.producerProperties::
+Key/Value map of arbitrary Kafka client producer properties.
+Properties here supersede any properties set in boot and in the `configuration` property above.
++
+Default: Empty map.
 spring.cloud.stream.kafka.binder.replicationFactor::
 The replication factor of auto-created topics if `autoCreateTopics` is active.
 Can be overridden on each binding.

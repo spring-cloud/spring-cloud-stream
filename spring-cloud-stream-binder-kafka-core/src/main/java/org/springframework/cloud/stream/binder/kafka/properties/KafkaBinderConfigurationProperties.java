@@ -24,10 +24,10 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -46,12 +46,24 @@ public class KafkaBinderConfigurationProperties {
 
 	private final Transaction transaction = new Transaction();
 
-	@Autowired
-	private KafkaProperties kafkaProperties;
+	private final KafkaProperties kafkaProperties;
 
 	private String[] zkNodes = new String[] { "localhost" };
 
+	/**
+	 * Arbitrary kafka properties that apply to both producers and consumers.
+	 */
 	private Map<String, String> configuration = new HashMap<>();
+
+	/**
+	 * Arbitrary kafka consumer properties.
+	 */
+	private Map<String, String> consumerProperties = new HashMap<>();
+
+	/**
+	 * Arbitrary kafka producer properties.
+	 */
+	private Map<String, String> producerProperties = new HashMap<>();
 
 	private String defaultZkPort = "2181";
 
@@ -106,6 +118,12 @@ public class KafkaBinderConfigurationProperties {
 	 * The bean name of a custom header mapper to use instead of a {@link org.springframework.kafka.support.DefaultKafkaHeaderMapper}.
 	 */
 	private String headerMapperBeanName;
+
+
+	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
+		Assert.notNull(kafkaProperties, "'kafkaProperties' cannot be null");
+		this.kafkaProperties = kafkaProperties;
+	}
 
 	public Transaction getTransaction() {
 		return this.transaction;
@@ -461,18 +479,40 @@ public class KafkaBinderConfigurationProperties {
 		this.configuration = configuration;
 	}
 
-	public Map<String, Object> getConsumerConfiguration() {
+	public Map<String, String> getConsumerProperties() {
+		return this.consumerProperties;
+	}
+
+	public void setConsumerProperties(Map<String, String> consumerProperties) {
+		Assert.notNull(consumerProperties, "'consumerProperties' cannot be null");
+		this.consumerProperties = consumerProperties;
+	}
+
+	public Map<String, String> getProducerProperties() {
+		return this.producerProperties;
+	}
+
+	public void setProducerProperties(Map<String, String> producerProperties) {
+		Assert.notNull(producerProperties, "'producerProperties' cannot be null");
+		this.producerProperties = producerProperties;
+	}
+
+	/**
+	 * Merge boot consumer properties, general properties from
+	 * {@link #setConfiguration(Map)} that apply to consumers, properties from
+	 * {@link #setConsumerProperties(Map)}, in that order.
+	 * @return the merged properties.
+	 */
+	public Map<String, Object> mergedConsumerConfiguration() {
 		Map<String, Object> consumerConfiguration = new HashMap<>();
-		// If Spring Boot Kafka properties are present, add them with lowest precedence
-		if (this.kafkaProperties != null) {
-			consumerConfiguration.putAll(this.kafkaProperties.buildConsumerProperties());
-		}
-		// Copy configured binder properties
+		consumerConfiguration.putAll(this.kafkaProperties.buildConsumerProperties());
+		// Copy configured binder properties that apply to consumers
 		for (Map.Entry<String, String> configurationEntry : this.configuration.entrySet()) {
 			if (ConsumerConfig.configNames().contains(configurationEntry.getKey())) {
 				consumerConfiguration.put(configurationEntry.getKey(), configurationEntry.getValue());
 			}
 		}
+		consumerConfiguration.putAll(this.consumerProperties);
 		// Override Spring Boot bootstrap server setting if left to default with the value
 		// configured in the binder
 		if (ObjectUtils.isEmpty(consumerConfiguration.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
@@ -492,18 +532,22 @@ public class KafkaBinderConfigurationProperties {
 		return Collections.unmodifiableMap(consumerConfiguration);
 	}
 
-	public Map<String, Object> getProducerConfiguration() {
+	/**
+	 * Merge boot producer properties, general properties from
+	 * {@link #setConfiguration(Map)} that apply to producers, properties from
+	 * {@link #setProducerProperties(Map)}, in that order.
+	 * @return the merged properties.
+	 */
+	public Map<String, Object> mergedProducerConfiguration() {
 		Map<String, Object> producerConfiguration = new HashMap<>();
-		// If Spring Boot Kafka properties are present, add them with lowest precedence
-		if (this.kafkaProperties != null) {
-			producerConfiguration.putAll(this.kafkaProperties.buildProducerProperties());
-		}
-		// Copy configured binder properties
+		producerConfiguration.putAll(this.kafkaProperties.buildProducerProperties());
+		// Copy configured binder properties that apply to producers
 		for (Map.Entry<String, String> configurationEntry : configuration.entrySet()) {
 			if (ProducerConfig.configNames().contains(configurationEntry.getKey())) {
 				producerConfiguration.put(configurationEntry.getKey(), configurationEntry.getValue());
 			}
 		}
+		producerConfiguration.putAll(this.producerProperties);
 		// Override Spring Boot bootstrap server setting if left to default with the value
 		// configured in the binder
 		if (ObjectUtils.isEmpty(producerConfiguration.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {

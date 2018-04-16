@@ -70,8 +70,8 @@ public class KafkaBinderConfiguration {
 	private KafkaProperties kafkaProperties;
 
 	@Bean
-	KafkaBinderConfigurationProperties configurationProperties() {
-		return new KafkaBinderConfigurationProperties();
+	KafkaBinderConfigurationProperties configurationProperties(KafkaProperties kafkaProperties) {
+		return new KafkaBinderConfigurationProperties(kafkaProperties);
 	}
 
 	@Bean

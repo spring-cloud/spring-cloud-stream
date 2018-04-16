@@ -63,7 +63,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import org.springframework.beans.DirectFieldAccessor;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
@@ -182,7 +181,7 @@ public class KafkaBinderTests extends
 	protected KafkaTestBinder getBinder() {
 		if (binder == null) {
 			KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
-			KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(binderConfiguration, new KafkaProperties());
+			KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(binderConfiguration, new TestKafkaProperties());
 			try {
 				kafkaTopicProvisioner.afterPropertiesSet();
 			}
@@ -196,7 +195,7 @@ public class KafkaBinderTests extends
 
 	private Binder getBinder(KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties) {
 		KafkaTopicProvisioner provisioningProvider =
-				new KafkaTopicProvisioner(kafkaBinderConfigurationProperties, new KafkaProperties());
+				new KafkaTopicProvisioner(kafkaBinderConfigurationProperties, new TestKafkaProperties());
 		try {
 			provisioningProvider.afterPropertiesSet();
 		}
@@ -207,7 +206,8 @@ public class KafkaBinderTests extends
 	}
 
 	private KafkaBinderConfigurationProperties createConfigurationProperties() {
-		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties();
+		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties(
+				new TestKafkaProperties());
 		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
 		List<String> bAddresses = new ArrayList<>();
 		for (BrokerAddress bAddress : brokerAddresses) {
@@ -215,7 +215,6 @@ public class KafkaBinderTests extends
 		}
 		String[] foo = new String[bAddresses.size()];
 		binderConfiguration.setBrokers(bAddresses.toArray(foo));
-		binderConfiguration.setZkNodes(embeddedKafka.getZookeeperConnectionString());
 		return binderConfiguration;
 	}
 

@@ -16,12 +16,18 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 
 /**
  * @author Soby Chacko
+ * @author Gary Russell
  */
 public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfigurationProperties {
+
+	public KafkaStreamsBinderConfigurationProperties(KafkaProperties kafkaProperties) {
+		super(kafkaProperties);
+	}
 
 	public enum SerdeError {
 		logAndContinue,
