@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,10 +55,13 @@ import org.springframework.util.StringUtils;
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Oleg Zhurakousky
  */
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class BinderFactoryConfiguration {
+
+	protected final Log logger = LogFactory.getLog(getClass());
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
@@ -150,16 +156,19 @@ public class BinderFactoryConfiguration {
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
 			if (!Boolean.valueOf(this.selfContained) && (resources == null || !resources.hasMoreElements())) {
-				throw new BeanCreationException("Cannot create binder factory, no `META-INF/spring.binders` " +
-						"resources found on the classpath");
+				this.logger.debug("Failed to locate 'META-INF/spring.binders' resources on the classpath."
+						+ " Assuming standard boot 'META-INF/spring.factories' configuration is used");
 			}
-			while (resources.hasMoreElements()) {
-				URL url = resources.nextElement();
-				UrlResource resource = new UrlResource(url);
-				for (BinderType binderType : parseBinderConfigurations(classLoader, resource)) {
-					binderTypes.put(binderType.getDefaultName(), binderType);
+			else {
+				while (resources.hasMoreElements()) {
+					URL url = resources.nextElement();
+					UrlResource resource = new UrlResource(url);
+					for (BinderType binderType : parseBinderConfigurations(classLoader, resource)) {
+						binderTypes.put(binderType.getDefaultName(), binderType);
+					}
 				}
 			}
+
 		}
 		catch (IOException | ClassNotFoundException e) {
 			throw new BeanCreationException("Cannot create binder factory:", e);

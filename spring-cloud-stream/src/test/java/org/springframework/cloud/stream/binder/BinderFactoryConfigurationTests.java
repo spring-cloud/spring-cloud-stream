@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.net.URLClassLoader;
 
 import org.junit.Test;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -80,33 +79,6 @@ public class BinderFactoryConfigurationTests {
 				.properties(properties)
 				.web(WebApplicationType.NONE)
 				.run();
-	}
-
-	@Test
-	public void loadBinderTypeRegistry() throws Exception {
-		try {
-			createBinderTestContext(new String[] {});
-			fail();
-		}
-		catch (BeanCreationException e) {
-			assertThat(e.getMessage()).contains(
-					"Cannot create binder factory, no `META-INF/spring.binders` resources found on the classpath");
-		}
-	}
-
-	@Test
-	public void loadBinderTypeRegistryWithNonSelfContainedAggregatorApp() throws Exception {
-		try {
-			createBinderTestContextWithSources(
-					new Class[] { SimpleApplication.class }, new String[] {},
-					"spring.cloud.stream.internal.selfContained=false");
-			fail();
-		}
-		catch (BeanCreationException e) {
-			assertThat(e.getMessage()).contains(
-					"Cannot create binder factory, no `META-INF/spring.binders` resources found on the classpath");
-		}
-
 	}
 
 	@Test

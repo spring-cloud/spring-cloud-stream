@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +49,7 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
+ * @author Oleg Zhurakousky
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
@@ -91,8 +93,35 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		this.defaultBinderForBindingTargetType.clear();
 	}
 
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
 	public synchronized <T> Binder<T, ?, ?> getBinder(String name, Class<? extends T> bindingTargetType) {
+
+		String binderName = StringUtils.hasText(name) ? name : this.defaultBinder;
+
+		Map<String, Binder> binders = this.context == null ? Collections.emptyMap() : this.context.getBeansOfType(Binder.class);
+		Binder<T, ConsumerProperties, ProducerProperties> binder;
+		if (StringUtils.hasText(binderName) && binders.containsKey(binderName)) {
+			binder = (Binder<T, ConsumerProperties, ProducerProperties>) this.context.getBean(binderName);
+		}
+		else if (binders.size() == 1) {
+			binder = binders.values().iterator().next();
+		}
+		else  if (binders.size() > 1) {
+			throw new IllegalStateException("Multiple binders are available, however neither default nor "
+					+ "per-destination binder name is provided. Available binders are " + binders.keySet());
+		}
+		else {
+			/*
+			 * This is the fall back to the old bootstrap that relies on spring.binders.
+			 */
+			binder = this.doGetBinder(binderName, bindingTargetType);
+		}
+		return binder;
+	}
+
+
+	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinder(String name, Class<? extends T> bindingTargetType) {
 		String configurationName;
 		// Fall back to a default if no argument is provided
 		if (StringUtils.isEmpty(name)) {
@@ -136,7 +165,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		else {
 			configurationName = name;
 		}
-		Binder<T, ?, ?> binderInstance = getBinderInstance(configurationName);
+		Binder<T, ConsumerProperties, ProducerProperties> binderInstance = getBinderInstance(configurationName);
 		Assert.state(verifyBinderTypeMatchesTarget(binderInstance, bindingTargetType),
 				"The binder '" + configurationName + "' cannot bind a " + bindingTargetType.getName());
 		return binderInstance;
@@ -159,7 +188,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> Binder<T, ?, ?> getBinderInstance(String configurationName) {
+	private <T> Binder<T, ConsumerProperties, ProducerProperties> getBinderInstance(String configurationName) {
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
 			BinderConfiguration binderConfiguration = this.binderConfigurations.get(configurationName);
 			Assert.state(binderConfiguration != null, "Unknown binder configuration: " + configurationName);
@@ -212,7 +241,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			}
 			this.binderInstanceCache.put(configurationName, new SimpleImmutableEntry<>(binder, binderProducingContext));
 		}
-		return (Binder<T, ?, ?>) this.binderInstanceCache.get(configurationName).getKey();
+		return (Binder<T, ConsumerProperties, ProducerProperties>) this.binderInstanceCache.get(configurationName).getKey();
 	}
 
 	/**
