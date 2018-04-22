@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.QueryableStoreType;
 
 /**
@@ -27,6 +28,7 @@ import org.apache.kafka.streams.state.QueryableStoreType;
  * the user applications.
  *
  * @author Soby Chacko
+ * @author Renwei Han
  * @since 2.0.0
  */
 public class QueryableStoreRegistry {
@@ -44,9 +46,14 @@ public class QueryableStoreRegistry {
 	public <T> T getQueryableStoreType(String storeName, QueryableStoreType<T> storeType) {
 
 		for (KafkaStreams kafkaStream : kafkaStreams) {
-			T store = kafkaStream.store(storeName, storeType);
-			if (store != null) {
-				return store;
+			try{
+				T store = kafkaStream.store(storeName, storeType);
+				if (store != null) {
+					return store;
+				}
+			}
+			catch (InvalidStateStoreException ignored) {
+				//pass through
 			}
 		}
 		return null;
