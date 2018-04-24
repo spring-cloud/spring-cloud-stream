@@ -23,9 +23,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -33,6 +35,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.TopicInformation;
@@ -43,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Henryk Konsek
+ * @author Thomas Cheyney
  */
 public class KafkaBinderMetricsTest {
 
@@ -121,6 +125,37 @@ public class KafkaBinderMetricsTest {
 		topicsInUse.put(TEST_TOPIC, new TopicInformation(null, partitions));
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).isEmpty();
+	}
+
+	@Test
+	public void createsConsumerOnceWhenInvokedMultipleTimes() {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
+
+		metrics.bindTo(meterRegistry);
+
+		TimeGauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group").tag("topic", TEST_TOPIC).timeGauge();
+		gauge.value(TimeUnit.MILLISECONDS);
+		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
+
+		org.mockito.Mockito.verify(this.consumerFactory).createConsumer();
+	}
+
+	@Test
+	public void consumerCreationFailsFirstTime() {
+		org.mockito.BDDMockito.given(consumerFactory.createConsumer()).willThrow(KafkaException.class)
+				.willReturn(consumer);
+
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
+
+		metrics.bindTo(meterRegistry);
+
+		TimeGauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group").tag("topic", TEST_TOPIC).timeGauge();
+		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(0);
+		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
+
+		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2)).createConsumer();
 	}
 
 	private List<PartitionInfo> partitions(Node... nodes) {
