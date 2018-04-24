@@ -54,6 +54,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  * @author Janne Valkealahti
+ * @author Soby Chacko
  */
 public class BindingService {
 
@@ -89,10 +90,6 @@ public class BindingService {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <T> Collection<Binding<T>> bindConsumer(T input, String inputName) {
-		String bindingTarget = this.bindingServiceProperties
-				.getBindingDestination(inputName);
-		String[] bindingTargets = StringUtils
-				.commaDelimitedListToStringArray(bindingTarget);
 		Collection<Binding<T>> bindings = new ArrayList<>();
 		Binder<T, ConsumerProperties, ?> binder = (Binder<T, ConsumerProperties, ?>) getBinder(
 				inputName, input.getClass());
@@ -106,19 +103,30 @@ public class BindingService {
 			BeanUtils.copyProperties(consumerProperties, extendedConsumerProperties);
 			consumerProperties = extendedConsumerProperties;
 		}
+
 		validate(consumerProperties);
-		for (String target : bindingTargets) {
-			Binding<T> binding;
-			if (input instanceof PollableSource) {
-				binding = doBindPollableConsumer(input, inputName, binder, consumerProperties, target);
+
+		String bindingTarget = this.bindingServiceProperties
+				.getBindingDestination(inputName);
+
+		if (consumerProperties.isNativeMultipleBinding()) {
+			bindings.add(doBindConsumer(input, inputName, binder, consumerProperties, bindingTarget));
+		}
+		else {
+			String[] bindingTargets = StringUtils
+					.commaDelimitedListToStringArray(bindingTarget);
+			for (String target : bindingTargets) {
+				Binding<T> binding;
+				if (input instanceof PollableSource) {
+					binding = doBindPollableConsumer(input, inputName, binder, consumerProperties, target);
+				} else {
+					binding = doBindConsumer(input, inputName, binder, consumerProperties, target);
+				}
+				bindings.add(binding);
 			}
-			else {
-				binding = doBindConsumer(input, inputName, binder, consumerProperties, target);
-			}
-			bindings.add(binding);
 		}
 		bindings = Collections.unmodifiableCollection(bindings);
-		this.consumerBindings.put(inputName, new ArrayList<Binding<?>>(bindings));
+		this.consumerBindings.put(inputName, new ArrayList<>(bindings));
 		return bindings;
 	}
 
