@@ -166,14 +166,14 @@ public class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	public void testConsumerBindingWhenNativeMultipleBindingIsEnabled() throws Exception {
+	public void testConsumerBindingWhenMultiplexingIsEnabled() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
 		props.setDestination("foo,bar");
 
 		ConsumerProperties consumer = properties.getConsumerProperties("input");
-		consumer.setNativeMultipleBinding(true);
+		consumer.setMultiplex(true);
 		props.setConsumer(consumer);
 
 		final String inputChannelName = "input";

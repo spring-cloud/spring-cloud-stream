@@ -109,7 +109,7 @@ public class BindingService {
 		String bindingTarget = this.bindingServiceProperties
 				.getBindingDestination(inputName);
 
-		if (consumerProperties.isNativeMultipleBinding()) {
+		if (consumerProperties.isMultiplex()) {
 			bindings.add(doBindConsumer(input, inputName, binder, consumerProperties, bindingTarget));
 		}
 		else {

@@ -124,15 +124,16 @@ public class ConsumerProperties {
 	private boolean useNativeDecoding;
 
 	/**
-	 * When set to true, the underlying binder natively deals with multiple destinations on the same input.
+	 * When set to true, the underlying binder will natively multiplex destinations on the same input binding.
 	 * For example, in the case of a comma separated multiple destinations, the core framework will skip binding
 	 * them individually if this is set to true, but delegate that responsibility to the binder.
 	 *
-	 * By default this property is set to `false` and the end users are not expected to configure this
-	 * property directly in the application. The individual binder implementations that need to support multiple
-	 * input bindings natively can enable this property by calling the setter method to do so.
+	 * By default this property is set to `false` and the binder will individually bind each destinations in case
+	 * of a comma separated multi destination list. The individual binder implementations that need to support multiple
+	 * input bindings natively (multiplex) can enable this property. Under normal circumstances, the end users are
+	 * not expected to enable or disable this property directly.
 	 */
-	private boolean nativeMultipleBinding;
+	private boolean multiplex;
 
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
@@ -221,11 +222,11 @@ public class ConsumerProperties {
 		this.useNativeDecoding = useNativeDecoding;
 	}
 
-	public boolean isNativeMultipleBinding() {
-		return nativeMultipleBinding;
+	public boolean isMultiplex() {
+		return multiplex;
 	}
 
-	public void setNativeMultipleBinding(boolean nativeMultipleBinding) {
-		this.nativeMultipleBinding = nativeMultipleBinding;
+	public void setMultiplex(boolean multiplex) {
+		this.multiplex = multiplex;
 	}
 }
