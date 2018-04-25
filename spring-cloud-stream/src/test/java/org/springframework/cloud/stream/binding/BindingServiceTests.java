@@ -81,6 +81,7 @@ import static org.mockito.Mockito.when;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Janne Valkealahti
+ * @author Soby Chacko
  */
 public class BindingServiceTests {
 
@@ -159,6 +160,53 @@ public class BindingServiceTests {
 				any(ConsumerProperties.class));
 		verify(binding1).unbind();
 		verify(binding2).unbind();
+
+		binderFactory.destroy();
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testConsumerBindingWhenMultiplexingIsEnabled() throws Exception {
+		BindingServiceProperties properties = new BindingServiceProperties();
+		Map<String, BindingProperties> bindingProperties = new HashMap<>();
+		BindingProperties props = new BindingProperties();
+		props.setDestination("foo,bar");
+
+		ConsumerProperties consumer = properties.getConsumerProperties("input");
+		consumer.setMultiplex(true);
+		props.setConsumer(consumer);
+
+		final String inputChannelName = "input";
+		bindingProperties.put(inputChannelName, props);
+
+		properties.setBindings(bindingProperties);
+
+		DefaultBinderFactory binderFactory = createMockBinderFactory();
+
+		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
+		BindingService service = new BindingService(properties,
+				binderFactory);
+		MessageChannel inputChannel = new DirectChannel();
+
+		Binding<MessageChannel> mockBinding1 = Mockito.mock(Binding.class);
+
+		when(binder.bindConsumer(eq("foo,bar"), isNull(), same(inputChannel),
+				any(ConsumerProperties.class))).thenReturn(mockBinding1);
+
+		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel,
+				"input");
+		assertThat(bindings).hasSize(1);
+
+		Iterator<Binding<MessageChannel>> iterator = bindings.iterator();
+		Binding<MessageChannel> binding1 = iterator.next();
+
+		assertThat(binding1).isSameAs(mockBinding1);
+
+		service.unbindConsumers("input");
+
+		verify(binder).bindConsumer(eq("foo,bar"), isNull(), same(inputChannel),
+				any(ConsumerProperties.class));
+		verify(binding1).unbind();
 
 		binderFactory.destroy();
 	}
