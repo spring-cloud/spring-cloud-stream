@@ -320,7 +320,7 @@ You can provide as many binding interfaces as you need, as arguments to the `@En
 
 [source, java]
 ----
-@EnableBinding(value={Orders.class, Payment.class}
+@EnableBinding(value = { Orders.class, Payment.class })
 ----
 
 In Spring Cloud Stream, the bindable `MessageChannel` components are the Spring Messaging `MessageChannel` (for outbound) and its extension, `SubscribableChannel`,
@@ -689,7 +689,7 @@ spring.cloud.stream.bindings.input.group=myGroup
 [source,java]
 ----
 @StreamListener(Sink.INPUT) // destination name 'input.myGroup'
-public void handle(Person value)
+public void handle(Person value) {
 	throw new RuntimeException("BOOM!");
 }
 
@@ -699,7 +699,7 @@ public void error(Message<?> message) {
 }
 ----
 
-In the preceeding example the destination name is `input.myGroup` and the dedicated error channel name is `input.myGroup.errors`.
+In the preceding example the destination name is `input.myGroup` and the dedicated error channel name is `input.myGroup.errors`.
 
 NOTE: The use of @StreamListener annotation is intended specifically to define bindings that bridge internal channels and external destinations. Given that the destination
 specific error channel does NOT have an associated external destination, such channel is a prerogative of Spring Integration (SI). This means that the handler
@@ -708,7 +708,7 @@ for such destination must be defined using one of the SI handler annotations (i.
 NOTE: If `group` is not specified anonymous group is used (something like `input.anonymous.2K37rb06Q6m2r51-SPIDDQ`), which is not suitable for error
 handling scenarious, since you don't know what it's going to be until the destination is created.
 
-Also, in the event you are binidng to the existing destination such as:
+Also, in the event you are binding to the existing destination such as:
 
 [source,text]
 ----
@@ -718,7 +718,7 @@ spring.cloud.stream.bindings.input.group=myGroup
 
 the full destination name is `myFooDestination.myGroup` and then the dedicated error channel name is `myFooDestination.myGroup.errors`.
 
-Back to the example. . .
+Back to the example...
 
 The `handle(..)` method, which subscribes to the channel named `input`, throws an exception.  Given there is also a subscriber to the error channel `input.myGroup.errors`
 all error messages are handled by this subscriber.
@@ -729,7 +729,7 @@ as shown in the following example:
 
 [source,java]
 ----
-@StreamListener(“errorChannel")
+@StreamListener("errorChannel")
 public void error(Message<?> message) {
 	System.out.println("Handling ERROR: " + message);
 }
@@ -1407,6 +1407,15 @@ When set to a negative value, it defaults to `spring.cloud.stream.instanceCount`
 See "`<<spring-cloud-stream-overview-instance-index-instance-count>>`" for more information.
 +
 Default: `-1`.
+useNativeDecoding::
+When set to `true`, the inbound message is deserialized directly by the client library, which must be configured correspondingly (for example, setting an appropriate Kafka producer value deserializer).
+When this configuration is being used, the inbound message unmarshalling is not based on the `contentType` of the binding.
+When native decoding is used, it is the responsibility of the producer to use an appropriate encoder (for example, the Kafka producer value serializer) to serialize the outbound message.
+Also, when native encoding and decoding is used, the `headerMode=embeddedHeaders` property is ignored and headers are not embedded in the message.
+See the producer property `useNativeEncoding`.
++
+Default: `false`.
+
 
 ==== Producer Properties
 
@@ -1459,10 +1468,11 @@ When set to `embeddedHeaders`, it embeds headers into the message payload.
 +
 Default: Depends on the binder implementation.
 useNativeEncoding::
-When set to `true`, the outbound message is serialized directly by client library, which must be configured correspondingly (for example, setting an appropriate Kafka producer value serializer).
+When set to `true`, the outbound message is serialized directly by the client library, which must be configured correspondingly (for example, setting an appropriate Kafka producer value serializer).
 When this configuration is being used, the outbound message marshalling is not based on the `contentType` of the binding.
 When native encoding is used, it is the responsibility of the consumer to use an appropriate decoder (for example, the Kafka consumer value de-serializer) to deserialize the inbound message.
 Also, when native encoding and decoding is used, the `headerMode=embeddedHeaders` property is ignored and headers are not embedded in the message.
+See the consumer property `useNativeDecoding`.
 +
 Default: `false`.
 errorChannelEnabled::
