@@ -113,15 +113,12 @@ public class BindingService {
 			bindings.add(doBindConsumer(input, inputName, binder, consumerProperties, bindingTarget));
 		}
 		else {
-			String[] bindingTargets = StringUtils
-					.commaDelimitedListToStringArray(bindingTarget);
+			String[] bindingTargets = StringUtils.commaDelimitedListToStringArray(bindingTarget);
 			for (String target : bindingTargets) {
-				Binding<T> binding;
-				if (input instanceof PollableSource) {
-					binding = doBindPollableConsumer(input, inputName, binder, consumerProperties, target);
-				} else {
-					binding = doBindConsumer(input, inputName, binder, consumerProperties, target);
-				}
+				Binding<T> binding = input instanceof PollableSource
+						? doBindPollableConsumer(input, inputName, binder, consumerProperties, target)
+						: doBindConsumer(input, inputName, binder, consumerProperties, target);
+
 				bindings.add(binding);
 			}
 		}
