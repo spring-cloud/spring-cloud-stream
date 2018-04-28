@@ -21,10 +21,12 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Serialized;
+import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.junit.AfterClass;
@@ -32,7 +34,6 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -89,6 +90,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.application.server=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 		try {
@@ -109,14 +111,22 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 
 		ProductCountApplication.Foo foo = context.getBean(ProductCountApplication.Foo.class);
 		assertThat(foo.getProductStock(123).equals(1L));
+
+		//perform assertions on HostInfo related methods in InteractiveQueryServices
+		InteractiveQueryServices interactiveQueryServices = context.getBean(InteractiveQueryServices.class);
+		HostInfo currentHostInfo = interactiveQueryServices.getCurrentHostInfo();
+		assertThat(currentHostInfo.host() + ":" + currentHostInfo.port()).isEqualTo(embeddedKafka.getBrokersAsString());
+
+		HostInfo hostInfo = interactiveQueryServices.getHostInfo("prod-id-count-store", 123, new IntegerSerializer());
+		assertThat(hostInfo.host() + ":" + hostInfo.port()).isEqualTo(embeddedKafka.getBrokersAsString());
+
+		HostInfo hostInfoFoo = interactiveQueryServices.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer());
+		assertThat(hostInfoFoo).isNull();
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	public static class ProductCountApplication {
-
-		@Autowired
-		private QueryableStoreRegistry queryableStoreRegistry;
 
 		@StreamListener("input")
 		@SendTo("output")
@@ -133,20 +143,21 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		}
 
 		@Bean
-		public Foo foo(QueryableStoreRegistry queryableStoreRegistry) {
-			return new Foo(queryableStoreRegistry);
+		public Foo foo(InteractiveQueryServices interactiveQueryServices) {
+			return new Foo(interactiveQueryServices);
 		}
 
 		static class Foo {
-			QueryableStoreRegistry queryableStoreRegistry;
+			InteractiveQueryServices interactiveQueryServices;
 
-			Foo(QueryableStoreRegistry queryableStoreRegistry) {
-				this.queryableStoreRegistry = queryableStoreRegistry;
+			Foo(InteractiveQueryServices interactiveQueryServices) {
+				this.interactiveQueryServices = interactiveQueryServices;
 			}
 
 			public Long getProductStock(Integer id) {
 				ReadOnlyKeyValueStore<Object, Object> keyValueStore =
-						queryableStoreRegistry.getQueryableStoreType("prod-id-count-store", QueryableStoreTypes.keyValueStore());
+						interactiveQueryServices.getQueryableStore("prod-id-count-store", QueryableStoreTypes.keyValueStore());
+
 				return (Long) keyValueStore.get(id);
 			}
 		}

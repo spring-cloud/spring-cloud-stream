@@ -144,14 +144,25 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public QueryableStoreRegistry queryableStoreTypeRegistry() {
-		return new QueryableStoreRegistry();
+	public QueryableStoreRegistry queryableStoreTypeRegistry(KafkaStreamsRegistry kafkaStreamsRegistry) {
+		return new QueryableStoreRegistry(kafkaStreamsRegistry);
+	}
+
+	@Bean
+	public InteractiveQueryServices interactiveQueryServices(KafkaStreamsRegistry kafkaStreamsRegistry,
+															KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
+		return new InteractiveQueryServices(kafkaStreamsRegistry, binderConfigurationProperties);
+	}
+
+	@Bean
+	public KafkaStreamsRegistry kafkaStreamsRegistry() {
+		return new KafkaStreamsRegistry();
 	}
 
 	@Bean
 	public StreamsBuilderFactoryManager streamsBuilderFactoryManager(KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-																	QueryableStoreRegistry queryableStoreRegistry) {
-		return new StreamsBuilderFactoryManager(kafkaStreamsBindingInformationCatalogue, queryableStoreRegistry);
+																	KafkaStreamsRegistry kafkaStreamsRegistry) {
+		return new StreamsBuilderFactoryManager(kafkaStreamsBindingInformationCatalogue, kafkaStreamsRegistry);
 	}
 
 }

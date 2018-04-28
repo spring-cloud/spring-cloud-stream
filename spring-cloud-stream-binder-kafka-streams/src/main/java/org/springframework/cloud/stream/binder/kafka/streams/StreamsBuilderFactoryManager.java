@@ -38,14 +38,14 @@ import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 class StreamsBuilderFactoryManager implements SmartLifecycle {
 
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
-	private final QueryableStoreRegistry queryableStoreRegistry;
+	private final KafkaStreamsRegistry kafkaStreamsRegistry;
 
 	private volatile boolean running;
 
 	StreamsBuilderFactoryManager(KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-								QueryableStoreRegistry queryableStoreRegistry) {
+								KafkaStreamsRegistry kafkaStreamsRegistry) {
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
-		this.queryableStoreRegistry = queryableStoreRegistry;
+		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 	}
 
 	@Override
@@ -68,7 +68,7 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 				Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeans();
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
 					streamsBuilderFactoryBean.start();
-					queryableStoreRegistry.registerKafkaStreams(streamsBuilderFactoryBean.getKafkaStreams());
+					kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean.getKafkaStreams());
 				}
 				this.running = true;
 			} catch (Exception e) {

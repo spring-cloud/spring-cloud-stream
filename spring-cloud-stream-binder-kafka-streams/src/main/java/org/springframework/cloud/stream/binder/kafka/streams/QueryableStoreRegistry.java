@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.QueryableStoreType;
@@ -30,10 +27,15 @@ import org.apache.kafka.streams.state.QueryableStoreType;
  * @author Soby Chacko
  * @author Renwei Han
  * @since 2.0.0
+ * @deprecated in favor of {@link InteractiveQueryServices}
  */
 public class QueryableStoreRegistry {
 
-	private final Set<KafkaStreams> kafkaStreams = new HashSet<>();
+	private final KafkaStreamsRegistry kafkaStreamsRegistry;
+
+	public QueryableStoreRegistry(KafkaStreamsRegistry kafkaStreamsRegistry) {
+		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
+	}
 
 	/**
 	 * Retrieve and return a queryable store by name created in the application.
@@ -42,10 +44,11 @@ public class QueryableStoreRegistry {
 	 * @param storeType type of the queryable store
 	 * @param <T>       generic queryable store
 	 * @return queryable store.
+	 * @deprecated in favor of {@link InteractiveQueryServices#getQueryableStore(String, QueryableStoreType)}
 	 */
 	public <T> T getQueryableStoreType(String storeName, QueryableStoreType<T> storeType) {
 
-		for (KafkaStreams kafkaStream : kafkaStreams) {
+		for (KafkaStreams kafkaStream : this.kafkaStreamsRegistry.getKafkaStreams()) {
 			try{
 				T store = kafkaStream.store(storeName, storeType);
 				if (store != null) {
@@ -59,12 +62,4 @@ public class QueryableStoreRegistry {
 		return null;
 	}
 
-	/**
-	 * Register the {@link KafkaStreams} object created in the application.
-	 *
-	 * @param kafkaStreams {@link KafkaStreams} object created in the application
-	 */
-	void registerKafkaStreams(KafkaStreams kafkaStreams) {
-		this.kafkaStreams.add(kafkaStreams);
-	}
 }
