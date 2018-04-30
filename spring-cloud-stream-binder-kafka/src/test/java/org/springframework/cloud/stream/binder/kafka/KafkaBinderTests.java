@@ -1778,8 +1778,6 @@ public class KafkaBinderTests extends
 	@SuppressWarnings("unchecked")
 	public void testDefaultConsumerStartsAtEarliest() throws Exception {
 		Binder binder = getBinder(createConfigurationProperties());
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.refresh();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
 		DirectChannel output = createBindableChannel("output", producerBindingProperties);
@@ -2508,6 +2506,35 @@ public class KafkaBinderTests extends
 		assertThat(deadLetter.value()).isEqualTo("testPollableDLQ");
 		binding.unbind();
 		consumer.close();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testTopicPatterns() throws Exception {
+		try (AdminClient admin = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
+				embeddedKafka.getBrokersAsString()))) {
+			admin.createTopics(Collections.singletonList(new NewTopic("topicPatterns.1", 1, (short) 1))).all().get();
+			Binder binder = getBinder();
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+			consumerProperties.getExtension().setDestinationIsPattern(true);
+			DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+			final CountDownLatch latch = new CountDownLatch(1);
+			final AtomicReference<String> topic = new AtomicReference<>();
+			moduleInputChannel.subscribe(m -> {
+				topic.set(m.getHeaders().get(KafkaHeaders.RECEIVED_TOPIC, String.class));
+				latch.countDown();
+			});
+			Binding<MessageChannel> consumerBinding = binder.bindConsumer("topicPatterns\\..*",
+					"testTopicPatterns", moduleInputChannel, consumerProperties);
+			DefaultKafkaProducerFactory pf = new DefaultKafkaProducerFactory(
+					KafkaTestUtils.producerProps(embeddedKafka));
+			KafkaTemplate template = new KafkaTemplate(pf);
+			template.send("topicPatterns.1", "foo");
+			assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+			assertThat(topic.get()).isEqualTo("topicPatterns.1");
+			consumerBinding.unbind();
+			pf.destroy();
+		}
 	}
 
 	private final class FailingInvocationCountingMessageHandler implements MessageHandler {

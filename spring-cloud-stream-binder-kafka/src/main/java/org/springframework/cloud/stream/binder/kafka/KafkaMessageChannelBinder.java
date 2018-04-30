@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -329,8 +331,9 @@ public class KafkaMessageChannelBinder extends
 		int partitionCount = extendedConsumerProperties.getInstanceCount()
 				* extendedConsumerProperties.getConcurrency();
 
-		Collection<PartitionInfo> allPartitions = getPartitionInfo(destination, extendedConsumerProperties,
-				consumerFactory, partitionCount);
+		boolean usingPatterns = extendedConsumerProperties.getExtension().isDestinationIsPattern();
+		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
+				: getPartitionInfo(destination, extendedConsumerProperties, consumerFactory, partitionCount);
 
 		Collection<PartitionInfo> listenedPartitions;
 
@@ -350,20 +353,25 @@ public class KafkaMessageChannelBinder extends
 				}
 			}
 		}
-		this.topicsInUse.put(destination.getName(), new TopicInformation(group, listenedPartitions));
+		String topics = destination.getName();
+		this.topicsInUse.put(topics, new TopicInformation(group, listenedPartitions));
 
-		Assert.isTrue(!CollectionUtils.isEmpty(listenedPartitions), "A list of partitions must be provided");
+		Assert.isTrue(usingPatterns
+				|| !CollectionUtils.isEmpty(listenedPartitions), "A list of partitions must be provided");
 		final TopicPartitionInitialOffset[] topicPartitionInitialOffsets = getTopicPartitionInitialOffsets(
 				listenedPartitions);
 		final ContainerProperties containerProperties = anonymous
 				|| extendedConsumerProperties.getExtension().isAutoRebalanceEnabled()
-						? new ContainerProperties(destination.getName())
+						? usingPatterns
+								? new ContainerProperties(Pattern.compile(topics))
+								: new ContainerProperties(topics)
 						: new ContainerProperties(topicPartitionInitialOffsets);
 		if (this.transactionManager != null) {
 			containerProperties.setTransactionManager(this.transactionManager);
 		}
 		containerProperties.setIdleEventInterval(extendedConsumerProperties.getExtension().getIdleEventInterval());
-		int concurrency = Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
+		int concurrency = usingPatterns ? extendedConsumerProperties.getConcurrency()
+				: Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
 		resetOffsets(extendedConsumerProperties, consumerFactory, groupManagement, containerProperties);
 		@SuppressWarnings("rawtypes")
 		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
@@ -383,7 +391,7 @@ public class KafkaMessageChannelBinder extends
 		else if (getApplicationContext() != null) {
 			messageListenerContainer.setApplicationEventPublisher(getApplicationContext());
 		}
-		messageListenerContainer.setBeanName(destination.getName() + ".container");
+		messageListenerContainer.setBeanName(topics + ".container");
 		// end of these won't be needed...
 		if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
 			messageListenerContainer.getContainerProperties()

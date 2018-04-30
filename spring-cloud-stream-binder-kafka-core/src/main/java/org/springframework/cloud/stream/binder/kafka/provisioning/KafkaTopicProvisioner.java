@@ -152,6 +152,15 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	public ConsumerDestination provisionConsumerDestination(final String name, final String group,
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 
+		if (properties.getExtension().isDestinationIsPattern()) {
+			Assert.isTrue(!properties.getExtension().isEnableDlq(),
+					"enableDLQ is not allowed when listening to topic patterns");
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Listening to a topic pattern - " + name
+						+ " - no provisioning performed");
+			}
+			return new KafkaConsumerDestination(name);
+		}
 		KafkaTopicUtils.validateTopicName(name);
 		boolean anonymous = !StringUtils.hasText(group);
 		Assert.isTrue(!anonymous || !properties.getExtension().isEnableDlq(),

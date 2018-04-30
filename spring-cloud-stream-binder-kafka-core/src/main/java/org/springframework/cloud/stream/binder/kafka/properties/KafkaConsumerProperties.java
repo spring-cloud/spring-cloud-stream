@@ -81,6 +81,8 @@ public class KafkaConsumerProperties {
 
 	private long idleEventInterval = 30_000;
 
+	private boolean destinationIsPattern;
+
 	private Map<String, String> configuration = new HashMap<>();
 
 	private KafkaAdminProperties admin = new KafkaAdminProperties();
@@ -214,6 +216,14 @@ public class KafkaConsumerProperties {
 
 	public void setIdleEventInterval(long idleEventInterval) {
 		this.idleEventInterval = idleEventInterval;
+	}
+
+	public boolean isDestinationIsPattern() {
+		return this.destinationIsPattern;
+	}
+
+	public void setDestinationIsPattern(boolean destinationIsPattern) {
+		this.destinationIsPattern = destinationIsPattern;
 	}
 
 	public KafkaAdminProperties getAdmin() {
