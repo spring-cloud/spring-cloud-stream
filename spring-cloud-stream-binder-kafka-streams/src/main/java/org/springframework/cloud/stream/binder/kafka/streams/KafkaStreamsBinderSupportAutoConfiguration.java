@@ -122,8 +122,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public KTableBoundElementFactory kTableBoundElementFactory() {
-		return new KTableBoundElementFactory();
+	public KTableBoundElementFactory kTableBoundElementFactory(BindingServiceProperties bindingServiceProperties) {
+		return new KTableBoundElementFactory(bindingServiceProperties);
 	}
 
 	@Bean

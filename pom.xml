@@ -15,7 +15,7 @@
 		<spring-kafka.version>2.1.5.RELEASE</spring-kafka.version>
 		<spring-integration-kafka.version>3.0.3.RELEASE</spring-integration-kafka.version>
 		<kafka.version>1.0.1</kafka.version>
-		<spring-cloud-stream.version>2.0.0.RELEASE</spring-cloud-stream.version>
+		<spring-cloud-stream.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream-binder-kafka</module>

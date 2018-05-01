@@ -333,7 +333,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 	}
 
 
-	private KStream<?, ?> getkStream(String inboundName, KafkaStreamsStateStoreProperties storeSpec, BindingProperties bindingProperties, StreamsBuilder streamsBuilder,
+	private KStream<?, ?> getkStream(String inboundName, KafkaStreamsStateStoreProperties storeSpec,
+									BindingProperties bindingProperties, StreamsBuilder streamsBuilder,
 									Serde<?> keySerde, Serde<?> valueSerde) {
 		if (storeSpec != null) {
 			StoreBuilder storeBuilder = buildStateStore(storeSpec);

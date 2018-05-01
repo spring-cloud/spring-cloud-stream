@@ -73,7 +73,11 @@ class KTableBinder extends
 		if (!StringUtils.hasText(group)) {
 			group = binderConfigurationProperties.getApplicationId();
 		}
-		this.kafkaTopicProvisioner.provisionConsumerDestination(name, group, extendedConsumerProperties);
+
+		String[] inputTopics = StringUtils.commaDelimitedListToStringArray(name);
+		for (String inputTopic : inputTopics) {
+			this.kafkaTopicProvisioner.provisionConsumerDestination(inputTopic, group, extendedConsumerProperties);
+		}
 
 		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
 			String dlqName = StringUtils.isEmpty(extendedConsumerProperties.getExtension().getDlqName()) ?
