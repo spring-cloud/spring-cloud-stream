@@ -165,7 +165,7 @@ class KafkaStreamsMessageConversionDelegate {
 			@Override
 			public void process(Object o, Object o2) {
 				if (kstreamBindingInformationCatalogue.isDlqEnabled(bindingTarget)) {
-					String destination = kstreamBindingInformationCatalogue.getDestination(bindingTarget);
+					String destination = context.topic();
 					if (o2 instanceof Message) {
 						Message message = (Message) o2;
 						sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) message.getPayload(), context.partition());

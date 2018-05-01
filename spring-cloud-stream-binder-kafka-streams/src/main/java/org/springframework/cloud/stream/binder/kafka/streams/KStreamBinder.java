@@ -42,7 +42,7 @@ import org.springframework.util.StringUtils;
 /**
  * {@link org.springframework.cloud.stream.binder.Binder} implementation for {@link KStream}.
  * This implemenation extends from the {@link AbstractBinder} directly.
- *
+ * <p>
  * Provides both producer and consumer bindings for the bound KStream.
  *
  * @author Marius Bogoevici
@@ -67,10 +67,10 @@ class KStreamBinder extends
 	private final KeyValueSerdeResolver keyValueSerdeResolver;
 
 	KStreamBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-						KafkaTopicProvisioner kafkaTopicProvisioner,
-						KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
-						KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-						KeyValueSerdeResolver keyValueSerdeResolver) {
+				KafkaTopicProvisioner kafkaTopicProvisioner,
+				KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
+				KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+				KeyValueSerdeResolver keyValueSerdeResolver) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
@@ -92,24 +92,34 @@ class KStreamBinder extends
 		if (!StringUtils.hasText(group)) {
 			group = binderConfigurationProperties.getApplicationId();
 		}
+
 		String[] inputTopics = StringUtils.commaDelimitedListToStringArray(name);
 		for (String inputTopic : inputTopics) {
 			this.kafkaTopicProvisioner.provisionConsumerDestination(inputTopic, group, extendedConsumerProperties);
 		}
-		StreamsConfig streamsConfig = this.KafkaStreamsBindingInformationCatalogue.getStreamsConfig(inputTarget);
-		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
-			String dlqName = StringUtils.isEmpty(extendedConsumerProperties.getExtension().getDlqName()) ?
-					"error." + name + "." + group : extendedConsumerProperties.getExtension().getDlqName();
-			KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = new KafkaStreamsDlqDispatch(dlqName, binderConfigurationProperties,
-					extendedConsumerProperties.getExtension());
-			SendToDlqAndContinue sendToDlqAndContinue = this.getApplicationContext().getBean(SendToDlqAndContinue.class);
-			sendToDlqAndContinue.addKStreamDlqDispatch(name, kafkaStreamsDlqDispatch);
 
-			DeserializationExceptionHandler deserializationExceptionHandler = streamsConfig.defaultDeserializationExceptionHandler();
-			if(deserializationExceptionHandler instanceof SendToDlqAndContinue) {
-				((SendToDlqAndContinue)deserializationExceptionHandler).addKStreamDlqDispatch(name, kafkaStreamsDlqDispatch);
+		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
+			StreamsConfig streamsConfig = this.KafkaStreamsBindingInformationCatalogue.getStreamsConfig(inputTarget);
+
+			KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = !StringUtils.isEmpty(extendedConsumerProperties.getExtension().getDlqName()) ?
+					new KafkaStreamsDlqDispatch(extendedConsumerProperties.getExtension().getDlqName(), binderConfigurationProperties,
+							extendedConsumerProperties.getExtension()) : null;
+			for (String inputTopic : inputTopics) {
+				if (StringUtils.isEmpty(extendedConsumerProperties.getExtension().getDlqName())) {
+					String dlqName = "error." + inputTopic + "." + group;
+					kafkaStreamsDlqDispatch = new KafkaStreamsDlqDispatch(dlqName, binderConfigurationProperties,
+							extendedConsumerProperties.getExtension());
+				}
+				SendToDlqAndContinue sendToDlqAndContinue = this.getApplicationContext().getBean(SendToDlqAndContinue.class);
+				sendToDlqAndContinue.addKStreamDlqDispatch(inputTopic, kafkaStreamsDlqDispatch);
+
+				DeserializationExceptionHandler deserializationExceptionHandler = streamsConfig.defaultDeserializationExceptionHandler();
+				if (deserializationExceptionHandler instanceof SendToDlqAndContinue) {
+					((SendToDlqAndContinue) deserializationExceptionHandler).addKStreamDlqDispatch(inputTopic, kafkaStreamsDlqDispatch);
+				}
 			}
 		}
+
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}
 
@@ -128,13 +138,12 @@ class KStreamBinder extends
 
 	@SuppressWarnings("unchecked")
 	private void to(boolean isNativeEncoding, String name, KStream<Object, Object> outboundBindTarget,
-				Serde<Object> keySerde, Serde<Object> valueSerde) {
+					Serde<Object> keySerde, Serde<Object> valueSerde) {
 		if (!isNativeEncoding) {
 			LOG.info("Native encoding is disabled for " + name + ". Outbound message conversion done by Spring Cloud Stream.");
 			kafkaStreamsMessageConversionDelegate.serializeOnOutbound(outboundBindTarget)
 					.to(name, Produced.with(keySerde, valueSerde));
-		}
-		else {
+		} else {
 			LOG.info("Native encoding is enabled for " + name + ". Outbound serialization done at the broker.");
 			outboundBindTarget.to(name, Produced.with(keySerde, valueSerde));
 		}

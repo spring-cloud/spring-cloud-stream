@@ -68,7 +68,8 @@ import static org.mockito.Mockito.verify;
 public abstract class DeserializationErrorHandlerByKafkaTests {
 
 	@ClassRule
-	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "counts", "error.words.group");
+	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "counts", "error.words.group",
+			"error.word1.groupx", "error.word2.groupx");
 
 	@SpyBean
 	KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate;
@@ -130,6 +131,47 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 		}
 	}
 
+	@SpringBootTest(properties = {
+			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
+			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+			"spring.cloud.stream.bindings.input.destination=word1,word2",
+			"spring.cloud.stream.bindings.input.group=groupx",
+			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=" +
+					"org.apache.kafka.common.serialization.Serdes$IntegerSerde"},
+			webEnvironment= SpringBootTest.WebEnvironment.NONE
+	)
+	public static class DeserializationByKafkaAndDlqTestsWithMultipleInputs extends DeserializationErrorHandlerByKafkaTests {
+
+		@Test
+		@SuppressWarnings("unchecked")
+		public void test() throws Exception {
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+			template.setDefaultTopic("word1");
+			template.sendDefault("foobar");
+
+			template.setDefaultTopic("word2");
+			template.sendDefault("foobar");
+
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobarx", "false", embeddedKafka);
+			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+			Consumer<String, String> consumer1 = cf.createConsumer();
+			embeddedKafka.consumeFromEmbeddedTopics(consumer1, "error.word1.groupx", "error.word2.groupx");
+
+			//TODO: Investigate why the ordering matters below: i.e. if we consume from error.word1.groupx first, an exception is thrown.
+			ConsumerRecord<String, String> cr1 = KafkaTestUtils.getSingleRecord(consumer1, "error.word2.groupx");
+			assertThat(cr1.value().equals("foobar")).isTrue();
+			ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer1, "error.word1.groupx");
+			assertThat(cr2.value().equals("foobar")).isTrue();
+
+			//Ensuring that the deserialization was indeed done by Kafka natively
+			verify(KafkaStreamsMessageConversionDelegate, never()).deserializeOnInbound(any(Class.class), any(KStream.class));
+			verify(KafkaStreamsMessageConversionDelegate, never()).serializeOnOutbound(any(KStream.class));
+		}
+	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
