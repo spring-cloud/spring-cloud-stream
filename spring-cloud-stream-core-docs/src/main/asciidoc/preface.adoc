@@ -1,18 +1,18 @@
 == A Brief History of Spring's Data Integration Journey
 
-Spring's journey on Data Integration started with https://projects.spring.io/spring-integration/[Spring Integration]. With its programming model, it provided a consistent developer experience to build applications that can embrace http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns] to connect with external systems such as databases, message brokers, and among others.
+Spring's journey on Data Integration started with https://projects.spring.io/spring-integration/[Spring Integration]. With its programming model, it provided a consistent developer experience to build applications that can embrace http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns] to connect with external systems such as, databases, message brokers, and among others.
 
-Fast forward to cloud-era, where microservices were prominent in the enterprise setting. https://projects.spring.io/spring-boot/[Spring Boot] transformed the way how developers built Applications. With Spring's programming model and the runtime responsibilities handled by Spring Boot, it became seamless to develop standalone production grade Spring-based microservices.
+Fast forward to the cloud-era, where microservices have become prominent in the enterprise setting. https://projects.spring.io/spring-boot/[Spring Boot] transformed the way how developers built Applications. With Spring's programming model and the runtime responsibilities handled by Spring Boot, it became seamless to develop stand-alone, production-grade Spring-based microservices.
 
 To extend this to Data Integration workloads, Spring Integration and Spring Boot were put together into a new project. Spring Cloud Stream was born.
 
 With Spring Cloud Stream, developers can:
-* Build, test, iterate, and deploy data-centric applications in isolation
-* Apply modern microservices architecture patterns, including composition via messaging
-* Decouple application responsibilities with event-centric thinking. An event can represent something that has happened in time, to which the downstream consumer applications can react without knowing where it originated or the producer identity
-* Port the business logic onto message brokers of choice (e.g., RabbitMQ, Apache Kafka, Amazon Kinesis)
-* Interoperate between the channel and non-channel based application binding scenarios to support stateless and stateful computations using Project Reactor's Flux and Kafka Streams APIs
-* Rely on framework's automatic content-type support for common use-cases. Extending to different data conversion types is possible
+* Build, test, iterate, and deploy data-centric applications in isolation.
+* Apply modern microservices architecture patterns, including composition through messaging.
+* Decouple application responsibilities with event-centric thinking. An event can represent something that has happened in time, to which the downstream consumer applications can react without knowing where it originated or the producer's identity.
+* Port the business logic onto message brokers (such as RabbitMQ, Apache Kafka, Amazon Kinesis).
+* Interoperate between channel-based and non-channel-based application binding scenarios to support stateless and stateful computations by using Project Reactor's Flux and Kafka Streams APIs.
+* Rely on the framework's automatic content-type support for common use-cases. Extending to different data conversion types is possible.
 
 == Quick Start
 
