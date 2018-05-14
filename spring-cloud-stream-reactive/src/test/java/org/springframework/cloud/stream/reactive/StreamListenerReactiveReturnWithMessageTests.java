@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import reactor.core.publisher.Flux;
-import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -58,11 +57,8 @@ public class StreamListenerReactiveReturnWithMessageTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { ReactorTestReturnWithMessage1.class, ReactorTestReturnWithMessage2.class,
-				ReactorTestReturnWithMessage3.class, ReactorTestReturnWithMessage4.class,
-				RxJava1TestReturnWithMessage1.class,
-				RxJava1TestReturnWithMessage2.class, RxJava1TestReturnWithMessage3.class,
-				RxJava1TestReturnWithMessage4.class });
+		return Arrays.asList(ReactorTestReturnWithMessage1.class, ReactorTestReturnWithMessage2.class,
+				ReactorTestReturnWithMessage3.class, ReactorTestReturnWithMessage4.class);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -125,47 +121,4 @@ public class StreamListenerReactiveReturnWithMessageTests {
 			return input.map(m -> m.getPayload().toUpperCase());
 		}
 	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithMessage1 {
-
-		@StreamListener
-		public @Output(Processor.OUTPUT) Observable<String> receive(
-				@Input(Processor.INPUT) Observable<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithMessage2 {
-
-		@StreamListener
-		public @SendTo(Processor.OUTPUT) Observable<String> receive(
-				@Input(Processor.INPUT) Observable<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithMessage3 {
-
-		@StreamListener(Processor.INPUT)
-		public @Output(Processor.OUTPUT) Observable<String> receive(Observable<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithMessage4 {
-
-		@StreamListener(Processor.INPUT)
-		public @SendTo(Processor.OUTPUT) Observable<String> receive(Observable<Message<String>> input) {
-			return input.map(m -> m.getPayload().toUpperCase());
-		}
-	}
-
 }

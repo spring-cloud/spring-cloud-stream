@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import reactor.core.publisher.Flux;
-import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -57,8 +56,7 @@ public class StreamListenerReactiveInputOutputArgsWithSenderTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { ReactorTestInputOutputArgsWithFluxSender.class,
-				RxJava1TestInputOutputArgsWithObservableSender.class });
+		return Collections.singletonList(ReactorTestInputOutputArgsWithFluxSender.class);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -92,18 +90,6 @@ public class StreamListenerReactiveInputOutputArgsWithSenderTests {
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input,
 				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input
-					.map(m -> m.getPayload().toString().toUpperCase())
-					.map(o -> MessageBuilder.withPayload(o).build()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestInputOutputArgsWithObservableSender {
-		@StreamListener
-		public void receive(@Input(Processor.INPUT) Observable<Message<?>> input,
-				@Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString().toUpperCase())
 					.map(o -> MessageBuilder.withPayload(o).build()));

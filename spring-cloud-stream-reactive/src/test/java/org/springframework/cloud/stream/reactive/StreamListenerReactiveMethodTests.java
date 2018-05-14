@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.reactive;
 
 import org.junit.Test;
 import reactor.core.publisher.Flux;
-import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -50,20 +49,6 @@ public class StreamListenerReactiveMethodTests {
 	}
 
 	@Test
-	public void testRxJava1InvalidInputValueWithOutputMethodParameters() {
-		try {
-			SpringApplication.run(RxJava1TestInputOutputArgs.class, "--server.port=0",
-					"--spring.jmx.enabled=false",
-					"--spring.cloud.stream.bindings.input.contentType=text/plain",
-					"--spring.cloud.stream.bindings.output.contentType=text/plain");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (Exception e) {
-			assertThat(e.getMessage()).contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
-		}
-	}
-
-	@Test
 	public void testMethodReturnTypeWithNoOutboundSpecified() {
 		try {
 			SpringApplication.run(ReactorTestReturn5.class, "--server.port=0",
@@ -83,16 +68,6 @@ public class StreamListenerReactiveMethodTests {
 
 		@StreamListener(Processor.INPUT)
 		public void receive(Flux<String> input, @Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> m.toUpperCase()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestInputOutputArgs {
-
-		@StreamListener(Processor.INPUT)
-		public void receive(Observable<String> input, @Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input.map(m -> m.toUpperCase()));
 		}
 	}
