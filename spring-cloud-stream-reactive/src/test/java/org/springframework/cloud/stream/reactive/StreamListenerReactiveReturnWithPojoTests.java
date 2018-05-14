@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import reactor.core.publisher.Flux;
-import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -62,9 +61,8 @@ public class StreamListenerReactiveReturnWithPojoTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { ReactorTestReturnWithPojo1.class, ReactorTestReturnWithPojo2.class,
-				ReactorTestReturnWithPojo3.class, ReactorTestReturnWithPojo4.class, RxJava1TestReturnWithPojo1.class,
-				RxJava1TestReturnWithPojo2.class, RxJava1TestReturnWithPojo3.class, RxJava1TestReturnWithPojo4.class });
+		return Arrays.asList(ReactorTestReturnWithPojo1.class, ReactorTestReturnWithPojo2.class,
+				ReactorTestReturnWithPojo3.class, ReactorTestReturnWithPojo4.class);
 	}
 
 	@Test
@@ -119,48 +117,6 @@ public class StreamListenerReactiveReturnWithPojoTests {
 
 		@StreamListener
 		public @SendTo(Processor.OUTPUT) Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
-			return input.map(m -> new BarPojo(m.getMessage()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithPojo1 {
-
-		@StreamListener
-		public @Output(Processor.OUTPUT) Observable<BarPojo> receive(
-				@Input(Processor.INPUT) Observable<FooPojo> input) {
-			return input.map(m -> new BarPojo(m.getMessage()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithPojo2 {
-
-		@StreamListener
-		public @SendTo(Processor.OUTPUT) Observable<BarPojo> receive(
-				@Input(Processor.INPUT) Observable<FooPojo> input) {
-			return input.map(m -> new BarPojo(m.getMessage()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithPojo3 {
-
-		@StreamListener(Processor.INPUT)
-		public @Output(Processor.OUTPUT) Observable<BarPojo> receive(Observable<FooPojo> input) {
-			return input.map(m -> new BarPojo(m.getMessage()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithPojo4 {
-
-		@StreamListener(Processor.INPUT)
-		public @SendTo(Processor.OUTPUT) Observable<BarPojo> receive(Observable<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
 	}

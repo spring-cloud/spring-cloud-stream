@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import reactor.core.publisher.Flux;
-import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -57,7 +56,7 @@ public class StreamListenerReactiveInputOutputArgsTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { ReactorTestInputOutputArgs.class, RxJava1TestInputOutputArgs.class });
+		return Collections.singletonList(ReactorTestInputOutputArgs.class);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -87,17 +86,6 @@ public class StreamListenerReactiveInputOutputArgsTests {
 
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<String> input, @Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> m.toUpperCase()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestInputOutputArgs {
-
-		@StreamListener
-		public void receive(@Input(Processor.INPUT) Observable<String> input,
-				@Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input.map(m -> m.toUpperCase()));
 		}
 	}

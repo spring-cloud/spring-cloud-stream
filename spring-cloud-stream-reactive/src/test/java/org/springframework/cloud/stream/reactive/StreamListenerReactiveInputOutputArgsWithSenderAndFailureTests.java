@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import reactor.core.publisher.Flux;
-import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -38,6 +37,7 @@ import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,8 +57,7 @@ public class StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { TestInputOutputArgsWithFluxSenderAndFailure.class,
-				TestInputOutputArgsWithObservableSenderAndFailure.class });
+		return Collections.singletonList(TestInputOutputArgsWithFluxSenderAndFailure.class);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -95,26 +94,6 @@ public class StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests {
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input,
 				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input
-					.map(m -> m.getPayload().toString())
-					.map(m -> {
-						if (!m.equals("fail")) {
-							return m.toUpperCase();
-						}
-						else {
-							throw new RuntimeException();
-						}
-					})
-					.map(o -> MessageBuilder.withPayload(o).build()));
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class TestInputOutputArgsWithObservableSenderAndFailure {
-		@StreamListener
-		public void receive(@Input(Processor.INPUT) Observable<Message<String>> input,
-				@Output(Processor.OUTPUT) ObservableSender output) {
 			output.send(input
 					.map(m -> m.getPayload().toString())
 					.map(m -> {
