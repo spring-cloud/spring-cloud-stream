@@ -331,31 +331,29 @@ public class KafkaMessageChannelBinder extends
 		int partitionCount = extendedConsumerProperties.getInstanceCount()
 				* extendedConsumerProperties.getConcurrency();
 
+		Collection<PartitionInfo> listenedPartitions = new ArrayList<>();
+
 		boolean usingPatterns = extendedConsumerProperties.getExtension().isDestinationIsPattern();
-		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
-				: getPartitionInfo(destination, extendedConsumerProperties, consumerFactory, partitionCount);
-
-		Collection<PartitionInfo> listenedPartitions;
-
+		Assert.isTrue(!usingPatterns || !extendedConsumerProperties.isMultiplex(),
+				"Cannot use a pattern with multiplexed destinations; "
+				+ "use the regex pattern to specify multiple topics instead");
 		boolean groupManagement = extendedConsumerProperties.getExtension().isAutoRebalanceEnabled();
-		if (groupManagement ||
-				extendedConsumerProperties.getInstanceCount() == 1) {
-			listenedPartitions = allPartitions;
+		if (!extendedConsumerProperties.isMultiplex()) {
+			listenedPartitions.addAll(processTopic(group, extendedConsumerProperties, consumerFactory,
+					partitionCount, usingPatterns, groupManagement, destination.getName()));
 		}
 		else {
-			listenedPartitions = new ArrayList<>();
-			for (PartitionInfo partition : allPartitions) {
-				// divide partitions across modules
-				if ((partition.partition()
-						% extendedConsumerProperties.getInstanceCount()) == extendedConsumerProperties
-								.getInstanceIndex()) {
-					listenedPartitions.add(partition);
-				}
+			for (String name : StringUtils.commaDelimitedListToStringArray(destination.getName())) {
+				listenedPartitions.addAll(processTopic(group, extendedConsumerProperties, consumerFactory,
+						partitionCount, usingPatterns, groupManagement, name.trim()));
 			}
 		}
-		String topics = destination.getName();
-		this.topicsInUse.put(topics, new TopicInformation(group, listenedPartitions));
 
+		String[] topics = extendedConsumerProperties.isMultiplex() ? StringUtils.commaDelimitedListToStringArray(destination.getName())
+				: new String[] { destination.getName() };
+		for (int i = 0; i < topics.length; i++) {
+			topics[i] = topics[i].trim();
+		}
 		Assert.isTrue(usingPatterns
 				|| !CollectionUtils.isEmpty(listenedPartitions), "A list of partitions must be provided");
 		final TopicPartitionInitialOffset[] topicPartitionInitialOffsets = getTopicPartitionInitialOffsets(
@@ -363,7 +361,7 @@ public class KafkaMessageChannelBinder extends
 		final ContainerProperties containerProperties = anonymous
 				|| extendedConsumerProperties.getExtension().isAutoRebalanceEnabled()
 						? usingPatterns
-								? new ContainerProperties(Pattern.compile(topics))
+								? new ContainerProperties(Pattern.compile(topics[0]))
 								: new ContainerProperties(topics)
 						: new ContainerProperties(topicPartitionInitialOffsets);
 		if (this.transactionManager != null) {
@@ -423,6 +421,33 @@ public class KafkaMessageChannelBinder extends
 			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
 		return kafkaMessageDrivenChannelAdapter;
+	}
+
+	public Collection<PartitionInfo> processTopic(final String group,
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
+			final ConsumerFactory<?, ?> consumerFactory, int partitionCount, boolean usingPatterns,
+			boolean groupManagement, String topic) {
+		Collection<PartitionInfo> listenedPartitions;
+		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
+				: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory, partitionCount);
+
+		if (groupManagement ||
+				extendedConsumerProperties.getInstanceCount() == 1) {
+			listenedPartitions = allPartitions;
+		}
+		else {
+			listenedPartitions = new ArrayList<>();
+			for (PartitionInfo partition : allPartitions) {
+				// divide partitions across modules
+				if ((partition.partition()
+						% extendedConsumerProperties.getInstanceCount()) == extendedConsumerProperties
+								.getInstanceIndex()) {
+					listenedPartitions.add(partition);
+				}
+			}
+		}
+		this.topicsInUse.put(topic, new TopicInformation(group, listenedPartitions));
+		return listenedPartitions;
 	}
 
 	/*
@@ -486,15 +511,29 @@ public class KafkaMessageChannelBinder extends
 		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
 		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(anonymous, consumerGroup,
 				consumerProperties);
-		KafkaMessageSource<?, ?> source = new KafkaMessageSource<>(consumerFactory, destination.getName());
+		String[] topics = consumerProperties.isMultiplex() ? StringUtils.commaDelimitedListToStringArray(destination.getName())
+				: new String[] { destination.getName() };
+		for (int i = 0; i < topics.length; i++) {
+			topics[i] = topics[i].trim();
+		}
+		KafkaMessageSource<?, ?> source = new KafkaMessageSource<>(consumerFactory, topics);
 		source.setMessageConverter(getMessageConverter(consumerProperties));
 		source.setRawMessageHeader(consumerProperties.getExtension().isEnableDlq());
 
-		// I copied this from the regular consumer - it looks bogus to me - includes all partitions
-		// not just the ones this binding is listening to; doesn't seem right for a health check.
-		Collection<PartitionInfo> partitionInfos = getPartitionInfo(destination, consumerProperties, consumerFactory,
-				-1);
-		this.topicsInUse.put(destination.getName(), new TopicInformation(group, partitionInfos));
+		if (!consumerProperties.isMultiplex()) {
+			// I copied this from the regular consumer - it looks bogus to me - includes all partitions
+			// not just the ones this binding is listening to; doesn't seem right for a health check.
+			Collection<PartitionInfo> partitionInfos = getPartitionInfo(destination.getName(), consumerProperties,
+					consumerFactory, -1);
+			this.topicsInUse.put(destination.getName(), new TopicInformation(group, partitionInfos));
+		}
+		else {
+			for (int i = 0; i < topics.length; i++) {
+				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i], consumerProperties,
+						consumerFactory, -1);
+				this.topicsInUse.put(topics[i], new TopicInformation(group, partitionInfos));
+			}
+		}
 
 		source.setRebalanceListener(new ConsumerRebalanceListener() {
 
@@ -576,16 +615,16 @@ public class KafkaMessageChannelBinder extends
 		return mapper;
 	}
 
-	private Collection<PartitionInfo> getPartitionInfo(final ConsumerDestination destination,
+	private Collection<PartitionInfo> getPartitionInfo(String topic,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
 			final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
 		Collection<PartitionInfo> allPartitions = provisioningProvider.getPartitionsForTopic(partitionCount,
 				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
 				() -> {
-					Consumer<?, ?> consumer = consumerFactory.createConsumer();
-					List<PartitionInfo> partitionsFor = consumer.partitionsFor(destination.getName());
-					consumer.close();
-					return partitionsFor;
+					try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
+						List<PartitionInfo> partitionsFor = consumer.partitionsFor(topic);
+						return partitionsFor;
+					}
 				});
 		return allPartitions;
 	}
@@ -606,12 +645,9 @@ public class KafkaMessageChannelBinder extends
 					: getProducerFactory(null,
 						new ExtendedProducerProperties<>(dlqProducerProperties));
 			final KafkaTemplate<?,?> kafkaTemplate = new KafkaTemplate<>(producerFactory);
-			String dlqName = StringUtils.hasText(kafkaConsumerProperties.getDlqName())
-					? kafkaConsumerProperties.getDlqName()
-					: "error." + destination.getName() + "." + group;
 
 			@SuppressWarnings({"unchecked", "rawtypes"})
-			DlqSender<?,?> dlqSender = new DlqSender(kafkaTemplate, dlqName);
+			DlqSender<?,?> dlqSender = new DlqSender(kafkaTemplate);
 
 			return message -> {
 				@SuppressWarnings("unchecked")
@@ -672,7 +708,10 @@ public class KafkaMessageChannelBinder extends
 						}
 					}
 				}
-				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders);
+				String dlqName = StringUtils.hasText(kafkaConsumerProperties.getDlqName())
+						? kafkaConsumerProperties.getDlqName()
+						: "error." + record.topic() + "." + group;
+				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName);
 			};
 		}
 		return null;
@@ -861,18 +900,16 @@ public class KafkaMessageChannelBinder extends
 	private final class DlqSender<K,V> {
 
 		private final KafkaTemplate<K,V> kafkaTemplate;
-		private final String dlqName;
 
-		DlqSender(KafkaTemplate<K, V> kafkaTemplate, String dlqName) {
+		DlqSender(KafkaTemplate<K, V> kafkaTemplate) {
 			this.kafkaTemplate = kafkaTemplate;
-			this.dlqName = dlqName;
 		}
 
 		@SuppressWarnings("unchecked")
-		void sendToDlq(ConsumerRecord<?, ?> consumerRecord, Headers headers) {
+		void sendToDlq(ConsumerRecord<?, ?> consumerRecord, Headers headers, String dlqName) {
 			K key = (K)consumerRecord.key();
 			V value = (V)consumerRecord.value();
-			ProducerRecord<K,V> producerRecord = new ProducerRecord<>(this.dlqName, consumerRecord.partition(),
+			ProducerRecord<K,V> producerRecord = new ProducerRecord<>(dlqName, consumerRecord.partition(),
 					key, value, headers);
 
 			StringBuilder sb = new StringBuilder().append(" a message with key='")

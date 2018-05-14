@@ -151,6 +151,20 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	@Override
 	public ConsumerDestination provisionConsumerDestination(final String name, final String group,
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+		if (!properties.isMultiplex()) {
+			return doProvisionConsumerDestination(name, group, properties);
+		}
+		else {
+			String[] destinations = StringUtils.commaDelimitedListToStringArray(name);
+			for (String destination : destinations) {
+				doProvisionConsumerDestination(destination.trim(), group, properties);
+			}
+			return new KafkaConsumerDestination(name);
+		}
+	}
+
+	private ConsumerDestination doProvisionConsumerDestination(final String name, final String group,
+			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 
 		if (properties.getExtension().isDestinationIsPattern()) {
 			Assert.isTrue(!properties.getExtension().isEnableDlq(),

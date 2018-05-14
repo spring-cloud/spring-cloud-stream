@@ -102,6 +102,7 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SendResult;
@@ -607,6 +608,7 @@ public class KafkaBinderTests extends
 		consumerProperties.getExtension().setEnableDlq(true);
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 		consumerProperties.setHeaderMode(headerMode);
+		consumerProperties.setMultiplex(true);
 
 		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
 
@@ -619,8 +621,13 @@ public class KafkaBinderTests extends
 		String producerName = "dlqTest." + uniqueBindingId + ".0";
 		Binding<MessageChannel> producerBinding = binder.bindProducer(producerName,
 				moduleOutputChannel, producerProperties);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(producerName,
+		String consumerDest = producerName + ", " + producerName.replaceAll("0", "1");
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(consumerDest,
 				"testGroup", moduleInputChannel, consumerProperties);
+
+		MessageListenerContainer container = TestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.messageListenerContainer", MessageListenerContainer.class);
+		assertThat(container.getContainerProperties().getTopicPartitions().length).isEqualTo(2);
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
 		dlqConsumerProperties.setMaxAttempts(1);
@@ -629,7 +636,7 @@ public class KafkaBinderTests extends
 		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(), "applicationContext",
 				ApplicationContext.class);
 		SubscribableChannel boundErrorChannel = context
-				.getBean(producerName + ".testGroup.errors-0", SubscribableChannel.class);
+				.getBean(consumerDest + ".testGroup.errors-0", SubscribableChannel.class);
 		SubscribableChannel globalErrorChannel = context.getBean("errorChannel", SubscribableChannel.class);
 		final AtomicReference<Message<?>> boundErrorChannelMessage = new AtomicReference<>();
 		final AtomicReference<Message<?>> globalErrorChannelMessage = new AtomicReference<>();
@@ -2451,8 +2458,10 @@ public class KafkaBinderTests extends
 	public void testPolledConsumer() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
-		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable", "group",
-				inboundBindTarget, createConsumerProperties());
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProps = createConsumerProperties();
+		consumerProps.setMultiplex(true);
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable,anotherOne", "group",
+				inboundBindTarget, consumerProps);
 		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
 		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
 		template.send("pollable", "testPollable");
@@ -2463,6 +2472,19 @@ public class KafkaBinderTests extends
 		while (n++ < 100 && !polled) {
 			polled = inboundBindTarget.poll(m -> {
 				assertThat(m.getPayload()).isEqualTo("testPollable".getBytes());
+			});
+			Thread.sleep(100);
+		}
+		assertThat(polled).isTrue();
+
+		template.send("anotherOne", "testPollable2");
+		polled = inboundBindTarget.poll(m -> {
+			assertThat(m.getPayload()).isEqualTo("testPollable2");
+		});
+		n = 0;
+		while (n++ < 100 && !polled) {
+			polled = inboundBindTarget.poll(m -> {
+				assertThat(m.getPayload()).isEqualTo("testPollable2".getBytes());
 			});
 			Thread.sleep(100);
 		}
