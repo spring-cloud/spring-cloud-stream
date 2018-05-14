@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import reactor.core.publisher.Flux;
-import rx.Observable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -58,11 +57,8 @@ public class StreamListenerReactiveReturnWithFailureTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { ReactorTestReturnWithFailure1.class, ReactorTestReturnWithFailure2.class,
-				ReactorTestReturnWithFailure3.class, ReactorTestReturnWithFailure4.class,
-				RxJava1TestReturnWithFailure1.class,
-				RxJava1TestReturnWithFailure2.class, RxJava1TestReturnWithFailure3.class,
-				RxJava1TestReturnWithFailure4.class });
+		return Arrays.asList(ReactorTestReturnWithFailure1.class, ReactorTestReturnWithFailure2.class,
+				ReactorTestReturnWithFailure3.class, ReactorTestReturnWithFailure4.class);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -76,7 +72,7 @@ public class StreamListenerReactiveReturnWithFailureTests {
 		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
 
-	private static void sendFailingMessage(ConfigurableApplicationContext context) throws InterruptedException {
+	private static void sendFailingMessage(ConfigurableApplicationContext context) {
 		Processor processor = context.getBean(Processor.class);
 		processor.input().send(MessageBuilder.withPayload("fail").setHeader("contentType", "text/plain").build());
 	}
@@ -100,12 +96,12 @@ public class StreamListenerReactiveReturnWithFailureTests {
 	public static class ReactorTestReturnWithFailure1 {
 
 		@StreamListener
-		public @Output(Processor.OUTPUT) Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
+		public @Output(Processor.OUTPUT)
+		Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
-				}
-				else {
+				} else {
 					throw new RuntimeException();
 				}
 			});
@@ -117,12 +113,12 @@ public class StreamListenerReactiveReturnWithFailureTests {
 	public static class ReactorTestReturnWithFailure2 {
 
 		@StreamListener(Processor.INPUT)
-		public @Output(Processor.OUTPUT) Flux<String> receive(Flux<String> input) {
+		public @Output(Processor.OUTPUT)
+		Flux<String> receive(Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
-				}
-				else {
+				} else {
 					throw new RuntimeException();
 				}
 			});
@@ -134,12 +130,12 @@ public class StreamListenerReactiveReturnWithFailureTests {
 	public static class ReactorTestReturnWithFailure3 {
 
 		@StreamListener(Processor.INPUT)
-		public @SendTo(Processor.OUTPUT) Flux<String> receive(Flux<String> input) {
+		public @SendTo(Processor.OUTPUT)
+		Flux<String> receive(Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
-				}
-				else {
+				} else {
 					throw new RuntimeException();
 				}
 			});
@@ -151,80 +147,12 @@ public class StreamListenerReactiveReturnWithFailureTests {
 	public static class ReactorTestReturnWithFailure4 {
 
 		@StreamListener
-		public @SendTo(Processor.OUTPUT) Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
+		public @SendTo(Processor.OUTPUT)
+		Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
-				}
-				else {
-					throw new RuntimeException();
-				}
-			});
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithFailure1 {
-
-		@StreamListener
-		public @Output(Processor.OUTPUT) Observable<String> receive(@Input(Processor.INPUT) Observable<String> input) {
-			return input.map(m -> {
-				if (!m.equals("fail")) {
-					return m.toUpperCase();
-				}
-				else {
-					throw new RuntimeException();
-				}
-			});
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithFailure2 {
-
-		@StreamListener
-		public @SendTo(Processor.OUTPUT) Observable<String> receive(@Input(Processor.INPUT) Observable<String> input) {
-			return input.map(m -> {
-				if (!m.equals("fail")) {
-					return m.toUpperCase();
-				}
-				else {
-					throw new RuntimeException();
-				}
-			});
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithFailure3 {
-
-		@StreamListener(Processor.INPUT)
-		public @SendTo(Processor.OUTPUT) Observable<String> receive(Observable<String> input) {
-			return input.map(m -> {
-				if (!m.equals("fail")) {
-					return m.toUpperCase();
-				}
-				else {
-					throw new RuntimeException();
-				}
-			});
-		}
-	}
-
-	@EnableBinding(Processor.class)
-	@EnableAutoConfiguration
-	public static class RxJava1TestReturnWithFailure4 {
-
-		@StreamListener(Processor.INPUT)
-		public @Output(Processor.OUTPUT) Observable<String> receive(Observable<String> input) {
-			return input.map(m -> {
-				if (!m.equals("fail")) {
-					return m.toUpperCase();
-				}
-				else {
+				} else {
 					throw new RuntimeException();
 				}
 			});
