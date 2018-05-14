@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.rabbit.provisioning;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -129,6 +131,23 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 	@Override
 	public ConsumerDestination provisionConsumerDestination(String name, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+		if (!properties.isMultiplex()) {
+			return doProvisionConsumerDestination(name, group, properties);
+		}
+		else {
+			String[] destinations = StringUtils.commaDelimitedListToStringArray(name);
+			List<String> queues = new ArrayList<>();
+			for (String destination : destinations) {
+				ConsumerDestination dest = doProvisionConsumerDestination(destination.trim(), group, properties);
+				queues.add(dest.getName());
+			}
+			return new RabbitConsumerDestination(
+					StringUtils.arrayToCommaDelimitedString(queues.toArray(new String[queues.size()])), null);
+		}
+	}
+
+	private ConsumerDestination doProvisionConsumerDestination(String name, String group,
+			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
 		boolean anonymous = !StringUtils.hasText(group);
 		String  baseQueueName = anonymous ? groupedName(name, ANONYMOUS_GROUP_NAME_GENERATOR.generateName())
 					: properties.getExtension().isQueueNameGroupOnly() ? group : groupedName(name, group);
@@ -171,7 +190,7 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 			autoBindDLQ(applyPrefix(properties.getExtension().getPrefix(), baseQueueName), queueName,
 					properties.getExtension());
 		}
-		return new RabbitConsumerDestination(queue, binding);
+		return new RabbitConsumerDestination(queue.getName(), binding);
 	}
 
 	/**
@@ -476,13 +495,23 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 		addToAutoDeclareContext(rootName + ".binding", binding);
 	}
 
-	public void cleanAutoDeclareContext(String name) {
+	public void cleanAutoDeclareContext(ConsumerDestination destination,
+			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
 		synchronized (this.autoDeclareContext) {
-			removeSingleton(name + ".binding");
-			removeSingleton(name);
-			String dlq = name + ".dlq";
-			removeSingleton(dlq + ".binding");
-			removeSingleton(dlq);
+			String[] names = new String[] { destination.getName() };
+			if (consumerProperties.isMultiplex()) {
+				names = StringUtils.commaDelimitedListToStringArray(destination.getName());
+			}
+			for (int i = 0; i < names.length; i++) {
+				names[i] = names[i].trim();
+			}
+			for (String name : names) {
+				removeSingleton(name + ".binding");
+				removeSingleton(name);
+				String dlq = name + ".dlq";
+				removeSingleton(dlq + ".binding");
+				removeSingleton(dlq);
+			}
 		}
 	}
 
@@ -533,10 +562,10 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 
 	private static final class RabbitConsumerDestination implements ConsumerDestination {
 
-		private final Queue queue;
+		private final String queue;
 		private final Binding binding;
 
-		RabbitConsumerDestination(Queue queue, Binding binding) {
+		RabbitConsumerDestination(String queue, Binding binding) {
 			Assert.notNull(queue, "queue must not be null");
 			this.queue = queue;
 			this.binding = binding;
@@ -552,7 +581,7 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 
 		@Override
 		public String getName() {
-			return this.queue.getName();
+			return this.queue;
 		}
 	}
 

@@ -49,6 +49,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitManagementTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.AsyncConsumerStartedEvent;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.AmqpHeaders;
@@ -641,8 +642,12 @@ public class RabbitBinderTests extends
 			}
 
 		});
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("dlqtest", "default", moduleInputChannel,
-				consumerProperties);
+		consumerProperties.setMultiplex(true);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("dlqtest,dlqtest2", "default",
+				moduleInputChannel, consumerProperties);
+		AbstractMessageListenerContainer container = TestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.messageListenerContainer", AbstractMessageListenerContainer.class);
+		assertThat(container.getQueueNames().length).isEqualTo(2);
 
 		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
 		template.convertAndSend("", TEST_PREFIX + "dlqtest.default", "foo");
@@ -652,6 +657,19 @@ public class RabbitBinderTests extends
 			Object deadLetter = template.receiveAndConvert(TEST_PREFIX + "dlqtest.default.dlq");
 			if (deadLetter != null) {
 				assertThat(deadLetter).isEqualTo("foo");
+				break;
+			}
+			Thread.sleep(100);
+		}
+		assertThat(n).isLessThan(100);
+
+		template.convertAndSend("", TEST_PREFIX + "dlqtest2.default", "bar");
+
+		n = 0;
+		while (n++ < 100) {
+			Object deadLetter = template.receiveAndConvert(TEST_PREFIX + "dlqtest2.default.dlq");
+			if (deadLetter != null) {
+				assertThat(deadLetter).isEqualTo("bar");
 				break;
 			}
 			Thread.sleep(100);
@@ -1009,8 +1027,9 @@ public class RabbitBinderTests extends
 			}
 
 		});
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.dlqpubtest", "foo", moduleInputChannel,
-				consumerProperties);
+		consumerProperties.setMultiplex(true);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.dlqpubtest,foo.dlqpubtest2", "foo",
+				moduleInputChannel, consumerProperties);
 
 		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest.foo", "foo");
@@ -1020,6 +1039,20 @@ public class RabbitBinderTests extends
 			org.springframework.amqp.core.Message deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest.foo.dlq");
 			if (deadLetter != null) {
 				assertThat(new String(deadLetter.getBody())).isEqualTo("foo");
+				assertThat(deadLetter.getMessageProperties().getHeaders()).containsKey(("x-exception-stacktrace"));
+				break;
+			}
+			Thread.sleep(100);
+		}
+		assertThat(n).isLessThan(100);
+
+		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest2.foo", "bar");
+
+		n = 0;
+		while (n++ < 100) {
+			org.springframework.amqp.core.Message deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest2.foo.dlq");
+			if (deadLetter != null) {
+				assertThat(new String(deadLetter.getBody())).isEqualTo("bar");
 				assertThat(deadLetter.getMessageProperties().getHeaders()).containsKey(("x-exception-stacktrace"));
 				break;
 			}

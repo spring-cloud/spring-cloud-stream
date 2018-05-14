@@ -361,7 +361,17 @@ public class RabbitMessageChannelBinder
 		listenerContainer.setRecoveryInterval(properties.getExtension().getRecoveryInterval());
 		listenerContainer.setTxSize(properties.getExtension().getTxSize());
 		listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(consumerDestination.getName() + "-"));
-		listenerContainer.setQueueNames(destination);
+		String[] queues;
+		if (properties.isMultiplex()) {
+			queues = StringUtils.commaDelimitedListToStringArray(destination);
+		}
+		else {
+			queues = new String[] { destination };
+		}
+		for (int i = 0; i < queues.length; i++) {
+			queues[i] = queues[i].trim();
+		}
+		listenerContainer.setQueueNames(queues);
 		listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
 		listenerContainer.setMessagePropertiesConverter(
 				RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
@@ -403,6 +413,8 @@ public class RabbitMessageChannelBinder
 	@Override
 	protected PolledConsumerResources createPolledConsumerResources(String name, String group, ConsumerDestination destination,
 			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
+		Assert.isTrue(!consumerProperties.isMultiplex(),
+				"The Spring Integration polled MessageSource does not currently support muiltiple queues");
 		AmqpMessageSource source = new AmqpMessageSource(this.connectionFactory, destination.getName());
 		source.setRawMessageHeader(true);
 		return new PolledConsumerResources(source,
@@ -568,7 +580,7 @@ public class RabbitMessageChannelBinder
 	@Override
 	protected void afterUnbindConsumer(ConsumerDestination consumerDestination, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
-		provisioningProvider.cleanAutoDeclareContext(consumerDestination.getName());
+		provisioningProvider.cleanAutoDeclareContext(consumerDestination, consumerProperties);
 	}
 
 	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties, boolean mandatory) {

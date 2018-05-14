@@ -36,6 +36,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.util.StringUtils;
 
 /**
  * Test support class for {@link RabbitMessageChannelBinder}.
@@ -92,15 +93,31 @@ public class RabbitTestBinder extends
 
 	private void captureConsumerResources(String name, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+		String[] names = null;
 		if (group != null) {
 			if (properties.getExtension().isQueueNameGroupOnly()) {
 				this.queues.add(properties.getExtension().getPrefix() + group);
 			}
 			else {
-				this.queues.add(properties.getExtension().getPrefix() + name + ("." + group));
+				if (properties.isMultiplex()) {
+					names = StringUtils.commaDelimitedListToStringArray(name);
+					for (String nayme : names) {
+						this.queues.add(properties.getExtension().getPrefix() + nayme.trim() + "." + group);
+					}
+				}
+				else {
+					this.queues.add(properties.getExtension().getPrefix() + name + "." + group);
+				}
 			}
 		}
-		this.exchanges.add(properties.getExtension().getPrefix() + name);
+		if (names != null) {
+			for (String nayme : names) {
+				this.exchanges.add(properties.getExtension().getPrefix() + nayme.trim());
+			}
+		}
+		else {
+			this.exchanges.add(properties.getExtension().getPrefix() + name);
+		}
 		this.prefixes.add(properties.getExtension().getPrefix());
 		deadLetters(properties.getExtension());
 	}
