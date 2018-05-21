@@ -16,10 +16,9 @@
 
 package org.springframework.cloud.stream.binder.rabbit.provisioning;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,6 +57,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Soby Chacko
  * @author Gary Russell
+ * @author Oleg Zhurakousky
  */
 public class RabbitExchangeQueueProvisioner implements ApplicationListener<DeclarationExceptionEvent>,
 		ProvisioningProvider<ExtendedConsumerProperties<RabbitConsumerProperties>,
@@ -131,19 +131,17 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 	@Override
 	public ConsumerDestination provisionConsumerDestination(String name, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+		ConsumerDestination consumerDestination;
 		if (!properties.isMultiplex()) {
-			return doProvisionConsumerDestination(name, group, properties);
+			consumerDestination = doProvisionConsumerDestination(name, group, properties);
 		}
 		else {
-			String[] destinations = StringUtils.commaDelimitedListToStringArray(name);
-			List<String> queues = new ArrayList<>();
-			for (String destination : destinations) {
-				ConsumerDestination dest = doProvisionConsumerDestination(destination.trim(), group, properties);
-				queues.add(dest.getName());
-			}
-			return new RabbitConsumerDestination(
-					StringUtils.arrayToCommaDelimitedString(queues.toArray(new String[queues.size()])), null);
+			String[] provisionedDestinations = Stream.of(StringUtils.tokenizeToStringArray(name, ",", true, true))
+				.map(destination -> doProvisionConsumerDestination(destination, group, properties).getName())
+				.toArray(String[]::new);
+			consumerDestination = new RabbitConsumerDestination(StringUtils.arrayToCommaDelimitedString(provisionedDestinations), null);
 		}
+		return consumerDestination;
 	}
 
 	private ConsumerDestination doProvisionConsumerDestination(String name, String group,
@@ -498,20 +496,14 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 	public void cleanAutoDeclareContext(ConsumerDestination destination,
 			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
 		synchronized (this.autoDeclareContext) {
-			String[] names = new String[] { destination.getName() };
-			if (consumerProperties.isMultiplex()) {
-				names = StringUtils.commaDelimitedListToStringArray(destination.getName());
-			}
-			for (int i = 0; i < names.length; i++) {
-				names[i] = names[i].trim();
-			}
-			for (String name : names) {
+			Stream.of(StringUtils.tokenizeToStringArray(destination.getName(), ",", true, true)).forEach(name -> {
+				name = name.trim();
 				removeSingleton(name + ".binding");
 				removeSingleton(name);
 				String dlq = name + ".dlq";
 				removeSingleton(dlq + ".binding");
 				removeSingleton(dlq);
-			}
+			});
 		}
 	}
 
