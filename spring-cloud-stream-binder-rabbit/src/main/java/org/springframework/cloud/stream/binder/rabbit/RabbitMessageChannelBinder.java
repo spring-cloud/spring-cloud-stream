@@ -285,6 +285,8 @@ public class RabbitMessageChannelBinder
 			checkConnectionFactoryIsErrorCapable();
 			endpoint.setReturnChannel(errorChannel);
 			endpoint.setConfirmNackChannel(errorChannel);
+			endpoint.setConfirmAckChannel(getApplicationContext().getBean(
+					IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME, MessageChannel.class));
 			endpoint.setConfirmCorrelationExpressionString("#root");
 			endpoint.setErrorMessageStrategy(new DefaultErrorMessageStrategy());
 		}
