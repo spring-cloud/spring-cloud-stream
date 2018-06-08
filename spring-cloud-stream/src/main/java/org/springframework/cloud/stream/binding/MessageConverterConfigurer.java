@@ -357,7 +357,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 	/**
 	 *
 	 */
-	protected final class PartitioningInterceptor extends ChannelInterceptorAdapter {
+	public final class PartitioningInterceptor extends ChannelInterceptorAdapter {
 
 		private final BindingProperties bindingProperties;
 
