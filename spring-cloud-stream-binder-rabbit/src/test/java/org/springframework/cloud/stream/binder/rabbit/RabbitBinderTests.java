@@ -171,8 +171,14 @@ public class RabbitBinderTests extends
 		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
 		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0", moduleOutputChannel,
 				createProducerProperties());
+		assertThat(TestUtils.getPropertyValue(producerBinding, "lifecycle.headersMappedLast", Boolean.class))
+			.isTrue();
+		assertThat(TestUtils.getPropertyValue(producerBinding, "lifecycle.amqpTemplate.messageConverter")
+				.getClass().getName()).contains("Passthrough");
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
 				createConsumerProperties());
+		assertThat(TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageConverter")
+				.getClass().getName()).contains("Passthrough");
 		Message<?> message = MessageBuilder.withPayload("bad".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
 		final CountDownLatch latch = new CountDownLatch(3);
 		moduleInputChannel.subscribe(new MessageHandler() {

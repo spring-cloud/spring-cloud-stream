@@ -40,6 +40,9 @@ import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter;
 import org.springframework.amqp.rabbit.support.MessagePropertiesConverter;
+import org.springframework.amqp.support.converter.AbstractMessageConverter;
+import org.springframework.amqp.support.converter.MessageConversionException;
+import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.DisposableBean;
@@ -106,6 +109,9 @@ public class RabbitMessageChannelBinder
 		ExtendedProducerProperties<RabbitProducerProperties>, RabbitExchangeQueueProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, RabbitConsumerProperties, RabbitProducerProperties>,
 			DisposableBean {
+
+	private static final SimplePassthroughMessageConverter passThoughConverter =
+			new SimplePassthroughMessageConverter();
 
 	private static final AmqpMessageHeaderErrorMessageStrategy errorMessageStrategy =
 			new AmqpMessageHeaderErrorMessageStrategy();
@@ -290,7 +296,7 @@ public class RabbitMessageChannelBinder
 			endpoint.setConfirmCorrelationExpressionString("#root");
 			endpoint.setErrorMessageStrategy(new DefaultErrorMessageStrategy());
 		}
-		endpoint.afterPropertiesSet();
+		endpoint.setHeadersMappedLast(true);
 		return endpoint;
 	}
 
@@ -400,6 +406,7 @@ public class RabbitMessageChannelBinder
 			adapter.setErrorMessageStrategy(errorMessageStrategy);
 			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
+		adapter.setMessageConverter(passThoughConverter);
 		return adapter;
 	}
 
@@ -590,6 +597,7 @@ public class RabbitMessageChannelBinder
 		else {
 			rabbitTemplate = new RabbitTemplate();
 		}
+		rabbitTemplate.setMessageConverter(passThoughConverter);
 		rabbitTemplate.setChannelTransacted(properties.isTransacted());
 		rabbitTemplate.setConnectionFactory(this.connectionFactory);
 		rabbitTemplate.setUsePublisherConnection(true);
@@ -618,6 +626,32 @@ public class RabbitMessageChannelBinder
 		PrintWriter printWriter = new PrintWriter(stringWriter, true);
 		cause.printStackTrace(printWriter);
 		return stringWriter.getBuffer().toString();
+	}
+
+	private static final class SimplePassthroughMessageConverter extends AbstractMessageConverter {
+
+		private static final SimpleMessageConverter converter = new SimpleMessageConverter();
+
+		SimplePassthroughMessageConverter() {
+			super();
+		}
+
+		@Override
+		protected Message createMessage(Object object, MessageProperties messageProperties) {
+			if (object instanceof byte[]) {
+				return new Message((byte[]) object, messageProperties);
+			}
+			else {
+				// just for safety (backwards compatibility)
+				return converter.toMessage(object, messageProperties);
+			}
+		}
+
+		@Override
+		public Object fromMessage(Message message) throws MessageConversionException {
+			return message.getBody();
+		}
+
 	}
 
 }
