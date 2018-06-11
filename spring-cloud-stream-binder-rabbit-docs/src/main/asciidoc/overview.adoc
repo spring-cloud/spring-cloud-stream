@@ -184,6 +184,10 @@ dlqMaxPriority::
 Maximum priority of messages in the dead letter queue (0-255).
 +
 Default: `none`
+dlqOverflowBehavior::
+Action to take when `dlqMaxLength` or `dlqMaxLengthBytes` is exceeded; currently `drop-head` or `reject-publish` but refer to the RabbitMQ documentation.
++
+Default: `none`
 dlqTtl::
 Default time to live to apply to the dead letter queue when declared (in milliseconds).
 +
@@ -251,6 +255,10 @@ When the queue cannot be found, whether to treat the condition as fatal and stop
 Defaults to `false` so that the container keeps trying to consume from the queue -- for example, when using a cluster and the node hosting a non-HA queue is down.
 +
 Default: `false`
+overflowBehavior::
+Action to take when `maxLength` or `maxLengthBytes` is exceeded; currently `drop-head` or `reject-publish` but refer to the RabbitMQ documentation.
++
+Default: `none`
 prefetch::
 Prefetch count.
 +

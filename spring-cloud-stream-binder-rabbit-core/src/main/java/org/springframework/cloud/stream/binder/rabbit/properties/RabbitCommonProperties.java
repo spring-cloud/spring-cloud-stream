@@ -164,6 +164,16 @@ public abstract class RabbitCommonProperties {
 	 */
 	private boolean dlqLazy;
 
+	/**
+	 * action when maxLength or maxLengthBytes is exceeded
+	 */
+	private String overflowBehavior;
+
+	/**
+	 * action when maxLength or maxLengthBytes is exceeded
+	 */
+	private String dlqOverflowBehavior;
+
 	public String getExchangeType() {
 		return this.exchangeType;
 	}
@@ -379,6 +389,22 @@ public abstract class RabbitCommonProperties {
 
 	public void setDlqLazy(boolean dlqLazy) {
 		this.dlqLazy = dlqLazy;
+	}
+
+	public String getOverflowBehavior() {
+		return this.overflowBehavior;
+	}
+
+	public void setOverflowBehavior(String overflowBehavior) {
+		this.overflowBehavior = overflowBehavior;
+	}
+
+	public String getDlqOverflowBehavior() {
+		return this.dlqOverflowBehavior;
+	}
+
+	public void setDlqOverflowBehavior(String dlqOverflowBehavior) {
+		this.dlqOverflowBehavior = dlqOverflowBehavior;
 	}
 
 }

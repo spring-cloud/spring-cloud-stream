@@ -380,8 +380,6 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 				}
 				args.put("x-dead-letter-routing-key", dlRk);
 			}
-			additionalArgs(args, properties.getExpires(), properties.getMaxLength(), properties.getMaxLengthBytes(),
-					properties.getMaxPriority(), properties.getTtl(), properties.isLazy());
 		}
 		else {
 			if (properties.getDlqDeadLetterExchange() != null) {
@@ -390,15 +388,19 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 			if (properties.getDlqDeadLetterRoutingKey() != null) {
 				args.put("x-dead-letter-routing-key", properties.getDlqDeadLetterRoutingKey());
 			}
-			additionalArgs(args, properties.getDlqExpires(), properties.getDlqMaxLength(),
-					properties.getDlqMaxLengthBytes(), properties.getDlqMaxPriority(), properties.getDlqTtl(),
-					properties.isDlqLazy());
 		}
+		additionalArgs(args, properties, isDlq);
 		return args;
 	}
 
-	private void additionalArgs(Map<String, Object> args, Integer expires, Integer maxLength, Integer maxLengthBytes,
-								Integer maxPriority, Integer ttl, boolean lazy) {
+	private void additionalArgs(Map<String, Object> args, RabbitCommonProperties properties, boolean isDlq) {
+		Integer expires = isDlq ? properties.getDlqExpires() : properties.getExpires();
+		Integer maxLength = isDlq ? properties.getDlqMaxLength() : properties.getMaxLength();
+		Integer maxLengthBytes = isDlq ? properties.getDlqMaxLengthBytes() : properties.getMaxLengthBytes();
+		Integer maxPriority = isDlq ? properties.getDlqMaxPriority() : properties.getMaxPriority();
+		Integer ttl = isDlq ? properties.getDlqTtl() : properties.getTtl();
+		boolean lazy = isDlq ? properties.isDlqLazy() : properties.isLazy();
+		String overflow = isDlq ? properties.getDlqOverflowBehavior() : properties.getOverflowBehavior();
 		if (expires != null) {
 			args.put("x-expires", expires);
 		}
@@ -416,6 +418,9 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 		}
 		if (lazy) {
 			args.put("x-queue-mode", "lazy");
+		}
+		if (StringUtils.hasText(overflow)) {
+			args.put("x-overflow", overflow);
 		}
 	}
 

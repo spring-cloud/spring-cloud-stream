@@ -416,6 +416,7 @@ public class RabbitBinderTests extends
 		extProps.setMaxLength(10_000);
 		extProps.setMaxLengthBytes(100_000);
 		extProps.setMaxPriority(10);
+		extProps.setOverflowBehavior("drop-head");
 		extProps.setTtl(2_000);
 		extProps.setAutoBindDlq(true);
 		extProps.setDeadLetterQueueName("customDLQ");
@@ -427,6 +428,7 @@ public class RabbitBinderTests extends
 		extProps.setDlqLazy(true);
 		extProps.setDlqMaxLength(20_000);
 		extProps.setDlqMaxLengthBytes(40_000);
+		extProps.setDlqOverflowBehavior("reject-publish");
 		extProps.setDlqMaxPriority(8);
 		extProps.setDlqTtl(1_000);
 
@@ -472,6 +474,7 @@ public class RabbitBinderTests extends
 		assertThat(args.get("x-expires")).isEqualTo(30_000);
 		assertThat(args.get("x-max-length")).isEqualTo(10_000);
 		assertThat(args.get("x-max-length-bytes")).isEqualTo(100_000);
+		assertThat(args.get("x-overflow")).isEqualTo("drop-head");
 		assertThat(args.get("x-max-priority")).isEqualTo(10);
 		assertThat(args.get("x-message-ttl")).isEqualTo(2_000);
 		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("customDLX");
@@ -490,6 +493,7 @@ public class RabbitBinderTests extends
 		assertThat(args.get("x-expires")).isEqualTo(60_000);
 		assertThat(args.get("x-max-length")).isEqualTo(20_000);
 		assertThat(args.get("x-max-length-bytes")).isEqualTo(40_000);
+		assertThat(args.get("x-overflow")).isEqualTo("reject-publish");
 		assertThat(args.get("x-max-priority")).isEqualTo(8);
 		assertThat(args.get("x-message-ttl")).isEqualTo(1_000);
 		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("propsUser3");
