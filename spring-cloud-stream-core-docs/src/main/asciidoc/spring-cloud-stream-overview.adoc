@@ -606,7 +606,7 @@ public ApplicationRunner poller(PollableMessageSource destIn, MessageChannel des
 The `PollableMessageSource.poll()` method takes a `MessageHandler` argument (often a lambda expression, as shown here).
 It returns `true` if the message was received and successfully processed.
 
-As with message-driven consumers, if the `MessageHandler` throws an exception, messages are published to error channels, as discussed in "`<<binder-error-channels>>`".
+As with message-driven consumers, if the `MessageHandler` throws an exception, messages are published to error channels, as discussed in "`<<spring-cloud-stream-overview-error-handling>>`".
 
 Normally, the `poll()` method acknowledges the message when the `MessageHandler` exits.
 If the method exits abnormally, the message is rejected (not re-queued).
@@ -748,6 +748,15 @@ spring.cloud.stream.bindings.error.destination=myErrors.
 
 NOTE: The ability to bridge global error channel to a broker destination essentially provides a mechanism which connects
 the _application-level_ error handling with the _system-level_ error handling.
+
+Some binders support reporting asynchronous send failures.
+Error channels are not enabled for producers by default; see the `errorChannelEnabled` producer property.
+Producer channels do not include the `group` component (e.g. `mydest.errors`).
+Producer error channels are also bridged to the global error channel.
+
+IMPORTANT: It is possible to configure multiple bindings to the same destination on both the producer and consumer sides.
+Since the error channels and supporting infrastructure are registered as beans, they must have unique names.
+The `qualifier` property is provided for both producers and consumers; when qualified, producer error channels are named `<qualifier>.<destination>.errors` and consumer error channels are named `<qualifier>.<destination>.<group>.errors`.
 
 ===== System Error Handling
 
@@ -1415,6 +1424,11 @@ Also, when native encoding and decoding is used, the `headerMode=embeddedHeaders
 See the producer property `useNativeEncoding`.
 +
 Default: `false`.
+qualifier::
+When using multiple bindings with the same destination and group, set a qualifier that is used to prefix error infrastructure bean names to provide unique beans for each binding.
+See "`<<spring-cloud-stream-overview-error-handling>>`" for more information.
++
+Default: `none`.
 
 
 ==== Producer Properties
@@ -1476,10 +1490,15 @@ See the consumer property `useNativeDecoding`.
 +
 Default: `false`.
 errorChannelEnabled::
-When set to `true`, if the binder supports asynchroous send results, send failures are sent to an error channel for the destination.
-See "`<<binder-error-channels>>`" for more information.
+When set to `true`, if the binder supports asynchronous send results, send failures are sent to an error channel for the destination.
+See "`<<spring-cloud-stream-overview-error-handling>>`" for more information.
 +
 Default: `false`.
+qualifier::
+When using multiple bindings with the same destination, set a qualifier that is used to prefix error infrastructure bean names to provide unique beans for each binding.
+See "`<<spring-cloud-stream-overview-error-handling>>`" for more information.
++
+Default: `none`.
 
 [[dynamicdestination]]
 === Using Dynamically Bound Destinations

@@ -135,6 +135,14 @@ public class ConsumerProperties {
 	 */
 	private boolean multiplex;
 
+	/**
+	 * When using multiple bindings that reference the same destination and use the same
+	 * group, set a different qualifier for each binding so that beans created for the
+	 * binder (error channels, etc) will get a unique bean name with this value as a
+	 * prefix followed by ".".
+	 */
+	private String qualifier;
+
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
 		return concurrency;
@@ -229,4 +237,13 @@ public class ConsumerProperties {
 	public void setMultiplex(boolean multiplex) {
 		this.multiplex = multiplex;
 	}
+
+	public String getQualifier() {
+		return this.qualifier;
+	}
+
+	public void setQualifier(String qualifier) {
+		this.qualifier = qualifier;
+	}
+
 }
