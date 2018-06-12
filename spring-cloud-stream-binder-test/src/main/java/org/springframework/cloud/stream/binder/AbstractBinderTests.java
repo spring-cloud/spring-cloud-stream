@@ -45,10 +45,12 @@ import org.springframework.cloud.stream.converter.KryoMessageConverter;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -727,6 +729,43 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		assertTrue(reply.getPayload() instanceof Station);
 		producerBinding.unbind();
 		consumerBinding.unbind();
+	}
+
+	@Test
+	public void testQualifiedErrorInfrastructure() throws Exception {
+		@SuppressWarnings("rawtypes")
+		AbstractTestBinder binder = getBinder();
+		BindingProperties outputBindingProperties = createProducerBindingProperties(createProducerProperties());
+		DirectChannel outputChannel1 = createBindableChannel("output1", outputBindingProperties);
+		outputBindingProperties.getProducer().setQualifier("q1");
+		outputBindingProperties.getProducer().setErrorChannelEnabled(true);
+		Binding<?> binding1 = binder.bindProducer("output", outputChannel1, outputBindingProperties.getProducer());
+		DirectChannel outputChannel2 = createBindableChannel("output1", outputBindingProperties);
+		outputBindingProperties.getProducer().setQualifier("q2");
+		Binding<?> binding2 = binder.bindProducer("output", outputChannel1, outputBindingProperties.getProducer());
+
+		BindingProperties inputBindingroperties = createConsumerBindingProperties(createConsumerProperties());
+		DirectChannel input1Channel = createBindableChannel("input1", inputBindingroperties);
+		DirectChannel input2Channel = createBindableChannel("input2", inputBindingroperties);
+		inputBindingroperties.getConsumer().setQualifier("q3");
+		Binding<?> binding3 = binder.bindConsumer("input", "group", input1Channel, inputBindingroperties.getConsumer());
+		inputBindingroperties.getConsumer().setQualifier("q4");
+		Binding<?> binding4 = binder.bindConsumer("input", "group", input2Channel, inputBindingroperties.getConsumer());
+		AbstractApplicationContext context = binder.getCoreBinder().getApplicationContext();
+		String errorBaseName = "input.group.errors";
+		if (this.getClass().getName().contains("Kafka")) {
+			errorBaseName += "-0"; // KafkaTestBinder modifies
+		}
+		context.getBean("q1.output.errors", MessageChannel.class);
+		context.getBean("q2.output.errors", MessageChannel.class);
+		context.getBean("q3." + errorBaseName, MessageChannel.class);
+		context.getBean("q4." + errorBaseName, MessageChannel.class);
+		context.getBean("q3." + errorBaseName + ".recoverer", ErrorMessageSendingRecoverer.class);
+		context.getBean("q4." + errorBaseName + ".recoverer", ErrorMessageSendingRecoverer.class);
+		binding1.unbind();
+		binding2.unbind();
+		binding3.unbind();
+		binding4.unbind();
 	}
 
 	@SuppressWarnings("unused") // it is used via reflection

@@ -80,6 +80,13 @@ public class ProducerProperties {
 
 	private boolean errorChannelEnabled = false;
 
+	/**
+	 * When using multiple bindings that reference the same destination, set a different
+	 * qualifier for each binding so that beans created for the binder (error channels,
+	 * etc) will get a unique bean name with this value as a prefix followed by ".".
+	 */
+	private String qualifier;
+
 	public Expression getPartitionKeyExpression() {
 		return partitionKeyExpression;
 	}
@@ -186,6 +193,14 @@ public class ProducerProperties {
 
 	public void setPartitionSelectorName(String partitionSelectorName) {
 		this.partitionSelectorName = partitionSelectorName;
+	}
+
+	public String getQualifier() {
+		return this.qualifier;
+	}
+
+	public void setQualifier(String qualifier) {
+		this.qualifier = qualifier;
 	}
 
 }
