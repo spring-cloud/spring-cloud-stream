@@ -41,6 +41,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.ReflectionUtils;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -75,11 +76,11 @@ public class KafkaBinderConfigurationPropertiesTest {
 		ReflectionUtils.makeAccessible(producerFactoryConfigField);
 		Map<String, Object> producerConfigs = (Map<String, Object>) ReflectionUtils.getField(producerFactoryConfigField,
 				producerFactory);
-		assertTrue(producerConfigs.get("batch.size").equals("12345"));
-		assertTrue(producerConfigs.get("linger.ms").equals("100"));
-		assertTrue(producerConfigs.get("key.serializer").equals(ByteArraySerializer.class));
-		assertTrue(producerConfigs.get("value.serializer").equals(ByteArraySerializer.class));
-		assertTrue(producerConfigs.get("compression.type").equals("gzip"));
+		assertEquals("12345", producerConfigs.get("batch.size"));;
+		assertEquals("100", producerConfigs.get("linger.ms"));
+		assertEquals(producerConfigs.get("key.serializer"), ByteArraySerializer.class);
+		assertEquals(producerConfigs.get("value.serializer"), ByteArraySerializer.class);
+		assertEquals("gzip", producerConfigs.get("compression.type"));
 		List<String> bootstrapServers = new ArrayList<>();
 		bootstrapServers.add("10.98.09.199:9082");
 		assertTrue((((String) producerConfigs.get("bootstrap.servers")).contains("10.98.09.199:9082")));
@@ -95,8 +96,8 @@ public class KafkaBinderConfigurationPropertiesTest {
 		ReflectionUtils.makeAccessible(consumerFactoryConfigField);
 		Map<String, Object> consumerConfigs = (Map<String, Object>) ReflectionUtils.getField(consumerFactoryConfigField,
 				consumerFactory);
-		assertTrue(consumerConfigs.get("key.deserializer").equals(ByteArrayDeserializer.class));
-		assertTrue(consumerConfigs.get("value.deserializer").equals(ByteArrayDeserializer.class));
+		assertEquals(consumerConfigs.get("key.deserializer"), ByteArrayDeserializer.class);
+		assertEquals(consumerConfigs.get("value.deserializer"), ByteArrayDeserializer.class);
 		assertTrue((((String) consumerConfigs.get("bootstrap.servers")).contains("10.98.09.199:9082")));
 	}
 

@@ -106,10 +106,10 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 		template.sendDefault("{\"id\":\"123\"}");
 		ConsumerRecord<Integer, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
 
-		assertThat(cr.key().equals(123));
+		assertThat(cr.key()).isEqualTo(123);
 		ObjectMapper om = new ObjectMapper();
 		Long aLong = om.readValue(cr.value(), Long.class);
-		assertThat(aLong.equals(1L));
+		assertThat(aLong).isEqualTo(1L);
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)

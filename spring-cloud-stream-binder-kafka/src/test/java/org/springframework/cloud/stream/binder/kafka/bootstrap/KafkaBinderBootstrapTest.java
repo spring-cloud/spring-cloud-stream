@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.bootstrap;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -35,7 +36,7 @@ public class KafkaBinderBootstrapTest {
 	@Test
 	public void testKafkaBinderConfiguration() throws Exception {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
-				.web(false)
+				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 					"--spring.cloud.stream.kafka.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 		applicationContext.close();
