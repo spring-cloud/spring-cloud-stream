@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
+import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.endpoint.BindingsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,7 +41,7 @@ import org.springframework.context.annotation.Configuration;
 public class BindingsEndpointAutoConfiguration {
 
 	@Bean
-	public BindingsEndpoint bindingsEndpoint(List<InputBindingLifecycle> inputBindings) {
-		return new BindingsEndpoint(inputBindings);
+	public BindingsEndpoint bindingsEndpoint(List<InputBindingLifecycle> inputBindings, List<OutputBindingLifecycle> outputBindings) {
+		return new BindingsEndpoint(inputBindings, outputBindings);
 	}
 }

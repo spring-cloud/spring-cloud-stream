@@ -54,8 +54,21 @@ public interface Bindable {
 
 	/**
 	 * Binds all the outputs associated with this instance.
+	 * @deprecated as of 2.0 in favor of {@link #createAndBindOutputs(BindingService)}
 	 */
+	@Deprecated
 	default void bindOutputs(BindingService adapter) {}
+
+	/**
+	 * Binds all the outputs associated with this instance.
+	 * @param adapter instance of {@link BindingService}
+	 * @return collection of {@link Binding}s
+	 *
+	 * @since 2.0
+	 */
+	default Collection<Binding<Object>> createAndBindOutputs(BindingService adapter) {
+		return Collections.<Binding<Object>>emptyList();
+	}
 
 	/**
 	 * Unbinds all the inputs associated with this instance.

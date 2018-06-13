@@ -176,7 +176,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
 						producerProperties.isUseNativeEncoding()));
 
-		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination, null, outputChannel,
+		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
 
 			@Override

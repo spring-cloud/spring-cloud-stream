@@ -17,9 +17,12 @@
 package org.springframework.cloud.stream.binding;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.springframework.cloud.stream.binder.Binding;
 
 /**
  * A {@link Bindable} component that wraps a generic output binding target. Useful for
@@ -42,7 +45,12 @@ public class SingleBindingTargetBindable<T> implements Bindable {
 
 	@Override
 	public void bindOutputs(BindingService bindingService) {
-		bindingService.bindProducer(bindingTarget, name);
+		this.createAndBindOutputs(bindingService);
+	}
+
+	@Override
+	public Collection<Binding<Object>> createAndBindOutputs(BindingService bindingService) {
+		return Collections.singletonList(bindingService.bindProducer(bindingTarget, name));
 	}
 
 	@Override

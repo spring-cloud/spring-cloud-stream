@@ -55,6 +55,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	private boolean paused;
 
+	private boolean restartable;
+
 	/**
 	 * Creates an instance that associates a given name, group and binding target with an
 	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
@@ -70,6 +72,12 @@ public class DefaultBinding<T> implements Binding<T> {
 		this.group = group;
 		this.target = target;
 		this.lifecycle = lifecycle;
+		this.restartable = StringUtils.hasText(group);
+	}
+
+	public DefaultBinding(String name, T target, Lifecycle lifecycle) {
+		this(name, null, target, lifecycle);
+		this.restartable = true;
 	}
 
 	public String getName() {
@@ -104,7 +112,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	@Override
 	public final synchronized void start() {
 		if (!this.isRunning()) {
-			if (this.lifecycle != null && StringUtils.hasText(this.group)) {
+			if (this.lifecycle != null && this.restartable) {
 				this.lifecycle.start();
 			}
 			else {

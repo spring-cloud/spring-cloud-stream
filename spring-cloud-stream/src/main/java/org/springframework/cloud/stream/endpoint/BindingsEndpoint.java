@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.endpoint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -29,6 +30,7 @@ import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
+import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.util.Assert;
 
 /**
@@ -45,11 +47,14 @@ public class BindingsEndpoint {
 
 	private final List<InputBindingLifecycle> inputBindingLifecycles;
 
+	private final List<OutputBindingLifecycle> outputBindingsLifecycles;
+
 	private final ObjectMapper objectMapper;
 
-	public BindingsEndpoint(List<InputBindingLifecycle> inputBindingLifecycles) {
+	public BindingsEndpoint(List<InputBindingLifecycle> inputBindingLifecycles, List<OutputBindingLifecycle> outputBindingsLifecycles) {
 		Assert.notEmpty(inputBindingLifecycles, "'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
+		this.outputBindingsLifecycles = outputBindingsLifecycles;
 		this.objectMapper = new ObjectMapper();
 	}
 
@@ -78,7 +83,9 @@ public class BindingsEndpoint {
 
 	@ReadOperation
 	public List<?> queryStates() {
-		return objectMapper.convertValue(gatherInputBindings(), List.class);
+		List<Binding<?>> bindings = new ArrayList<>(gatherInputBindings());
+		bindings.addAll(gatherOutputBindings());
+		return objectMapper.convertValue(bindings, List.class);
 	}
 
 	@ReadOperation
@@ -98,8 +105,20 @@ public class BindingsEndpoint {
 		return inputBindings;
 	}
 
+	@SuppressWarnings("unchecked")
+	private List<Binding<?>> gatherOutputBindings() {
+		List<Binding<?>> outputBindings = new ArrayList<>();
+		for (OutputBindingLifecycle inputBindingLifecycle : this.outputBindingsLifecycles) {
+			Collection<Binding<?>> lifecycleInputBindings = (Collection<Binding<?>>) new DirectFieldAccessor(
+					inputBindingLifecycle).getPropertyValue("outputBindings");
+			outputBindings.addAll(lifecycleInputBindings);
+		}
+		return outputBindings;
+	}
+
 	private Binding<?> locateBinding(String name) {
-		return BindingsEndpoint.this.gatherInputBindings().stream()
+		Stream<Binding<?>> bindings = Stream.concat(this.gatherInputBindings().stream(), this.gatherOutputBindings().stream());
+		return bindings
 			.filter(binding -> name.equals(binding.getName()))
 			.findFirst()
 			.orElse(null);

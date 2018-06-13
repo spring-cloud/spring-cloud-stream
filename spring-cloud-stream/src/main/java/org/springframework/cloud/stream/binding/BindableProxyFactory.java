@@ -237,8 +237,18 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		return bindings;
 	}
 
+	/**
+	 * @deprecated in favor of {@link #createAndBindOutputs(BindingService)}
+	 */
 	@Override
+	@Deprecated
 	public void bindOutputs(BindingService bindingService) {
+		this.createAndBindOutputs(bindingService);
+	}
+
+	@Override
+	public Collection<Binding<Object>> createAndBindOutputs(BindingService bindingService) {
+		List<Binding<Object>> bindings = new ArrayList<>();
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Binding outputs for %s:%s", this.namespace, this.type));
 		}
@@ -249,9 +259,10 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type, outputTargetName));
 				}
-				bindingService.bindProducer(boundTargetHolder.getBoundTarget(), outputTargetName);
+				bindings.add(bindingService.bindProducer(boundTargetHolder.getBoundTarget(), outputTargetName));
 			}
 		}
+		return bindings;
 	}
 
 	@Override

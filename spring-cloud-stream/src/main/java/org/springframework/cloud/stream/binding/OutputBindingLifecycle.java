@@ -16,7 +16,10 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.Collection;
 import java.util.Map;
+
+import org.springframework.cloud.stream.binder.Binding;
 
 /**
  * Coordinates binding/unbinding of output binding targets in accordance to the lifecycle
@@ -27,6 +30,10 @@ import java.util.Map;
  * @author Oleg Zhurakousky
  */
 public class OutputBindingLifecycle extends AbstractBindingLifecycle {
+
+	@SuppressWarnings("unused")
+	//It is actually used reflectively since at the moment we do not want to expose it via public method
+	private Collection<Binding<Object>> outputBindings;
 
 	public OutputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
 		super(bindingService, bindables);
@@ -43,7 +50,7 @@ public class OutputBindingLifecycle extends AbstractBindingLifecycle {
 
 	@Override
 	void doStartWithBindable(Bindable bindable) {
-		bindable.bindOutputs(bindingService);
+		this.outputBindings = bindable.createAndBindOutputs(bindingService);
 	}
 
 	@Override
