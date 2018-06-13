@@ -444,7 +444,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		else {
 			errorChannel = new PublishSubscribeChannel();
-			beanFactory.registerSingleton(errorChannelName, errorChannel);
+			this.registerComponentWithBeanFactory(errorChannelName, errorChannel);
 			errorChannel = (PublishSubscribeChannel) beanFactory.initializeBean(errorChannel, errorChannelName);
 		}
 		MessageChannel defaultErrorChannel = null;
@@ -457,7 +457,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			errorBridge.setOutputChannel(defaultErrorChannel);
 			errorChannel.subscribe(errorBridge);
 			String errorBridgeHandlerName = getErrorBridgeName(destination);
-			beanFactory.registerSingleton(errorBridgeHandlerName, errorBridge);
+			this.registerComponentWithBeanFactory(errorBridgeHandlerName, errorBridge);
 			beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
 		}
 		return errorChannel;
@@ -505,7 +505,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		else {
 			errorChannel = new BinderErrorChannel();
-			beanFactory.registerSingleton(errorChannelName, errorChannel);
+			this.registerComponentWithBeanFactory(errorChannelName, errorChannel);
 			errorChannel = (LastSubscriberAwareChannel) beanFactory.initializeBean(errorChannel, errorChannelName);
 		}
 		ErrorMessageSendingRecoverer recoverer;
@@ -516,7 +516,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			recoverer = new ErrorMessageSendingRecoverer(errorChannel, errorMessageStrategy);
 		}
 		String recovererBeanName = getErrorRecovererName(destination, group, consumerProperties);
-		beanFactory.registerSingleton(recovererBeanName, recoverer);
+		this.registerComponentWithBeanFactory(recovererBeanName, recoverer);
 		beanFactory.initializeBean(recoverer, recovererBeanName);
 		MessageHandler handler;
 		if (polled) {
@@ -535,7 +535,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, consumerProperties);
 		if (handler != null) {
-			beanFactory.registerSingleton(errorMessageHandlerName, handler);
+			this.registerComponentWithBeanFactory(errorMessageHandlerName, handler);
 			beanFactory.initializeBean(handler, errorMessageHandlerName);
 			errorChannel.subscribe(handler);
 		}
@@ -544,7 +544,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			errorBridge.setOutputChannel(defaultErrorChannel);
 			errorChannel.subscribe(errorBridge);
 			String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
-			beanFactory.registerSingleton(errorBridgeHandlerName, errorBridge);
+			this.registerComponentWithBeanFactory(errorBridgeHandlerName, errorBridge);
 			beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
 		}
 		return new ErrorInfrastructure(errorChannel, recoverer, handler);
@@ -695,6 +695,18 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	private void doPublishEvent(ApplicationEvent event) {
 		if (this.applicationEventPublisher != null) {
 			this.applicationEventPublisher.publishEvent(event);
+		}
+	}
+
+	private void registerComponentWithBeanFactory(String name, Object component) {
+		if (getApplicationContext().getBeanFactory().containsBean(name)) {
+			throw new IllegalStateException("Failed to register bean with name '" + name + "', since bean with the same name already exists. Possible reason: "
+					+ "You may have multiple bindings with the same 'destination' and 'group' name (consumer side) "
+					+ "and multiple bindings with the same 'destination' name (producer side). Solution: ensure each binding uses different group name (consumer side) "
+					+ "or 'destination' name (producer side)." );
+		}
+		else {
+			getApplicationContext().getBeanFactory().registerSingleton(name, component);
 		}
 	}
 
