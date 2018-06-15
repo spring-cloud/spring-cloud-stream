@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -57,8 +58,10 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 	@Test
 	public void testSendMessage() throws Exception {
 
-		ConfigurableApplicationContext schemaRegistryServerContext = SpringApplication.run(
-				SchemaRegistryServerApplication.class);
+		ConfigurableApplicationContext schemaRegistryServerContext =
+			new SpringApplicationBuilder(SchemaRegistryServerApplication.class)
+			.properties("spring.config.name=schemaregistryserver")
+			.run();
 
 		ConfigurableApplicationContext sourceContext = SpringApplication.run(AvroSourceApplication.class,
 				"--server.port=0",

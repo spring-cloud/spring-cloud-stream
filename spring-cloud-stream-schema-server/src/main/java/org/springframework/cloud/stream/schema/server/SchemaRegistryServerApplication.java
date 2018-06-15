@@ -16,16 +16,18 @@
 
 package org.springframework.cloud.stream.schema.server;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 
 /**
  * @author Vinicius Carvalho
+ * @author Guilherme Blanco
  */
-@SpringBootApplication
+@EnableAutoConfiguration
 @EnableSchemaRegistryServer
 public class SchemaRegistryServerApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(SchemaRegistryServerApplication.class, args);
+		new SpringApplicationBuilder(SchemaRegistryServerApplication.class)
+			.properties("spring.config.name=schemaregistryserver").run(args);
 	}
 }
