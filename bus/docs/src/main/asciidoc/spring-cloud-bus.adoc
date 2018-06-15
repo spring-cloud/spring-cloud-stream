@@ -13,6 +13,47 @@ include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/maste
 
 include::quickstart.adoc[]
 
+== Bus Endpoints
+
+Spring Cloud Bus provides two endpoints, `/actuator/bus-refresh` and `/actuator/bus-env`
+that correspond to individual actuator endpoints in Spring Cloud Commons,
+`/actuator/refresh` and `/actuator/env` respectively.
+
+=== Bus Refresh Endpoint
+The `/actuator/bus-refresh` endpoint clears the `RefreshScope` cache and rebinds
+`@ConfigurationProperties`. See the <<refresh-scope,Refresh Scope>> documentation for
+more information.
+
+To expose the `/actuator/bus-refresh` endpoint, you need to add following configuration to your
+application:
+
+[source,properties]
+----
+management.endpoints.web.exposure.include=bus-refresh
+----
+
+=== Bus Env Endpoint
+The `/actuator/bus-env` endpoint updates each instances environment with the specified
+key/value pair across multiple instances.
+
+To expose the `/actuator/bus-env` endpoint, you need to add following configuration to your
+application:
+
+[source,properties]
+----
+management.endpoints.web.exposure.include=bus-env
+----
+
+The `/actuator/bus-env` endpoint accepts `POST` requests with the following shape:
+
+[source,json]
+----
+{
+	"name": "key1",
+	"value": "value1"
+}
+----
+
 == Addressing an Instance
 
 Each instance of the application has a service ID, whose value can be set with
@@ -27,8 +68,8 @@ constructed in the form of `app:index:id`, where:
 `spring.application.index`, `local.server.port`, `server.port`, or `0` (in that order).
 * `id` is the `vcap.application.instance_id`, if it exists, or a random value.
 
-The HTTP endpoints accept a "`destination`" parameter, such as
-`/bus/refresh?destination=customers:9000`, where `destination` is a service ID. If the ID
+The HTTP endpoints accept a "`destination`" path parameter, such as
+`/bus-refresh/customers:9000`, where `destination` is a service ID. If the ID
 is owned by an instance on the bus, it processes the message, and all other instances
 ignore it.
 
@@ -36,7 +77,7 @@ ignore it.
 
 The "`destination`" parameter is used in a Spring `PathMatcher` (with the path separator
 as a colon -- `:`) to determine if an instance processes the message. Using the example
-from earlier, `/bus/refresh?destination=customers:**` targets all instances of the
+from earlier, `/bus-env/customers:**` targets all instances of the
 "`customers`" service regardless of the rest of the service ID.
 
 == Service ID Must Be Unique
