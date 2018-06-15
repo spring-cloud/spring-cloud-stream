@@ -233,7 +233,15 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			}
 			ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
 					.run(args.toArray(new String[args.size()]));
+
 			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
+			/*
+			 * This will ensure that application defined errorChannel and other beans are accessible within binder's context
+			 * (see https://github.com/spring-cloud/spring-cloud-stream/issues/1384)
+			 */
+			if (this.context != null && binder instanceof ApplicationContextAware) {
+				((ApplicationContextAware)binder).setApplicationContext(this.context);
+			}
 			if (!CollectionUtils.isEmpty(this.listeners)) {
 				for (Listener binderFactoryListener : listeners) {
 					binderFactoryListener.afterBinderContextInitialized(configurationName, binderProducingContext);
