@@ -2,12 +2,22 @@
 
 = Spring Cloud Bus
 
-Spring Cloud Bus links nodes of a distributed system with a lightweight message broker. This can then be used to broadcast state changes (e.g. configuration changes) or other management instructions. A key idea is that the Bus is like a distributed Actuator for a Spring Boot application that is scaled out, but it can also be used as a communication channel between apps. Starters are provided for an AMQP broker as the transport or for Kafka, but the same basic feature set (and some more depending on the transport) is on the roadmap for other transports.
-
+Spring Cloud Bus links the nodes of a distributed system with a lightweight message
+broker. This broker can then be used to broadcast state changes (such as configuration
+changes) or other management instructions. A key idea is that the bus is like a
+distributed actuator for a Spring Boot application that is scaled out. However, it can
+also be used as a communication channel between apps. This project provides starters for
+either an AMQP broker or Kafka as the transport.
 
 == Quick Start
 
-Spring Cloud Bus works by adding Spring Boot autconfiguration if it detects itself on the classpath. All you need to do to enable the bus is to add `spring-cloud-starter-bus-amqp` or `spring-cloud-starter-bus-kafka` to your dependency management and Spring Cloud takes care of the rest. Make sure the broker (RabbitMQ or Kafka) is available and configured: running on localhost you shouldn't have to do anything, but if you are running remotely use Spring Cloud Connectors, or Spring Boot conventions to define the broker credentials, e.g. for Rabbit
+Spring Cloud Bus works by adding Spring Boot autconfiguration if it detects itself on the
+classpath. To enable the bus, add `spring-cloud-starter-bus-amqp` or
+`spring-cloud-starter-bus-kafka` to your dependency management. Spring Cloud takes care of
+the rest. Make sure the broker (RabbitMQ or Kafka) is available and configured. When
+running on localhost, you need not do anything. If you run remotely, use Spring Cloud
+Connectors or Spring Boot conventions to define the broker credentials, as shown in the
+following example for Rabbit:
 
 .application.yml
 ----
@@ -19,9 +29,16 @@ spring:
     password: secret
 ----
 
-The bus currently supports sending messages to all nodes listening or all nodes for a particular service (as defined by Eureka).  More selector criteria may be added in the future (ie. only service X nodes in data center Y, etc...). There are also some http endpoints under the `/bus/*` actuator namespace.  There are currently two implemented.  The first, `/bus/env`, sends key/value pairs to update each node's Spring Environment.  The second, `/bus/refresh`, will reload each application's configuration, just as if they had all been pinged on their `/refresh` endpoint.
+The bus currently supports sending messages to all nodes listening or all nodes for a
+particular service (as defined by Eureka). The `/bus/*` actuator namespace has some HTTP
+endpoints. Currently, two are implemented. The first, `/bus/env`, sends key/value pairs to
+update each node's Spring Environment. The second, `/bus/refresh`, reloads each
+application's configuration, as though they had all been pinged on their `/refresh`
+endpoint.
 
-NOTE: The Bus starters cover Rabbit and Kafka, because those are the two most common implementations, but Spring Cloud Stream is quite flexible and binder will work combined with `spring-cloud-bus`.
+NOTE: The Spring Cloud Bus starters cover Rabbit and Kafka, because those are the two most
+common implementations. However, Spring Cloud Stream is quite flexible, and the binder
+works with `spring-cloud-bus`.
 
 == Building
 
