@@ -36,7 +36,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.SpringApplication;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.schema.SchemaReference;
@@ -67,9 +67,8 @@ public class AvroMessageConverterSerializationTests {
 
 	@Before
 	public void setup() {
-		schemaRegistryServerContext = new SpringApplicationBuilder(SchemaRegistryServerApplication.class)
-			.properties("spring.config.name=schemaregistryserver")
-			.run();
+		schemaRegistryServerContext = SpringApplication
+				.run(SchemaRegistryServerApplication.class);
 	}
 
 	@After
