@@ -20,6 +20,8 @@ import javax.validation.constraints.Min;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import org.springframework.cloud.stream.config.MergableProperties;
+
 /**
  * Common consumer properties.
  *
@@ -30,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Oleg Zhurakousky
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-public class ConsumerProperties {
+public class ConsumerProperties implements MergableProperties{
 
 	/**
 	 * The concurrency setting of the consumer. Default: 1.

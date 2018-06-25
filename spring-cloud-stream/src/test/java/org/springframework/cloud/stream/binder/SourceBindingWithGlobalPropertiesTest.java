@@ -42,7 +42,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 		"spring.cloud.stream.default.contentType=application/json",
 		"spring.cloud.stream.bindings.output.destination=ticktock",
 		"spring.cloud.stream.default.producer.requiredGroups=someGroup",
-		"spring.cloud.stream.bindings.output.producer.headerMode=none" })
+		"spring.cloud.stream.default.producer.partitionCount=1",
+		"spring.cloud.stream.bindings.output.producer.headerMode=none",
+		"spring.cloud.stream.bindings.output.producer.partitionCount=4"})
 public class SourceBindingWithGlobalPropertiesTest {
 
 	@Autowired
@@ -53,7 +55,8 @@ public class SourceBindingWithGlobalPropertiesTest {
 		BindingProperties bindingProperties = serviceProperties.getBindingProperties(Source.OUTPUT);
 		Assertions.assertThat(bindingProperties.getContentType()).isEqualTo("application/json");
 		Assertions.assertThat(bindingProperties.getDestination()).isEqualTo("ticktock");
-		Assertions.assertThat(bindingProperties.getProducer().getRequiredGroups()).containsExactly("someGroup");
+		Assertions.assertThat(bindingProperties.getProducer().getRequiredGroups()).containsExactly("someGroup"); // default propagates to producer
+		Assertions.assertThat(bindingProperties.getProducer().getPartitionCount()).isEqualTo(4); // validates binding property takes precedence over default
 		Assertions.assertThat(bindingProperties.getProducer().getHeaderMode()).isEqualTo(HeaderMode.none);
 	}
 

@@ -95,9 +95,10 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 
 	@Override
 	public T put(String key, T value) {
-		// boot 2 call this first
 		Binder binder = new Binder(ConfigurationPropertySources.get(environment),new PropertySourcesPlaceholdersResolver(environment),this.conversionService, null);
-		binder.bind(defaultsPrefix, Bindable.ofInstance(value));
+		T defaultProperties = BeanUtils.instantiateClass(entryClass);
+		binder.bind(defaultsPrefix, Bindable.ofInstance(defaultProperties));
+		((MergableProperties)defaultProperties).merge((MergableProperties) value);
 		return this.delegate.put(key, value);
 	}
 
