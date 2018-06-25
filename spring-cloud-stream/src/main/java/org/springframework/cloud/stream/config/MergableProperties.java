@@ -47,6 +47,9 @@ public interface MergableProperties {
 	 * - If source property is mergable then merge.
 	 */
 	default void merge(MergableProperties mergable) {
+		if (mergable == null) {
+			return;
+		}
 		for (PropertyDescriptor targetPd : BeanUtils.getPropertyDescriptors(mergable.getClass())) {
 			Method writeMethod = targetPd.getWriteMethod();
 			if (writeMethod != null) {
@@ -62,6 +65,7 @@ public interface MergableProperties {
 							Object value = readMethod.invoke(this);
 							if (value != null) {
 								if (value instanceof MergableProperties) {
+									Object m = readMethod.invoke(mergable);
 									((MergableProperties)value).merge((MergableProperties)readMethod.invoke(mergable));
 								}
 								else {
