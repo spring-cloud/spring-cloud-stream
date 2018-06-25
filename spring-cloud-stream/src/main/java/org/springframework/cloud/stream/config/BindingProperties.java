@@ -37,7 +37,7 @@ import org.springframework.validation.annotation.Validated;
  */
 @JsonInclude(Include.NON_DEFAULT)
 @Validated
-public class BindingProperties {
+public class BindingProperties implements MergableProperties {
 
 	public static final MimeType DEFAULT_CONTENT_TYPE = MimeTypeUtils.APPLICATION_JSON;
 
@@ -153,5 +153,4 @@ public class BindingProperties {
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));
 		return "BindingProperties{" + sb.toString() + "}";
 	}
-
 }
