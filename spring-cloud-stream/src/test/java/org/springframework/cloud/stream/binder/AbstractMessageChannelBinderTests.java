@@ -62,7 +62,7 @@ public class AbstractMessageChannelBinderTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings("unchecked")
 	public void testEndpointLifecycle() throws Exception {
 		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, ProvisioningProvider<ConsumerProperties, ProducerProperties>> binder =
 				context.getBean(AbstractMessageChannelBinder.class);
@@ -106,7 +106,7 @@ public class AbstractMessageChannelBinderTests {
 	}
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings("unchecked")
 	public void testEndpointBinderHasRecoverer() throws Exception {
 		ConfigurableApplicationContext context =
 				new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration()).web(WebApplicationType.NONE).run();

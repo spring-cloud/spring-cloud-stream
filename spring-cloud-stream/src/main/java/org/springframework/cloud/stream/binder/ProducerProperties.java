@@ -16,11 +16,16 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.io.IOException;
+
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Min;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.springframework.cloud.stream.config.MergableProperties;
@@ -189,4 +194,14 @@ public class ProducerProperties implements MergableProperties {
 		this.partitionSelectorName = partitionSelectorName;
 	}
 
+	static class ExpressionSerializer extends JsonSerializer<Expression> {
+
+		@Override
+		public void serialize(Expression expression, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+				throws IOException {
+			if (expression != null) {
+				jsonGenerator.writeString(expression.getExpressionString());
+			}
+		}
+	}
 }
