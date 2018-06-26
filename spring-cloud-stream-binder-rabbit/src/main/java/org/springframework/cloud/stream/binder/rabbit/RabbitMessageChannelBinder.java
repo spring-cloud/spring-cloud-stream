@@ -34,6 +34,7 @@ import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.core.support.BatchingStrategy;
 import org.springframework.amqp.rabbit.core.support.SimpleBatchingStrategy;
+import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.exception.ListenerExecutionFailedException;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
@@ -55,12 +56,12 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
-import org.springframework.cloud.stream.binder.rabbit.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
+import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
@@ -132,8 +133,6 @@ public class RabbitMessageChannelBinder
 
 	private final RabbitProperties rabbitProperties;
 
-	private final ListenerContainerCustomizer containerCustomizer;
-
 	private boolean destroyConnectionFactory;
 
 	private ConnectionFactory connectionFactory;
@@ -157,13 +156,12 @@ public class RabbitMessageChannelBinder
 
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory, RabbitProperties rabbitProperties,
 			RabbitExchangeQueueProvisioner provisioningProvider,
-			ListenerContainerCustomizer containerCustomizer) {
-		super(new String[0], provisioningProvider);
+			ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer) {
+		super(new String[0], provisioningProvider, containerCustomizer);
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		Assert.notNull(rabbitProperties, "rabbitProperties must not be null");
 		this.connectionFactory = connectionFactory;
 		this.rabbitProperties = rabbitProperties;
-		this.containerCustomizer = containerCustomizer == null ? (c, q, g) -> { } : containerCustomizer;
 	}
 
 	/**
@@ -399,7 +397,7 @@ public class RabbitMessageChannelBinder
 		else if (getApplicationContext() != null) {
 			listenerContainer.setApplicationEventPublisher(getApplicationContext());
 		}
-		this.containerCustomizer.configure(listenerContainer, consumerDestination.getName(), group);
+		this.getContainerCustomizer().configure(listenerContainer, consumerDestination.getName(), group);
 		listenerContainer.afterPropertiesSet();
 
 		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);
