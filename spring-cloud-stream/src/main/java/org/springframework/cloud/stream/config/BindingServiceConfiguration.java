@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
@@ -40,7 +39,6 @@ import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResu
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
-import org.springframework.cloud.stream.binding.SingleBindingTargetBindable;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -52,17 +50,13 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.integration.config.HandlerMethodArgumentResolversHolder;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
-import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
@@ -89,11 +83,6 @@ public class BindingServiceConfiguration {
 
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =
 			"streamListenerAnnotationBeanPostProcessor";
-
-	public static final String ERROR_BRIDGE_CHANNEL = "errorBridgeChannel";
-
-	private static final String ERROR_KEY_NAME = "error";
-
 
 	@Bean
 	public MessageChannelStreamListenerResultAdapter messageChannelStreamListenerResultAdapter() {
@@ -181,30 +170,9 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_KEY_NAME + ".destination")
-	public MessageChannel errorBridgeChannel(
-			@Qualifier(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) PublishSubscribeChannel errorChannel) {
-		SubscribableChannel errorBridgeChannel = new DirectChannel();
-		BridgeHandler handler = new BridgeHandler();
-		handler.setOutputChannel(errorBridgeChannel);
-		errorChannel.subscribe(handler);
-		return errorBridgeChannel;
-	}
-
-	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.bindings." + ERROR_KEY_NAME + ".destination")
-	public SingleBindingTargetBindable<MessageChannel> errorBridgeChannelBindable(
-			@Qualifier(ERROR_BRIDGE_CHANNEL) MessageChannel errorBridgeChannel,
-			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		compositeMessageChannelConfigurer.configureOutputChannel(errorBridgeChannel, ERROR_KEY_NAME);
-		return new SingleBindingTargetBindable<>(ERROR_KEY_NAME, errorBridgeChannel);
-	}
-
-	@Bean
 	public DynamicDestinationsBindable dynamicDestinationsBindable() {
 		return new DynamicDestinationsBindable();
 	}
-
 
 	@SuppressWarnings("deprecation")
 	@Bean

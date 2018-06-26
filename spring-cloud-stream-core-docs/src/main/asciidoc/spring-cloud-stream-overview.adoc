@@ -737,18 +737,6 @@ public void error(Message<?> message) {
 
 This may be a convenient option if error handling logic is the same regardless of which handler produced the error.
 
-Also, error messages sent to the `errorChannel` can be published to the specific destination at the broker by configuring a binding named `error` for the outbound target.
-This option provides a mechanism to automatically send error messages to another application bound to that destination or for later retrieval (for example, audit).
-For example, to publish error messages to a broker destination named `myErrors`, set the following property:
-
-[source,text]
-----
-spring.cloud.stream.bindings.error.destination=myErrors.
-----
-
-NOTE: The ability to bridge global error channel to a broker destination essentially provides a mechanism which connects
-the _application-level_ error handling with the _system-level_ error handling.
-
 ===== System Error Handling
 
 System-level error handling implies that the errors are communicated back to the messaging system and, given that not every messaging system

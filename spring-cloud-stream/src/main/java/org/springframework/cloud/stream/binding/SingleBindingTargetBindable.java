@@ -31,7 +31,10 @@ import org.springframework.cloud.stream.binder.Binding;
  *
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ *
+ * @deprecated This class is no longer used by the framework and maybe removed in a future release.
  */
+@Deprecated
 public class SingleBindingTargetBindable<T> implements Bindable {
 
 	private final String name;
