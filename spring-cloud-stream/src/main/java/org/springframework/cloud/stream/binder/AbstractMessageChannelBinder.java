@@ -27,6 +27,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -52,6 +53,8 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
+
+
 
 /**
  * {@link AbstractBinder} that serves as base class for {@link MessageChannel} binders.
@@ -94,23 +97,18 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private final String[] headersToEmbed;
 
+	private final ListenerContainerCustomizer<?> containerCustomizer;
+
 	private ApplicationEventPublisher applicationEventPublisher;
 
-	public AbstractMessageChannelBinder(String[] headersToEmbed,
-			PP provisioningProvider) {
-
-		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
-		this.provisioningProvider = provisioningProvider;
+	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
+		this(headersToEmbed, provisioningProvider, null);
 	}
 
-	/**
-	 * @deprecated As of release 2.0. Please use other constructors.
-	 */
-	@Deprecated
-	protected AbstractMessageChannelBinder(boolean supportsHeadersNatively, String[] headersToEmbed,
-			PP provisioningProvider) {
-
-		this(headersToEmbed, provisioningProvider);
+	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider, ListenerContainerCustomizer<?> containerCustomizer) {
+		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
+		this.provisioningProvider = provisioningProvider;
+		this.containerCustomizer = containerCustomizer == null ? (c, q, g) -> { } : containerCustomizer;
 	}
 
 	@Override
@@ -120,6 +118,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	protected ApplicationEventPublisher getApplicationEventPublisher() {
 		return this.applicationEventPublisher;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected <L> ListenerContainerCustomizer<L> getContainerCustomizer() {
+		return (ListenerContainerCustomizer<L>) this.containerCustomizer;
 	}
 
 	/**

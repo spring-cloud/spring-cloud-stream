@@ -474,7 +474,7 @@ public class BindingServiceTests {
 				Binding.class);
 		int n = 0;
 		while (n++ < 300 && delegate == null) {
-			Thread.sleep(200);
+			Thread.sleep(400);
 		}
 		assertThat(delegate).isSameAs(mockBinding);
 		service.unbindConsumers(inputChannelName);
