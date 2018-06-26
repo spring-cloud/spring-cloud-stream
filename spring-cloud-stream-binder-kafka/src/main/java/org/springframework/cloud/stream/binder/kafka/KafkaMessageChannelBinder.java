@@ -67,6 +67,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
@@ -146,9 +147,13 @@ public class KafkaMessageChannelBinder extends
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
+	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties, KafkaTopicProvisioner provisioningProvider) {
+		this(configurationProperties, provisioningProvider, null);
+	}
+
 	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
-			KafkaTopicProvisioner provisioningProvider) {
-		super(headersToMap(configurationProperties), provisioningProvider);
+			KafkaTopicProvisioner provisioningProvider, ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer) {
+		super(headersToMap(configurationProperties), provisioningProvider, containerCustomizer);
 		this.configurationProperties = configurationProperties;
 		if (StringUtils.hasText(configurationProperties.getTransaction().getTransactionIdPrefix())) {
 			this.transactionManager = new KafkaTransactionManager<>(
@@ -407,6 +412,7 @@ public class KafkaMessageChannelBinder extends
 			this.logger.debug(
 					"Listened partitions: " + StringUtils.collectionToCommaDelimitedString(listenedPartitions));
 		}
+		this.getContainerCustomizer().configure(messageListenerContainer, destination.getName(), group);
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter =
 				new KafkaMessageDrivenChannelAdapter<>(messageListenerContainer);
 		kafkaMessageDrivenChannelAdapter.setMessageConverter(getMessageConverter(extendedConsumerProperties));

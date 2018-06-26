@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.integration;
 
+import java.util.List;
+import java.util.Map;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
@@ -25,6 +28,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.FilteredClassLoader;
@@ -32,9 +36,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binding.BindingService;
+import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,12 +103,24 @@ public class KafkaBinderActuatorTests {
 				.run(context -> {
 					assertThat(context.getBeanNamesForType(MeterRegistry.class)).isEmpty();
 					assertThat(context.getBeanNamesForType(MeterBinder.class)).isEmpty();
+
+					DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(context.getBean(BindingService.class));
+					@SuppressWarnings("unchecked")
+					Map<String, List<Binding<MessageChannel>>> consumerBindings = (Map<String, List<Binding<MessageChannel>>>) channelBindingServiceAccessor
+							.getPropertyValue("consumerBindings");
+					assertThat(new DirectFieldAccessor(consumerBindings.get("input").get(0)).getPropertyValue("lifecycle.messageListenerContainer.beanName"))
+						.isEqualTo("setByCustomizer:input");
 				});
 	}
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	public static class KafkaMetricsTestConfig {
+
+		@Bean
+		public ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer() {
+			return (c, q, g) -> c.setBeanName("setByCustomizer:" + q);
+		}
 
 		@StreamListener(Sink.INPUT)
 		public void process(String payload) throws InterruptedException {

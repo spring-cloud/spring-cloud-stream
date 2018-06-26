@@ -36,12 +36,15 @@ import org.springframework.cloud.stream.binder.kafka.properties.JaasLoginModuleC
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.security.jaas.KafkaJaasLoginModuleInitializer;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
+import org.springframework.lang.Nullable;
 
 /**
  * @author David Turanski
@@ -81,10 +84,10 @@ public class KafkaBinderConfiguration {
 
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
-			KafkaTopicProvisioner provisioningProvider) {
+			KafkaTopicProvisioner provisioningProvider, @Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer<?,?>> listenerContainerCustomizer) {
 
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
-				configurationProperties, provisioningProvider);
+				configurationProperties, provisioningProvider, listenerContainerCustomizer);
 		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
 		return kafkaMessageChannelBinder;
