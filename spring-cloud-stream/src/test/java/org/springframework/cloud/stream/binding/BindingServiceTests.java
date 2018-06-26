@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -444,7 +443,6 @@ public class BindingServiceTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	@Ignore // Inconsistent, needs fixing
 	public void testLateBindingConsumer() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		properties.setBindingRetryInterval(1);
@@ -476,7 +474,7 @@ public class BindingServiceTests {
 				Binding.class);
 		int n = 0;
 		while (n++ < 300 && delegate == null) {
-			Thread.sleep(100);
+			Thread.sleep(200);
 		}
 		assertThat(delegate).isSameAs(mockBinding);
 		service.unbindConsumers(inputChannelName);
