@@ -69,26 +69,4 @@ public abstract class JavaClassMimeTypeUtils {
 		}
 		return mimeType;
 	}
-
-	/**
-	 * Retrieve the class name from the type parameter in {@link MimeType}.
-	 *
-	 * @param mimeType {@link MimeType} to retrieve class name from
-	 * @return class name from the type parameter in MimeType and null if the class name cannot be determined
-	 */
-	public static String classNameFromMimeType(MimeType mimeType) {
-		Assert.notNull(mimeType, "mimeType cannot be null.");
-		String className = mimeType.getParameter("type");
-		if (className == null) {
-			return null;
-		}
-		// unwrap quotes if any
-		className = className.replace("\"", "");
-
-		// restore trailing ';'
-		if (className.contains("[L")) {
-			className += ";";
-		}
-		return className;
-	}
 }

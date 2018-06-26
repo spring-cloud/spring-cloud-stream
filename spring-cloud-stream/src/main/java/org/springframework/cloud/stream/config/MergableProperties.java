@@ -65,7 +65,6 @@ public interface MergableProperties {
 							Object value = readMethod.invoke(this);
 							if (value != null) {
 								if (value instanceof MergableProperties) {
-									Object m = readMethod.invoke(mergable);
 									((MergableProperties)value).merge((MergableProperties)readMethod.invoke(mergable));
 								}
 								else {
