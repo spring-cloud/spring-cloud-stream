@@ -112,15 +112,15 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		ProductCountApplication.Foo foo = context.getBean(ProductCountApplication.Foo.class);
 		assertThat(foo.getProductStock(123).equals(1L));
 
-		//perform assertions on HostInfo related methods in InteractiveQueryServices
-		InteractiveQueryServices interactiveQueryServices = context.getBean(InteractiveQueryServices.class);
-		HostInfo currentHostInfo = interactiveQueryServices.getCurrentHostInfo();
+		//perform assertions on HostInfo related methods in InteractiveQueryService
+		InteractiveQueryService interactiveQueryService = context.getBean(InteractiveQueryService.class);
+		HostInfo currentHostInfo = interactiveQueryService.getCurrentHostInfo();
 		assertThat(currentHostInfo.host() + ":" + currentHostInfo.port()).isEqualTo(embeddedKafka.getBrokersAsString());
 
-		HostInfo hostInfo = interactiveQueryServices.getHostInfo("prod-id-count-store", 123, new IntegerSerializer());
+		HostInfo hostInfo = interactiveQueryService.getHostInfo("prod-id-count-store", 123, new IntegerSerializer());
 		assertThat(hostInfo.host() + ":" + hostInfo.port()).isEqualTo(embeddedKafka.getBrokersAsString());
 
-		HostInfo hostInfoFoo = interactiveQueryServices.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer());
+		HostInfo hostInfoFoo = interactiveQueryService.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer());
 		assertThat(hostInfoFoo).isNull();
 	}
 
@@ -143,20 +143,20 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		}
 
 		@Bean
-		public Foo foo(InteractiveQueryServices interactiveQueryServices) {
-			return new Foo(interactiveQueryServices);
+		public Foo foo(InteractiveQueryService interactiveQueryService) {
+			return new Foo(interactiveQueryService);
 		}
 
 		static class Foo {
-			InteractiveQueryServices interactiveQueryServices;
+			InteractiveQueryService interactiveQueryService;
 
-			Foo(InteractiveQueryServices interactiveQueryServices) {
-				this.interactiveQueryServices = interactiveQueryServices;
+			Foo(InteractiveQueryService interactiveQueryService) {
+				this.interactiveQueryService = interactiveQueryService;
 			}
 
 			public Long getProductStock(Integer id) {
 				ReadOnlyKeyValueStore<Object, Object> keyValueStore =
-						interactiveQueryServices.getQueryableStore("prod-id-count-store", QueryableStoreTypes.keyValueStore());
+						interactiveQueryService.getQueryableStore("prod-id-count-store", QueryableStoreTypes.keyValueStore());
 
 				return (Long) keyValueStore.get(id);
 			}

@@ -149,9 +149,9 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public InteractiveQueryServices interactiveQueryServices(KafkaStreamsRegistry kafkaStreamsRegistry,
+	public InteractiveQueryService interactiveQueryServices(KafkaStreamsRegistry kafkaStreamsRegistry,
 															KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
-		return new InteractiveQueryServices(kafkaStreamsRegistry, binderConfigurationProperties);
+		return new InteractiveQueryService(kafkaStreamsRegistry, binderConfigurationProperties);
 	}
 
 	@Bean

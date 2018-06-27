@@ -27,7 +27,7 @@ import org.apache.kafka.streams.state.QueryableStoreType;
  * @author Soby Chacko
  * @author Renwei Han
  * @since 2.0.0
- * @deprecated in favor of {@link InteractiveQueryServices}
+ * @deprecated in favor of {@link InteractiveQueryService}
  */
 public class QueryableStoreRegistry {
 
@@ -44,7 +44,7 @@ public class QueryableStoreRegistry {
 	 * @param storeType type of the queryable store
 	 * @param <T>       generic queryable store
 	 * @return queryable store.
-	 * @deprecated in favor of {@link InteractiveQueryServices#getQueryableStore(String, QueryableStoreType)}
+	 * @deprecated in favor of {@link InteractiveQueryService#getQueryableStore(String, QueryableStoreType)}
 	 */
 	public <T> T getQueryableStoreType(String storeName, QueryableStoreType<T> storeType) {
 

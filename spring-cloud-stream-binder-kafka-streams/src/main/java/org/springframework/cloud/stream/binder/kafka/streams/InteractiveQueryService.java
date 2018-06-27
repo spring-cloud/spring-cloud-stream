@@ -39,7 +39,7 @@ import org.springframework.util.StringUtils;
  * @author Renwei Han
  * @since 2.1.0
  */
-public class InteractiveQueryServices {
+public class InteractiveQueryService {
 
 	private final KafkaStreamsRegistry kafkaStreamsRegistry;
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
@@ -49,8 +49,8 @@ public class InteractiveQueryServices {
 	 * @param kafkaStreamsRegistry holding {@link KafkaStreamsRegistry}
 	 * @param binderConfigurationProperties Kafka Streams binder configuration properties
 	 */
-	public InteractiveQueryServices(KafkaStreamsRegistry kafkaStreamsRegistry,
-									KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
+	public InteractiveQueryService(KafkaStreamsRegistry kafkaStreamsRegistry,
+								KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 		this.binderConfigurationProperties = binderConfigurationProperties;
 	}
