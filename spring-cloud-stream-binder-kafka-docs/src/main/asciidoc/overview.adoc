@@ -473,7 +473,7 @@ public class Application {
 == Error Channels
 
 Starting with version 1.3, the binder unconditionally sends exceptions to an error channel for each consumer destination and can also be configured to send async producer send failures to an error channel.
-See <<binder-error-channels>> for more information.
+See <<spring-cloud-stream-overview-error-handling>> for more information.
 
 The payload of the `ErrorMessage` for a send failure is a `KafkaSendFailureException` with properties:
 
