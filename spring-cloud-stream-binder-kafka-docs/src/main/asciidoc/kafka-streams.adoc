@@ -652,3 +652,17 @@ else {
     //query from the remote host
 }
 ----
+
+== Accessing the underlying KafkaStreams object
+
+`StreamBuilderFactoryBean` from spring-kafka that is responsible for constructing the `KafkaStreams` object can be accessed programmatically.
+Each `StreamBuilderFactoryBean` is registered as `stream-builder` and appended with the `StreamListener` method name.
+If your `StreamListener` method is named as `process` for example, the stream builder bean is named as `stream-builder-process`.
+Since this is a factory bean, it should be accessed by prepending an ampersand (`&`) when accessing it programmatically.
+Following is an example and it assumes the `StreamListener` method is named as `process`
+
+[source]
+----
+StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
+			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
+----

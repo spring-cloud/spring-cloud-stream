@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,7 +34,6 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.state.KeyValueStore;
-
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 
@@ -386,12 +384,11 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext.getBeanFactory();
 		StreamsBuilderFactoryBean streamsBuilder = new StreamsBuilderFactoryBean();
 		streamsBuilder.setAutoStartup(false);
-		String uuid = UUID.randomUUID().toString();
 		BeanDefinition streamsBuilderBeanDefinition =
 				BeanDefinitionBuilder.genericBeanDefinition((Class<StreamsBuilderFactoryBean>) streamsBuilder.getClass(), () -> streamsBuilder)
 				.getRawBeanDefinition();
-		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("stream-builder-" + uuid, streamsBuilderBeanDefinition);
-		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean("&stream-builder-" + uuid, StreamsBuilderFactoryBean.class);
+		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("stream-builder-" + method.getName(), streamsBuilderBeanDefinition);
+		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean("&stream-builder-" + method.getName(), StreamsBuilderFactoryBean.class);
 		String group = bindingProperties.getGroup();
 		if (!StringUtils.hasText(group)) {
 			group = binderConfigurationProperties.getApplicationId();
@@ -421,7 +418,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		BeanDefinition streamsConfigBeanDefinition =
 				BeanDefinitionBuilder.genericBeanDefinition((Class<StreamsConfig>) streamsConfig.getClass(), () -> streamsConfig)
 						.getRawBeanDefinition();
-		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("streamsConfig-" + uuid, streamsConfigBeanDefinition);
+		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("streamsConfig-" + method.getName(), streamsConfigBeanDefinition);
 
 		streamsBuilder.setStreamsConfig(streamsConfig);
 		methodStreamsBuilderFactoryBeanMap.put(method, streamsBuilderX);
