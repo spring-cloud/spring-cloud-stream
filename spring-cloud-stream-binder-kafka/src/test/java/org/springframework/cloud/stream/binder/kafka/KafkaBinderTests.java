@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +49,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -660,21 +662,51 @@ public class KafkaBinderTests extends
 		assertThat(receivedMessage.getPayload()).isEqualTo(testMessagePayload.getBytes());
 		if (HeaderMode.embeddedHeaders.equals(headerMode)) {
 			assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
+
 			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
 					.isEqualTo(producerName);
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_PARTITION)).isEqualTo(0);
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_OFFSET))
+					.isEqualTo(0);
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TIMESTAMP)).isNotNull();
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TIMESTAMP_TYPE))
+					.isEqualTo(TimestampType.CREATE_TIME.toString());
+
 			assertThat(((String) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
 					.startsWith("failed to send Message to channel 'input'");
 			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
 					.isNotNull();
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
 		}
 		else if (!HeaderMode.none.equals(headerMode)) {
 			assertThat(handler.getInvocationCount()).isEqualTo(consumerProperties.getMaxAttempts());
+
 			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
 					.isEqualTo(producerName.getBytes(StandardCharsets.UTF_8));
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_PARTITION))
+					.isEqualTo(ByteBuffer.allocate(Integer.BYTES).putInt(0).array());
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_OFFSET))
+					.isEqualTo(ByteBuffer.allocate(Long.BYTES).putLong(0).array());
+
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TIMESTAMP)).isNotNull();
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TIMESTAMP_TYPE))
+					.isEqualTo(TimestampType.CREATE_TIME.toString().getBytes());
+
 			assertThat(new String((byte[]) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
 					.startsWith("failed to send Message to channel 'input'");
+
 			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
 					.isNotNull();
+
+			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
 		}
 		else {
 			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC)).isNull();

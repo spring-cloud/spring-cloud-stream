@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -130,12 +131,21 @@ public class KafkaMessageChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
+	public static final String X_EXCEPTION_FQCN = "x-exception-fqcn";
+
 	public static final String X_EXCEPTION_STACKTRACE = "x-exception-stacktrace";
 
 	public static final String X_EXCEPTION_MESSAGE = "x-exception-message";
 
 	public static final String X_ORIGINAL_TOPIC = "x-original-topic";
 
+	public static final String X_ORIGINAL_PARTITION = "x-original-partition";
+
+	public static final String X_ORIGINAL_OFFSET = "x-original-offset";
+
+	public static final String X_ORIGINAL_TIMESTAMP = "x-original-timestamp";
+
+	public static final String X_ORIGINAL_TIMESTAMP_TYPE = "x-original-timestamp-type";
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
@@ -656,7 +666,7 @@ public class KafkaMessageChannelBinder extends
 			DlqSender<?,?> dlqSender = new DlqSender(kafkaTemplate);
 
 			return message -> {
-				@SuppressWarnings("unchecked")
+
 				final ConsumerRecord<Object, Object> record = message.getHeaders()
 						.get(KafkaHeaders.RAW_DATA, ConsumerRecord.class);
 
@@ -683,11 +693,25 @@ public class KafkaMessageChannelBinder extends
 				Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
 				AtomicReference<ConsumerRecord<?, ?>> recordToSend = new AtomicReference<>(record);
 				if (message.getPayload() instanceof Throwable) {
+
 					Throwable throwable = (Throwable) message.getPayload();
+
 					HeaderMode headerMode = properties.getHeaderMode();
+
 					if (headerMode == null || HeaderMode.headers.equals(headerMode)) {
-						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
-								record.topic().getBytes(StandardCharsets.UTF_8)));
+
+						kafkaHeaders.add(
+								new RecordHeader(X_ORIGINAL_TOPIC, record.topic().getBytes(StandardCharsets.UTF_8)));
+						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_PARTITION,
+								ByteBuffer.allocate(Integer.BYTES).putInt(record.partition()).array()));
+						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_OFFSET,
+								ByteBuffer.allocate(Long.BYTES).putLong(record.offset()).array()));
+						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TIMESTAMP,
+								ByteBuffer.allocate(Long.BYTES).putLong(record.timestamp()).array()));
+						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TIMESTAMP_TYPE,
+								record.timestampType().toString().getBytes(StandardCharsets.UTF_8)));
+						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_FQCN,
+								throwable.getClass().getName().getBytes(StandardCharsets.UTF_8)));
 						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
 								throwable.getMessage().getBytes(StandardCharsets.UTF_8)));
 						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
@@ -696,14 +720,18 @@ public class KafkaMessageChannelBinder extends
 					else if (HeaderMode.embeddedHeaders.equals(headerMode)) {
 						try {
 							MessageValues messageValues = EmbeddedHeaderUtils
-									.extractHeaders(MessageBuilder.withPayload((byte[]) record.value()).build(),
-											false);
+									.extractHeaders(MessageBuilder.withPayload((byte[]) record.value()).build(), false);
 							messageValues.put(X_ORIGINAL_TOPIC, record.topic());
+							messageValues.put(X_ORIGINAL_PARTITION, record.partition());
+							messageValues.put(X_ORIGINAL_OFFSET, record.offset());
+							messageValues.put(X_ORIGINAL_TIMESTAMP, record.timestamp());
+							messageValues.put(X_ORIGINAL_TIMESTAMP_TYPE, record.timestampType().toString());
+							messageValues.put(X_EXCEPTION_FQCN, throwable.getClass().getName());
 							messageValues.put(X_EXCEPTION_MESSAGE, throwable.getMessage());
 							messageValues.put(X_EXCEPTION_STACKTRACE, getStackTraceAsString(throwable));
 
-							final String[] headersToEmbed = new ArrayList<>(messageValues.keySet()).toArray(
-									new String[messageValues.keySet().size()]);
+							final String[] headersToEmbed = new ArrayList<>(messageValues.keySet())
+									.toArray(new String[messageValues.keySet().size()]);
 							byte[] payload = EmbeddedHeaderUtils.embedHeaders(messageValues,
 									EmbeddedHeaderUtils.headersToEmbed(headersToEmbed));
 							recordToSend.set(new ConsumerRecord<Object, Object>(record.topic(), record.partition(),
@@ -715,8 +743,7 @@ public class KafkaMessageChannelBinder extends
 					}
 				}
 				String dlqName = StringUtils.hasText(kafkaConsumerProperties.getDlqName())
-						? kafkaConsumerProperties.getDlqName()
-						: "error." + record.topic() + "." + group;
+						? kafkaConsumerProperties.getDlqName() : "error." + record.topic() + "." + group;
 				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName);
 			};
 		}
