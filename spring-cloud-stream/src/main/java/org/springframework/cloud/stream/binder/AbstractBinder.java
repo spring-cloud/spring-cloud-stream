@@ -66,7 +66,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	@Autowired(required=false) // this would need to be refactored into constructor in the future
 	@StreamRetryTemplate
-	private RetryTemplate retryTemplate;
+	private RetryTemplate consumerBindingRetryTemplate;
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -178,7 +178,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * @return The retry template
 	 */
 	protected RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
-		RetryTemplate rt = this.retryTemplate;
+		RetryTemplate rt = this.consumerBindingRetryTemplate;
 		if (rt == null) {
 			rt = new RetryTemplate();
 			SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
