@@ -844,7 +844,7 @@ essentially allowing you to build your own re-try logic within the handler itsel
 ===== Retry Template
 
 The `RetryTemplate` is part of the https://github.com/spring-projects/spring-retry[Spring Retry] library.
-While it is out of scope of this dcument to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
+While it is out of scope of this document to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
 the `RetryTemplate`:
 
 maxAttempts::
