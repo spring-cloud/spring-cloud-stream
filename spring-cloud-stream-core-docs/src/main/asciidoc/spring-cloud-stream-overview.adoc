@@ -856,7 +856,7 @@ essentially allowing you to build your own re-try logic within the handler itsel
 ===== Retry Template
 
 The `RetryTemplate` is part of the https://github.com/spring-projects/spring-retry[Spring Retry] library.
-While it is out of scope of this dcument to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
+While it is out of scope of this document to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
 the `RetryTemplate`:
 
 maxAttempts::
@@ -877,8 +877,18 @@ The backoff multiplier.
 Default 2.0.
 
 While the preceding settings are sufficient for majority of the customization requirements, they may not satisfy certain complex requirements at, which
-point you may want to provide your own instance of the `RetryTemplate`. To do so configure it as a `@Bean` in your application configuration. The application provided
-instance overrides the one provided by the framework.
+point you may want to provide your own instance of the `RetryTemplate`. To do so configure it as a bean in your application configuration. The application provided
+instance will override the one provided by the framework. Also, to avoid conflicts you must qualify the instance of the `RetryTemplate` you want to be used by the binder
+as `@StreamRetryTemplate`. For example,
+
+[source,java]
+----
+@StreamRetryTemplate
+public RetryTemplate myRetryTemplate() {
+    return new RetryTemplate();
+}
+----
+As you can see from the above example you don't need to annotate it with `@Bean` since `@StreamRetryTemplate` is a qualified `@Bean`.
 
 [[spring-cloud-stream-overview-reactive-programming-support]]
 === Reactive Programming Support

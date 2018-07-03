@@ -23,6 +23,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -64,7 +65,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	private volatile EvaluationContext evaluationContext;
 
 	@Autowired(required=false) // this would need to be refactored into constructor in the future
-	private RetryTemplate retryTemplate;
+	@StreamRetryTemplate
+	private RetryTemplate consumerBindingRetryTemplate;
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -176,7 +178,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * @return The retry template
 	 */
 	protected RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
-		RetryTemplate rt = this.retryTemplate;
+		RetryTemplate rt = this.consumerBindingRetryTemplate;
 		if (rt == null) {
 			rt = new RetryTemplate();
 			SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
