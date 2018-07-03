@@ -207,7 +207,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			// Initialize the domain with a unique name based on the bootstrapping context
 			// setting
 			ConfigurableEnvironment environment = this.context != null ? this.context.getEnvironment() : null;
-			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain.") : "";
+			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain") : "";
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
 			args.add("--spring.main.applicationContextClass=" + AnnotationConfigApplicationContext.class.getName());
 			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder()
