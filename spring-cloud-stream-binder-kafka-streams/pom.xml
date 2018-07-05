@@ -57,6 +57,11 @@
 			<artifactId>spring-cloud-stream-binder-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-autoconfigure-processor</artifactId>
+			<optional>true</optional>
+		</dependency>
 		<!-- Following dependencies are needed to support Kafka 1.1.0 client-->
 		<dependency>
 			<groupId>org.apache.kafka</groupId>

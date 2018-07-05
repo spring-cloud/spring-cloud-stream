@@ -23,10 +23,12 @@ import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProv
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Soby Chacko
  */
+@Configuration
 public class KTableBinderConfiguration {
 
 	@Autowired
