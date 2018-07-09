@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.rabbit.properties;
 import javax.validation.constraints.Min;
 
 import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.expression.Expression;
 
 /**
  * @author Marius Bogoevici
@@ -69,12 +70,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	/**
 	 * when using a delayed message exchange, a SpEL expression to determine the delay to apply to messages
 	 */
-	private String delayExpression;
+	private Expression delayExpression;
 
 	/**
 	 * a custom routing key when publishing messages; default is the destination name; suffixed by "-partition" when partitioned
 	 */
-	private String routingKeyExpression;
+	private Expression routingKeyExpression;
 
 	/**
 	 * the channel name to which to send publisher confirms (acks) if the connection
@@ -167,19 +168,19 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 		this.transacted = transacted;
 	}
 
-	public String getDelayExpression() {
+	public Expression getDelayExpression() {
 		return this.delayExpression;
 	}
 
-	public void setDelayExpression(String delayExpression) {
+	public void setDelayExpression(Expression delayExpression) {
 		this.delayExpression = delayExpression;
 	}
 
-	public String getRoutingKeyExpression() {
+	public Expression getRoutingKeyExpression() {
 		return this.routingKeyExpression;
 	}
 
-	public void setRoutingKeyExpression(String routingKeyExpression) {
+	public void setRoutingKeyExpression(Expression routingKeyExpression) {
 		this.routingKeyExpression = routingKeyExpression;
 	}
 

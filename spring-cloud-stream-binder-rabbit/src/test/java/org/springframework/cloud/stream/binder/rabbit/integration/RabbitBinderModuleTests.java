@@ -299,7 +299,7 @@ public class RabbitBinderModuleTests {
 		RabbitProducerProperties rabbitProducerProperties =
 				(RabbitProducerProperties)((ExtendedPropertiesBinder) rabbitBinder).getExtendedProducerProperties("output");
 
-		assertThat(rabbitProducerProperties.getRoutingKeyExpression()).isEqualTo("fooRoutingKey");
+		assertThat(rabbitProducerProperties.getRoutingKeyExpression().getExpressionString()).isEqualTo("fooRoutingKey");
 		assertThat(rabbitProducerProperties.getBatchSize()).isEqualTo(512);
 
 		RabbitConsumerProperties rabbitConsumerProperties =

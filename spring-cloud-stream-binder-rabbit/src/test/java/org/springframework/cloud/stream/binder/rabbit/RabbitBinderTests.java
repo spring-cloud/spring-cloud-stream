@@ -162,7 +162,7 @@ public class RabbitBinderTests extends
 		ExtendedProducerProperties<RabbitProducerProperties> props = new ExtendedProducerProperties<>(
 				new RabbitProducerProperties());
 		if (testName.getMethodName().equals("testPartitionedModuleSpEL")) {
-			props.getExtension().setRoutingKeyExpression("'part.0'");
+			props.getExtension().setRoutingKeyExpression(spelExpressionParser.parseExpression("'part.0'"));
 		}
 		return props;
 	}
@@ -579,7 +579,7 @@ public class RabbitBinderTests extends
 		producerProperties.setPartitionSelectorClass(TestPartitionSelectorClass.class);
 		producerProperties.setPartitionCount(1);
 		producerProperties.getExtension().setTransacted(true);
-		producerProperties.getExtension().setDelayExpression("42");
+		producerProperties.getExtension().setDelayExpression(spelExpressionParser.parseExpression("42"));
 		producerProperties.setRequiredGroups("prodPropsRequired");
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
@@ -1344,7 +1344,7 @@ public class RabbitBinderTests extends
 	public void testRoutingKeyExpression() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
-		producerProperties.getExtension().setRoutingKeyExpression("payload.field");
+		producerProperties.getExtension().setRoutingKeyExpression(spelExpressionParser.parseExpression("payload.field"));
 
 		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 		output.setBeanName("rkeProducer");
@@ -1381,10 +1381,10 @@ public class RabbitBinderTests extends
 	public void testRoutingKeyExpressionPartitionedAndDelay() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
-		producerProperties.getExtension().setRoutingKeyExpression("payload.field");
+		producerProperties.getExtension().setRoutingKeyExpression(spelExpressionParser.parseExpression("payload.field"));
 		// requires delayed message exchange plugin; tested locally
 //		producerProperties.getExtension().setDelayedExchange(true);
-		producerProperties.getExtension().setDelayExpression("1000");
+		producerProperties.getExtension().setDelayExpression(spelExpressionParser.parseExpression("1000"));
 		producerProperties.setPartitionKeyExpression(new ValueExpression<>(0));
 
 		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
