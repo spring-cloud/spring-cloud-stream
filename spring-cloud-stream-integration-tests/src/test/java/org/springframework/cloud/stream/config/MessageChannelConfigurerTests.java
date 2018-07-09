@@ -53,7 +53,7 @@ import static org.junit.Assert.assertNull;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = { MessageChannelConfigurerTests.TestSink.class,
-		MessageChannelConfigurerTests.TestSource.class })
+		MessageChannelConfigurerTests.TestSource.class, SpelExpressionConverterConfiguration.class})
 public class MessageChannelConfigurerTests {
 
 	@Autowired
@@ -64,8 +64,6 @@ public class MessageChannelConfigurerTests {
 
 	@Autowired
 	private CompositeMessageConverterFactory messageConverterFactory;
-
-	private ObjectMapper objectMapper = new ObjectMapper();
 
 	@Autowired
 	private MessageCollector messageCollector;

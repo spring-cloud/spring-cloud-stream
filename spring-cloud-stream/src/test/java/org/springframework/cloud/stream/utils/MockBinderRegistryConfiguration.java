@@ -21,8 +21,10 @@ import java.util.Collections;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
+import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * A simple configuration that creates mock
@@ -30,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Marius Bogoevici
  */
 @Configuration
+@Import(SpelExpressionConverterConfiguration.class)
 public class MockBinderRegistryConfiguration {
 
 	@Bean
