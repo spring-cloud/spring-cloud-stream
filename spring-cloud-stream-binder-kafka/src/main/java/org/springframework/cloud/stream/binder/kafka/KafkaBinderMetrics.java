@@ -20,11 +20,17 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.binder.MeterBinder;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -51,8 +57,11 @@ import org.springframework.util.ObjectUtils;
  * @author Oleg Zhurakousky
  * @author Jon Schneider
  * @author Thomas Cheyney
+ * @author Gary Russell
  */
 public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
+
+	private static final int DEFAULT_TIMEOUT = 60;
 
 	private final static Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
 
@@ -68,6 +77,8 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 	private Consumer<?, ?> metadataConsumer;
 
+	private int timeout = DEFAULT_TIMEOUT;
+
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties,
 			ConsumerFactory<?, ?> defaultConsumerFactory, @Nullable MeterRegistry meterRegistry) {
@@ -82,6 +93,10 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 			KafkaBinderConfigurationProperties binderConfigurationProperties) {
 
 		this(binder, binderConfigurationProperties, null, null);
+	}
+
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
 
 	@Override
@@ -106,33 +121,56 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 	}
 
 	private double calculateConsumerLagOnTopic(String topic, String group) {
-		long lag = 0;
+		ExecutorService exec = Executors.newSingleThreadExecutor();
+		Future<Long> future = exec.submit(() -> {
+
+			long lag = 0;
+			try {
+				if (metadataConsumer == null) {
+					synchronized(KafkaBinderMetrics.this) {
+						if (metadataConsumer == null) {
+							metadataConsumer = createConsumerFactory(group).createConsumer();
+						}
+					}
+				}
+				synchronized (metadataConsumer) {
+					List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
+					List<TopicPartition> topicPartitions = new LinkedList<>();
+					for (PartitionInfo partitionInfo : partitionInfos) {
+						topicPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
+					}
+
+					Map<TopicPartition, Long> endOffsets = metadataConsumer.endOffsets(topicPartitions);
+
+					for (Map.Entry<TopicPartition, Long> endOffset : endOffsets.entrySet()) {
+						OffsetAndMetadata current = metadataConsumer.committed(endOffset.getKey());
+						if (current != null) {
+							lag += endOffset.getValue() - current.offset();
+						}
+						else {
+							lag += endOffset.getValue();
+						}
+					}
+				}
+			}
+			catch (Exception e) {
+				LOG.debug("Cannot generate metric for topic: " + topic, e);
+			}
+			return lag;
+		});
 		try {
-			if (metadataConsumer == null) {
-				metadataConsumer = createConsumerFactory(group).createConsumer();
-			}
-			List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
-			List<TopicPartition> topicPartitions = new LinkedList<>();
-			for (PartitionInfo partitionInfo : partitionInfos) {
-				topicPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
-			}
-
-			Map<TopicPartition, Long> endOffsets = metadataConsumer.endOffsets(topicPartitions);
-
-			for (Map.Entry<TopicPartition, Long> endOffset : endOffsets.entrySet()) {
-				OffsetAndMetadata current = metadataConsumer.committed(endOffset.getKey());
-				if (current != null) {
-					lag += endOffset.getValue() - current.offset();
-				}
-				else {
-					lag += endOffset.getValue();
-				}
-			}
+			return future.get(this.timeout, TimeUnit.SECONDS);
 		}
-		catch (Exception e) {
-			LOG.debug("Cannot generate metric for topic: " + topic, e);
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return 0L;
 		}
-		return lag;
+		catch (ExecutionException | TimeoutException e) {
+			return 0L;
+		}
+		finally {
+			exec.shutdownNow();
+		}
 	}
 
 	private ConsumerFactory<?, ?> createConsumerFactory(String group) {

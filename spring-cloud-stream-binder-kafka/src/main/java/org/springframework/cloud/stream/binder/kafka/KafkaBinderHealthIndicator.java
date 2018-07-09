@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,25 +78,31 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 			public Health call() {
 				try {
 					if (metadataConsumer == null) {
-						metadataConsumer = consumerFactory.createConsumer();
-					}
-					Set<String> downMessages = new HashSet<>();
-					for (String topic : KafkaBinderHealthIndicator.this.binder.getTopicsInUse().keySet()) {
-						List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
-						for (PartitionInfo partitionInfo : partitionInfos) {
-							if (KafkaBinderHealthIndicator.this.binder.getTopicsInUse().get(topic).getPartitionInfos()
-									.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
-								downMessages.add(partitionInfo.toString());
+						synchronized(KafkaBinderHealthIndicator.this) {
+							if (metadataConsumer == null) {
+								metadataConsumer = consumerFactory.createConsumer();
 							}
 						}
 					}
-					if (downMessages.isEmpty()) {
-						return Health.up().build();
-					}
-					else {
-						return Health.down()
-							.withDetail("Following partitions in use have no leaders: ", downMessages.toString())
-							.build();
+					synchronized (metadataConsumer) {
+						Set<String> downMessages = new HashSet<>();
+						for (String topic : KafkaBinderHealthIndicator.this.binder.getTopicsInUse().keySet()) {
+							List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
+							for (PartitionInfo partitionInfo : partitionInfos) {
+								if (KafkaBinderHealthIndicator.this.binder.getTopicsInUse().get(topic).getPartitionInfos()
+										.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
+									downMessages.add(partitionInfo.toString());
+								}
+							}
+						}
+						if (downMessages.isEmpty()) {
+							return Health.up().build();
+						}
+						else {
+							return Health.down()
+								.withDetail("Following partitions in use have no leaders: ", downMessages.toString())
+								.build();
+						}
 					}
 				}
 				catch (Exception e) {
