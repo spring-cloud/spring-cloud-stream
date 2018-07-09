@@ -44,8 +44,7 @@ import org.springframework.integration.config.EnableIntegration;
 @Documented
 @Inherited
 @Configuration
-@Import({ BindingServiceConfiguration.class, BindingBeansRegistrar.class, BinderFactoryConfiguration.class,
-		SpelExpressionConverterConfiguration.class })
+@Import({ BindingServiceConfiguration.class, BindingBeansRegistrar.class, BinderFactoryConfiguration.class})
 @EnableIntegration
 public @interface EnableBinding {
 
