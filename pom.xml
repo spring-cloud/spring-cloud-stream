@@ -12,9 +12,9 @@
 	</parent>
 	<properties>
 		<java.version>1.8</java.version>
-		<spring-kafka.version>2.1.5.RELEASE</spring-kafka.version>
+		<spring-kafka.version>2.1.7.RELEASE</spring-kafka.version>
 		<spring-integration-kafka.version>3.0.3.RELEASE</spring-integration-kafka.version>
-		<kafka.version>1.0.1</kafka.version>
+		<kafka.version>1.1.0</kafka.version>
 		<spring-cloud-stream.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
 	</properties>
 	<modules>
@@ -48,6 +48,13 @@
 				<version>${kafka.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.apache.kafka</groupId>
+				<artifactId>kafka-clients</artifactId>
+				<version>${kafka.version}</version>
+				<classifier>test</classifier>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
 				<groupId>org.springframework.kafka</groupId>
 				<artifactId>spring-kafka</artifactId>
 				<version>${spring-kafka.version}</version>
@@ -77,6 +84,27 @@
 					<exclusion>
 						<groupId>org.slf4j</groupId>
 						<artifactId>slf4j-log4j12</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.kafka</groupId>
+				<artifactId>kafka_2.11</artifactId>
+				<classifier>test</classifier>
+				<scope>test</scope>
+				<version>${kafka.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>jline</groupId>
+						<artifactId>jline</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-log4j12</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>log4j</groupId>
+						<artifactId>log4j</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
