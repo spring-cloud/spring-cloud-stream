@@ -30,11 +30,11 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.Assert;
@@ -180,8 +180,11 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			ConfigurableEnvironment environment = this.context != null ? this.context.getEnvironment() : null;
 			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain") : "";
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
-			args.add("--spring.main.applicationContextClass=" + AnnotationConfigApplicationContext.class.getName());
-			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder()
+			// Initializing SpringApplicationBuilder with SpelExpressionConverterConfiguration due to the fact that
+			// infrastructure related configuration is not propagated in a multi binder scenario.
+			// See this GH issue for more details: https://github.com/spring-cloud/spring-cloud-stream/issues/1412
+			// and the associated PR: https://github.com/spring-cloud/spring-cloud-stream/pull/1413
+			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder(SpelExpressionConverterConfiguration.class)
 					.sources(binderType.getConfigurationClasses())
 					.bannerMode(Mode.OFF)
 					.logStartupInfo(false)
@@ -197,6 +200,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			if (useApplicationContextAsParent) {
 				springApplicationBuilder.parent(this.context);
 			}
+
 			if (environment != null && (useApplicationContextAsParent || binderConfiguration.isInheritEnvironment())) {
 				StandardEnvironment binderEnvironment = new StandardEnvironment();
 				binderEnvironment.merge(environment);
