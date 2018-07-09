@@ -31,6 +31,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -209,8 +210,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			ConfigurableEnvironment environment = this.context != null ? this.context.getEnvironment() : null;
 			String defaultDomain = environment != null ? environment.getProperty("spring.jmx.default-domain") : "";
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder." + configurationName);
-			args.add("--spring.main.applicationContextClass=" + AnnotationConfigApplicationContext.class.getName());
-			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder()
+			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder(SpelExpressionConverterConfiguration.class)
 					.sources(binderType.getConfigurationClasses())
 					.bannerMode(Mode.OFF)
 					.logStartupInfo(false)
@@ -226,6 +226,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			if (useApplicationContextAsParent) {
 				springApplicationBuilder.parent(this.context);
 			}
+
 			if (environment != null && (useApplicationContextAsParent || binderConfiguration.isInheritEnvironment())) {
 				StandardEnvironment binderEnvironment = new StandardEnvironment();
 				binderEnvironment.merge(environment);
