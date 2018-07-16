@@ -1357,7 +1357,7 @@ contentType::
 The content type of the channel.
 See "`<<content-type-management>>`".
 +
-Default: `null` (no type coercion is performed).
+Default: `application/json`.
 binder::
 The binder used by this binding.
 See "`<<multiple-binders>>`" for details.
