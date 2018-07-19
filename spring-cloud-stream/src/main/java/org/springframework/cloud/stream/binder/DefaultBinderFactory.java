@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.config.SpelExpressionConverterConfigurat
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.StandardEnvironment;
@@ -50,6 +51,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
@@ -88,8 +90,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	}
 
 	@Override
-	public void destroy() throws Exception {
-		this.binderInstanceCache.values().stream().map(e -> e.getValue()).forEach(ctx -> ctx.close());
+	public void destroy() {
+		this.binderInstanceCache.values().stream().map(Entry::getValue).forEach(ConfigurableApplicationContext::close);
 		this.defaultBinderForBindingTargetType.clear();
 	}
 
@@ -229,6 +231,11 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			if (useApplicationContextAsParent) {
 				springApplicationBuilder.parent(this.context);
 			}
+			// If the current application context is not set as parent and the environment is set,
+			// provide the current context as an additional bean in the BeanFactory.
+			if (environment != null && !useApplicationContextAsParent){
+				springApplicationBuilder.initializers(new InitializerWithOuterContext(this.context));
+			}
 
 			if (environment != null && (useApplicationContextAsParent || binderConfiguration.isInheritEnvironment())) {
 				StandardEnvironment binderEnvironment = new StandardEnvironment();
@@ -288,4 +295,18 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		void afterBinderContextInitialized(String configurationName,
 				ConfigurableApplicationContext binderContext);
 	}
+
+	private static class InitializerWithOuterContext implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+		private final ApplicationContext context;
+
+		InitializerWithOuterContext(ApplicationContext context) {
+			this.context = context;
+		}
+
+		@Override
+		public void initialize(ConfigurableApplicationContext applicationContext) {
+			applicationContext.getBeanFactory().registerSingleton("outerContext", context);
+		}
+	}
+
 }

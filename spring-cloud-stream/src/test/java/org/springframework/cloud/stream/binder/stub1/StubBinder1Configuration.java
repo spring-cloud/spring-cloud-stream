@@ -16,16 +16,20 @@
 
 package org.springframework.cloud.stream.binder.stub1;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.actuate.health.ApplicationHealthIndicator;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 @Configuration
 @EnableConfigurationProperties
@@ -33,8 +37,19 @@ public class StubBinder1Configuration {
 
 	@Bean
 	@ConfigurationProperties("binder1")
-	public Binder<?, ?, ?> binder() {
-		return new StubBinder1();
+	public Binder<?, ?, ?> binder(BeanFactory beanFactory) {
+		StubBinder1 stubBinder1 = new StubBinder1();
+		ConfigurableApplicationContext outerContext = null;
+		try {
+			outerContext = (ConfigurableApplicationContext) beanFactory.getBean("outerContext");
+		}
+		catch (BeansException be) {
+			//Pass through
+		}
+		if (outerContext != null) {
+			stubBinder1.setOuterContext(outerContext);
+		}
+		return stubBinder1;
 	}
 
 	@Bean
