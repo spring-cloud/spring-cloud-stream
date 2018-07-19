@@ -45,6 +45,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Soby Chacko
  */
 public class BinderFactoryConfigurationTests {
 
@@ -136,6 +137,37 @@ public class BinderFactoryConfigurationTests {
 		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
 
 		assertThat(binderFactory.getBinder(null, MessageChannel.class)).isSameAs(binder1);
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testCustomEnvironmentHasAccessToOuterContext() throws Exception {
+		ConfigurableApplicationContext context = createBinderTestContext(
+				new String[] { "binder1" }, "binder1.name=foo",
+				"spring.cloud.stream.binders.custom.environment.foo=bar",
+				"spring.cloud.stream.binders.custom.type=binder1");
+
+		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+
+		Binder binder1 = binderFactory.getBinder("custom", MessageChannel.class);
+
+		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
+		assertThat(binder1).hasFieldOrPropertyWithValue("outerContext", context);
+
+		assertThat(binderFactory.getBinder(null, MessageChannel.class)).isSameAs(binder1);
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testStandardBinderDoesNotHaveTheOuterContextBean() throws Exception {
+		ConfigurableApplicationContext context = createBinderTestContext(
+				new String[] { "binder1" }, "binder1.name=foo");
+
+		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
+		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
+
+		assertThat(((StubBinder1) binder1).getOuterContext()).isNull();
 	}
 
 	@SuppressWarnings("rawtypes")

@@ -20,14 +20,26 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * @author Marius Bogoevici
  * @author Mark Fisher
+ * @author Soby Chacko
  */
 public class StubBinder1 implements Binder<Object, ConsumerProperties, ProducerProperties> {
 
 	private String name;
+
+	private ConfigurableApplicationContext outerContext;
+
+	public ConfigurableApplicationContext getOuterContext() {
+		return outerContext;
+	}
+
+	public void setOuterContext(ConfigurableApplicationContext outerContext) {
+		this.outerContext = outerContext;
+	}
 
 	public String getName() {
 		return this.name;
