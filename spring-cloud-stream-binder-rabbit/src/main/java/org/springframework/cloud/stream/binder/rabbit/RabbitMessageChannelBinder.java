@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
@@ -397,7 +398,12 @@ public class RabbitMessageChannelBinder
 		else if (getApplicationContext() != null) {
 			listenerContainer.setApplicationEventPublisher(getApplicationContext());
 		}
-		this.getContainerCustomizer().configure(listenerContainer, consumerDestination.getName(), group);
+		getContainerCustomizer().configure(listenerContainer, consumerDestination.getName(), group);
+		if (StringUtils.hasText(properties.getExtension().getConsumerTagPrefix())) {
+			final AtomicInteger index = new AtomicInteger();
+			listenerContainer.setConsumerTagStrategy(q ->
+				properties.getExtension().getConsumerTagPrefix() + "#" + index.getAndIncrement());
+		}
 		listenerContainer.afterPropertiesSet();
 
 		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);

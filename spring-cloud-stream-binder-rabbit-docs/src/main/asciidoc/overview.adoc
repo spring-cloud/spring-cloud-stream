@@ -130,6 +130,11 @@ Whether to bind the queue to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
 +
 Default: `true`.
+consumerTagPrefix::
+Used to create the consumer tag(s); will be appended by `#n` where `n` increments for each consumer created.
+Example: `${spring.application.name}-${spring.cloud.stream.bindings.input.group}-${spring.cloud.stream.instance-index}`.
++
+Default: none - the broker will generate random consumer tags.
 deadLetterQueueName::
 The name of the DLQ
 +

@@ -103,6 +103,12 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	 */
 	private Long  failedDeclarationRetryInterval;
 
+	/**
+	 * Used to create the consumer tags; will be appended by '#n' where 'n' increments for
+	 * each consumer created.
+	 */
+	private String consumerTagPrefix;
+
 	public boolean isTransacted() {
 		return transacted;
 	}
@@ -243,6 +249,14 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setFailedDeclarationRetryInterval(Long failedDeclarationRetryInterval) {
 		this.failedDeclarationRetryInterval = failedDeclarationRetryInterval;
+	}
+
+	public String getConsumerTagPrefix() {
+		return this.consumerTagPrefix;
+	}
+
+	public void setConsumerTagPrefix(String consumerTagPrefix) {
+		this.consumerTagPrefix = consumerTagPrefix;
 	}
 
 }

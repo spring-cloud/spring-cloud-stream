@@ -431,6 +431,8 @@ public class RabbitBinderTests extends
 		extProps.setDlqOverflowBehavior("reject-publish");
 		extProps.setDlqMaxPriority(8);
 		extProps.setDlqTtl(1_000);
+		extProps.setConsumerTagPrefix("testConsumerTag");
+		extProps.setExclusive(true);
 
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser3", "infra",
 				createBindableChannel("input", new BindingProperties()), properties);
@@ -438,8 +440,6 @@ public class RabbitBinderTests extends
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertThat(container.isRunning()).isTrue();
-		consumerBinding.unbind();
-		assertThat(container.isRunning()).isFalse();
 		RabbitManagementTemplate rmt = new RabbitManagementTemplate();
 		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", "propsUser3");
 		int n = 0;
@@ -462,10 +462,9 @@ public class RabbitBinderTests extends
 		assertThat(exchange.isDurable()).isEqualTo(false);
 		assertThat(exchange.isAutoDelete()).isEqualTo(true);
 
-//		Queue queue = rmt.getQueue("propsUser3"); AMQP-698
 		QueueInfo queue = rmt.getClient().getQueue("/", "propsUser3.infra");
 		n = 0;
-		while (n++ < 100 && queue == null) {
+		while (n++ < 100 && queue == null || queue.getConsumerCount() == 0) {
 			Thread.sleep(100);
 			queue = rmt.getClient().getQueue("/", "propsUser3.infra");
 		}
@@ -480,6 +479,7 @@ public class RabbitBinderTests extends
 		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("customDLX");
 		assertThat(args.get("x-dead-letter-routing-key")).isEqualTo("customDLRK");
 		assertThat(args.get("x-queue-mode")).isEqualTo("lazy");
+		assertThat(queue.getExclusiveConsumerTag()).isEqualTo("testConsumerTag#0");
 
 		queue = rmt.getClient().getQueue("/", "customDLQ");
 
@@ -499,6 +499,9 @@ public class RabbitBinderTests extends
 		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("propsUser3");
 		assertThat(args.get("x-dead-letter-routing-key")).isEqualTo("propsUser3");
 		assertThat(args.get("x-queue-mode")).isEqualTo("lazy");
+
+		consumerBinding.unbind();
+		assertThat(container.isRunning()).isFalse();
 	}
 
 	@Test
