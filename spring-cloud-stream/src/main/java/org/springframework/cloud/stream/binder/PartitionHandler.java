@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ public class PartitionHandler {
 
 	private final PartitionSelectorStrategy partitionSelectorStrategy;
 
+	private volatile int partitionCount;
+
 	/**
 	 * Construct a {@code PartitionHandler}.
 	 *
@@ -58,7 +60,17 @@ public class PartitionHandler {
 		this.producerProperties = properties;
 		this.partitionKeyExtractorStrategy = partitionKeyExtractorStrategy;
 		this.partitionSelectorStrategy = partitionSelectorStrategy;
+		this.partitionCount = producerProperties.getPartitionCount();
 	}
+
+	/**
+	 * Set the actual partition count (if different to the configured count).
+	 * @param partitionCount the count.
+	 */
+	public void setPartitionCount(int partitionCount) {
+		this.partitionCount = partitionCount;
+	}
+
 
 	/**
 	 * Determine the partition to which to send this message.
@@ -86,10 +98,10 @@ public class PartitionHandler {
 					this.evaluationContext, key, Integer.class);
 		}
 		else {
-			partition = this.partitionSelectorStrategy.selectPartition(key, producerProperties.getPartitionCount());
+			partition = this.partitionSelectorStrategy.selectPartition(key, this.partitionCount);
 		}
 		// protection in case a user selector returns a negative.
-		return Math.abs(partition % producerProperties.getPartitionCount());
+		return Math.abs(partition % this.partitionCount);
 	}
 
 	private Object extractKey(Message<?> message) {
