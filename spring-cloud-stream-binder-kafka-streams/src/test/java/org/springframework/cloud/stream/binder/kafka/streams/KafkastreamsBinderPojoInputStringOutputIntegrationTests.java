@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,12 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.integration.test.util.TestUtils;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -92,7 +95,15 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 		try {
 			receiveAndValidateFoo(context);
-		} finally {
+			//Assertions on StreamBuilderFactoryBean
+			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean("&stream-builder-process",
+					StreamsBuilderFactoryBean.class);
+			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean, "cleanupConfig",
+					CleanupConfig.class);
+			assertThat(cleanup.cleanupOnStart()).isFalse();
+			assertThat(cleanup.cleanupOnStop()).isTrue();
+		}
+		finally {
 			context.close();
 		}
 	}

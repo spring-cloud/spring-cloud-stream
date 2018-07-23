@@ -25,6 +25,7 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
 import org.apache.kafka.streams.errors.LogAndFailExceptionHandler;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -37,6 +38,7 @@ import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -99,10 +101,12 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 			KStreamStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter,
 			Collection<StreamListenerResultAdapter> streamListenerResultAdapters,
-			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
+			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+			ObjectProvider<CleanupConfig> cleanupConfig) {
 		return new KafkaStreamsStreamListenerSetupMethodOrchestrator(bindingServiceProperties,
 				kafkaStreamsExtendedBindingProperties, keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue,
-				kafkaStreamListenerParameterAdapter, streamListenerResultAdapters, binderConfigurationProperties);
+				kafkaStreamListenerParameterAdapter, streamListenerResultAdapters, binderConfigurationProperties,
+				cleanupConfig.getIfUnique());
 	}
 
 	@Bean

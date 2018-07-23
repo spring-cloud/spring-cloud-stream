@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,9 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.integration.test.util.TestUtils;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -110,8 +113,12 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 			ReadOnlyWindowStore<Object, Object> store = kafkaStreams.store("foo-WordCounts", QueryableStoreTypes.windowStore());
 			assertThat(store).isNotNull();
-
-		} finally {
+			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean, "cleanupConfig",
+					CleanupConfig.class);
+			assertThat(cleanup.cleanupOnStart()).isTrue();
+			assertThat(cleanup.cleanupOnStop()).isFalse();
+		}
+		finally {
 			context.close();
 		}
 	}
@@ -139,8 +146,6 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 		public KStream<?, WordCount> process(@Input("input") KStream<Object, String> input) {
 
 			input.map((k,v) -> {
-				System.out.println(k);
-				System.out.println(v);
 				return new KeyValue<>(k,v);
 			});
 			return input
@@ -151,6 +156,11 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 					.count(Materialized.as("foo-WordCounts"))
 					.toStream()
 					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
+		}
+
+		@Bean
+		public CleanupConfig cleanupConfig() {
+			return new CleanupConfig(true, false);
 		}
 
 	}

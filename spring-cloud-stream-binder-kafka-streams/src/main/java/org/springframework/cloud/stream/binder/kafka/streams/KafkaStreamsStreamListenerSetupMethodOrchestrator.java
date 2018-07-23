@@ -62,6 +62,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -84,6 +85,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Soby Chacko
  * @author Lei Chen
+ * @author Gary Russell
  */
 class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListenerSetupMethodOrchestrator, ApplicationContextAware {
 
@@ -105,6 +107,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
+	private final CleanupConfig cleanupConfig;
+
 	private ConfigurableApplicationContext applicationContext;
 
 	KafkaStreamsStreamListenerSetupMethodOrchestrator(BindingServiceProperties bindingServiceProperties,
@@ -113,7 +117,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 														KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 														StreamListenerParameterAdapter streamListenerParameterAdapter,
 														Collection<StreamListenerResultAdapter> streamListenerResultAdapters,
-														KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
+														KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+														CleanupConfig cleanupConfig) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.kafkaStreamsExtendedBindingProperties = kafkaStreamsExtendedBindingProperties;
 		this.keyValueSerdeResolver = keyValueSerdeResolver;
@@ -121,6 +126,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		this.streamListenerParameterAdapter = streamListenerParameterAdapter;
 		this.streamListenerResultAdapters = streamListenerResultAdapters;
 		this.binderConfigurationProperties = binderConfigurationProperties;
+		this.cleanupConfig = cleanupConfig;
 	}
 
 	@Override
@@ -382,13 +388,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 	private StreamsConfig buildStreamsBuilderAndRetrieveConfig(Method method, ApplicationContext applicationContext,
 															BindingProperties bindingProperties) {
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext.getBeanFactory();
-		StreamsBuilderFactoryBean streamsBuilder = new StreamsBuilderFactoryBean();
-		streamsBuilder.setAutoStartup(false);
-		BeanDefinition streamsBuilderBeanDefinition =
-				BeanDefinitionBuilder.genericBeanDefinition((Class<StreamsBuilderFactoryBean>) streamsBuilder.getClass(), () -> streamsBuilder)
-				.getRawBeanDefinition();
-		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("stream-builder-" + method.getName(), streamsBuilderBeanDefinition);
-		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean("&stream-builder-" + method.getName(), StreamsBuilderFactoryBean.class);
 		String group = bindingProperties.getGroup();
 		if (!StringUtils.hasText(group)) {
 			group = binderConfigurationProperties.getApplicationId();
@@ -415,12 +414,20 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 				return super.getConfiguredInstance(key, clazz);
 			}
 		};
+		StreamsBuilderFactoryBean streamsBuilder = this.cleanupConfig == null
+				? new StreamsBuilderFactoryBean(streamsConfig)
+				: new StreamsBuilderFactoryBean(streamsConfig, this.cleanupConfig);
+		streamsBuilder.setAutoStartup(false);
+		BeanDefinition streamsBuilderBeanDefinition =
+				BeanDefinitionBuilder.genericBeanDefinition((Class<StreamsBuilderFactoryBean>) streamsBuilder.getClass(), () -> streamsBuilder)
+				.getRawBeanDefinition();
+		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("stream-builder-" + method.getName(), streamsBuilderBeanDefinition);
+		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean("&stream-builder-" + method.getName(), StreamsBuilderFactoryBean.class);
 		BeanDefinition streamsConfigBeanDefinition =
 				BeanDefinitionBuilder.genericBeanDefinition((Class<StreamsConfig>) streamsConfig.getClass(), () -> streamsConfig)
 						.getRawBeanDefinition();
 		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("streamsConfig-" + method.getName(), streamsConfigBeanDefinition);
 
-		streamsBuilder.setStreamsConfig(streamsConfig);
 		methodStreamsBuilderFactoryBeanMap.put(method, streamsBuilderX);
 		return streamsConfig;
 	}
