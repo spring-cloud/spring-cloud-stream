@@ -68,12 +68,14 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.integration.channel.ChannelInterceptorAware;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
@@ -106,6 +108,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -217,6 +220,14 @@ public class KafkaMessageChannelBinder extends
 	protected MessageHandler createProducerMessageHandler(final ProducerDestination destination,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, MessageChannel errorChannel)
 			throws Exception {
+		throw new IllegalStateException("The abstract binder should not call this method");
+	}
+
+	@Override
+	protected MessageHandler createProducerMessageHandler(final ProducerDestination destination,
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
+			MessageChannel channel, MessageChannel errorChannel)
+			throws Exception {
 		/*
 		 * IMPORTANT: With a transactional binder, individual producer properties for Kafka are
 		 * ignored; the global binder (spring.cloud.stream.kafka.binder.transaction.producer.*)
@@ -236,20 +247,18 @@ public class KafkaMessageChannelBinder extends
 					return partitionsFor;
 				});
 		this.topicsInUse.put(destination.getName(), new TopicInformation(null, partitions));
-		if (producerProperties.getPartitionCount() < partitions.size()) {
+		if (producerProperties.isPartitioned() && producerProperties.getPartitionCount() < partitions.size()) {
 			if (this.logger.isInfoEnabled()) {
 				this.logger.info("The `partitionCount` of the producer for topic " + destination.getName() + " is "
 						+ producerProperties.getPartitionCount() + ", smaller than the actual partition count of "
-						+ partitions.size() + " of the topic. The larger number will be used instead.");
+						+ partitions.size() + " for the topic. The larger number will be used instead.");
 			}
-			/*
-			 * This is dirty; it relies on the fact that we, and the partition interceptor, share a
-			 * hard reference to the producer properties instance. But I don't see another way to fix
-			 * it since the interceptor has already been added to the channel, and we don't have
-			 * access to the channel here; if we did, we could inject the proper partition count
-			 * there. TODO: Consider this when doing the 2.0 binder restructuring.
-			 */
-			producerProperties.setPartitionCount(partitions.size());
+			List<ChannelInterceptor> interceptors = ((ChannelInterceptorAware) channel).getChannelInterceptors();
+			interceptors.forEach(interceptor -> {
+				if (interceptor instanceof PartitioningInterceptor) {
+					((PartitioningInterceptor) interceptor).setPartitionCount(partitions.size());
+				}
+			});
 		}
 
 		KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFB);

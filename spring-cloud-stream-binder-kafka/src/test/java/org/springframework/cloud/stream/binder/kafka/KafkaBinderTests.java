@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -82,6 +83,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.utils.KafkaTopicUtils;
+import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.context.ApplicationContext;
@@ -120,6 +122,7 @@ import org.springframework.messaging.MessageHandlingException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
@@ -225,7 +228,7 @@ public class KafkaBinderTests extends
 		return consumerFactory().createConsumer().partitionsFor(topic).size();
 	}
 
-	private void invokeCreateTopic(String topic, int partitions, int replicationFactor) throws Throwable {
+	private void invokeCreateTopic(String topic, int partitions, int replicationFactor) throws Exception {
 
 		NewTopic newTopic = new NewTopic(topic, partitions,
 				(short) replicationFactor);
@@ -1253,6 +1256,7 @@ public class KafkaBinderTests extends
 		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
 		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
 		producerProperties.setPartitionCount(3);
+		invokeCreateTopic("output", 6, 1);
 
 		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
 		output.setBeanName("test.output");
@@ -1264,7 +1268,14 @@ public class KafkaBinderTests extends
 		}
 		catch (UnsupportedOperationException ignored) {
 		}
-
+		List<ChannelInterceptor> interceptors = output.getChannelInterceptors();
+		AtomicInteger count = new AtomicInteger();
+		interceptors.forEach(interceptor -> {
+			if (interceptor instanceof PartitioningInterceptor) {
+				count.set(TestUtils.getPropertyValue(interceptor, "partitionHandler.partitionCount", Integer.class));
+			}
+		});
+		assertThat(count.get()).isEqualTo(6);
 		Message<Integer> message2 = org.springframework.integration.support.MessageBuilder.withPayload(2)
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, 42)
