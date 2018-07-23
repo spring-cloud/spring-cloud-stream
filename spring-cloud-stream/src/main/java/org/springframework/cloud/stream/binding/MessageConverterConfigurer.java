@@ -50,7 +50,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
-import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -339,7 +339,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 	/**
 	 *
 	 */
-	private abstract class AbstractContentTypeInterceptor extends ChannelInterceptorAdapter {
+	private abstract class AbstractContentTypeInterceptor implements ChannelInterceptor {
 		final MimeType mimeType;
 
 		private AbstractContentTypeInterceptor(String contentType) {
@@ -354,10 +354,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		protected abstract Message<?> doPreSend(Message<?> message, MessageChannel channel);
 	}
 
-	/**
-	 *
-	 */
-	public final class PartitioningInterceptor extends ChannelInterceptorAdapter {
+	public final class PartitioningInterceptor implements ChannelInterceptor {
 
 		private final BindingProperties bindingProperties;
 
@@ -372,6 +369,10 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 							MessageConverterConfigurer.this.beanFactory),
 					this.bindingProperties.getProducer(), partitionKeyExtractorStrategy,
 					partitionSelectorStrategy);
+		}
+
+		public void setPartitionCount(int partitionCount) {
+			this.partitionHandler.setPartitionCount(partitionCount);
 		}
 
 		@Override
@@ -392,4 +393,5 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			}
 		}
 	}
+
 }
