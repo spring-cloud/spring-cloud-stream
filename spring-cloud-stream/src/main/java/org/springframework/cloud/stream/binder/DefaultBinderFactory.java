@@ -55,8 +55,6 @@ import org.springframework.util.StringUtils;
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
-	private static ConfigurableApplicationContext OUTER_CONTEXT;
-
 	private final Map<String, BinderConfiguration> binderConfigurations;
 
 	private final Map<String, Entry<Binder<?, ?, ?>, ConfigurableApplicationContext>> binderInstanceCache = new HashMap<>();
