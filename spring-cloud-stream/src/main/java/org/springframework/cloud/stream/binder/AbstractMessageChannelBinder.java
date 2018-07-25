@@ -154,7 +154,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			SubscribableChannel errorChannel = producerProperties.isErrorChannelEnabled()
 					? registerErrorInfrastructure(producerDestination) : null;
 			producerMessageHandler = createProducerMessageHandler(producerDestination, producerProperties,
-					errorChannel);
+					outputChannel, errorChannel);
 			if (producerMessageHandler instanceof InitializingBean) {
 				((InitializingBean) producerMessageHandler).afterPropertiesSet();
 			}
@@ -218,7 +218,35 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	/**
-	 * Creates a {@link MessageHandler} with the ability to send data to the target
+	 * Create a {@link MessageHandler} with the ability to send data to the target
+	 * middleware. If the returned instance is also a {@link Lifecycle}, it will be
+	 * stopped automatically by the binder.
+	 * <p>
+	 * In order to be fully compliant, the {@link MessageHandler} of the binder must
+	 * observe the following headers:
+	 * <ul>
+	 * <li>{@link BinderHeaders#PARTITION_HEADER} - indicates the target partition where
+	 * the message must be sent</li>
+	 * </ul>
+	 * <p>
+	 *
+	 * @param destination the name of the target destination.
+	 * @param producerProperties the producer properties.
+	 * @param channel the channel to bind.
+	 * @param errorChannel the error channel (if enabled, otherwise null). If not null,
+	 * the binder must wire this channel into the producer endpoint so that errors
+	 * are forwarded to it.
+	 * @return the message handler for sending data to the target middleware
+	 * @throws Exception
+	 */
+	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
+			P producerProperties, MessageChannel channel, MessageChannel errorChannel)
+			throws Exception {
+		return createProducerMessageHandler(destination, producerProperties, errorChannel);
+	}
+
+	/**
+	 * Create a {@link MessageHandler} with the ability to send data to the target
 	 * middleware. If the returned instance is also a {@link Lifecycle}, it will be
 	 * stopped automatically by the binder.
 	 * <p>
