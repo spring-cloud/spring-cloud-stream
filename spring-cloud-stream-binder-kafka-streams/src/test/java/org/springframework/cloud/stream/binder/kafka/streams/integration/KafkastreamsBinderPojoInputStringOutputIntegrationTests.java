@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.streams;
+package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -39,9 +38,12 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.integration.test.util.TestUtils;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -50,22 +52,22 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
+ * @author Marius Bogoevici
  * @author Soby Chacko
  * @author Gary Russell
  */
-public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
+public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 
 	@ClassRule
 	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "counts-id");
 
-	private static Consumer<Integer, String> consumer;
+	private static Consumer<String, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id", "false", embeddedKafka);
-		//consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Deserializer.class.getName());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
 	}
@@ -93,7 +95,15 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 		try {
 			receiveAndValidateFoo(context);
-		} finally {
+			//Assertions on StreamBuilderFactoryBean
+			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean("&stream-builder-process",
+					StreamsBuilderFactoryBean.class);
+			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean, "cleanupConfig",
+					CleanupConfig.class);
+			assertThat(cleanup.cleanupOnStart()).isFalse();
+			assertThat(cleanup.cleanupOnStop()).isTrue();
+		}
+		finally {
 			context.close();
 		}
 	}
@@ -104,12 +114,8 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic("foos");
 		template.sendDefault("{\"id\":\"123\"}");
-		ConsumerRecord<Integer, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
-
-		assertThat(cr.key()).isEqualTo(123);
-		ObjectMapper om = new ObjectMapper();
-		Long aLong = om.readValue(cr.value(), Long.class);
-		assertThat(aLong).isEqualTo(1L);
+		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
+		assertThat(cr.value().contains("Count for product with ID 123: 1")).isTrue();
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
@@ -118,15 +124,16 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 
 		@StreamListener("input")
 		@SendTo("output")
-		public KStream<Integer, Long> process(KStream<Object, Product> input) {
+		public KStream<Integer, String> process(KStream<Object, Product> input) {
+
 			return input
 					.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Serialized.with(new JsonSerde<>(Product.class), new JsonSerde<>(Product.class)))
 					.windowedBy(TimeWindows.of(5000))
-					.count(Materialized.as("id-count-store-x"))
+					.count(Materialized.as("id-count-store"))
 					.toStream()
-					.map((key, value) -> new KeyValue<>(key.key().id, value));
+					.map((key, value) -> new KeyValue<>(key.key().id, "Count for product with ID 123: " + value));
 		}
 	}
 

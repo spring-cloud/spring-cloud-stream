@@ -295,6 +295,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 	}
 
 	private <K,V> KTable<K,V> materializedAs(StreamsBuilder streamsBuilder, String destination, String storeName, Serde<K> k, Serde<V> v) {
+			
 		return streamsBuilder.table(bindingServiceProperties.getBindingDestination(destination),
 				Materialized.<K, V, KeyValueStore<Bytes, byte[]>>as(storeName)
 						.withKeySerde(k)

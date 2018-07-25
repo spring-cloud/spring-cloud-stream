@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.streams;
+package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.IntegerSerializer;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Serialized;
-import org.apache.kafka.streams.state.HostInfo;
-import org.apache.kafka.streams.state.QueryableStoreTypes;
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
+import org.apache.kafka.streams.kstream.TimeWindows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -41,7 +39,6 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -56,18 +53,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  * @author Gary Russell
  */
-public class KafkaStreamsInteractiveQueryIntegrationTests {
+public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 
 	@ClassRule
 	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "counts-id");
 
-	private static Consumer<String, String> consumer;
+	private static Consumer<Integer, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id", "false", embeddedKafka);
+		//consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Deserializer.class.getName());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
 	}
@@ -89,8 +87,8 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.application.server=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 		try {
@@ -106,22 +104,12 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic("foos");
 		template.sendDefault("{\"id\":\"123\"}");
-		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
-		assertThat(cr.value().contains("Count for product with ID 123: 1")).isTrue();
+		ConsumerRecord<Integer, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
 
-		ProductCountApplication.Foo foo = context.getBean(ProductCountApplication.Foo.class);
-		assertThat(foo.getProductStock(123).equals(1L));
-
-		//perform assertions on HostInfo related methods in InteractiveQueryService
-		InteractiveQueryService interactiveQueryService = context.getBean(InteractiveQueryService.class);
-		HostInfo currentHostInfo = interactiveQueryService.getCurrentHostInfo();
-		assertThat(currentHostInfo.host() + ":" + currentHostInfo.port()).isEqualTo(embeddedKafka.getBrokersAsString());
-
-		HostInfo hostInfo = interactiveQueryService.getHostInfo("prod-id-count-store", 123, new IntegerSerializer());
-		assertThat(hostInfo.host() + ":" + hostInfo.port()).isEqualTo(embeddedKafka.getBrokersAsString());
-
-		HostInfo hostInfoFoo = interactiveQueryService.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer());
-		assertThat(hostInfoFoo).isNull();
+		assertThat(cr.key()).isEqualTo(123);
+		ObjectMapper om = new ObjectMapper();
+		Long aLong = om.readValue(cr.value(), Long.class);
+		assertThat(aLong).isEqualTo(1L);
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
@@ -130,36 +118,15 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 
 		@StreamListener("input")
 		@SendTo("output")
-		@SuppressWarnings("deprecation")
-		public KStream<?, String> process(KStream<Object, Product> input) {
-
+		public KStream<Integer, Long> process(KStream<Object, Product> input) {
 			return input
 					.filter((key, product) -> product.getId() == 123)
-					.map((key, value) -> new KeyValue<>(value.id, value))
-					.groupByKey(Serialized.with(new Serdes.IntegerSerde(), new JsonSerde<>(Product.class)))
-					.count("prod-id-count-store")
+					.map((key, value) -> new KeyValue<>(value, value))
+					.groupByKey(Serialized.with(new JsonSerde<>(Product.class), new JsonSerde<>(Product.class)))
+					.windowedBy(TimeWindows.of(5000))
+					.count(Materialized.as("id-count-store-x"))
 					.toStream()
-					.map((key, value) -> new KeyValue<>(null, "Count for product with ID 123: " + value));
-		}
-
-		@Bean
-		public Foo foo(InteractiveQueryService interactiveQueryService) {
-			return new Foo(interactiveQueryService);
-		}
-
-		static class Foo {
-			InteractiveQueryService interactiveQueryService;
-
-			Foo(InteractiveQueryService interactiveQueryService) {
-				this.interactiveQueryService = interactiveQueryService;
-			}
-
-			public Long getProductStock(Integer id) {
-				ReadOnlyKeyValueStore<Object, Object> keyValueStore =
-						interactiveQueryService.getQueryableStore("prod-id-count-store", QueryableStoreTypes.keyValueStore());
-
-				return (Long) keyValueStore.get(id);
-			}
+					.map((key, value) -> new KeyValue<>(key.key().id, value));
 		}
 	}
 

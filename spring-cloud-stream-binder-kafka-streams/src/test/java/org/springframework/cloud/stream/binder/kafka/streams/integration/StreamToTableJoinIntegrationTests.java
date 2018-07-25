@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.streams;
+package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.util.ArrayList;
 import java.util.Arrays;

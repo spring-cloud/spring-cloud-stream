@@ -14,37 +14,47 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.streams;
+package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
+import org.apache.kafka.streams.state.QueryableStoreTypes;
+import org.apache.kafka.streams.state.ReadOnlyWindowStore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.StreamsBuilderFactoryBean;
-import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.rule.KafkaEmbedded;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -56,20 +66,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  * @author Gary Russell
  */
-public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
+public class KafkaStreamsBinderWordCountIntegrationTests {
 
 	@ClassRule
-	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "counts-id");
+	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, "counts");
 
 	private static Consumer<String, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
-		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
+		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts");
 	}
 
 	@AfterClass
@@ -78,75 +88,131 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 	}
 
 	@Test
-	public void testKstreamBinderWithPojoInputAndStringOuput() throws Exception {
-		SpringApplication app = new SpringApplication(ProductCountApplication.class);
+	public void testKstreamWordCountWithStringInputAndPojoOuput() throws Exception {
+		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
+
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=foos",
-				"--spring.cloud.stream.bindings.output.destination=counts-id",
+				"--spring.cloud.stream.bindings.input.destination=words",
+				"--spring.cloud.stream.bindings.output.destination=counts",
+				"--spring.cloud.stream.bindings.output.contentType=application/json",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
+				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
+				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 		try {
-			receiveAndValidateFoo(context);
+			receiveAndValidate(context);
 			//Assertions on StreamBuilderFactoryBean
-			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean("&stream-builder-process",
-					StreamsBuilderFactoryBean.class);
+			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
+			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
+			ReadOnlyWindowStore<Object, Object> store = kafkaStreams.store("foo-WordCounts", QueryableStoreTypes.windowStore());
+			assertThat(store).isNotNull();
 			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean, "cleanupConfig",
 					CleanupConfig.class);
-			assertThat(cleanup.cleanupOnStart()).isFalse();
-			assertThat(cleanup.cleanupOnStop()).isTrue();
+			assertThat(cleanup.cleanupOnStart()).isTrue();
+			assertThat(cleanup.cleanupOnStop()).isFalse();
 		}
 		finally {
 			context.close();
 		}
 	}
 
-	private void receiveAndValidateFoo(ConfigurableApplicationContext context) throws Exception {
+	private void receiveAndValidate(ConfigurableApplicationContext context) throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
-		template.setDefaultTopic("foos");
-		template.sendDefault("{\"id\":\"123\"}");
-		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
-		assertThat(cr.value().contains("Count for product with ID 123: 1")).isTrue();
+		template.setDefaultTopic("words");
+		template.sendDefault("foobar");
+		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts");
+		assertThat(cr.value().contains("\"word\":\"foobar\",\"count\":1")).isTrue();
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
-	public static class ProductCountApplication {
+	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
+	static class WordCountProcessorApplication {
 
-		@StreamListener("input")
+		@Autowired
+		private TimeWindows timeWindows;
+
+		@StreamListener
 		@SendTo("output")
-		public KStream<Integer, String> process(KStream<Object, Product> input) {
+		public KStream<?, WordCount> process(@Input("input") KStream<Object, String> input) {
 
+			input.map((k,v) -> {
+				return new KeyValue<>(k,v);
+			});
 			return input
-					.filter((key, product) -> product.getId() == 123)
+					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(new JsonSerde<>(Product.class), new JsonSerde<>(Product.class)))
-					.windowedBy(TimeWindows.of(5000))
-					.count(Materialized.as("id-count-store"))
+					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
+					.windowedBy(timeWindows)
+					.count(Materialized.as("foo-WordCounts"))
 					.toStream()
-					.map((key, value) -> new KeyValue<>(key.key().id, "Count for product with ID 123: " + value));
+					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
+		}
+
+		@Bean
+		public CleanupConfig cleanupConfig() {
+			return new CleanupConfig(true, false);
+		}
+
+	}
+
+	static class WordCount {
+
+		private String word;
+
+		private long count;
+
+		private Date start;
+
+		private Date end;
+
+		WordCount(String word, long count, Date start, Date end) {
+			this.word = word;
+			this.count = count;
+			this.start = start;
+			this.end = end;
+		}
+
+		public String getWord() {
+			return word;
+		}
+
+		public void setWord(String word) {
+			this.word = word;
+		}
+
+		public long getCount() {
+			return count;
+		}
+
+		public void setCount(long count) {
+			this.count = count;
+		}
+
+		public Date getStart() {
+			return start;
+		}
+
+		public void setStart(Date start) {
+			this.start = start;
+		}
+
+		public Date getEnd() {
+			return end;
+		}
+
+		public void setEnd(Date end) {
+			this.end = end;
 		}
 	}
 
-	static class Product {
-
-		Integer id;
-
-		public Integer getId() {
-			return id;
-		}
-
-		public void setId(Integer id) {
-			this.id = id;
-		}
-	}
 }

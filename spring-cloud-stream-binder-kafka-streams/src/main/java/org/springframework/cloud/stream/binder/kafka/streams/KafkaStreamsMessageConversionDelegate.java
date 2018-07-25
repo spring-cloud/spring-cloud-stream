@@ -41,7 +41,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Soby Chacko
  */
-class KafkaStreamsMessageConversionDelegate {
+public class KafkaStreamsMessageConversionDelegate {
 
 	private static final ThreadLocal<KeyValue<Object, Object>> keyValueThreadLocal = new ThreadLocal<>();
 

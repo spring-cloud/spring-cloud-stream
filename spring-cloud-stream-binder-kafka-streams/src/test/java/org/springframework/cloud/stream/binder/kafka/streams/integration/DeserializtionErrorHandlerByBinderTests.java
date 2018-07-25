@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.streams;
+package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.util.Map;
 
@@ -66,7 +66,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 			"error.foos1.fooz-group", "error.foos2.fooz-group");
 
 	@SpyBean
-	KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate;
+	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate;
 
 	private static Consumer<Integer, String> consumer;
 
