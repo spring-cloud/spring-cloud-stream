@@ -109,6 +109,11 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	 */
 	private String consumerTagPrefix;
 
+	/**
+	 * Room to leave for other headers after adding the stack trace to a DLQ message.
+	 */
+	private int frameMaxHeadroom = 20_000;
+
 	public boolean isTransacted() {
 		return transacted;
 	}
@@ -257,6 +262,14 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setConsumerTagPrefix(String consumerTagPrefix) {
 		this.consumerTagPrefix = consumerTagPrefix;
+	}
+
+	public int getFrameMaxHeadroom() {
+		return this.frameMaxHeadroom;
+	}
+
+	public void setFrameMaxHeadroom(int frameMaxHeadroom) {
+		this.frameMaxHeadroom = frameMaxHeadroom;
 	}
 
 }

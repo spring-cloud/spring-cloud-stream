@@ -31,6 +31,7 @@ import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.LocalizedQueueConnectionFactory;
+import org.springframework.amqp.rabbit.connection.RabbitUtils;
 import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.core.support.BatchingStrategy;
@@ -489,6 +490,10 @@ public class RabbitMessageChannelBinder
 
 				private final String routingKey = properties.getExtension().getDeadLetterRoutingKey();
 
+				private final int frameMaxHeadroom = properties.getExtension().getFrameMaxHeadroom();
+
+				private int maxStackTraceLength = -1;
+
 				@Override
 				public void handleMessage(org.springframework.messaging.Message<?> message) throws MessagingException {
 					Message amqpMessage = (Message) message.getHeaders()
@@ -504,7 +509,21 @@ public class RabbitMessageChannelBinder
 						Throwable cause = (Throwable) message.getPayload();
 						MessageProperties messageProperties = amqpMessage.getMessageProperties();
 						Map<String, Object> headers = messageProperties.getHeaders();
-						headers.put(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE, getStackTraceAsString(cause));
+						String stackTraceAsString = getStackTraceAsString(cause);
+						if (this.maxStackTraceLength < 0) {
+							int maxStackTraceLength = RabbitUtils
+									.getMaxFrame(this.template.getConnectionFactory());
+							if (maxStackTraceLength > 0) {
+								maxStackTraceLength -= this.frameMaxHeadroom;
+								this.maxStackTraceLength = maxStackTraceLength;
+							}
+						}
+						if (this.maxStackTraceLength > 0 && stackTraceAsString.length() > this.maxStackTraceLength) {
+							stackTraceAsString = stackTraceAsString.substring(0, this.maxStackTraceLength);
+							logger.warn("Stack trace in republished message header truncated due to frame_max limitations; "
+									+ "consider increasing frame_max on the broker or reduce the stack trace depth", cause);
+						}
+						headers.put(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE, stackTraceAsString);
 						headers.put(RepublishMessageRecoverer.X_EXCEPTION_MESSAGE,
 								cause.getCause() != null ? cause.getCause().getMessage() : cause.getMessage());
 						headers.put(RepublishMessageRecoverer.X_ORIGINAL_EXCHANGE,
@@ -514,7 +533,7 @@ public class RabbitMessageChannelBinder
 						if (properties.getExtension().getRepublishDeliveyMode() != null) {
 							messageProperties.setDeliveryMode(properties.getExtension().getRepublishDeliveyMode());
 						}
-						template.send(this.exchange,
+						this.template.send(this.exchange,
 								this.routingKey != null ? this.routingKey : messageProperties.getConsumerQueue(),
 								amqpMessage);
 					}

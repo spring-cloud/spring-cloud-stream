@@ -45,6 +45,7 @@ If retry is enabled (`maxAttempts > 1`), failed messages are delivered to the DL
 If retry is disabled (`maxAttempts = 1`), you should set `requeueRejected` to `false` (the default) so that failed messages are routed to the DLQ, instead of being re-queued.
 In addition, `republishToDlq` causes the binder to publish a failed message to the DLQ (instead of rejecting it).
 This feature lets additional information (such as the stack trace in the `x-exception-stacktrace` header) be added to the message in headers.
+See the <<spring-cloud-stream-rabbit-frame-max-headroom, `frameMaxHeadroom` property>> for information about truncated stack traces.
 This option does not need retry enabled.
 You can republish a failed message after just one attempt.
 Starting with version 1.2, you can configure the delivery mode of republished messages.
@@ -240,6 +241,14 @@ failedDeclarationRetryInterval::
 The interval (in milliseconds) between attempts to consume from a queue if it is missing.
 +
 Default: 5000
+[[spring-cloud-stream-rabbit-frame-max-headroom]]
+frameMaxHeadroom::
+The number of bytes to reserve for other headers when adding the stack trace to a DLQ message header.
+All headers must fit within the `frame_max` size configured on the broker.
+Stack traces can be large; if the size plus this property exceeds `frame_max` then the stack trace will be truncated.
+A WARN log will be written; consider increasing the `frame_max` or reducing the stack trace by catching the exception and throwing one with a smaller stack trace.
++
+Default: 20000
 headerPatterns::
 Patterns for headers to be mapped from inbound messages.
 +
@@ -312,6 +321,7 @@ republishToDlq::
 By default, messages that fail after retries are exhausted are rejected.
 If a dead-letter queue (DLQ) is configured, RabbitMQ routes the failed message (unchanged) to the DLQ.
 If set to `true`, the binder republishs failed messages to the DLQ with additional headers, including the exception message and stack trace from the cause of the final failure.
+Also see the <<spring-cloud-stream-rabbit-frame-max-headroom, frameMaxHeadroom property>>.
 +
 Default: false
 transacted::

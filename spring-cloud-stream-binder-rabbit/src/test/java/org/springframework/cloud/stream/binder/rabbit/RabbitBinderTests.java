@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -46,12 +48,14 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.RabbitUtils;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitManagementTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.AsyncConsumerStartedEvent;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.utils.test.TestUtils;
@@ -103,6 +107,7 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
+import com.rabbitmq.client.LongString;
 import com.rabbitmq.http.client.domain.QueueInfo;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -124,6 +129,10 @@ public class RabbitBinderTests extends
 	private final String CLASS_UNDER_TEST_NAME = RabbitMessageChannelBinder.class.getSimpleName();
 
 	public static final String TEST_PREFIX = "bindertest.";
+
+	private static final String BIG_EXCEPTION_MESSAGE = new String(new byte[10_000]).replaceAll("\u0000", "x");
+
+	private int maxStackTraceSize;
 
 	@Rule
 	public RabbitTestSupport rabbitAvailableRule = new RabbitTestSupport(true);
@@ -1060,6 +1069,9 @@ public class RabbitBinderTests extends
 
 	@Test
 	public void testAutoBindDLQwithRepublish() throws Exception {
+		this.maxStackTraceSize = RabbitUtils.getMaxFrame(rabbitAvailableRule.getResource()) - 20_000;
+		assertThat(this.maxStackTraceSize).isGreaterThan(0);
+
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.getExtension().setPrefix(TEST_PREFIX);
@@ -1069,11 +1081,13 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setDurableSubscription(true);
 		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
 		moduleInputChannel.setBeanName("dlqPubTest");
+		RuntimeException exception = bigCause(new RuntimeException(BIG_EXCEPTION_MESSAGE));
+		assertThat(getStackTraceAsString(exception).length()).isGreaterThan(this.maxStackTraceSize);
 		moduleInputChannel.subscribe(new MessageHandler() {
 
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				throw new RuntimeException("foo");
+				throw exception;
 			}
 
 		});
@@ -1089,7 +1103,10 @@ public class RabbitBinderTests extends
 			org.springframework.amqp.core.Message deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest.foo.dlq");
 			if (deadLetter != null) {
 				assertThat(new String(deadLetter.getBody())).isEqualTo("foo");
-				assertThat(deadLetter.getMessageProperties().getHeaders()).containsKey(("x-exception-stacktrace"));
+				assertThat(deadLetter.getMessageProperties().getHeaders())
+						.containsKey((RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE));
+				assertThat(((LongString) deadLetter.getMessageProperties().getHeaders()
+						.get(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE)).length()).isEqualTo(this.maxStackTraceSize);
 				break;
 			}
 			Thread.sleep(100);
@@ -1623,6 +1640,20 @@ public class RabbitBinderTests extends
 			}
 
 		};
+	}
+
+	private RuntimeException bigCause(RuntimeException cause) {
+		if (getStackTraceAsString(cause).length() > this.maxStackTraceSize) {
+			return cause;
+		}
+		return bigCause(new RuntimeException(BIG_EXCEPTION_MESSAGE, cause));
+	}
+
+	private String getStackTraceAsString(Throwable cause) {
+		StringWriter stringWriter = new StringWriter();
+		PrintWriter printWriter = new PrintWriter(stringWriter, true);
+		cause.printStackTrace(printWriter);
+		return stringWriter.getBuffer().toString();
 	}
 
 	public static class TestPartitionKeyExtractorClass implements PartitionKeyExtractorStrategy {
