@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.bootstrap;
 
 import org.apache.kafka.streams.kstream.KStream;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -32,6 +33,7 @@ import org.springframework.kafka.test.rule.KafkaEmbedded;
 /**
  * @author Soby Chacko
  */
+@Ignore("Temporarily disabling the test as builds are getting slower due to this.")
 public class KafkaStreamsBinderBootstrapTest {
 
 	@ClassRule
