@@ -19,6 +19,7 @@ package org.springframework.cloud.schema.avro;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -41,6 +42,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SubjectNamingStrategyTest {
 
 	static StubSchemaRegistryClient stubSchemaRegistryClient = new StubSchemaRegistryClient();
+
+	@Before
+	public void setup() {
+		System.setProperty("--spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	public void testCustomNamingStrategy() throws Exception {

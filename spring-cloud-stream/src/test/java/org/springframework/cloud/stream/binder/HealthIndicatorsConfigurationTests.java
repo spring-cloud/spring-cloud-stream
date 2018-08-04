@@ -28,6 +28,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.HealthIndicatorRegistry;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -83,11 +84,12 @@ public class HealthIndicatorsConfigurationTests {
 				CompositeHealthIndicator.class);
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
 		assertThat(bindersHealthIndicator).isNotNull();
-		assertThat(context.getBean("testHealthIndicator1", CompositeHealthIndicator.class)).isNotNull();
-		assertThat(context.getBean("testHealthIndicator2", CompositeHealthIndicator.class)).isNotNull();
-		@SuppressWarnings("unchecked")
-		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
-				.getPropertyValue("indicators");
+		assertThat(context.getBean("test1HealthIndicator1", CompositeHealthIndicator.class)).isNotNull();
+		assertThat(context.getBean("test2HealthIndicator2", CompositeHealthIndicator.class)).isNotNull();
+
+		HealthIndicatorRegistry registry = (HealthIndicatorRegistry)directFieldAccessor.getPropertyValue("registry");
+
+		Map<String, HealthIndicator> healthIndicators = registry.getAll();
 		assertThat(healthIndicators).containsKey("binder1");
 		assertThat(healthIndicators.get("binder1").health().getStatus()).isEqualTo(Status.UP);
 		assertThat(healthIndicators).containsKey("binder2");
@@ -113,8 +115,8 @@ public class HealthIndicatorsConfigurationTests {
 		}
 		catch (NoSuchBeanDefinitionException e) {
 		}
-		assertThat(context.getBean("testHealthIndicator1", CompositeHealthIndicator.class)).isNotNull();
-		assertThat(context.getBean("testHealthIndicator2", CompositeHealthIndicator.class)).isNotNull();
+		assertThat(context.getBean("test1HealthIndicator1", CompositeHealthIndicator.class)).isNotNull();
+		assertThat(context.getBean("test2HealthIndicator2", CompositeHealthIndicator.class)).isNotNull();
 		context.close();
 	}
 
@@ -126,12 +128,12 @@ public class HealthIndicatorsConfigurationTests {
 		static class TestConfig {
 
 			@Bean
-			public CompositeHealthIndicator testHealthIndicator1() {
+			public CompositeHealthIndicator test1HealthIndicator1() {
 				return new CompositeHealthIndicator(new OrderedHealthAggregator());
 			}
 
 			@Bean
-			public CompositeHealthIndicator testHealthIndicator2() {
+			public CompositeHealthIndicator test2HealthIndicator2() {
 				return new CompositeHealthIndicator(new OrderedHealthAggregator());
 			}
 		}

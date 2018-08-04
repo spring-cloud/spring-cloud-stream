@@ -42,7 +42,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = { "server.port=-1","--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain" })
+@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = { "server.port=-1","--spring.cloud.stream.bindings.input.contentType=text/plain",
+		"--spring.cloud.stream.bindings.output.contentType=text/plain",
+		"--spring.main.allow-bean-definition-overriding=true"})
 public class AggregateWithBeanTest {
 
 	@Autowired

@@ -43,7 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = DefaultHeaderPropagationTests.HeaderPropagationProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE)
+		webEnvironment = SpringBootTest.WebEnvironment.NONE,
+		properties = {"--spring.main.allow-bean-definition-overriding=true"})
 public class DefaultHeaderPropagationTests {
 
 	@Autowired

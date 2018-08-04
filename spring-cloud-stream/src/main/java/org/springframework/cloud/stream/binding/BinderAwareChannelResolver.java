@@ -118,7 +118,9 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			MessageChannel channel = this.bindingTargetFactory.createOutput(channelName);
 			this.beanFactory.registerSingleton(channelName, channel);
 
-			this.instrumentChannelWithGlobalInterceptors(channel, channelName);
+			//TODO: Investigate if the following call is necessary.
+			//initializeBean call on the next line also calling the addMatchingInterceptors method in GlobalChannelInterceptorProcessor
+			//this.instrumentChannelWithGlobalInterceptors(channel, channelName);
 
 			channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
 			if (this.newBindingCallback != null) {

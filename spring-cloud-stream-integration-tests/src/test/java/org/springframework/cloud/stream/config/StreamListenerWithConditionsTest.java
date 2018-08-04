@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -41,6 +42,11 @@ import static org.assertj.core.api.Assertions.fail;
  * @author Marius Bogoevici
  */
 public class StreamListenerWithConditionsTest {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	public void testAnnotatedArgumentsWithConditionalClass() throws Exception {

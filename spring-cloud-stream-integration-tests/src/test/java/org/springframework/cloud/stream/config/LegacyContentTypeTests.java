@@ -43,7 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { LegacyContentTypeTests.LegacyTestSink.class})
+@SpringBootTest(classes = { LegacyContentTypeTests.LegacyTestSink.class},
+		properties = {"--spring.main.allow-bean-definition-overriding=true"})
 public class LegacyContentTypeTests {
 
 	@Autowired

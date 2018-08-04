@@ -43,7 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = DeserializeJSONToJavaTypeTests.FooProcessor.class)
+@SpringBootTest(classes = DeserializeJSONToJavaTypeTests.FooProcessor.class,
+		properties = {"--spring.main.allow-bean-definition-overriding=true"})
 public class DeserializeJSONToJavaTypeTests {
 
 	@Autowired

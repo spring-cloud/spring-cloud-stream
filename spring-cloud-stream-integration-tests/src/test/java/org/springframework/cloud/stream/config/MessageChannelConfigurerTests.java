@@ -53,7 +53,8 @@ import static org.junit.Assert.assertNull;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = { MessageChannelConfigurerTests.TestSink.class,
-		MessageChannelConfigurerTests.TestSource.class, SpelExpressionConverterConfiguration.class})
+		MessageChannelConfigurerTests.TestSource.class, SpelExpressionConverterConfiguration.class},
+		properties = {"--spring.main.allow-bean-definition-overriding=true"})
 public class MessageChannelConfigurerTests {
 
 	@Autowired

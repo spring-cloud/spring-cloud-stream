@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.config;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanCreationException;
@@ -38,6 +39,11 @@ import static org.junit.Assert.fail;
  * @author Ilayaperumal Gopinathan
  */
 public class StreamListenerDuplicateMappingTests {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	@SuppressWarnings("unchecked")

@@ -169,7 +169,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	@Override
 	protected Timer newTimer(Id id, DistributionStatisticConfig distributionStatisticConfig,
 			PauseDetector pauseDetector) {
-		return new StepTimer(id, clock, distributionStatisticConfig, pauseDetector, getBaseTimeUnit());
+		return new StepTimer(id, clock, distributionStatisticConfig, pauseDetector, getBaseTimeUnit(), metricsPublisherConfig.step().toMillis(), false);
 	}
 
 	@Override
@@ -191,7 +191,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 
 	@Override
 	protected DistributionSummary newDistributionSummary(Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
-		return new StepDistributionSummary(id, clock, distributionStatisticConfig, scale);
+		return new StepDistributionSummary(id, clock, distributionStatisticConfig, scale, metricsPublisherConfig.step().toMillis(), false);
 	}
 
 	@Override

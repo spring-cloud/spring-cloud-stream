@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -45,6 +46,11 @@ import static org.springframework.cloud.stream.config.BindingServiceConfiguratio
  * @author Marius Bogoevici
  */
 public class StreamListenerAnnotationBeanPostProcessorOverrideTest {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	@SuppressWarnings("unchecked")

@@ -44,7 +44,8 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
+		properties = {"--spring.main.allow-bean-definition-overriding=true"})
 @DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 public class SchemaRegistryServerAvroTests {
 
