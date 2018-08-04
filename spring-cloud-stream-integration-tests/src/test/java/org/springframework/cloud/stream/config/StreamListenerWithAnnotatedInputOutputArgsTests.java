@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.config;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -48,6 +49,11 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  * @author Oleg Zhurakousky
  */
 public class StreamListenerWithAnnotatedInputOutputArgsTests {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	public void testInputOutputArgs() throws Exception {

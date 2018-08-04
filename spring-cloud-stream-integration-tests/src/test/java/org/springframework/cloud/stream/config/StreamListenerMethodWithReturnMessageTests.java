@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.assertj.core.api.Assertions;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -55,6 +56,11 @@ public class StreamListenerMethodWithReturnMessageTests {
 
 	public StreamListenerMethodWithReturnMessageTests(Class<?> configClass) {
 		this.configClass = configClass;
+	}
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
 	}
 
 	@Parameterized.Parameters

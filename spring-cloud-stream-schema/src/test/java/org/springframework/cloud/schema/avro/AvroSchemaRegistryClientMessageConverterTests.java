@@ -21,11 +21,14 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -53,6 +56,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AvroSchemaRegistryClientMessageConverterTests {
 
 	static SchemaRegistryClient stubSchemaRegistryClient = new StubSchemaRegistryClient();
+
+	@Before
+	public void setup() {
+		System.setProperty("--spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	public void testSendMessage() throws Exception {
@@ -159,10 +167,16 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 
 	@Configuration
 	public static class NoCacheConfiguration {
+
 		@Bean
 		@StreamMessageConverter
 		AvroSchemaRegistryClientMessageConverter avroSchemaRegistryClientMessageConverter() {
 			return new AvroSchemaRegistryClientMessageConverter(new DefaultSchemaRegistryClient(), new NoOpCacheManager());
+		}
+
+		@Bean
+		ServletWebServerFactory servletWebServerFactory(){
+			return new TomcatServletWebServerFactory();
 		}
 	}
 }

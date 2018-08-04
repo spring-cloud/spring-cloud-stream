@@ -67,6 +67,7 @@ public class AvroMessageConverterSerializationTests {
 
 	@Before
 	public void setup() {
+		System.setProperty("--spring.main.allow-bean-definition-overriding", "true");
 		schemaRegistryServerContext = SpringApplication
 				.run(SchemaRegistryServerApplication.class);
 	}

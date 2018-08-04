@@ -44,7 +44,8 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = DefaultHeaderPropagationWithApplicationProvidedHeaderTests.HeaderPropagationProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE)
+		webEnvironment = SpringBootTest.WebEnvironment.NONE,
+		properties = {"--spring.main.allow-bean-definition-overriding=true"})
 public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 
 	@Autowired

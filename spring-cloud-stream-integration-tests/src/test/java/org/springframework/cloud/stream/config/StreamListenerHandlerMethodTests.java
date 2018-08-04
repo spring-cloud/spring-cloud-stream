@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.config;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -66,6 +67,11 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  * @author Oleg Zhurakousky
  */
 public class StreamListenerHandlerMethodTests {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	public void testInvalidInputOnMethod() throws Exception {

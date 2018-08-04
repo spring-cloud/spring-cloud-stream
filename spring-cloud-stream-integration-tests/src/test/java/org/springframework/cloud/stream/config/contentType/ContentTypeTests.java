@@ -26,6 +26,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -58,6 +59,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ContentTypeTests {
 
 	private ObjectMapper mapper = new ObjectMapper();
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	public void testSendWithDefaultContentType() throws Exception {

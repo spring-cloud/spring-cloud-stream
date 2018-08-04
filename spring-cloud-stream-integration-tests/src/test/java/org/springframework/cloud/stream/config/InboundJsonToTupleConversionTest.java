@@ -45,7 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = InboundJsonToTupleConversionTest.FooProcessor.class)
+@SpringBootTest(classes = InboundJsonToTupleConversionTest.FooProcessor.class,
+		properties = {"--spring.main.allow-bean-definition-overriding=true"})
 public class InboundJsonToTupleConversionTest {
 
 	@Autowired

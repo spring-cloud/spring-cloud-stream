@@ -64,6 +64,7 @@ public class AggregationTest {
 
 	@Before
 	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
 		System.setProperty("server.port", "0");
 	}
 

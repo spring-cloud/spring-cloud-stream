@@ -94,6 +94,8 @@ public class BinderAwareChannelResolverTests {
 	@SuppressWarnings("unchecked")
 	@Before
 	public void setupContext() throws Exception {
+		//System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+
 		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration(BinderAwareChannelResolverTests.InterceptorConfiguration.class))
 				.web(WebApplicationType.NONE).run();
 

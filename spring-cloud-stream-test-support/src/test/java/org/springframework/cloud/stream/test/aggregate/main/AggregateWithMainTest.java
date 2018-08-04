@@ -46,6 +46,7 @@ public class AggregateWithMainTest {
 	@Before
 	public void before() {
 		System.setProperty("server.port", "0");
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
 	}
 
 	@SuppressWarnings("unchecked")
