@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -177,7 +178,7 @@ public class KafkaBinderUnitTests {
 				Thread.currentThread().interrupt();
 			}
 			return new ConsumerRecords<>(Collections.emptyMap());
-		}).given(consumer).poll(anyLong());
+		}).given(consumer).poll(any(Duration.class));
 		willAnswer(i -> {
 			((org.apache.kafka.clients.consumer.ConsumerRebalanceListener) i.getArgument(1))
 					.onPartitionsAssigned(partitions);
