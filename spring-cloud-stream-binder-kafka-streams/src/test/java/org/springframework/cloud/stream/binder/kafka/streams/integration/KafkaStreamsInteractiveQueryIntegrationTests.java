@@ -25,6 +25,7 @@ import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
@@ -138,7 +139,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 					.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value.id, value))
 					.groupByKey(Serialized.with(new Serdes.IntegerSerde(), new JsonSerde<>(Product.class)))
-					.count("prod-id-count-store")
+					.count(Materialized.as("prod-id-count-store"))
 					.toStream()
 					.map((key, value) -> new KeyValue<>(null, "Count for product with ID 123: " + value));
 		}

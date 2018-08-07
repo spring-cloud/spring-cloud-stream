@@ -117,11 +117,6 @@ public class KafkaStreamsStateStoreIntegrationTests {
 					}
 
 					@Override
-					public void punctuate(long l) {
-
-					}
-
-					@Override
 					public void close() {
 						if (state != null) {
 							state.close();

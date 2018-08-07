@@ -36,6 +36,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
@@ -82,25 +83,25 @@ public class KafkaBinderUnitTests {
 		method.setAccessible(true);
 
 		// test default for anon
-		Object factory = method.invoke(binder, true, "foo", ecp);
+		Object factory = method.invoke(binder, true, "foo-1", ecp);
 		Map<?, ?> configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)).isEqualTo("latest");
 
 		// test default for named
-		factory = method.invoke(binder, false, "foo", ecp);
+		factory = method.invoke(binder, false, "foo-2", ecp);
 		configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)).isEqualTo("earliest");
 
 		// binder level setting
 		binderConfigurationProperties.setConfiguration(
 				Collections.singletonMap(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest"));
-		factory = method.invoke(binder, false, "foo", ecp);
+		factory = method.invoke(binder, false, "foo-3", ecp);
 		configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)).isEqualTo("latest");
 
 		// consumer level setting
 		consumerProps.setConfiguration(Collections.singletonMap(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"));
-		factory = method.invoke(binder, false, "foo", ecp);
+		factory = method.invoke(binder, false, "foo-4", ecp);
 		configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)).isEqualTo("earliest");
 	}
@@ -131,38 +132,38 @@ public class KafkaBinderUnitTests {
 
 	@Test
 	public void testOffsetResetWithGroupManagementEarliest() throws Exception {
-		testOffsetResetWithGroupManagement(true, true);
+		testOffsetResetWithGroupManagement(true, true, "foo-100", "testOffsetResetWithGroupManagementEarliest");
 	}
 
 	@Test
 	public void testOffsetResetWithGroupManagementLatest() throws Throwable {
-		testOffsetResetWithGroupManagement(false, true);
+		testOffsetResetWithGroupManagement(false, true, "foo-101", "testOffsetResetWithGroupManagementLatest");
 	}
 
 	@Test
 	public void testOffsetResetWithManualAssignmentEarliest() throws Exception {
-		testOffsetResetWithGroupManagement(true, false);
+		testOffsetResetWithGroupManagement(true, false, "foo-102", "testOffsetResetWithManualAssignmentEarliest");
 	}
 
 	@Test
 	public void testOffsetResetWithGroupManualAssignmentLatest() throws Throwable {
-		testOffsetResetWithGroupManagement(false, false);
+		testOffsetResetWithGroupManagement(false, false, "foo-103", "testOffsetResetWithGroupManualAssignmentLatest");
 	}
 
-	private void testOffsetResetWithGroupManagement(final boolean earliest, boolean groupManage) throws Exception {
+	private void testOffsetResetWithGroupManagement(final boolean earliest, boolean groupManage, String topic, String group) throws Exception {
 		final List<TopicPartition> partitions = new ArrayList<>();
-		partitions.add(new TopicPartition("foo", 0));
-		partitions.add(new TopicPartition("foo", 1));
+		partitions.add(new TopicPartition(topic, 0));
+		partitions.add(new TopicPartition(topic, 1));
 		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
 				new TestKafkaProperties());
 		KafkaTopicProvisioner provisioningProvider = mock(KafkaTopicProvisioner.class);
 		ConsumerDestination dest = mock(ConsumerDestination.class);
-		given(dest.getName()).willReturn("foo");
+		given(dest.getName()).willReturn(topic);
 		given(provisioningProvider.provisionConsumerDestination(anyString(), anyString(), any())).willReturn(dest);
 		final AtomicInteger part = new AtomicInteger();
 		willAnswer(i -> {
 			return partitions.stream()
-					.map(p -> new PartitionInfo("foo", part.getAndIncrement(), null, null, null))
+					.map(p -> new PartitionInfo(topic, part.getAndIncrement(), null, null, null))
 					.collect(Collectors.toList());
 		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), anyBoolean(), any());
 		@SuppressWarnings("unchecked")
@@ -183,7 +184,7 @@ public class KafkaBinderUnitTests {
 			latch.countDown();
 			latch.countDown();
 			return null;
-		}).given(consumer).subscribe(eq(Collections.singletonList("foo")),
+		}).given(consumer).subscribe(eq(Collections.singletonList(topic)),
 				any(org.apache.kafka.clients.consumer.ConsumerRebalanceListener.class));
 		willAnswer(i -> {
 			latch.countDown();
@@ -193,7 +194,7 @@ public class KafkaBinderUnitTests {
 
 			@Override
 			protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous, String consumerGroup,
-					ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+																	   ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
 
 				return new ConsumerFactory<byte[], byte[]>() {
 
@@ -213,6 +214,11 @@ public class KafkaBinderUnitTests {
 					}
 
 					@Override
+					public Consumer<byte[], byte[]> createConsumer(String groupId, String clientIdPrefix, String clientIdSuffix) {
+						return consumer;
+					}
+
+					@Override
 					public boolean isAutoCommit() {
 						return false;
 					}
@@ -222,7 +228,7 @@ public class KafkaBinderUnitTests {
 						Map<String, Object> props = new HashMap<>();
 						props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
 								earliest ? "earliest" : "latest");
-						props.put(ConsumerConfig.GROUP_ID_CONFIG, "bar");
+						props.put(ConsumerConfig.GROUP_ID_CONFIG, group);
 						return props;
 					}
 
@@ -240,7 +246,7 @@ public class KafkaBinderUnitTests {
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = new ExtendedConsumerProperties<KafkaConsumerProperties>(
 				extension);
 		consumerProperties.setInstanceCount(1);
-		binder.bindConsumer("foo", "bar", channel, consumerProperties);
+		Binding<MessageChannel> messageChannelBinding = binder.bindConsumer(topic, group, channel, consumerProperties);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		if (groupManage) {
 			if (earliest) {
@@ -260,6 +266,7 @@ public class KafkaBinderUnitTests {
 				verify(consumer).seek(partitions.get(1), Long.MAX_VALUE);
 			}
 		}
+		messageChannelBinding.unbind();
 	}
 
 

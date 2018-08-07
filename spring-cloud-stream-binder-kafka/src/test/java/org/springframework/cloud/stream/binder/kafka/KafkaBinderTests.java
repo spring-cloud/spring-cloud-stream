@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -104,8 +103,8 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
-import org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -113,7 +112,7 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.test.core.BrokerAddress;
-import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -127,7 +126,6 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
-import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SettableListenableFuture;
@@ -154,7 +152,7 @@ public class KafkaBinderTests extends
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class.getSimpleName();
 
 	@ClassRule
-	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 10, "error.pollableDlq.group");
+	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10, "error.pollableDlq.group-pcWithDlq");
 
 	private KafkaTestBinder binder;
 
@@ -214,7 +212,7 @@ public class KafkaBinderTests extends
 	private KafkaBinderConfigurationProperties createConfigurationProperties() {
 		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties(
 				new TestKafkaProperties());
-		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
+		BrokerAddress[] brokerAddresses = embeddedKafka.getEmbeddedKafka().getBrokerAddresses();
 		List<String> bAddresses = new ArrayList<>();
 		for (BrokerAddress bAddress : brokerAddresses) {
 			bAddresses.add(bAddress.toString());
@@ -247,7 +245,7 @@ public class KafkaBinderTests extends
 			timeoutMultiplier = Double.parseDouble(multiplier);
 		}
 
-		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
+		BrokerAddress[] brokerAddresses = embeddedKafka.getEmbeddedKafka().getBrokerAddresses();
 		List<String> bAddresses = new ArrayList<>();
 		for (BrokerAddress bAddress : brokerAddresses) {
 			bAddresses.add(bAddress.toString());
@@ -339,9 +337,9 @@ public class KafkaBinderTests extends
 		Assertions.assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
 		Assertions.assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE))
 				.isEqualTo(MimeTypeUtils.TEXT_PLAIN);
-		Assertions.assertThat(inboundMessageRef.get().getHeaders().get("foo")).isInstanceOf(MimeType.class);
-		MimeType actual = (MimeType) inboundMessageRef.get().getHeaders().get("foo");
-		Assertions.assertThat(actual).isEqualTo(MimeTypeUtils.TEXT_PLAIN);
+		Assertions.assertThat(inboundMessageRef.get().getHeaders().get("foo")).isInstanceOf(String.class);
+		String actual = (String) inboundMessageRef.get().getHeaders().get("foo");
+		Assertions.assertThat(actual).isEqualTo(MimeTypeUtils.TEXT_PLAIN.toString());
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -498,7 +496,7 @@ public class KafkaBinderTests extends
 		assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
 				.isEqualTo("foo.bar".getBytes(StandardCharsets.UTF_8));
 		assertThat(new String((byte[]) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
-				.startsWith("failed to send Message to channel 'input'");
+				.startsWith("Dispatcher failed to deliver Message; nested exception is java.lang.RuntimeException: fail");
 		assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
 				.isNotNull();
 		binderBindUnbindLatency();
@@ -680,7 +678,7 @@ public class KafkaBinderTests extends
 					.isEqualTo(TimestampType.CREATE_TIME.toString());
 
 			assertThat(((String) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
-					.startsWith("failed to send Message to channel 'input'");
+					.startsWith("Dispatcher failed to deliver Message; nested exception is java.lang.RuntimeException: fail");
 			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
 					.isNotNull();
 			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
@@ -704,7 +702,7 @@ public class KafkaBinderTests extends
 					.isEqualTo(TimestampType.CREATE_TIME.toString().getBytes());
 
 			assertThat(new String((byte[]) receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE)))
-					.startsWith("failed to send Message to channel 'input'");
+					.startsWith("Dispatcher failed to deliver Message; nested exception is java.lang.RuntimeException: fail");
 
 			assertThat(receivedMessage.getHeaders().get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE))
 					.isNotNull();
@@ -1167,7 +1165,7 @@ public class KafkaBinderTests extends
 
 		AbstractMessageListenerContainer<?, ?> container = TestUtils.getPropertyValue(consumerBinding,
 				"lifecycle.messageListenerContainer", AbstractMessageListenerContainer.class);
-		assertThat(container.getContainerProperties().getAckMode()).isEqualTo(AckMode.BATCH);
+		assertThat(container.getContainerProperties().getAckMode()).isEqualTo(ContainerProperties.AckMode.BATCH);
 
 		String testPayload1 = "foo" + UUID.randomUUID().toString();
 		Message<?> message1 = org.springframework.integration.support.MessageBuilder.withPayload(
@@ -1214,7 +1212,7 @@ public class KafkaBinderTests extends
 
 		AbstractMessageListenerContainer<?, ?> container = TestUtils.getPropertyValue(consumerBinding2,
 				"lifecycle.messageListenerContainer", AbstractMessageListenerContainer.class);
-		assertThat(container.getContainerProperties().getAckMode()).isEqualTo(AckMode.RECORD);
+		assertThat(container.getContainerProperties().getAckMode()).isEqualTo(ContainerProperties.AckMode.RECORD);
 
 		Message<?> receivedMessage1 = receive(inbound1);
 		assertThat(receivedMessage1).isNotNull();
@@ -2466,7 +2464,7 @@ public class KafkaBinderTests extends
 		assertThat(inbound.getHeaders().get(BinderHeaders.NATIVE_HEADERS_PRESENT)).isNull();
 
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("testSendAndReceiveWithMixedMode", "false",
-				embeddedKafka);
+				embeddedKafka.getEmbeddedKafka());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
@@ -2503,9 +2501,9 @@ public class KafkaBinderTests extends
 		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProps = createConsumerProperties();
 		consumerProps.setMultiplex(true);
-		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable,anotherOne", "group",
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable,anotherOne", "group-polledConsumer",
 				inboundBindTarget, consumerProps);
-		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
+		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka.getEmbeddedKafka());
 		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
 		template.send("pollable", "testPollable");
 		boolean polled = inboundBindTarget.poll(m -> {
@@ -2544,8 +2542,8 @@ public class KafkaBinderTests extends
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
 		properties.getExtension().setEnableDlq(true);
-		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
-		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlq", "group",
+		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka.getEmbeddedKafka());
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlq", "group-pcWithDlq",
 				inboundBindTarget, properties);
 		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
 		template.send("pollableDlq", "testPollableDLQ");
@@ -2561,12 +2559,12 @@ public class KafkaBinderTests extends
 		catch (MessageHandlingException e) {
 			assertThat(e.getCause().getMessage()).isEqualTo("test DLQ");
 		}
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("dlq", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("dlq", "false", embeddedKafka.getEmbeddedKafka());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		ConsumerFactory cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		Consumer consumer = cf.createConsumer();
-		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "error.pollableDlq.group");
-		ConsumerRecord deadLetter = KafkaTestUtils.getSingleRecord(consumer, "error.pollableDlq.group");
+		embeddedKafka.getEmbeddedKafka().consumeFromAnEmbeddedTopic(consumer, "error.pollableDlq.group-pcWithDlq");
+		ConsumerRecord deadLetter = KafkaTestUtils.getSingleRecord(consumer, "error.pollableDlq.group-pcWithDlq");
 		assertThat(deadLetter).isNotNull();
 		assertThat(deadLetter.value()).isEqualTo("testPollableDLQ");
 		binding.unbind();
@@ -2577,7 +2575,7 @@ public class KafkaBinderTests extends
 	@Test
 	public void testTopicPatterns() throws Exception {
 		try (AdminClient admin = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
-				embeddedKafka.getBrokersAsString()))) {
+				embeddedKafka.getEmbeddedKafka().getBrokersAsString()))) {
 			admin.createTopics(Collections.singletonList(new NewTopic("topicPatterns.1", 1, (short) 1))).all().get();
 			Binder binder = getBinder();
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
@@ -2592,7 +2590,7 @@ public class KafkaBinderTests extends
 			Binding<MessageChannel> consumerBinding = binder.bindConsumer("topicPatterns\\..*",
 					"testTopicPatterns", moduleInputChannel, consumerProperties);
 			DefaultKafkaProducerFactory pf = new DefaultKafkaProducerFactory(
-					KafkaTestUtils.producerProps(embeddedKafka));
+					KafkaTestUtils.producerProps(embeddedKafka.getEmbeddedKafka()));
 			KafkaTemplate template = new KafkaTemplate(pf);
 			template.send("topicPatterns.1", "foo");
 			assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();

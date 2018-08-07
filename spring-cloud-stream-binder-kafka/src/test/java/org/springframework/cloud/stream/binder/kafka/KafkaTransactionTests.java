@@ -34,7 +34,7 @@ import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProv
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
 
@@ -53,13 +53,13 @@ import static org.mockito.Mockito.spy;
 public class KafkaTransactionTests {
 
 	@ClassRule
-	public static final KafkaEmbedded embeddedKafka = new KafkaEmbedded(1);
+	public static final EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1);
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testProducerRunsInTx() {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
-		kafkaProperties.setBootstrapServers(Collections.singletonList(embeddedKafka.getBrokersAsString()));
+		kafkaProperties.setBootstrapServers(Collections.singletonList(embeddedKafka.getEmbeddedKafka().getBrokersAsString()));
 		KafkaBinderConfigurationProperties configurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);
 		configurationProperties.getTransaction().setTransactionIdPrefix("foo-");

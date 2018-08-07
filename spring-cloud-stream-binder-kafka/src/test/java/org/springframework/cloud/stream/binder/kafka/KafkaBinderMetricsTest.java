@@ -84,11 +84,11 @@ public class KafkaBinderMetricsTest {
 	public void shouldIndicateLag() {
 		org.mockito.BDDMockito.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group1-metrics", partitions));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group").tag("topic", TEST_TOPIC).timeGauge()
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group1-metrics").tag("topic", TEST_TOPIC).timeGauge()
 				.value(TimeUnit.MILLISECONDS)).isEqualTo(500.0);
 	}
 
@@ -100,22 +100,22 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(consumer.endOffsets(ArgumentMatchers.anyCollection())).willReturn(endOffsets);
 		org.mockito.BDDMockito.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0), new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group2-metrics", partitions));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group").tag("topic", TEST_TOPIC).timeGauge()
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group2-metrics").tag("topic", TEST_TOPIC).timeGauge()
 				.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
 	}
 
 	@Test
 	public void shouldIndicateFullLagForNotCommittedGroups() {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group3-metrics", partitions));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group").tag("topic", TEST_TOPIC).timeGauge()
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group3-metrics").tag("topic", TEST_TOPIC).timeGauge()
 				.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
 	}
 
@@ -130,11 +130,11 @@ public class KafkaBinderMetricsTest {
 	@Test
 	public void createsConsumerOnceWhenInvokedMultipleTimes() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group4-metrics", partitions));
 
 		metrics.bindTo(meterRegistry);
 
-		TimeGauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group").tag("topic", TEST_TOPIC).timeGauge();
+		TimeGauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group4-metrics").tag("topic", TEST_TOPIC).timeGauge();
 		gauge.value(TimeUnit.MILLISECONDS);
 		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
 
@@ -147,11 +147,11 @@ public class KafkaBinderMetricsTest {
 				.willReturn(consumer);
 
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group5-metrics", partitions));
 
 		metrics.bindTo(meterRegistry);
 
-		TimeGauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group").tag("topic", TEST_TOPIC).timeGauge();
+		TimeGauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group5-metrics").tag("topic", TEST_TOPIC).timeGauge();
 		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(0);
 		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
 

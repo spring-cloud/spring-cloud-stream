@@ -46,7 +46,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
 		"spring.cloud.stream.kafka.bindings.input.consumer.admin.replication-factor=2",
 		"spring.cloud.stream.kafka.bindings.input.consumer.admin.replicas-assignments.0=0,1",
-		"spring.cloud.stream.kafka.bindings.input.consumer.admin.configuration.message.format.version=0.9.0.0" })
+		"spring.cloud.stream.kafka.bindings.input.consumer.admin.configuration.message.format.version=0.9.0.0",
+		"spring.main.allow-bean-definition-overriding=true"})
 @EnableIntegration
 public class AdminConfigTests {
 

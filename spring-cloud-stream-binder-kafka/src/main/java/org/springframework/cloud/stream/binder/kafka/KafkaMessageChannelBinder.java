@@ -75,27 +75,25 @@ import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.integration.StaticMessageHeaderAccessor;
+import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.channel.ChannelInterceptorAware;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.integration.kafka.support.RawRecordHeaderErrorMessageStrategy;
-import org.springframework.integration.support.AcknowledgmentCallback;
-import org.springframework.integration.support.AcknowledgmentCallback.Status;
 import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.integration.support.MessageBuilder;
-import org.springframework.integration.support.StaticMessageHeaderAccessor;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
-import org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
-import org.springframework.kafka.listener.config.ContainerProperties;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -417,14 +415,14 @@ public class KafkaMessageChannelBinder extends
 		// end of these won't be needed...
 		if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
 			messageListenerContainer.getContainerProperties()
-					.setAckMode(AbstractMessageListenerContainer.AckMode.MANUAL);
+					.setAckMode(ContainerProperties.AckMode.MANUAL);
 			messageListenerContainer.getContainerProperties().setAckOnError(false);
 		}
 		else {
 			messageListenerContainer.getContainerProperties()
 					.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
 			if (extendedConsumerProperties.getExtension().isAckEachRecord()) {
-				messageListenerContainer.getContainerProperties().setAckMode(AckMode.RECORD);
+				messageListenerContainer.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
 			}
 		}
 		if (this.logger.isDebugEnabled()) {
@@ -783,10 +781,10 @@ public class KafkaMessageChannelBinder extends
 							((MessagingException) message.getPayload()).getFailedMessage());
 					if (ack != null) {
 						if (isAutoCommitOnError(properties)) {
-							ack.acknowledge(Status.REJECT);
+							ack.acknowledge(AcknowledgmentCallback.Status.REJECT);
 						}
 						else {
-							ack.acknowledge(Status.REQUEUE);
+							ack.acknowledge(AcknowledgmentCallback.Status.REQUEUE);
 						}
 					}
 				}

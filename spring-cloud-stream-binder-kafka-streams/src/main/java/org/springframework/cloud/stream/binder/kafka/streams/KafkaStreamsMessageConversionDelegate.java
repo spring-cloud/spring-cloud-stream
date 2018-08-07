@@ -182,12 +182,6 @@ public class KafkaStreamsMessageConversionDelegate {
 				}
 			}
 
-			@SuppressWarnings("deprecation")
-			@Override
-			public void punctuate(long timestamp) {
-
-			}
-
 			@Override
 			public void close() {
 
