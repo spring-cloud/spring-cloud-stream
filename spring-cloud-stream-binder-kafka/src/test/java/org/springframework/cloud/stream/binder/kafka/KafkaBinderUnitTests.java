@@ -194,7 +194,7 @@ public class KafkaBinderUnitTests {
 
 			@Override
 			protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous, String consumerGroup,
-																	   ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+																	ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
 
 				return new ConsumerFactory<byte[], byte[]>() {
 
@@ -268,6 +268,5 @@ public class KafkaBinderUnitTests {
 		}
 		messageChannelBinding.unbind();
 	}
-
 
 }
