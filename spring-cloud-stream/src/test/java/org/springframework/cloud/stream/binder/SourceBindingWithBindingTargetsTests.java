@@ -43,7 +43,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = SourceBindingWithBindingTargetsTests.TestSource.class)
+@SpringBootTest(classes = SourceBindingWithBindingTargetsTests.TestSource.class,
+				properties = "spring.main.allow-bean-definition-overriding=true")
 public class SourceBindingWithBindingTargetsTests {
 
 	@Autowired

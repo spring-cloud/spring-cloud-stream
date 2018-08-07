@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -36,6 +37,11 @@ import static org.mockito.ArgumentMatchers.isNull;
  * @author Marius Bogoevici
  */
 public class ErrorBindingTests {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test

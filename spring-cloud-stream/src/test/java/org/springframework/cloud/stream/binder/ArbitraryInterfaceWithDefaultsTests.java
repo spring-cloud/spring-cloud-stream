@@ -39,7 +39,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ArbitraryInterfaceWithDefaultsTests.TestFooChannels.class)
+@SpringBootTest(classes = ArbitraryInterfaceWithDefaultsTests.TestFooChannels.class,
+				properties = "spring.main.allow-bean-definition-overriding=true")
 public class ArbitraryInterfaceWithDefaultsTests {
 
 	@Autowired

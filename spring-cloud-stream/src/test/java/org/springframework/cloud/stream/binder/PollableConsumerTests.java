@@ -63,6 +63,7 @@ public class PollableConsumerTests {
 
 	@Before
 	public void before() {
+		//System.setProperty("spring.main.allow-bean-definition-overriding", "true");
 		this.messageConverter = new CompositeMessageConverterFactory().getMessageConverterForAllRegistered();
 	}
 

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -35,6 +36,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Ilayaperumal Gopinathan
  */
 public class LifecycleBinderTests {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	public void testOnlySmartLifecyclesStarted() {

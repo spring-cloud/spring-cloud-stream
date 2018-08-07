@@ -40,7 +40,8 @@ import static org.mockito.Mockito.verify;
  * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ProcessorBindingWithBindingTargetsTests.TestProcessor.class)
+@SpringBootTest(classes = ProcessorBindingWithBindingTargetsTests.TestProcessor.class,
+				properties = "spring.main.allow-bean-definition-overriding=true")
 public class ProcessorBindingWithBindingTargetsTests {
 
 	@Autowired

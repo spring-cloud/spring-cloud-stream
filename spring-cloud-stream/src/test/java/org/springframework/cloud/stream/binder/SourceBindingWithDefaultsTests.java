@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -38,7 +39,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = SourceBindingWithDefaultsTests.TestSource.class)
+@SpringBootTest(classes = SourceBindingWithDefaultsTests.TestSource.class,
+				properties = "spring.main.allow-bean-definition-overriding=true")
 public class SourceBindingWithDefaultsTests {
 
 	@Autowired
@@ -46,6 +48,11 @@ public class SourceBindingWithDefaultsTests {
 
 	@Autowired
 	private Source testSource;
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test

@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.assertj.core.api.ThrowableAssert;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
@@ -39,17 +39,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 public class InvalidBindingConfigurationTests {
 
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
+
 	@Test
 	public void testDuplicateBeanByBindingConfig() {
 		assertThatThrownBy(
-				new ThrowableAssert.ThrowingCallable() {
-
-					@Override
-					public void call() throws Throwable {
-						SpringApplication.run(TestBindingConfig.class);
-					}
-
-				})
+				() -> SpringApplication.run(TestBindingConfig.class))
 				.isInstanceOf(BeanDefinitionStoreException.class)
 				.hasMessageContaining("bean definition with this name already exists")
 				.hasMessageContaining(TestInvalidBinding.NAME)

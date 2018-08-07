@@ -44,7 +44,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 		"spring.cloud.stream.default.producer.requiredGroups=someGroup",
 		"spring.cloud.stream.default.producer.partitionCount=1",
 		"spring.cloud.stream.bindings.output.producer.headerMode=none",
-		"spring.cloud.stream.bindings.output.producer.partitionCount=4"})
+		"spring.cloud.stream.bindings.output.producer.partitionCount=4",
+		"spring.main.allow-bean-definition-overriding=true"})
 public class SourceBindingWithGlobalPropertiesTest {
 
 	@Autowired

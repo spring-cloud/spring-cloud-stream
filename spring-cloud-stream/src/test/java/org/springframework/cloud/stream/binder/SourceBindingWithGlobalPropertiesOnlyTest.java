@@ -38,7 +38,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = {TestChannelBinderConfiguration.class, SourceBindingWithGlobalPropertiesOnlyTest.TestSource.class, SpelExpressionConverterConfiguration.class},
 				properties = {"spring.cloud.stream.default.contentType=application/json",
-							"spring.cloud.stream.default.producer.partitionKeyExpression=key" })
+							"spring.cloud.stream.default.producer.partitionKeyExpression=key"})
 public class SourceBindingWithGlobalPropertiesOnlyTest {
 
 	@Autowired

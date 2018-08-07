@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -44,6 +45,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Janne Valkealahti
  */
 public class InputOutputBindingOrderTest {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test

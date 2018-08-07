@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -72,6 +73,11 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class ContentTypeTckTests {
+
+	@Before
+	public void before() {
+		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
+	}
 
 	@Test
 	public void stringToMapStreamListener() {
