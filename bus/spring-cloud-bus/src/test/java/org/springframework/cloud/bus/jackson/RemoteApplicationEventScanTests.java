@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.junit.Test;
 import org.springframework.boot.Banner;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.EnvironmentChangeRemoteApplicationEvent;
@@ -98,7 +99,7 @@ public class RemoteApplicationEventScanTests {
 	}
 
 	private ConfigurableApplicationContext createTestContext(Class<?> configuration) {
-		return new SpringApplicationBuilder(configuration).web(false)
+		return new SpringApplicationBuilder(configuration).web(WebApplicationType.NONE)
 				.bannerMode(Banner.Mode.OFF).run();
 	}
 

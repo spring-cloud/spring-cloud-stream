@@ -68,7 +68,7 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void defaultId() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class);
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class, "--spring.main.allow-bean-definition-overriding=true");
 		assertTrue("Wrong ID: " + context.getBean(BusProperties.class).getId(),
 				this.context.getBean(BusProperties.class).getId()
 						.startsWith("application:0:"));
@@ -77,7 +77,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundNotForSelf() {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
-				"--spring.cloud.bus.id=foo");
+				"--spring.cloud.bus.id=foo", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "bar", "bar")));
@@ -88,7 +88,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundFromSelf() {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
-				"--spring.cloud.bus.id=foo");
+				"--spring.cloud.bus.id=foo", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
@@ -99,7 +99,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundNotFromSelf() {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
-				"--spring.cloud.bus.id=bar");
+				"--spring.cloud.bus.id=bar", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
@@ -113,7 +113,7 @@ public class BusAutoConfigurationTests {
 				new Class[] { InboundMessageHandlerConfiguration.class,
 						OutboundMessageHandlerConfiguration.class,
 						SentMessageConfiguration.class },
-				new String[] { "--spring.cloud.bus.id=bar" });
+				new String[] { "--spring.cloud.bus.id=bar", "--spring.main.allow-bean-definition-overriding=true" });
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
@@ -135,7 +135,7 @@ public class BusAutoConfigurationTests {
 						OutboundMessageHandlerConfiguration.class,
 						SentMessageConfiguration.class },
 				new String[] { "--spring.cloud.bus.trace.enabled=true",
-						"--spring.cloud.bus.id=bar" });
+						"--spring.cloud.bus.id=bar", "--spring.main.allow-bean-definition-overriding=true" });
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
@@ -155,7 +155,7 @@ public class BusAutoConfigurationTests {
 						OutboundMessageHandlerConfiguration.class,
 						AckMessageConfiguration.class },
 				new String[] { "--spring.cloud.bus.trace.enabled=true",
-						"--spring.cloud.bus.id=bar" });
+						"--spring.cloud.bus.id=bar", "--spring.main.allow-bean-definition-overriding=true" });
 		this.context.getBean(BusProperties.class).setId("bar");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(new AckRemoteApplicationEvent(this, "foo",
@@ -169,7 +169,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void outboundFromSelf() throws Exception {
 		this.context = SpringApplication.run(OutboundMessageHandlerConfiguration.class,
-				"--debug=true", "--spring.cloud.bus.id=foo");
+				"--debug=true", "--spring.cloud.bus.id=foo", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", null));
 		OutboundMessageHandlerConfiguration outbound = this.context
 				.getBean(OutboundMessageHandlerConfiguration.class);
@@ -180,7 +180,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void outboundNotFromSelf() {
 		this.context = SpringApplication.run(OutboundMessageHandlerConfiguration.class,
-				"--spring.cloud.bus.id=bar");
+				"--spring.cloud.bus.id=bar", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", null));
 		assertNull(
 				this.context.getBean(OutboundMessageHandlerConfiguration.class).message);
@@ -189,7 +189,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundNotFromSelfPathPattern() {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
-				"--spring.cloud.bus.id=bar:1000");
+				"--spring.cloud.bus.id=bar:1000", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar:*")));
@@ -200,7 +200,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundNotFromSelfDeepPathPattern() {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
-				"--spring.cloud.bus.id=bar:test:1000");
+				"--spring.cloud.bus.id=bar:test:1000", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar:**")));
@@ -211,7 +211,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundNotFromSelfFlatPattern() {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
-				"--spring.cloud.bus.id=bar");
+				"--spring.cloud.bus.id=bar", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar*")));
@@ -223,7 +223,7 @@ public class BusAutoConfigurationTests {
 	@Test
 	public void inboundNotFromSelfUnknown() {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
-				"--spring.cloud.bus.id=bar");
+				"--spring.cloud.bus.id=bar", "--spring.main.allow-bean-definition-overriding=true");
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(new UnknownRemoteApplicationEvent(this,
 						"UnknownEvent", "yada".getBytes())));
@@ -235,7 +235,7 @@ public class BusAutoConfigurationTests {
 	@Ignore // TODO: replicate problem
 	public void serviceMatcherIdIsConstantAfterRefresh() {
 		this.context = SpringApplication.run(new Class[] { RefreshConfig.class, },
-				new String[] {});
+				new String[] {"--spring.main.allow-bean-definition-overriding=true"});
 		String originalServiceId = this.context.getBean(ServiceMatcher.class)
 				.getServiceId();
 		this.context.getBean(ContextRefresher.class).refresh();
@@ -249,6 +249,7 @@ public class BusAutoConfigurationTests {
 	}
 
 	@Configuration
+	@EnableAutoConfiguration
 	@Import({ MessageConsumer.class, BusAutoConfiguration.class,
 			TestSupportBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
@@ -291,6 +292,7 @@ public class BusAutoConfigurationTests {
 	}
 
 	@Configuration
+	@EnableAutoConfiguration
 	@Import({ MessageConsumer.class, BusAutoConfiguration.class,
 			TestSupportBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
