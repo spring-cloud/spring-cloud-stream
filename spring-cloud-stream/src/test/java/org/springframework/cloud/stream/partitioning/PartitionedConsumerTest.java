@@ -49,8 +49,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = PartitionedConsumerTest.TestSink.class,
-				properties = "spring.main.allow-bean-definition-overriding=true")
+@SpringBootTest(classes = PartitionedConsumerTest.TestSink.class)
 public class PartitionedConsumerTest {
 
 	@Autowired

@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.test.aggregate.main;
 
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,12 +41,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Artem Bilan
  */
 public class AggregateWithMainTest {
-
-	@Before
-	public void before() {
-		System.setProperty("server.port", "0");
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -77,6 +70,7 @@ public class AggregateWithMainTest {
 
 	@Configuration
 	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
 	static class UppercaseProcessor {
 
 		@Autowired
@@ -91,6 +85,7 @@ public class AggregateWithMainTest {
 
 	@Configuration
 	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
 	static class SuffixProcessor {
 
 		@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)

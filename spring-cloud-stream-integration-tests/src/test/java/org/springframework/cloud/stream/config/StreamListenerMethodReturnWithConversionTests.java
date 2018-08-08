@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -65,11 +64,6 @@ public class StreamListenerMethodReturnWithConversionTests extends Suite {
 	public StreamListenerMethodReturnWithConversionTests(Class<?> klass, RunnerBuilder builder)
 			throws InitializationError {
 		super(klass, builder);
-	}
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
 	}
 
 	@RunWith(Parameterized.class)

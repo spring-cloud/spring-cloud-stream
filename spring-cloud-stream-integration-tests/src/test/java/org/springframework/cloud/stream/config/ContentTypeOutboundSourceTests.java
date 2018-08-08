@@ -41,8 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { ContentTypeOutboundSourceTests.TestSource.class },
-		properties = {"--spring.main.allow-bean-definition-overriding=true"})
+@SpringBootTest(classes = { ContentTypeOutboundSourceTests.TestSource.class })
 public class ContentTypeOutboundSourceTests {
 
 	@Autowired

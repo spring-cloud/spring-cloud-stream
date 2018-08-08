@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -24,13 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,15 +42,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 public class InputOutputBindingOrderTest {
 
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
-
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testInputOutputBindingOrder() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1",
+				"--spring.cloud.stream.defaultBinder=mock");
 		@SuppressWarnings("rawtypes")
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
 		Processor processor = applicationContext.getBean(Processor.class);
@@ -69,7 +61,6 @@ public class InputOutputBindingOrderTest {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@Import({ MockBinderRegistryConfiguration.class, BinderFactoryConfiguration.class })
 	public static class TestSource {
 
 		@Bean

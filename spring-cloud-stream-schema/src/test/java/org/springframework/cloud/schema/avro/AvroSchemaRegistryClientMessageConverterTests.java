@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -56,11 +55,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AvroSchemaRegistryClientMessageConverterTests {
 
 	static SchemaRegistryClient stubSchemaRegistryClient = new StubSchemaRegistryClient();
-
-	@Before
-	public void setup() {
-		System.setProperty("--spring.main.allow-bean-definition-overriding", "true");
-	}
 
 	@Test
 	public void testSendMessage() throws Exception {

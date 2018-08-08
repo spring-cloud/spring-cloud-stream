@@ -38,6 +38,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.Binding;
@@ -47,8 +48,8 @@ import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
@@ -403,7 +404,7 @@ public class BindingServiceTests {
 		properties.put("spring.cloud.stream.binders.mock1.type", "mock");
 		properties.put("spring.cloud.stream.binders.kafka1.type", "kafka");
 		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(properties);
-		DefaultBinderFactory binderFactory = new BinderFactoryConfiguration()
+		BinderFactory binderFactory = new BindingServiceConfiguration()
 				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties);
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory);
@@ -421,7 +422,7 @@ public class BindingServiceTests {
 		properties.put("spring.cloud.stream.binders.mock1.type", "mock");
 		properties.put("spring.cloud.stream.binders.kafka1.type", "kafka");
 		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(properties);
-		DefaultBinderFactory binderFactory = new BinderFactoryConfiguration()
+		BinderFactory binderFactory = new BindingServiceConfiguration()
 				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties);
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory);

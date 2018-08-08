@@ -44,8 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = CustomHeaderPropagationTests.HeaderPropagationProcessor.class,
 		webEnvironment = SpringBootTest.WebEnvironment.NONE,
-		properties = {"spring.cloud.stream.integration.messageHandlerNotPropagatedHeaders=bar,contentType",
-				"--spring.main.allow-bean-definition-overriding=true"})
+		properties = {"spring.cloud.stream.integration.messageHandlerNotPropagatedHeaders=bar,contentType"})
 public class CustomHeaderPropagationTests {
 
 	@Autowired

@@ -18,8 +18,13 @@ package org.springframework.cloud.stream.utils;
 
 import java.util.Collections;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.binder.BinderType;
-import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -36,8 +41,30 @@ import org.springframework.context.annotation.Import;
 public class MockBinderRegistryConfiguration {
 
 	@Bean
-	public BinderTypeRegistry binderTypeRegistry() {
-		return new DefaultBinderTypeRegistry(
-				Collections.singletonMap("mock", new BinderType("", new Class[] { MockBinderConfiguration.class })));
+	public static MockBinderRegistryFactoryPostProcessor mockBinderRegistryFactoryPostProcessor() {
+		return new MockBinderRegistryFactoryPostProcessor();
+	}
+
+	static class MockBinderRegistryFactoryPostProcessor implements BeanFactoryPostProcessor {
+
+		@Override
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+			if (beanFactory.containsBean("binderTypeRegistry")) {
+
+				BeanDefinitionRegistry beanDefinitionRegistry =
+						(BeanDefinitionRegistry) beanFactory;
+				beanDefinitionRegistry.removeBeanDefinition("binderTypeRegistry");
+
+				DefaultBinderTypeRegistry mock = new DefaultBinderTypeRegistry(
+						Collections.singletonMap("mock", new BinderType("", new Class[]{MockBinderConfiguration.class})));
+				BeanDefinition mockDefn =
+						BeanDefinitionBuilder.genericBeanDefinition((Class<DefaultBinderTypeRegistry>) mock.getClass(),
+								() -> mock)
+								.getRawBeanDefinition();
+
+				beanDefinitionRegistry.registerBeanDefinition("binderTypeRegistry", mockDefn);
+
+			}
+		}
 	}
 }

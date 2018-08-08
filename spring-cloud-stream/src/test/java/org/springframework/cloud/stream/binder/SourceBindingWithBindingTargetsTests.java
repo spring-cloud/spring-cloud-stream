@@ -26,8 +26,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
@@ -44,7 +42,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SourceBindingWithBindingTargetsTests.TestSource.class,
-				properties = "spring.main.allow-bean-definition-overriding=true")
+		properties = "spring.cloud.stream.defaultBinder=mock")
 public class SourceBindingWithBindingTargetsTests {
 
 	@Autowired
@@ -68,7 +66,6 @@ public class SourceBindingWithBindingTargetsTests {
 
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/source-binding-test.properties")
 	public static class TestSource {
 

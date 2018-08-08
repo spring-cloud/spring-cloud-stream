@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -49,11 +48,6 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  * @author Oleg Zhurakousky
  */
 public class StreamListenerAnnotatedMethodArgumentsTests {
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
 
 	@Test
 	@SuppressWarnings("unchecked")

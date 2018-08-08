@@ -18,18 +18,15 @@ package org.springframework.cloud.stream.binder.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderType;
-import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -65,17 +62,11 @@ public class TestChannelBinderConfiguration<T> {
 		Import annotation = AnnotationUtils.getAnnotation(EnableBinding.class, Import.class);
 		Map<String, Object> annotationAttributes = AnnotationUtils.getAnnotationAttributes(annotation);
 		configClasses.addAll(Arrays.asList((Class<?>[])annotationAttributes.get("value")));
+		configClasses.add(BindingServiceConfiguration.class);
 		if (additionalConfigurationClasses != null) {
 			configClasses.addAll(Arrays.asList(additionalConfigurationClasses));
 		}
 		return configClasses.toArray(new Class<?>[] {});
-	}
-
-	@Bean
-	public BinderTypeRegistry binderTypeRegistry() {
-		BinderType binderType = new BinderType(NAME, new Class[] {TestChannelBinderConfiguration.class});
-		BinderTypeRegistry btr = new DefaultBinderTypeRegistry(Collections.singletonMap(NAME, binderType));
-		return btr;
 	}
 
 	@Bean

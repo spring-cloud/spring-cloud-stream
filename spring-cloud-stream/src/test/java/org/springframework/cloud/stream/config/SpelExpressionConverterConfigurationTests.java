@@ -54,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class,
-		properties = {"expression: a.b", "spring.main.allow-bean-definition-overriding=true"})
+		properties = {"expression: a.b"})
 public class SpelExpressionConverterConfigurationTests {
 
 	@Autowired

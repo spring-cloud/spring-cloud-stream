@@ -24,8 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
-import org.springframework.context.annotation.Import;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -40,7 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = ArbitraryInterfaceWithDefaultsTests.TestFooChannels.class,
-				properties = "spring.main.allow-bean-definition-overriding=true")
+				properties = "spring.cloud.stream.default-binder=mock")
 public class ArbitraryInterfaceWithDefaultsTests {
 
 	@Autowired
@@ -66,7 +64,6 @@ public class ArbitraryInterfaceWithDefaultsTests {
 
 	@EnableBinding(FooChannels.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestFooChannels {
 
 	}

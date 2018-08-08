@@ -56,8 +56,7 @@ public class CustomPartitionedProducerTest {
 				"--spring.jmx.enabled=false",
 				"--spring.main.web-application-type=none",
 				"--spring.cloud.stream.bindings.output.producer.partitionKeyExtractorClass=org.springframework.cloud.stream.partitioning.CustomPartitionKeyExtractorClass",
-				"--spring.cloud.stream.bindings.output.producer.partitionSelectorClass=org.springframework.cloud.stream.partitioning.CustomPartitionSelectorClass",
-				"--spring.main.allow-bean-definition-overriding=true");
+				"--spring.cloud.stream.bindings.output.producer.partitionSelectorClass=org.springframework.cloud.stream.partitioning.CustomPartitionSelectorClass");
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {
@@ -88,8 +87,7 @@ public class CustomPartitionedProducerTest {
 				"--spring.jmx.enabled=false",
 				"--spring.main.web-application-type=none",
 				"--spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName=customPartitionKeyExtractor",
-				"--spring.cloud.stream.bindings.output.producer.partitionSelectorName=customPartitionSelector",
-				"--spring.main.allow-bean-definition-overriding=true");
+				"--spring.cloud.stream.bindings.output.producer.partitionSelectorName=customPartitionSelector");
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {
@@ -117,7 +115,7 @@ public class CustomPartitionedProducerTest {
 	@Test
 	public void testCustomPartitionedProducerAsSingletons() {
 		ApplicationContext context = SpringApplication.run(CustomPartitionedProducerTest.TestSource.class,
-				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none", "--spring.main.allow-bean-definition-overriding=true");
+				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none");
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {

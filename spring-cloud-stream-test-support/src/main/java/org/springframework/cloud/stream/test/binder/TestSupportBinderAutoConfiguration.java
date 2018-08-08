@@ -16,11 +16,13 @@
 
 package org.springframework.cloud.stream.test.binder;
 
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -43,6 +45,7 @@ import org.springframework.messaging.MessageChannel;
 @Configuration
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 @Import(TestSupportBinderConfiguration.class)
+@AutoConfigureBefore(BindingServiceConfiguration.class)
 public class TestSupportBinderAutoConfiguration {
 
 	@Bean

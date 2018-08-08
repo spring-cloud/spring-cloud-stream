@@ -24,11 +24,12 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder.SourceConfigurer;
 import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
@@ -41,7 +42,6 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.ReflectionUtils;
@@ -57,16 +57,11 @@ import static org.junit.Assert.assertTrue;
  * @author Artem Bilan
  * @author Janne Valkealahti
  * @author Gary Russell
+ * @author Soby Chacko
  */
 public class AggregationTest {
 
 	private ConfigurableApplicationContext aggregatedApplicationContext;
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-		System.setProperty("server.port", "0");
-	}
 
 	@After
 	public void closeContext() {
@@ -82,7 +77,8 @@ public class AggregationTest {
 	@Test
 	public void aggregation() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0", "--debug=true")
+				FooConfig.class, "--server.port=0", "--debug=true",
+				"--spring.cloud.stream.default-binder=mock")
 						.web(false).from(TestSource.class).to(TestProcessor.class).run();
 		SharedBindingTargetRegistry sharedBindingTargetRegistry = aggregatedApplicationContext
 				.getBean(SharedBindingTargetRegistry.class);
@@ -97,7 +93,8 @@ public class AggregationTest {
 	public void testModuleAggregationUsingSharedChannelRegistry() {
 		// test backward compatibility
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0").web(false)
+				FooConfig.class, "--server.port=0",
+				"--spring.cloud.stream.default-binder=mock").web(false)
 						.from(TestSource.class).to(TestProcessor.class).run();
 		SharedBindingTargetRegistry sharedChannelRegistry = aggregatedApplicationContext
 				.getBean(SharedBindingTargetRegistry.class);
@@ -117,12 +114,14 @@ public class AggregationTest {
 		argsToVerify.add("--foo2=bar2");
 		argsToVerify.add("--foo3=bar3");
 		argsToVerify.add("--server.port=0");
+		argsToVerify.add("--spring.cloud.stream.default-binder=mock");
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
 				MockBinderRegistryConfiguration.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
 				.parent(DummyConfig.class, "--foo2=bar2").web(false)
 				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
-				.namespace("bar").run("--foo3=bar3", "--server.port=0");
+				.namespace("bar").run("--foo3=bar3", "--server.port=0",
+						"--spring.cloud.stream.default-binder=mock");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
 				aggregateApplicationBuilder);
 		final List<String> parentArgs = (List<String>) aggregateApplicationBuilderAccessor
@@ -140,7 +139,7 @@ public class AggregationTest {
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
 				.parent(DummyConfig.class, "--foo2=bar2").web(false)
 				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
-				.namespace("bar").run("--server.port=0");
+				.namespace("bar").run("--server.port=0", "--spring.cloud.stream.default-binder=mock");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
 				aggregateApplicationBuilder);
 		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor
@@ -156,7 +155,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLine() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				FooConfig.class, "--spring.cloud.stream.default-binder=mock");
 		aggregatedApplicationContext = aggregateApplicationBuilder
 				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").via(TestProcessor.class).namespace("b")
@@ -187,7 +186,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineVsArgs() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				FooConfig.class, "--spring.cloud.stream.default-binder=mock");
 		aggregatedApplicationContext = aggregateApplicationBuilder
 				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--fooValue=bar").via(TestProcessor.class)
@@ -218,7 +217,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineWithRelaxedNames() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				FooConfig.class, "--spring.cloud.stream.default-binder=mock");
 		aggregatedApplicationContext = aggregateApplicationBuilder
 				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar").via(TestProcessor.class)
@@ -250,7 +249,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineWithRelaxedNamesAndMorePropertySources() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				FooConfig.class, "--spring.cloud.stream.default-binder=mock");
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
 		System.setProperty("server.port", "0");
@@ -284,7 +283,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesWithoutCmdLinePropertySource() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				FooConfig.class, "--spring.cloud.stream.default-binder=mock");
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
 		System.setProperty("server.port", "0");
@@ -317,7 +316,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesWithCAPSProperties() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				FooConfig.class, "--spring.cloud.stream.default-binder=mock");
 		System.setProperty("a.fooValue", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
 		aggregatedApplicationContext = aggregateApplicationBuilder
@@ -348,7 +347,7 @@ public class AggregationTest {
 	@Test
 	public void testNamespaces() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0").web(false)
+				FooConfig.class, "--server.port=0", "--spring.cloud.stream.default-binder=mock").web(false)
 						.from(TestSource.class).namespace("foo").to(TestProcessor.class)
 						.namespace("bar").run();
 		SharedBindingTargetRegistry sharedChannelRegistry = aggregatedApplicationContext
@@ -367,9 +366,11 @@ public class AggregationTest {
 
 	@Test
 	public void testBindableProxyFactoryCaching() {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(
-				MockBinderRegistryConfiguration.class, TestSource2.class,
-				TestProcessor.class);
+		ConfigurableApplicationContext context = new SpringApplicationBuilder(TestSource2.class,
+				TestProcessor.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.cloud.stream.default-binder=mock");
+
 		Map<String, BindableProxyFactory> factories = context
 				.getBeansOfType(BindableProxyFactory.class);
 		assertThat(factories).hasSize(2);
@@ -441,6 +442,12 @@ public class AggregationTest {
 
 	@Configuration
 	public static class DummyConfig {
+
+	}
+
+	@Configuration
+	@EnableAutoConfiguration
+	public static class FooConfig {
 
 	}
 }

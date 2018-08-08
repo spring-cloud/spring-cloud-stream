@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
@@ -38,11 +37,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @since 1.3
  */
 public class InvalidBindingConfigurationTests {
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
 
 	@Test
 	public void testDuplicateBeanByBindingConfig() {

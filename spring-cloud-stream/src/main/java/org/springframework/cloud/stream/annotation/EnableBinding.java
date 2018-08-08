@@ -25,7 +25,6 @@ import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.config.BindingBeansRegistrar;
-import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.config.EnableIntegration;
@@ -37,13 +36,14 @@ import org.springframework.integration.config.EnableIntegration;
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author David Turanski
+ * @author Soby Chacko
  */
 @Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
 @Configuration
-@Import({ BindingServiceConfiguration.class, BindingBeansRegistrar.class, BinderFactoryConfiguration.class})
+@Import({ BindingBeansRegistrar.class, BinderFactoryConfiguration.class})
 @EnableIntegration
 public @interface EnableBinding {
 

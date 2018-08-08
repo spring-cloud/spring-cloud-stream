@@ -48,8 +48,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = BoundChannelsInterceptedTest.Foo.class,
-				properties = "spring.main.allow-bean-definition-overriding=true")
+@SpringBootTest(classes = BoundChannelsInterceptedTest.Foo.class)
 public class BoundChannelsInterceptedTest {
 
 	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();

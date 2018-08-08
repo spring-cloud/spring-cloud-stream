@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -24,9 +23,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Import;
 import org.springframework.messaging.MessageChannel;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -38,16 +35,11 @@ import static org.mockito.ArgumentMatchers.isNull;
  */
 public class ErrorBindingTests {
 
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
-
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testErrorChannelNotBoundByDefault() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class,
-				"--server.port=0");
+				"--server.port=0", "--spring.cloud.stream.default-binder=mock");
 		BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
 
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
@@ -61,7 +53,6 @@ public class ErrorBindingTests {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestProcessor {
 
 	}
