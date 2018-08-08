@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.binder.rabbit.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.willReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +25,7 @@ import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.Mockito;
+
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
@@ -66,6 +62,11 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.willReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Marius Bogoevici
@@ -114,7 +115,7 @@ public class RabbitBinderModuleTests {
 		assertThat(bindersHealthIndicator).isNotNull();
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
-				.getPropertyValue("indicators");
+				.getPropertyValue("registry.healthIndicators");
 		assertThat(healthIndicators).containsKey(("rabbit"));
 		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo((Status.UP));
 
@@ -173,7 +174,7 @@ public class RabbitBinderModuleTests {
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
 		assertThat(bindersHealthIndicator).isNotNull();
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
-				.getPropertyValue("indicators");
+				.getPropertyValue("registry.healthIndicators");
 		assertThat(healthIndicators).containsKey("rabbit");
 		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo(Status.UP);
 
@@ -203,7 +204,7 @@ public class RabbitBinderModuleTests {
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
-				.getPropertyValue("indicators");
+				.getPropertyValue("registry.healthIndicators");
 		assertThat(healthIndicators).containsKey("rabbit");
 		// mock connection factory behaves as if down
 		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo(Status.DOWN);
@@ -241,7 +242,7 @@ public class RabbitBinderModuleTests {
 		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
-				.getPropertyValue("indicators");
+				.getPropertyValue("registry.healthIndicators");
 		assertThat(healthIndicators).containsKey("custom");
 		assertThat(healthIndicators.get("custom").health().getStatus()).isEqualTo(Status.UP);
 		String name = UUID.randomUUID().toString();
