@@ -57,6 +57,8 @@ public class AggregateApplicationTests {
 				.poll(5, TimeUnit.SECONDS));
 		Assert.assertThat(received, notNullValue());
 		Assert.assertTrue(received.getPayload().endsWith("processed"));
+
+		context.close();
 	}
 
 	@Configuration
