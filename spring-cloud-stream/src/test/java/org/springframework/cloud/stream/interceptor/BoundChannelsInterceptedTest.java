@@ -25,9 +25,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.config.GlobalChannelInterceptor;
 import org.springframework.messaging.Message;
@@ -48,7 +46,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = BoundChannelsInterceptedTest.Foo.class)
+@SpringBootTest(classes = BoundChannelsInterceptedTest.Foo.class, properties = "spring.cloud.stream.default-binder=mock")
 public class BoundChannelsInterceptedTest {
 
 	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
@@ -68,7 +66,6 @@ public class BoundChannelsInterceptedTest {
 
 	@SpringBootApplication
 	@EnableBinding(Sink.class)
-	@Import(MockBinderRegistryConfiguration.class)
 	public static class Foo {
 
 		@ServiceActivator(inputChannel = Sink.INPUT)

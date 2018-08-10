@@ -40,7 +40,6 @@ import org.springframework.cloud.stream.binding.BindingTargetFactory;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
@@ -116,7 +115,7 @@ public class AggregationTest {
 		argsToVerify.add("--server.port=0");
 		argsToVerify.add("--spring.cloud.stream.default-binder=mock");
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--foo1=bar1");
+				FooConfig.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
 				.parent(DummyConfig.class, "--foo2=bar2").web(false)
 				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
@@ -135,7 +134,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testParentArgsAndSourcesWithWebDisabled() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--foo1=bar1");
+				FooConfig.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
 				.parent(DummyConfig.class, "--foo2=bar2").web(false)
 				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
@@ -147,7 +146,7 @@ public class AggregationTest {
 		assertThat(sources).containsExactlyInAnyOrder(
 				AggregateApplicationBuilder.ParentConfiguration.class,
 				AggregateApplicationBuilder.ParentActuatorConfiguration.class,
-				MockBinderRegistryConfiguration.class, DummyConfig.class);
+				FooConfig.class, DummyConfig.class);
 		context.close();
 	}
 

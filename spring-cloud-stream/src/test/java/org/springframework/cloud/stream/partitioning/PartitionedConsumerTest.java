@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.partitioning;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 
@@ -31,7 +32,6 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.messaging.MessageChannel;
@@ -49,7 +49,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = PartitionedConsumerTest.TestSink.class)
+@SpringBootTest(classes = PartitionedConsumerTest.TestSink.class, properties = "spring.cloud.stream.default-binder=mock")
 public class PartitionedConsumerTest {
 
 	@Autowired
@@ -72,7 +72,7 @@ public class PartitionedConsumerTest {
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	@Import({ MockBinderRegistryConfiguration.class, BinderFactoryConfiguration.class })
+	@Import({ BinderFactoryConfiguration.class })
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/partitioned-consumer-test.properties")
 	public static class TestSink {
 
