@@ -45,7 +45,7 @@ public class InputOutputBindingOrderTest {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testInputOutputBindingOrder() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1",
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class,
 				"--spring.cloud.stream.defaultBinder=mock");
 		@SuppressWarnings("rawtypes")
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);

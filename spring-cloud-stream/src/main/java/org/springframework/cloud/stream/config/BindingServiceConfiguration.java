@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -39,18 +38,12 @@ import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
-import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResultAdapter;
-import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
-import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
-import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.micrometer.DestinationPublishingMetricsAutoConfiguration;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
@@ -60,15 +53,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
-import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
-import org.springframework.integration.handler.support.HandlerMethodArgumentResolversHolder;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolver;
-import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
-import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 
@@ -88,7 +77,7 @@ import org.springframework.util.Assert;
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
-@Import({ContentTypeConfiguration.class, DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class})
+@Import({DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class})
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
 public class BindingServiceConfiguration {
@@ -159,15 +148,6 @@ public class BindingServiceConfiguration {
 		return new MessageChannelStreamListenerResultAdapter();
 	}
 
-	@Bean
-	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar) {
-		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
-		messageHandlerMethodFactory.setCustomArgumentResolvers(ahmar.getResolvers());
-		return messageHandlerMethodFactory;
-	}
-
 	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
 	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
 	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
@@ -182,33 +162,6 @@ public class BindingServiceConfiguration {
 	public BindingService bindingService(BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory, TaskScheduler taskScheduler) {
 		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler);
-	}
-
-	@Bean
-	public MessageConverterConfigurer messageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory);
-	}
-
-	@Bean
-	public SubscribableChannelBindingTargetFactory channelFactory(
-			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new SubscribableChannelBindingTargetFactory(compositeMessageChannelConfigurer);
-	}
-
-	@Bean
-	public MessageSourceBindingTargetFactory messageSourceFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new MessageSourceBindingTargetFactory(compositeMessageConverterFactory.getMessageConverterForAllRegistered(), compositeMessageChannelConfigurer);
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer(
-			MessageConverterConfigurer messageConverterConfigurer) {
-		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
-		configurerList.add(messageConverterConfigurer);
-		return new CompositeMessageChannelConfigurer(configurerList);
 	}
 
 	@Bean

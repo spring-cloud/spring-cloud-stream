@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
@@ -32,8 +31,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -41,15 +38,13 @@ import static org.hamcrest.Matchers.notNullValue;
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@DirtiesContext
 public class AggregateApplicationTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testAggregateApplication() throws Exception {
 		ConfigurableApplicationContext context = new AggregateApplicationBuilder(
-				FooConfig.class).web(false).from(TestSource.class).to(TestProcessor.class).run();
+				AggregateApplicationTestConfig.class).web(false).from(TestSource.class).to(TestProcessor.class).run();
 		TestSupportBinder testSupportBinder = (TestSupportBinder) context.getBean(BinderFactory.class).getBinder(null,
 				MessageChannel.class);
 		MessageChannel processorOutput = testSupportBinder.getChannelForName("output");
@@ -63,7 +58,7 @@ public class AggregateApplicationTests {
 
 	@Configuration
 	@EnableAutoConfiguration
-	static class FooConfig{
+	static class AggregateApplicationTestConfig {
 
 	}
 }
