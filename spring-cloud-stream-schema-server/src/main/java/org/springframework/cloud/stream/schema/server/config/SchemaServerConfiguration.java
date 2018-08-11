@@ -26,6 +26,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.domain.EntityScanPackages;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.schema.server.controllers.ServerController;
 import org.springframework.cloud.stream.schema.server.model.Schema;
 import org.springframework.cloud.stream.schema.server.repository.SchemaRepository;
 import org.springframework.cloud.stream.schema.server.support.AvroSchemaValidator;
@@ -55,6 +56,12 @@ public class SchemaServerConfiguration {
 				}
 			}
 		};
+	}
+
+	@Bean
+	public ServerController serverController(SchemaRepository repository,
+											SchemaServerProperties schemeServerProperties) {
+		return new ServerController(repository, schemaValidators(), schemeServerProperties);
 	}
 
 	@Bean

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -30,19 +31,32 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
+import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
+import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
+import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
+import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.handler.support.HandlerMethodArgumentResolversHolder;
+import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
+import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -54,6 +68,8 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+@EnableConfigurationProperties({ BindingServiceProperties.class })
+@Import({ContentTypeConfiguration.class})
 public class BinderFactoryConfiguration {
 
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -114,4 +130,40 @@ public class BinderFactoryConfiguration {
 		}
 		return new DefaultBinderTypeRegistry(binderTypes);
 	}
+
+	@Bean
+	public MessageConverterConfigurer messageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
+																CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory);
+	}
+
+	@Bean
+	public SubscribableChannelBindingTargetFactory channelFactory(
+			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new SubscribableChannelBindingTargetFactory(compositeMessageChannelConfigurer);
+	}
+
+	@Bean
+	public MessageSourceBindingTargetFactory messageSourceFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
+																CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new MessageSourceBindingTargetFactory(compositeMessageConverterFactory.getMessageConverterForAllRegistered(), compositeMessageChannelConfigurer);
+	}
+
+	@Bean
+	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer(
+			MessageConverterConfigurer messageConverterConfigurer) {
+		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
+		configurerList.add(messageConverterConfigurer);
+		return new CompositeMessageChannelConfigurer(configurerList);
+	}
+
+	@Bean
+	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
+																		@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar) {
+		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
+		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		messageHandlerMethodFactory.setCustomArgumentResolvers(ahmar.getResolvers());
+		return messageHandlerMethodFactory;
+	}
+
 }
