@@ -17,31 +17,33 @@
 package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.BinderType;
+import org.springframework.cloud.stream.binder.BinderTypeRegistry;
+import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
-import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResultAdapter;
-import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
-import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
-import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.micrometer.DestinationPublishingMetricsAutoConfiguration;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
@@ -51,16 +53,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
-import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
-import org.springframework.integration.handler.support.HandlerMethodArgumentResolversHolder;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolver;
-import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
-import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.util.Assert;
 
 
 /**
@@ -74,31 +73,83 @@ import org.springframework.scheduling.TaskScheduler;
  * @author Vinicius Carvalho
  * @author Artem Bilan
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
-@Import({ContentTypeConfiguration.class, DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class})
+@Import({DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class})
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+@ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
 public class BindingServiceConfiguration {
 
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =
 			"streamListenerAnnotationBeanPostProcessor";
+
+	@Autowired(required = false)
+	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
+
+	@Bean
+	@ConditionalOnMissingBean(BinderFactory.class)
+	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
+									BindingServiceProperties bindingServiceProperties) {
+		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
+				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties), binderTypeRegistry);
+		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
+		binderFactory.setListeners(binderFactoryListeners);
+		return binderFactory;
+	}
+
+	private static Map<String, BinderConfiguration> getBinderConfigurations(BinderTypeRegistry binderTypeRegistry,
+																			BindingServiceProperties bindingServiceProperties) {
+		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
+		Map<String, BinderProperties> declaredBinders = bindingServiceProperties.getBinders();
+		boolean defaultCandidatesExist = false;
+		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders.entrySet().iterator();
+		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
+			defaultCandidatesExist = binderPropertiesIterator.next().getValue().isDefaultCandidate();
+		}
+		List<String> existingBinderConfigurations = new ArrayList<>();
+		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
+			BinderProperties binderProperties = binderEntry.getValue();
+			if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
+				binderConfigurations.put(binderEntry.getKey(),
+						new BinderConfiguration(binderEntry.getKey(),
+								binderProperties.getEnvironment(), binderProperties.isInheritEnvironment(),
+								binderProperties.isDefaultCandidate()));
+				existingBinderConfigurations.add(binderEntry.getKey());
+			}
+			else {
+				Assert.hasText(binderProperties.getType(),
+						"No 'type' property present for custom binder " + binderEntry.getKey());
+				binderConfigurations.put(binderEntry.getKey(),
+						new BinderConfiguration(binderProperties.getType(), binderProperties.getEnvironment(),
+								binderProperties.isInheritEnvironment(), binderProperties.isDefaultCandidate()));
+				existingBinderConfigurations.add(binderEntry.getKey());
+			}
+		}
+		for (Map.Entry<String, BinderConfiguration> configurationEntry : binderConfigurations.entrySet()) {
+			if (configurationEntry.getValue().isDefaultCandidate()) {
+				defaultCandidatesExist = true;
+			}
+		}
+		if (!defaultCandidatesExist) {
+			for (Map.Entry<String, BinderType> binderEntry : binderTypeRegistry.getAll().entrySet()) {
+				if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
+					binderConfigurations.put(binderEntry.getKey(), new BinderConfiguration(binderEntry.getKey(),
+							new HashMap<>(), true, true));
+				}
+			}
+		}
+		return binderConfigurations;
+	}
 
 	@Bean
 	public MessageChannelStreamListenerResultAdapter messageChannelStreamListenerResultAdapter() {
 		return new MessageChannelStreamListenerResultAdapter();
 	}
 
-	@Bean
-	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar) {
-		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
-		messageHandlerMethodFactory.setCustomArgumentResolvers(ahmar.getResolvers());
-		return messageHandlerMethodFactory;
-	}
-
 	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
+	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
 	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
 		return new StreamListenerAnnotationBeanPostProcessor();
 	}
@@ -107,37 +158,10 @@ public class BindingServiceConfiguration {
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
 	// it is used to detect a BindingService in the parent context (which we know
 	// already exists).
-	@ConditionalOnMissingBean
+	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
 	public BindingService bindingService(BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory, TaskScheduler taskScheduler) {
 		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler);
-	}
-
-	@Bean
-	public MessageConverterConfigurer messageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory);
-	}
-
-	@Bean
-	public SubscribableChannelBindingTargetFactory channelFactory(
-			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new SubscribableChannelBindingTargetFactory(compositeMessageChannelConfigurer);
-	}
-
-	@Bean
-	public MessageSourceBindingTargetFactory messageSourceFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new MessageSourceBindingTargetFactory(compositeMessageConverterFactory.getMessageConverterForAllRegistered(), compositeMessageChannelConfigurer);
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public CompositeMessageChannelConfigurer compositeMessageChannelConfigurer(
-			MessageConverterConfigurer messageConverterConfigurer) {
-		List<MessageChannelConfigurer> configurerList = new ArrayList<>();
-		configurerList.add(messageConverterConfigurer);
-		return new CompositeMessageChannelConfigurer(configurerList);
 	}
 
 	@Bean

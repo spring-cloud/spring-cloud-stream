@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -60,11 +59,6 @@ public class StreamListenerReactiveReturnWithMessageTests {
 	public static Collection<?> InputConfigs() {
 		return Arrays.asList(ReactorTestReturnWithMessage1.class, ReactorTestReturnWithMessage2.class,
 				ReactorTestReturnWithMessage3.class, ReactorTestReturnWithMessage4.class);
-	}
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
 	}
 
 	@SuppressWarnings("unchecked")

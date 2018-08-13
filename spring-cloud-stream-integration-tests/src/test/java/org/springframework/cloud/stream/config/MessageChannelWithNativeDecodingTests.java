@@ -41,8 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { MessageChannelWithNativeDecodingTests.NativeDecodingSink.class},
-		properties = {"--spring.main.allow-bean-definition-overriding=true"})
+@SpringBootTest(classes = { MessageChannelWithNativeDecodingTests.NativeDecodingSink.class})
 public class MessageChannelWithNativeDecodingTests {
 
 	@Autowired

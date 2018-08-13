@@ -16,18 +16,15 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,14 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class LifecycleBinderTests {
 
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
-
 	@Test
 	public void testOnlySmartLifecyclesStarted() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class, "--server.port=-1");
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class,
+				"--server.port=-1", "--spring.cloud.stream.defaultBinder=mock");
 		SimpleLifecycle simpleLifecycle = applicationContext.getBean(SimpleLifecycle.class);
 		assertThat(simpleLifecycle.isRunning()).isFalse();
 		applicationContext.close();
@@ -52,7 +45,6 @@ public class LifecycleBinderTests {
 
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestSource {
 
 		@Bean

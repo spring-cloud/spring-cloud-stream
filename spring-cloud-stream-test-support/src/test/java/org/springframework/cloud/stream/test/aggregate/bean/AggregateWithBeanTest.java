@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.aggregate.AggregateApplication;
@@ -43,8 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = { "server.port=-1","--spring.cloud.stream.bindings.input.contentType=text/plain",
-		"--spring.cloud.stream.bindings.output.contentType=text/plain",
-		"--spring.main.allow-bean-definition-overriding=true"})
+		"--spring.cloud.stream.bindings.output.contentType=text/plain"})
 public class AggregateWithBeanTest {
 
 	@Autowired
@@ -77,6 +77,7 @@ public class AggregateWithBeanTest {
 
 	@Configuration
 	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
 	public static class UppercaseProcessor {
 
 		@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
@@ -87,6 +88,7 @@ public class AggregateWithBeanTest {
 
 	@Configuration
 	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
 	public static class SuffixProcessor {
 
 		@Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)

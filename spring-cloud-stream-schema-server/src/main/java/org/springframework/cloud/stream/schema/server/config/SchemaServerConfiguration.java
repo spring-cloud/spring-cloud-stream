@@ -37,6 +37,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * @author Vinicius Carvalho
+ * @author Soby Chacko
  */
 @Configuration
 @EnableJpaRepositories(basePackageClasses = SchemaRepository.class)
@@ -59,7 +60,7 @@ public class SchemaServerConfiguration {
 
 	@Bean
 	public ServerController serverController(SchemaRepository repository,
-			SchemaServerProperties schemeServerProperties) {
+											SchemaServerProperties schemeServerProperties) {
 		return new ServerController(repository, schemaValidators(), schemeServerProperties);
 	}
 

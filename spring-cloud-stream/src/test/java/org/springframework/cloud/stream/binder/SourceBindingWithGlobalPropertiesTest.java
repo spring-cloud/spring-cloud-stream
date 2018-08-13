@@ -27,8 +27,6 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
@@ -45,7 +43,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 		"spring.cloud.stream.default.producer.partitionCount=1",
 		"spring.cloud.stream.bindings.output.producer.headerMode=none",
 		"spring.cloud.stream.bindings.output.producer.partitionCount=4",
-		"spring.main.allow-bean-definition-overriding=true"})
+		"spring.cloud.stream.defaultBinder=mock"})
 public class SourceBindingWithGlobalPropertiesTest {
 
 	@Autowired
@@ -63,7 +61,6 @@ public class SourceBindingWithGlobalPropertiesTest {
 
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestSource {
 
 	}

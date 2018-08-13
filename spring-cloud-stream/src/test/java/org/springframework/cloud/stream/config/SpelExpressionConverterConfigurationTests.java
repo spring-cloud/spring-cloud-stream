@@ -32,10 +32,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.PropertyAccessor;
@@ -54,7 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class,
-		properties = {"expression: a.b", "spring.main.allow-bean-definition-overriding=true"})
+		properties = {"expression: a.b"})
 public class SpelExpressionConverterConfigurationTests {
 
 	@Autowired
@@ -101,7 +99,6 @@ public class SpelExpressionConverterConfigurationTests {
 	@Configuration
 	@EnableBinding
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
 	@EnableConfigurationProperties(Pojo.class)
 	public static class Config implements BeanFactoryAware {
 

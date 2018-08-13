@@ -22,11 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -73,11 +72,6 @@ import static org.junit.Assert.assertTrue;
  *
  */
 public class ContentTypeTckTests {
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
 
 	@Test
 	public void stringToMapStreamListener() {
@@ -470,6 +464,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class CollectionWithParameterizedTypes {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -481,6 +476,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class TextInJsonOutListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -491,6 +487,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class PojoToPojoStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -501,6 +498,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class PojoToStringStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -511,6 +509,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class PojoToByteArrayStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -521,6 +520,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class ByteArrayToPojoStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -532,6 +532,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class StringToPojoStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -543,6 +544,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class ByteArrayToByteArrayStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -553,6 +555,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class StringToStringStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -563,6 +566,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class StringToMapStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -573,6 +577,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class StringToMapMessageStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -584,6 +589,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class PojoMessageToStringMessageStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
@@ -594,6 +600,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class PojoMessageToStringMessageServiceActivator {
 		@ServiceActivator(inputChannel=Processor.INPUT, outputChannel=Processor.OUTPUT)
 		public Message<String> echo(Message<Person> value)  {
@@ -603,6 +610,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class StringMessageToStringMessageStreamListener {
 		@ServiceActivator(inputChannel=Processor.INPUT, outputChannel=Processor.OUTPUT)
 		public Message<String> echo(Message<String> value) throws Exception {
@@ -614,6 +622,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class ByteArrayMessageToStringJsonMessageStreamListener {
 		@ServiceActivator(inputChannel=Processor.INPUT, outputChannel=Processor.OUTPUT)
 		public Message<String> echo(Message<byte[]> value) throws Exception {
@@ -627,6 +636,7 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
 	public static class InternalPipeLine {
 		@StreamListener(Processor.INPUT)
 		@SendTo("internalChannel")

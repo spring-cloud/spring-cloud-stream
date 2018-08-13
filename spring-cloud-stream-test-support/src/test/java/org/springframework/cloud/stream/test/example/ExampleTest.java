@@ -39,8 +39,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * correctly.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ExampleTest.MyProcessor.class, properties = { "server.port=-1", "--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.cloud.stream.bindings.output.contentType=text/plain",
-		"--spring.main.allow-bean-definition-overriding=true"})
+@SpringBootTest(classes = ExampleTest.MyProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE,
+		properties = {
+		"--spring.cloud.stream.bindings.input.contentType=text/plain",
+		"--spring.cloud.stream.bindings.output.contentType=text/plain"})
 @DirtiesContext
 public class ExampleTest {
 

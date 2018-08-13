@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
@@ -25,8 +24,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
-import org.springframework.context.annotation.Import;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 
@@ -38,11 +35,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @since 1.3
  */
 public class InvalidBindingConfigurationTests {
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
 
 	@Test
 	public void testDuplicateBeanByBindingConfig() {
@@ -56,7 +48,6 @@ public class InvalidBindingConfigurationTests {
 
 	@EnableBinding(TestInvalidBinding.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestBindingConfig {
 
 	}

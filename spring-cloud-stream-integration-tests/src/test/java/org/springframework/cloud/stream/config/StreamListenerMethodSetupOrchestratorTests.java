@@ -55,7 +55,7 @@ import static org.mockito.Mockito.verify;
  * @author Soby Chacko
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(properties = {"--spring.main.allow-bean-definition-overriding=true"})
+@SpringBootTest
 public class StreamListenerMethodSetupOrchestratorTests {
 
 	@SpyBean

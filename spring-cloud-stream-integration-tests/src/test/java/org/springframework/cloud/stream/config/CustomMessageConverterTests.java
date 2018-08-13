@@ -51,8 +51,7 @@ import static org.hamcrest.Matchers.notNullValue;
  * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CustomMessageConverterTests.TestSource.class,
-		properties = {"--spring.main.allow-bean-definition-overriding=true"})
+@SpringBootTest(classes = CustomMessageConverterTests.TestSource.class)
 public class CustomMessageConverterTests {
 
 	@Autowired

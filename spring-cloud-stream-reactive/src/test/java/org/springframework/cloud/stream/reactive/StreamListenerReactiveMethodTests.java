@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import org.junit.Before;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -37,11 +36,6 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  * @author Ilayaperumal Gopinathan
  */
 public class StreamListenerReactiveMethodTests {
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-	}
 
 	@Test
 	public void testReactiveInvalidInputValueWithOutputMethodParameters() {

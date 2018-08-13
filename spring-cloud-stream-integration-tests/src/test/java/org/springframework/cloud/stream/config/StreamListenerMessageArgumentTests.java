@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -55,11 +54,6 @@ public class StreamListenerMessageArgumentTests {
 
 	public StreamListenerMessageArgumentTests(Class<?> configClass) {
 		this.configClass = configClass;
-	}
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
 	}
 
 	@Parameterized.Parameters

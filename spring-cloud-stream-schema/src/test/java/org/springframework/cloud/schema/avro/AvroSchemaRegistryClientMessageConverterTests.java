@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -57,16 +56,11 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 
 	static SchemaRegistryClient stubSchemaRegistryClient = new StubSchemaRegistryClient();
 
-	@Before
-	public void setup() {
-		System.setProperty("--spring.main.allow-bean-definition-overriding", "true");
-	}
-
 	@Test
 	public void testSendMessage() throws Exception {
 
 		ConfigurableApplicationContext schemaRegistryServerContext = SpringApplication.run(
-				SchemaRegistryServerApplication.class);
+				SchemaRegistryServerApplication.class, "--spring.main.allow-bean-definition-overriding=true");
 
 		ConfigurableApplicationContext sourceContext = SpringApplication.run(AvroSourceApplication.class,
 				"--server.port=0",

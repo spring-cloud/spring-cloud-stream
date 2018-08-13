@@ -45,8 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = TextPlainConversionTest.FooProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE,
-		properties = {"--spring.main.allow-bean-definition-overriding=true"})
+		webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class TextPlainConversionTest {
 
 	@Autowired

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.test.binder;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +33,7 @@ import org.springframework.messaging.MessageChannel;
  * @author Marius Bogoevici
  */
 @Configuration
+@ConditionalOnMissingBean(Binder.class)
 public class TestSupportBinderConfiguration {
 
 	private Binder<MessageChannel, ?, ?> messageChannelBinder = new TestSupportBinder();

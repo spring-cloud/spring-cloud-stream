@@ -26,10 +26,12 @@ import org.springframework.boot.actuate.health.CompositeHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -41,7 +43,8 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 @ConditionalOnEnabledHealthIndicator("binders")
 @AutoConfigureBefore(EndpointAutoConfiguration.class)
-@ConditionalOnBean(DefaultBinderFactory.class)
+@ConditionalOnBean(BinderFactory.class)
+@AutoConfigureAfter(BindingServiceConfiguration.class)
 @Configuration
 public class BindersHealthIndicatorAutoConfiguration {
 

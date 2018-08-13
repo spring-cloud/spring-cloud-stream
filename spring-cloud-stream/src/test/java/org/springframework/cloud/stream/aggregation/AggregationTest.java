@@ -24,11 +24,12 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder;
 import org.springframework.cloud.stream.aggregate.AggregateApplicationBuilder.SourceConfigurer;
 import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
@@ -39,9 +40,7 @@ import org.springframework.cloud.stream.binding.BindingTargetFactory;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.util.ReflectionUtils;
@@ -57,16 +56,11 @@ import static org.junit.Assert.assertTrue;
  * @author Artem Bilan
  * @author Janne Valkealahti
  * @author Gary Russell
+ * @author Soby Chacko
  */
 public class AggregationTest {
 
 	private ConfigurableApplicationContext aggregatedApplicationContext;
-
-	@Before
-	public void before() {
-		System.setProperty("spring.main.allow-bean-definition-overriding", "true");
-		System.setProperty("server.port", "0");
-	}
 
 	@After
 	public void closeContext() {
@@ -82,8 +76,9 @@ public class AggregationTest {
 	@Test
 	public void aggregation() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0", "--debug=true")
-						.web(false).from(TestSource.class).to(TestProcessor.class).run();
+				AggregationAppConfig.class,
+				"--spring.cloud.stream.default-binder=mock")
+				.web(false).from(TestSource.class).to(TestProcessor.class).run();
 		SharedBindingTargetRegistry sharedBindingTargetRegistry = aggregatedApplicationContext
 				.getBean(SharedBindingTargetRegistry.class);
 		BindingTargetFactory channelFactory = aggregatedApplicationContext
@@ -97,8 +92,9 @@ public class AggregationTest {
 	public void testModuleAggregationUsingSharedChannelRegistry() {
 		// test backward compatibility
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0").web(false)
-						.from(TestSource.class).to(TestProcessor.class).run();
+				AggregationAppConfig.class,
+				"--spring.cloud.stream.default-binder=mock").web(false)
+				.from(TestSource.class).to(TestProcessor.class).run();
 		SharedBindingTargetRegistry sharedChannelRegistry = aggregatedApplicationContext
 				.getBean(SharedBindingTargetRegistry.class);
 		BindingTargetFactory channelFactory = aggregatedApplicationContext
@@ -116,13 +112,14 @@ public class AggregationTest {
 		argsToVerify.add("--foo1=bar1");
 		argsToVerify.add("--foo2=bar2");
 		argsToVerify.add("--foo3=bar3");
-		argsToVerify.add("--server.port=0");
+		argsToVerify.add("--spring.cloud.stream.default-binder=mock");
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--foo1=bar1");
+				AggregationAppConfig.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
 				.parent(DummyConfig.class, "--foo2=bar2").web(false)
 				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
-				.namespace("bar").run("--foo3=bar3", "--server.port=0");
+				.namespace("bar").run("--foo3=bar3",
+						"--spring.cloud.stream.default-binder=mock");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
 				aggregateApplicationBuilder);
 		final List<String> parentArgs = (List<String>) aggregateApplicationBuilderAccessor
@@ -136,11 +133,11 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testParentArgsAndSourcesWithWebDisabled() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--foo1=bar1");
+				AggregationAppConfig.class, "--foo1=bar1");
 		final ConfigurableApplicationContext context = aggregateApplicationBuilder
 				.parent(DummyConfig.class, "--foo2=bar2").web(false)
 				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
-				.namespace("bar").run("--server.port=0");
+				.namespace("bar").run("--spring.cloud.stream.default-binder=mock");
 		DirectFieldAccessor aggregateApplicationBuilderAccessor = new DirectFieldAccessor(
 				aggregateApplicationBuilder);
 		List<Object> sources = (List<Object>) aggregateApplicationBuilderAccessor
@@ -148,7 +145,7 @@ public class AggregationTest {
 		assertThat(sources).containsExactlyInAnyOrder(
 				AggregateApplicationBuilder.ParentConfiguration.class,
 				AggregateApplicationBuilder.ParentActuatorConfiguration.class,
-				MockBinderRegistryConfiguration.class, DummyConfig.class);
+				AggregationAppConfig.class, DummyConfig.class);
 		context.close();
 	}
 
@@ -156,7 +153,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLine() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				AggregationAppConfig.class, "--spring.cloud.stream.default-binder=mock");
 		aggregatedApplicationContext = aggregateApplicationBuilder
 				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").via(TestProcessor.class).namespace("b")
@@ -167,17 +164,17 @@ public class AggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor
 						.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] { "--foo1=bar1" }));
+				new String[]{"--foo1=bar1"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=bar2" }));
+						new String[]{"--foo1=bar2"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=bar3" }));
+						new String[]{"--foo1=bar3"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -187,7 +184,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineVsArgs() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				AggregationAppConfig.class, "--spring.cloud.stream.default-binder=mock");
 		aggregatedApplicationContext = aggregateApplicationBuilder
 				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--fooValue=bar").via(TestProcessor.class)
@@ -198,17 +195,17 @@ public class AggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor
 						.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] { "--fooValue=bara" }));
+				new String[]{"--fooValue=bara"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=argbarb" }));
+						new String[]{"--foo1=argbarb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo1=barc" }));
+						new String[]{"--foo1=barc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -218,7 +215,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineWithRelaxedNames() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				AggregationAppConfig.class, "--spring.cloud.stream.default-binder=mock");
 		aggregatedApplicationContext = aggregateApplicationBuilder
 				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar").via(TestProcessor.class)
@@ -230,17 +227,17 @@ public class AggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor
 						.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] { "--fooValue=bara" }));
+				new String[]{"--fooValue=bara"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--foo-value=barb" }));
+						new String[]{"--foo-value=barb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertThat(processorConfigurer.getArgs(),
-						is(new String[] { "--foo1=barc" }));
+						is(new String[]{"--foo1=barc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -250,10 +247,9 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesFromCmdLineWithRelaxedNamesAndMorePropertySources() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				AggregationAppConfig.class, "--spring.cloud.stream.default-binder=mock");
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
-		System.setProperty("server.port", "0");
 		aggregatedApplicationContext = aggregateApplicationBuilder
 				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar").via(TestProcessor.class)
@@ -264,17 +260,17 @@ public class AggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor
 						.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] { "--fooValue=bara", "--foo-value=bara" }));
+				new String[]{"--fooValue=bara", "--foo-value=bara"}));
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=argbarb" }));
+						new String[]{"--fooValue=argbarb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=sysbarc" }));
+						new String[]{"--fooValue=sysbarc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -284,10 +280,9 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesWithoutCmdLinePropertySource() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				AggregationAppConfig.class, "--spring.cloud.stream.default-binder=mock");
 		System.setProperty("a.foo-value", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
-		System.setProperty("server.port", "0");
 		aggregatedApplicationContext = aggregateApplicationBuilder
 				.parent(DummyConfig.class).web(false).from(TestSource.class)
 				.namespace("a").args("--foo-value=bar").via(TestProcessor.class)
@@ -298,16 +293,16 @@ public class AggregationTest {
 		assertTrue(Arrays.equals(
 				((SourceConfigurer) aggregateApplicationBuilderAccessor
 						.getPropertyValue("sourceConfigurer")).getArgs(),
-				new String[] { "--foo-value=sysbara" }));
+				new String[]{"--foo-value=sysbara"}));
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : ((List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers"))) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=argbarb" }));
+						new String[]{"--fooValue=argbarb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=sysbarc" }));
+						new String[]{"--fooValue=sysbarc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -317,7 +312,7 @@ public class AggregationTest {
 	@SuppressWarnings("unchecked")
 	public void testNamespacePrefixesWithCAPSProperties() {
 		AggregateApplicationBuilder aggregateApplicationBuilder = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class);
+				AggregationAppConfig.class, "--spring.cloud.stream.default-binder=mock");
 		System.setProperty("a.fooValue", "sysbara");
 		System.setProperty("c.fooValue", "sysbarc");
 		aggregatedApplicationContext = aggregateApplicationBuilder
@@ -329,17 +324,17 @@ public class AggregationTest {
 				aggregateApplicationBuilder);
 		assertThat(((SourceConfigurer) aggregateApplicationBuilderAccessor
 				.getPropertyValue("sourceConfigurer")).getArgs())
-						.containsExactly(new String[] { "--fooValue=highest" });
+				.containsExactly(new String[]{"--fooValue=highest"});
 		final List<AggregateApplicationBuilder.ProcessorConfigurer> processorConfigurers = (List<AggregateApplicationBuilder.ProcessorConfigurer>) aggregateApplicationBuilderAccessor
 				.getPropertyValue("processorConfigurers");
 		for (AggregateApplicationBuilder.ProcessorConfigurer processorConfigurer : processorConfigurers) {
 			if (processorConfigurer.getNamespace().equals("b")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=argbarb" }));
+						new String[]{"--fooValue=argbarb"}));
 			}
 			if (processorConfigurer.getNamespace().equals("c")) {
 				assertTrue(Arrays.equals(processorConfigurer.getArgs(),
-						new String[] { "--fooValue=sysbarc" }));
+						new String[]{"--fooValue=sysbarc"}));
 			}
 		}
 		aggregatedApplicationContext.close();
@@ -348,9 +343,9 @@ public class AggregationTest {
 	@Test
 	public void testNamespaces() {
 		aggregatedApplicationContext = new AggregateApplicationBuilder(
-				MockBinderRegistryConfiguration.class, "--server.port=0").web(false)
-						.from(TestSource.class).namespace("foo").to(TestProcessor.class)
-						.namespace("bar").run();
+				AggregationAppConfig.class, "--spring.cloud.stream.default-binder=mock").web(false)
+				.from(TestSource.class).namespace("foo").to(TestProcessor.class)
+				.namespace("bar").run();
 		SharedBindingTargetRegistry sharedChannelRegistry = aggregatedApplicationContext
 				.getBean(SharedBindingTargetRegistry.class);
 		BindingTargetFactory channelFactory = aggregatedApplicationContext
@@ -367,9 +362,11 @@ public class AggregationTest {
 
 	@Test
 	public void testBindableProxyFactoryCaching() {
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(
-				MockBinderRegistryConfiguration.class, TestSource2.class,
-				TestProcessor.class);
+		ConfigurableApplicationContext context = new SpringApplicationBuilder(TestSource2.class,
+				TestProcessor.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.cloud.stream.default-binder=mock");
+
 		Map<String, BindableProxyFactory> factories = context
 				.getBeansOfType(BindableProxyFactory.class);
 		assertThat(factories).hasSize(2);
@@ -403,11 +400,9 @@ public class AggregationTest {
 			}
 			if (factory.getObjectType() == FooSource.class) {
 				assertThat(targetCache).hasSize(1);
-			}
-			else if (factory.getObjectType() == Processor.class) {
+			} else if (factory.getObjectType() == Processor.class) {
 				assertThat(targetCache).hasSize(2);
-			}
-			else {
+			} else {
 				Assert.fail("Found unexpected type");
 			}
 		}
@@ -441,6 +436,12 @@ public class AggregationTest {
 
 	@Configuration
 	public static class DummyConfig {
+
+	}
+
+	@Configuration
+	@EnableAutoConfiguration
+	public static class AggregationAppConfig {
 
 	}
 }

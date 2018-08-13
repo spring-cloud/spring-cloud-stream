@@ -32,6 +32,7 @@ import org.springframework.cloud.stream.binder.stub2.StubBinder2;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationA;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationB;
 import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
@@ -93,11 +94,11 @@ public class BinderFactoryConfigurationTests {
 	@Test
 	public void loadBinderTypeRegistryWithOneBinder() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
-				new String[] { "binder1" });
+				new String[] { "binder1" }, "spring.cloud.stream.default-binder=binder1");
 
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
 		assertThat(binderTypeRegistry).isNotNull();
-		assertThat(binderTypeRegistry.getAll()).hasSize(1);
+		assertThat(binderTypeRegistry.getAll()).hasSize(3);
 		assertThat(binderTypeRegistry.getAll()).containsKey("binder1");
 		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
 				.containsExactlyInAnyOrder(StubBinder1Configuration.class);
@@ -176,8 +177,8 @@ public class BinderFactoryConfigurationTests {
 		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" });
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
 		assertThat(binderTypeRegistry).isNotNull();
-		assertThat(binderTypeRegistry.getAll()).hasSize(2);
-		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2");
+		assertThat(binderTypeRegistry.getAll()).hasSize(4);
+		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2", "mock", "integration");
 		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
 				.containsExactly(StubBinder1Configuration.class);
 		assertThat((Class[]) binderTypeRegistry.get("binder2").getConfigurationClasses())
@@ -208,10 +209,11 @@ public class BinderFactoryConfigurationTests {
 				new String[] { "binder1" },
 				"spring.cloud.stream.binders.custom.type=binder1",
 				"spring.cloud.stream.binders.custom.defaultCandidate=false",
-				"spring.cloud.stream.binders.custom.inheritEnvironment=false");
+				"spring.cloud.stream.binders.custom.inheritEnvironment=false",
+				"spring.cloud.stream.default-binder=binder1");
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
 		assertThat(binderTypeRegistry).isNotNull();
-		assertThat(binderTypeRegistry.getAll().size()).isEqualTo(1);
+		assertThat(binderTypeRegistry.getAll().size()).isEqualTo(3);
 		assertThat(binderTypeRegistry.getAll().keySet().contains("binder1"));
 		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
 				.contains(StubBinder1Configuration.class);
@@ -236,8 +238,8 @@ public class BinderFactoryConfigurationTests {
 				"spring.cloud.stream.defaultBinder:binder2");
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
 		assertThat(binderTypeRegistry).isNotNull();
-		assertThat(binderTypeRegistry.getAll()).hasSize(2);
-		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2");
+		assertThat(binderTypeRegistry.getAll()).hasSize(4);
+		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2", "mock", "integration");
 		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
 				.containsExactlyInAnyOrder(StubBinder1Configuration.class);
 		assertThat((Class[]) binderTypeRegistry.get("binder2").getConfigurationClasses())
@@ -254,7 +256,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(defaultBinder).isSameAs(binder2);
 	}
 
-	@Import({ BinderFactoryConfiguration.class, PropertyPlaceholderAutoConfiguration.class })
+	@Import({ BinderFactoryConfiguration.class, PropertyPlaceholderAutoConfiguration.class, BindingServiceConfiguration.class})
 	@EnableBinding
 	public static class SimpleApplication {
 

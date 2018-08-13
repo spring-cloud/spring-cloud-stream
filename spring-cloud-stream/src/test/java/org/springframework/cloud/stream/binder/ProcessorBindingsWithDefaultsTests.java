@@ -25,8 +25,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.utils.MockBinderRegistryConfiguration;
-import org.springframework.context.annotation.Import;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -40,7 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = ProcessorBindingsWithDefaultsTests.TestProcessor.class,
-				properties = "spring.main.allow-bean-definition-overriding=true")
+properties = "spring.cloud.stream.defaultBinder=mock")
 public class ProcessorBindingsWithDefaultsTests {
 
 	@Autowired
@@ -62,7 +60,6 @@ public class ProcessorBindingsWithDefaultsTests {
 
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
-	@Import(MockBinderRegistryConfiguration.class)
 	public static class TestProcessor {
 
 	}
