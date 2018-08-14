@@ -27,6 +27,7 @@ import org.apache.kafka.streams.errors.LogAndFailExceptionHandler;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -35,6 +36,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
@@ -48,6 +50,7 @@ import org.springframework.util.ObjectUtils;
  */
 @EnableConfigurationProperties(KafkaStreamsExtendedBindingProperties.class)
 @ConditionalOnBean(BindingService.class)
+@AutoConfigureAfter(BindingServiceConfiguration.class)
 public class KafkaStreamsBinderSupportAutoConfiguration {
 
 	@Bean
