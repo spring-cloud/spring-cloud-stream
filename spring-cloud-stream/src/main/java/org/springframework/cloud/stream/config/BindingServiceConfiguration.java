@@ -44,6 +44,8 @@ import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResultAdapter;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
+import org.springframework.cloud.stream.function.FunctionConfiguration;
+import org.springframework.cloud.stream.function.FunctionProperties;
 import org.springframework.cloud.stream.micrometer.DestinationPublishingMetricsAutoConfiguration;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
@@ -76,8 +78,8 @@ import org.springframework.util.Assert;
  * @author Soby Chacko
  */
 @Configuration
-@EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class })
-@Import({DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class})
+@EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class, FunctionProperties.class })
+@Import({ DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class, FunctionConfiguration.class })
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
 public class BindingServiceConfiguration {
@@ -91,7 +93,8 @@ public class BindingServiceConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
 	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
-									BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties) {
+
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
 				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties), binderTypeRegistry);
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
@@ -100,7 +103,8 @@ public class BindingServiceConfiguration {
 	}
 
 	private static Map<String, BinderConfiguration> getBinderConfigurations(BinderTypeRegistry binderTypeRegistry,
-																			BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties) {
+
 		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
 		Map<String, BinderProperties> declaredBinders = bindingServiceProperties.getBinders();
 		boolean defaultCandidatesExist = false;
@@ -161,12 +165,15 @@ public class BindingServiceConfiguration {
 	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
 	public BindingService bindingService(BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory, TaskScheduler taskScheduler) {
+
 		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler);
 	}
 
 	@Bean
 	@DependsOn("bindingService")
-	public OutputBindingLifecycle outputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
+	public OutputBindingLifecycle outputBindingLifecycle(BindingService bindingService,
+			Map<String, Bindable> bindables) {
+
 		return new OutputBindingLifecycle(bindingService, bindables);
 	}
 
@@ -189,6 +196,7 @@ public class BindingServiceConfiguration {
 			DynamicDestinationsBindable dynamicDestinationsBindable,
 			@Nullable BinderAwareChannelResolver.NewDestinationBindingCallback callback,
 			@Nullable GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor) {
+
 		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory, dynamicDestinationsBindable,
 				callback, globalChannelInterceptorProcessor);
 	}
@@ -202,8 +210,8 @@ public class BindingServiceConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	public org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
-			@Autowired(required=false) AbstractMappingMessageRouter[] routers,
-			@Autowired(required=false)DestinationResolver<MessageChannel> channelResolver) {
+			@Autowired(required = false) AbstractMappingMessageRouter[] routers,
+			@Autowired(required = false) DestinationResolver<MessageChannel> channelResolver) {
 
 		return new org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor(routers, channelResolver);
 	}
@@ -211,11 +219,15 @@ public class BindingServiceConfiguration {
 	@Bean
 	public ApplicationListener<ContextRefreshedEvent> appListener(SpringIntegrationProperties springIntegrationProperties) {
 		return new ApplicationListener<ContextRefreshedEvent>() {
+
 			@Override
 			public void onApplicationEvent(ContextRefreshedEvent event) {
 				event.getApplicationContext().getBeansOfType(AbstractReplyProducingMessageHandler.class).values()
-					.forEach(mh -> mh.addNotPropagatedHeaders(springIntegrationProperties.getMessageHandlerNotPropagatedHeaders()));
+						.forEach(mh -> mh.addNotPropagatedHeaders(springIntegrationProperties
+								.getMessageHandlerNotPropagatedHeaders()));
 			}
+
 		};
 	}
+
 }
