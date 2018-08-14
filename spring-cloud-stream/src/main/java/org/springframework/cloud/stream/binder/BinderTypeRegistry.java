@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ import java.util.Map;
 /**
  * A registry of {@link BinderType}s, indexed by name. A {@link BinderTypeRegistry} bean
  * is created automatically based on information found in the
- * {@literal META-INF/spring.binders} files provided by binder implementors. This can be
- * overridden by registering a {@link BinderTypeRegistry} bean in the context.
+ * {@literal META-INF/spring.binders} files provided by binder implementors.
  *
  * @author Marius Bogoevici
  */

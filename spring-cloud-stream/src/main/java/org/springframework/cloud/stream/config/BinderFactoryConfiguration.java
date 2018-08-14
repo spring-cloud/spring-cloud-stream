@@ -30,14 +30,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
-import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
@@ -65,11 +63,14 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ *
+ * @deprecated since it really represents 'auto-configuration' it will be renamed/restructured in the next release.
  */
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @EnableConfigurationProperties({ BindingServiceProperties.class })
 @Import({ContentTypeConfiguration.class})
+@Deprecated
 public class BinderFactoryConfiguration {
 
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -81,9 +82,6 @@ public class BinderFactoryConfiguration {
 
 	@Value("${" + SELF_CONTAINED_APP_PROPERTY_NAME + ":}")
 	private String selfContained;
-
-	@Autowired(required = false)
-	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
 
 	static Collection<BinderType> parseBinderConfigurations(ClassLoader classLoader, Resource resource)
 			throws IOException, ClassNotFoundException {
