@@ -41,7 +41,7 @@ import org.springframework.util.Assert;
  *
  * @since 2.1
  */
-public class FunctionSupport<I,O> {
+public class FunctionSupport {
 
 	private final FunctionCatalog functionCatalog;
 
@@ -59,19 +59,19 @@ public class FunctionSupport<I,O> {
 		this.messageConverterFactory = messageConverterFactory;
 	}
 
-	public void applyFunctionToIntegrationFlow(String functionName, IntegrationFlowBuilder flowBuilder, Consumer<Message<O>> outputProcessor) {
+	public <I,O> void applyFunctionToIntegrationFlow(String functionName, IntegrationFlowBuilder flowBuilder, Consumer<Message<O>> outputProcessor) {
 		FunctionInvoker<I,O> functionInvoker = new FunctionInvoker<>(functionName, functionCatalog, functionInspector, messageConverterFactory);
 		this.subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), outputProcessor);
 	}
 
-	private Mono<Void> subscribeToOutput(Consumer<Message<O>> outputProcessor, Publisher<Message<O>> outputPublisher) {
+	private <O> Mono<Void> subscribeToOutput(Consumer<Message<O>> outputProcessor, Publisher<Message<O>> outputPublisher) {
 		Flux<Message<O>> output = outputProcessor == null
 				? Flux.from(outputPublisher)
 						: Flux.from(outputPublisher).doOnNext(message -> outputProcessor.accept(message));
 		return output.then();
 	}
 
-	private void subscribeToInput(FunctionInvoker<I,O> functionInvoker, Publisher<Message<I>> publisher, Consumer<Message<O>> outputProcessor) {
+	private <I,O> void subscribeToInput(FunctionInvoker<I,O> functionInvoker, Publisher<Message<I>> publisher, Consumer<Message<O>> outputProcessor) {
 		Flux<Message<I>> inputPublisher = Flux.from(publisher);
 		this.subscribeToOutput(outputProcessor, functionInvoker.apply(inputPublisher)).subscribe();
 	}

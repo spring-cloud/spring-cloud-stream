@@ -43,7 +43,7 @@ import org.springframework.util.Assert;
  */
 class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O>>>  {
 
-	private final Log logger = LogFactory.getLog(this.getClass());
+	private static final Log logger = LogFactory.getLog(FunctionInvoker.class);
 
 	private final Class<?> inputClass;
 
@@ -68,28 +68,28 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 			.map(this::resolveArgument)				// resolves argument type before invocation of user function
 			.transform(f -> userFunction.apply(f))	// invoke user function
 			.map(resultMessage -> toMessage(resultMessage, originalMessage.get())); // create output message
-
 	}
 
 	@SuppressWarnings("unchecked")
 	private <T> Message<O> toMessage(T value, Message<I> originalMessage) {
-		logger.debug("Converting result back to message using the original message: " + originalMessage);
-		if (value instanceof Message) {
-			value = (T) ((Message<?>)value).getPayload();
+		if (logger.isDebugEnabled()) {
+			logger.debug("Converting result back to message using the original message: " + originalMessage);
 		}
-		Message<O> result = (Message<O>) this.messageConverter.toMessage(value, originalMessage.getHeaders());
+		Message<O> result = value instanceof Message
+				? result = (Message<O>) value
+				: (Message<O>) this.messageConverter.toMessage(value, originalMessage.getHeaders());
 		return result;
 	}
 
 	@SuppressWarnings("unchecked")
 	private <T> T resolveArgument(Message<I> message) {
-		logger.debug("Resolving input argument from message: " + message);
+		if (logger.isDebugEnabled()) {
+			logger.debug("Resolving input argument from message: " + message);
+		}
+
 		T result = this.shouldConvertFromMessage(message)
 				? (T) this.messageConverter.fromMessage(message, this.inputClass)
 						: (T) message;
-		if (result == message && !this.inputClass.isAssignableFrom(message.getClass())) {
-			result = (T) message.getPayload();
-		}
 		return result;
 	}
 

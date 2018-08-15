@@ -16,18 +16,15 @@
 
 package org.springframework.cloud.stream.function;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  *
  * @author Oleg Zhurakousky
  *
+ * @since 2.1
  */
 @ConfigurationProperties("spring.cloud.stream.function")
-@JsonInclude(Include.NON_DEFAULT)
 public class FunctionProperties {
 
 	/**

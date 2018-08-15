@@ -34,8 +34,8 @@ import org.springframework.context.annotation.Configuration;
 public class FunctionConfiguration {
 
 	@Bean
-	public FunctionSupport<?, ?> functionSupport(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+	public FunctionSupport functionSupport(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory) {
-		return new FunctionSupport<>(functionCatalog, functionInspector, messageConverterFactory);
+		return new FunctionSupport(functionCatalog, functionInspector, messageConverterFactory);
 	}
 }

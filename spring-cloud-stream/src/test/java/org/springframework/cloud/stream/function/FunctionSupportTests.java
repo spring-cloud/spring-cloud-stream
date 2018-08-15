@@ -89,6 +89,11 @@ public class FunctionSupportTests {
 		}
 	}
 
+	/**
+	 * This configuration essentially emulates our existing app-startes for Sources
+	 * and essentially demonstrates how a function(s) could be applied to an existing
+	 * source via {@link FunctionSupport} class.
+	 */
 	@EnableBinding(Source.class)
 	public static class SourceConfiguration {
 
@@ -99,13 +104,12 @@ public class FunctionSupportTests {
 		private FunctionProperties functionProperties;
 
 		@Bean
-		public IntegrationFlow messageSourceFlow(FunctionSupport<?, ?> functionSupport) {
+		public IntegrationFlow messageSourceFlow(FunctionSupport functionSupport) {
 			Supplier<Message<String>> messageSource = () -> MessageBuilder.withPayload("hello function")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 
 			PollerMetadata pm = new PollerMetadata();
 			pm.setTrigger(new PeriodicTrigger(1, TimeUnit.SECONDS));
-			pm.setMaxMessagesPerPoll(1);
 			IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(messageSource);
 
 			if (StringUtils.hasText(functionProperties.getName())) {
