@@ -53,8 +53,8 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	FunctionInvoker(String functionName, FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-
-		this.userFunction = functionCatalog.lookup(Function.class, functionName);
+		this.userFunction = functionCatalog.lookup(functionName);
+		Assert.isInstanceOf(Function.class, this.userFunction);
 		Assert.notNull(this.userFunction, "userFunction: " + functionName + " can not be located.");
 		this.messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		FunctionType functionType = functionInspector.getRegistration(this.userFunction).getType();
