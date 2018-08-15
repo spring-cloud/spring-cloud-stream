@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.function;
 
 import java.nio.charset.StandardCharsets;
 
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -38,11 +37,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
