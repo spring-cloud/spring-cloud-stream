@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,16 @@ import java.lang.annotation.Target;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
- * Marker to tag {@link org.springframework.messaging.converter.MessageConverter} beans that will be added to the {@link org.springframework.cloud.stream.converter.CompositeMessageConverterFactory}
+ * Marker to tag {@link org.springframework.messaging.converter.MessageConverter} beans
+ * that will be added to the {@link org.springframework.cloud.stream.converter.CompositeMessageConverterFactory}.
+ *
  * @author Vinicius Carvalho
+ * @author Arten Bilan
  */
-@Target({ElementType.FIELD,ElementType.METHOD})
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Qualifier
 public @interface StreamMessageConverter {
+
 }
