@@ -34,10 +34,12 @@ import org.springframework.context.annotation.Configuration;
 public class FunctionConfiguration {
 
 	@Bean
-	public FunctionSupport functionSupport(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			CompositeMessageConverterFactory messageConverterFactory) {
+	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalog functionCatalog,
+			FunctionInspector functionInspector, CompositeMessageConverterFactory messageConverterFactory,
+			FunctionProperties functionProperties) {
 
-		return new FunctionSupport(functionCatalog, functionInspector, messageConverterFactory);
+		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector, messageConverterFactory,
+				functionProperties);
 	}
 
 }
