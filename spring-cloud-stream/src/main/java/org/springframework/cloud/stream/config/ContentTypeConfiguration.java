@@ -37,7 +37,7 @@ import org.springframework.messaging.converter.MessageConverter;
  */
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-public class ContentTypeConfiguration {
+class ContentTypeConfiguration {
 
 	@Bean
 	public CompositeMessageConverterFactory compositeMessageConverterFactory(
