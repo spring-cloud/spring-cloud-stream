@@ -53,7 +53,6 @@ public class IntegrationFlowFunctionSupport {
 	private final FunctionProperties functionProperties;
 
 	/**
-	 *
 	 * @param functionCatalog
 	 * @param functionInspector
 	 * @param messageConverterFactory
@@ -65,6 +64,7 @@ public class IntegrationFlowFunctionSupport {
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(functionInspector, "'functionInspector' must not be null");
 		Assert.notNull(messageConverterFactory, "'messageConverterFactory' must not be null");
+		Assert.notNull(functionProperties, "'functionProperties' must not be null");
 		this.functionCatalog = functionCatalog;
 		this.functionInspector = functionInspector;
 		this.messageConverterFactory = messageConverterFactory;
@@ -72,10 +72,11 @@ public class IntegrationFlowFunctionSupport {
 	}
 
 	/**
-	 * Creates an instance of the {@link IntegrationFlowBuilder} from a {@link Supplier} bean available in the context.
+	 * Create an instance of the {@link IntegrationFlowBuilder} from a {@link Supplier} bean available in the context.
 	 * The name of the bean must be provided via `spring.cloud.stream.function.name` property.
 	 *
 	 * @return instance of {@link IntegrationFlowBuilder}
+	 * @throws IllegalStateException if the named Supplier can not be located.
 	 */
 	public <O> IntegrationFlowBuilder integrationFlowFromNamedSupplier() {
 		if (StringUtils.hasText(this.functionProperties.getName())) {
@@ -83,13 +84,15 @@ public class IntegrationFlowFunctionSupport {
 			if (supplier instanceof FluxSupplier) {
 				supplier = ((FluxSupplier<?>)supplier).getTarget();
 			}
-			return this.integrationFlowFromProvidedSupplier(supplier);
+			return this.integrationFlowFromProvidedSupplier(supplier).split();
 		}
-		throw new IllegalStateException("Supplier name is not provided");
+		throw new IllegalStateException("Supplier by the name '"
+				+ functionProperties.getName() + "' specified using 'spring.cloud.stream.function.name' property"
+						+ " can not be located.");
 	}
 
 	/**
-	 * Creates an instance of the {@link IntegrationFlowBuilder} from a provided {@link Supplier}.
+	 * Create an instance of the {@link IntegrationFlowBuilder} from a provided {@link Supplier}.
 	 *
 	 * @return instance of {@link IntegrationFlowBuilder}
 	 */
@@ -99,7 +102,7 @@ public class IntegrationFlowFunctionSupport {
 	}
 
 	/**
-	 * Adds a {@link Function} bean to the end of an integration flow.
+	 * Add a {@link Function} bean to the end of an integration flow.
 	 * The name of the bean must be provided via `spring.cloud.stream.function.name` property.
 	 * <p>
 	 * NOTE: If this method returns true, the integration flow is now represented as a Reactive Streams {@link Publisher} bean.
@@ -114,7 +117,7 @@ public class IntegrationFlowFunctionSupport {
 					new FunctionInvoker<>(this.functionProperties.getName(), this.functionCatalog, this.functionInspector,
 							this.messageConverterFactory);
 
-			subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), message -> outputChannel.send(message));
+			subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), outputChannel::send);
 			return true;
 		}
 		return false;

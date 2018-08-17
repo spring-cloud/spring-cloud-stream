@@ -31,7 +31,7 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -57,85 +57,89 @@ public class SourceToFunctionsSupportTests {
 
 	@Test
 	public void testFunctionIsAppliedToExistingMessageSource() {
-		ApplicationContext context =
+		try(ConfigurableApplicationContext context =
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
 						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=toUpperCase", "--spring.jmx.enabled=false");
+						.run("--spring.cloud.stream.function.name=toUpperCase", "--spring.jmx.enabled=false")){
 
-		OutputDestination target = context.getBean(OutputDestination.class);
-		assertThat(target.receive(1000).getPayload()).isEqualTo("HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertThat(target.receive(1000).getPayload()).isEqualTo("HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
+		}
 	}
 
 	@Test
 	public void testComposedFunctionIsAppliedToExistingMessageSource() {
-		ApplicationContext context =
+		try(ConfigurableApplicationContext context =
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf",
-								"--spring.jmx.enabled=false");
-
-		OutputDestination target = context.getBean(OutputDestination.class);
-		assertThat(target.receive(1000).getPayload())
-				.isEqualTo("HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
+								"--spring.jmx.enabled=false")) {
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertThat(target.receive(1000).getPayload())
+					.isEqualTo("HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
+		}
 	}
 
 	@Test
 	public void testMessageSourceIsCreatedFromProvidedSupplier() {
-		ApplicationContext context =
+		try(ConfigurableApplicationContext context =
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.cloud.stream.function.name=number",
-								"--spring.jmx.enabled=false");
+								"--spring.jmx.enabled=false")){
 
-		OutputDestination target = context.getBean(OutputDestination.class);
-		assertThat(target.receive(10000).getPayload())
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("1".getBytes(StandardCharsets.UTF_8));
-		assertThat(target.receive(10000).getPayload())
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("2".getBytes(StandardCharsets.UTF_8));
-		assertThat(target.receive(10000).getPayload())
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("3".getBytes(StandardCharsets.UTF_8));
-		//etc
+			//etc
+		}
 	}
 
 	@Test
 	public void testMessageSourceIsCreatedFromProvidedSupplierComposedWithSingleFunction() {
-		ApplicationContext context =
+		try(ConfigurableApplicationContext context =
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.cloud.stream.function.name=number|concatWithSelf",
-								"--spring.jmx.enabled=false");
+								"--spring.jmx.enabled=false")){
 
-		OutputDestination target = context.getBean(OutputDestination.class);
-		assertThat(target.receive(10000).getPayload())
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("11".getBytes(StandardCharsets.UTF_8));
-		assertThat(target.receive(10000).getPayload())
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("22".getBytes(StandardCharsets.UTF_8));
-		assertThat(target.receive(10000).getPayload())
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("33".getBytes(StandardCharsets.UTF_8));
-		//etc
+			//etc
+		}
 	}
 
 	@Test
 	public void testMessageSourceIsCreatedFromProvidedSupplierComposedWithMultipleFunctions() {
-		ApplicationContext context =
+		try(ConfigurableApplicationContext context =
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.cloud.stream.function.name=number|concatWithSelf|mmultiplyByTwo",
-								"--spring.jmx.enabled=false");
+								"--spring.jmx.enabled=false")) {
 
-		OutputDestination target = context.getBean(OutputDestination.class);
-		assertThat(target.receive(10000).getPayload())
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("22".getBytes(StandardCharsets.UTF_8));
-		assertThat(target.receive(10000).getPayload())
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("44".getBytes(StandardCharsets.UTF_8));
-		assertThat(target.receive(10000).getPayload())
+			assertThat(target.receive(10000).getPayload())
 				.isEqualTo("66".getBytes(StandardCharsets.UTF_8));
-		//etc
+			//etc
+		}
 	}
 
 	@EnableAutoConfiguration
@@ -215,7 +219,6 @@ public class SourceToFunctionsSupportTests {
 
 			IntegrationFlowBuilder flowBuilder = functionSupport
 					.integrationFlowFromNamedSupplier()
-					.split()
 					.channel(source.output());
 
 			return flowBuilder.get();
