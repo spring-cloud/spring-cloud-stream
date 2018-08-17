@@ -33,6 +33,7 @@ import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -101,6 +102,15 @@ public class IntegrationFlowFunctionSupport {
 	 */
 	public IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier) {
 		return IntegrationFlows.from(supplier);
+	}
+
+	/**
+	 * @param inputChannel
+	 * @return
+	 */
+	public <O> IntegrationFlowBuilder integrationFlowFromChannel(SubscribableChannel inputChannel) {
+		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel).bridge();
+		return flowBuilder;
 	}
 
 	/**

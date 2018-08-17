@@ -95,7 +95,22 @@ public class SourceToFunctionsSupportTests {
 	public void testFailedInputTypeConversion() {
 		try (ConfigurableApplicationContext context =
 				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfigurationNoContentType.class))
+						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfigurationNoConversionPossible.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf",
+								"--spring.jmx.enabled=false")) {
+			PollableChannel errorChannel = context.getBean("errorChannel", PollableChannel.class);
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertNull(target.receive(1000));
+			assertNotNull(errorChannel.receive(1000));
+		}
+	}
+
+	@Test
+	public void testComposedFunctionIsAppliedToExistingMessageSourceFailedTypeConversion() {
+		try (ConfigurableApplicationContext context =
+				new SpringApplicationBuilder(
+						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfigurationNoConversionPossible.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf",
 								"--spring.jmx.enabled=false")) {
@@ -206,7 +221,7 @@ public class SourceToFunctionsSupportTests {
 
 	@EnableAutoConfiguration
 	@Import(ExistingMessageSourceConfigurationNoContentTypeSet.class)
-	public static class FunctionsConfigurationNoContentType {
+	public static class FunctionsConfigurationNoConversionPossible {
 
 		@Bean
 		public PollableChannel errorChannel() {
@@ -214,13 +229,13 @@ public class SourceToFunctionsSupportTests {
 		}
 
 		@Bean
-		public Function<String, String> toUpperCase() {
-			return String::toUpperCase;
+		public Function<Boolean, Boolean> toUpperCase() {
+			return x -> true;
 		}
 
 		@Bean
-		public Function<String, String> concatWithSelf() {
-			return x -> x + ":" + x;
+		public Function<Boolean, Integer> concatWithSelf() {
+			return x -> 1;
 		}
 
 	}

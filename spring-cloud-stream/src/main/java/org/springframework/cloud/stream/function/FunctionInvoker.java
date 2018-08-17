@@ -27,8 +27,10 @@ import reactor.core.publisher.Flux;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.Assert;
@@ -49,11 +51,15 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	private final Class<?> inputClass;
 
+	private final Class<?> outputClass;
+
 	private final Function<Flux<?>, Flux<?>> userFunction;
 
 	private final CompositeMessageConverter messageConverter;
 
 	private final MessageChannel errorChannel;
+
+	private final boolean isInputArgumentMessage;
 
 	FunctionInvoker(String functionName, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
@@ -66,28 +72,33 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		Assert.isInstanceOf(Function.class, this.userFunction);
 		this.messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		FunctionType functionType = functionInspector.getRegistration(this.userFunction).getType();
+		this.isInputArgumentMessage = functionType.isMessage();
 		this.inputClass = functionType.getInputType();
+		this.outputClass = functionType.getOutputType();
 		this.errorChannel = errorChannel;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Flux<Message<O>> apply(Flux<Message<I>> input) {
 		AtomicReference<Message<I>> originalMessageRef = new AtomicReference<>();
 		return input
 				.doOnNext(originalMessageRef::set)        // to preserve the original message
 				.map(this::resolveArgument)                // resolves argument type before invocation of user function
-				.onErrorContinue((exception, originalMessage) -> {
-					if (this.errorChannel != null) {
-						ErrorMessage em = new ErrorMessage(exception, (Message<?>) originalMessage);
-						logger.error(em);
-						this.errorChannel.send(em);
-					}
-					else {
-						exception.printStackTrace();
-					}
-				})
+				.onErrorContinue((x, y) -> onError(x, (Message<I>) y))
 				.transform(this.userFunction::apply)    // invoke user function
 				.map(resultMessage -> toMessage(resultMessage, originalMessageRef.get())); // create output message
+	}
+
+	private void onError(Throwable t, Message<I> originalMessage) {
+		if (this.errorChannel != null) {
+			ErrorMessage em = new ErrorMessage(t, (Message<?>) originalMessage);
+			logger.error(em);
+			this.errorChannel.send(em);
+		}
+		else {
+			logger.error(t);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -95,10 +106,17 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		if (logger.isDebugEnabled()) {
 			logger.debug("Converting result back to message using the original message: " + originalMessage);
 		}
-		return (Message<O>)
+		Message<O> returnMessage = (Message<O>)
 				(value instanceof Message
 						? value
-						: this.messageConverter.toMessage(value, originalMessage.getHeaders()));
+						: this.messageConverter.toMessage(value, originalMessage.getHeaders(), this.outputClass));
+		if (returnMessage == null) {
+			if (value.getClass().isAssignableFrom(this.outputClass)) {
+				returnMessage = (Message<O>) MessageBuilder.withPayload(value).copyHeaders(originalMessage.getHeaders()).removeHeader(MessageHeaders.CONTENT_TYPE).build();
+			}
+		}
+		Assert.notNull(returnMessage, "Failed to convert result value '" + value + "' to message.");
+		return returnMessage;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -110,13 +128,15 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		T argument = (T) (shouldConvertFromMessage(message)
 				? this.messageConverter.fromMessage(message, this.inputClass)
 				: message);
-
 		Assert.notNull(argument, "Failed to resolve argument type '" + this.inputClass + "' from message: " + message );
+		if (!this.isInputArgumentMessage && argument instanceof Message) {
+			argument = ((Message<T>)argument).getPayload();
+		}
 		return argument;
 	}
 
 	private boolean shouldConvertFromMessage(Message<?> message) {
-		return !this.inputClass.isAssignableFrom(byte[].class) &&
+		return !message.getPayload().getClass().isAssignableFrom(this.inputClass) &&
 				!this.inputClass.isAssignableFrom(Object.class);
 	}
 
