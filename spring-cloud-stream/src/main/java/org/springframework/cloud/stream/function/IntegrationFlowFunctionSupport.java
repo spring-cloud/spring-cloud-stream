@@ -25,7 +25,6 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -39,12 +38,13 @@ import org.springframework.util.StringUtils;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author David Turanski
  *
  * @since 2.1
  */
 public class IntegrationFlowFunctionSupport {
 
-	private final FunctionCatalog functionCatalog;
+	private final FunctionCatalogWrapper functionCatalog;
 
 	private final FunctionInspector functionInspector;
 
@@ -58,7 +58,7 @@ public class IntegrationFlowFunctionSupport {
 	 * @param messageConverterFactory
 	 * @param functionProperties
 	 */
-	public IntegrationFlowFunctionSupport(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+	public IntegrationFlowFunctionSupport(FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory, FunctionProperties functionProperties) {
 
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");

@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 
 import reactor.core.publisher.Flux;
 
-import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -35,6 +34,7 @@ import org.springframework.util.Assert;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author David Turanski
  *
  * @param <I> the payload type of the input Message
  * @param <O> the payload type of the output Message
@@ -51,11 +51,10 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	private final CompositeMessageConverter messageConverter;
 
-	FunctionInvoker(String functionName, FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+	FunctionInvoker(String functionName, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		this.userFunction = functionCatalog.lookup(functionName);
 		Assert.isInstanceOf(Function.class, this.userFunction);
-		Assert.notNull(this.userFunction, "userFunction: " + functionName + " can not be located.");
 		this.messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		FunctionType functionType = functionInspector.getRegistration(this.userFunction).getType();
 		this.inputClass = functionType.getInputType();

@@ -34,12 +34,17 @@ import org.springframework.context.annotation.Configuration;
 public class FunctionConfiguration {
 
 	@Bean
-	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalog functionCatalog,
+	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalogWrapper functionCatalog,
 			FunctionInspector functionInspector, CompositeMessageConverterFactory messageConverterFactory,
 			FunctionProperties functionProperties) {
 
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector, messageConverterFactory,
 				functionProperties);
+	}
+
+	@Bean
+	public FunctionCatalogWrapper functionCatalogWrapper(FunctionCatalog catalog) {
+		return new FunctionCatalogWrapper(catalog);
 	}
 
 }

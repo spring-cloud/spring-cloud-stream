@@ -21,10 +21,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Rule;
 import org.junit.Test;
-
+import org.junit.rules.ExpectedException;
 import reactor.core.publisher.Flux;
 
+import org.springframework.beans.BeanInstantiationException;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -45,23 +48,27 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.isA;
+import static org.hamcrest.Matchers.hasProperty;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
+ * @author David Turanski
  * @since 2.1
- *
  */
 public class SourceToFunctionsSupportTests {
 
+	@Rule
+	public ExpectedException expectedException = ExpectedException.none();
+
 	@Test
 	public void testFunctionIsAppliedToExistingMessageSource() {
-		try (ConfigurableApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=toUpperCase", "--spring.jmx.enabled=false")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
+			WebApplicationType.NONE)
+			.run("--spring.cloud.stream.function.name=toUpperCase", "--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertThat(target.receive(1000).getPayload()).isEqualTo("HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
@@ -70,76 +77,73 @@ public class SourceToFunctionsSupportTests {
 
 	@Test
 	public void testComposedFunctionIsAppliedToExistingMessageSource() {
-		try (ConfigurableApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf",
-								"--spring.jmx.enabled=false")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
+			WebApplicationType.NONE)
+			.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf", "--spring.jmx.enabled=false")) {
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(1000).getPayload())
-					.isEqualTo("HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(1000).getPayload()).isEqualTo(
+				"HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
 		}
 	}
 
 	@Test
 	public void testMessageSourceIsCreatedFromProvidedSupplier() {
-		try (ConfigurableApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=number",
-								"--spring.jmx.enabled=false")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
+			WebApplicationType.NONE).run("--spring.cloud.stream.function.name=number", "--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("1".getBytes(StandardCharsets.UTF_8));
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("2".getBytes(StandardCharsets.UTF_8));
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("3".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("1".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("2".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("3".getBytes(StandardCharsets.UTF_8));
 			//etc
 		}
 	}
 
 	@Test
 	public void testMessageSourceIsCreatedFromProvidedSupplierComposedWithSingleFunction() {
-		try (ConfigurableApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=number|concatWithSelf",
-								"--spring.jmx.enabled=false")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
+			WebApplicationType.NONE)
+			.run("--spring.cloud.stream.function.name=number|concatWithSelf", "--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("11".getBytes(StandardCharsets.UTF_8));
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("22".getBytes(StandardCharsets.UTF_8));
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("33".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("11".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("22".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("33".getBytes(StandardCharsets.UTF_8));
 			//etc
 		}
 	}
 
 	@Test
 	public void testMessageSourceIsCreatedFromProvidedSupplierComposedWithMultipleFunctions() {
-		try (ConfigurableApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=number|concatWithSelf|multiplyByTwo",
-								"--spring.jmx.enabled=false")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
+			WebApplicationType.NONE)
+			.run("--spring.cloud.stream.function.name=number|concatWithSelf|multiplyByTwo",
+				"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("22".getBytes(StandardCharsets.UTF_8));
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("44".getBytes(StandardCharsets.UTF_8));
-			assertThat(target.receive(10000).getPayload())
-					.isEqualTo("66".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("22".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("44".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("66".getBytes(StandardCharsets.UTF_8));
 			//etc
 		}
+	}
+
+	@Test
+	public void testFunctionDoesNotExist() {
+
+		expectedException.expect(BeanCreationException.class);
+		expectedException.expectCause(
+			allOf(isA(BeanInstantiationException.class), hasProperty("cause", isA(IllegalArgumentException.class)),
+				hasProperty("message", endsWith("'doesNotExist' cannot be located."))));
+
+		ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
+			WebApplicationType.NONE)
+			.run("--spring.cloud.stream.function.name=doesNotExist", "--spring.jmx.enabled=false");
 	}
 
 	@EnableAutoConfiguration
@@ -195,7 +199,8 @@ public class SourceToFunctionsSupportTests {
 		@Bean
 		public IntegrationFlow messageSourceFlow(IntegrationFlowFunctionSupport functionSupport) {
 			Supplier<Message<String>> messageSource = () -> MessageBuilder.withPayload("hello function")
-					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build();
 
 			IntegrationFlowBuilder flowBuilder = functionSupport.integrationFlowFromProvidedSupplier(messageSource);
 
@@ -221,10 +226,7 @@ public class SourceToFunctionsSupportTests {
 		public IntegrationFlow messageSourceFlow(IntegrationFlowFunctionSupport functionSupport) {
 			Assert.hasText(this.functionProperties.getName(), "Supplier name must be provided");
 
-			return functionSupport
-					.integrationFlowFromNamedSupplier()
-					.channel(this.source.output())
-					.get();
+			return functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get();
 		}
 
 	}
