@@ -25,6 +25,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -51,6 +52,9 @@ public class IntegrationFlowFunctionSupport {
 	private final CompositeMessageConverterFactory messageConverterFactory;
 
 	private final FunctionProperties functionProperties;
+
+	@Autowired
+	private MessageChannel errorChannel;
 
 	/**
 	 * @param functionCatalog
@@ -115,7 +119,7 @@ public class IntegrationFlowFunctionSupport {
 		if (StringUtils.hasText(this.functionProperties.getName())) {
 			FunctionInvoker<I,O> functionInvoker =
 					new FunctionInvoker<>(this.functionProperties.getName(), this.functionCatalog,
-							this.functionInspector, this.messageConverterFactory);
+							this.functionInspector, this.messageConverterFactory, this.errorChannel);
 
 			subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), outputChannel::send);
 			return true;

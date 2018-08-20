@@ -39,11 +39,13 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.PollableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 
@@ -52,6 +54,8 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Oleg Zhurakousky
@@ -84,6 +88,21 @@ public class SourceToFunctionsSupportTests {
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertThat(target.receive(1000).getPayload()).isEqualTo(
 				"HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
+		}
+	}
+
+	@Test
+	public void testFailedInputTypeConversion() {
+		try (ConfigurableApplicationContext context =
+				new SpringApplicationBuilder(
+						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfigurationNoContentType.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf",
+								"--spring.jmx.enabled=false")) {
+			PollableChannel errorChannel = context.getBean("errorChannel", PollableChannel.class);
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertNull(target.receive(1000));
+			assertNotNull(errorChannel.receive(1000));
 		}
 	}
 
@@ -140,7 +159,7 @@ public class SourceToFunctionsSupportTests {
 			allOf(isA(BeanInstantiationException.class), hasProperty("cause", isA(IllegalArgumentException.class)),
 				hasProperty("message", endsWith("'doesNotExist' cannot be located."))));
 
-		ConfigurableApplicationContext context = new SpringApplicationBuilder(
+		new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
 			WebApplicationType.NONE)
 			.run("--spring.cloud.stream.function.name=doesNotExist", "--spring.jmx.enabled=false");
@@ -185,6 +204,27 @@ public class SourceToFunctionsSupportTests {
 
 	}
 
+	@EnableAutoConfiguration
+	@Import(ExistingMessageSourceConfigurationNoContentTypeSet.class)
+	public static class FunctionsConfigurationNoContentType {
+
+		@Bean
+		public PollableChannel errorChannel() {
+			return new QueueChannel(10);
+		}
+
+		@Bean
+		public Function<String, String> toUpperCase() {
+			return String::toUpperCase;
+		}
+
+		@Bean
+		public Function<String, String> concatWithSelf() {
+			return x -> x + ":" + x;
+		}
+
+	}
+
 	/**
 	 * This configuration essentially emulates our existing app-starters for Sources
 	 * and essentially demonstrates how a function(s) could be applied to an existing
@@ -201,6 +241,28 @@ public class SourceToFunctionsSupportTests {
 			Supplier<Message<String>> messageSource = () -> MessageBuilder.withPayload("hello function")
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 				.build();
+
+			IntegrationFlowBuilder flowBuilder = functionSupport.integrationFlowFromProvidedSupplier(messageSource);
+
+			if (!functionSupport.andThenFunction(flowBuilder, this.source.output())) {
+				flowBuilder = flowBuilder.channel(this.source.output());
+			}
+
+			return flowBuilder.get();
+		}
+
+	}
+
+	@EnableBinding(Source.class)
+	public static class ExistingMessageSourceConfigurationNoContentTypeSet {
+
+		@Autowired
+		private Source source;
+
+		@Bean
+		public IntegrationFlow messageSourceFlow(IntegrationFlowFunctionSupport functionSupport) {
+			Supplier<Message<String>> messageSource = () -> MessageBuilder.withPayload("hello function")
+					.setHeader(MessageHeaders.CONTENT_TYPE, "application/octet-stream").build();
 
 			IntegrationFlowBuilder flowBuilder = functionSupport.integrationFlowFromProvidedSupplier(messageSource);
 

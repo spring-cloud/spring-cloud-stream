@@ -28,7 +28,9 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.Assert;
 
 /**
@@ -51,23 +53,41 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	private final CompositeMessageConverter messageConverter;
 
+	private final MessageChannel errorChannel;
+
 	FunctionInvoker(String functionName, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		this(functionName, functionCatalog, functionInspector, compositeMessageConverterFactory, null);
+	}
+
+	FunctionInvoker(String functionName, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
+			CompositeMessageConverterFactory compositeMessageConverterFactory, MessageChannel errorChannel) {
 		this.userFunction = functionCatalog.lookup(functionName);
 		Assert.isInstanceOf(Function.class, this.userFunction);
 		this.messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		FunctionType functionType = functionInspector.getRegistration(this.userFunction).getType();
 		this.inputClass = functionType.getInputType();
+		this.errorChannel = errorChannel;
 	}
 
 	@Override
 	public Flux<Message<O>> apply(Flux<Message<I>> input) {
-		AtomicReference<Message<I>> originalMessage = new AtomicReference<>();
+		AtomicReference<Message<I>> originalMessageRef = new AtomicReference<>();
 		return input
-				.doOnNext(originalMessage::set)        // to preserve the original message
+				.doOnNext(originalMessageRef::set)        // to preserve the original message
 				.map(this::resolveArgument)                // resolves argument type before invocation of user function
+				.onErrorContinue((exception, originalMessage) -> {
+					if (this.errorChannel != null) {
+						ErrorMessage em = new ErrorMessage(exception, (Message<?>) originalMessage);
+						logger.error(em);
+						this.errorChannel.send(em);
+					}
+					else {
+						exception.printStackTrace();
+					}
+				})
 				.transform(this.userFunction::apply)    // invoke user function
-				.map(resultMessage -> toMessage(resultMessage, originalMessage.get())); // create output message
+				.map(resultMessage -> toMessage(resultMessage, originalMessageRef.get())); // create output message
 	}
 
 	@SuppressWarnings("unchecked")
@@ -87,9 +107,12 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 			logger.debug("Resolving input argument from message: " + message);
 		}
 
-		return (T) (shouldConvertFromMessage(message)
+		T argument = (T) (shouldConvertFromMessage(message)
 				? this.messageConverter.fromMessage(message, this.inputClass)
 				: message);
+
+		Assert.notNull(argument, "Failed to resolve argument type '" + this.inputClass + "' from message: " + message );
+		return argument;
 	}
 
 	private boolean shouldConvertFromMessage(Message<?> message) {

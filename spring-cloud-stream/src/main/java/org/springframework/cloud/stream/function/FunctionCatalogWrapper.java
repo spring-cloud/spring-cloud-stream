@@ -21,8 +21,10 @@ import org.springframework.util.Assert;
 
 /**
  * @author David Turanski
+ *
+ * @since 2.1
  **/
-public class FunctionCatalogWrapper {
+class FunctionCatalogWrapper {
 
 	private final FunctionCatalog catalog;
 
