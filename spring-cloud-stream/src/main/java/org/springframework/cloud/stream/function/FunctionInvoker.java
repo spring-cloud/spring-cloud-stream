@@ -87,6 +87,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 				.map(this::resolveArgument)                // resolves argument type before invocation of user function
 				.onErrorContinue((x, y) -> onError(x, (Message<I>) y))
 				.transform(this.userFunction::apply)    // invoke user function
+				.onErrorContinue((x, y) -> onError(x, (Message<I>) y))
 				.map(resultMessage -> toMessage(resultMessage, originalMessageRef.get())); // create output message
 	}
 
@@ -136,7 +137,8 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 	}
 
 	private boolean shouldConvertFromMessage(Message<?> message) {
-		return !message.getPayload().getClass().isAssignableFrom(this.inputClass) &&
+		return !this.inputClass.isAssignableFrom(Message.class) &&
+				!message.getPayload().getClass().isAssignableFrom(this.inputClass) &&
 				!this.inputClass.isAssignableFrom(Object.class);
 	}
 

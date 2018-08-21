@@ -62,6 +62,11 @@ public class FunctionInvokerTests {
 					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
 			outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage)).blockFirst();
 			assertThat(inputMessage.getPayload()).isEqualTo(outputMessage.getPayload());
+
+			FunctionInvoker<Foo, Foo> messageToMessageNoType = new FunctionInvoker<>("messageToMessageNoType",
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessage)).blockFirst();
+			assertThat(outputMessage).isInstanceOf(Message.class);
 		}
 	}
 
@@ -72,6 +77,17 @@ public class FunctionInvokerTests {
 		public Function<Message<Foo>, Message<Bar>> messageToMessageDifferentType() {
 			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders()).build();
 		}
+
+		@Bean
+		public Function<Message<?>, Message<?>> messageToMessageAnyType() {
+			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders()).build();
+		}
+
+		@Bean
+		public Function<Message, Message> messageToMessageNoType() {
+			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders()).build();
+		}
+
 		@Bean
 		public Function<Message<Foo>, Message<Foo>> messageToMessageSameType() {
 			return x -> x;
@@ -81,6 +97,7 @@ public class FunctionInvokerTests {
 		public Function<Foo, Foo> pojoToPojoSameType() {
 			return x -> x;
 		}
+
 	}
 
 	private static class Foo {
