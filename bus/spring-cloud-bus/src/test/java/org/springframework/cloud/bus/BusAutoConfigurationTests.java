@@ -25,6 +25,7 @@ import javax.annotation.PostConstruct;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -36,10 +37,10 @@ import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.event.EventListener;
 import org.springframework.integration.annotation.MessageEndpoint;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
@@ -296,36 +297,36 @@ public class BusAutoConfigurationTests {
 	@Import({ MessageConsumer.class, BusAutoConfiguration.class,
 			TestSupportBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
-	protected static class InboundMessageHandlerConfiguration {
+	protected static class InboundMessageHandlerConfiguration implements ApplicationListener<RefreshRemoteApplicationEvent> {
 
 		private RefreshRemoteApplicationEvent refresh;
 
-		@EventListener(RefreshRemoteApplicationEvent.class)
-		public void refresh(RefreshRemoteApplicationEvent event) {
+		@Override
+		public void onApplicationEvent(RefreshRemoteApplicationEvent event) {
 			this.refresh = event;
 		}
 
 	}
 
 	@Configuration
-	protected static class SentMessageConfiguration {
+	protected static class SentMessageConfiguration implements ApplicationListener<SentApplicationEvent> {
 		private SentApplicationEvent event;
 		private int count;
 
-		@EventListener
-		public void onSend(SentApplicationEvent event) {
+		@Override
+		public void onApplicationEvent(SentApplicationEvent event) {
 			this.event = event;
 			this.count++;
 		}
 	}
 
 	@Configuration
-	protected static class AckMessageConfiguration {
+	protected static class AckMessageConfiguration implements ApplicationListener<AckRemoteApplicationEvent> {
 		private AckRemoteApplicationEvent event;
 		private int count;
 
-		@EventListener
-		public void onSend(AckRemoteApplicationEvent event) {
+		@Override
+		public void onApplicationEvent(AckRemoteApplicationEvent event) {
 			this.event = event;
 			this.count++;
 		}
