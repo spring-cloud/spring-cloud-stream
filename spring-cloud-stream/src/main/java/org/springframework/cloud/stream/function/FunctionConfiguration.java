@@ -26,11 +26,11 @@ import org.springframework.context.annotation.Configuration;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author David Turanski
  *
  * @since 2.1
  */
 @Configuration
-@ConditionalOnProperty("spring.cloud.stream.function.name")
 public class FunctionConfiguration {
 
 	@Bean
