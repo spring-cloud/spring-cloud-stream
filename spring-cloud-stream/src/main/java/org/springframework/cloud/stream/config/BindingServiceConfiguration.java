@@ -79,7 +79,7 @@ import org.springframework.util.Assert;
  */
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class, FunctionProperties.class })
-@Import({ DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class, FunctionConfiguration.class })
+@Import({ DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class })
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
 public class BindingServiceConfiguration {

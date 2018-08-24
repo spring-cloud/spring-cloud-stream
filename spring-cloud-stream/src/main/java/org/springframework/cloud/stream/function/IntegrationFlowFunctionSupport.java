@@ -26,6 +26,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -76,6 +77,10 @@ public class IntegrationFlowFunctionSupport {
 		this.functionProperties = functionProperties;
 	}
 
+	public FunctionType getCurrentFunctionType() {
+		return functionInspector.getRegistration(functionCatalog.lookup(this.functionProperties.getName())).getType();
+	}
+
 	/**
 	 * Create an instance of the {@link IntegrationFlowBuilder} from a {@link Supplier} bean available in the context.
 	 * The name of the bean must be provided via `spring.cloud.stream.function.name` property.
@@ -114,6 +119,21 @@ public class IntegrationFlowFunctionSupport {
 	}
 
 	/**
+	 *
+	 * @param inputChannel
+	 * @param outputChannel
+	 * @return
+	 */
+	public <O> IntegrationFlowBuilder integrationFlowForFunction(SubscribableChannel inputChannel, MessageChannel outputChannel) {
+		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel).bridge();
+
+		if (!this.andThenFunction(flowBuilder, outputChannel)) {
+			flowBuilder = flowBuilder.channel(outputChannel);
+		}
+		return flowBuilder;
+	}
+
+	/**
 	 * Add a {@link Function} bean to the end of an integration flow.
 	 * The name of the bean must be provided via `spring.cloud.stream.function.name` property.
 	 * <p>
@@ -131,7 +151,12 @@ public class IntegrationFlowFunctionSupport {
 					new FunctionInvoker<>(this.functionProperties.getName(), this.functionCatalog,
 							this.functionInspector, this.messageConverterFactory, this.errorChannel);
 
-			subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), outputChannel::send);
+			if (outputChannel != null) {
+				subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), outputChannel::send);
+			}
+			else {
+				subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), null);
+			}
 			return true;
 		}
 		return false;

@@ -16,12 +16,25 @@
 
 package org.springframework.cloud.stream.function;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.stream.binding.BindingBeanDefinitionRegistryUtils;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.SubscribableChannel;
+import org.springframework.util.ClassUtils;
 
 /**
  *
@@ -32,6 +45,18 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty("spring.cloud.stream.function.name")
 public class FunctionConfiguration {
+
+	@Autowired(required=false)
+	private Source source;
+
+	@Autowired(required=false)
+	private Processor processor;
+
+	@Autowired(required=false)
+	private Sink sink;
+
+	@Autowired
+	private ConfigurableListableBeanFactory registry;
 
 	@Bean
 	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalogWrapper functionCatalog,
@@ -47,4 +72,28 @@ public class FunctionConfiguration {
 		return new FunctionCatalogWrapper(catalog);
 	}
 
+
+	@ConditionalOnProperty("spring.cloud.stream.function.name")
+	@ConditionalOnMissingBean
+	@Bean
+	public IntegrationFlow foo(IntegrationFlowFunctionSupport functionSupport) {
+		if (processor != null) {
+			return functionSupport.integrationFlowForFunction(processor.input(), processor.output()).get();
+		}
+		else if (sink != null) {
+			return functionSupport.integrationFlowForFunction(sink.input(), null).get();
+		}
+		else if (source != null) {
+			return functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get();
+		}
+
+		FunctionType ft = functionSupport.getCurrentFunctionType();
+		BindingBeanDefinitionRegistryUtils.registerBindingTargetBeanDefinitions(Sink.class,
+				Sink.class.getName(), (BeanDefinitionRegistry) registry);
+		BindingBeanDefinitionRegistryUtils.registerBindingTargetsQualifiedBeanDefinitions(
+				ClassUtils.resolveClassName(this.getClass().getName(), null), Sink.class,
+				(BeanDefinitionRegistry) registry);
+		return functionSupport.integrationFlowForFunction(registry.getBean("input", SubscribableChannel.class), null).get();
+		//throw new UnsupportedOperationException("Not yet supotrted");
+	}
 }
