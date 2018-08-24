@@ -31,6 +31,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AckUtils;
 import org.springframework.integration.acks.AcknowledgmentCallback;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.support.DefaultErrorMessageStrategy;
@@ -61,6 +62,12 @@ import org.springframework.util.Assert;
  *
  */
 public class DefaultPollableMessageSource implements PollableMessageSource, Lifecycle, RetryListener {
+
+	private static final DirectChannel dummyChannel = new DirectChannel();
+
+	static {
+		dummyChannel.setBeanName("dummy.required.by.nonnull.api");
+	}
 
 	protected static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<AttributeAccessor>();
 
@@ -103,7 +110,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 				if (result instanceof Message) {
 					Message<?> received = (Message<?>) result;
 					for (ChannelInterceptor interceptor : this.interceptors) {
-						received = interceptor.preSend(received, null);
+						received = interceptor.preSend(received, dummyChannel);
 						if (received == null) {
 							return null;
 						}
