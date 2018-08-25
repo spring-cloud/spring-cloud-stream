@@ -18,12 +18,11 @@ package org.springframework.cloud.stream.schema.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 
 /**
  * @author Vinicius Carvalho
  */
-@SpringBootApplication(exclude=BindingServiceConfiguration.class)
+@SpringBootApplication
 @EnableSchemaRegistryServer
 public class SchemaRegistryServerApplication {
 	public static void main(String[] args) {

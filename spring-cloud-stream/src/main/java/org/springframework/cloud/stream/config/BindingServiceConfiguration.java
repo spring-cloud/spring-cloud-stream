@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -80,7 +81,7 @@ import org.springframework.util.Assert;
 @EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class, FunctionProperties.class })
 @Import({ DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class, FunctionConfiguration.class })
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-//@ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
+@ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
 public class BindingServiceConfiguration {
 
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =

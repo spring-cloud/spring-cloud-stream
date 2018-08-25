@@ -20,7 +20,6 @@ import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.schema.server.EnableSchemaRegistryServer;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -36,7 +35,7 @@ public class EntityScanningTests {
 		context.close();
 	}
 
-	@EnableAutoConfiguration(exclude=BindingServiceConfiguration.class)
+	@EnableAutoConfiguration
 	@EnableSchemaRegistryServer
 	public static class CustomApplicationEmbeddingSchemaServer {
 	}
