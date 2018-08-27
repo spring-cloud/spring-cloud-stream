@@ -84,7 +84,7 @@ public class FunctionInvokerTests {
 		}
 
 		@Bean
-		public Function<Message, Message> messageToMessageNoType() {
+		public Function<Message<?>, Message<?>> messageToMessageNoType() {
 			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders()).build();
 		}
 

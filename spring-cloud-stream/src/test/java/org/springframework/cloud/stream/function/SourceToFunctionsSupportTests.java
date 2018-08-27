@@ -72,7 +72,7 @@ public class SourceToFunctionsSupportTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
 			WebApplicationType.NONE)
-			.run("--spring.cloud.stream.function.name=toUpperCase", "--spring.jmx.enabled=false")) {
+			.run("--spring.cloud.stream.function.definition=toUpperCase", "--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertThat(target.receive(1000).getPayload()).isEqualTo("HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
@@ -84,7 +84,7 @@ public class SourceToFunctionsSupportTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
 			WebApplicationType.NONE)
-			.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf", "--spring.jmx.enabled=false")) {
+			.run("--spring.cloud.stream.function.definition=toUpperCase|concatWithSelf", "--spring.jmx.enabled=false")) {
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertThat(target.receive(1000).getPayload()).isEqualTo(
 				"HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
@@ -97,7 +97,7 @@ public class SourceToFunctionsSupportTests {
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfigurationNoConversionPossible.class))
 						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf",
+						.run("--spring.cloud.stream.function.definition=toUpperCase|concatWithSelf",
 								"--spring.jmx.enabled=false")) {
 			PollableChannel errorChannel = context.getBean("errorChannel", PollableChannel.class);
 			OutputDestination target = context.getBean(OutputDestination.class);
@@ -112,7 +112,7 @@ public class SourceToFunctionsSupportTests {
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfigurationNoConversionPossible.class))
 						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf",
+						.run("--spring.cloud.stream.function.definition=toUpperCase|concatWithSelf",
 								"--spring.jmx.enabled=false")) {
 			PollableChannel errorChannel = context.getBean("errorChannel", PollableChannel.class);
 			OutputDestination target = context.getBean(OutputDestination.class);
@@ -125,7 +125,7 @@ public class SourceToFunctionsSupportTests {
 	public void testMessageSourceIsCreatedFromProvidedSupplier() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
-			WebApplicationType.NONE).run("--spring.cloud.stream.function.name=number", "--spring.jmx.enabled=false")) {
+			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=number", "--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertThat(target.receive(10000).getPayload()).isEqualTo("1".getBytes(StandardCharsets.UTF_8));
@@ -140,7 +140,7 @@ public class SourceToFunctionsSupportTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
 			WebApplicationType.NONE)
-			.run("--spring.cloud.stream.function.name=number|concatWithSelf", "--spring.jmx.enabled=false")) {
+			.run("--spring.cloud.stream.function.definition=number|concatWithSelf", "--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertThat(target.receive(10000).getPayload()).isEqualTo("11".getBytes(StandardCharsets.UTF_8));
@@ -155,7 +155,7 @@ public class SourceToFunctionsSupportTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
 			WebApplicationType.NONE)
-			.run("--spring.cloud.stream.function.name=number|concatWithSelf|multiplyByTwo",
+			.run("--spring.cloud.stream.function.definition=number|concatWithSelf|multiplyByTwo",
 				"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
@@ -177,7 +177,7 @@ public class SourceToFunctionsSupportTests {
 		new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
 			WebApplicationType.NONE)
-			.run("--spring.cloud.stream.function.name=doesNotExist", "--spring.jmx.enabled=false");
+			.run("--spring.cloud.stream.function.definition=doesNotExist", "--spring.jmx.enabled=false");
 	}
 
 	@EnableAutoConfiguration
@@ -297,11 +297,11 @@ public class SourceToFunctionsSupportTests {
 		private Source source;
 
 		@Autowired
-		private FunctionProperties functionProperties;
+		private StreamFunctionProperties functionProperties;
 
 		@Bean
 		public IntegrationFlow messageSourceFlow(IntegrationFlowFunctionSupport functionSupport) {
-			Assert.hasText(this.functionProperties.getName(), "Supplier name must be provided");
+			Assert.hasText(this.functionProperties.getDefinition(), "Supplier name must be provided");
 
 			return functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get();
 		}

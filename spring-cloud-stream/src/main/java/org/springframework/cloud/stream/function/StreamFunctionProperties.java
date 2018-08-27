@@ -25,20 +25,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 2.1
  */
 @ConfigurationProperties("spring.cloud.stream.function")
-public class FunctionProperties {
+public class StreamFunctionProperties {
 
 	/**
-	 * Name of functions to bind. If several functions need to be composed into one, use pipes (e.g., 'fooFunc|barFunc')
+	 * Definition of functions to bind. If several functions need to be composed
+	 * into one, use pipes (e.g., 'fooFunc|barFunc')
 	 */
-	private String name;
+	private String definition;
 
 
-	public String getName() {
-		return this.name;
+	public String getDefinition() {
+		return this.definition;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setDefinition(String definition) {
+		this.definition = definition;
 	}
 
 }

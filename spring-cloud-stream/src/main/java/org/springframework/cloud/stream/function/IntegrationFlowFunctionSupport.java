@@ -53,7 +53,7 @@ public class IntegrationFlowFunctionSupport {
 
 	private final CompositeMessageConverterFactory messageConverterFactory;
 
-	private final FunctionProperties functionProperties;
+	private final StreamFunctionProperties functionProperties;
 
 	@Autowired
 	private MessageChannel errorChannel;
@@ -65,7 +65,7 @@ public class IntegrationFlowFunctionSupport {
 	 * @param functionProperties
 	 */
 	public IntegrationFlowFunctionSupport(FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
-			CompositeMessageConverterFactory messageConverterFactory, FunctionProperties functionProperties) {
+			CompositeMessageConverterFactory messageConverterFactory, StreamFunctionProperties functionProperties) {
 
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(functionInspector, "'functionInspector' must not be null");
@@ -78,18 +78,18 @@ public class IntegrationFlowFunctionSupport {
 	}
 
 	public FunctionType getCurrentFunctionType() {
-		return functionInspector.getRegistration(functionCatalog.lookup(this.functionProperties.getName())).getType();
+		return functionInspector.getRegistration(functionCatalog.lookup(this.functionProperties.getDefinition())).getType();
 	}
 
 	/**
 	 * Create an instance of the {@link IntegrationFlowBuilder} from a {@link Supplier} bean available in the context.
-	 * The name of the bean must be provided via `spring.cloud.stream.function.name` property.
+	 * The name of the bean must be provided via `spring.cloud.stream.function.definition` property.
 	 * @return instance of {@link IntegrationFlowBuilder}
 	 * @throws IllegalStateException if the named Supplier can not be located.
 	 */
 	public IntegrationFlowBuilder integrationFlowFromNamedSupplier() {
-		if (StringUtils.hasText(this.functionProperties.getName())) {
-			Supplier<?> supplier = functionCatalog.lookup(Supplier.class, this.functionProperties.getName());
+		if (StringUtils.hasText(this.functionProperties.getDefinition())) {
+			Supplier<?> supplier = functionCatalog.lookup(Supplier.class, this.functionProperties.getDefinition());
 			if (supplier instanceof FluxSupplier) {
 				supplier = ((FluxSupplier<?>)supplier).getTarget();
 			}
@@ -98,7 +98,7 @@ public class IntegrationFlowFunctionSupport {
 		}
 
 		throw new IllegalStateException(
-				"A Supplier is not specified in the 'spring.cloud.stream.function.name' property.");
+				"A Supplier is not specified in the 'spring.cloud.stream.function.definition' property.");
 	}
 
 	/**
@@ -135,7 +135,7 @@ public class IntegrationFlowFunctionSupport {
 
 	/**
 	 * Add a {@link Function} bean to the end of an integration flow.
-	 * The name of the bean must be provided via `spring.cloud.stream.function.name` property.
+	 * The name of the bean must be provided via `spring.cloud.stream.function.definition` property.
 	 * <p>
 	 * NOTE: If this method returns true, the integration flow is now represented
 	 * as a Reactive Streams {@link Publisher} bean.
@@ -146,9 +146,9 @@ public class IntegrationFlowFunctionSupport {
 	 * @return true if {@link Function} was located and added and false if it wasn't.
 	 */
 	public <I,O> boolean andThenFunction(IntegrationFlowBuilder flowBuilder, MessageChannel outputChannel) {
-		if (StringUtils.hasText(this.functionProperties.getName())) {
+		if (StringUtils.hasText(this.functionProperties.getDefinition())) {
 			FunctionInvoker<I,O> functionInvoker =
-					new FunctionInvoker<>(this.functionProperties.getName(), this.functionCatalog,
+					new FunctionInvoker<>(this.functionProperties.getDefinition(), this.functionCatalog,
 							this.functionInspector, this.messageConverterFactory, this.errorChannel);
 
 			if (outputChannel != null) {

@@ -74,7 +74,7 @@ public class ProcessorToFunctionsSupportTests {
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
 						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=toUpperCase", "--spring.jmx.enabled=false");
+						.run("--spring.cloud.stream.function.definition=toUpperCase", "--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
@@ -88,7 +88,7 @@ public class ProcessorToFunctionsSupportTests {
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
 						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=toUpperCase|concatWithSelf", "--spring.jmx.enabled=false");
+						.run("--spring.cloud.stream.function.definition=toUpperCase|concatWithSelf", "--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
@@ -102,7 +102,7 @@ public class ProcessorToFunctionsSupportTests {
 				new SpringApplicationBuilder(
 						TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class))
 						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.name=log", "--spring.jmx.enabled=false");
+						.run("--spring.cloud.stream.function.definition=log", "--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);

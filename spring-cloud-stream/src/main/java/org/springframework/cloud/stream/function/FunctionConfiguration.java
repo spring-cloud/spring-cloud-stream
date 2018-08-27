@@ -17,14 +17,10 @@
 package org.springframework.cloud.stream.function;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.stream.binding.BindingBeanDefinitionRegistryUtils;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
@@ -32,9 +28,6 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.SubscribableChannel;
-import org.springframework.util.ClassUtils;
 
 /**
  *
@@ -43,7 +36,7 @@ import org.springframework.util.ClassUtils;
  * @since 2.1
  */
 @Configuration
-@ConditionalOnProperty("spring.cloud.stream.function.name")
+@ConditionalOnProperty("spring.cloud.stream.function.definition")
 public class FunctionConfiguration {
 
 	@Autowired(required=false)
@@ -55,13 +48,10 @@ public class FunctionConfiguration {
 	@Autowired(required=false)
 	private Sink sink;
 
-	@Autowired
-	private ConfigurableListableBeanFactory registry;
-
 	@Bean
 	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalogWrapper functionCatalog,
 			FunctionInspector functionInspector, CompositeMessageConverterFactory messageConverterFactory,
-			FunctionProperties functionProperties) {
+			StreamFunctionProperties functionProperties) {
 
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector, messageConverterFactory,
 				functionProperties);
@@ -72,11 +62,13 @@ public class FunctionConfiguration {
 		return new FunctionCatalogWrapper(catalog);
 	}
 
-
-	@ConditionalOnProperty("spring.cloud.stream.function.name")
-	@ConditionalOnMissingBean
+	/**
+	 * This configuration creates an instance of {@link IntegrationFlow} appropriate for binding declared using EnableBinding.
+	 * At the moment only Source, Processor and Sink are supported.
+	 */
+	@ConditionalOnMissingBean // starter apps typically already provide and instance of IntegrationFlow, so we don't need this one.
 	@Bean
-	public IntegrationFlow foo(IntegrationFlowFunctionSupport functionSupport) {
+	public IntegrationFlow integrationFlowCreator(IntegrationFlowFunctionSupport functionSupport) {
 		if (processor != null) {
 			return functionSupport.integrationFlowForFunction(processor.input(), processor.output()).get();
 		}
@@ -86,14 +78,6 @@ public class FunctionConfiguration {
 		else if (source != null) {
 			return functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get();
 		}
-
-		FunctionType ft = functionSupport.getCurrentFunctionType();
-		BindingBeanDefinitionRegistryUtils.registerBindingTargetBeanDefinitions(Sink.class,
-				Sink.class.getName(), (BeanDefinitionRegistry) registry);
-		BindingBeanDefinitionRegistryUtils.registerBindingTargetsQualifiedBeanDefinitions(
-				ClassUtils.resolveClassName(this.getClass().getName(), null), Sink.class,
-				(BeanDefinitionRegistry) registry);
-		return functionSupport.integrationFlowForFunction(registry.getBean("input", SubscribableChannel.class), null).get();
-		//throw new UnsupportedOperationException("Not yet supotrted");
+		throw new UnsupportedOperationException("Bindings other then Source, Processor and Sink are not currently supported");
 	}
 }
