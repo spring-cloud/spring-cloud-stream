@@ -412,7 +412,7 @@ Spring Cloud Stream is built on the concepts and patterns defined by http://www.
 in its internal implementation on an already established and popular implementation of Enterprise Integration Patterns within the Spring portfolio of projects:
 https://projects.spring.io/spring-integration/[Spring Integration] framework.
 
-So its only natiural for it to support the foundation, semantics, and configuration options that are already established by Spring Integration
+So its only natural for it to support the foundation, semantics, and configuration options that are already established by Spring Integration
 
 For example, you can attach the output channel of a `Source` to a `MessageSource` and use the familiar `@InboundChannelAdapter` annotation, as follows:
 
@@ -549,7 +549,7 @@ public static class CatsAndDogs {
 
 The preceding code is perfectly valid. It compiles and deploys without any issues, yet it never produces the result you expect.
 
-That is because you are testing something that does not yet exist in a state you expect. That is becouse the payload of the message is not yet converted from the
+That is because you are testing something that does not yet exist in a state you expect. That is because the payload of the message is not yet converted from the
 wire format (`byte[]`) to the desired type.
 In other words, it has not yet gone through the type conversion process described in the <<Content Type Negotiation>>.
 
@@ -559,6 +559,107 @@ So, unless you use a SPeL expression that evaluates raw data (for example, the v
 
 NOTE: At the moment, dispatching through `@StreamListener` conditions is supported only for channel-based binders (not for reactive programming)
 support.
+
+
+[[_spring_cloud_function]]
+==== Spring Cloud Function support
+
+Since Spring Cloud Stream v2.1, another alternative for defining _stream handlers_ and _sources_ is to use build-in
+support for https://cloud.spring.io/spring-cloud-function/[Spring Cloud Function] where they can be expressed as beans of
+ type `java.util.function.[Supplier/Function/Consumer]`.
+
+To specify which functional bean to bind to the external destination(s) exposed by the bindings, you must provide `spring.cloud.stream.function.definition` property.
+
+Here is the example of the Processor application exposing message handler as `java.util.function.Function`
+[source,java]
+----
+@SpringBootApplication
+@EnableBinding(Processor.class)
+public class MyFunctionBootApp {
+
+	public static void main(String[] args) {
+		SpringApplication.run(MyFunctionBootApp.class, "--spring.cloud.stream.function.definition=toUpperCase");
+	}
+
+	@Bean
+	public Function<String, String> toUpperCase() {
+		return s -> s.toUpperCase();
+	}
+}
+----
+In the above you we simply define a bean of type `java.util.function.Function` called _toUpperCase_ and identify it as a bean to be used as message handler
+whose 'input' and 'output' must be bound to the external destinations exposed by the Processor binding.
+
+Below are the examples of simple functional applications to support Source, Processor and Sink.
+
+Here is the example of a Source application defined as `java.util.function.Supplier`
+[source,java]
+----
+@SpringBootApplication
+@EnableBinding(Source.class)
+public static class SourceFromSupplier {
+	public static void main(String[] args) {
+		SpringApplication.run(SourceFromSupplier.class, "--spring.cloud.stream.function.definition=date");
+	}
+	@Bean
+	public Supplier<Date> date() {
+		return () -> new Date(12345L);
+	}
+}
+----
+
+Here is the example of a Processor application defined as `java.util.function.Function`
+[source,java]
+----
+@SpringBootApplication
+@EnableBinding(Processor.class)
+public static class ProcessorFromFunction {
+	public static void main(String[] args) {
+		SpringApplication.run(ProcessorFromFunction.class, "--spring.cloud.stream.function.definition=toUpperCase");
+	}
+	@Bean
+	public Function<String, String> toUpperCase() {
+		return s -> s.toUpperCase();
+	}
+}
+----
+
+Here is the example of a Sink application defined as `java.util.function.Consumer`
+[source,java]
+----
+@EnableAutoConfiguration
+@EnableBinding(Sink.class)
+public static class SinkFromConsumer {
+	public static void main(String[] args) {
+		SpringApplication.run(SinkFromConsumer.class, "--spring.cloud.stream.function.definition=sink");
+	}
+	@Bean
+	public Consumer<String> sink() {
+		return System.out::println;
+	}
+}
+----
+
+===== Functional Composition
+
+Using this programming model you can also benefit from functional composition where you can dynamically compose complex handlers from a set of simple functions.
+As an example let's add the following function bean to the application defined above
+[source,java]
+----
+@Bean
+public Function<String, String> wrapInQuotes() {
+	return s -> "\"" + s + "\"";
+}
+----
+and modify the `spring.cloud.stream.function.definition` property to reflect your intention to compose a new function from both ‘toUpperCase’ and ‘wrapInQuotes’.
+To do that Spring Cloud Function allows you to use `|` (pipe) symbol. So to finish our example our property will now look like this:
+
+[source,java]
+----
+—spring.cloud.stream.function.definition=toUpperCase|wrapInQuotes
+----
+
+
 
 [[spring-cloud-streams-overview-using-polled-consumers]]
 ==== Using Polled Consumers
