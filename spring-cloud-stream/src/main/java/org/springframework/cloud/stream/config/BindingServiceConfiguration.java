@@ -44,6 +44,7 @@ import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResultAdapter;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
+import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.cloud.stream.micrometer.DestinationPublishingMetricsAutoConfiguration;
 import org.springframework.context.ApplicationListener;
@@ -89,6 +90,9 @@ public class BindingServiceConfiguration {
 	@Autowired(required = false)
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
 
+	@Autowired(required = false)
+	IntegrationFlowFunctionSupport functionSupport;
+
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
 	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
@@ -98,6 +102,8 @@ public class BindingServiceConfiguration {
 				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties), binderTypeRegistry);
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
 		binderFactory.setListeners(binderFactoryListeners);
+		binderFactory.setIntegrationFlowFunctionSupport(functionSupport);
+
 		return binderFactory;
 	}
 

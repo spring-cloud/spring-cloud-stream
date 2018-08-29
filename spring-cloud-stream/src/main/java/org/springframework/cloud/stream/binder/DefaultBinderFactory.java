@@ -32,6 +32,7 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
+import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -68,6 +69,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	private volatile String defaultBinder;
 
 	private final BinderTypeRegistry binderTypeRegistry;
+
+	private IntegrationFlowFunctionSupport functionSupport;
+	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
 
 	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations,
 			BinderTypeRegistry binderTypeRegistry) {
@@ -118,6 +122,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			 * This is the fall back to the old bootstrap that relies on spring.binders.
 			 */
 			binder = this.doGetBinder(binderName, bindingTargetType);
+		}
+		if (binder instanceof AbstractMessageChannelBinder) {
+			((AbstractMessageChannelBinder)binder).setIntegationFlowFunctionSupport(functionSupport);
 		}
 		return binder;
 	}
@@ -275,6 +282,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		else {
 			flattenedProperties.put(propertyName, value.toString());
 		}
+	}
+
+	public void setIntegrationFlowFunctionSupport(IntegrationFlowFunctionSupport integrationFlowFunctionSupport) {
+		this.integrationFlowFunctionSupport = integrationFlowFunctionSupport;
+	}
+
+	public IntegrationFlowFunctionSupport getIntegrationFlowFunctionSupport() {
+		return integrationFlowFunctionSupport;
 	}
 
 	/**
