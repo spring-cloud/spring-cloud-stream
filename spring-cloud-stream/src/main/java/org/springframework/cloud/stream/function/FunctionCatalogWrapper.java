@@ -21,6 +21,7 @@ import org.springframework.util.Assert;
 
 /**
  * @author David Turanski
+ * @author Oleg Zhurakousky
  *
  * @since 2.1
  **/
@@ -44,4 +45,7 @@ class FunctionCatalogWrapper {
 		return lookup(null, name);
 	}
 
+	<T> boolean contains(Class<T> functionType, String name) {
+		return catalog.lookup(functionType, name) != null;
+	}
 }

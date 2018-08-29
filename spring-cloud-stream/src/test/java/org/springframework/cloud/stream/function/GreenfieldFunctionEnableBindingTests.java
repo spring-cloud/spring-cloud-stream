@@ -24,9 +24,11 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
@@ -37,7 +39,12 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.http.dsl.Http;
+import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
+import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -94,6 +101,19 @@ public class GreenfieldFunctionEnableBindingTests {
 		}
 	}
 
+	@Test
+	public void testHttpEndpoint() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(HttpInboundEndpoint.class)).web(
+			WebApplicationType.SERVLET).run("--spring.cloud.stream.function.definition=upperCase",  "--spring.jmx.enabled=false")) {
+			TestRestTemplate restTemplate = new TestRestTemplate();
+			restTemplate.postForLocation("http://localhost:8080", "hello");
+
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertThat(target.receive(10000).getPayload()).isEqualTo("HELLO".getBytes(StandardCharsets.UTF_8));
+		}
+	}
+
 
 	@EnableAutoConfiguration
 	@EnableBinding(Source.class)
@@ -126,6 +146,32 @@ public class GreenfieldFunctionEnableBindingTests {
 				result.send(new GenericMessage<String>(s));
 				System.out.println(s);
 			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Source.class)
+	public static class HttpInboundEndpoint {
+
+		@Autowired
+		private Source source;
+
+		@Bean
+		public Function<String, String> upperCase() {
+			return s -> s.toUpperCase();
+		}
+
+		@Bean
+		public HttpRequestHandlingEndpointSupport doFoo(IntegrationFlowFunctionSupport functionSupport) {
+			FluxMessageChannel fluxChannel = new FluxMessageChannel();
+			HttpRequestHandlerEndpointSpec httpRequestHandler = Http
+					.inboundChannelAdapter("/*")
+					.requestMapping(requestMapping -> requestMapping.methods(HttpMethod.POST)
+					.consumes("*/*"))
+					.requestChannel(fluxChannel);
+
+			functionSupport.andThenFunction(fluxChannel, source.output());
+			return httpRequestHandler.get();
 		}
 	}
 }

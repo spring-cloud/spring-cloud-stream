@@ -26,10 +26,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
@@ -45,7 +47,7 @@ import org.springframework.util.StringUtils;
  *
  * @since 2.1
  */
-public class IntegrationFlowFunctionSupport {
+class IntegrationFlowFunctionSupport {
 
 	private final FunctionCatalogWrapper functionCatalog;
 
@@ -64,7 +66,7 @@ public class IntegrationFlowFunctionSupport {
 	 * @param messageConverterFactory
 	 * @param functionProperties
 	 */
-	public IntegrationFlowFunctionSupport(FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
+	IntegrationFlowFunctionSupport(FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory, StreamFunctionProperties functionProperties) {
 
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
@@ -77,8 +79,21 @@ public class IntegrationFlowFunctionSupport {
 		this.functionProperties = functionProperties;
 	}
 
+	/**
+	 * Determines if function specified via 'spring.cloud.stream.function.definition'
+	 * property can be located in {@link FunctionCatalog}
+	 *
+	 * @param typeOfFunction must be Supplier, Function or Consumer
+	 * @return
+	 */
+	public <T> boolean containsFunction(Class<T> typeOfFunction) {
+		return StringUtils.hasText(this.functionProperties.getDefinition())
+				&& this.functionCatalog.contains(typeOfFunction, this.functionProperties.getDefinition());
+	}
+
 	public FunctionType getCurrentFunctionType() {
-		return functionInspector.getRegistration(functionCatalog.lookup(this.functionProperties.getDefinition())).getType();
+		FunctionType functionType = functionInspector.getRegistration(functionCatalog.lookup(this.functionProperties.getDefinition())).getType();
+		return functionType;
 	}
 
 	/**
@@ -162,6 +177,23 @@ public class IntegrationFlowFunctionSupport {
 		return false;
 	}
 
+	public <I,O> boolean andThenFunction(FluxMessageChannel fluxChannel, MessageChannel outputChannel) {
+		if (StringUtils.hasText(this.functionProperties.getDefinition())) {
+			FunctionInvoker<I,O> functionInvoker =
+					new FunctionInvoker<>(this.functionProperties.getDefinition(), this.functionCatalog,
+							this.functionInspector, this.messageConverterFactory, this.errorChannel);
+
+			if (outputChannel != null) {
+				subscribeToInput(functionInvoker, fluxChannel, outputChannel::send);
+			}
+			else {
+				subscribeToInput(functionInvoker, fluxChannel, null);
+			}
+			return true;
+		}
+		return false;
+	}
+
 	private <O> Mono<Void> subscribeToOutput(Consumer<Message<O>> outputProcessor,
 			Publisher<Message<O>> outputPublisher) {
 
@@ -171,11 +203,12 @@ public class IntegrationFlowFunctionSupport {
 		return output.then();
 	}
 
-	private <I,O> void subscribeToInput(FunctionInvoker<I,O> functionInvoker, Publisher<Message<I>> publisher,
+	@SuppressWarnings("unchecked")
+	private <I,O> void subscribeToInput(FunctionInvoker<I,O> functionInvoker, Publisher<?> publisher,
 			Consumer<Message<O>> outputProcessor) {
 
-		Flux<Message<I>> inputPublisher = Flux.from(publisher);
-		subscribeToOutput(outputProcessor, functionInvoker.apply(inputPublisher)).subscribe();
+		Flux<?> inputPublisher = Flux.from(publisher);
+		subscribeToOutput(outputProcessor, functionInvoker.apply((Flux<Message<I>>) inputPublisher)).subscribe();
 	}
 
 }

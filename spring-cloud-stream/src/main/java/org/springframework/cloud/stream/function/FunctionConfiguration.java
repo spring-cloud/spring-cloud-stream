@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.function.Supplier;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -52,7 +54,6 @@ public class FunctionConfiguration {
 	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalogWrapper functionCatalog,
 			FunctionInspector functionInspector, CompositeMessageConverterFactory messageConverterFactory,
 			StreamFunctionProperties functionProperties) {
-
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector, messageConverterFactory,
 				functionProperties);
 	}
@@ -76,7 +77,9 @@ public class FunctionConfiguration {
 			return functionSupport.integrationFlowForFunction(sink.input(), null).get();
 		}
 		else if (source != null) {
-			return functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get();
+			return functionSupport.containsFunction(Supplier.class)
+					? functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get()
+							: null;
 		}
 		throw new UnsupportedOperationException("Bindings other then Source, Processor and Sink are not currently supported");
 	}
