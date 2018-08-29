@@ -61,6 +61,10 @@ public class GreenfieldFunctionEnableBindingTests {
 			Message<byte[]> sourceMessage = target.receive(10000);
 			Date date = (Date) new CompositeMessageConverterFactory().getMessageConverterForAllRegistered().fromMessage(sourceMessage, Date.class);
 			assertThat(date).isEqualTo(new Date(12345L));
+
+			sourceMessage = target.receive(10000);
+			date = (Date) new CompositeMessageConverterFactory().getMessageConverterForAllRegistered().fromMessage(sourceMessage, Date.class);
+			assertThat(date).isEqualTo(new Date(12345L));
 		}
 	}
 
