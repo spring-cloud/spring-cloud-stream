@@ -47,7 +47,7 @@ import org.springframework.util.StringUtils;
  *
  * @since 2.1
  */
-class IntegrationFlowFunctionSupport {
+public class IntegrationFlowFunctionSupport {
 
 	private final FunctionCatalogWrapper functionCatalog;
 
