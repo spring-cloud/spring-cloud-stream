@@ -18,9 +18,9 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.logging.Log;
 
 import org.springframework.beans.factory.DisposableBean;
@@ -39,13 +39,11 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.FluxMessageChannel;
+import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.core.MessageSource;
-import org.springframework.integration.dsl.IntegrationFlowBuilder;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
@@ -105,6 +103,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	private final ListenerContainerCustomizer<?> containerCustomizer;
 
 	private ApplicationEventPublisher applicationEventPublisher;
+
 	private IntegrationFlowFunctionSupport integationFlowFunctionSupport;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
@@ -219,13 +218,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	private SubscribableChannel andThenFunctionDefinition(MessageChannel outputChannel) {
-		if (integationFlowFunctionSupport != null) {
+		if (this.integationFlowFunctionSupport != null && this.integationFlowFunctionSupport.containsFunction(Function.class)) {
 			DirectChannel actualOutputChannel = new DirectChannel();
-			IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(outputChannel);
-			integationFlowFunctionSupport.andThenFunction(flowBuilder, actualOutputChannel);
+			this.integationFlowFunctionSupport.andThenFunction(MessageChannelReactiveUtils.toPublisher(outputChannel),
+								actualOutputChannel);
 			return actualOutputChannel;
 		}
-		return (SubscribableChannel)outputChannel;
+		return (SubscribableChannel) outputChannel;
 	}
 
 	/**

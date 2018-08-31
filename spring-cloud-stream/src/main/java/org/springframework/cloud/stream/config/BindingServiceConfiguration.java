@@ -91,7 +91,7 @@ public class BindingServiceConfiguration {
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
 
 	@Autowired(required = false)
-	IntegrationFlowFunctionSupport functionSupport;
+	private IntegrationFlowFunctionSupport functionSupport;
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)

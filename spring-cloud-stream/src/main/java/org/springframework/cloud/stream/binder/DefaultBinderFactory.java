@@ -70,7 +70,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private final BinderTypeRegistry binderTypeRegistry;
 
-	private IntegrationFlowFunctionSupport functionSupport;
 	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
 
 	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations,
@@ -124,7 +123,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			binder = this.doGetBinder(binderName, bindingTargetType);
 		}
 		if (binder instanceof AbstractMessageChannelBinder) {
-			((AbstractMessageChannelBinder)binder).setIntegationFlowFunctionSupport(functionSupport);
+			((AbstractMessageChannelBinder)binder).setIntegationFlowFunctionSupport(this.integrationFlowFunctionSupport);
 		}
 		return binder;
 	}
