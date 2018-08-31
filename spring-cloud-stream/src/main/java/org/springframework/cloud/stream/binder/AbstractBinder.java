@@ -24,6 +24,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
+import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
+import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupportAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -61,12 +63,14 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private volatile AbstractApplicationContext applicationContext;
 
-
 	private volatile EvaluationContext evaluationContext;
 
 	@Autowired(required=false) // this would need to be refactored into constructor in the future
 	@StreamRetryTemplate
 	private RetryTemplate consumerBindingRetryTemplate;
+
+	@Autowired(required = false)
+	IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -111,6 +115,9 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		Assert.notNull(this.applicationContext, "The 'applicationContext' property must not be null");
 		if (this.evaluationContext == null) {
 			this.evaluationContext = ExpressionUtils.createStandardEvaluationContext(getBeanFactory());
+		}
+		if (this instanceof IntegrationFlowFunctionSupportAware) {
+			((IntegrationFlowFunctionSupportAware)this).setIntegrationFlowFunctionSupport(integrationFlowFunctionSupport);
 		}
 		onInit();
 	}

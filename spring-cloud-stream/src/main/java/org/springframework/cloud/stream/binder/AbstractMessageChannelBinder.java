@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.logging.Log;
 
 import org.springframework.beans.factory.DisposableBean;
@@ -28,6 +27,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.function.BinderFunctionSupport;
+import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
+import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupportAware;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -79,7 +81,7 @@ import org.springframework.util.Assert;
  */
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
 		extends AbstractBinder<MessageChannel, C, P>
-		implements PollableConsumerBinder<MessageHandler, C>, ApplicationEventPublisherAware {
+		implements PollableConsumerBinder<MessageHandler, C>, ApplicationEventPublisherAware, IntegrationFlowFunctionSupportAware {
 
 	private final EmbeddedHeadersChannelInterceptor embeddedHeadersChannelInterceptor =
 			new EmbeddedHeadersChannelInterceptor(this.logger);
@@ -101,6 +103,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private ApplicationEventPublisher applicationEventPublisher;
 
+	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
+
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
 		this(headersToEmbed, provisioningProvider, null);
 	}
@@ -114,6 +118,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	@Override
 	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
 		this.applicationEventPublisher = applicationEventPublisher;
+	}
+
+	@Override
+	public void setIntegrationFlowFunctionSupport(IntegrationFlowFunctionSupport integrationFlowFunctionSupport) {
+		this.integrationFlowFunctionSupport = integrationFlowFunctionSupport;
 	}
 
 	protected ApplicationEventPublisher getApplicationEventPublisher() {
@@ -173,11 +182,17 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (producerMessageHandler instanceof Lifecycle) {
 			((Lifecycle) producerMessageHandler).start();
 		}
+
 		postProcessOutputChannel(outputChannel, producerProperties);
+
+		outputChannel = BinderFunctionSupport.andThenFunctionDefinition(this.integrationFlowFunctionSupport,
+			outputChannel);
+
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, HeaderMode.embeddedHeaders
 						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
 						producerProperties.isUseNativeEncoding()));
+
 
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
@@ -206,6 +221,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		doPublishEvent(new BindingCreatedEvent(binding));
 		return binding;
 	}
+
+
 
 	/**
 	 * Allows subclasses to perform post processing on the channel - for example to

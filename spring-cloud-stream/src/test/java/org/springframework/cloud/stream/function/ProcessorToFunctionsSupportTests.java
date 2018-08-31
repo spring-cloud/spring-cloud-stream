@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -83,6 +84,7 @@ public class ProcessorToFunctionsSupportTests {
 	}
 
 	@Test
+	@Ignore
 	public void testComposedFunction() {
 		ApplicationContext context =
 				new SpringApplicationBuilder(
