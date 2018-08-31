@@ -32,30 +32,29 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
+ * @author David Turanski
  * @since 2.1
  */
 @Configuration
 @ConditionalOnProperty("spring.cloud.stream.function.definition")
 public class FunctionConfiguration {
 
-	@Autowired(required=false)
+	@Autowired(required = false)
 	private Source source;
 
-	@Autowired(required=false)
+	@Autowired(required = false)
 	private Processor processor;
 
-	@Autowired(required=false)
+	@Autowired(required = false)
 	private Sink sink;
 
 	@Bean
 	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalogWrapper functionCatalog,
-			FunctionInspector functionInspector, CompositeMessageConverterFactory messageConverterFactory,
-			StreamFunctionProperties functionProperties) {
+		FunctionInspector functionInspector, CompositeMessageConverterFactory messageConverterFactory,
+		StreamFunctionProperties functionProperties) {
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector, messageConverterFactory,
-				functionProperties);
+			functionProperties);
 	}
 
 	@Bean
@@ -67,7 +66,8 @@ public class FunctionConfiguration {
 	 * This configuration creates an instance of {@link IntegrationFlow} appropriate for binding declared using EnableBinding.
 	 * At the moment only Source, Processor and Sink are supported.
 	 */
-	@ConditionalOnMissingBean // starter apps typically already provide and instance of IntegrationFlow, so we don't need this one.
+	@ConditionalOnMissingBean
+	// starter apps typically already provide and instance of IntegrationFlow, so we don't need this one.
 	@Bean
 	public IntegrationFlow integrationFlowCreator(IntegrationFlowFunctionSupport functionSupport) {
 		if (processor != null) {
@@ -77,10 +77,11 @@ public class FunctionConfiguration {
 			return functionSupport.integrationFlowForFunction(sink.input(), null).get();
 		}
 		else if (source != null) {
-			return functionSupport.containsFunction(Supplier.class)
-					? functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get()
-							: null;
+			return functionSupport.containsFunction(Supplier.class) ?
+				functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get() :
+				null;
 		}
-		throw new UnsupportedOperationException("Bindings other then Source, Processor and Sink are not currently supported");
+		throw new UnsupportedOperationException(
+			"Bindings other then Source, Processor and Sink are not currently supported");
 	}
 }

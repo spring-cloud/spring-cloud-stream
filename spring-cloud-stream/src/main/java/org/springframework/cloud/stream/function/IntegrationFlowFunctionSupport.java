@@ -21,17 +21,19 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.integration.channel.FluxMessageChannel;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
@@ -44,10 +46,11 @@ import org.springframework.util.StringUtils;
  *
  * @author Oleg Zhurakousky
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  *
  * @since 2.1
  */
-public class IntegrationFlowFunctionSupport {
+public class IntegrationFlowFunctionSupport implements ApplicationContextAware, InitializingBean {
 
 	private final FunctionCatalogWrapper functionCatalog;
 
@@ -57,8 +60,8 @@ public class IntegrationFlowFunctionSupport {
 
 	private final StreamFunctionProperties functionProperties;
 
-	@Autowired
 	private MessageChannel errorChannel;
+	private ApplicationContext applicationContext;
 
 	/**
 	 * @param functionCatalog
@@ -92,7 +95,8 @@ public class IntegrationFlowFunctionSupport {
 	}
 
 	public FunctionType getCurrentFunctionType() {
-		FunctionType functionType = functionInspector.getRegistration(functionCatalog.lookup(this.functionProperties.getDefinition())).getType();
+		FunctionType functionType = functionInspector.getRegistration(
+				functionCatalog.lookup(this.functionProperties.getDefinition())).getType();
 		return functionType;
 	}
 
@@ -161,33 +165,20 @@ public class IntegrationFlowFunctionSupport {
 	 * @return true if {@link Function} was located and added and false if it wasn't.
 	 */
 	public <I,O> boolean andThenFunction(IntegrationFlowBuilder flowBuilder, MessageChannel outputChannel) {
-		if (StringUtils.hasText(this.functionProperties.getDefinition())) {
-			FunctionInvoker<I,O> functionInvoker =
-					new FunctionInvoker<>(this.functionProperties.getDefinition(), this.functionCatalog,
-							this.functionInspector, this.messageConverterFactory, this.errorChannel);
-
-			if (outputChannel != null) {
-				subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), outputChannel::send);
-			}
-			else {
-				subscribeToInput(functionInvoker, flowBuilder.toReactivePublisher(), null);
-			}
-			return true;
-		}
-		return false;
+		return andThenFunction(flowBuilder.toReactivePublisher(), outputChannel);
 	}
 
-	public <I,O> boolean andThenFunction(FluxMessageChannel fluxChannel, MessageChannel outputChannel) {
+	public <I,O> boolean andThenFunction(Publisher<?> publisher, MessageChannel outputChannel) {
 		if (StringUtils.hasText(this.functionProperties.getDefinition())) {
-			FunctionInvoker<I,O> functionInvoker =
+			FunctionInvoker<I, O> functionInvoker =
 					new FunctionInvoker<>(this.functionProperties.getDefinition(), this.functionCatalog,
 							this.functionInspector, this.messageConverterFactory, this.errorChannel);
 
 			if (outputChannel != null) {
-				subscribeToInput(functionInvoker, fluxChannel, outputChannel::send);
+				subscribeToInput(functionInvoker, publisher, outputChannel::send);
 			}
 			else {
-				subscribeToInput(functionInvoker, fluxChannel, null);
+				subscribeToInput(functionInvoker, publisher, null);
 			}
 			return true;
 		}
@@ -211,4 +202,13 @@ public class IntegrationFlowFunctionSupport {
 		subscribeToOutput(outputProcessor, functionInvoker.apply((Flux<Message<I>>) inputPublisher)).subscribe();
 	}
 
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		this.errorChannel = (MessageChannel) applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME);
+	}
 }
