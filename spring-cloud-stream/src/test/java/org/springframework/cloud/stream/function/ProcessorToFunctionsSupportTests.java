@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.function;
 
-
-
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -40,7 +38,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -158,19 +155,9 @@ public class ProcessorToFunctionsSupportTests {
 		private Processor processor;
 
 		@Bean
-		public IntegrationFlow fromChannel(@Nullable IntegrationFlowFunctionSupport functionSupport) {
+		public IntegrationFlow fromChannel() {
 
-			IntegrationFlowBuilder flowBuilder = null;
-			if (functionSupport == null) {
-				flowBuilder = IntegrationFlows.from(processor.input()).bridge().channel(processor.output());
-			}
-			else {
-				flowBuilder = functionSupport.integrationFlowFromChannel(processor.input());
-				if (!functionSupport.andThenFunction(flowBuilder, processor.output())) {
-					flowBuilder = flowBuilder.channel(processor.output());
-				}
-			}
-
+			IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(processor.input()).bridge().channel(processor.output());
 			return flowBuilder.get();
 		}
 

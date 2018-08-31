@@ -42,6 +42,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
+import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -70,7 +71,7 @@ public class SourceToFunctionsSupportTests {
 	@Test
 	public void testFunctionIsAppliedToExistingMessageSource() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class, TestChannelBinderConfiguration.class)).web(
 			WebApplicationType.NONE)
 			.run("--spring.cloud.stream.function.definition=toUpperCase", "--spring.jmx.enabled=false")) {
 
@@ -200,6 +201,22 @@ public class SourceToFunctionsSupportTests {
 		public Function<Flux<String>, Flux<String>> multiplyByTwo() {
 			return x -> x.map(i -> String.valueOf(Integer.valueOf(i) * 2));
 		}
+	}
+
+	@EnableBinding(Source.class)
+	public static class ProvidedMessageSourceConfiguration {
+
+		@Autowired
+		private Source source;
+
+		@Autowired
+		private StreamFunctionProperties functionProperties;
+
+		@Bean
+		public IntegrationFlow messageSourceFlow(IntegrationFlowFunctionSupport functionSupport) {
+			Assert.hasText(this.functionProperties.getDefinition(), "Supplier name must be provided");
+			return functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get();
+		}
 
 	}
 
@@ -252,17 +269,10 @@ public class SourceToFunctionsSupportTests {
 		private Source source;
 
 		@Bean
-		public IntegrationFlow messageSourceFlow(IntegrationFlowFunctionSupport functionSupport) {
+		public IntegrationFlow messageSourceFlow() {
 			Supplier<Message<String>> messageSource = () -> MessageBuilder.withPayload("hello function")
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
-				.build();
-
-			IntegrationFlowBuilder flowBuilder = functionSupport.integrationFlowFromProvidedSupplier(messageSource);
-
-			if (!functionSupport.andThenFunction(flowBuilder, this.source.output())) {
-				flowBuilder = flowBuilder.channel(this.source.output());
-			}
-
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
+			IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(messageSource).channel(this.source.output());
 			return flowBuilder.get();
 		}
 
@@ -275,37 +285,12 @@ public class SourceToFunctionsSupportTests {
 		private Source source;
 
 		@Bean
-		public IntegrationFlow messageSourceFlow(IntegrationFlowFunctionSupport functionSupport) {
+		public IntegrationFlow messageSourceFlow() {
 			Supplier<Message<String>> messageSource = () -> MessageBuilder.withPayload("hello function")
 					.setHeader(MessageHeaders.CONTENT_TYPE, "application/octet-stream").build();
-
-			IntegrationFlowBuilder flowBuilder = functionSupport.integrationFlowFromProvidedSupplier(messageSource);
-
-			if (!functionSupport.andThenFunction(flowBuilder, this.source.output())) {
-				flowBuilder = flowBuilder.channel(this.source.output());
-			}
-
+			IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(messageSource).channel(this.source.output());
 			return flowBuilder.get();
 		}
 
 	}
-
-	@EnableBinding(Source.class)
-	public static class ProvidedMessageSourceConfiguration {
-
-		@Autowired
-		private Source source;
-
-		@Autowired
-		private StreamFunctionProperties functionProperties;
-
-		@Bean
-		public IntegrationFlow messageSourceFlow(IntegrationFlowFunctionSupport functionSupport) {
-			Assert.hasText(this.functionProperties.getDefinition(), "Supplier name must be provided");
-
-			return functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get();
-		}
-
-	}
-
 }

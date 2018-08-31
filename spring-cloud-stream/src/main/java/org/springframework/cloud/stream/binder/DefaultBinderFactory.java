@@ -28,10 +28,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
+import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -69,6 +71,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private final BinderTypeRegistry binderTypeRegistry;
 
+	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
+
 	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations,
 			BinderTypeRegistry binderTypeRegistry) {
 		this.binderConfigurations = new HashMap<>(binderConfigurations);
@@ -79,6 +83,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		Assert.isInstanceOf(ConfigurableApplicationContext.class, applicationContext);
 		this.context = (ConfigurableApplicationContext) applicationContext;
+		try {
+			this.integrationFlowFunctionSupport = this.context.getBean(IntegrationFlowFunctionSupport.class);
+		}
+		catch (NoSuchBeanDefinitionException e) {
+			// ignore
+		}
 	}
 
 	public void setDefaultBinder(String defaultBinder) {
@@ -118,6 +128,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			 * This is the fall back to the old bootstrap that relies on spring.binders.
 			 */
 			binder = this.doGetBinder(binderName, bindingTargetType);
+		}
+		if (binder instanceof AbstractMessageChannelBinder) {
+			((AbstractMessageChannelBinder)binder).setIntegationFlowFunctionSupport(this.integrationFlowFunctionSupport);
 		}
 		return binder;
 	}
@@ -275,6 +288,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		else {
 			flattenedProperties.put(propertyName, value.toString());
 		}
+	}
+
+	public void setIntegrationFlowFunctionSupport(IntegrationFlowFunctionSupport integrationFlowFunctionSupport) {
+		this.integrationFlowFunctionSupport = integrationFlowFunctionSupport;
+	}
+
+	public IntegrationFlowFunctionSupport getIntegrationFlowFunctionSupport() {
+		return integrationFlowFunctionSupport;
 	}
 
 	/**

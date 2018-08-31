@@ -18,9 +18,9 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.logging.Log;
 
 import org.springframework.beans.factory.DisposableBean;
@@ -28,6 +28,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -37,6 +38,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
@@ -100,6 +103,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	private final ListenerContainerCustomizer<?> containerCustomizer;
 
 	private ApplicationEventPublisher applicationEventPublisher;
+
+	private IntegrationFlowFunctionSupport integationFlowFunctionSupport;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
 		this(headersToEmbed, provisioningProvider, null);
@@ -173,11 +178,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (producerMessageHandler instanceof Lifecycle) {
 			((Lifecycle) producerMessageHandler).start();
 		}
+
 		postProcessOutputChannel(outputChannel, producerProperties);
+
+		outputChannel = andThenFunctionDefinition(outputChannel);
+
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, HeaderMode.embeddedHeaders
 						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
 						producerProperties.isUseNativeEncoding()));
+
 
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
@@ -205,6 +215,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		doPublishEvent(new BindingCreatedEvent(binding));
 		return binding;
+	}
+
+	private SubscribableChannel andThenFunctionDefinition(MessageChannel outputChannel) {
+		if (this.integationFlowFunctionSupport != null && this.integationFlowFunctionSupport.containsFunction(Function.class)) {
+			DirectChannel actualOutputChannel = new DirectChannel();
+			this.integationFlowFunctionSupport.andThenFunction(MessageChannelReactiveUtils.toPublisher(outputChannel),
+								actualOutputChannel);
+			return actualOutputChannel;
+		}
+		return (SubscribableChannel) outputChannel;
 	}
 
 	/**
@@ -739,6 +759,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		else {
 			getApplicationContext().getBeanFactory().registerSingleton(name, component);
 		}
+	}
+
+	public void setIntegationFlowFunctionSupport(IntegrationFlowFunctionSupport integationFlowFunctionSupport) {
+		this.integationFlowFunctionSupport = integationFlowFunctionSupport;
+	}
+
+	public IntegrationFlowFunctionSupport getIntegationFlowFunctionSupport() {
+		return integationFlowFunctionSupport;
 	}
 
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {

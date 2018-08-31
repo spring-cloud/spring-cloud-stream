@@ -26,6 +26,7 @@ import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.endpoint.BindingsEndpoint;
+import org.springframework.cloud.stream.function.FunctionConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -37,7 +38,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnClass(name = {"org.springframework.boot.actuate.endpoint.annotation.Endpoint"})
 @ConditionalOnBean(BindingService.class)
-@AutoConfigureAfter(EndpointAutoConfiguration.class)
+@AutoConfigureAfter({EndpointAutoConfiguration.class, FunctionConfiguration.class})
 public class BindingsEndpointAutoConfiguration {
 
 	@Bean
