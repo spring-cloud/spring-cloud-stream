@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -82,6 +83,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		Assert.isInstanceOf(ConfigurableApplicationContext.class, applicationContext);
 		this.context = (ConfigurableApplicationContext) applicationContext;
+		try {
+			this.integrationFlowFunctionSupport = this.context.getBean(IntegrationFlowFunctionSupport.class);
+		}
+		catch (NoSuchBeanDefinitionException e) {
+			// ignore
+		}
 	}
 
 	public void setDefaultBinder(String defaultBinder) {
