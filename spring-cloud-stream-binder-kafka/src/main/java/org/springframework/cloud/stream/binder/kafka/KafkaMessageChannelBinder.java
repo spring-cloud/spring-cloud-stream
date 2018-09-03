@@ -167,9 +167,9 @@ public class KafkaMessageChannelBinder extends
 		super(headersToMap(configurationProperties), provisioningProvider, containerCustomizer);
 		this.configurationProperties = configurationProperties;
 		if (StringUtils.hasText(configurationProperties.getTransaction().getTransactionIdPrefix())) {
-			this.transactionManager = new KafkaTransactionManager<>(
-					getProducerFactory(configurationProperties.getTransaction().getTransactionIdPrefix(),
-							new ExtendedProducerProperties<>(configurationProperties.getTransaction().getProducer())));
+			this.transactionManager = new KafkaTransactionManager<>(getProducerFactory(
+					configurationProperties.getTransaction().getTransactionIdPrefix(), new ExtendedProducerProperties<>(
+							configurationProperties.getTransaction().getProducer().getExtension())));
 		}
 		else {
 			this.transactionManager = null;
@@ -337,6 +337,14 @@ public class KafkaMessageChannelBinder extends
 			producerFactory.setTransactionIdPrefix(transactionIdPrefix);
 		}
 		return producerFactory;
+	}
+
+	@Override
+	protected boolean useNativeEncoding(ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
+		if (this.transactionManager != null) {
+			return this.configurationProperties.getTransaction().getProducer().isUseNativeEncoding();
+		}
+		return super.useNativeEncoding(producerProperties);
 	}
 
 	@Override

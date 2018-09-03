@@ -33,11 +33,13 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerPro
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.willReturn;
@@ -63,6 +65,7 @@ public class KafkaTransactionTests {
 		KafkaBinderConfigurationProperties configurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);
 		configurationProperties.getTransaction().setTransactionIdPrefix("foo-");
+		configurationProperties.getTransaction().getProducer().setUseNativeEncoding(true);
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(configurationProperties, kafkaProperties);
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
 		final Producer mockProducer = mock(Producer.class);
@@ -93,6 +96,8 @@ public class KafkaTransactionTests {
 		inOrder.verify(mockProducer).commitTransaction();
 		inOrder.verify(mockProducer).close();
 		inOrder.verifyNoMoreInteractions();
+		assertThat(TestUtils.getPropertyValue(channel, "dispatcher.theOneHandler.useNativeEncoding", Boolean.class))
+				.isTrue();
 	}
 
 }

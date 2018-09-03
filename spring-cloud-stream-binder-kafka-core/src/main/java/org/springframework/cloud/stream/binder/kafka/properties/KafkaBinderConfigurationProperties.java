@@ -21,12 +21,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
+import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
+import org.springframework.cloud.stream.binder.HeaderMode;
+import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties.CompressionType;
+import org.springframework.cloud.stream.config.MergableProperties;
+import org.springframework.expression.Expression;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -585,7 +595,7 @@ public class KafkaBinderConfigurationProperties {
 
 	public static class Transaction {
 
-		private final KafkaProducerProperties producer = new KafkaProducerProperties();
+		private final CombinedProducerProperties producer = new CombinedProducerProperties();
 
 		private String transactionIdPrefix;
 
@@ -597,10 +607,183 @@ public class KafkaBinderConfigurationProperties {
 			this.transactionIdPrefix = transactionIdPrefix;
 		}
 
-		public KafkaProducerProperties getProducer() {
+		public CombinedProducerProperties getProducer() {
 			return this.producer;
 		}
 
+	}
+
+	/**
+	 * An combination of {@link ProducerProperties} and {@link KafkaProducerProperties}
+	 * so that common and kafka-specific properties can be set for the transactional
+	 * producer.
+	 * @since 2.1
+	 */
+	public static class CombinedProducerProperties {
+
+		private final ProducerProperties producerProperties = new ProducerProperties();
+
+		private final KafkaProducerProperties kafkaProducerProperties = new KafkaProducerProperties();
+
+		public void merge(MergableProperties mergable) {
+			this.producerProperties.merge(mergable);
+		}
+
+		public Expression getPartitionKeyExpression() {
+			return this.producerProperties.getPartitionKeyExpression();
+		}
+
+		public void setPartitionKeyExpression(Expression partitionKeyExpression) {
+			this.producerProperties.setPartitionKeyExpression(partitionKeyExpression);
+		}
+
+		public boolean isPartitioned() {
+			return this.producerProperties.isPartitioned();
+		}
+
+		public void copyProperties(Object source, Object target) throws BeansException {
+			this.producerProperties.copyProperties(source, target);
+		}
+
+		public Expression getPartitionSelectorExpression() {
+			return this.producerProperties.getPartitionSelectorExpression();
+		}
+
+		public void setPartitionSelectorExpression(Expression partitionSelectorExpression) {
+			this.producerProperties.setPartitionSelectorExpression(partitionSelectorExpression);
+		}
+
+		public @Min(value = 1, message = "Partition count should be greater than zero.") int getPartitionCount() {
+			return this.producerProperties.getPartitionCount();
+		}
+
+		public void setPartitionCount(int partitionCount) {
+			this.producerProperties.setPartitionCount(partitionCount);
+		}
+
+		public String[] getRequiredGroups() {
+			return this.producerProperties.getRequiredGroups();
+		}
+
+		public void setRequiredGroups(String... requiredGroups) {
+			this.producerProperties.setRequiredGroups(requiredGroups);
+		}
+
+		public @AssertTrue(message = "Partition key expression and partition key extractor class properties are mutually exclusive.") boolean isValidPartitionKeyProperty() {
+			return this.producerProperties.isValidPartitionKeyProperty();
+		}
+
+		public @AssertTrue(message = "Partition selector class and partition selector expression properties are mutually exclusive.") boolean isValidPartitionSelectorProperty() {
+			return this.producerProperties.isValidPartitionSelectorProperty();
+		}
+
+		public HeaderMode getHeaderMode() {
+			return this.producerProperties.getHeaderMode();
+		}
+
+		public void setHeaderMode(HeaderMode headerMode) {
+			this.producerProperties.setHeaderMode(headerMode);
+		}
+
+		public boolean isUseNativeEncoding() {
+			return this.producerProperties.isUseNativeEncoding();
+		}
+
+		public void setUseNativeEncoding(boolean useNativeEncoding) {
+			this.producerProperties.setUseNativeEncoding(useNativeEncoding);
+		}
+
+		public boolean isErrorChannelEnabled() {
+			return this.producerProperties.isErrorChannelEnabled();
+		}
+
+		public void setErrorChannelEnabled(boolean errorChannelEnabled) {
+			this.producerProperties.setErrorChannelEnabled(errorChannelEnabled);
+		}
+
+		public String getPartitionKeyExtractorName() {
+			return this.producerProperties.getPartitionKeyExtractorName();
+		}
+
+		public void setPartitionKeyExtractorName(String partitionKeyExtractorName) {
+			this.producerProperties.setPartitionKeyExtractorName(partitionKeyExtractorName);
+		}
+
+		public String getPartitionSelectorName() {
+			return this.producerProperties.getPartitionSelectorName();
+		}
+
+		public void setPartitionSelectorName(String partitionSelectorName) {
+			this.producerProperties.setPartitionSelectorName(partitionSelectorName);
+		}
+
+		public int getBufferSize() {
+			return this.kafkaProducerProperties.getBufferSize();
+		}
+
+		public void setBufferSize(int bufferSize) {
+			this.kafkaProducerProperties.setBufferSize(bufferSize);
+		}
+
+		public @NotNull CompressionType getCompressionType() {
+			return this.kafkaProducerProperties.getCompressionType();
+		}
+
+		public void setCompressionType(CompressionType compressionType) {
+			this.kafkaProducerProperties.setCompressionType(compressionType);
+		}
+
+		public boolean isSync() {
+			return this.kafkaProducerProperties.isSync();
+		}
+
+		public void setSync(boolean sync) {
+			this.kafkaProducerProperties.setSync(sync);
+		}
+
+		public int getBatchTimeout() {
+			return this.kafkaProducerProperties.getBatchTimeout();
+		}
+
+		public void setBatchTimeout(int batchTimeout) {
+			this.kafkaProducerProperties.setBatchTimeout(batchTimeout);
+		}
+
+		public Expression getMessageKeyExpression() {
+			return this.kafkaProducerProperties.getMessageKeyExpression();
+		}
+
+		public void setMessageKeyExpression(Expression messageKeyExpression) {
+			this.kafkaProducerProperties.setMessageKeyExpression(messageKeyExpression);
+		}
+
+		public String[] getHeaderPatterns() {
+			return this.kafkaProducerProperties.getHeaderPatterns();
+		}
+
+		public void setHeaderPatterns(String[] headerPatterns) {
+			this.kafkaProducerProperties.setHeaderPatterns(headerPatterns);
+		}
+
+		public Map<String, String> getConfiguration() {
+			return this.kafkaProducerProperties.getConfiguration();
+		}
+
+		public void setConfiguration(Map<String, String> configuration) {
+			this.kafkaProducerProperties.setConfiguration(configuration);
+		}
+
+		public KafkaAdminProperties getAdmin() {
+			return this.kafkaProducerProperties.getAdmin();
+		}
+
+		public void setAdmin(KafkaAdminProperties admin) {
+			this.kafkaProducerProperties.setAdmin(admin);
+		}
+
+		public KafkaProducerProperties getExtension() {
+			return this.kafkaProducerProperties;
+		}
 	}
 
 }
