@@ -177,7 +177,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, HeaderMode.embeddedHeaders
 						.equals(producerProperties.getHeaderMode()), this.headersToEmbed,
-						producerProperties.isUseNativeEncoding()));
+						useNativeEncoding(producerProperties)));
 
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination, outputChannel,
 				producerMessageHandler instanceof Lifecycle ? (Lifecycle) producerMessageHandler : null) {
@@ -205,6 +205,18 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		doPublishEvent(new BindingCreatedEvent(binding));
 		return binding;
+	}
+
+	/**
+	 * Whether the producer for the destination being created should be configured to use
+	 * native encoding which may, or may not, be determined from the properties. For
+	 * example, a transactional kafka binder uses a common producer for all destinations.
+	 * The default implementation returns {@link P#isUseNativeEncoding()}.
+	 * @param producerProperties the properties.
+	 * @return true to use native encoding.
+	 */
+	protected boolean useNativeEncoding(P producerProperties) {
+		return producerProperties.isUseNativeEncoding();
 	}
 
 	/**
@@ -749,6 +761,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		private final MessageHandler delegate;
 
+		private final boolean useNativeEncoding;
+
 
 		private SendingHandler(MessageHandler delegate, boolean embedHeaders,
 				String[] headersToEmbed, boolean useNativeEncoding) {
@@ -758,8 +772,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			this.embeddedHeaders = headersToEmbed;
 			this.useNativeEncoding = useNativeEncoding;
 		}
-
-		private final boolean useNativeEncoding;
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) throws Exception {
