@@ -89,7 +89,7 @@ public class FunctionConfiguration {
 	}
 
 	@Bean
-	BeanPostProcessor integrationFlowFunctionSupportAwareBeanPostProcesser() {
+	public BeanPostProcessor integrationFlowFunctionSupportAwareBeanPostProcesser() {
 		return new BeanPostProcessor() {
 			@Nullable
 			@Override
