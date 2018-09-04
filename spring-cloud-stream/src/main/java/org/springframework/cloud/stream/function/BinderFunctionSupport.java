@@ -25,6 +25,7 @@ import org.springframework.messaging.SubscribableChannel;
 
 /**
  * @author David Turanski
+ * @since 2.1
  **/
 public abstract class BinderFunctionSupport {
 

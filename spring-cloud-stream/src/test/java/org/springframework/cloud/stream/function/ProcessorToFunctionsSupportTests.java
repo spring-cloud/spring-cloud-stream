@@ -36,7 +36,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -85,9 +84,7 @@ public class ProcessorToFunctionsSupportTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		source.send(new GenericMessage<byte[]>("hello".getBytes(StandardCharsets.UTF_8)));
-		byte[] result = target.receive(1000).getPayload();
-		System.out.println(new String(result));
-		assertThat(result).isEqualTo("HELLO:HELLO".getBytes(StandardCharsets.UTF_8));
+		assertThat(target.receive(1000).getPayload()).isEqualTo("HELLO:HELLO".getBytes(StandardCharsets.UTF_8));
 	}
 
 	@Test
@@ -152,11 +149,8 @@ public class ProcessorToFunctionsSupportTests {
 		@Bean
 		public IntegrationFlow fromChannel() {
 
-			IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(processor.input())
-				.bridge()
-				.channel(processor.output());
-
-			return flowBuilder.get();
+			return IntegrationFlows.from(processor.input())
+				.channel(processor.output()).get();
 		}
 
 	}

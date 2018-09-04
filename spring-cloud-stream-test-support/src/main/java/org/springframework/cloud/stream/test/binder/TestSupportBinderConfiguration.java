@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package org.springframework.cloud.stream.test.binder;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.MessageChannel;
@@ -27,26 +25,21 @@ import org.springframework.messaging.MessageChannel;
 /**
  * Binder {@link org.springframework.context.annotation.Configuration} for the
  * {@link TestSupportBinder}
- * <p>
+ *
  * Either imported by the {@link TestSupportBinderAutoConfiguration} for the test binder
  * default usage scenario (superseding all binders on the classpath), or used as a binder
  * configuration on the classpath when test binder autoconfiguration is disabled.
  *
  * @author Marius Bogoevici
- * @author David Turanski
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
 public class TestSupportBinderConfiguration {
 
-	@Autowired(required = false)
-	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
+	private Binder<MessageChannel, ?, ?> messageChannelBinder = new TestSupportBinder();
 
 	@Bean
 	public Binder<MessageChannel, ?, ?> binder() {
-
-		TestSupportBinder messageChannelBinder = new TestSupportBinder();
-		messageChannelBinder.setIntegrationFlowFunctionSupport(integrationFlowFunctionSupport);
 		return messageChannelBinder;
 	}
 
