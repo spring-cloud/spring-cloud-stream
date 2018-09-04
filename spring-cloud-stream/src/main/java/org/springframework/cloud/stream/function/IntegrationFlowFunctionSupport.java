@@ -25,6 +25,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -49,7 +50,7 @@ import org.springframework.util.StringUtils;
  *
  * @since 2.1
  */
-public class IntegrationFlowFunctionSupport implements ApplicationContextAware {
+public class IntegrationFlowFunctionSupport implements ApplicationContextAware, InitializingBean {
 
 	private final FunctionCatalogWrapper functionCatalog;
 
@@ -60,6 +61,7 @@ public class IntegrationFlowFunctionSupport implements ApplicationContextAware {
 	private final StreamFunctionProperties functionProperties;
 
 	private MessageChannel errorChannel;
+	private ApplicationContext applicationContext;
 
 	/**
 	 * @param functionCatalog
@@ -202,6 +204,11 @@ public class IntegrationFlowFunctionSupport implements ApplicationContextAware {
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
 		this.errorChannel = (MessageChannel) applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME);
 	}
 }
