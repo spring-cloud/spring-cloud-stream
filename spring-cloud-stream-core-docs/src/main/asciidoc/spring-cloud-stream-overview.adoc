@@ -103,7 +103,7 @@ To run a Spring Cloud Stream application in production, you can create an execut
 [[spring-cloud-stream-overview-binder-abstraction]]
 === The Binder Abstraction
 
-Spring Cloud Stream provides Binder implementations for https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-binders/spring-cloud-stream-binder-kafka[Kafka] and https://github.com/spring-cloud/spring-cloud-stream/tree/master/spring-cloud-stream-binders/spring-cloud-stream-binder-rabbit[Rabbit MQ].
+Spring Cloud Stream provides Binder implementations for https://github.com/spring-cloud/spring-cloud-stream-binder-kafka[Kafka] and https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit[Rabbit MQ].
 Spring Cloud Stream also includes a https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-test-support/src/main/java/org/springframework/cloud/stream/test/binder/TestSupportBinder.java[TestSupportBinder], which leaves a channel unmodified so that tests can interact with channels directly and reliably assert on what is received.
 You can also use the extensible API to write your own Binder.
 
