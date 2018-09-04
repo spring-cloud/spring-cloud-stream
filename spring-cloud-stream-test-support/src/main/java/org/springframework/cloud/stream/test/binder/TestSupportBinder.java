@@ -38,9 +38,7 @@ import org.springframework.cloud.stream.test.matcher.MessageQueueMatcher;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.converter.DefaultContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
@@ -65,6 +63,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author David Turanski
  * @see MessageQueueMatcher
  */
 public class TestSupportBinder
@@ -89,19 +88,13 @@ public class TestSupportBinder
 	@Override
 	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget,
 		ProducerProperties properties) {
-		SubscribableChannel actualOutboundBindTarget = BinderFunctionSupport.andThenFunctionDefinition(
+		SubscribableChannel functionOutputChannel = BinderFunctionSupport.andThenFunctionDefinition(
 			this.integrationFlowFunctionSupport, outboundBindTarget);
-		final BlockingQueue<Message<?>> queue = messageCollector.register(actualOutboundBindTarget,
+		final BlockingQueue<Message<?>> queue = messageCollector.register(outboundBindTarget,
 			properties.isUseNativeEncoding());
-		((SubscribableChannel) actualOutboundBindTarget).subscribe(new MessageHandler() {
-			@Override
-			public void handleMessage(Message<?> message) throws MessagingException {
-
-				queue.add(message);
-			}
-		});
-		this.messageChannels.put(name, actualOutboundBindTarget);
-		return new TestBinding(actualOutboundBindTarget, messageCollector);
+		(functionOutputChannel).subscribe(message -> queue.add(message));
+		this.messageChannels.put(name, outboundBindTarget);
+		return new TestBinding(outboundBindTarget, messageCollector);
 	}
 
 	public MessageCollector messageCollector() {

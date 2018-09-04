@@ -16,13 +16,10 @@
 
 package org.springframework.cloud.stream.function;
 
-
-
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -41,28 +38,23 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
+ * @author David Turanski
  * @since 2.1
- *
  */
 public class ProcessorToFunctionsSupportTests {
 
 	@Test
 	public void testPathThrough() {
-		ApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.jmx.enabled=false");
+		ApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
+			WebApplicationType.NONE).run("--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		source.send(new GenericMessage<byte[]>("hello".getBytes(StandardCharsets.UTF_8)));
@@ -71,11 +63,10 @@ public class ProcessorToFunctionsSupportTests {
 
 	@Test
 	public void testSingleFunction() {
-		ApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.definition=toUpperCase", "--spring.jmx.enabled=false");
+		ApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
+			WebApplicationType.NONE)
+			.run("--spring.cloud.stream.function.definition=toUpperCase", "--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
@@ -84,27 +75,26 @@ public class ProcessorToFunctionsSupportTests {
 	}
 
 	@Test
-	@Ignore
 	public void testComposedFunction() {
-		ApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.definition=toUpperCase|concatWithSelf", "--spring.jmx.enabled=false");
+		ApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
+			WebApplicationType.NONE)
+			.run("--spring.cloud.stream.function.definition=toUpperCase|concatWithSelf",
+				"--spring.jmx" + ".enabled=false", "--logging.level.org.springframework.integration=DEBUG");
 
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		source.send(new GenericMessage<byte[]>("hello".getBytes(StandardCharsets.UTF_8)));
-		assertThat(target.receive(1000).getPayload()).isEqualTo("HELLO:HELLO".getBytes(StandardCharsets.UTF_8));
+		byte[] result = target.receive(1000).getPayload();
+		System.out.println(new String(result));
+		assertThat(result).isEqualTo("HELLO:HELLO".getBytes(StandardCharsets.UTF_8));
 	}
 
 	@Test
 	public void testConsumer() {
-		ApplicationContext context =
-				new SpringApplicationBuilder(
-						TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.function.definition=log", "--spring.jmx.enabled=false");
+		ApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class)).web(
+			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=log", "--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
@@ -160,18 +150,11 @@ public class ProcessorToFunctionsSupportTests {
 		private Processor processor;
 
 		@Bean
-		public IntegrationFlow fromChannel(@Nullable IntegrationFlowFunctionSupport functionSupport) {
+		public IntegrationFlow fromChannel() {
 
-			IntegrationFlowBuilder flowBuilder = null;
-			if (functionSupport == null) {
-				flowBuilder = IntegrationFlows.from(processor.input()).bridge().channel(processor.output());
-			}
-			else {
-				flowBuilder = functionSupport.integrationFlowFromChannel(processor.input());
-				if (!functionSupport.andThenFunction(flowBuilder, processor.output())) {
-					flowBuilder = flowBuilder.channel(processor.output());
-				}
-			}
+			IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(processor.input())
+				.bridge()
+				.channel(processor.output());
 
 			return flowBuilder.get();
 		}
