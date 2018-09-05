@@ -170,19 +170,11 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 			for (Resource schemaLocation : this.schemaLocations) {
 				try {
 					Schema schema = parseSchema(schemaLocation);
-					if (this.logger.isInfoEnabled()) {
-						this.logger.info("Resource " + schemaLocation.getFilename()
-								+ " parsed into schema " + schema.getNamespace() + "."
-								+ schema.getName());
+					if (schema.getType().equals(Schema.Type.UNION)) {
+						schema.getTypes().forEach(innerSchema -> registerSchema(schemaLocation, innerSchema));
+					} else {
+						registerSchema(schemaLocation, schema);
 					}
-					this.schemaRegistryClient.register(toSubject(schema), AVRO_FORMAT,
-							schema.toString());
-					if (this.logger.isInfoEnabled()) {
-						this.logger.info("Schema " + schema.getName()
-								+ " registered with id " + schema);
-					}
-					this.cacheManager.getCache(REFLECTION_CACHE_NAME)
-							.put(schema.getNamespace() + "." + schema.getName(), schema);
 				}
 				catch (IOException e) {
 					if (this.logger.isWarnEnabled()) {
@@ -198,6 +190,22 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 					+ "the intention, please provide the appropriate instance of CacheManager "
 					+ "(i.e., ConcurrentMapCacheManager).");
 		}
+	}
+
+	private void registerSchema(Resource schemaLocation, Schema schema) {
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("Resource " + schemaLocation.getFilename()
+					+ " parsed into schema " + schema.getNamespace() + "."
+					+ schema.getName());
+		}
+		this.schemaRegistryClient.register(toSubject(schema), AVRO_FORMAT,
+				schema.toString());
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("Schema " + schema.getName()
+					+ " registered with id " + schema);
+		}
+		this.cacheManager.getCache(REFLECTION_CACHE_NAME)
+				.put(schema.getNamespace() + "." + schema.getName(), schema);
 	}
 
 	protected String toSubject(Schema schema) {
