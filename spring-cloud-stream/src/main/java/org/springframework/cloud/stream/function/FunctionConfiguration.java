@@ -18,9 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.util.function.Supplier;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -32,7 +30,6 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.lang.Nullable;
 
 /**
  * @author Oleg Zhurakousky
@@ -86,20 +83,5 @@ public class FunctionConfiguration {
 		}
 		throw new UnsupportedOperationException(
 			"Bindings other then Source, Processor and Sink are not currently supported");
-	}
-
-	@Bean
-	public BeanPostProcessor integrationFlowFunctionSupportAwareBeanPostProcesser() {
-		return new BeanPostProcessor() {
-			@Nullable
-			@Override
-			public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-				if (bean instanceof IntegrationFlowFunctionSupportAware) {
-					((IntegrationFlowFunctionSupportAware)bean).setIntegrationFlowFunctionSupport(functionSupport
-						(null, null, null, null));
-				}
-				return bean;
-			}
-		};
 	}
 }
