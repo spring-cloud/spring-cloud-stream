@@ -66,6 +66,7 @@ public class SourceToFunctionsSupportTests {
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();
 
+
 	@Test
 	public void testFunctionIsAppliedToExistingMessageSource() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -88,6 +89,7 @@ public class SourceToFunctionsSupportTests {
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertThat(target.receive(1000).getPayload()).isEqualTo(
 				"HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
+			context.close();
 		}
 	}
 
@@ -102,6 +104,7 @@ public class SourceToFunctionsSupportTests {
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertNull(target.receive(1000));
 			assertNotNull(errorChannel.receive(1000));
+			context.close();
 		}
 	}
 
@@ -116,6 +119,7 @@ public class SourceToFunctionsSupportTests {
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertNull(target.receive(1000));
 			assertNotNull(errorChannel.receive(1000));
+			context.close();
 		}
 	}
 
@@ -131,6 +135,7 @@ public class SourceToFunctionsSupportTests {
 			assertThat(target.receive(10000).getPayload()).isEqualTo("2".getBytes(StandardCharsets.UTF_8));
 			assertThat(target.receive(10000).getPayload()).isEqualTo("3".getBytes(StandardCharsets.UTF_8));
 			//etc
+			context.close();
 		}
 	}
 
@@ -146,6 +151,7 @@ public class SourceToFunctionsSupportTests {
 			assertThat(target.receive(10000).getPayload()).isEqualTo("22".getBytes(StandardCharsets.UTF_8));
 			assertThat(target.receive(10000).getPayload()).isEqualTo("33".getBytes(StandardCharsets.UTF_8));
 			//etc
+			context.close();
 		}
 	}
 
@@ -162,6 +168,7 @@ public class SourceToFunctionsSupportTests {
 			assertThat(target.receive(10000).getPayload()).isEqualTo("44".getBytes(StandardCharsets.UTF_8));
 			assertThat(target.receive(10000).getPayload()).isEqualTo("66".getBytes(StandardCharsets.UTF_8));
 			//etc
+			context.close();
 		}
 	}
 

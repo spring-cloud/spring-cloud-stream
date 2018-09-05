@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.junit.After;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -32,7 +33,7 @@ import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -49,9 +50,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ProcessorToFunctionsSupportTests {
 
+	private ConfigurableApplicationContext context;
+
+	@After
+	public void cleanUp() {
+		context.close();
+	}
+
 	@Test
 	public void testPathThrough() {
-		ApplicationContext context = new SpringApplicationBuilder(
+		context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
 			WebApplicationType.NONE).run("--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
@@ -62,7 +70,7 @@ public class ProcessorToFunctionsSupportTests {
 
 	@Test
 	public void testSingleFunction() {
-		ApplicationContext context = new SpringApplicationBuilder(
+		context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
 			WebApplicationType.NONE)
 			.run("--spring.cloud.stream.function.definition=toUpperCase", "--spring.jmx.enabled=false");
@@ -75,7 +83,7 @@ public class ProcessorToFunctionsSupportTests {
 
 	@Test
 	public void testComposedFunction() {
-		ApplicationContext context = new SpringApplicationBuilder(
+	context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
 			WebApplicationType.NONE)
 			.run("--spring.cloud.stream.function.definition=toUpperCase|concatWithSelf",
@@ -89,7 +97,7 @@ public class ProcessorToFunctionsSupportTests {
 
 	@Test
 	public void testConsumer() {
-		ApplicationContext context = new SpringApplicationBuilder(
+		context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class)).web(
 			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=log", "--spring.jmx.enabled=false");
 
