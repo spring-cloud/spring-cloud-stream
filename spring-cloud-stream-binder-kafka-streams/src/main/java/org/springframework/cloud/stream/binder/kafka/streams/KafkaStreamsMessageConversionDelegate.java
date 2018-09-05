@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.processor.Processor;
@@ -42,6 +44,8 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  */
 public class KafkaStreamsMessageConversionDelegate {
+
+	private final static Log LOG = LogFactory.getLog(KafkaStreamsMessageConversionDelegate.class);
 
 	private static final ThreadLocal<KeyValue<Object, Object>> keyValueThreadLocal = new ThreadLocal<>();
 
@@ -105,32 +109,34 @@ public class KafkaStreamsMessageConversionDelegate {
 				boolean isValidRecord = false;
 
 				try {
-					if (valueClass.isAssignableFrom(o2.getClass())) {
-						keyValueThreadLocal.set(new KeyValue<>(o, o2));
-					}
-					else if (o2 instanceof Message) {
-						if (valueClass.isAssignableFrom(((Message) o2).getPayload().getClass())) {
-							keyValueThreadLocal.set(new KeyValue<>(o, ((Message) o2).getPayload()));
+					//if the record is a tombstone, ignore and exit from processing further.
+					if (o2 != null) {
+						if (valueClass.isAssignableFrom(o2.getClass())) {
+							keyValueThreadLocal.set(new KeyValue<>(o, o2));
+						} else if (o2 instanceof Message) {
+							if (valueClass.isAssignableFrom(((Message) o2).getPayload().getClass())) {
+								keyValueThreadLocal.set(new KeyValue<>(o, ((Message) o2).getPayload()));
+							} else {
+								convertAndSetMessage(o, valueClass, messageConverter, (Message) o2);
+							}
+						} else if (o2 instanceof String || o2 instanceof byte[]) {
+							Message<?> message = MessageBuilder.withPayload(o2).build();
+							convertAndSetMessage(o, valueClass, messageConverter, message);
+						} else {
+							keyValueThreadLocal.set(new KeyValue<>(o, o2));
 						}
-						else {
-							convertAndSetMessage(o, valueClass, messageConverter, (Message) o2);
-						}
-					}
-					else if (o2 instanceof String || o2 instanceof byte[]) {
-						Message<?> message = MessageBuilder.withPayload(o2).build();
-						convertAndSetMessage(o, valueClass, messageConverter, message);
+						isValidRecord = true;
 					}
 					else {
-						keyValueThreadLocal.set(new KeyValue<>(o, o2));
+						LOG.info("Received a tombstone record. This will be skipped from further processing.");
 					}
-					isValidRecord = true;
 				}
 				catch (Exception ignored) {
 					//pass through
 				}
 				return isValidRecord;
 			},
-			//sedond filter that catches any messages for which an exception thrown in the first filter above.
+			//second filter that catches any messages for which an exception thrown in the first filter above.
 			(k, v) -> true
 		);
 		//process errors from the second filter in the branch above.
@@ -164,21 +170,21 @@ public class KafkaStreamsMessageConversionDelegate {
 
 			@Override
 			public void process(Object o, Object o2) {
-				if (kstreamBindingInformationCatalogue.isDlqEnabled(bindingTarget)) {
-					String destination = context.topic();
-					if (o2 instanceof Message) {
-						Message message = (Message) o2;
-						sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) message.getPayload(), context.partition());
+				//Only continue if the record was not a tombstone.
+				if (o2 != null) {
+					if (kstreamBindingInformationCatalogue.isDlqEnabled(bindingTarget)) {
+						String destination = context.topic();
+						if (o2 instanceof Message) {
+							Message message = (Message) o2;
+							sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) message.getPayload(), context.partition());
+						} else {
+							sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) o2, context.partition());
+						}
+					} else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
+						throw new IllegalStateException("Inbound deserialization failed.");
+					} else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
+						//quietly pass through. No action needed, this is similar to log and continue.
 					}
-					else {
-						sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) o2, context.partition());
-					}
-				}
-				else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
-					throw new IllegalStateException("Inbound deserialization failed.");
-				}
-				else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
-					//quietly pass through. No action needed, this is similar to log and continue.
 				}
 			}
 

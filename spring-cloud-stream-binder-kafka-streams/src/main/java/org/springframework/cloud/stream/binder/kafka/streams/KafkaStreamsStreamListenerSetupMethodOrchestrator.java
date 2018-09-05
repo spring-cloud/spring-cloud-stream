@@ -64,7 +64,6 @@ import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.StreamsBuilderFactoryBean;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.support.MessageBuilder;
@@ -363,11 +362,11 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		stream = stream.mapValues(value -> {
 			Object returnValue;
 			String contentType = bindingProperties.getContentType();
-			if (!StringUtils.isEmpty(contentType) && !nativeDecoding) {
-				Message<?> message = MessageBuilder.withPayload(value)
-						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
-						returnValue = message;
-			} else {
+			if (value != null && !StringUtils.isEmpty(contentType) && !nativeDecoding) {
+				returnValue = MessageBuilder.withPayload(value)
+								.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
+			}
+			else {
 				returnValue = value;
 			}
 			return returnValue;

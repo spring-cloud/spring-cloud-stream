@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
@@ -116,6 +118,9 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 			ReadOnlyWindowStore<Object, Object> store = kafkaStreams.store("foo-WordCounts", QueryableStoreTypes.windowStore());
 			assertThat(store).isNotNull();
+
+			sendTombStoneRecordsAndVerifyGracefulHandling();
+
 			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean, "cleanupConfig",
 					CleanupConfig.class);
 			assertThat(cleanup.cleanupOnStart()).isTrue();
@@ -129,11 +134,33 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 	private void receiveAndValidate(ConfigurableApplicationContext context) throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
-		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
-		template.setDefaultTopic("words");
-		template.sendDefault("foobar");
-		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts");
-		assertThat(cr.value().contains("\"word\":\"foobar\",\"count\":1")).isTrue();
+		try {
+			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+			template.setDefaultTopic("words");
+			template.sendDefault("foobar");
+			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts");
+			assertThat(cr.value().contains("\"word\":\"foobar\",\"count\":1")).isTrue();
+		}
+		finally {
+			pf.destroy();
+		}
+	}
+
+	private void sendTombStoneRecordsAndVerifyGracefulHandling() throws Exception {
+		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+		try {
+			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+			template.setDefaultTopic("words");
+			template.sendDefault(null);
+			ConsumerRecords<String, String> received = consumer.poll(Duration.ofMillis(5000));
+			//By asserting that the received record is empty, we are ensuring that the tombstone record
+			//was handled by the binder gracefully.
+			assertThat(received.isEmpty()).isTrue();
+		}
+		finally {
+			pf.destroy();
+		}
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
@@ -148,9 +175,6 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 		@SendTo("output")
 		public KStream<?, WordCount> process(@Input("input") KStream<Object, String> input) {
 
-			input.map((k,v) -> {
-				return new KeyValue<>(k,v);
-			});
 			return input
 					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
