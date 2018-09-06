@@ -38,7 +38,9 @@ public interface PollableSource<H> {
 	boolean poll(H handler);
 
 	/**
-	 * Poll the consumer and convert the payload to the type.
+	 * Poll the consumer and convert the payload to the type. Throw a
+	 * {@code RequeueCurrentMessageException} to force the current message to be requeued
+	 * in the broker (after retries are exhausted, if configured).
 	 * @param handler the handler.
 	 * @param type the type.
 	 * @return true if a message was handled.

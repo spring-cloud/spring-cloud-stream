@@ -408,8 +408,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		if (properties.getMaxAttempts() > 1) {
 			bindingTarget.setRetryTemplate(buildRetryTemplate(properties));
-			bindingTarget.setRecoveryCallback(
-					getPolledConsumerRecoveryCallback(resources.getErrorInfrastructure(), properties));
+			if (properties.getPolled().isRecoverable()) {
+				bindingTarget.setRecoveryCallback(
+						getPolledConsumerRecoveryCallback(resources.getErrorInfrastructure(), properties));
+			}
 		}
 		postProcessPollableSource(bindingTarget);
 		if (resources.getSource() instanceof Lifecycle) {

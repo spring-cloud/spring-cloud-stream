@@ -42,6 +42,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHandlingException;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -216,6 +217,29 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 				}, this.recoveryCallback);
 			}
 			return true;
+		}
+		catch (MessagingException e) {
+			/*
+			 * The rabbit binder default error handling wants to reject and don't
+			 * requeue so the message will go to a DLQ. Therefore we have to stop
+			 * traversing at that point so we don't requeue here.
+			 */
+			boolean requeue = false;
+			Throwable t = e.getCause();
+			while (t != null && !requeue && !(t instanceof StopTraversingCauseException)) {
+				requeue = t instanceof RequeueCurrentMessageException;
+				t = t.getCause();
+			}
+			if (requeue && !ackCallback.isAcknowledged()) {
+				AckUtils.requeue(ackCallback);
+			}
+			else {
+				AckUtils.autoNack(ackCallback);
+			}
+			if (e.getFailedMessage().equals(message)) {
+				throw e;
+			}
+			throw new MessageHandlingException(message, e);
 		}
 		catch (Exception e) {
 			AckUtils.autoNack(ackCallback);

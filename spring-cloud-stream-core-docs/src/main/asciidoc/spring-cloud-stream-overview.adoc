@@ -664,6 +664,8 @@ To do that Spring Cloud Function allows you to use `|` (pipe) symbol. So to fini
 [[spring-cloud-streams-overview-using-polled-consumers]]
 ==== Using Polled Consumers
 
+===== Overview
+
 When using polled consumers, you poll the `PollableMessageSource` on demand.
 Consider the following example of a polled consumer:
 
@@ -697,7 +699,7 @@ public ApplicationRunner poller(PollableMessageSource destIn, MessageChannel des
                 }
             }
             catch (Exception e) {
-                // handle failure (throw an exception to reject the message);
+                // handle failure
             }
         }
     };
@@ -710,7 +712,7 @@ It returns `true` if the message was received and successfully processed.
 As with message-driven consumers, if the `MessageHandler` throws an exception, messages are published to error channels, as discussed in "`<<binder-error-channels>>`".
 
 Normally, the `poll()` method acknowledges the message when the `MessageHandler` exits.
-If the method exits abnormally, the message is rejected (not re-queued).
+If the method exits abnormally, the message is rejected (not re-queued), but see <<polled-errors>>.
 You can override that behavior by taking responsibility for the acknowledgment, as shown in the following example:
 
 [source,java]
@@ -753,6 +755,21 @@ boolean result = pollableSource.poll(received -> {
 
 		}, new ParameterizedTypeReference<Map<String, Foo>>() {});
 ----
+
+[[polled-errors]]
+===== Handling Errors
+
+By default, an error channel is configured for the pollable source; if the callback throws an exception, an `ErrorMessage` is sent to the error channel (`<destination>.<group>.errors`); this error channel is also bridged to the global Spring Integration `errorChannel`.
+
+You can subscribe to either error channel with a `@ServiceActivator` to handle errors; without a subscription, the error will simply be logged and the message will be acknowledged as successful.
+If the error channel service activator throws an exception, the message will be rejected (by default) and won't be redelivered.
+If the service activator throws a `RequeueCurrentMessageException`, the message will be requeued at the broker and will be again retrieved on a subsequent poll.
+
+You can disable error channel processing by setting `spring.cloud.stream.bindings.<channel>.consumer.polled.recoverable` to `false`.
+In that case, exceptions thrown by the listener will have the imediate affect of requeuing or rejecting the message.
+Again, throw a `RequeueCurrentMessageException` to requeue, as discussed above.
+
+IMPORTANT: When the error channel is disabled, any dead-letter mechanisms implemented by binders will also be disabled since those mechanisms consume from the error channel.
 
 [[spring-cloud-stream-overview-error-handling]]
 === Error Handling
@@ -1506,6 +1523,12 @@ When set to a negative value, it defaults to `spring.cloud.stream.instanceCount`
 See "`<<spring-cloud-stream-overview-instance-index-instance-count>>`" for more information.
 +
 Default: `-1`.
+polled.recoverable::
+When set to true (default) exceptions thrown by the polled consumer callback will result in an ErrorMessage sent to the consumer's error channel (and the global Spring Integration errorChannel).
+Set to `false` if, say, you want to requeue messages by throwing `RequeueCurrentMessageException` s.
+See <<polled-errors>>.
++
+Default: `true`.
 useNativeDecoding::
 When set to `true`, the inbound message is deserialized directly by the client library, which must be configured correspondingly (for example, setting an appropriate Kafka producer value deserializer).
 When this configuration is being used, the inbound message unmarshalling is not based on the `contentType` of the binding.
