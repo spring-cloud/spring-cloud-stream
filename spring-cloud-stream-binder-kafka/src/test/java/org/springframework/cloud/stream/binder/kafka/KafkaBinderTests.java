@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -75,6 +76,7 @@ import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.PollableSource;
+import org.springframework.cloud.stream.binder.RequeueCurrentMessageException;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.TestUtils;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
@@ -2529,6 +2531,38 @@ public class KafkaBinderTests extends
 			});
 			Thread.sleep(100);
 		}
+		assertThat(polled).isTrue();
+		binding.unbind();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testPolledConsumerRequeue() throws Exception {
+		KafkaTestBinder binder = getBinder();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
+		ExtendedConsumerProperties<KafkaConsumerProperties> properties = createConsumerProperties();
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableRequeue", "group",
+				inboundBindTarget, properties);
+		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka.getEmbeddedKafka());
+		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
+		template.send("pollableRequeue", "testPollable");
+		try {
+			boolean polled = false;
+			int n = 0;
+			while (n++ < 100 && !polled) {
+				polled = inboundBindTarget.poll(m -> {
+					assertThat(m.getPayload()).isEqualTo("testPollable".getBytes());
+					throw new RequeueCurrentMessageException();
+				});
+			}
+			fail("Expected exception");
+		}
+		catch (MessageHandlingException e) {
+			assertThat(e.getCause()).isInstanceOf(RequeueCurrentMessageException.class);
+		}
+		boolean polled = inboundBindTarget.poll(m -> {
+			assertThat(m.getPayload()).isEqualTo("testPollable".getBytes());
+		});
 		assertThat(polled).isTrue();
 		binding.unbind();
 	}
