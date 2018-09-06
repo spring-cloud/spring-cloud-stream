@@ -964,6 +964,17 @@ backOffMultiplier::
 The backoff multiplier.
 +
 Default 2.0.
+defaultRetryable::
+Whether exceptions thrown by the listener that are not listed in the `retryableExceptions` are retryable.
++
+Default: `true`.
+retryableExceptions::
+A map of Throwable class names in the key and a boolean in the value.
+Specify those exceptions (and subclasses) that will or won't be retried.
+Also see `defaultRetriable`.
+Example: `spring.cloud.stream.bindings.input.consumer.retryable-exceptions.java.lang.IllegalStateException=false`.
++
+Default: empty.
 
 While the preceding settings are sufficient for majority of the customization requirements, they may not satisfy certain complex requirements at, which
 point you may want to provide your own instance of the `RetryTemplate`. To do so configure it as a bean in your application configuration. The application provided
@@ -1494,6 +1505,10 @@ backOffMultiplier::
 The backoff multiplier.
 +
 Default: `2.0`.
+defaultRetryable::
+Whether exceptions thrown by the listener that are not listed in the `retryableExceptions` are retryable.
++
+Default: `true`.
 instanceIndex::
 When set to a value greater than equal to zero, it allows customizing the instance index of this consumer (if different from `spring.cloud.stream.instanceIndex`).
 When set to a negative value, it defaults to `spring.cloud.stream.instanceIndex`.
@@ -1506,6 +1521,13 @@ When set to a negative value, it defaults to `spring.cloud.stream.instanceCount`
 See "`<<spring-cloud-stream-overview-instance-index-instance-count>>`" for more information.
 +
 Default: `-1`.
+retryableExceptions::
+A map of Throwable class names in the key and a boolean in the value.
+Specify those exceptions (and subclasses) that will or won't be retried.
+Also see `defaultRetriable`.
+Example: `spring.cloud.stream.bindings.input.consumer.retryable-exceptions.java.lang.IllegalStateException=false`.
++
+Default: empty.
 useNativeDecoding::
 When set to `true`, the inbound message is deserialized directly by the client library, which must be configured correspondingly (for example, setting an appropriate Kafka producer value deserializer).
 When this configuration is being used, the inbound message unmarshalling is not based on the `contentType` of the binding.

@@ -42,7 +42,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.converter.SmartMessageConverter;
-import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
@@ -74,7 +74,7 @@ public class PollableConsumerTests {
 
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+		pollableSource.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -229,7 +229,7 @@ public class PollableConsumerTests {
 		properties.setHeaderMode(HeaderMode.embeddedHeaders);
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+		pollableSource.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -253,7 +253,7 @@ public class PollableConsumerTests {
 
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+		pollableSource.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -266,6 +266,7 @@ public class PollableConsumerTests {
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
+		properties.getRetryableExceptions().put(IllegalStateException.class, false);
 		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
 		final CountDownLatch latch = new CountDownLatch(1);
 		context.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class).subscribe(m -> {
@@ -280,6 +281,14 @@ public class PollableConsumerTests {
 		Message<?> lastError = binder.getLastError();
 		assertThat(lastError).isNotNull();
 		assertThat(((Exception) lastError.getPayload()).getCause().getMessage()).isEqualTo("test recoverer");
+		assertThat(pollableSource.poll(received -> {
+			count.incrementAndGet();
+			throw new IllegalStateException("no retries");
+		})).isTrue();
+		assertThat(count.get()).isEqualTo(3);
+		lastError = binder.getLastError();
+		assertThat(lastError).isNotNull();
+		assertThat(((Exception) lastError.getPayload()).getCause().getMessage()).isEqualTo("no retries");
 	}
 
 	@Test
@@ -289,7 +298,7 @@ public class PollableConsumerTests {
 
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+		pollableSource.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
