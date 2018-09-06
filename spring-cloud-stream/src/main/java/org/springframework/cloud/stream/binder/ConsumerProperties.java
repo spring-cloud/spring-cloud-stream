@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import javax.validation.constraints.Min;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -103,6 +106,18 @@ public class ConsumerProperties implements MergableProperties{
 	 * it as @Bean inside your application configuration.
 	 */
 	private double backOffMultiplier = 2.0;
+
+	/**
+	 * Whether exceptions thrown by the listener that are not listed in the
+	 * 'retryableExceptions' are retryable.
+	 */
+	private boolean defaultRetryable = true;
+
+	/**
+	 * A map of Throwable class names in the key and a boolean in the value.
+	 * Specify those exceptions (and subclasses) that will or won't be retried.
+	 */
+	private Map<Class<? extends Throwable>, Boolean> retryableExceptions = new LinkedHashMap<>();
 
 	/**
 	 * When set to none, disables header parsing on input. Effective only
@@ -206,6 +221,22 @@ public class ConsumerProperties implements MergableProperties{
 
 	public void setBackOffMultiplier(double backOffMultiplier) {
 		this.backOffMultiplier = backOffMultiplier;
+	}
+
+	public boolean isDefaultRetryable() {
+		return this.defaultRetryable;
+	}
+
+	public void setDefaultRetryable(boolean defaultRetryable) {
+		this.defaultRetryable = defaultRetryable;
+	}
+
+	public Map<Class<? extends Throwable>, Boolean> getRetryableExceptions() {
+		return this.retryableExceptions;
+	}
+
+	public void setRetryableExceptions(Map<Class<? extends Throwable>, Boolean> retryableExceptions) {
+		this.retryableExceptions = retryableExceptions;
 	}
 
 	public HeaderMode getHeaderMode() {

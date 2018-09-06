@@ -180,8 +180,14 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		RetryTemplate rt = this.consumerBindingRetryTemplate;
 		if (rt == null) {
 			rt = new RetryTemplate();
-			SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
-			retryPolicy.setMaxAttempts(properties.getMaxAttempts());
+			SimpleRetryPolicy retryPolicy;
+			if (properties.getRetryableExceptions().size() == 0) {
+				retryPolicy = new SimpleRetryPolicy(properties.getMaxAttempts());
+			}
+			else {
+				retryPolicy = new SimpleRetryPolicy(properties.getMaxAttempts(), properties.getRetryableExceptions(),
+						true, properties.isDefaultRetryable());
+			}
 			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
 			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
 			backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
