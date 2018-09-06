@@ -42,6 +42,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHandlingException;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -135,7 +136,12 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	}
 
 	public void setRecoveryCallback(RecoveryCallback<Object> recoveryCallback) {
-		this.recoveryCallback = recoveryCallback;
+		this.recoveryCallback = context -> {
+			if (!shouldRequeue((MessagingException) context.getLastThrowable())) {
+				return recoveryCallback.recover(context);
+			}
+			throw (MessagingException) context.getLastThrowable();
+		};
 	}
 
 	public void setErrorChannel(MessageChannel errorChannel) {
@@ -217,6 +223,18 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			}
 			return true;
 		}
+		catch (MessagingException e) {
+			if (!ackCallback.isAcknowledged() && shouldRequeue(e)) {
+				AckUtils.requeue(ackCallback);
+			}
+			else {
+				AckUtils.autoNack(ackCallback);
+			}
+			if (e.getFailedMessage().equals(message)) {
+				throw e;
+			}
+			throw new MessageHandlingException(message, e);
+		}
 		catch (Exception e) {
 			AckUtils.autoNack(ackCallback);
 			if (e instanceof MessageHandlingException
@@ -228,6 +246,16 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		finally {
 			AckUtils.autoAck(ackCallback);
 		}
+	}
+
+	protected boolean shouldRequeue(Exception e) {
+		boolean requeue = false;
+		Throwable t = e.getCause();
+		while (t != null && !requeue) {
+			requeue = t instanceof RequeueCurrentMessageException;
+			t = t.getCause();
+		}
+		return requeue;
 	}
 
 	@Override

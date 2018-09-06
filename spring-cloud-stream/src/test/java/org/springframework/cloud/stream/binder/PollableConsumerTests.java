@@ -36,19 +36,24 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
+import org.springframework.integration.acks.AcknowledgmentCallback;
+import org.springframework.integration.acks.AcknowledgmentCallback.Status;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.converter.SmartMessageConverter;
-import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Gary Russell
@@ -74,7 +79,7 @@ public class PollableConsumerTests {
 
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+		pollableSource.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -229,7 +234,7 @@ public class PollableConsumerTests {
 		properties.setHeaderMode(HeaderMode.embeddedHeaders);
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+		pollableSource.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -253,7 +258,7 @@ public class PollableConsumerTests {
 
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+		pollableSource.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -289,7 +294,7 @@ public class PollableConsumerTests {
 
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
-		pollableSource.addInterceptor(new ChannelInterceptorAdapter() {
+		pollableSource.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -312,6 +317,43 @@ public class PollableConsumerTests {
 			throw new RuntimeException("test recoverer");
 		})).isTrue();
 		assertThat(count.get()).isEqualTo(1);
+	}
+
+	@Test
+	public void testRequeue() {
+		TestChannelBinder binder = createBinder();
+		MessageConverterConfigurer configurer = context.getBean(MessageConverterConfigurer.class);
+
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		AcknowledgmentCallback callback = mock(AcknowledgmentCallback.class);
+		pollableSource.addInterceptor(new ChannelInterceptor() {
+
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				return MessageBuilder.fromMessage(message)
+						.setHeader(IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK, callback)
+						.build();
+			}
+
+		});
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
+		properties.setMaxAttempts(2);
+		properties.setBackOffInitialInterval(0);
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		final AtomicInteger count = new AtomicInteger();
+		try {
+			assertThat(pollableSource.poll(received -> {
+				count.incrementAndGet();
+				throw new RequeueCurrentMessageException("test retry");
+			})).isTrue();
+			fail("Expected exception");
+		}
+		catch (Exception e) {
+			// no op
+		}
+		assertThat(count.get()).isEqualTo(2);
+		verify(callback).acknowledge(Status.REQUEUE);
 	}
 
 	private TestChannelBinder createBinder(String... args) {
