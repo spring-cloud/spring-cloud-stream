@@ -69,6 +69,7 @@ import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.PollableSource;
+import org.springframework.cloud.stream.binder.RequeueCurrentMessageException;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
@@ -95,7 +96,7 @@ import org.springframework.messaging.MessageHandlingException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
@@ -1306,7 +1307,7 @@ public class RabbitBinderTests extends
 		admin.declareQueue(queue);
 		admin.declareBinding(binding);
 
-		output.addInterceptor(new ChannelInterceptorAdapter() {
+		output.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -1348,7 +1349,7 @@ public class RabbitBinderTests extends
 		admin.declareQueue(queue);
 		admin.declareBinding(binding);
 
-		output.addInterceptor(new ChannelInterceptorAdapter() {
+		output.addInterceptor(new ChannelInterceptor() {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -1392,6 +1393,36 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
+	public void testPolledConsumerRequeue() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableRequeue", "group",
+				inboundBindTarget, properties);
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("pollableRequeue.group", "testPollable");
+		try {
+			boolean polled = false;
+			int n = 0;
+			while (n++ < 100 && !polled) {
+				polled = inboundBindTarget.poll(m -> {
+					assertThat(m.getPayload()).isEqualTo("testPollable");
+					throw new RequeueCurrentMessageException();
+				});
+			}
+			fail("Expected exception");
+		}
+		catch (MessageHandlingException e) {
+			assertThat(e.getCause()).isInstanceOf(RequeueCurrentMessageException.class);
+		}
+		boolean polled = inboundBindTarget.poll(m -> {
+			assertThat(m.getPayload()).isEqualTo("testPollable");
+		});
+		assertThat(polled).isTrue();
+		binding.unbind();
+	}
+
+	@Test
 	public void testPolledConsumerWithDlq() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
@@ -1413,7 +1444,8 @@ public class RabbitBinderTests extends
 			}
 		}
 		catch (MessageHandlingException e) {
-			assertThat(e.getCause().getCause().getCause().getCause().getCause().getMessage()).isEqualTo("test DLQ");
+			assertThat(e.getCause().getCause().getCause().getCause().getCause().getMessage())
+					.isEqualTo("test DLQ");
 		}
 		org.springframework.amqp.core.Message deadLetter = template.receive("pollableDlq.group.dlq", 10_000);
 		assertThat(deadLetter).isNotNull();
