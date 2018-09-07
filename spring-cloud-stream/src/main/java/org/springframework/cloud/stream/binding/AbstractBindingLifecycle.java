@@ -44,7 +44,7 @@ abstract class AbstractBindingLifecycle implements SmartLifecycle {
 	@Override
 	public void start() {
 		if (!running) {
-			bindables.values().stream().forEach(this::doStartWithBindable);
+			bindables.values().forEach(this::doStartWithBindable);
 			this.running = true;
 		}
 	}
@@ -52,7 +52,7 @@ abstract class AbstractBindingLifecycle implements SmartLifecycle {
 	@Override
 	public void stop() {
 		if (running) {
-			bindables.values().stream().forEach(this::doStopWithBindable);
+			bindables.values().forEach(this::doStopWithBindable);
 			this.running = false;
 		}
 	}

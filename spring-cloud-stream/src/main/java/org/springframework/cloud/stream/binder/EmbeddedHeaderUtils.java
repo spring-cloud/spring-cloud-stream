@@ -63,7 +63,7 @@ public abstract class EmbeddedHeaderUtils {
 		int headerCount = 0;
 		int headersLength = 0;
 		for (String header : headers) {
-			Object value = original.get(header) == null ? null : original.get(header);
+			Object value = original.get(header);
 			if (value != null) {
 				String json = objectMapper.toJson(value);
 				headerValues[n] = json.getBytes("UTF-8");
