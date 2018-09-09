@@ -18,17 +18,17 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
-import org.springframework.cloud.stream.function.BinderFunctionSupport;
 import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
@@ -39,6 +39,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
@@ -103,6 +105,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private ApplicationEventPublisher applicationEventPublisher;
 
+	@Autowired(required = false)
 	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
@@ -178,10 +181,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			((Lifecycle) producerMessageHandler).start();
 		}
 
-		postProcessOutputChannel(outputChannel, producerProperties);
+		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		outputChannel = BinderFunctionSupport.andThenFunctionDefinition(this.integrationFlowFunctionSupport,
-			outputChannel);
+		outputChannel = this.postProcessChannelForFunction(outputChannel);
 
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, HeaderMode.embeddedHeaders
@@ -740,18 +742,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return destination.getName() + ".errors";
 	}
 
-
-	@Override
-	protected void onInit() throws Exception {
-		super.onInit();
-		try {
-			this.integrationFlowFunctionSupport = getApplicationContext().getBean(IntegrationFlowFunctionSupport.class);
-		}
-		catch (NoSuchBeanDefinitionException e) {
-			//ignore
-		}
-	}
-
 	private Map<String, Object> doGetExtendedInfo(Object destination, Object properties) {
 		Map<String, Object> extendedInfo = new LinkedHashMap<>();
 		extendedInfo.put("bindingDestination", destination.toString());
@@ -775,6 +765,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		else {
 			getApplicationContext().getBeanFactory().registerSingleton(name, component);
 		}
+	}
+
+	private SubscribableChannel postProcessChannelForFunction(MessageChannel outputChannel) {
+		if (integrationFlowFunctionSupport != null && integrationFlowFunctionSupport.containsFunction(Function.class)) {
+			DirectChannel actualOutputChannel = new DirectChannel();
+			integrationFlowFunctionSupport.andThenFunction(MessageChannelReactiveUtils.toPublisher(outputChannel),
+				actualOutputChannel);
+			return actualOutputChannel;
+		}
+		return (SubscribableChannel) outputChannel;
 	}
 
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {

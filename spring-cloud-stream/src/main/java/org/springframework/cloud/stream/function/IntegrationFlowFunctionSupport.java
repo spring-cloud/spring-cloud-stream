@@ -24,16 +24,12 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
@@ -50,7 +46,7 @@ import org.springframework.util.StringUtils;
  *
  * @since 2.1
  */
-public class IntegrationFlowFunctionSupport implements ApplicationContextAware, InitializingBean {
+public class IntegrationFlowFunctionSupport {
 
 	private final FunctionCatalogWrapper functionCatalog;
 
@@ -60,8 +56,8 @@ public class IntegrationFlowFunctionSupport implements ApplicationContextAware, 
 
 	private final StreamFunctionProperties functionProperties;
 
+	@Autowired
 	private MessageChannel errorChannel;
-	private ApplicationContext applicationContext;
 
 	/**
 	 * @param functionCatalog
@@ -200,15 +196,5 @@ public class IntegrationFlowFunctionSupport implements ApplicationContextAware, 
 
 		Flux<?> inputPublisher = Flux.from(publisher);
 		subscribeToOutput(outputProcessor, functionInvoker.apply((Flux<Message<I>>) inputPublisher)).subscribe();
-	}
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
-	}
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		this.errorChannel = (MessageChannel) applicationContext.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME);
 	}
 }
