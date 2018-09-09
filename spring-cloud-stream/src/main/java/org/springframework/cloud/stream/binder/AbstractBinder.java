@@ -49,7 +49,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
-		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
+	implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
 
 	/**
 	 * The delimiter between a group and index when constructing a binder
@@ -61,10 +61,9 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private volatile AbstractApplicationContext applicationContext;
 
-
 	private volatile EvaluationContext evaluationContext;
 
-	@Autowired(required=false) // this would need to be refactored into constructor in the future
+	@Autowired(required = false) // this would need to be refactored into constructor in the future
 	@StreamRetryTemplate
 	private RetryTemplate consumerBindingRetryTemplate;
 
@@ -72,7 +71,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * For binder implementations that support a prefix, apply the prefix to the name.
 	 *
 	 * @param prefix the prefix.
-	 * @param name the name.
+	 * @param name   the name.
 	 */
 	public static String applyPrefix(String prefix, String name) {
 		return prefix + name;
@@ -143,7 +142,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	/**
 	 * Construct a name comprised of the name and group.
 	 *
-	 * @param name the name.
+	 * @param name  the name.
 	 * @param group the group.
 	 * @return the constructed name.
 	 */
