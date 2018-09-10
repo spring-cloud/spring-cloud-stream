@@ -1519,12 +1519,6 @@ When set to a negative value, it defaults to `spring.cloud.stream.instanceCount`
 See "`<<spring-cloud-stream-overview-instance-index-instance-count>>`" for more information.
 +
 Default: `-1`.
-polled.recoverable::
-When set to true (default) exceptions thrown by the polled consumer callback will result in an ErrorMessage sent to the consumer's error channel (and the global Spring Integration errorChannel).
-Set to `false` if, say, you want to requeue messages by throwing `RequeueCurrentMessageException` s.
-See <<polled-errors>>.
-+
-Default: `true`.
 useNativeDecoding::
 When set to `true`, the inbound message is deserialized directly by the client library, which must be configured correspondingly (for example, setting an appropriate Kafka producer value deserializer).
 When this configuration is being used, the inbound message unmarshalling is not based on the `contentType` of the binding.
