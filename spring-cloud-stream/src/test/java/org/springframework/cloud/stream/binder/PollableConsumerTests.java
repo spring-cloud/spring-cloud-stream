@@ -340,7 +340,6 @@ public class PollableConsumerTests {
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
-		properties.getPolled().setRecoverable(false);
 		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
 		final AtomicInteger count = new AtomicInteger();
 		try {

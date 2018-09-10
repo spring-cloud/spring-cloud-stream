@@ -137,8 +137,6 @@ public class ConsumerProperties implements MergableProperties{
 	 */
 	private boolean multiplex;
 
-	private final Polled polled = new Polled();
-
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
 		return concurrency;
@@ -233,28 +231,4 @@ public class ConsumerProperties implements MergableProperties{
 	public void setMultiplex(boolean multiplex) {
 		this.multiplex = multiplex;
 	}
-
-	public Polled getPolled() {
-		return this.polled;
-	}
-
-	public static class Polled {
-
-		/**
-		 * When set to true (default) exceptions thrown by the polled consumer callback
-		 * will result in an ErrorMessage sent to the consumer's error channel (and the
-		 * global Spring Integration errorChannel).
-		 */
-		private boolean recoverable = true;
-
-		public boolean isRecoverable() {
-			return this.recoverable;
-		}
-
-		public void setRecoverable(boolean recoverable) {
-			this.recoverable = recoverable;
-		}
-
-	}
-
 }

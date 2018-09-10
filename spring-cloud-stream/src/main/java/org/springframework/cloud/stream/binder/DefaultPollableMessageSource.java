@@ -136,7 +136,12 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	}
 
 	public void setRecoveryCallback(RecoveryCallback<Object> recoveryCallback) {
-		this.recoveryCallback = recoveryCallback;
+		this.recoveryCallback = context -> {
+			if (!shouldRequeue((MessagingException) context.getLastThrowable())) {
+				return recoveryCallback.recover(context);
+			}
+			throw (MessagingException) context.getLastThrowable();
+		};
 	}
 
 	public void setErrorChannel(MessageChannel errorChannel) {
@@ -219,18 +224,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			return true;
 		}
 		catch (MessagingException e) {
-			/*
-			 * The rabbit binder default error handling wants to reject and don't
-			 * requeue so the message will go to a DLQ. Therefore we have to stop
-			 * traversing at that point so we don't requeue here.
-			 */
-			boolean requeue = false;
-			Throwable t = e.getCause();
-			while (t != null && !requeue && !(t instanceof StopTraversingCauseException)) {
-				requeue = t instanceof RequeueCurrentMessageException;
-				t = t.getCause();
-			}
-			if (requeue && !ackCallback.isAcknowledged()) {
+			if (!ackCallback.isAcknowledged() && shouldRequeue(e)) {
 				AckUtils.requeue(ackCallback);
 			}
 			else {
@@ -252,6 +246,16 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		finally {
 			AckUtils.autoAck(ackCallback);
 		}
+	}
+
+	protected boolean shouldRequeue(Exception e) {
+		boolean requeue = false;
+		Throwable t = e.getCause();
+		while (t != null && !requeue) {
+			requeue = t instanceof RequeueCurrentMessageException;
+			t = t.getCause();
+		}
+		return requeue;
 	}
 
 	@Override

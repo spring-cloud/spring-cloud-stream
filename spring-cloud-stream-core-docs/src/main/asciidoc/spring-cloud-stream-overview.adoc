@@ -765,11 +765,7 @@ You can subscribe to either error channel with a `@ServiceActivator` to handle e
 If the error channel service activator throws an exception, the message will be rejected (by default) and won't be redelivered.
 If the service activator throws a `RequeueCurrentMessageException`, the message will be requeued at the broker and will be again retrieved on a subsequent poll.
 
-You can disable error channel processing by setting `spring.cloud.stream.bindings.<channel>.consumer.polled.recoverable` to `false`.
-In that case, exceptions thrown by the listener will have the imediate affect of requeuing or rejecting the message.
-Again, throw a `RequeueCurrentMessageException` to requeue, as discussed above.
-
-IMPORTANT: When the error channel is disabled, any dead-letter mechanisms implemented by binders will also be disabled since those mechanisms consume from the error channel.
+If the listener throws a `RequeueCurrentMessageException` directly, the message will be requeued, as discussed above, and will not be sent to the error channels.
 
 [[spring-cloud-stream-overview-error-handling]]
 === Error Handling
