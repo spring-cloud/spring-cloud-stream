@@ -34,6 +34,7 @@ import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -180,14 +181,10 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		RetryTemplate rt = this.consumerBindingRetryTemplate;
 		if (rt == null) {
 			rt = new RetryTemplate();
-			SimpleRetryPolicy retryPolicy;
-			if (properties.getRetryableExceptions().size() == 0) {
-				retryPolicy = new SimpleRetryPolicy(properties.getMaxAttempts());
-			}
-			else {
-				retryPolicy = new SimpleRetryPolicy(properties.getMaxAttempts(), properties.getRetryableExceptions(),
-						true, properties.isDefaultRetryable());
-			}
+			SimpleRetryPolicy retryPolicy = CollectionUtils.isEmpty(properties.getRetryableExceptions())
+					? new SimpleRetryPolicy(properties.getMaxAttempts())
+							: new SimpleRetryPolicy(properties.getMaxAttempts(), properties.getRetryableExceptions(), true, properties.isDefaultRetryable());
+
 			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
 			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
 			backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
