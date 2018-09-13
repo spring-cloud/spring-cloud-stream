@@ -82,11 +82,11 @@ public class RabbitServiceAutoConfiguration {
 			}
 
 			/**
-			 * Active only if {@code spring.cloud.stream.overrideCloudConnectors} is not set to
+			 * Active only if {@code spring.cloud.stream.override-cloud-connectors} is not set to
 			 * {@code true}.
 			 */
 			@Configuration
-			@ConditionalOnProperty(value = "spring.cloud.stream.overrideCloudConnectors", havingValue = "false", matchIfMissing = true)
+			@ConditionalOnProperty(value = "spring.cloud.stream.override-cloud-connectors", havingValue = "false", matchIfMissing = true)
 			// Required to parse Rabbit properties which are passed to the binder for
 			// clustering. We need to enable it here explicitly as the default Rabbit
 			// configuration is not triggered.
@@ -124,11 +124,11 @@ public class RabbitServiceAutoConfiguration {
 			}
 
 			/**
-			 * Configuration to be used if {@code spring.cloud.stream.overrideCloudConnectors} is set
+			 * Configuration to be used if {@code spring.cloud.stream.override-cloud-connectors} is set
 			 * to {@code true}. Defers to Spring Boot auto-configuration.
 			 */
 			@Configuration
-			@ConditionalOnProperty("spring.cloud.stream.overrideCloudConnectors")
+			@ConditionalOnProperty("spring.cloud.stream.override-cloud-connectors")
 			@Import(RabbitAutoConfiguration.class)
 			protected static class OverrideCloudConnectors {
 
