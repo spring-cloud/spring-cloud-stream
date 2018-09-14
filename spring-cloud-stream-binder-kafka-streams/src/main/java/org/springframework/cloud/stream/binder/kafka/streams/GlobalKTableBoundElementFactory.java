@@ -18,7 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.GlobalKTable;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
@@ -27,49 +27,49 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.util.Assert;
 
 /**
- * {@link org.springframework.cloud.stream.binding.BindingTargetFactory} for {@link KTable}
+ * {@link org.springframework.cloud.stream.binding.BindingTargetFactory} for {@link GlobalKTable}
  *
- * Input bindings are only created as output bindings on KTable are not allowed.
+ * Input bindings are only created as output bindings on GlobalKTable are not allowed.
  *
  * @author Soby Chacko
+ * @since 2.1.0
  */
-class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
+public class GlobalKTableBoundElementFactory extends AbstractBindingTargetFactory<GlobalKTable> {
 
 	private final BindingServiceProperties bindingServiceProperties;
 
-	KTableBoundElementFactory(BindingServiceProperties bindingServiceProperties) {
-		super(KTable.class);
+	GlobalKTableBoundElementFactory(BindingServiceProperties bindingServiceProperties) {
+		super(GlobalKTable.class);
 		this.bindingServiceProperties = bindingServiceProperties;
 	}
 
 	@Override
-	public KTable createInput(String name) {
+	public GlobalKTable createInput(String name) {
 		ConsumerProperties consumerProperties = this.bindingServiceProperties.getConsumerProperties(name);
 		//Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);
 
-		KTableBoundElementFactory.KTableWrapperHandler wrapper= new KTableBoundElementFactory.KTableWrapperHandler();
-		ProxyFactory proxyFactory = new ProxyFactory(KTableBoundElementFactory.KTableWrapper.class, KTable.class);
+		GlobalKTableBoundElementFactory.GlobalKTableWrapperHandler wrapper= new GlobalKTableBoundElementFactory.GlobalKTableWrapperHandler();
+		ProxyFactory proxyFactory = new ProxyFactory(GlobalKTableBoundElementFactory.GlobalKTableWrapper.class, GlobalKTable.class);
 		proxyFactory.addAdvice(wrapper);
 
-		return (KTable) proxyFactory.getProxy();
+		return (GlobalKTable) proxyFactory.getProxy();
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public KTable createOutput(final String name) {
-		throw new UnsupportedOperationException("Outbound operations are not allowed on target type KTable");
+	public GlobalKTable createOutput(String name) {
+		throw new UnsupportedOperationException("Outbound operations are not allowed on target type GlobalKTable");
 	}
 
-	public interface KTableWrapper {
-		void wrap(KTable<Object, Object> delegate);
+	public interface GlobalKTableWrapper {
+		void wrap(GlobalKTable<Object, Object> delegate);
 	}
 
-	private static class KTableWrapperHandler implements KTableBoundElementFactory.KTableWrapper, MethodInterceptor {
+	private static class GlobalKTableWrapperHandler implements GlobalKTableBoundElementFactory.GlobalKTableWrapper, MethodInterceptor {
 
-		private KTable<Object, Object> delegate;
+		private GlobalKTable<Object, Object> delegate;
 
-		public void wrap(KTable<Object, Object> delegate) {
+		public void wrap(GlobalKTable<Object, Object> delegate) {
 			Assert.notNull(delegate, "delegate cannot be null");
 			Assert.isNull(this.delegate, "delegate already set to " + this.delegate);
 			this.delegate = delegate;
@@ -77,16 +77,16 @@ class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 
 		@Override
 		public Object invoke(MethodInvocation methodInvocation) throws Throwable {
-			if (methodInvocation.getMethod().getDeclaringClass().equals(KTable.class)) {
+			if (methodInvocation.getMethod().getDeclaringClass().equals(GlobalKTable.class)) {
 				Assert.notNull(delegate, "Trying to prepareConsumerBinding " + methodInvocation
 						.getMethod() + "  but no delegate has been set.");
 				return methodInvocation.getMethod().invoke(delegate, methodInvocation.getArguments());
 			}
-			else if (methodInvocation.getMethod().getDeclaringClass().equals(KTableBoundElementFactory.KTableWrapper.class)) {
+			else if (methodInvocation.getMethod().getDeclaringClass().equals(GlobalKTableBoundElementFactory.GlobalKTableWrapper.class)) {
 				return methodInvocation.getMethod().invoke(this, methodInvocation.getArguments());
 			}
 			else {
-				throw new IllegalStateException("Only KTable method invocations are permitted");
+				throw new IllegalStateException("Only GlobalKTable method invocations are permitted");
 			}
 		}
 	}

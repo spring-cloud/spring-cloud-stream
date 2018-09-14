@@ -20,7 +20,7 @@ import java.util.Set;
 
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.config.StreamsBuilderFactoryBean;
+import org.springframework.kafka.core.StreamsBuilderFactoryBean;
 
 /**
  * Iterate through all {@link StreamsBuilderFactoryBean} in the application context

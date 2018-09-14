@@ -134,6 +134,11 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
+	public GlobalKTableBoundElementFactory globalKTableBoundElementFactory(BindingServiceProperties bindingServiceProperties) {
+		return new GlobalKTableBoundElementFactory(bindingServiceProperties);
+	}
+
+	@Bean
 	public SendToDlqAndContinue sendToDlqAndContinue() {
 		return new SendToDlqAndContinue();
 	}

@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.GlobalKTable;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.Binding;
@@ -32,16 +32,17 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.util.StringUtils;
 
 /**
- * {@link org.springframework.cloud.stream.binder.Binder} implementation for {@link KTable}.
- * This implemenation extends from the {@link AbstractBinder} directly.
+ * An {@link AbstractBinder} implementation for {@link GlobalKTable}.
  *
- * Provides only consumer binding for the bound KTable as output bindings are not allowed on it.
+ * Provides only consumer binding for the bound {@link GlobalKTable}.
+ * Output bindings are not allowed on this binder.
  *
  * @author Soby Chacko
+ * @since 2.1.0
  */
-class KTableBinder extends
-		AbstractBinder<KTable<Object, Object>, ExtendedConsumerProperties<KafkaStreamsConsumerProperties>, ExtendedProducerProperties<KafkaStreamsProducerProperties>>
-		implements ExtendedPropertiesBinder<KTable<Object, Object>, KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
+public class GlobalKTableBinder extends
+		AbstractBinder<GlobalKTable<Object, Object>, ExtendedConsumerProperties<KafkaStreamsConsumerProperties>, ExtendedProducerProperties<KafkaStreamsProducerProperties>>
+		implements ExtendedPropertiesBinder<GlobalKTable<Object, Object>, KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
 
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
@@ -51,8 +52,8 @@ class KTableBinder extends
 
 	private KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = new KafkaStreamsExtendedBindingProperties();
 
-	KTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties, KafkaTopicProvisioner kafkaTopicProvisioner,
-						KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
+	public GlobalKTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties, KafkaTopicProvisioner kafkaTopicProvisioner,
+				KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
@@ -60,7 +61,7 @@ class KTableBinder extends
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected Binding<KTable<Object, Object>> doBindConsumer(String name, String group, KTable<Object, Object> inputTarget,
+	protected Binding<GlobalKTable<Object, Object>> doBindConsumer(String name, String group, GlobalKTable<Object, Object> inputTarget,
 															ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
 		if (!StringUtils.hasText(group)) {
 			group = binderConfigurationProperties.getApplicationId();
@@ -74,9 +75,9 @@ class KTableBinder extends
 	}
 
 	@Override
-	protected Binding<KTable<Object, Object>> doBindProducer(String name, KTable<Object, Object> outboundBindTarget,
+	protected Binding<GlobalKTable<Object, Object>> doBindProducer(String name, GlobalKTable<Object, Object> outboundBindTarget,
 															ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
-		throw new UnsupportedOperationException("No producer level binding is allowed for KTable");
+		throw new UnsupportedOperationException("No producer level binding is allowed for GlobalKTable");
 	}
 
 	@Override
@@ -86,6 +87,7 @@ class KTableBinder extends
 
 	@Override
 	public KafkaStreamsProducerProperties getExtendedProducerProperties(String channelName) {
-		return this.kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties(channelName);
+		throw new UnsupportedOperationException("No producer binding is allowed and therefore no properties");
 	}
+
 }

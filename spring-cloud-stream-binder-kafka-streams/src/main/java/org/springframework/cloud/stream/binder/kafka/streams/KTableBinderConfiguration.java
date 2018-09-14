@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author Soby Chacko
  */
+@SuppressWarnings("ALL")
 @Configuration
 public class KTableBinderConfiguration {
 

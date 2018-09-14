@@ -95,7 +95,7 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 		@Override
 		public Object invoke(MethodInvocation methodInvocation) throws Throwable {
 			if (methodInvocation.getMethod().getDeclaringClass().equals(KStream.class)) {
-				Assert.notNull(delegate, "Trying to invoke " + methodInvocation
+				Assert.notNull(delegate, "Trying to prepareConsumerBinding " + methodInvocation
 						.getMethod() + "  but no delegate has been set.");
 				return methodInvocation.getMethod().invoke(delegate, methodInvocation.getArguments());
 			}

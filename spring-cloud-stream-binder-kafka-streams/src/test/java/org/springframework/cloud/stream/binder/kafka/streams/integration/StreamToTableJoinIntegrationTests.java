@@ -116,11 +116,11 @@ public class StreamToTableJoinIntegrationTests {
 	}
 
 	@Test
-	public void testStreamToTable() throws Exception {
+	public void testStreamToTable() {
 		SpringApplication app = new SpringApplication(CountClicksPerRegionApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
-		ConfigurableApplicationContext context = app.run("--server.port=0",
+		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=user-clicks",
 				"--spring.cloud.stream.bindings.inputX.destination=user-regions",
@@ -141,8 +141,7 @@ public class StreamToTableJoinIntegrationTests {
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.bindings.inputX.consumer.headerMode=raw",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
-		try {
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
 			// Input 1: Clicks per user (multiple records allowed per user).
 			List<KeyValue<String, Long>> userClicks = Arrays.asList(
 					new KeyValue<>("alice", 13L),
@@ -163,7 +162,7 @@ public class StreamToTableJoinIntegrationTests {
 			KafkaTemplate<String, Long> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("user-clicks");
 
-			for (KeyValue<String,Long> keyValue : userClicks) {
+			for (KeyValue<String, Long> keyValue : userClicks) {
 				template.sendDefault(keyValue.key, keyValue.value);
 			}
 
@@ -186,7 +185,7 @@ public class StreamToTableJoinIntegrationTests {
 			KafkaTemplate<String, String> template1 = new KafkaTemplate<>(pf1, true);
 			template1.setDefaultTopic("user-regions");
 
-			for (KeyValue<String,String> keyValue : userRegions) {
+			for (KeyValue<String, String> keyValue : userRegions) {
 				template1.sendDefault(keyValue.key, keyValue.value);
 			}
 
@@ -206,16 +205,10 @@ public class StreamToTableJoinIntegrationTests {
 				for (ConsumerRecord<String, Long> record : records) {
 					actualClicksPerRegion.add(new KeyValue<>(record.key(), record.value()));
 				}
-			} while (count < expectedClicksPerRegion.size() && (System.currentTimeMillis() - start) < 30000 );
+			} while (count < expectedClicksPerRegion.size() && (System.currentTimeMillis() - start) < 30000);
 
 			assertThat(count == expectedClicksPerRegion.size()).isTrue();
 			assertThat(actualClicksPerRegion).hasSameElementsAs(expectedClicksPerRegion);
-		}
-		catch (Exception e){
-			System.out.println(e);
-		}
-		finally {
-			context.close();
 		}
 	}
 
