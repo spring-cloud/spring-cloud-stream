@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.config;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
 import java.util.Map;
 
 import org.springframework.beans.BeanUtils;
@@ -73,11 +72,15 @@ public interface MergableProperties {
 								}
 								else {
 									Object v = readMethod.invoke(mergable);
-									if (isMergable(v)) {
+									if (v == null || (ObjectUtils.isArray(v) && ObjectUtils.isEmpty(v)) ||
+											isEmptyMapAtDestination(v)) {
 										if (!Modifier.isPublic(writeMethod.getDeclaringClass().getModifiers())) {
 											writeMethod.setAccessible(true);
 										}
 										writeMethod.invoke(mergable, value);
+									}
+									else if (isMergableByMap(v)) {
+										handleMapMerging(value, v);
 									}
 								}
 							}
@@ -92,11 +95,25 @@ public interface MergableProperties {
 		}
 	}
 
-	static boolean isMergable(Object v) {
-		return v == null ||
-				((((ObjectUtils.isArray(v) && ObjectUtils.isEmpty(v))) ||
-				(Collection.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Collection)v)) ||
-				(Map.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Map)v))));
+	default boolean isEmptyMapAtDestination(Object v) {
+		return Map.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Map)v);
+	}
+
+	default boolean isMergableByMap(Object v) {
+		return (Map.class.isAssignableFrom(v.getClass()) && !CollectionUtils.isEmpty((Map)v));
+	}
+
+	@SuppressWarnings("unchecked")
+	default void handleMapMerging(Object value, Object v) {
+		if (value instanceof Map) {
+			Map<Object,Object> sourceMap = (Map) value;
+			for (Object key : sourceMap.keySet()) {
+				Map<Object, Object> targetMap = (Map) v;
+				if(!targetMap.containsKey(key)) {
+					targetMap.put(key, sourceMap.get(key));
+				}
+			}
+		}
 	}
 
 	default void copyProperties(Object source, Object target) throws BeansException {
