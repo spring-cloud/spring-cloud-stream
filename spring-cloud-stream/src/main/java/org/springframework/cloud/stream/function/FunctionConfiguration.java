@@ -16,11 +16,13 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -34,10 +36,12 @@ import org.springframework.integration.dsl.IntegrationFlow;
 /**
  * @author Oleg Zhurakousky
  * @author David Turanski
+ * @author Ilayaperumal Gopinathan
  * @since 2.1
  */
 @Configuration
 @ConditionalOnProperty("spring.cloud.stream.function.definition")
+@EnableConfigurationProperties(StreamFunctionProperties.class)
 public class FunctionConfiguration {
 
 	@Autowired(required = false)
@@ -64,24 +68,18 @@ public class FunctionConfiguration {
 
 	/**
 	 * This configuration creates an instance of {@link IntegrationFlow} appropriate for binding declared using EnableBinding.
-	 * At the moment only Source, Processor and Sink are supported.
 	 */
 	@ConditionalOnMissingBean
-	// starter apps typically already provide and instance of IntegrationFlow, so we don't need this one.
 	@Bean
 	public IntegrationFlow integrationFlowCreator(IntegrationFlowFunctionSupport functionSupport) {
-		if (processor != null) {
-			return functionSupport.integrationFlowForFunction(processor.input(), processor.output()).get();
+		if (this.processor != null) {
+			return functionSupport.containsFunction(Function.class) ?
+					functionSupport.integrationFlowForFunction(this.processor.input(), this.processor.output()).get() : null;
 		}
-		else if (sink != null) {
-			return functionSupport.integrationFlowForFunction(sink.input(), null).get();
-		}
-		else if (source != null) {
+		else if (this.source != null && this.processor == null) {
 			return functionSupport.containsFunction(Supplier.class) ?
-				functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get() :
-				null;
+				functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get() : null;
 		}
-		throw new UnsupportedOperationException(
-			"Bindings other then Source, Processor and Sink are not currently supported");
+		return null;
 	}
 }
