@@ -30,6 +30,9 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
@@ -58,6 +61,15 @@ public class IntegrationFlowFunctionSupport {
 
 	@Autowired
 	private MessageChannel errorChannel;
+
+	@Autowired(required = false)
+	private Source source;
+
+	@Autowired(required = false)
+	private Processor processor;
+
+	@Autowired(required = false)
+	private Sink sink;
 
 	/**
 	 * @param functionCatalog
@@ -88,6 +100,19 @@ public class IntegrationFlowFunctionSupport {
 	public <T> boolean containsFunction(Class<T> typeOfFunction) {
 		return StringUtils.hasText(this.functionProperties.getDefinition())
 				&& this.functionCatalog.contains(typeOfFunction, this.functionProperties.getDefinition());
+	}
+
+	/**
+	 * Determines if function specified via 'spring.cloud.stream.function.definition'
+	 * property can be located in {@link FunctionCatalog}
+	 *
+	 * @param typeOfFunction must be Supplier, Function or Consumer
+	 * @param functionName the function name to check
+	 * @return
+	 */
+	public <T> boolean containsFunction(Class<T> typeOfFunction, String functionName) {
+		return StringUtils.hasText(functionName)
+				&& this.functionCatalog.contains(typeOfFunction, functionName);
 	}
 
 	public FunctionType getCurrentFunctionType() {
@@ -133,16 +158,11 @@ public class IntegrationFlowFunctionSupport {
 		return flowBuilder;
 	}
 
-	/**
-	 *
-	 * @param inputChannel
-	 * @param outputChannel
-	 * @return
-	 */
-	public <O> IntegrationFlowBuilder integrationFlowForFunction(SubscribableChannel inputChannel, MessageChannel outputChannel) {
+	public <O> IntegrationFlowBuilder integrationFlowForFunction(SubscribableChannel inputChannel,
+			MessageChannel outputChannel) {
 		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel).bridge();
 
-		if (!this.andThenFunction(flowBuilder, outputChannel)) {
+		if (!this.andThenFunction(flowBuilder, outputChannel, this.functionProperties.getDefinition())) {
 			flowBuilder = flowBuilder.channel(outputChannel);
 		}
 		return flowBuilder;
@@ -158,27 +178,30 @@ public class IntegrationFlowFunctionSupport {
 	 * @param flowBuilder instance of the {@link IntegrationFlowBuilder} representing
 	 *                       the current state of the integration flow
 	 * @param outputChannel channel where the output of a function will be sent
+	 * @param functionName the function name to use
 	 * @return true if {@link Function} was located and added and false if it wasn't.
 	 */
-	public <I,O> boolean andThenFunction(IntegrationFlowBuilder flowBuilder, MessageChannel outputChannel) {
-		return andThenFunction(flowBuilder.toReactivePublisher(), outputChannel);
+	public <I,O> boolean andThenFunction(IntegrationFlowBuilder flowBuilder, MessageChannel outputChannel,
+			String functionName) {
+		return andThenFunction(flowBuilder.toReactivePublisher(), outputChannel, functionName);
 	}
 
-	public <I,O> boolean andThenFunction(Publisher<?> publisher, MessageChannel outputChannel) {
-		if (StringUtils.hasText(this.functionProperties.getDefinition())) {
-			FunctionInvoker<I, O> functionInvoker =
-					new FunctionInvoker<>(this.functionProperties.getDefinition(), this.functionCatalog,
-							this.functionInspector, this.messageConverterFactory, this.errorChannel);
-
-			if (outputChannel != null) {
-				subscribeToInput(functionInvoker, publisher, outputChannel::send);
-			}
-			else {
-				subscribeToInput(functionInvoker, publisher, null);
-			}
-			return true;
+	public <I,O> boolean andThenFunction(Publisher<?> publisher, MessageChannel outputChannel,
+			String functionName) {
+		if (!StringUtils.hasText(functionName)) {
+			return false;
 		}
-		return false;
+		FunctionInvoker<I, O> functionInvoker =
+				new FunctionInvoker<>(functionName, this.functionCatalog,
+						this.functionInspector, this.messageConverterFactory, this.errorChannel);
+
+		if (outputChannel != null) {
+			subscribeToInput(functionInvoker, publisher, outputChannel::send);
+		}
+		else {
+			subscribeToInput(functionInvoker, publisher, null);
+		}
+		return true;
 	}
 
 	private <O> Mono<Void> subscribeToOutput(Consumer<Message<O>> outputProcessor,

@@ -18,10 +18,13 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
+import org.reactivestreams.Publisher;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -30,6 +33,8 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
+import org.springframework.cloud.stream.function.StreamFunctionProperties;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -45,6 +50,8 @@ import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.dsl.IntegrationFlowBuilder;
+import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
@@ -54,11 +61,11 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
-
-
+import org.springframework.util.StringUtils;
 
 /**
  * {@link AbstractBinder} that serves as base class for {@link MessageChannel} binders.
@@ -106,7 +113,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	private ApplicationEventPublisher applicationEventPublisher;
 
 	@Autowired(required = false)
+	private Processor processor;
+
+	@Autowired(required = false)
 	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
+
+	@Autowired
+	private StreamFunctionProperties streamFunctionProperties;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
 		this(headersToEmbed, provisioningProvider, null);
@@ -180,10 +193,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (producerMessageHandler instanceof Lifecycle) {
 			((Lifecycle) producerMessageHandler).start();
 		}
-
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		outputChannel = this.postProcessChannelForFunction(outputChannel);
+		if (StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
+			outputChannel = this.postProcessOutboundChannelForFunction(outputChannel);
+		}
 
 		((SubscribableChannel) outputChannel).subscribe(
 				new SendingHandler(producerMessageHandler, HeaderMode.embeddedHeaders
@@ -329,7 +343,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		MessageProducer consumerEndpoint = null;
 		try {
 			ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
-
+			// the function support for the inbound channel is only for Sink
+			if (StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
+				inputChannel = this.postProcessInboundChannelForFunction(inputChannel);
+			}
 			if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
 				enhanceMessageChannel(inputChannel);
 			}
@@ -767,14 +784,49 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
-	private SubscribableChannel postProcessChannelForFunction(MessageChannel outputChannel) {
-		if (integrationFlowFunctionSupport != null && integrationFlowFunctionSupport.containsFunction(Function.class)) {
-			DirectChannel actualOutputChannel = new DirectChannel();
-			integrationFlowFunctionSupport.andThenFunction(MessageChannelReactiveUtils.toPublisher(outputChannel),
-				actualOutputChannel);
-			return actualOutputChannel;
+	private SubscribableChannel postProcessOutboundChannelForFunction(MessageChannel outputChannel) {
+		if (this.integrationFlowFunctionSupport != null) {
+			Publisher publisher = MessageChannelReactiveUtils.toPublisher(outputChannel);
+			// If the app has an explicit Supplier bean defined, make that as the publisher
+			if (this.integrationFlowFunctionSupport.containsFunction(Supplier.class)) {
+				IntegrationFlowBuilder integrationFlowBuilder = IntegrationFlows.from(outputChannel).bridge();
+				publisher = integrationFlowBuilder.toReactivePublisher();
+			}
+			if (this.integrationFlowFunctionSupport.containsFunction(Function.class,
+					this.streamFunctionProperties.getDefinition())) {
+				DirectChannel actualOutputChannel = new DirectChannel();
+				if (outputChannel instanceof AbstractMessageChannel) {
+					moveChannelInterceptors((AbstractMessageChannel) outputChannel, actualOutputChannel);
+				}
+				this.integrationFlowFunctionSupport.andThenFunction(publisher, actualOutputChannel,
+						this.streamFunctionProperties.getDefinition());
+				return actualOutputChannel;
+			}
 		}
 		return (SubscribableChannel) outputChannel;
+	}
+
+	private SubscribableChannel postProcessInboundChannelForFunction(MessageChannel inputChannel) {
+		if (this.integrationFlowFunctionSupport != null &&
+				(this.integrationFlowFunctionSupport.containsFunction(Consumer.class) ||
+						this.integrationFlowFunctionSupport.containsFunction(Function.class))) {
+			DirectChannel actualInputChannel = new DirectChannel();
+			if (inputChannel instanceof AbstractMessageChannel) {
+				moveChannelInterceptors((AbstractMessageChannel) inputChannel, actualInputChannel);
+			}
+			this.integrationFlowFunctionSupport.andThenFunction(MessageChannelReactiveUtils.toPublisher(actualInputChannel),
+					inputChannel, this.streamFunctionProperties.getDefinition());
+			return actualInputChannel;
+		}
+		return (SubscribableChannel) inputChannel;
+	}
+
+	private void moveChannelInterceptors(AbstractMessageChannel existingMessageChannel,
+			AbstractMessageChannel actualMessageChannel) {
+		for (ChannelInterceptor channelInterceptor : existingMessageChannel.getChannelInterceptors()) {
+			actualMessageChannel.addInterceptor(channelInterceptor);
+			existingMessageChannel.removeInterceptor(channelInterceptor);
+		}
 	}
 
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {
