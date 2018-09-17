@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.lang.reflect.Field;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +29,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
@@ -39,8 +43,12 @@ import org.springframework.cloud.stream.binder.PollableConsumerBinder;
 import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.cloud.stream.config.MergableProperties;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.DataBinder;
 import org.springframework.validation.beanvalidation.CustomValidatorBean;
@@ -72,20 +80,24 @@ public class BindingService {
 
 	private final BinderFactory binderFactory;
 
+	private final ConfigurableApplicationContext applicationContext;
+
 	public BindingService(
 			BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory) {
-		this(bindingServiceProperties, binderFactory, null);
+		this(bindingServiceProperties, binderFactory, null, null);
 	}
 
 	public BindingService(
 			BindingServiceProperties bindingServiceProperties,
-			BinderFactory binderFactory, TaskScheduler taskScheduler) {
+			BinderFactory binderFactory, TaskScheduler taskScheduler,
+			ConfigurableApplicationContext applicationContext) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.binderFactory = binderFactory;
 		this.validator = new CustomValidatorBean();
 		this.validator.afterPropertiesSet();
 		this.taskScheduler = taskScheduler;
+		this.applicationContext = applicationContext;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -101,6 +113,12 @@ public class BindingService {
 			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(
 					extension);
 			BeanUtils.copyProperties(consumerProperties, extendedConsumerProperties);
+
+			if (MergableProperties.class.isAssignableFrom(extendedConsumerProperties.getExtension().getClass())) {
+				handleExtendedDefaultProperties((ExtendedPropertiesBinder) binder,
+						(MergableProperties) extendedConsumerProperties.getExtension(), "consumer");
+			}
+
 			consumerProperties = extendedConsumerProperties;
 		}
 
@@ -220,12 +238,41 @@ public class BindingService {
 			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(
 					extension);
 			BeanUtils.copyProperties(producerProperties, extendedProducerProperties);
+
+			if (MergableProperties.class.isAssignableFrom(extendedProducerProperties.getExtension().getClass())) {
+				handleExtendedDefaultProperties((ExtendedPropertiesBinder) binder,
+						(MergableProperties) extendedProducerProperties.getExtension(), "producer");
+			}
 			producerProperties = extendedProducerProperties;
 		}
 		validate(producerProperties);
 		Binding<T> binding = doBindProducer(output, bindingTarget, binder, producerProperties);
 		this.producerBindings.put(outputName, binding);
 		return binding;
+	}
+
+	private void handleExtendedDefaultProperties(ExtendedPropertiesBinder binder, MergableProperties extendedProperties, String filedName) {
+		String defaultsPrefix = binder.getDefaultsPrefix();
+		Class<?> extendedPropertiesEntryClass = binder.getExtendedPropertiesEntryClass();
+
+		if (defaultsPrefix != null && extendedPropertiesEntryClass != null) {
+
+			org.springframework.boot.context.properties.bind.Binder extendedPropertiesResolverBinder =
+					new org.springframework.boot.context.properties.bind.Binder(ConfigurationPropertySources.get(applicationContext.getEnvironment()),
+							new PropertySourcesPlaceholdersResolver(applicationContext.getEnvironment()),
+							IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory()), null);
+			Object defaultProperties = BeanUtils.instantiateClass(extendedPropertiesEntryClass);
+			extendedPropertiesResolverBinder.bind(defaultsPrefix, Bindable.ofInstance(defaultProperties));
+
+			Field extendedPropertyField = ReflectionUtils.findField(defaultProperties.getClass(), filedName);
+			if (extendedPropertyField != null) {
+				extendedPropertyField.setAccessible(true);
+				Object extendedProducerObject = ReflectionUtils.getField(extendedPropertyField, defaultProperties);
+				if (extendedProducerObject != null) {
+					((MergableProperties)extendedProducerObject).merge(extendedProperties);
+				}
+			}
+		}
 	}
 
 	@SuppressWarnings("rawtypes")

@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.config;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.Map;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
@@ -26,6 +28,7 @@ import org.springframework.beans.FatalBeanException;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -36,6 +39,7 @@ import org.springframework.util.ObjectUtils;
  * @see ConsumerProperties
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 public interface MergableProperties {
 
@@ -69,7 +73,7 @@ public interface MergableProperties {
 								}
 								else {
 									Object v = readMethod.invoke(mergable);
-									if (v == null || (ObjectUtils.isArray(v) && ObjectUtils.isEmpty(v))) {
+									if (isMergable(v)) {
 										if (!Modifier.isPublic(writeMethod.getDeclaringClass().getModifiers())) {
 											writeMethod.setAccessible(true);
 										}
@@ -86,6 +90,13 @@ public interface MergableProperties {
 				}
 			}
 		}
+	}
+
+	static boolean isMergable(Object v) {
+		return v == null ||
+				((((ObjectUtils.isArray(v) && ObjectUtils.isEmpty(v))) ||
+				(Collection.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Collection)v)) ||
+				(Map.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Map)v))));
 	}
 
 	default void copyProperties(Object source, Object target) throws BeansException {

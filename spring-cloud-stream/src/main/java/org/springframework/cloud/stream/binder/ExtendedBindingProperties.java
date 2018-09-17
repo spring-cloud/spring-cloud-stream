@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,38 @@ package org.springframework.cloud.stream.binder;
  *
  * @author Marius Bogoevici
  * @author Mark Fisher
+ * @author Soby Chacko
  */
 public interface ExtendedBindingProperties<C, P> {
 
 	C getExtendedConsumerProperties(String channelName);
 
 	P getExtendedProducerProperties(String channelName);
+
+	/**
+	 * Extended binding properties can define a default prefix to place all the extended
+	 * common producer and consumer properties. For example, if the binder type is foo
+	 * it is convenient to specify common extended properties for the producer or consumer
+	 * across multiple bindings in the form of `spring.cloud.stream.foo.default.producer.x=y`
+	 * or `spring.cloud.stream.foo.default.consumer.x=y`.
+	 *
+	 * The binding process will use this defaults prefix to resolve any common extended
+	 * producer and consumer properties.
+	 *
+	 * @return default prefix for extended properties
+	 * @since 2.1.0
+	 */
+	String getDefaultsPrefix();
+
+	/**
+	 *
+	 * Extended properties class against which default extended producer and consumer properties
+	 * are resolved. It is expected that this class has two properties - one called producer
+	 * and another called consumer that contains the extended properties for producer and
+	 * consumer respectively.
+	 *
+	 * @return extended properties class that contains extended producer/consumer properties
+	 * @since 2.1.0
+	 */
+	Class<?> getExtendedPropertiesEntryClass();
 }
