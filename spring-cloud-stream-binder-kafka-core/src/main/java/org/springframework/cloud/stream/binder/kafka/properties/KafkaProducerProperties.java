@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
+import org.springframework.cloud.stream.config.MergableProperties;
 import org.springframework.expression.Expression;
 
 /**
@@ -28,7 +29,7 @@ import org.springframework.expression.Expression;
  * @author Henryk Konsek
  * @author Gary Russell
  */
-public class KafkaProducerProperties {
+public class KafkaProducerProperties implements MergableProperties {
 
 	private int bufferSize = 16384;
 

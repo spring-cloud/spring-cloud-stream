@@ -88,4 +88,14 @@ class KTableBinder extends
 	public KafkaStreamsProducerProperties getExtendedProducerProperties(String channelName) {
 		return this.kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties(channelName);
 	}
+
+	@Override
+	public String getDefaultsPrefix() {
+		return this.kafkaStreamsExtendedBindingProperties.getDefaultsPrefix();
+	}
+
+	@Override
+	public Class<?> getExtendedPropertiesEntryClass() {
+		return this.kafkaStreamsExtendedBindingProperties.getExtendedPropertiesEntryClass();
+	}
 }

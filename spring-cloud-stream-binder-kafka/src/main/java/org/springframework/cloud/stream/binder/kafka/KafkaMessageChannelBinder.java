@@ -215,6 +215,16 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	@Override
+	public String getDefaultsPrefix() {
+		return this.extendedBindingProperties.getDefaultsPrefix();
+	}
+
+	@Override
+	public Class<?> getExtendedPropertiesEntryClass() {
+		return this.extendedBindingProperties.getExtendedPropertiesEntryClass();
+	}
+
+	@Override
 	protected MessageHandler createProducerMessageHandler(final ProducerDestination destination,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, MessageChannel errorChannel)
 			throws Exception {

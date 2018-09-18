@@ -58,4 +58,14 @@ public class KafkaStreamsExtendedBindingProperties
 			return new KafkaStreamsProducerProperties();
 		}
 	}
+
+	@Override
+	public String getDefaultsPrefix() {
+		return null;
+	}
+
+	@Override
+	public Class<?> getExtendedPropertiesEntryClass() {
+		return KafkaStreamsBindingProperties.class;
+	}
 }

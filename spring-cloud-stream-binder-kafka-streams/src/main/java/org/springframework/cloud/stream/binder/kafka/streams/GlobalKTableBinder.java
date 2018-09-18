@@ -90,4 +90,14 @@ public class GlobalKTableBinder extends
 		throw new UnsupportedOperationException("No producer binding is allowed and therefore no properties");
 	}
 
+	@Override
+	public String getDefaultsPrefix() {
+		return this.kafkaStreamsExtendedBindingProperties.getDefaultsPrefix();
+	}
+
+	@Override
+	public Class<?> getExtendedPropertiesEntryClass() {
+		return this.kafkaStreamsExtendedBindingProperties.getExtendedPropertiesEntryClass();
+	}
+
 }

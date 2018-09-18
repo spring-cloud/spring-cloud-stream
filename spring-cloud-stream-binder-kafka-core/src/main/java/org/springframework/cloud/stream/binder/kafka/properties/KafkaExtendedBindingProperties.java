@@ -25,10 +25,13 @@ import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
 /**
  * @author Marius Bogoevici
  * @author Gary Russell
+ * @author Soby Chacko
  */
 @ConfigurationProperties("spring.cloud.stream.kafka")
 public class KafkaExtendedBindingProperties
 		implements ExtendedBindingProperties<KafkaConsumerProperties, KafkaProducerProperties> {
+
+	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.kafka.default";
 
 	private Map<String, KafkaBindingProperties> bindings = new HashMap<>();
 
@@ -80,6 +83,16 @@ public class KafkaExtendedBindingProperties
 			bindings.put(channelName, rbp);
 			return properties;
 		}
+	}
+
+	@Override
+	public String getDefaultsPrefix() {
+		return DEFAULTS_PREFIX;
+	}
+
+	@Override
+	public Class<?> getExtendedPropertiesEntryClass() {
+		return KafkaBindingProperties.class;
 	}
 
 }

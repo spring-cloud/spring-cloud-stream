@@ -132,4 +132,14 @@ class KStreamBinder extends
 	public void setKafkaStreamsExtendedBindingProperties(KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties) {
 		this.kafkaStreamsExtendedBindingProperties = kafkaStreamsExtendedBindingProperties;
 	}
+
+	@Override
+	public String getDefaultsPrefix() {
+		return this.kafkaStreamsExtendedBindingProperties.getDefaultsPrefix();
+	}
+
+	@Override
+	public Class<?> getExtendedPropertiesEntryClass() {
+		return this.kafkaStreamsExtendedBindingProperties.getExtendedPropertiesEntryClass();
+	}
 }
