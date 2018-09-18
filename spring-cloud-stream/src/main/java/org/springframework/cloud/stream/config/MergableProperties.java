@@ -33,18 +33,17 @@ import org.springframework.util.ObjectUtils;
 /**
  * NOT INTENDED FOR PUBLIC USE! Was primarily created to address GH-1359.
  *
+ * @author Oleg Zhurakousky
+ * @author Soby Chacko
  * @see BinderProperties
  * @see ProducerProperties
  * @see ConsumerProperties
- *
- * @author Oleg Zhurakousky
- * @author Soby Chacko
  */
 public interface MergableProperties {
 
 	/**
 	 * A variation of {@link BeanUtils#copyProperties(Object, Object)} specifically designed to copy properties using the following rule:
-	 *
+	 * <p>
 	 * - If source property is null then override with the same from mergable.
 	 * - If source property is an array and it is empty then override with same from mergable.
 	 * - If source property is mergable then merge.
@@ -68,7 +67,7 @@ public interface MergableProperties {
 							Object value = readMethod.invoke(this);
 							if (value != null) {
 								if (value instanceof MergableProperties) {
-									((MergableProperties)value).merge((MergableProperties)readMethod.invoke(mergable));
+									((MergableProperties) value).merge((MergableProperties) readMethod.invoke(mergable));
 								}
 								else {
 									Object v = readMethod.invoke(mergable);
@@ -81,6 +80,14 @@ public interface MergableProperties {
 									}
 									else if (isMergableByMap(v)) {
 										handleMapMerging(value, v);
+									}
+									else if (!ObjectUtils.nullSafeEquals(v, value)) {
+										Object obj = BeanUtils.instantiateClass(this.getClass());
+										Object defaultValue = readMethod.invoke(obj);
+										if (ObjectUtils.nullSafeEquals(v, defaultValue)) {
+											writeMethod.invoke(mergable, value);
+										}
+
 									}
 								}
 							}
@@ -96,20 +103,20 @@ public interface MergableProperties {
 	}
 
 	default boolean isEmptyMapAtDestination(Object v) {
-		return Map.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Map)v);
+		return Map.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Map) v);
 	}
 
 	default boolean isMergableByMap(Object v) {
-		return (Map.class.isAssignableFrom(v.getClass()) && !CollectionUtils.isEmpty((Map)v));
+		return (Map.class.isAssignableFrom(v.getClass()) && !CollectionUtils.isEmpty((Map) v));
 	}
 
 	@SuppressWarnings("unchecked")
 	default void handleMapMerging(Object value, Object v) {
 		if (value instanceof Map) {
-			Map<Object,Object> sourceMap = (Map) value;
+			Map<Object, Object> sourceMap = (Map) value;
 			for (Object key : sourceMap.keySet()) {
 				Map<Object, Object> targetMap = (Map) v;
-				if(!targetMap.containsKey(key)) {
+				if (!targetMap.containsKey(key)) {
 					targetMap.put(key, sourceMap.get(key));
 				}
 			}
