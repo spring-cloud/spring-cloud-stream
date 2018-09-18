@@ -21,7 +21,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  *
  * @author Oleg Zhurakousky
- *
  * @since 2.1
  */
 @ConfigurationProperties("spring.cloud.stream.function")
@@ -33,7 +32,6 @@ public class StreamFunctionProperties {
 	 */
 	private String definition;
 
-
 	public String getDefinition() {
 		return this.definition;
 	}
@@ -41,5 +39,4 @@ public class StreamFunctionProperties {
 	public void setDefinition(String definition) {
 		this.definition = definition;
 	}
-
 }

@@ -16,12 +16,14 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,14 +42,18 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
-import org.springframework.integration.channel.FluxMessageChannel;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.http.dsl.Http;
 import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -114,6 +120,27 @@ public class GreenfieldFunctionEnableBindingTests {
 		}
 	}
 
+	@Test
+	public void testPojoReturn() throws IOException {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FooTransform.class)).web(
+			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=fooFunction", "--spring.jmx"
+			+ ".enabled=false", "--logging.level.org.springframework.integration=TRACE")) {
+			MessageChannel input = context.getBean("input", MessageChannel.class);
+			OutputDestination target = context.getBean(OutputDestination.class);
+
+			ObjectMapper mapper = context.getBean(ObjectMapper.class);
+
+			input.send(MessageBuilder.withPayload("bar").build());
+			byte[] payload = target.receive(10000).getPayload();
+
+			Foo result = mapper.readValue(payload, Foo.class);
+
+			assertThat(result.getBar()).isEqualTo("bar");
+
+		}
+	}
+
 
 	@EnableAutoConfiguration
 	@EnableBinding(Source.class)
@@ -140,6 +167,7 @@ public class GreenfieldFunctionEnableBindingTests {
 		public PollableChannel result() {
 			return new QueueChannel();
 		}
+
 		@Bean
 		public Consumer<String> sink(PollableChannel result) {
 			return s -> {
@@ -162,16 +190,50 @@ public class GreenfieldFunctionEnableBindingTests {
 		}
 
 		@Bean
-		public HttpRequestHandlingEndpointSupport doFoo(IntegrationFlowFunctionSupport functionSupport) {
-			FluxMessageChannel fluxChannel = new FluxMessageChannel();
+		public HttpRequestHandlingEndpointSupport doFoo() {
 			HttpRequestHandlerEndpointSpec httpRequestHandler = Http
 					.inboundChannelAdapter("/*")
 					.requestMapping(requestMapping -> requestMapping.methods(HttpMethod.POST)
 					.consumes("*/*"))
-					.requestChannel(fluxChannel);
-
-			functionSupport.andThenFunction(fluxChannel, source.output());
+					.requestChannel(this.source.output());
 			return httpRequestHandler.get();
+		}
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Source.class)
+	public static class FooTransform {
+
+		@Bean
+		public MessageChannel input() {
+			return new DirectChannel();
+		}
+
+		@Bean
+		public IntegrationFlow flow() {
+
+			return IntegrationFlows.from(input()).bridge().channel(Source.OUTPUT).get();
+		}
+
+		@Bean
+		public Function<Message<?>, Message<?>> fooFunction() {
+			return m -> {
+				Foo foo = new Foo();
+				foo.setBar(m.getPayload().toString());
+				return MessageBuilder.withPayload(foo).setHeader("foo","foo").build();
+			};
+		}
+	}
+
+	static class Foo {
+		String bar;
+
+		public String getBar() {
+			return bar;
+		}
+
+		public void setBar(String bar) {
+			this.bar = bar;
 		}
 	}
 }
