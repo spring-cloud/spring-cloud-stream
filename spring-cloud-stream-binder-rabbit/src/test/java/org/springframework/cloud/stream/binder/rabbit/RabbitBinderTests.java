@@ -422,6 +422,7 @@ public class RabbitBinderTests extends
 		extProps.setAutoBindDlq(true);
 		extProps.setDeadLetterQueueName("customDLQ");
 		extProps.setDeadLetterExchange("customDLX");
+		extProps.setDeadLetterExchangeType(ExchangeTypes.TOPIC);
 		extProps.setDeadLetterRoutingKey("customDLRK");
 		extProps.setDlqDeadLetterExchange("propsUser3");
 		extProps.setDlqDeadLetterRoutingKey("propsUser3");
@@ -462,6 +463,16 @@ public class RabbitBinderTests extends
 		assertThat(exchange).isInstanceOf(DirectExchange.class);
 		assertThat(exchange.isDurable()).isEqualTo(false);
 		assertThat(exchange.isAutoDelete()).isEqualTo(true);
+
+		exchange = rmt.getExchange("customDLX");
+		n = 0;
+		while (n++ < 100 && exchange == null) {
+			Thread.sleep(100);
+			exchange = rmt.getExchange("customDLX");
+		}
+		assertThat(exchange).isInstanceOf(TopicExchange.class);
+		assertThat(exchange.isDurable()).isEqualTo(true);
+		assertThat(exchange.isAutoDelete()).isEqualTo(false);
 
 		QueueInfo queue = rmt.getClient().getQueue("/", "propsUser3.infra");
 		n = 0;

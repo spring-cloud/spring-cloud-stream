@@ -144,11 +144,22 @@ A DLX to assign to the queue.
 Relevant only if `autoBindDlq` is `true`.
 +
 Default: 'prefix+DLX'
+deadLetterExchangeType::
+The type of the DLX to assign to the queue.
+Relevant only if `autoBindDlq` is `true`.
++
+Default: 'direct'
 deadLetterRoutingKey::
 A dead letter routing key to assign to the queue.
 Relevant only if `autoBindDlq` is `true`.
 +
 Default: `destination`
+declareDlx::
+Whether to declare the dead letter exchange for the destination.
+Relevant only if `autoBindDlq` is `true`.
+Set to `false` if you have a pre-configured DLX.
++
+Default: `true`.
 declareExchange::
 Whether to declare the exchange for the destination.
 +
@@ -376,12 +387,25 @@ Relevant only when `autoBindDlq` is `true`.
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: 'prefix+DLX'
+deadLetterExchangeType::
+The type of the DLX to assign to the queue.
+Relevant only if `autoBindDlq` is `true`.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: 'direct'
 deadLetterRoutingKey::
 A dead letter routing key to assign to the queue.
 Relevant only when `autoBindDlq` is `true`.
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: `destination`
+declareDlx::
+Whether to declare the dead letter exchange for the destination.
+Relevant only if `autoBindDlq` is `true`.
+Set to `false` if you have a pre-configured DLX.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: `true`.
 declareExchange::
 Whether to declare the exchange for the destination.
 +

@@ -107,6 +107,16 @@ public abstract class RabbitCommonProperties implements MergableProperties {
 	private String deadLetterExchange;
 
 	/**
+	 * the type of the DLX, if autoBindDlq is true
+	 */
+	private String deadLetterExchangeType = ExchangeTypes.DIRECT;
+
+	/**
+	 * whether to declare the dead-letter exchange when autoBindDlq is true.
+	 */
+	private boolean declareDlx = true;
+
+	/**
 	 * a dead letter routing key to assign to that queue; if autoBindDlq is true, defaults to destination
 	 */
 	private String deadLetterRoutingKey;
@@ -295,6 +305,22 @@ public abstract class RabbitCommonProperties implements MergableProperties {
 
 	public void setDeadLetterExchange(String deadLetterExchange) {
 		this.deadLetterExchange = deadLetterExchange;
+	}
+
+	public String getDeadLetterExchangeType() {
+		return this.deadLetterExchangeType;
+	}
+
+	public void setDeadLetterExchangeType(String deadLetterExchangeType) {
+		this.deadLetterExchangeType = deadLetterExchangeType;
+	}
+
+	public boolean isDeclareDlx() {
+		return this.declareDlx;
+	}
+
+	public void setDeclareDlx(boolean declareDlx) {
+		this.declareDlx = declareDlx;
 	}
 
 	public String getDeadLetterRoutingKey() {

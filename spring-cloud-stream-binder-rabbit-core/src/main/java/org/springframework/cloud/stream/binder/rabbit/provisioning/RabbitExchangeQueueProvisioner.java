@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.Binding.DestinationType;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
@@ -295,16 +296,15 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 			Queue dlq = new Queue(dlqName, true, false, false, queueArgs(dlqName, properties, true));
 			declareQueue(dlqName, dlq);
 			String dlxName = deadLetterExchangeName(properties);
-			final DirectExchange dlx = new DirectExchange(dlxName);
-			declareExchange(dlxName, dlx);
-			BindingBuilder.DirectExchangeRoutingKeyConfigurer bindingBuilder = BindingBuilder.bind(dlq).to(dlx);
-			Binding dlqBinding;
-			if (properties.getDeadLetterRoutingKey() == null) {
-				dlqBinding = bindingBuilder.with(routingKey);
+			if (properties.isDeclareDlx()) {
+				declareExchange(dlxName,
+						new ExchangeBuilder(dlxName, properties.getDeadLetterExchangeType())
+							.durable(true)
+							.build());
 			}
-			else {
-				dlqBinding = bindingBuilder.with(properties.getDeadLetterRoutingKey());
-			}
+			Binding dlqBinding = new Binding(dlq.getName(), DestinationType.QUEUE, dlxName,
+					properties.getDlqDeadLetterRoutingKey() == null ? routingKey : properties.getDeadLetterRoutingKey(),
+					null);
 			declareBinding(dlqName, dlqBinding);
 			if (properties instanceof RabbitConsumerProperties &&
 					((RabbitConsumerProperties) properties).isRepublishToDlq()) {
@@ -312,7 +312,8 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 				 *  Also bind with the base queue name when republishToDlq is used, which does not know about
 				 * partitioning
 				 */
-				declareBinding(dlqName, BindingBuilder.bind(dlq).to(dlx).with(baseQueueName));
+				declareBinding(dlqName,
+						new Binding(dlq.getName(), DestinationType.QUEUE, dlxName, baseQueueName, null));
 			}
 		}
 	}
