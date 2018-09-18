@@ -19,8 +19,6 @@ package org.springframework.cloud.stream.function;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -54,11 +52,9 @@ import org.springframework.integration.http.dsl.HttpRequestHandlerEndpointSpec;
 import org.springframework.integration.http.inbound.HttpRequestHandlingEndpointSupport;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
