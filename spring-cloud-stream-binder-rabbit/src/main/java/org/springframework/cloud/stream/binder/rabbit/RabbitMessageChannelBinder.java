@@ -106,6 +106,7 @@ import com.rabbitmq.client.Envelope;
  * @author David Turanski
  * @author Marius Bogoevici
  * @author Artem Bilan
+ * @author Soby Chacko
  */
 public class RabbitMessageChannelBinder
 		extends AbstractMessageChannelBinder<ExtendedConsumerProperties<RabbitConsumerProperties>,
@@ -234,6 +235,16 @@ public class RabbitMessageChannelBinder
 	@Override
 	public RabbitProducerProperties getExtendedProducerProperties(String channelName) {
 		return this.extendedBindingProperties.getExtendedProducerProperties(channelName);
+	}
+
+	@Override
+	public String getDefaultsPrefix() {
+		return this.extendedBindingProperties.getDefaultsPrefix();
+	}
+
+	@Override
+	public Class<?> getExtendedPropertiesEntryClass() {
+		return this.extendedBindingProperties.getExtendedPropertiesEntryClass();
 	}
 
 	@Override

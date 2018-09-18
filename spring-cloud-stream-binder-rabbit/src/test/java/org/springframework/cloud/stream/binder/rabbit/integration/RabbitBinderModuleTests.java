@@ -16,16 +16,12 @@
 
 package org.springframework.cloud.stream.binder.rabbit.integration;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
@@ -42,11 +38,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
-import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.*;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
@@ -63,6 +55,11 @@ import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.mock;
@@ -72,6 +69,7 @@ import static org.mockito.Mockito.verify;
  * @author Marius Bogoevici
  * @author Gary Russell
  * @author Artem Bilan
+ * @author Soby Chacko
  */
 public class RabbitBinderModuleTests {
 
@@ -285,6 +283,30 @@ public class RabbitBinderModuleTests {
 		Cloud cloud = this.context.getBean(Cloud.class);
 
 		verify(cloud).getSingletonServiceConnector(ConnectionFactory.class, null);
+	}
+
+	@Test
+	public void testExtendedProperties() {
+		context = new SpringApplicationBuilder(SimpleProcessor.class)
+				.web(WebApplicationType.NONE)
+				.run("--server.port=0", "--spring.cloud.stream.rabbit.default.producer.routing-key-expression=fooRoutingKey",
+						"--spring.cloud.stream.rabbit.bindings.output.producer.batch-size=512",
+						"--spring.cloud.stream.rabbit.default.consumer.max-concurrency=4",
+						"--spring.cloud.stream.rabbit.bindings.input.consumer.exchange-type=fanout");
+		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+		Binder<?, ?, ?> rabbitBinder = binderFactory.getBinder(null, MessageChannel.class);
+
+		RabbitProducerProperties rabbitProducerProperties =
+				(RabbitProducerProperties)((ExtendedPropertiesBinder) rabbitBinder).getExtendedProducerProperties("output");
+
+		assertThat(rabbitProducerProperties.getRoutingKeyExpression()).isEqualTo("fooRoutingKey");
+		assertThat(rabbitProducerProperties.getBatchSize()).isEqualTo(512);
+
+		RabbitConsumerProperties rabbitConsumerProperties =
+				(RabbitConsumerProperties)((ExtendedPropertiesBinder) rabbitBinder).getExtendedConsumerProperties("input");
+
+		assertThat(rabbitConsumerProperties.getExchangeType()).isEqualTo(ExchangeTypes.FANOUT);
+		assertThat(rabbitConsumerProperties.getMaxConcurrency()).isEqualTo(4);
 	}
 
 	@EnableBinding(Processor.class)

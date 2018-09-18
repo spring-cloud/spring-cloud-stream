@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,12 @@ import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
  * @author Marius Bogoevici
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 @ConfigurationProperties("spring.cloud.stream.rabbit")
 public class RabbitExtendedBindingProperties implements ExtendedBindingProperties<RabbitConsumerProperties, RabbitProducerProperties> {
+
+	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.rabbit.default";
 
 	private Map<String, RabbitBindingProperties> bindings = new HashMap<>();
 
@@ -80,6 +83,16 @@ public class RabbitExtendedBindingProperties implements ExtendedBindingPropertie
 			bindings.put(channelName, rbp);
 		}
 		return properties;
+	}
+
+	@Override
+	public String getDefaultsPrefix() {
+		return DEFAULTS_PREFIX;
+	}
+
+	@Override
+	public Class<?> getExtendedPropertiesEntryClass() {
+		return RabbitBindingProperties.class;
 	}
 
 }
