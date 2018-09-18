@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
@@ -44,6 +45,8 @@ import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.config.MergableProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.scheduling.TaskScheduler;
@@ -64,7 +67,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  * @author Janne Valkealahti
  * @author Soby Chacko
  */
-public class BindingService {
+public class BindingService implements ApplicationContextAware {
 
 	private final CustomValidatorBean validator;
 
@@ -80,24 +83,27 @@ public class BindingService {
 
 	private final BinderFactory binderFactory;
 
-	private final ConfigurableApplicationContext applicationContext;
+	private ConfigurableApplicationContext applicationContext;
 
 	public BindingService(
 			BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory) {
-		this(bindingServiceProperties, binderFactory, null, null);
+		this(bindingServiceProperties, binderFactory, null);
 	}
 
 	public BindingService(
 			BindingServiceProperties bindingServiceProperties,
-			BinderFactory binderFactory, TaskScheduler taskScheduler,
-			ConfigurableApplicationContext applicationContext) {
+			BinderFactory binderFactory, TaskScheduler taskScheduler) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.binderFactory = binderFactory;
 		this.validator = new CustomValidatorBean();
 		this.validator.afterPropertiesSet();
 		this.taskScheduler = taskScheduler;
-		this.applicationContext = applicationContext;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -251,7 +257,7 @@ public class BindingService {
 		return binding;
 	}
 
-	private void handleExtendedDefaultProperties(ExtendedPropertiesBinder binder, MergableProperties extendedProperties, String filedName) {
+	private void handleExtendedDefaultProperties(ExtendedPropertiesBinder<?,?,?> binder, MergableProperties extendedProperties, String filedName) {
 		String defaultsPrefix = binder.getDefaultsPrefix();
 		Class<?> extendedPropertiesEntryClass = binder.getExtendedPropertiesEntryClass();
 

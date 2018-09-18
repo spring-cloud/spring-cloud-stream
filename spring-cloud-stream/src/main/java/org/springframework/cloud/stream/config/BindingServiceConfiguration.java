@@ -47,7 +47,6 @@ import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPost
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.cloud.stream.micrometer.DestinationPublishingMetricsAutoConfiguration;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -164,10 +163,9 @@ public class BindingServiceConfiguration {
 	// already exists).
 	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
 	public BindingService bindingService(BindingServiceProperties bindingServiceProperties,
-										BinderFactory binderFactory, TaskScheduler taskScheduler,
-										ConfigurableApplicationContext applicationContext) {
+										BinderFactory binderFactory, TaskScheduler taskScheduler) {
 
-		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler, applicationContext);
+		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler);
 	}
 
 	@Bean

@@ -35,6 +35,7 @@ import org.springframework.util.ObjectUtils;
  *
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ *
  * @see BinderProperties
  * @see ProducerProperties
  * @see ConsumerProperties
@@ -103,19 +104,19 @@ public interface MergableProperties {
 	}
 
 	default boolean isEmptyMapAtDestination(Object v) {
-		return Map.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Map) v);
+		return Map.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Map<?,?>) v);
 	}
 
 	default boolean isMergableByMap(Object v) {
-		return (Map.class.isAssignableFrom(v.getClass()) && !CollectionUtils.isEmpty((Map) v));
+		return (Map.class.isAssignableFrom(v.getClass()) && !CollectionUtils.isEmpty((Map<?,?>) v));
 	}
 
 	@SuppressWarnings("unchecked")
 	default void handleMapMerging(Object value, Object v) {
 		if (value instanceof Map) {
-			Map<Object, Object> sourceMap = (Map) value;
+			Map<Object, Object> sourceMap = (Map<Object, Object>) value;
 			for (Object key : sourceMap.keySet()) {
-				Map<Object, Object> targetMap = (Map) v;
+				Map<Object, Object> targetMap = (Map<Object, Object>) v;
 				if (!targetMap.containsKey(key)) {
 					targetMap.put(key, sourceMap.get(key));
 				}
@@ -124,6 +125,6 @@ public interface MergableProperties {
 	}
 
 	default void copyProperties(Object source, Object target) throws BeansException {
-
+		// noop
 	}
 }

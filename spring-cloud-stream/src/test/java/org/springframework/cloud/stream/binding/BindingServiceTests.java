@@ -379,7 +379,8 @@ public class BindingServiceTests {
 		environment.getPropertySources().addLast(new MapPropertySource("extPropertiesConfig", propertiesToAdd));
 		applicationContext.setEnvironment(environment);
 
-		BindingService service = new BindingService(serviceProperties, binderFactory, null, applicationContext);
+		BindingService service = new BindingService(serviceProperties, binderFactory, null);
+		service.setApplicationContext(applicationContext);
 		MessageChannel outputChannel = new DirectChannel();
 
 		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
@@ -413,7 +414,8 @@ public class BindingServiceTests {
 		environment.getPropertySources().addLast(new MapPropertySource("extPropertiesConfig", propertiesToAdd));
 		applicationContext.setEnvironment(environment);
 
-		BindingService service = new BindingService(serviceProperties, binderFactory, null, applicationContext);
+		BindingService service = new BindingService(serviceProperties, binderFactory, null);
+		service.setApplicationContext(applicationContext);
 		MessageChannel inputChannel = new DirectChannel();
 
 		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
@@ -533,7 +535,7 @@ public class BindingServiceTests {
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.initialize();
-		BindingService service = new BindingService(properties, binderFactory, scheduler, null);
+		BindingService service = new BindingService(properties, binderFactory, scheduler);
 		MessageChannel inputChannel = new DirectChannel();
 		final Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		final CountDownLatch fail = new CountDownLatch(2);
@@ -576,7 +578,7 @@ public class BindingServiceTests {
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.initialize();
-		BindingService service = new BindingService(properties, binderFactory, scheduler, null);
+		BindingService service = new BindingService(properties, binderFactory, scheduler);
 		MessageChannel outputChannel = new DirectChannel();
 		final Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		final CountDownLatch fail = new CountDownLatch(2);

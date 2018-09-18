@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 @Configuration
 public class MockExtendedBinderConfiguration {
 
+	@SuppressWarnings("rawtypes")
 	@Bean
 	public Binder<?, ?, ?> extendedPropertiesBinder() {
 		Binder mock = Mockito.mock(Binder.class, Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS)
