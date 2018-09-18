@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,20 @@
 
 package org.springframework.cloud.stream.utils;
 
-import org.mockito.Mockito;
-
-import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.cloud.stream.config.MergableProperties;
 
 /**
- * @author Marius Bogoevici
+ * @author Soby Chacko
  */
-@Configuration
-public class MockBinderConfiguration {
+public class FooExtendedProducerProperties implements MergableProperties {
 
-	@Bean
-	public Binder<?, ?, ?> binder() {
-		return Mockito.mock(Binder.class, Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS));
+	String extendedProperty;
+
+	public String getExtendedProperty() {
+		return extendedProperty;
 	}
 
+	public void setExtendedProperty(String extendedProperty) {
+		this.extendedProperty = extendedProperty;
+	}
 }

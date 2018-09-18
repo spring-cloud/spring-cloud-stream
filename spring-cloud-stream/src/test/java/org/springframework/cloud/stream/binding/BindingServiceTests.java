@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,15 @@ import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
+import org.springframework.cloud.stream.utils.FooExtendedConsumerProperties;
+import org.springframework.cloud.stream.utils.FooExtendedProducerProperties;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
+import org.springframework.cloud.stream.utils.MockExtendedBinderConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.MessageChannel;
@@ -351,6 +359,74 @@ public class BindingServiceTests {
 	}
 
 	@Test
+	public void testExtendedDefaultProducerProperties() {
+		BindingServiceProperties serviceProperties = new BindingServiceProperties();
+		Map<String, BindingProperties> bindingProperties = new HashMap<>();
+		BindingProperties props = new BindingProperties();
+		ProducerProperties producerProperties = new ProducerProperties();
+		props.setDestination("dest");
+		props.setProducer(producerProperties);
+		final String outputChannelName = "output";
+		bindingProperties.put(outputChannelName, props);
+		serviceProperties.setBindings(bindingProperties);
+
+		DefaultBinderFactory binderFactory = createMockExtendedBinderFactory();
+
+		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
+		ConfigurableEnvironment environment = new StandardEnvironment();
+		Map<String, Object> propertiesToAdd = new HashMap<>();
+		propertiesToAdd.put("spring.cloud.stream.foo.default.producer.extendedProperty", "someFancyExtension");
+		environment.getPropertySources().addLast(new MapPropertySource("extPropertiesConfig", propertiesToAdd));
+		applicationContext.setEnvironment(environment);
+
+		BindingService service = new BindingService(serviceProperties, binderFactory, null, applicationContext);
+		MessageChannel outputChannel = new DirectChannel();
+
+		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
+		FooExtendedProducerProperties fooExtendedProducerProperties =
+				(FooExtendedProducerProperties)((ExtendedPropertiesBinder)binder).getExtendedProducerProperties("output");
+		assertThat(fooExtendedProducerProperties.getExtendedProperty()).isNull();
+
+		service.bindProducer(outputChannel, outputChannelName);
+
+		assertThat(fooExtendedProducerProperties.getExtendedProperty()).isEqualTo("someFancyExtension");
+	}
+
+	@Test
+	public void testExtendedDefaultConsumerProperties() {
+		BindingServiceProperties serviceProperties = new BindingServiceProperties();
+		Map<String, BindingProperties> bindingProperties = new HashMap<>();
+		BindingProperties props = new BindingProperties();
+		ConsumerProperties consumerProperties = new ConsumerProperties();
+		props.setDestination("dest");
+		props.setConsumer(consumerProperties);
+		final String inputChannelName = "input";
+		bindingProperties.put(inputChannelName, props);
+		serviceProperties.setBindings(bindingProperties);
+
+		DefaultBinderFactory binderFactory = createMockExtendedBinderFactory();
+
+		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
+		ConfigurableEnvironment environment = new StandardEnvironment();
+		Map<String, Object> propertiesToAdd = new HashMap<>();
+		propertiesToAdd.put("spring.cloud.stream.foo.default.consumer.extendedProperty", "someFancyExtension");
+		environment.getPropertySources().addLast(new MapPropertySource("extPropertiesConfig", propertiesToAdd));
+		applicationContext.setEnvironment(environment);
+
+		BindingService service = new BindingService(serviceProperties, binderFactory, null, applicationContext);
+		MessageChannel inputChannel = new DirectChannel();
+
+		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
+		FooExtendedConsumerProperties fooExtendedConsumerProperties =
+				(FooExtendedConsumerProperties)((ExtendedPropertiesBinder)binder).getExtendedConsumerProperties("input");
+		assertThat(fooExtendedConsumerProperties.getExtendedProperty()).isNull();
+
+		service.bindConsumer(inputChannel, inputChannelName);
+
+		assertThat(fooExtendedConsumerProperties.getExtendedProperty()).isEqualTo("someFancyExtension");
+	}
+
+	@Test
 	public void testConsumerPropertiesValidation() {
 		BindingServiceProperties serviceProperties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
@@ -457,7 +533,7 @@ public class BindingServiceTests {
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.initialize();
-		BindingService service = new BindingService(properties, binderFactory, scheduler);
+		BindingService service = new BindingService(properties, binderFactory, scheduler, null);
 		MessageChannel inputChannel = new DirectChannel();
 		final Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		final CountDownLatch fail = new CountDownLatch(2);
@@ -500,7 +576,7 @@ public class BindingServiceTests {
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.initialize();
-		BindingService service = new BindingService(properties, binderFactory, scheduler);
+		BindingService service = new BindingService(properties, binderFactory, scheduler, null);
 		MessageChannel outputChannel = new DirectChannel();
 		final Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		final CountDownLatch fail = new CountDownLatch(2);
@@ -535,9 +611,22 @@ public class BindingServiceTests {
 				binderTypeRegistry);
 	}
 
+	private DefaultBinderFactory createMockExtendedBinderFactory() {
+		BinderTypeRegistry binderTypeRegistry = createMockExtendedBinderTypeRegistry();
+		return new DefaultBinderFactory(
+				Collections.singletonMap("mock", new BinderConfiguration("mock", new HashMap<>(), true, true)),
+				binderTypeRegistry);
+	}
+
+
 	private DefaultBinderTypeRegistry createMockBinderTypeRegistry() {
 		return new DefaultBinderTypeRegistry(Collections.singletonMap("mock",
 				new BinderType("mock", new Class[] { MockBinderConfiguration.class })));
+	}
+
+	private DefaultBinderTypeRegistry createMockExtendedBinderTypeRegistry() {
+		return new DefaultBinderTypeRegistry(Collections.singletonMap("mock",
+				new BinderType("mock", new Class[] { MockExtendedBinderConfiguration.class })));
 	}
 
 	private BindingServiceProperties createBindingServiceProperties(HashMap<String, String> properties) {
