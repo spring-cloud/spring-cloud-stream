@@ -95,8 +95,7 @@ public class GreenfieldFunctionEnableBindingTests {
 			InputDestination source = context.getBean(InputDestination.class);
 			source.send(new GenericMessage<byte[]>("John Doe".getBytes()));
 			OutputDestination target = context.getBean(OutputDestination.class);
-			Message<byte[]>  message = target.receive(10000);
-			assertThat(message.getPayload()).isEqualTo("JOHN DOE".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload()).isEqualTo("JOHN DOE".getBytes(StandardCharsets.UTF_8));
 		}
 	}
 
@@ -162,10 +161,7 @@ public class GreenfieldFunctionEnableBindingTests {
 	public static class ProcessorFromFunction {
 		@Bean
 		public Function<String, String> toUpperCase() {
-			return s -> {
-				System.out.println(s);
-				return s.toUpperCase();
-			};
+			return s -> s.toUpperCase();
 		}
 	}
 
