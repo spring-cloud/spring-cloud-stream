@@ -53,7 +53,6 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.lang.Nullable;
@@ -193,11 +192,9 @@ public class BindingServiceConfiguration {
 	public BinderAwareChannelResolver binderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable,
-			@Nullable BinderAwareChannelResolver.NewDestinationBindingCallback callback,
-			@Nullable GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor) {
+			@Nullable BinderAwareChannelResolver.NewDestinationBindingCallback callback) {
 
-		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory, dynamicDestinationsBindable,
-				callback, globalChannelInterceptorProcessor);
+		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory, dynamicDestinationsBindable, callback);
 	}
 
 	@Bean

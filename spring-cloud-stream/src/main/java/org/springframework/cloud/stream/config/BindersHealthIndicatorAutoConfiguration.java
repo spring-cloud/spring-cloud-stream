@@ -23,6 +23,7 @@ import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfi
 import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
+import org.springframework.boot.actuate.health.DefaultHealthIndicatorRegistry;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
@@ -51,7 +52,7 @@ public class BindersHealthIndicatorAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(name = "bindersHealthIndicator")
 	public CompositeHealthIndicator bindersHealthIndicator() {
-		return new CompositeHealthIndicator(new OrderedHealthAggregator());
+		return new CompositeHealthIndicator(new OrderedHealthAggregator(), new DefaultHealthIndicatorRegistry());
 	}
 
 	@Bean
@@ -85,7 +86,7 @@ public class BindersHealthIndicatorAutoConfiguration {
 				// this can happen due to the fact that configuration is inherited
 				HealthIndicator binderHealthIndicator = indicators.isEmpty() ? new DefaultHealthIndicator()
 						: new CompositeHealthIndicator(healthAggregator, indicators);
-				this.bindersHealthIndicator.addHealthIndicator(binderConfigurationName, binderHealthIndicator);
+				bindersHealthIndicator.getRegistry().register(binderConfigurationName, binderHealthIndicator);
 			}
 		}
 

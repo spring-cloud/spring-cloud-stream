@@ -210,11 +210,11 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	}
 
 	private Metric<Number> toSummaryMetric(DistributionSummary summary) {
-		return new Metric<Number>(summary.getId(), summary.takeSnapshot(false));
+		return new Metric<Number>(summary.getId(), summary.takeSnapshot());
 	}
 
 	private Metric<Number> toTimerMetric(Timer timer) {
-		return new Metric<Number>(timer.getId(), timer.takeSnapshot(false));
+		return new Metric<Number>(timer.getId(), timer.takeSnapshot());
 	}
 
 	/**

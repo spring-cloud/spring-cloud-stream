@@ -41,7 +41,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.converter.DefaultContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
-import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
@@ -166,7 +166,7 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 	 * - byte[] to String conversion
 	 * - etc
 	 */
-	private final static class InboundMessageConvertingInterceptor extends ChannelInterceptorAdapter {
+	private final static class InboundMessageConvertingInterceptor implements ChannelInterceptor {
 
 		private final DefaultContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
 		private final CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory();

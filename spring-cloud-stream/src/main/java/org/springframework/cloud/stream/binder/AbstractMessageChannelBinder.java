@@ -54,7 +54,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.ChannelInterceptorAdapter;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
 
@@ -877,7 +877,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	}
 
-	private static final class EmbeddedHeadersChannelInterceptor extends ChannelInterceptorAdapter {
+	private static final class EmbeddedHeadersChannelInterceptor implements ChannelInterceptor {
 
 		protected final Log logger;
 

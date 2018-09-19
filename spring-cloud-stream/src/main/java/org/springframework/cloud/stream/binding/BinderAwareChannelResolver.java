@@ -16,15 +16,11 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.integration.channel.ChannelInterceptorAware;
 import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
@@ -44,8 +40,6 @@ import org.springframework.util.ObjectUtils;
  */
 public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
 
-	private final Log logger = LogFactory.getLog(BinderAwareChannelResolver.class);
-
 	private final BindingService bindingService;
 
 	private final AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory;
@@ -56,8 +50,6 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	private final NewDestinationBindingCallback newBindingCallback;
 
 	private ConfigurableListableBeanFactory beanFactory;
-
-	private final GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor;
 
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
@@ -72,7 +64,11 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, callback, null);
 	}
 
+	/**
+	 * @deprecated since GlobalChannelInterceptorProcessor is no longer used
+	 */
 	@SuppressWarnings("rawtypes")
+	@Deprecated
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback,
@@ -83,7 +79,6 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		this.bindingService = bindingService;
 		this.bindingTargetFactory = bindingTargetFactory;
 		this.newBindingCallback = callback;
-		this.globalChannelInterceptorProcessor = globalChannelInterceptorProcessor;
 	}
 
 	@Override
@@ -133,17 +128,6 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
 
 			return channel;
-		}
-	}
-
-	private void instrumentChannelWithGlobalInterceptors(MessageChannel channel, String channelName) {
-		if (channel instanceof ChannelInterceptorAware) {
-			if (this.globalChannelInterceptorProcessor != null) {
-				this.globalChannelInterceptorProcessor.addMatchingInterceptors((ChannelInterceptorAware) channel, channelName);
-			}
-		}
-		else {
-			logger.warn("Failed to add global interceptors to '" + channelName + "' since it is not an instance of ChannelInterceptorAware.");
 		}
 	}
 
