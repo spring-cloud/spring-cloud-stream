@@ -16,10 +16,12 @@
 
 package org.springframework.cloud.stream.utils;
 
+import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
+
 /**
  * @author Soby Chacko
  */
-public class FooBindingProperties {
+public class FooBindingProperties implements BinderSpecificPropertiesProvider {
 
 	private FooExtendedProducerProperties producer = new FooExtendedProducerProperties();
 

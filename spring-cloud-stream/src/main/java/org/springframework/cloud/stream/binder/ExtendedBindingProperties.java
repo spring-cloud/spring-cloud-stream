@@ -47,13 +47,12 @@ public interface ExtendedBindingProperties<C, P> {
 
 	/**
 	 *
-	 * Extended properties class against which default extended producer and consumer properties
-	 * are resolved. It is expected that this class has two properties - one called producer
-	 * and another called consumer that contains the extended properties for producer and
-	 * consumer respectively.
+	 * Extended properties class which should be a subclass of {@link BinderSpecificPropertiesProvider}
+	 * against which default extended producer and consumer properties
+	 * are resolved.
 	 *
 	 * @return extended properties class that contains extended producer/consumer properties
 	 * @since 2.1.0
 	 */
-	Class<?> getExtendedPropertiesEntryClass();
+	Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass();
 }

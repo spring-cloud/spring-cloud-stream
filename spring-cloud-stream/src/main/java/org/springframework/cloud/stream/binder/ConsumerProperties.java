@@ -35,7 +35,7 @@ import org.springframework.cloud.stream.config.MergableProperties;
  * @author Oleg Zhurakousky
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-public class ConsumerProperties implements MergableProperties{
+public class ConsumerProperties implements MergableProperties {
 
 	/**
 	 * The concurrency setting of the consumer. Default: 1.
