@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -67,6 +68,8 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 
 	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable
 			.mapOf(String.class, String.class);
+
+	private static final Pattern DOLLAR_ESCAPE_PATTERN = Pattern.compile("\\$");
 
 	private SourceConfigurer sourceConfigurer;
 
@@ -208,7 +211,7 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 				// binder
 				// org.springframework.cloud.stream.aggregation.AggregationTest$TestSource
 				appConfigurer.namespace = AggregateApplicationUtils.getDefaultNamespace(
-						appConfigurer.getApp().getName().replaceAll("\\$", "."), i);
+						DOLLAR_ESCAPE_PATTERN.matcher(appConfigurer.getApp().getName()).replaceAll("."), i);
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 			appConfigurers.put(appConfigurer, appConfigurer.namespace);
