@@ -23,6 +23,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
+import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -139,7 +140,7 @@ class KStreamBinder extends
 	}
 
 	@Override
-	public Class<?> getExtendedPropertiesEntryClass() {
+	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return this.kafkaStreamsExtendedBindingProperties.getExtendedPropertiesEntryClass();
 	}
 }

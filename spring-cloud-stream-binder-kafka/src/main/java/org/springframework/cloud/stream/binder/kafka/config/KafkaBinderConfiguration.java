@@ -69,6 +69,7 @@ public class KafkaBinderConfiguration {
 	@Autowired
 	private KafkaExtendedBindingProperties kafkaExtendedBindingProperties;
 
+	@SuppressWarnings("rawtypes")
 	@Autowired
 	private ProducerListener producerListener;
 
@@ -85,6 +86,7 @@ public class KafkaBinderConfiguration {
 		return new KafkaTopicProvisioner(configurationProperties, this.kafkaProperties);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider, @Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> listenerContainerCustomizer) {
@@ -96,6 +98,7 @@ public class KafkaBinderConfiguration {
 		return kafkaMessageChannelBinder;
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Bean
 	@ConditionalOnMissingBean(ProducerListener.class)
 	ProducerListener producerListener() {
@@ -154,6 +157,7 @@ public class KafkaBinderConfiguration {
 
 	}
 
+	@SuppressWarnings("unused")
 	public static class JaasConfigurationProperties {
 
 		private JaasLoginModuleConfiguration kafka;

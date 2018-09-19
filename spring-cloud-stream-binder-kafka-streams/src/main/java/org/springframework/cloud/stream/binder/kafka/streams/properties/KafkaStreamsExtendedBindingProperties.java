@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
 
 /**
@@ -65,7 +66,7 @@ public class KafkaStreamsExtendedBindingProperties
 	}
 
 	@Override
-	public Class<?> getExtendedPropertiesEntryClass() {
+	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return KafkaStreamsBindingProperties.class;
 	}
 }

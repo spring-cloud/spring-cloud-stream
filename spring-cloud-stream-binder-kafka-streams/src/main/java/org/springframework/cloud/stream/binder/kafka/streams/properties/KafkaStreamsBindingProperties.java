@@ -16,10 +16,12 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
+import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
+
 /**
  * @author Marius Bogoevici
  */
-public class KafkaStreamsBindingProperties {
+public class KafkaStreamsBindingProperties implements BinderSpecificPropertiesProvider {
 
 	private KafkaStreamsConsumerProperties consumer = new KafkaStreamsConsumerProperties();
 

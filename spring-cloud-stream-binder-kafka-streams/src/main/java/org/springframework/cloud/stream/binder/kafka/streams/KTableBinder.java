@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import org.apache.kafka.streams.kstream.KTable;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
+import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -95,7 +96,7 @@ class KTableBinder extends
 	}
 
 	@Override
-	public Class<?> getExtendedPropertiesEntryClass() {
+	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return this.kafkaStreamsExtendedBindingProperties.getExtendedPropertiesEntryClass();
 	}
 }

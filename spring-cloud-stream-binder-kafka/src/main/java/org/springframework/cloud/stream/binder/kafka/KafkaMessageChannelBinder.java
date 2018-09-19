@@ -55,6 +55,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.EmbeddedHeaderUtils;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -220,7 +221,7 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	@Override
-	public Class<?> getExtendedPropertiesEntryClass() {
+	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return this.extendedBindingProperties.getExtendedPropertiesEntryClass();
 	}
 
@@ -675,6 +676,7 @@ public class KafkaMessageChannelBinder extends
 		return new RawRecordHeaderErrorMessageStrategy();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
@@ -687,7 +689,7 @@ public class KafkaMessageChannelBinder extends
 						new ExtendedProducerProperties<>(dlqProducerProperties));
 			final KafkaTemplate<?,?> kafkaTemplate = new KafkaTemplate<>(producerFactory);
 
-			@SuppressWarnings({"unchecked", "rawtypes"})
+			@SuppressWarnings("rawtypes")
 			DlqSender<?,?> dlqSender = new DlqSender(kafkaTemplate);
 
 			return message -> {
