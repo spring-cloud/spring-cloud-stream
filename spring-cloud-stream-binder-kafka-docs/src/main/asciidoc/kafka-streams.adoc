@@ -20,13 +20,15 @@ https://kafka.apache.org/documentation/streams/developer-guide[Apache Kafka Stre
 Kafka Streams binder implementation builds on the foundation provided by the http://docs.spring.io/spring-kafka/reference/html/_reference.html#kafka-streams[Kafka Streams in Spring Kafka]
 project.
 
+Kafka Streams binder provides binding capabilities for the three major types in Kafka Streams - KStream, KTable and GlobalKTable.
+
 As part of this native integration, the high-level https://docs.confluent.io/current/streams/developer-guide/dsl-api.html[Streams DSL]
-provided by the Kafka Streams API is available for use in the business logic, too.
+provided by the Kafka Streams API is available for use in the business logic.
 
 An early version of the https://docs.confluent.io/current/streams/developer-guide/processor-api.html[Processor API]
 support is available as well.
 
-As noted early-on, Kafka Streams support in Spring Cloud Stream strictly only available for use in the Processor model.
+As noted early-on, Kafka Streams support in Spring Cloud Stream is strictly only available for use in the Processor model.
 A model in which the messages read from an inbound topic, business processing can be applied, and the transformed messages
 can be written to an outbound topic. It can also be used in Processor applications with a no-outbound destination.
 
@@ -217,6 +219,12 @@ through the following property.
 ----
 spring.cloud.stream.kafka.streams.bindings.inputTable.consumer.materializedAs: all-songs
 ----
+
+The above example shows the use of KTable as an input binding.
+The binder also supports input bindings for GlobalKTable.
+GlobalKTable binding is useful when you have to ensure that all instances of your application has access to the data updates from the topic.
+KTable and GlobalKTable bindings are only available on the input.
+Binder supports both input and output bindings for KStream.
 
 === Multiple Input Bindings as a Processor
 
