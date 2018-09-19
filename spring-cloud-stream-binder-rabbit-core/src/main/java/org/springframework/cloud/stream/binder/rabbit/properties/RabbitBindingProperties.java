@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package org.springframework.cloud.stream.binder.rabbit.properties;
 
+import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
+
 /**
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
-public class RabbitBindingProperties {
+public class RabbitBindingProperties implements BinderSpecificPropertiesProvider{
 
 	private RabbitConsumerProperties consumer = new RabbitConsumerProperties();
 
