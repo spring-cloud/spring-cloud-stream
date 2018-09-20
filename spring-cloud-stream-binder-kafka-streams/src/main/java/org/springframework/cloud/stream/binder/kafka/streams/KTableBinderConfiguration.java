@@ -25,12 +25,14 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * @author Soby Chacko
  */
 @SuppressWarnings("ALL")
 @Configuration
+@Import(KafkaStreamsBinderUtils.KafkaStreamsMissingBeansRegistrar.class)
 public class KTableBinderConfiguration {
 
 	@Bean

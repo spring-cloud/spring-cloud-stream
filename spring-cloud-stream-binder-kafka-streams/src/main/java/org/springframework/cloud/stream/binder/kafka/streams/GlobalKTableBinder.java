@@ -67,7 +67,7 @@ public class GlobalKTableBinder extends
 		if (!StringUtils.hasText(group)) {
 			group = binderConfigurationProperties.getApplicationId();
 		}
-		KafkaStreamsConsumerBindingUtils.prepareConsumerBinding(name, group, inputTarget,
+		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group, inputTarget,
 				getApplicationContext(),
 				kafkaTopicProvisioner,
 				kafkaStreamsBindingInformationCatalogue,

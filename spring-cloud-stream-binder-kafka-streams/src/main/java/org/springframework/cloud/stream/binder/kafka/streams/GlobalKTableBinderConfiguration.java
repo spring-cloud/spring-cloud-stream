@@ -16,10 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
@@ -27,44 +23,14 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
-import org.springframework.core.type.AnnotationMetadata;
 
 /**
  * @author Soby Chacko
  * @since 2.1.0
  */
 @Configuration
-@Import(GlobalKTableBinderConfiguration.Registrar.class)
+@Import(KafkaStreamsBinderUtils.KafkaStreamsMissingBeansRegistrar.class)
 public class GlobalKTableBinderConfiguration {
-
-	static class Registrar implements ImportBeanDefinitionRegistrar {
-
-		private static final String BEAN_NAME = "outerContext";
-
-		@Override
-		public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
-											BeanDefinitionRegistry registry) {
-			if (registry.containsBeanDefinition(BEAN_NAME)) {
-
-				AbstractBeanDefinition configBean = BeanDefinitionBuilder.genericBeanDefinition(MethodInvokingFactoryBean.class)
-						.addPropertyReference("targetObject", BEAN_NAME)
-						.addPropertyValue("targetMethod", "getBean")
-						.addPropertyValue("arguments", KafkaStreamsBinderConfigurationProperties.class)
-						.getBeanDefinition();
-
-				registry.registerBeanDefinition(KafkaStreamsBinderConfigurationProperties.class.getSimpleName(), configBean);
-
-				AbstractBeanDefinition catalogueBean = BeanDefinitionBuilder.genericBeanDefinition(MethodInvokingFactoryBean.class)
-						.addPropertyReference("targetObject", BEAN_NAME)
-						.addPropertyValue("targetMethod", "getBean")
-						.addPropertyValue("arguments", KafkaStreamsBindingInformationCatalogue.class)
-						.getBeanDefinition();
-
-				registry.registerBeanDefinition(KafkaStreamsBindingInformationCatalogue.class.getSimpleName(), catalogueBean);
-			}
-		}
-	}
 
 	@Bean
 	public KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties binderConfigurationProperties,
