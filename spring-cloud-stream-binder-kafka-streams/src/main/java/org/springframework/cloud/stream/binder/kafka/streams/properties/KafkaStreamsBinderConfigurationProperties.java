@@ -35,7 +35,7 @@ public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfig
 		sendToDlq
 	}
 
-	private String applicationId = "default";
+	private String applicationId;
 
 	public String getApplicationId() {
 		return applicationId;

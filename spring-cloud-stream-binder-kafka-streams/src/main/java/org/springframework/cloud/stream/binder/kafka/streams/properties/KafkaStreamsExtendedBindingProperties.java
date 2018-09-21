@@ -30,6 +30,8 @@ import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
 public class KafkaStreamsExtendedBindingProperties
 		implements ExtendedBindingProperties<KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
 
+	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.kafka.streams.default";
+
 	private Map<String, KafkaStreamsBindingProperties> bindings = new HashMap<>();
 
 	public Map<String, KafkaStreamsBindingProperties> getBindings() {
@@ -62,7 +64,7 @@ public class KafkaStreamsExtendedBindingProperties
 
 	@Override
 	public String getDefaultsPrefix() {
-		return null;
+		return DEFAULTS_PREFIX;
 	}
 
 	@Override

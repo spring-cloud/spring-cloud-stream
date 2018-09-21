@@ -93,15 +93,16 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 	}
 
 	@Test
-	public void testKstreamWordCountWithStringInputAndPojoOuput() throws Exception {
+	public void testKstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
-		ConfigurableApplicationContext context = app.run("--server.port=0",
+		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=words",
 				"--spring.cloud.stream.bindings.output.destination=counts",
 				"--spring.cloud.stream.bindings.output.contentType=application/json",
+				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=basic-word-count",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
@@ -110,8 +111,29 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
 				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
-		try {
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
+			receiveAndValidate(context);
+		}
+	}
+
+	@Test
+	public void testKstreamWordCountWithInputBindingLevelApplicationId() throws Exception {
+		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		try (ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.destination=words",
+				"--spring.cloud.stream.bindings.output.destination=counts",
+				"--spring.cloud.stream.bindings.output.contentType=application/json",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=basic-word-count",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
+				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
 			receiveAndValidate(context);
 			//Assertions on StreamBuilderFactoryBean
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
@@ -125,9 +147,6 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 					CleanupConfig.class);
 			assertThat(cleanup.cleanupOnStart()).isTrue();
 			assertThat(cleanup.cleanupOnStop()).isFalse();
-		}
-		finally {
-			context.close();
 		}
 	}
 

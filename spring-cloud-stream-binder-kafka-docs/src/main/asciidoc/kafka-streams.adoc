@@ -115,14 +115,13 @@ serdeError::
 +
 Default: `logAndFail`
 applicationId::
- Application ID for all the stream configurations in the current application context.
- You can override the application id for an individual `StreamListener` method using the `group` property on the binding.
- You have to ensure that you are using the same group name for all input bindings in the case of multiple inputs on the same methods.
+ Convenient way to set the application.id for the Kafka Streams application globally at the binder level.
+ If the application contains multiple `StreamListener` methods, then application.id should be set at the binding level per input binding.
 +
-Default: `default`
+Default: `none`
 
-The following properties are _only_ available for Kafka Streams producers and must be prefixed with `spring.cloud.stream.kafka.streams.bindings.<binding name>.producer.`
-literal.
+The following properties are _only_ available for Kafka Streams producers and must be prefixed with `spring.cloud.stream.kafka.streams.bindings.<binding name>.producer.` literal.
+For convenience, if there multiple output bindings and they all require a common value, that can be configured by using the prefix `spring.cloud.stream.kafka.streams.default.producer.`.
 
 keySerde::
   key serde to use
@@ -137,9 +136,13 @@ useNativeEncoding::
 +
 Default: `false`.
 
-The following properties are _only_ available for Kafka Streams consumers and must be prefixed with `spring.cloud.stream.kafka.streams.bindings.<binding name>.consumer.`
-literal.
+The following properties are _only_ available for Kafka Streams consumers and must be prefixed with `spring.cloud.stream.kafka.streams.bindings.<binding name>.consumer.`literal.
+For convenience, if there multiple input bindings and they all require a common value, that can be configured by using the prefix `spring.cloud.stream.kafka.streams.default.consumer.`.
 
+applicationId::
+ Setting application.id per input binding.
++
+Default: `none`
 keySerde::
   key serde to use
 +

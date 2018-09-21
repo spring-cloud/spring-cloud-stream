@@ -24,6 +24,8 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
  */
 public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
+	private String applicationId;
+
 	/**
 	 * Key serde specified per binding.
 	 */
@@ -38,6 +40,14 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	 * Materialized as a KeyValueStore
 	 */
 	private String materializedAs;
+
+	public String getApplicationId() {
+		return applicationId;
+	}
+
+	public void setApplicationId(String applicationId) {
+		this.applicationId = applicationId;
+	}
 
 	public String getKeySerde() {
 		return keySerde;

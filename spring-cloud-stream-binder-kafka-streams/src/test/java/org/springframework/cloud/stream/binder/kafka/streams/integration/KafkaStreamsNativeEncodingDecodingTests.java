@@ -100,7 +100,9 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
-			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=true"},
+			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=NativeEncodingDecodingEnabledTests-abc"
+	},
 			webEnvironment= SpringBootTest.WebEnvironment.NONE
 			)
 	public static class NativeEncodingDecodingEnabledTests extends KafkaStreamsNativeEncodingDecodingTests {
@@ -120,7 +122,8 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 		}
 	}
 
-	@SpringBootTest(webEnvironment= SpringBootTest.WebEnvironment.NONE)
+	@SpringBootTest(webEnvironment= SpringBootTest.WebEnvironment.NONE,
+	properties = "spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=NativeEncodingDecodingEnabledTests-xyz")
 	public static class NativeEncodingDecodingDisabledTests extends KafkaStreamsNativeEncodingDecodingTests {
 
 		@Test

@@ -135,6 +135,10 @@ public class KafkaBinderConfigurationProperties {
 		this.kafkaProperties = kafkaProperties;
 	}
 
+	public KafkaProperties getKafkaProperties() {
+		return kafkaProperties;
+	}
+
 	public Transaction getTransaction() {
 		return this.transaction;
 	}

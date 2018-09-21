@@ -130,6 +130,7 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=StreamToGlobalKTableJoinIntegrationTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
 			Map<String, Object> senderPropsCustomer = KafkaTestUtils.producerProps(embeddedKafka);

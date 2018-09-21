@@ -104,6 +104,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deserializationByBinderAndDlqTests",
 			"spring.cloud.stream.bindings.input.group=foobar-group"},
 			webEnvironment= SpringBootTest.WebEnvironment.NONE
 	)
@@ -138,10 +139,9 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 			"spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-			"spring.cloud.stream.bindings.output.producer.headerMode=raw",
 			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
-			"spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deserializationByBinderAndDlqTestsWithMultipleInputs",
 			"spring.cloud.stream.bindings.input.group=fooz-group"},
 			webEnvironment= SpringBootTest.WebEnvironment.NONE
 	)

@@ -102,6 +102,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
 			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deser-kafka-dlq",
 			"spring.cloud.stream.bindings.input.group=group",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=" +
@@ -138,6 +139,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
 			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
 			"spring.cloud.stream.bindings.input.destination=word1,word2",
+			"spring.cloud.stream.kafka.streams.default.consumer.applicationId=deser-kafka-dlq-multi-input",
 			"spring.cloud.stream.bindings.input.group=groupx",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=" +
