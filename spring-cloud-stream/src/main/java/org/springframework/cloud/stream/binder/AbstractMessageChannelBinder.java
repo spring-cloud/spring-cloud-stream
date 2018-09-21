@@ -117,7 +117,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	@Autowired(required = false)
 	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
 
-	@Autowired
+	@Autowired(required = false)
 	private StreamFunctionProperties streamFunctionProperties;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
@@ -194,7 +194,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		if (StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
+		if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
 			outputChannel = this.postProcessOutboundChannelForFunction(outputChannel);
 		}
 
@@ -343,7 +343,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		try {
 			ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
 			// the function support for the inbound channel is only for Sink
-			if (StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
+			if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
 				inputChannel = this.postProcessInboundChannelForFunction(inputChannel);
 			}
 			if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
