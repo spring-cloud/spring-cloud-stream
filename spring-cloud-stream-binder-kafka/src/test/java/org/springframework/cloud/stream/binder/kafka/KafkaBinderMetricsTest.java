@@ -20,10 +20,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.TimeGauge;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -88,8 +87,8 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group1-metrics").tag("topic", TEST_TOPIC).timeGauge()
-				.value(TimeUnit.MILLISECONDS)).isEqualTo(500.0);
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge()
+				.value()).isEqualTo(500.0);
 	}
 
 	@Test
@@ -104,8 +103,8 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group2-metrics").tag("topic", TEST_TOPIC).timeGauge()
-				.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group2-metrics").tag("topic", TEST_TOPIC).gauge()
+				.value()).isEqualTo(1000.0);
 	}
 
 	@Test
@@ -115,8 +114,8 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group3-metrics").tag("topic", TEST_TOPIC).timeGauge()
-				.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group3-metrics").tag("topic", TEST_TOPIC).gauge()
+				.value()).isEqualTo(1000.0);
 	}
 
 	@Test
@@ -134,9 +133,9 @@ public class KafkaBinderMetricsTest {
 
 		metrics.bindTo(meterRegistry);
 
-		TimeGauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group4-metrics").tag("topic", TEST_TOPIC).timeGauge();
-		gauge.value(TimeUnit.MILLISECONDS);
-		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
+		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group4-metrics").tag("topic", TEST_TOPIC).gauge();
+		gauge.value();
+		assertThat(gauge.value()).isEqualTo(1000.0);
 
 		org.mockito.Mockito.verify(this.consumerFactory).createConsumer();
 	}
@@ -151,9 +150,9 @@ public class KafkaBinderMetricsTest {
 
 		metrics.bindTo(meterRegistry);
 
-		TimeGauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group5-metrics").tag("topic", TEST_TOPIC).timeGauge();
-		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(0);
-		assertThat(gauge.value(TimeUnit.MILLISECONDS)).isEqualTo(1000.0);
+		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group5-metrics").tag("topic", TEST_TOPIC).gauge();
+		assertThat(gauge.value()).isEqualTo(0);
+		assertThat(gauge.value()).isEqualTo(1000.0);
 
 		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2)).createConsumer();
 	}

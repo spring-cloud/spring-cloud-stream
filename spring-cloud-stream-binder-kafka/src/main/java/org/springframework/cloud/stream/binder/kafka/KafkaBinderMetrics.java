@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.TimeGauge;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
 import org.apache.commons.logging.Log;
@@ -111,7 +111,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 			String topic = topicInfo.getKey();
 			String group = topicInfo.getValue().getConsumerGroup();
 
-			TimeGauge.builder(METRIC_NAME, this, TimeUnit.MILLISECONDS,
+			Gauge.builder(METRIC_NAME, this,
 						o -> calculateConsumerLagOnTopic(topic, group))
 					.tag("group", group)
 					.tag("topic", topic)
