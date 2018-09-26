@@ -21,6 +21,8 @@ import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 
+import javax.validation.constraints.NotBlank;
+
 /**
  * @author Ilayaperumal Gopinathan
  */
@@ -85,4 +87,16 @@ public class StreamListenerTestUtils {
 			return sb.toString();
 		}
 	}
+
+	public static class PojoWithValidation {
+
+		@NotBlank
+		private String foo;
+
+		public String getFoo() { return this.foo; }
+
+		public void setFoo(String foo) { this.foo = foo; }
+
+	}
+
 }
