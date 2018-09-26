@@ -36,7 +36,10 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
 import org.springframework.util.MimeType;
+
+import javax.validation.Valid;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -86,6 +89,36 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 		}
 	}
 
+	@Test
+	public void testValidAnnotationAtMethodParameterWithPojoThatPassesValidation() {
+		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithValidAnnotationThatPassesValidation.class,
+				"--server.port=0");
+
+		TestPojoWithValidAnnotationThatPassesValidation testPojoWithValidAnnotationThatPassesValidation = context.getBean(TestPojoWithValidAnnotationThatPassesValidation.class);
+		Sink sink = context.getBean(Sink.class);
+		String id = UUID.randomUUID().toString();
+		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"" + id + "\"}")
+				.setHeader("contentType", MimeType.valueOf("application/json")).build());
+		assertThat(testPojoWithValidAnnotationThatPassesValidation.receivedArguments.get(0)).hasFieldOrPropertyWithValue("foo", id);
+		context.close();
+	}
+
+	@Test
+	public void testValidAnnotationAtMethodParameterWithPojoThatFailsValidation() {
+		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithValidAnnotationThatPassesValidation.class,
+				"--server.port=0");
+
+		Sink sink = context.getBean(Sink.class);
+		try {
+			sink.input().send(MessageBuilder.withPayload("{\"foo\":\"\"}")
+					.setHeader("contentType", MimeType.valueOf("application/json")).build());
+			fail("Exception expected: MethodArgumentNotValidException!");
+		} catch(MethodArgumentNotValidException e) {
+			assertThat(e.getMessage()).contains("default message [foo]]; default message [must not be blank]]");
+		}
+		context.close();
+	}
+
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestPojoWithAnnotatedArguments {
@@ -118,4 +151,17 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 			this.receivedArguments.add(contentType);
 		}
 	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class TestPojoWithValidAnnotationThatPassesValidation {
+
+		List<Object> receivedArguments = new ArrayList<>();
+
+		@StreamListener(Processor.INPUT)
+		public void receive(@Valid StreamListenerTestUtils.PojoWithValidation pojoWithValidation) {
+			this.receivedArguments.add(pojoWithValidation);
+		}
+	}
+
 }
