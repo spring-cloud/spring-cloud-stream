@@ -27,7 +27,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.kafka.core.StreamsBuilderFactoryBean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 /**
  * A catalogue that provides binding information for Kafka Streams target types such as KStream.
