@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -56,9 +59,8 @@ public class KTableBinderConfiguration {
 	@Bean
 	public KTableBinder kTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 									KafkaTopicProvisioner kafkaTopicProvisioner,
-									KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
-		KTableBinder kStreamBinder = new KTableBinder(binderConfigurationProperties, kafkaTopicProvisioner,
-				KafkaStreamsBindingInformationCatalogue);
+									 @Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+		KTableBinder kStreamBinder = new KTableBinder(binderConfigurationProperties, kafkaTopicProvisioner, kafkaStreamsDlqDispatchers);
 		return kStreamBinder;
 	}
 }

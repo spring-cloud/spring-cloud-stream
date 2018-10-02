@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
@@ -64,16 +66,20 @@ class KStreamBinder extends
 
 	private final KeyValueSerdeResolver keyValueSerdeResolver;
 
+	private final Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers;
+
 	KStreamBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 				KafkaTopicProvisioner kafkaTopicProvisioner,
 				KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 				KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-				KeyValueSerdeResolver keyValueSerdeResolver) {
+				KeyValueSerdeResolver keyValueSerdeResolver,
+				  Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
 		this.kafkaStreamsBindingInformationCatalogue = KafkaStreamsBindingInformationCatalogue;
 		this.keyValueSerdeResolver = keyValueSerdeResolver;
+		this.kafkaStreamsDlqDispatchers = kafkaStreamsDlqDispatchers;
 	}
 
 	@Override
@@ -85,11 +91,9 @@ class KStreamBinder extends
 		if (!StringUtils.hasText(group)) {
 			group = binderConfigurationProperties.getApplicationId();
 		}
-		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group, inputTarget,
-				getApplicationContext(),
+		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group, getApplicationContext(),
 				kafkaTopicProvisioner,
-				kafkaStreamsBindingInformationCatalogue,
-				binderConfigurationProperties, properties);
+				binderConfigurationProperties, properties, kafkaStreamsDlqDispatchers);
 
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}

@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -86,14 +89,15 @@ public class KStreamBinderConfiguration {
 
 	@Bean
 	public KStreamBinder kStreamBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-									KafkaTopicProvisioner kafkaTopicProvisioner,
-									KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate,
-									KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-									KeyValueSerdeResolver keyValueSerdeResolver,
-									KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties) {
+									   KafkaTopicProvisioner kafkaTopicProvisioner,
+									   KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate,
+									   KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+									   KeyValueSerdeResolver keyValueSerdeResolver,
+									   KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+									   @Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner,
 				KafkaStreamsMessageConversionDelegate, KafkaStreamsBindingInformationCatalogue,
-				keyValueSerdeResolver);
+				keyValueSerdeResolver, kafkaStreamsDlqDispatchers);
 		kStreamBinder.setKafkaStreamsExtendedBindingProperties(kafkaStreamsExtendedBindingProperties);
 		return kStreamBinder;
 	}

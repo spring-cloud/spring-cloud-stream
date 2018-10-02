@@ -43,8 +43,6 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	private final Map<KStream<?, ?>, KafkaStreamsConsumerProperties> consumerProperties = new ConcurrentHashMap<>();
 
-	private final Map<Object, StreamsConfig> streamsConfigs = new ConcurrentHashMap<>();
-
 	private final Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = new HashSet<>();
 
 	/**
@@ -95,16 +93,6 @@ class KafkaStreamsBindingInformationCatalogue {
 	}
 
 	/**
-	 * Retrieve and return the registered {@link StreamsBuilderFactoryBean} for the given KStream
-	 *
-	 * @param bindingTarget KStream binding target
-	 * @return corresponding {@link StreamsBuilderFactoryBean}
-	 */
-	StreamsConfig getStreamsConfig(Object bindingTarget) {
-		return streamsConfigs.get(bindingTarget);
-	}
-
-	/**
 	 * Register a cache for bounded KStream -> {@link BindingProperties}
 	 *
 	 * @param bindingTarget KStream binding target
@@ -131,10 +119,6 @@ class KafkaStreamsBindingInformationCatalogue {
 	 */
 	void addStreamBuilderFactory(StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
 		this.streamsBuilderFactoryBeans.add(streamsBuilderFactoryBean);
-	}
-
-	void addStreamsConfigs(Object bindingTarget, StreamsConfig streamsConfig) {
-		this.streamsConfigs.put(bindingTarget, streamsConfig);
 	}
 
 	Set<StreamsBuilderFactoryBean> getStreamsBuilderFactoryBeans() {

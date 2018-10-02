@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,7 +29,6 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.errors.DeserializationExceptionHandler;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
@@ -53,7 +53,6 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore;
-import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsStateStoreProperties;
@@ -70,6 +69,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.integration.support.utils.IntegrationUtils;
+import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.messaging.MessageHeaders;
@@ -112,8 +112,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 
 	private final Map<Method, StreamsBuilderFactoryBean> methodStreamsBuilderFactoryBeanMap = new HashMap<>();
 
-	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
-
 	private final CleanupConfig cleanupConfig;
 
 	private ConfigurableApplicationContext applicationContext;
@@ -124,7 +122,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 													KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 													StreamListenerParameterAdapter streamListenerParameterAdapter,
 													Collection<StreamListenerResultAdapter> streamListenerResultAdapters,
-													KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 													CleanupConfig cleanupConfig) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.kafkaStreamsExtendedBindingProperties = kafkaStreamsExtendedBindingProperties;
@@ -132,7 +129,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 		this.streamListenerParameterAdapter = streamListenerParameterAdapter;
 		this.streamListenerResultAdapters = streamListenerResultAdapters;
-		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.cleanupConfig = cleanupConfig;
 	}
 
@@ -239,11 +235,10 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 				Object targetBean = applicationContext.getBean((String) targetReferenceValue);
 				BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(inboundName);
 				enableNativeDecodingForKTableAlways(parameterType, bindingProperties);
-				StreamsConfig streamsConfig = null;
 				//Retrieve the StreamsConfig created for this method if available.
 				//Otherwise, create the StreamsBuilderFactory and get the underlying config.
 				if (!methodStreamsBuilderFactoryBeanMap.containsKey(method)) {
-					streamsConfig = buildStreamsBuilderAndRetrieveConfig(method, applicationContext, inboundName);
+					buildStreamsBuilderAndRetrieveConfig(method, applicationContext, inboundName);
 				}
 				try {
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean = methodStreamsBuilderFactoryBeanMap.get(method);
@@ -259,9 +254,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 						//wrap the proxy created during the initial target type binding with real object (KStream)
 						kStreamWrapper.wrap((KStream<Object, Object>) stream);
 						kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
-						if (streamsConfig != null){
-							kafkaStreamsBindingInformationCatalogue.addStreamsConfigs(kStreamWrapper, streamsConfig);
-						}
 						for (StreamListenerParameterAdapter streamListenerParameterAdapter : streamListenerParameterAdapters) {
 							if (streamListenerParameterAdapter.supports(stream.getClass(), methodParameter)) {
 								arguments[parameterIndex] = streamListenerParameterAdapter.adapt(kStreamWrapper, methodParameter);
@@ -285,9 +277,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 						//wrap the proxy created during the initial target type binding with real object (KTable)
 						kTableWrapper.wrap((KTable<Object, Object>) table);
 						kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
-						if (streamsConfig != null){
-							kafkaStreamsBindingInformationCatalogue.addStreamsConfigs(kTableWrapper, streamsConfig);
-						}
 						arguments[parameterIndex] = table;
 					}
 					else if (parameterType.isAssignableFrom(GlobalKTable.class)) {
@@ -301,9 +290,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 						//wrap the proxy created during the initial target type binding with real object (KTable)
 						globalKTableWrapper.wrap((GlobalKTable<Object, Object>) table);
 						kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
-						if (streamsConfig != null){
-							kafkaStreamsBindingInformationCatalogue.addStreamsConfigs(globalKTableWrapper, streamsConfig);
-						}
 						arguments[parameterIndex] = table;
 					}
 				}
@@ -417,7 +403,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 	}
 
 	@SuppressWarnings({"unchecked"})
-	private StreamsConfig buildStreamsBuilderAndRetrieveConfig(Method method, ApplicationContext applicationContext,
+	private void buildStreamsBuilderAndRetrieveConfig(Method method, ApplicationContext applicationContext,
 															String inboundName) {
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext.getBeanFactory();
 
@@ -435,41 +421,27 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 			streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
 		}
 
-		//Custom StreamsConfig implementation that overrides to guarantee that the deserialization handler is cached.
-		StreamsConfig streamsConfig = new StreamsConfig(streamConfigGlobalProperties) {
-			DeserializationExceptionHandler deserializationExceptionHandler;
+		Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers = applicationContext.getBean("kafkaStreamsDlqDispatchers", Map.class);
+
+		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfigGlobalProperties) {
 			@Override
-			@SuppressWarnings("unchecked")
-			public <T> T getConfiguredInstance(String key, Class<T> clazz) {
-				if (key.equals(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG)){
-					if (deserializationExceptionHandler != null){
-						return (T)deserializationExceptionHandler;
-					}
-					else {
-						T t = super.getConfiguredInstance(key, clazz);
-						deserializationExceptionHandler = (DeserializationExceptionHandler)t;
-						return t;
-					}
-				}
-				return super.getConfiguredInstance(key, clazz);
+			public Properties asProperties() {
+				Properties properties = super.asProperties();
+				properties.put(SendToDlqAndContinue.KAFKA_STREAMS_DLQ_DISPATCHERS, kafkaStreamsDlqDispatchers);
+				return properties;
 			}
 		};
+
 		StreamsBuilderFactoryBean streamsBuilder = this.cleanupConfig == null
-				? new StreamsBuilderFactoryBean(streamsConfig)
-				: new StreamsBuilderFactoryBean(streamsConfig, this.cleanupConfig);
+				? new StreamsBuilderFactoryBean(kafkaStreamsConfiguration)
+				: new StreamsBuilderFactoryBean(kafkaStreamsConfiguration, this.cleanupConfig);
 		streamsBuilder.setAutoStartup(false);
 		BeanDefinition streamsBuilderBeanDefinition =
 				BeanDefinitionBuilder.genericBeanDefinition((Class<StreamsBuilderFactoryBean>) streamsBuilder.getClass(), () -> streamsBuilder)
 						.getRawBeanDefinition();
 		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("stream-builder-" + method.getName(), streamsBuilderBeanDefinition);
 		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean("&stream-builder-" + method.getName(), StreamsBuilderFactoryBean.class);
-		BeanDefinition streamsConfigBeanDefinition =
-				BeanDefinitionBuilder.genericBeanDefinition((Class<StreamsConfig>) streamsConfig.getClass(), () -> streamsConfig)
-						.getRawBeanDefinition();
-		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("streamsConfig-" + method.getName(), streamsConfigBeanDefinition);
-
 		methodStreamsBuilderFactoryBeanMap.put(method, streamsBuilderX);
-		return streamsConfig;
 	}
 
 	// This method is mostly copied from core. We should refactor the original method in core so that it is publicly available

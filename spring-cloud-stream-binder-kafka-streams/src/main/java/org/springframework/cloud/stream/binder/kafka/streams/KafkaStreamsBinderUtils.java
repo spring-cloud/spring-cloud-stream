@@ -16,8 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.errors.DeserializationExceptionHandler;
+import java.util.Map;
 
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -38,12 +37,11 @@ import org.springframework.util.StringUtils;
  */
 class KafkaStreamsBinderUtils {
 
-	static void prepareConsumerBinding(String name, String group, Object inputTarget,
-											ApplicationContext context,
+	static void prepareConsumerBinding(String name, String group, ApplicationContext context,
 											KafkaTopicProvisioner kafkaTopicProvisioner,
-											KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 											KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-											ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
+											ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties,
+									   Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<>(
 				properties.getExtension());
 		if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
@@ -56,8 +54,6 @@ class KafkaStreamsBinderUtils {
 		}
 
 		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
-			StreamsConfig streamsConfig = kafkaStreamsBindingInformationCatalogue.getStreamsConfig(inputTarget);
-
 			KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = !StringUtils.isEmpty(extendedConsumerProperties.getExtension().getDlqName()) ?
 					new KafkaStreamsDlqDispatch(extendedConsumerProperties.getExtension().getDlqName(), binderConfigurationProperties,
 							extendedConsumerProperties.getExtension()) : null;
@@ -67,13 +63,11 @@ class KafkaStreamsBinderUtils {
 					kafkaStreamsDlqDispatch = new KafkaStreamsDlqDispatch(dlqName, binderConfigurationProperties,
 							extendedConsumerProperties.getExtension());
 				}
+
 				SendToDlqAndContinue sendToDlqAndContinue = context.getBean(SendToDlqAndContinue.class);
 				sendToDlqAndContinue.addKStreamDlqDispatch(inputTopic, kafkaStreamsDlqDispatch);
 
-				DeserializationExceptionHandler deserializationExceptionHandler = streamsConfig.defaultDeserializationExceptionHandler();
-				if (deserializationExceptionHandler instanceof SendToDlqAndContinue) {
-					((SendToDlqAndContinue) deserializationExceptionHandler).addKStreamDlqDispatch(inputTopic, kafkaStreamsDlqDispatch);
-				}
+				kafkaStreamsDlqDispatchers.put(inputTopic, kafkaStreamsDlqDispatch);
 			}
 		}
 	}

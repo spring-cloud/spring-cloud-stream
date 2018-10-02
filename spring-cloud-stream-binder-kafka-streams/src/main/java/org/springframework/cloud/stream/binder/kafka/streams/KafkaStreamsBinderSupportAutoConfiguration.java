@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -109,13 +110,13 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 		if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
 			properties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
-					LogAndContinueExceptionHandler.class);
+					LogAndContinueExceptionHandler.class.getName());
 		} else if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
 			properties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
-					LogAndFailExceptionHandler.class);
+					LogAndFailExceptionHandler.class.getName());
 		} else if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
 			properties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
-					SendToDlqAndContinue.class);
+					SendToDlqAndContinue.class.getName());
 		}
 
 		if (!ObjectUtils.isEmpty(binderConfigurationProperties.getConfiguration())) {
@@ -144,11 +145,10 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 			KStreamStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter,
 			Collection<StreamListenerResultAdapter> streamListenerResultAdapters,
-			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 			ObjectProvider<CleanupConfig> cleanupConfig) {
 		return new KafkaStreamsStreamListenerSetupMethodOrchestrator(bindingServiceProperties,
 				kafkaStreamsExtendedBindingProperties, keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue,
-				kafkaStreamListenerParameterAdapter, streamListenerResultAdapters, binderConfigurationProperties,
+				kafkaStreamListenerParameterAdapter, streamListenerResultAdapters,
 				cleanupConfig.getIfUnique());
 	}
 
@@ -215,6 +215,11 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	public StreamsBuilderFactoryManager streamsBuilderFactoryManager(KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 																	KafkaStreamsRegistry kafkaStreamsRegistry) {
 		return new StreamsBuilderFactoryManager(kafkaStreamsBindingInformationCatalogue, kafkaStreamsRegistry);
+	}
+
+	@Bean("kafkaStreamsDlqDispatchers")
+	public Map<String, KafkaStreamsDlqDispatch> dlqDispatchers() {
+		return new HashMap<>();
 	}
 
 }

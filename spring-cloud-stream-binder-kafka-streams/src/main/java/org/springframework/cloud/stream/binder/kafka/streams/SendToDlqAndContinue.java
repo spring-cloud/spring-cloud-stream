@@ -41,6 +41,8 @@ import org.springframework.util.ReflectionUtils;
  */
 public class SendToDlqAndContinue implements DeserializationExceptionHandler{
 
+	public static final String KAFKA_STREAMS_DLQ_DISPATCHERS = "spring.cloud.stream.kafka.streams.dlq.dispatchers";
+
 	/**
 	 * DLQ dispatcher per topic in the application context. The key here is not the actual DLQ topic
 	 * but the incoming topic that caused the error.
@@ -56,14 +58,14 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler{
 	 * @param partition for the topic where this record should be sent
 	 */
 	public void sendToDlq(String topic, byte[] key, byte[] value, int partition){
-		KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = dlqDispatchers.get(topic);
+		KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = this.dlqDispatchers.get(topic);
 		kafkaStreamsDlqDispatch.sendToDlq(key,value, partition);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public DeserializationHandlerResponse handle(ProcessorContext context, ConsumerRecord<byte[], byte[]> record, Exception exception) {
-		KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = dlqDispatchers.get(record.topic());
+		KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = this.dlqDispatchers.get(record.topic());
 		kafkaStreamsDlqDispatch.sendToDlq(record.key(), record.value(), record.partition());
 		context.commit();
 
@@ -98,11 +100,13 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler{
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void configure(Map<String, ?> configs) {
-
+		this.dlqDispatchers = (Map<String, KafkaStreamsDlqDispatch>) configs.get(KAFKA_STREAMS_DLQ_DISPATCHERS);
 	}
 
 	void addKStreamDlqDispatch(String topic, KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch){
-		dlqDispatchers.put(topic, kafkaStreamsDlqDispatch);
+		this.dlqDispatchers.put(topic, kafkaStreamsDlqDispatch);
 	}
+
 }
