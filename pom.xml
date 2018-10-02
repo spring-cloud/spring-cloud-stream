@@ -160,18 +160,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-checkstyle-plugin</artifactId>
-				<dependencies>
-					<dependency>
-						<groupId>org.springframework.cloud</groupId>
-						<artifactId>spring-cloud-stream-tools</artifactId>
-						<version>${spring-cloud-stream.version}</version>
-					</dependency>
-				</dependencies>
-				<configuration>
-					<configLocation>checkstyle.xml</configLocation>
-					<headerLocation>checkstyle-header.txt</headerLocation>
-					<includeTestSourceDirectory>true</includeTestSourceDirectory>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
