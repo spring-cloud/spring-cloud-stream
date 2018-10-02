@@ -91,7 +91,7 @@ public class KafkaBinderActuatorTests {
 		assertThat(this.meterRegistry.get("spring.cloud.stream.binder.kafka.offset")
 				.tag("group", TEST_CONSUMER_GROUP)
 				.tag("topic", Sink.INPUT)
-				.timeGauge().value()).isGreaterThan(0);
+				.gauge().value()).isGreaterThan(0);
 	}
 
 	@Test

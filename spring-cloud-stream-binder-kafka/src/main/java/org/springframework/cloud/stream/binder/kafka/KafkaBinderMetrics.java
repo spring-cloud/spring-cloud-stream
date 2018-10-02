@@ -112,15 +112,15 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 			String group = topicInfo.getValue().getConsumerGroup();
 
 			Gauge.builder(METRIC_NAME, this,
-						o -> calculateConsumerLagOnTopic(topic, group))
+						o -> computeUnconsumedMessages(topic, group))
 					.tag("group", group)
 					.tag("topic", topic)
-					.description("Consumer lag for a particular group and topic")
+					.description("Unconsumed messages for a particular group and topic")
 					.register(registry);
 		}
 	}
 
-	private double calculateConsumerLagOnTopic(String topic, String group) {
+	private long computeUnconsumedMessages(String topic, String group) {
 		ExecutorService exec = Executors.newSingleThreadExecutor();
 		Future<Long> future = exec.submit(() -> {
 
@@ -144,11 +144,9 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 					for (Map.Entry<TopicPartition, Long> endOffset : endOffsets.entrySet()) {
 						OffsetAndMetadata current = metadataConsumer.committed(endOffset.getKey());
+						lag += endOffset.getValue();
 						if (current != null) {
-							lag += endOffset.getValue() - current.offset();
-						}
-						else {
-							lag += endOffset.getValue();
+							lag -= current.offset();
 						}
 					}
 				}
