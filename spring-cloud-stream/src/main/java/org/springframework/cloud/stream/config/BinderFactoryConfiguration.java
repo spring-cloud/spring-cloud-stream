@@ -53,6 +53,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.support.HandlerMethodArgumentResolversHolder;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.util.ClassUtils;
@@ -133,7 +134,7 @@ public class BinderFactoryConfiguration {
 
 	@Bean
 	public MessageConverterConfigurer messageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
-																CompositeMessageConverterFactory compositeMessageConverterFactory) {
+								CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory);
 	}
 
@@ -145,7 +146,7 @@ public class BinderFactoryConfiguration {
 
 	@Bean
 	public MessageSourceBindingTargetFactory messageSourceFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-																CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+								CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
 		return new MessageSourceBindingTargetFactory(compositeMessageConverterFactory.getMessageConverterForAllRegistered(), compositeMessageChannelConfigurer);
 	}
 
@@ -159,8 +160,8 @@ public class BinderFactoryConfiguration {
 
 	@Bean
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-																		@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar,
-																		Validator validator) {
+								@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar,
+								@Nullable Validator validator) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
 		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 		messageHandlerMethodFactory.setCustomArgumentResolvers(ahmar.getResolvers());

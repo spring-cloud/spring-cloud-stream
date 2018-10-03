@@ -16,12 +16,14 @@
 
 package org.springframework.cloud.stream.config;
 
+import javax.validation.constraints.NotBlank;
+
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 
-import javax.validation.constraints.NotBlank;
+
 
 /**
  * @author Ilayaperumal Gopinathan

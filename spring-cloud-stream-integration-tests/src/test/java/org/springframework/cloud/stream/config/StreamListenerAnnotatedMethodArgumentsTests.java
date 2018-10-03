@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.validation.Valid;
+
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -38,8 +40,6 @@ import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
 import org.springframework.util.MimeType;
-
-import javax.validation.Valid;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -119,7 +119,7 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 		context.close();
 	}
 
-	@EnableBinding(Processor.class)
+	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	public static class TestPojoWithAnnotatedArguments {
 
@@ -135,7 +135,7 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 		}
 	}
 
-	@EnableBinding(Processor.class)
+	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	public static class TestPojoWithInvalidInputAnnotatedArgument {
 
