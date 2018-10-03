@@ -57,12 +57,14 @@ import org.springframework.messaging.handler.annotation.support.DefaultMessageHa
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.Validator;
 
 /**
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author David Harrigan
  *
  * @deprecated since it really represents 'auto-configuration' it will be renamed/restructured in the next release.
  */
@@ -157,10 +159,12 @@ public class BinderFactoryConfiguration {
 
 	@Bean
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-																		@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar) {
+																		@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar,
+																		Validator validator) {
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
 		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 		messageHandlerMethodFactory.setCustomArgumentResolvers(ahmar.getResolvers());
+		messageHandlerMethodFactory.setValidator(validator);
 		return messageHandlerMethodFactory;
 	}
 
