@@ -511,11 +511,11 @@ public class RabbitMessageChannelBinder
 						Map<String, Object> headers = messageProperties.getHeaders();
 						String stackTraceAsString = getStackTraceAsString(cause);
 						if (this.maxStackTraceLength < 0) {
-							int maxStackTraceLength = RabbitUtils
+							int rabbitMaxStackTraceLength = RabbitUtils
 									.getMaxFrame(this.template.getConnectionFactory());
-							if (maxStackTraceLength > 0) {
-								maxStackTraceLength -= this.frameMaxHeadroom;
-								this.maxStackTraceLength = maxStackTraceLength;
+							if (rabbitMaxStackTraceLength > 0) {
+								//maxStackTraceLength -= this.frameMaxHeadroom;
+								this.maxStackTraceLength = rabbitMaxStackTraceLength - this.frameMaxHeadroom;
 							}
 						}
 						if (this.maxStackTraceLength > 0 && stackTraceAsString.length() > this.maxStackTraceLength) {
