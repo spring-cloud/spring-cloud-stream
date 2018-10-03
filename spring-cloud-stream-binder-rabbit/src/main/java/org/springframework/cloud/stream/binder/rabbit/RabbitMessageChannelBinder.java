@@ -66,6 +66,7 @@ import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchang
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
@@ -76,6 +77,7 @@ import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.AmqpMessageHeaderErrorMessageStrategy;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.support.DefaultErrorMessageStrategy;
@@ -312,8 +314,15 @@ public class RabbitMessageChannelBinder
 			checkConnectionFactoryIsErrorCapable();
 			endpoint.setReturnChannel(errorChannel);
 			endpoint.setConfirmNackChannel(errorChannel);
-			endpoint.setConfirmAckChannel(getApplicationContext().getBean(
-					IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME, MessageChannel.class));
+			String ackChannelBeanName = StringUtils.hasText(extendedProperties.getConfirmAckChannel())
+					? extendedProperties.getConfirmAckChannel()
+					: IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME;
+			if (!ackChannelBeanName.equals(IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME)
+					&& !getApplicationContext().containsBean(ackChannelBeanName)) {
+				GenericApplicationContext context = (GenericApplicationContext) getApplicationContext();
+				context.registerBean(ackChannelBeanName, DirectChannel.class, () -> new DirectChannel());
+			}
+			endpoint.setConfirmAckChannelName(ackChannelBeanName);
 			endpoint.setConfirmCorrelationExpressionString("#root");
 			endpoint.setErrorMessageStrategy(new DefaultErrorMessageStrategy());
 		}

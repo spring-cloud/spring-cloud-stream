@@ -269,6 +269,31 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
+	public void testProducerAckChannel() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		ccf.setPublisherReturns(true);
+		ccf.setPublisherConfirms(true);
+		ccf.resetConnection();
+		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		ExtendedProducerProperties<RabbitProducerProperties> producerProps = createProducerProperties();
+		producerProps.setErrorChannelEnabled(true);
+		producerProps.getExtension().setConfirmAckChannel("acksChannel");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("acks.0", moduleOutputChannel, producerProps);
+		final Message<?> message = MessageBuilder.withPayload("acksMessage".getBytes()).build();
+		final AtomicReference<Message<?>> confirm = new AtomicReference<>();
+		final CountDownLatch confirmLatch = new CountDownLatch(1);
+		binder.getApplicationContext().getBean("acksChannel", DirectChannel.class).subscribe(m -> {
+			confirm.set(m);
+			confirmLatch.countDown();
+		});
+		moduleOutputChannel.send(message);
+		assertThat(confirmLatch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(confirm.get().getPayload()).isEqualTo("acksMessage".getBytes());
+		producerBinding.unbind();
+	}
+
+	@Test
 	public void testConsumerProperties() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();

@@ -77,6 +77,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	private String routingKeyExpression;
 
 	/**
+	 * the channel name to which to send publisher confirms (acks) if the connection
+	 * factory is so configured; default 'nullChannel'; requires 'errorChannelEnabled=true'
+	 */
+	private String confirmAckChannel;
+
+	/**
 	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
 	 * @param requestHeaderPatterns the patterns.
 	 */
@@ -175,6 +181,14 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	public void setRoutingKeyExpression(String routingKeyExpression) {
 		this.routingKeyExpression = routingKeyExpression;
+	}
+
+	public String getConfirmAckChannel() {
+		return this.confirmAckChannel;
+	}
+
+	public void setConfirmAckChannel(String confirmAckChannel) {
+		this.confirmAckChannel = confirmAckChannel;
 	}
 
 }

@@ -376,6 +376,12 @@ compress::
 Whether data should be compressed when sent.
 +
 Default: `false`.
+confirmAckChannel::
+When `errorChannelEnabled` is true, a channel to which to send positive delivery acknowledgments (aka publisher confirms).
+If the channel does not exist, a `DirectChannel` is registered with this name.
+The connection factory must be configured to enable publisher confirms.
++
+Default: `nullChannel` (acks are discarded).
 deadLetterQueueName::
 The name of the DLQ
 Only applies if `requiredGroups` are provided and then only to those groups.
