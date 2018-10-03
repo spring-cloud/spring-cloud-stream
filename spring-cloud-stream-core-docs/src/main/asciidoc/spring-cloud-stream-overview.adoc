@@ -1705,7 +1705,7 @@ public class SourceWithDynamicDestination {
 The https://github.com/spring-cloud-stream-app-starters/router[Router Sink Application] uses this technique to create the destinations on-demand.
 
 If the channel names are known in advance, you can configure the producer properties as with any other destination.
-Alternatively, if you register a `NewBindingCallback<>` bean, it is invoked just before the binding is created.
+Alternatively, if you register a `NewDestinationBindingCallback<>` bean, it is invoked just before the binding is created.
 The callback takes the generic type of the extended producer properties used by the binder.
 It has one method:
 
@@ -1720,7 +1720,7 @@ The following example shows how to use the RabbitMQ binder:
 [source, java]
 ----
 @Bean
-public NewBindingCallback<RabbitProducerProperties> dynamicConfigurer() {
+public NewDestinationBindingCallback<RabbitProducerProperties> dynamicConfigurer() {
     return (name, channel, props, extended) -> {
         props.setRequiredGroups("bindThisQueue");
         extended.setQueueNameGroupOnly(true);
