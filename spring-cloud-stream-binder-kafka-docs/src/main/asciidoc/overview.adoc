@@ -491,3 +491,21 @@ Kafka binder module exposes the following metrics:
 `spring.cloud.stream.binder.kafka.offset`: This metric indicates how many messages have not been yet consumed from a given binder's topic by a given consumer group.
 The metrics provided are based on the Mircometer metrics library. The metric contains the consumer group information, topic and the actual lag in committed offset from the latest offset on the topic.
 This metric is particularly useful for providing auto-scaling feedback to a PaaS platform.
+
+[[kafka-tombstones]]
+== Tombstone Records (null record values)
+
+When using compacted topics, a record with a `null` value (also called a tombstone record) represents the deletion of a key.
+To receive such messages in a `@StreamListener` method, the parameter must be marked as not required to receive a `null` value argument.
+
+====
+[source, java]
+----
+@StreamListener(Sink.INPUT)
+public void in(@Header(KafkaHeaders.RECEIVED_MESSAGE_KEY) byte[] key,
+               @Payload(required = false) Customer customer) {
+    // customer is null if a tombstone record
+    ...
+}
+----
+====
