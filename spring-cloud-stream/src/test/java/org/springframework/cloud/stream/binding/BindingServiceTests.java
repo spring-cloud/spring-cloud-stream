@@ -35,7 +35,12 @@ import org.mockito.stubbing.Answer;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -58,6 +63,7 @@ import org.springframework.cloud.stream.utils.FooExtendedProducerProperties;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
 import org.springframework.cloud.stream.utils.MockExtendedBinderConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
@@ -65,6 +71,7 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
@@ -426,6 +433,58 @@ public class BindingServiceTests {
 		service.bindConsumer(inputChannel, inputChannelName);
 
 		assertThat(fooExtendedConsumerProperties.getExtendedProperty()).isEqualTo("someFancyExtension");
+	}
+
+	@Test
+	public void testDefaultPropertyBehavior() {
+		ConfigurableApplicationContext run = SpringApplication.run(DefaultConsumerPropertiesTestSink.class,
+				"--spring.cloud.stream.default.contentType=text/plain",
+				"--spring.cloud.stream.bindings.input1.contentType=application/json",
+				"--spring.cloud.stream.default.group=foo",
+				"--spring.cloud.stream.bindings.input2.group=bar",
+				"--spring.cloud.stream.default.consumer.concurrency=5",
+				"--spring.cloud.stream.bindings.input2.consumer.concurrency=1",
+				"--spring.cloud.stream.bindings.input1.consumer.partitioned=true",
+				"--spring.cloud.stream.default.producer.partitionCount=10",
+				"--spring.cloud.stream.bindings.output2.producer.partitionCount=1");
+
+		BindingServiceProperties bindingServiceProperties = run.getBeanFactory().getBean(BindingServiceProperties.class);
+		Map<String, BindingProperties> bindings = bindingServiceProperties.getBindings();
+
+		assertThat(bindings.get("input1").getContentType()).isEqualTo("application/json");
+		assertThat(bindings.get("input2").getContentType()).isEqualTo("text/plain");
+		assertThat(bindings.get("input1").getGroup()).isEqualTo("foo");
+		assertThat(bindings.get("input2").getGroup()).isEqualTo("bar");
+		assertThat(bindings.get("input1").getConsumer().getConcurrency()).isEqualTo(5);
+		assertThat(bindings.get("input2").getConsumer().getConcurrency()).isEqualTo(1);
+		assertThat(bindings.get("input1").getConsumer().isPartitioned()).isEqualTo(true);
+		assertThat(bindings.get("input2").getConsumer().isPartitioned()).isEqualTo(false);
+		assertThat(bindings.get("output1").getProducer().getPartitionCount()).isEqualTo(10);
+		assertThat(bindings.get("output2").getProducer().getPartitionCount()).isEqualTo(1);
+	}
+
+	@EnableBinding(FooBinding.class)
+	@EnableAutoConfiguration
+	public static class DefaultConsumerPropertiesTestSink {
+		@Bean
+		public Binder<?, ?, ?> binder() {
+			return Mockito.mock(Binder.class, Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS));
+		}
+	}
+
+	public interface FooBinding {
+
+		@Input("input1")
+		SubscribableChannel in1();
+
+		@Input("input2")
+		SubscribableChannel in2();
+
+		@Output("output1")
+		MessageChannel out1();
+
+		@Output("output2")
+		MessageChannel out2();
 	}
 
 	@Test
