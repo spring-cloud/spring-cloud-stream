@@ -23,14 +23,19 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
+import org.springframework.boot.context.properties.bind.BindContext;
+import org.springframework.boot.context.properties.bind.BindHandler;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
+import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -121,7 +126,7 @@ public class BindingService implements ApplicationContextAware {
 
 			if (MergableProperties.class.isAssignableFrom(extendedConsumerProperties.getExtension().getClass())) {
 				handleExtendedDefaultProperties((ExtendedPropertiesBinder) binder,
-						(MergableProperties) extendedConsumerProperties.getExtension(), false);
+						(MergableProperties) extendedConsumerProperties.getExtension(), false, inputName);
 			}
 
 			consumerProperties = extendedConsumerProperties;
@@ -246,7 +251,7 @@ public class BindingService implements ApplicationContextAware {
 
 			if (MergableProperties.class.isAssignableFrom(extendedProducerProperties.getExtension().getClass())) {
 				handleExtendedDefaultProperties((ExtendedPropertiesBinder) binder,
-						(MergableProperties) extendedProducerProperties.getExtension(), true);
+						(MergableProperties) extendedProducerProperties.getExtension(), true, outputName);
 			}
 			producerProperties = extendedProducerProperties;
 		}
@@ -256,7 +261,7 @@ public class BindingService implements ApplicationContextAware {
 		return binding;
 	}
 
-	private void handleExtendedDefaultProperties(ExtendedPropertiesBinder<?,?,?> binder, MergableProperties extendedProperties, boolean producer) {
+	private void handleExtendedDefaultProperties(ExtendedPropertiesBinder<?,?,?> binder, MergableProperties extendedProperties, boolean producer, String bindingName) {
 		String defaultsPrefix = binder.getDefaultsPrefix();
 
 		if (defaultsPrefix != null) {
@@ -266,13 +271,35 @@ public class BindingService implements ApplicationContextAware {
 						new org.springframework.boot.context.properties.bind.Binder(ConfigurationPropertySources.get(applicationContext.getEnvironment()),
 								new PropertySourcesPlaceholdersResolver(applicationContext.getEnvironment()),
 								IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory()), null);
+
+				//filter in the properties explicitly set by the user on custom bindings.
+				String bindingPropertyPrefixOnBinder = getBindingPropertyPrefix(bindingName, defaultsPrefix);
+				SortedSet<String> setProperties = new TreeSet<>();
+				BindHandler handler = new BindHandler() {
+					@Override
+					public Object onSuccess(ConfigurationPropertyName name, Bindable<?> target,
+											BindContext context, Object result) {
+						setProperties.add(name.getLastElement(ConfigurationPropertyName.Form.UNIFORM));
+						return result;
+					}
+				};
+				//Re-bind extended properties to check which properties are really provided by the application
+				extendedPropertiesResolverBinder.bind(producer ? bindingPropertyPrefixOnBinder + ".producer" : bindingPropertyPrefixOnBinder + ".consumer",
+						Bindable.ofInstance(extendedProperties), handler);
+
 				BinderSpecificPropertiesProvider defaultProperties = BeanUtils.instantiateClass(extendedPropertiesEntryClass);
 				extendedPropertiesResolverBinder.bind(defaultsPrefix, Bindable.ofInstance(defaultProperties));
 
 				Object binderExtendedProperties = producer ? defaultProperties.getProducer() : defaultProperties.getConsumer();
-				((MergableProperties)binderExtendedProperties).merge(extendedProperties);
+				((MergableProperties)binderExtendedProperties).merge(extendedProperties, setProperties.toArray(new String[0]));
 			}
 		}
+	}
+
+	private String getBindingPropertyPrefix(String bindingName, String defaultsPrefix) {
+		int lastIndexOfDot = defaultsPrefix.lastIndexOf('.');
+		String springCloudStreamBinderPrefix = defaultsPrefix.substring(0, lastIndexOfDot);
+		return springCloudStreamBinderPrefix + ".bindings." + bindingName;
 	}
 
 	@SuppressWarnings("rawtypes")

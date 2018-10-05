@@ -71,7 +71,13 @@ public interface MergableProperties {
 							Object value = readMethod.invoke(this);
 							if (value != null) {
 								if (value instanceof MergableProperties) {
-									((MergableProperties) value).merge((MergableProperties) readMethod.invoke(mergable));
+									MergableProperties mergeTarget = (MergableProperties) readMethod.invoke(mergable);
+									if (mergeTarget == null) {
+										writeMethod.invoke(mergable, value);
+									}
+									else {
+										((MergableProperties) value).merge(mergeTarget);
+									}
 								}
 								else {
 									Object v = readMethod.invoke(mergable);
@@ -85,9 +91,10 @@ public interface MergableProperties {
 									else if (isMergableByMap(v)) {
 										handleMapMerging(value, v);
 									}
-									else if (!ObjectUtils.nullSafeEquals(v, value) && !ObjectUtils.isEmpty(explicitlySetProperties)) {
+									else if (!ObjectUtils.nullSafeEquals(v, value)) {
 										// if NOT set explicitly by the user
-										if (Arrays.binarySearch(explicitlySetProperties, sourcePd.getName().toLowerCase()) < 0) {
+										if (ObjectUtils.isEmpty(explicitlySetProperties) ||
+												Arrays.binarySearch(explicitlySetProperties, sourcePd.getName().toLowerCase()) < 0) {
 											writeMethod.invoke(mergable, value);
 										}
 									}
