@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.config;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.springframework.beans.BeanUtils;
@@ -29,6 +30,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
+
 
 /**
  * NOT INTENDED FOR PUBLIC USE! Was primarily created to address GH-1359.
@@ -49,10 +51,11 @@ public interface MergableProperties {
 	 * - If source property is an array and it is empty then override with same from mergable.
 	 * - If source property is mergable then merge.
 	 */
-	default void merge(MergableProperties mergable) {
+	default void merge(MergableProperties mergable, String... explicitlySetProperties) {
 		if (mergable == null) {
 			return;
 		}
+		//Set<String> explicitlySetPropertiesSet = Arrays.as
 		for (PropertyDescriptor targetPd : BeanUtils.getPropertyDescriptors(mergable.getClass())) {
 			Method writeMethod = targetPd.getWriteMethod();
 			if (writeMethod != null) {
@@ -68,7 +71,13 @@ public interface MergableProperties {
 							Object value = readMethod.invoke(this);
 							if (value != null) {
 								if (value instanceof MergableProperties) {
-									((MergableProperties) value).merge((MergableProperties) readMethod.invoke(mergable));
+									MergableProperties mergeTarget = (MergableProperties) readMethod.invoke(mergable);
+									if (mergeTarget == null) {
+										writeMethod.invoke(mergable, value);
+									}
+									else {
+										((MergableProperties) value).merge(mergeTarget);
+									}
 								}
 								else {
 									Object v = readMethod.invoke(mergable);
@@ -83,12 +92,11 @@ public interface MergableProperties {
 										handleMapMerging(value, v);
 									}
 									else if (!ObjectUtils.nullSafeEquals(v, value)) {
-										Object obj = BeanUtils.instantiateClass(this.getClass());
-										Object defaultValue = readMethod.invoke(obj);
-										if (ObjectUtils.nullSafeEquals(v, defaultValue)) {
+										// if NOT set explicitly by the user
+										if (ObjectUtils.isEmpty(explicitlySetProperties) ||
+												Arrays.binarySearch(explicitlySetProperties, sourcePd.getName().toLowerCase()) < 0) {
 											writeMethod.invoke(mergable, value);
 										}
-
 									}
 								}
 							}
@@ -102,6 +110,7 @@ public interface MergableProperties {
 			}
 		}
 	}
+
 
 	default boolean isEmptyMapAtDestination(Object v) {
 		return Map.class.isAssignableFrom(v.getClass()) && CollectionUtils.isEmpty((Map<?,?>) v);

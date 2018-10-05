@@ -19,11 +19,16 @@ package org.springframework.cloud.stream.config;
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.boot.context.properties.bind.BindContext;
+import org.springframework.boot.context.properties.bind.BindHandler;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
+import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -96,7 +101,21 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 		Binder binder = new Binder(ConfigurationPropertySources.get(environment),new PropertySourcesPlaceholdersResolver(environment),this.conversionService, null);
 		T defaultProperties = BeanUtils.instantiateClass(entryClass);
 		binder.bind(defaultsPrefix, Bindable.ofInstance(defaultProperties));
-		((MergableProperties)defaultProperties).merge((MergableProperties) value);
+
+		SortedSet<String> setProperties = new TreeSet<>();
+
+		BindHandler handler = new BindHandler() {
+			@Override
+			public Object onSuccess(ConfigurationPropertyName name, Bindable<?> target,
+					BindContext context, Object result) {
+				setProperties.add(name.getLastElement(ConfigurationPropertyName.Form.UNIFORM));
+				return result;
+			}
+		};
+
+		binder.bind("spring.cloud.stream.bindings." + key, Bindable.ofInstance(defaultProperties), handler);
+
+		((MergableProperties)defaultProperties).merge((MergableProperties) value, setProperties.toArray(new String[0]));
 		return this.delegate.put(key, value);
 	}
 
