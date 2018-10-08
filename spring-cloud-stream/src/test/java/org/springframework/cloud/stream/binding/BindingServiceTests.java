@@ -446,7 +446,9 @@ public class BindingServiceTests {
 				"--spring.cloud.stream.bindings.input2.consumer.concurrency=1",
 				"--spring.cloud.stream.bindings.input1.consumer.partitioned=true",
 				"--spring.cloud.stream.default.producer.partitionCount=10",
-				"--spring.cloud.stream.bindings.output2.producer.partitionCount=1");
+				"--spring.cloud.stream.bindings.output2.producer.partitionCount=1",
+				"--spring.cloud.stream.bindings.inputXyz.contentType=application/json",
+				"--spring.cloud.stream.bindings.inputFooBar.contentType=application/avro");
 
 		BindingServiceProperties bindingServiceProperties = run.getBeanFactory().getBean(BindingServiceProperties.class);
 		Map<String, BindingProperties> bindings = bindingServiceProperties.getBindings();
@@ -461,6 +463,10 @@ public class BindingServiceTests {
 		assertThat(bindings.get("input2").getConsumer().isPartitioned()).isEqualTo(false);
 		assertThat(bindings.get("output1").getProducer().getPartitionCount()).isEqualTo(10);
 		assertThat(bindings.get("output2").getProducer().getPartitionCount()).isEqualTo(1);
+
+		assertThat(bindings.get("inputXyz").getContentType()).isEqualTo("application/json");
+		assertThat(bindings.get("inputFooBar").getContentType()).isEqualTo("application/avro");
+		assertThat(bindings.get("inputFooBarBuzz").getContentType()).isEqualTo("text/plain");
 	}
 
 	@EnableBinding(FooBinding.class)
@@ -485,6 +491,15 @@ public class BindingServiceTests {
 
 		@Output("output2")
 		MessageChannel out2();
+
+		@Input("inputXyz")
+		SubscribableChannel inXyz();
+
+		@Input("inputFooBar")
+		SubscribableChannel inFooBar();
+
+		@Input("inputFooBarBuzz")
+		SubscribableChannel inFooBarBuzz();
 	}
 
 	@Test

@@ -113,7 +113,8 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 			}
 		};
 
-		binder.bind("spring.cloud.stream.bindings." + key, Bindable.ofInstance(defaultProperties), handler);
+		String configElements = "spring.cloud.stream.bindings." + key;
+		binder.bind(configElements.toLowerCase(), Bindable.ofInstance(defaultProperties), handler);
 
 		((MergableProperties)defaultProperties).merge((MergableProperties) value, setProperties.toArray(new String[0]));
 		return this.delegate.put(key, value);
