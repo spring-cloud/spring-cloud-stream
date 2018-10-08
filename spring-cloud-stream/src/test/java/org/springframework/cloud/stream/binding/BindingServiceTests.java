@@ -448,7 +448,9 @@ public class BindingServiceTests {
 				"--spring.cloud.stream.default.producer.partitionCount=10",
 				"--spring.cloud.stream.bindings.output2.producer.partitionCount=1",
 				"--spring.cloud.stream.bindings.inputXyz.contentType=application/json",
-				"--spring.cloud.stream.bindings.inputFooBar.contentType=application/avro");
+				"--spring.cloud.stream.bindings.inputFooBar.contentType=application/avro",
+				"--spring.cloud.stream.bindings.input_snake_case.contentType=application/avro"
+				);
 
 		BindingServiceProperties bindingServiceProperties = run.getBeanFactory().getBean(BindingServiceProperties.class);
 		Map<String, BindingProperties> bindings = bindingServiceProperties.getBindings();
@@ -467,6 +469,7 @@ public class BindingServiceTests {
 		assertThat(bindings.get("inputXyz").getContentType()).isEqualTo("application/json");
 		assertThat(bindings.get("inputFooBar").getContentType()).isEqualTo("application/avro");
 		assertThat(bindings.get("inputFooBarBuzz").getContentType()).isEqualTo("text/plain");
+		assertThat(bindings.get("input_snake_case").getContentType()).isEqualTo("application/avro");
 	}
 
 	@EnableBinding(FooBinding.class)
@@ -500,6 +503,9 @@ public class BindingServiceTests {
 
 		@Input("inputFooBarBuzz")
 		SubscribableChannel inFooBarBuzz();
+
+		@Input("input_snake_case")
+		SubscribableChannel inWithSnakeCase();
 	}
 
 	@Test

@@ -284,8 +284,9 @@ public class BindingService implements ApplicationContextAware {
 					}
 				};
 				//Re-bind extended properties to check which properties are really provided by the application
-				extendedPropertiesResolverBinder.bind(producer ? bindingPropertyPrefixOnBinder + ".producer" : bindingPropertyPrefixOnBinder + ".consumer",
-						Bindable.ofInstance(extendedProperties), handler);
+				String configElements = producer ? bindingPropertyPrefixOnBinder + ".producer" : bindingPropertyPrefixOnBinder + ".consumer";
+				String uniformConfigElements = StringUtils.replace(configElements, "_", "").toLowerCase();
+				extendedPropertiesResolverBinder.bind(uniformConfigElements, Bindable.ofInstance(extendedProperties), handler);
 
 				BinderSpecificPropertiesProvider defaultProperties = BeanUtils.instantiateClass(extendedPropertiesEntryClass);
 				extendedPropertiesResolverBinder.bind(defaultsPrefix, Bindable.ofInstance(defaultProperties));

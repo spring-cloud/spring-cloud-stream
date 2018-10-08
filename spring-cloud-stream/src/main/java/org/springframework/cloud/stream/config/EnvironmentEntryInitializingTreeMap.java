@@ -33,6 +33,7 @@ import org.springframework.boot.context.properties.source.ConfigurationPropertyS
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * A {@link Map} implementation that initializes its entries by binding values from the
@@ -114,7 +115,8 @@ public class EnvironmentEntryInitializingTreeMap<T> extends AbstractMap<String, 
 		};
 
 		String configElements = "spring.cloud.stream.bindings." + key;
-		binder.bind(configElements.toLowerCase(), Bindable.ofInstance(defaultProperties), handler);
+		String uniformConfigElements = StringUtils.replace(configElements, "_", "").toLowerCase();
+		binder.bind(uniformConfigElements, Bindable.ofInstance(defaultProperties), handler);
 
 		((MergableProperties)defaultProperties).merge((MergableProperties) value, setProperties.toArray(new String[0]));
 		return this.delegate.put(key, value);
