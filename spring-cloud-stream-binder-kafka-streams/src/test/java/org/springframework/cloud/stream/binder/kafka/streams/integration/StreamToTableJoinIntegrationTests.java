@@ -97,7 +97,7 @@ public class StreamToTableJoinIntegrationTests {
 		@StreamListener
 		@SendTo("output")
 		public KStream<String, Long> process(@Input("input") KStream<String, Long> userClicksStream,
-											@Input("inputX") KTable<String, String> userRegionsTable) {
+											@Input("input-x") KTable<String, String> userRegionsTable) {
 
 			return userClicksStream
 					.leftJoin(userRegionsTable, (clicks, region) -> new RegionWithClicks(region == null ? "UNKNOWN" : region, clicks),
@@ -111,7 +111,7 @@ public class StreamToTableJoinIntegrationTests {
 
 	interface KafkaStreamsProcessorX extends KafkaStreamsProcessor {
 
-		@Input("inputX")
+		@Input("input-x")
 		KTable<?, ?> inputX();
 	}
 
@@ -123,10 +123,10 @@ public class StreamToTableJoinIntegrationTests {
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=user-clicks",
-				"--spring.cloud.stream.bindings.inputX.destination=user-regions",
+				"--spring.cloud.stream.bindings.input-x.destination=user-regions",
 				"--spring.cloud.stream.bindings.output.destination=output-topic",
 				"--spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.inputX.consumer.useNativeDecoding=true",
+				"--spring.cloud.stream.bindings.input-x.consumer.useNativeDecoding=true",
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde",

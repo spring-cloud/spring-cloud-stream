@@ -70,10 +70,10 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 
 	interface CustomGlobalKTableProcessor extends KafkaStreamsProcessor {
 
-		@Input("inputX")
+		@Input("input-x")
 		GlobalKTable<?, ?> inputX();
 
-		@Input("inputY")
+		@Input("input-y")
 		GlobalKTable<?, ?> inputY();
 	}
 
@@ -85,8 +85,8 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 		@StreamListener
 		@SendTo("output")
 		public KStream<Long, EnrichedOrder> process(@Input("input") KStream<Long, Order> ordersStream,
-													@Input("inputX") GlobalKTable<Long, Customer> customers,
-													@Input("inputY") GlobalKTable<Long, Product> products) {
+													@Input("input-x") GlobalKTable<Long, Customer> customers,
+													@Input("input-y") GlobalKTable<Long, Product> products) {
 
 			KStream<Long, CustomerOrder> customerOrdersStream = ordersStream.join(customers,
 					(orderId, order) -> order.getCustomerId(),
@@ -112,19 +112,19 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=orders",
-				"--spring.cloud.stream.bindings.inputX.destination=customers",
-				"--spring.cloud.stream.bindings.inputY.destination=products",
+				"--spring.cloud.stream.bindings.input-x.destination=customers",
+				"--spring.cloud.stream.bindings.input-y.destination=products",
 				"--spring.cloud.stream.bindings.output.destination=enriched-order",
 				"--spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.inputX.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.inputY.consumer.useNativeDecoding=true",
+				"--spring.cloud.stream.bindings.input-x.consumer.useNativeDecoding=true",
+				"--spring.cloud.stream.bindings.input-y.consumer.useNativeDecoding=true",
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.integration.StreamToGlobalKTableJoinIntegrationTests$OrderSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.integration.StreamToGlobalKTableJoinIntegrationTests$CustomerSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.inputY.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.inputY.consumer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.integration.StreamToGlobalKTableJoinIntegrationTests$ProductSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.integration.StreamToGlobalKTableJoinIntegrationTests$CustomerSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.integration.StreamToGlobalKTableJoinIntegrationTests$ProductSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.integration.StreamToGlobalKTableJoinIntegrationTests$EnrichedOrderSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",

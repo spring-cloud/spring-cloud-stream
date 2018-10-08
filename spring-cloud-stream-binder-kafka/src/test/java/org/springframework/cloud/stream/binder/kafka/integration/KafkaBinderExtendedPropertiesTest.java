@@ -59,7 +59,9 @@ properties = {"spring.cloud.stream.kafka.bindings.output.producer.configuration.
 		"spring.cloud.stream.kafka.default.consumer.configuration.key.serializer=BarSerializer.class",
 		"spring.cloud.stream.kafka.default.consumer.configuration.value.serializer=BarSerializer.class",
 		"spring.cloud.stream.kafka.default.producer.configuration.foo=bar",
-		"spring.cloud.stream.kafka.bindings.output.producer.configuration.foo=bindingSpecificPropertyShouldWinOverDefault"})
+		"spring.cloud.stream.kafka.bindings.output.producer.configuration.foo=bindingSpecificPropertyShouldWinOverDefault",
+		"spring.cloud.stream.kafka.default.consumer.ackEachRecord=true",
+		"spring.cloud.stream.kafka.bindings.custom-in.consumer.ackEachRecord=false"})
 public class KafkaBinderExtendedPropertiesTest {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
@@ -122,6 +124,9 @@ public class KafkaBinderExtendedPropertiesTest {
 		//binding "input" gets BarSerializer and BarSerializer for ker.serializer/value.serializer through default properties.
 		assertThat(customKafkaConsumerProperties.getConfiguration().get("key.serializer")).isEqualTo("BarSerializer.class");
 		assertThat(customKafkaConsumerProperties.getConfiguration().get("value.serializer")).isEqualTo("BarSerializer.class");
+
+		assertThat(kafkaConsumerProperties.isAckEachRecord()).isEqualTo(true);
+		assertThat(customKafkaConsumerProperties.isAckEachRecord()).isEqualTo(false);
 	}
 
 	@EnableBinding(CustomBindingForExtendedPropertyTesting.class)
@@ -130,13 +135,13 @@ public class KafkaBinderExtendedPropertiesTest {
 
 		@StreamListener(Sink.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public String process(String payload) throws InterruptedException {
+		public String process(String payload) {
 			return payload;
 		}
 
 		@StreamListener("custom-in")
 		@SendTo("custom-out")
-		public String processCustom(String payload) throws InterruptedException {
+		public String processCustom(String payload) {
 			return payload;
 		}
 
