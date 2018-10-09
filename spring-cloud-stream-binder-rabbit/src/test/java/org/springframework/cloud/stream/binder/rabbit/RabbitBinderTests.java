@@ -36,6 +36,7 @@ import org.junit.rules.TestName;
 import org.mockito.ArgumentCaptor;
 
 import org.springframework.amqp.AmqpIOException;
+import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.AnonymousQueue;
@@ -1083,10 +1084,14 @@ public class RabbitBinderTests extends
 		moduleInputChannel.setBeanName("dlqPubTest");
 		RuntimeException exception = bigCause(new RuntimeException(BIG_EXCEPTION_MESSAGE));
 		assertThat(getStackTraceAsString(exception).length()).isGreaterThan(this.maxStackTraceSize);
+		AtomicBoolean dontRepublish = new AtomicBoolean();
 		moduleInputChannel.subscribe(new MessageHandler() {
 
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
+				if (dontRepublish.get()) {
+					throw new ImmediateAcknowledgeAmqpException("testDontRepublish");
+				}
 				throw exception;
 			}
 
@@ -1098,34 +1103,26 @@ public class RabbitBinderTests extends
 		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest.foo", "foo");
 
-		int n = 0;
-		while (n++ < 100) {
-			org.springframework.amqp.core.Message deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest.foo.dlq");
-			if (deadLetter != null) {
-				assertThat(new String(deadLetter.getBody())).isEqualTo("foo");
-				assertThat(deadLetter.getMessageProperties().getHeaders())
-						.containsKey((RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE));
-				assertThat(((LongString) deadLetter.getMessageProperties().getHeaders()
-						.get(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE)).length()).isEqualTo(this.maxStackTraceSize);
-				break;
-			}
-			Thread.sleep(100);
-		}
-		assertThat(n).isLessThan(100);
+		template.setReceiveTimeout(10_000);
+		org.springframework.amqp.core.Message deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest.foo.dlq");
+		assertThat(deadLetter).isNotNull();
+		assertThat(new String(deadLetter.getBody())).isEqualTo("foo");
+		assertThat(deadLetter.getMessageProperties().getHeaders())
+				.containsKey((RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE));
+		assertThat(((LongString) deadLetter.getMessageProperties().getHeaders()
+				.get(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE)).length()).isEqualTo(this.maxStackTraceSize);
 
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest2.foo", "bar");
 
-		n = 0;
-		while (n++ < 100) {
-			org.springframework.amqp.core.Message deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest2.foo.dlq");
-			if (deadLetter != null) {
-				assertThat(new String(deadLetter.getBody())).isEqualTo("bar");
-				assertThat(deadLetter.getMessageProperties().getHeaders()).containsKey(("x-exception-stacktrace"));
-				break;
-			}
-			Thread.sleep(100);
-		}
-		assertThat(n).isLessThan(100);
+		deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest2.foo.dlq");
+		assertThat(deadLetter).isNotNull();
+		assertThat(new String(deadLetter.getBody())).isEqualTo("bar");
+		assertThat(deadLetter.getMessageProperties().getHeaders()).containsKey(("x-exception-stacktrace"));
+
+		dontRepublish.set(true);
+		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest2.foo", "baz");
+		template.setReceiveTimeout(500);
+		assertThat(template.receive(TEST_PREFIX + "foo.dlqpubtest2.foo.dlq")).isNull();
 
 		consumerBinding.unbind();
 	}

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
+import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
@@ -507,6 +508,12 @@ public class RabbitMessageChannelBinder
 					}
 					else {
 						Throwable cause = (Throwable) message.getPayload();
+						if (!shouldRepublish(cause)) {
+							if (logger.isDebugEnabled()) {
+								logger.debug("Skipping republish of: " + message);
+							}
+							return;
+						}
 						MessageProperties messageProperties = amqpMessage.getMessageProperties();
 						Map<String, Object> headers = messageProperties.getHeaders();
 						String stackTraceAsString = getStackTraceAsString(cause);
@@ -537,6 +544,22 @@ public class RabbitMessageChannelBinder
 								this.routingKey != null ? this.routingKey : messageProperties.getConsumerQueue(),
 								amqpMessage);
 					}
+				}
+
+				/**
+				 * Traverse the cause tree, stopping at AmqpRejectAndDontRequeueException
+				 * or ImmediateAcknowledgeAmqpException.
+				 * @param throwable the throwable.
+				 * @return true if neither found or AmqpRejectAndDontRequeueException is
+				 * found first.
+				 */
+				private boolean shouldRepublish(Throwable throwable) {
+					Throwable cause = throwable;
+					while (cause != null && !(cause instanceof AmqpRejectAndDontRequeueException)
+						&& !(cause instanceof ImmediateAcknowledgeAmqpException)) {
+						cause = cause.getCause();
+					}
+					return !(cause instanceof ImmediateAcknowledgeAmqpException);
 				}
 
 			};
