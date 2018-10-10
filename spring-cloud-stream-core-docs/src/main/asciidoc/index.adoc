@@ -12,8 +12,8 @@ Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinat
 :github-tag: master
 :spring-cloud-stream-docs-version: current
 :spring-cloud-stream-docs: http://docs.spring.io/spring-cloud-stream/docs/{spring-cloud-stream-docs-version}/reference
-:spring-cloud-stream-docs-current: http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/html/
-:spring-cloud-stream-javadoc-current: https://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/api/
+:spring-cloud-stream-docs-current: http://docs.spring.io/spring-cloud-stream/docs/current-snapshot/reference/html/
+:spring-cloud-stream-javadoc-current: https://docs.spring.io/spring-cloud-stream/docs/current-snapshot/api/
 :github-repo: spring-cloud/spring-cloud-stream
 :github-raw: http://raw.github.com/{github-repo}/{github-tag}
 :github-code: http://github.com/{github-repo}/tree/{github-tag}
