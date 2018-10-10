@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
+import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
@@ -40,11 +41,12 @@ import org.springframework.util.ObjectUtils;
 
 @Configuration
 @ConditionalOnClass(name="org.springframework.boot.actuate.health.HealthIndicator")
+@ConditionalOnEnabledHealthIndicator("binders")
 class KafkaBinderHealthIndicatorConfiguration {
 
 	@Bean
-	KafkaBinderHealthIndicator healthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder,
-											KafkaBinderConfigurationProperties configurationProperties) {
+	KafkaBinderHealthIndicator kafkaBinderHealthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder,
+														  KafkaBinderConfigurationProperties configurationProperties) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
