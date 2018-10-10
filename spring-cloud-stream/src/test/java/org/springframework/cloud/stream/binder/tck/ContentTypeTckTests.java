@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -69,6 +70,7 @@ import static org.junit.Assert.assertTrue;
  *  wire format (byte[])
  *
  * @author Oleg Zhurakousky
+ * @author Gary Russell
  *
  */
 public class ContentTypeTckTests {
@@ -567,12 +569,24 @@ public class ContentTypeTckTests {
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	@EnableAutoConfiguration
+	/*
+	 * Uncomment to test MBean name quoting for ":" in bean name component of
+	 * ObjectName.
+	 * Commented to avoid "InstanceAlreadyExistsException" in other tests.
+	 */
+	//	@EnableIntegrationMBeanExport
 	public static class StringToMapStreamListener {
+
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public String echo(@Payload Map<?, ?> value)  {
 			return (String) value.get("name");
 		}
+
+		@ServiceActivator(inputChannel = "input:foo.myGroup.errors")
+		public void error(Message<?> message) {
+		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -692,6 +706,7 @@ public class ContentTypeTckTests {
 			this.name = name;
 		}
 
+		@Override
 		public String toString() {
 			return name;
 		}
@@ -727,10 +742,12 @@ public class ContentTypeTckTests {
 				return clazz == null || String.class.isAssignableFrom(clazz);
 			}
 
+			@Override
 			protected Object convertFromInternal(
 					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 				return this.getClass().getSimpleName();
 			}
+			@Override
 			protected Object convertToInternal(
 					Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
 				return ((String)payload).getBytes(StandardCharsets.UTF_8);
@@ -746,11 +763,13 @@ public class ContentTypeTckTests {
 				return clazz != null && String.class.isAssignableFrom(clazz);
 			}
 
+			@Override
 			protected Object convertFromInternal(
 					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 				return this.getClass().getSimpleName();
 			}
 
+			@Override
 			protected Object convertToInternal(
 					Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
 				return ((String)payload).getBytes(StandardCharsets.UTF_8);
