@@ -782,7 +782,7 @@ Spring Cloud Stream uses the https://github.com/spring-projects/spring-retry[Spr
 However, when all fails, the exceptions thrown by the message handlers are propagated back to the binder. At that point, binder invokes custom error handler or communicates
 the error back to the messaging system (re-queue, DLQ, and others).
 
-===== Application Error Handling
+==== Application Error Handling
 
 There are two types of application-level error handling. Errors can be handled at each binding subscription or a global handler can handle all the binding subscription errors. Let's review the details.
 
@@ -851,7 +851,7 @@ public void error(Message<?> message) {
 
 This may be a convenient option if error handling logic is the same regardless of which handler produced the error.
 
-===== System Error Handling
+==== System Error Handling
 
 System-level error handling implies that the errors are communicated back to the messaging system and, given that not every messaging system
 is the same, the capabilities may differ from binder to binder.
@@ -864,12 +864,12 @@ Depending on the capabilities of the messaging system such a system may _drop_ t
 Both Rabbit and Kafka support these concepts. However, other binders may not, so refer to your individual binder’s documentation for details on supported system-level
 error-handling options.
 
-====== Drop Failed Messages
+===== Drop Failed Messages
 
 By default, if no additional system-level configuration is provided, the messaging system drops the failed message.
 While acceptable in some cases, for most cases, it is not, and we need some recovery mechanism to avoid message loss.
 
-====== DLQ - Dead Letter Queue
+===== DLQ - Dead Letter Queue
 
 DLQ allows failed messages to be sent to a special destination: - _Dead Letter Queue_.
 
@@ -935,7 +935,7 @@ Payload {"name”:"Bob"}
 
 This effectively combines application-level and system-level error handling to further assist with downstream troubleshooting mechanics.
 
-====== Re-queue Failed Messages
+===== Re-queue Failed Messages
 
 As mentioned earlier, the currently supported binders (Rabbit and Kafka) rely on `RetryTemplate` to facilitate successful message processing. See <<Retry Template>> for details.
 However, for cases when `max-attempts` property is set to 1, internal reprocessing of the message is disabled. At this point, you can facilitate message re-processing (re-tries)
@@ -955,7 +955,7 @@ In the preceding example, the `max-attempts` set to 1 essentially disabling inte
 Once set, the failed message is resubmitted to the same handler and loops continuously or until the handler throws `AmqpRejectAndDontRequeueException`
 essentially allowing you to build your own re-try logic within the handler itself.
 
-===== Retry Template
+==== Retry Template
 
 The `RetryTemplate` is part of the https://github.com/spring-projects/spring-retry[Spring Retry] library.
 While it is out of scope of this document to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
