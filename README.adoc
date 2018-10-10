@@ -18,7 +18,7 @@ The following binder implementations are currently available:
 
 === Documentation
 
-The latest documentation for the project can be found http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/htmlsingle/[here].
+The latest documentation for the project can be found http://docs.spring.io/spring-cloud-stream/docs/current-snapshot/reference/htmlsingle/[here].
 
 === Samples
 
