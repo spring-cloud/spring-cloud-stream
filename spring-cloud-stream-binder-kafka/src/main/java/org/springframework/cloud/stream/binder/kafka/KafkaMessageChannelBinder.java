@@ -380,12 +380,12 @@ public class KafkaMessageChannelBinder extends
 				+ "use the regex pattern to specify multiple topics instead");
 		boolean groupManagement = extendedConsumerProperties.getExtension().isAutoRebalanceEnabled();
 		if (!extendedConsumerProperties.isMultiplex()) {
-			listenedPartitions.addAll(processTopic(group, extendedConsumerProperties, consumerFactory,
+			listenedPartitions.addAll(processTopic(consumerGroup, extendedConsumerProperties, consumerFactory,
 					partitionCount, usingPatterns, groupManagement, destination.getName()));
 		}
 		else {
 			for (String name : StringUtils.commaDelimitedListToStringArray(destination.getName())) {
-				listenedPartitions.addAll(processTopic(group, extendedConsumerProperties, consumerFactory,
+				listenedPartitions.addAll(processTopic(consumerGroup, extendedConsumerProperties, consumerFactory,
 						partitionCount, usingPatterns, groupManagement, name.trim()));
 			}
 		}
